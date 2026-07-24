@@ -26,6 +26,10 @@ import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import RetailerMapLoader from '@/components/retailer-map-loader';
 import FavoriteButton from '@/components/favorite-button';
 import DiscoverySupportBand from '@/components/discovery-support-band';
+import MarketplaceCategoryRail from '@/components/marketplace-category-rail';
+import MarketplaceFeaturedRetailers from '@/components/marketplace-featured-retailers';
+import MarketplaceHomeHero from '@/components/marketplace-home-hero';
+import MarketplaceSearchPanel from '@/components/marketplace-search-panel';
 import {
   BadgeCheck,
   Candy,
@@ -167,7 +171,22 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     <div className="flex-grow flex flex-col animate-fade-in">
       {itemListJsonLd && <script {...jsonLdScriptProps(itemListJsonLd)} />}
 
+      {isCanonicalBrand && (
+        <>
+          <MarketplaceHomeHero
+            activeDealCount={activeDealCount}
+            articleCount={articleCount}
+            totalResults={totalResults}
+            verifiedCurrentCount={verifiedCurrentCount}
+          />
+          <MarketplaceSearchPanel filters={requestedFilters} />
+          <MarketplaceCategoryRail />
+          <MarketplaceFeaturedRetailers retailers={retailers} />
+        </>
+      )}
+
       {/* Hero + Search Header */}
+      {!isCanonicalBrand && (
       <section className="hero-aurora border-b border-brand-border px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5">
@@ -393,12 +412,26 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           </nav>
         </div>
       </section>
+      )}
 
       {/* Main Contents (Directory grid + Map Sidebar) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div
+        id="directory"
+        className="mx-auto grid w-full max-w-screen-2xl flex-grow grid-cols-1 gap-8 px-4 py-12 sm:px-6 lg:grid-cols-3 lg:px-10"
+      >
 
         {/* Left Side: Directory Listings */}
         <div className="lg:col-span-2 space-y-4">
+          <div className="mb-6">
+            <p className="kicker">All labeled records</p>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-brand-text">
+              Compare the full directory
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-brand-muted">
+              Filter by service type and evidence state, then compare the
+              records side by side.
+            </p>
+          </div>
           <div className="flex items-center justify-between text-sm text-brand-muted mb-2">
             <div>
               Showing{' '}
@@ -449,7 +482,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     Compare selected
                   </button>
                 </div>
-                {retailers.map((retailer) => (
+                {retailers.map((retailer, index) => (
                 <article
                   key={retailer.id}
                   className={`record-card rounded-2xl p-5 flex flex-col md:flex-row gap-5 ${
@@ -457,18 +490,16 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                   } ${isPubliclyVerified(retailer) ? 'record-card--verified' : ''}`}
                 >
                   <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-xl border border-brand-border md:h-32 md:w-44">
-                    <div
-                      role="img"
-                      aria-label={`Illustrative ${retailer.type} directory panel`}
-                      className={`listing-visual listing-visual--${retailer.type}`}
-                    >
-                      {retailer.type === 'storefront' ? (
-                        <Store size={28} strokeWidth={1.6} aria-hidden="true" />
-                      ) : (
-                        <Truck size={28} strokeWidth={1.6} aria-hidden="true" />
-                      )}
-                      <span>D.C. directory</span>
-                    </div>
+                    <img
+                      src={`/marketplace/retailer-${index % 4}.webp`}
+                      alt=""
+                      width={900}
+                      height={900}
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute left-1.5 top-1.5 rounded-full bg-black/70 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+                      Illustrative
+                    </span>
                     <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-text backdrop-blur-sm">
                       {retailer.type === 'storefront' ? (
                         <Store size={10} aria-hidden="true" />

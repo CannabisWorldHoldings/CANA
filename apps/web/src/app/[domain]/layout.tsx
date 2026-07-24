@@ -22,16 +22,15 @@ import AgeGate from '@/components/age-gate';
 import MobileNav from '@/components/mobile-nav';
 import BrandWordmark from '@/components/brand-wordmark';
 import DaypartThemeControl from '@/components/daypart-theme-control';
-import { Leaf, LifeBuoy, ShieldCheck } from 'lucide-react';
+import { Leaf, LifeBuoy, MapPin, ShieldCheck } from 'lucide-react';
 
 const NAV_LINKS = [
-  { href: '/', label: 'Retailers' },
+  { href: '/', label: 'Dispensaries' },
+  { href: '/?type=delivery', label: 'Delivery' },
   { href: '/products', label: 'Products' },
   { href: '/deals', label: 'Deals' },
-  { href: '/education', label: 'Learn' },
   { href: '/neighborhoods', label: 'Neighborhoods' },
-  { href: '/compare', label: 'Compare' },
-  { href: '/pricing', label: 'Pricing' },
+  { href: '/education', label: 'Learn' },
 ];
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }) {
@@ -143,9 +142,22 @@ export default async function TenantLayout({ children, params }: { children: Rea
 
       <AgeGate />
 
+      {isCanonicalBrand && (
+        <aside className="operator-strip border-b border-brand-border px-4 py-2 text-center text-[11px] font-semibold">
+          D.C. operators: publish evidence, claim your listing, and reach
+          ready-to-shop visitors.
+          <Link
+            href="/pricing"
+            className="ml-2 font-bold text-brand-primary hover:underline"
+          >
+            See published pricing →
+          </Link>
+        </aside>
+      )}
+
       {/* Brand Header Nav */}
-      <header className="border-b border-brand-border bg-brand-background/85 backdrop-blur-xl sticky top-0 z-50">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-50 border-b border-brand-border bg-brand-background/90 backdrop-blur-xl">
+        <div className="relative mx-auto flex h-20 max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
           <Link
             href="/"
             aria-label={`${displayName} home`}
@@ -153,7 +165,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
           >
             {isCanonicalBrand ? (
               <>
-                <BrandWordmark className="w-36 sm:w-40" priority />
+                <BrandWordmark className="w-40 sm:w-52" priority />
                 <span className="sr-only">{displayName}</span>
               </>
             ) : (
@@ -166,9 +178,20 @@ export default async function TenantLayout({ children, params }: { children: Rea
             )}
           </Link>
 
+          {isCanonicalBrand && (
+            <span className="hidden shrink-0 items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-text xl:inline-flex">
+              <MapPin
+                size={14}
+                className="text-brand-primary"
+                aria-hidden="true"
+              />
+              Washington, D.C.
+            </span>
+          )}
+
           <nav
             aria-label="Primary navigation"
-            className="hidden md:flex items-center gap-1 text-sm font-medium"
+            className="hidden items-center gap-0.5 text-sm font-medium lg:flex"
           >
             {NAV_LINKS.map((link) => (
               <Link
@@ -182,9 +205,9 @@ export default async function TenantLayout({ children, params }: { children: Rea
           </nav>
 
           <div className="flex items-center gap-3">
-            <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 text-[11px] font-semibold text-brand-muted">
+            <span className="hidden items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 text-[11px] font-semibold text-brand-muted 2xl:inline-flex">
               <ShieldCheck size={13} className="text-brand-primary" aria-hidden="true" />
-              Evidence-labeled data
+              Evidence labeled
             </span>
             <Link
               href="/help"
@@ -196,15 +219,23 @@ export default async function TenantLayout({ children, params }: { children: Rea
             </Link>
             {isCanonicalBrand && <DaypartThemeControl />}
             <Link
-              href={canonicalBusiness}
-              className="hidden sm:inline-flex rounded-lg bg-brand-primary px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              href="/customer/login"
+              className="hidden rounded-lg border border-brand-border bg-brand-surface px-4 py-2.5 text-xs font-bold text-brand-text transition-colors hover:border-brand-primary/40 sm:inline-flex"
             >
-              Business Portal
+              Log in
+            </Link>
+            <Link
+              href="/business/claim"
+              className="hidden rounded-lg bg-brand-primary px-4 py-2.5 text-xs font-bold text-black transition-transform hover:-translate-y-0.5 xl:inline-flex"
+            >
+              List your business
             </Link>
             <MobileNav
               links={[
                 ...NAV_LINKS,
-                { href: canonicalBusiness, label: 'Business Portal' },
+                { href: '/customer/login', label: 'Customer login' },
+                { href: '/business/claim', label: 'List your business' },
+                { href: canonicalBusiness, label: 'Business portal' },
               ]}
             />
           </div>
@@ -212,7 +243,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
       </header>
 
       {demonstrationCount > 0 && (
-        <aside className="border-b border-violet-500/30 bg-violet-500/10 px-4 py-2.5 text-center text-xs font-semibold text-violet-800">
+        <aside className="demonstration-banner border-b px-4 py-2.5 text-center text-xs font-semibold">
           Demonstration environment: visible businesses, coordinates, license fields, menus, prices, deals, articles, and rewards are synthetic unless a record explicitly says otherwise.
         </aside>
       )}

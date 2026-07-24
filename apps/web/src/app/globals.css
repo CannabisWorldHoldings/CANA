@@ -447,3 +447,122 @@ html[data-daypart="night"] .homepage-hero-image {
     var(--brand-surface)
   );
 }
+
+.marketplace-hero {
+  background: var(--brand-background);
+}
+
+.operator-strip {
+  color: #f6faf7;
+  background: #050806;
+}
+
+.demonstration-banner {
+  color: #493205;
+  background: #fff7df;
+  border-color: #ead599;
+}
+
+html[data-daypart="night"] .demonstration-banner {
+  color: #f3d77c;
+  background: #171205;
+  border-color: #554719;
+}
+
+.marketplace-hero__image {
+  filter: saturate(0.94) contrast(1.02);
+  transition: filter 0.35s ease;
+}
+
+.marketplace-hero__veil {
+  background:
+    linear-gradient(
+      90deg,
+      var(--brand-background) 0%,
+      color-mix(in srgb, var(--brand-background) 94%, transparent) 34%,
+      color-mix(in srgb, var(--brand-background) 52%, transparent) 60%,
+      color-mix(in srgb, var(--brand-background) 12%, transparent) 100%
+    ),
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--brand-background) 48%, transparent) 0%,
+      transparent 40%
+    );
+}
+
+.marketplace-snapshot,
+.marketplace-search-panel {
+  background: color-mix(in srgb, var(--brand-surface) 90%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.marketplace-quick-paths {
+  background: var(--brand-surface);
+  box-shadow: 0 16px 40px -32px color-mix(in srgb, var(--brand-text) 35%, transparent);
+}
+
+.marketplace-format-card__veil {
+  background: linear-gradient(
+    0deg,
+    rgba(3, 10, 6, 0.92) 0%,
+    rgba(3, 10, 6, 0.3) 55%,
+    transparent 82%
+  );
+}
+
+.marketplace-retailer-card {
+  box-shadow: 0 18px 38px -32px color-mix(in srgb, var(--brand-text) 38%, transparent);
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.marketplace-retailer-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-border));
+}
+
+.marketplace-retailer-card:hover img {
+  transform: scale(1.025);
+}
+
+html[data-daypart="night"] .marketplace-hero__image {
+  filter: brightness(0.48) saturate(0.78) contrast(1.12);
+}
+
+html[data-daypart="night"] .marketplace-hero__veil {
+  background:
+    linear-gradient(
+      90deg,
+      var(--brand-background) 0%,
+      color-mix(in srgb, var(--brand-background) 92%, transparent) 38%,
+      color-mix(in srgb, var(--brand-background) 50%, transparent) 68%,
+      color-mix(in srgb, var(--brand-background) 18%, transparent) 100%
+    ),
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--brand-background) 70%, transparent) 0%,
+      transparent 48%
+    );
+}
+
+@media (max-width: 1023px) {
+  .marketplace-hero__image {
+    object-position: 62% center;
+  }
+
+  .marketplace-hero__veil {
+    background:
+      linear-gradient(
+        90deg,
+        var(--brand-background) 0%,
+        color-mix(in srgb, var(--brand-background) 90%, transparent) 62%,
+        color-mix(in srgb, var(--brand-background) 45%, transparent) 100%
+      ),
+      linear-gradient(
+        0deg,
+        var(--brand-background) 0%,
+        transparent 58%
+      );
+  }
+}
