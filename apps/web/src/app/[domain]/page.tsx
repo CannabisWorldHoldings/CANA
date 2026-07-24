@@ -25,17 +25,25 @@ import {
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import RetailerMapLoader from '@/components/retailer-map-loader';
 import FavoriteButton from '@/components/favorite-button';
+import DiscoverySupportBand from '@/components/discovery-support-band';
 import {
   BadgeCheck,
+  Candy,
+  Cigarette,
   Clock,
+  Flower2,
   Flame,
   MapPin,
   Navigation,
+  Package,
   Phone,
+  Pipette,
   ScrollText,
   Search,
+  Sparkles,
   Store,
   Truck,
+  Wind,
 } from 'lucide-react';
 
 type Props = {
@@ -48,6 +56,16 @@ type Props = {
     page?: string | string[];
   }>;
 };
+
+const CATEGORY_TILES = [
+  { slug: 'flower', label: 'Flower', icon: Flower2 },
+  { slug: 'edibles', label: 'Edibles', icon: Candy },
+  { slug: 'concentrates', label: 'Concentrates', icon: Pipette },
+  { slug: 'vapes', label: 'Vapes', icon: Wind },
+  { slug: 'pre-rolls', label: 'Pre-rolls', icon: Cigarette },
+  { slug: 'topicals', label: 'Topicals', icon: Sparkles },
+  { slug: 'accessories', label: 'Accessories', icon: Package },
+];
 
 export const metadata = {
   ...buildPublicMetadata({
@@ -186,11 +204,11 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
             </div>
             <div className="hidden lg:col-span-2 lg:block">
               <img
-                src="/art/hero-dc.jpg"
-                alt="Illustrative artwork of the Washington, D.C. skyline at dawn"
+                src="/art/hero-dc.webp"
+                alt="Washington, D.C. skyline at dawn with an abstract directory map overlay"
                 width={1680}
                 height={720}
-                className="w-full rounded-2xl border border-brand-border object-cover shadow-xl shadow-emerald-950/10"
+                className="homepage-hero-image w-full rounded-2xl border border-brand-border object-cover shadow-xl shadow-emerald-950/10"
               />
             </div>
           </div>
@@ -352,28 +370,20 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           {/* Category tile rail (illustrative artwork) */}
           <nav aria-label="Browse products by category" className="mt-8">
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-              {[
-                ['flower', 'Flower'],
-                ['edibles', 'Edibles'],
-                ['concentrates', 'Concentrates'],
-                ['vapes', 'Vapes'],
-                ['pre-rolls', 'Pre-rolls'],
-                ['topicals', 'Topicals'],
-                ['accessories', 'Accessories'],
-              ].map(([slug, label]) => (
+              {CATEGORY_TILES.map(({ slug, label, icon: Icon }) => (
                 <Link
                   key={slug}
                   href={`/products?category=${slug}`}
-                  className="record-card group overflow-hidden rounded-2xl"
+                  className={`record-card category-tile category-tile--${slug} group overflow-hidden rounded-2xl`}
                 >
-                  <img
-                    src={`/art/cat-${slug}.jpg`}
-                    alt={`${label} — illustrative artwork`}
-                    width={480}
-                    height={480}
-                    loading="lazy"
-                    className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
-                  />
+                  <span className="category-tile__visual">
+                    <Icon
+                      size={28}
+                      strokeWidth={1.7}
+                      aria-hidden="true"
+                      className="transition-transform duration-300 group-hover:scale-110"
+                    />
+                  </span>
                   <span className="block px-3 py-2 text-center text-xs font-bold text-brand-text transition-colors group-hover:text-brand-primary">
                     {label}
                   </span>
@@ -446,16 +456,19 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     retailer.isSponsored ? 'ring-1 ring-brand-gold/25' : ''
                   } ${isPubliclyVerified(retailer) ? 'record-card--verified' : ''}`}
                 >
-                  {/* Retailer Thumbnail (illustrative artwork, not a photo of the business) */}
                   <div className="relative h-28 w-full shrink-0 overflow-hidden rounded-xl border border-brand-border md:h-32 md:w-44">
-                    <img
-                      src={retailer.type === 'storefront' ? '/art/retailer-storefront.jpg' : '/art/retailer-delivery.jpg'}
-                      alt={`Illustrative ${retailer.type} artwork`}
-                      width={720}
-                      height={480}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
+                    <div
+                      role="img"
+                      aria-label={`Illustrative ${retailer.type} directory panel`}
+                      className={`listing-visual listing-visual--${retailer.type}`}
+                    >
+                      {retailer.type === 'storefront' ? (
+                        <Store size={28} strokeWidth={1.6} aria-hidden="true" />
+                      ) : (
+                        <Truck size={28} strokeWidth={1.6} aria-hidden="true" />
+                      )}
+                      <span>D.C. directory</span>
+                    </div>
                     <span className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-text backdrop-blur-sm">
                       {retailer.type === 'storefront' ? (
                         <Store size={10} aria-hidden="true" />
@@ -724,6 +737,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
         </div>
 
       </div>
+      <DiscoverySupportBand />
     </div>
   );
 }

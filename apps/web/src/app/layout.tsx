@@ -28,14 +28,14 @@ export default function RootLayout({
             subsets so the strict CSP holds and builds stay deterministic. */}
         <link
           rel="preload"
-          href="/fonts/inter-var-latin.woff2"
+          href="/fonts/geist-latin.woff2"
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"
         />
         <link
           rel="preload"
-          href="/fonts/space-grotesk-var-latin.woff2"
+          href="/fonts/geist-mono-latin.woff2"
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"
