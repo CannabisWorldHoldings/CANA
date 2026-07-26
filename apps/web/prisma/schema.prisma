@@ -472,7 +472,25 @@ model DemandCreditEntry {
   exportableByMerchant Boolean   @default(false)
   recordedAt           DateTime  @default(now())
 
+  /// CANONICAL EVENT IDENTITY. The stable fingerprint of the real-world event this
+  /// row records, independent of transport, retry, key ordering or wall-clock
+  /// jitter. Nullable because only ATTRIBUTION rows carry one — money rows are
+  /// already serialized by the per-merchant seq.
+  ///
+  /// WHY A COLUMN AND NOT A LOOKUP. The application previously did
+  /// find-then-insert, which is a check-then-act race: 50 simultaneous identical
+  /// POSTs produced TWO committed rows because both requests read "no duplicate"
+  /// before either wrote. Only the database can decide this, and only with a
+  /// uniqueness constraint. An application-level guard cannot be made correct here
+  /// no matter how carefully it is written.
+  eventIdentity        String?
+
   @@unique([merchantId, seq])
+  /// The constraint that actually enforces idempotency. Scoped to the merchant so a
+  /// collision across merchants is impossible by construction, and a tenant cannot
+  /// suppress another tenant's event by guessing its identity.
+  @@unique([merchantId, eventIdentity])
   @@index([merchantId, kind])
   @@index([entryHash])
+  @@index([eventIdentity])
 }

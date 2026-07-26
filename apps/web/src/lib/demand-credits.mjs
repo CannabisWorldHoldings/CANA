@@ -44,6 +44,12 @@ const money = (v) =>
   typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= MAX_ENTRY_AMOUNT
   && Number.isSafeInteger(Math.round(v * 100));
 
+/**
+ * Two identical actions inside this window are ONE event. Wider than a plausible
+ * double-click or retry storm, narrower than a genuine repeat visit.
+ */
+export const IDENTITY_WINDOW_MS = 5 * 60_000;
+
 export const GENESIS_HASH = sha('orderweeddc:demand-credits:genesis');
 export const PLACEMENT_KINDS = Object.freeze(['FEATURED_CARD', 'NEIGHBORHOOD_BANNER', 'DEAL_SPOTLIGHT', 'BRAND_COLLECTION']);
 export const ACTION_KINDS = Object.freeze(['PROFILE_VIEW', 'MENU_VIEW', 'DIRECTIONS_CLICK', 'PHONE_CLICK', 'WEBSITE_CLICK', 'HANDOFF']);
@@ -63,6 +69,40 @@ const deny = (code, detail) => ({ accepted: false, denial_code: code, denial_det
  * entryHash='x' render a real visible badge on the production homepage.
  * Duplicating the algorithm there would let the two drift; one definition.
  */
+/**
+ * CANONICAL EVENT IDENTITY — the stable fingerprint of the real-world event a row
+ * records, independent of transport, retry, JSON key order, or wall-clock jitter.
+ *
+ * WHY THIS EXISTS. The endpoint previously deduped by doing a lookup and then an
+ * insert. That is a check-then-act race, and it lost: FIFTY simultaneous identical
+ * POSTs produced TWO committed rows, because both requests read "no duplicate"
+ * before either wrote. No amount of care in the application layer fixes this —
+ * only the database can decide, and only with a uniqueness constraint. This
+ * function produces the value that constraint is placed on.
+ *
+ * The identity deliberately EXCLUDES:
+ *   - key order (fields are concatenated in a fixed sequence, never JSON.stringify
+ *     of a caller-shaped object, whose key order is caller-controlled)
+ *   - exact millisecond (bucketed, so a retry milliseconds later is the same event)
+ *   - transport details, headers, request ids
+ * and deliberately INCLUDES merchantId, so two merchants can never collide and one
+ * tenant cannot suppress another's event by guessing its identity.
+ */
+export function eventIdentityOf({ merchantId, actionKind, evidenceChainSha256, windowBucket, idempotencyKey }) {
+  // An explicit idempotency key, when supplied, IS the identity — the caller is
+  // asserting "this is the same event". It is still scoped by merchant.
+  if (typeof idempotencyKey === 'string' && idempotencyKey.trim() !== '') {
+    return sha(`k1|${merchantId}|${idempotencyKey.trim()}`);
+  }
+  return sha([
+    'e1',
+    String(merchantId ?? ''),
+    String(actionKind ?? ''),
+    String(evidenceChainSha256 ?? ''),
+    String(windowBucket ?? ''),
+  ].join('|'));
+}
+
 export function hashBody(e, prevHash) {
   return sha(JSON.stringify({
     merchantId: e.merchantId, kind: e.kind, amount: e.amount, seq: e.seq,
@@ -89,8 +129,44 @@ export function createDemandCredits(prisma) {
     const { prevHash, nextSeq } = await head(merchantId);
     const draft = { merchantId, seq: nextSeq, ...fields };
     const entryHash = hashBody(draft, prevHash);
-    const entry = await table.create({ data: { ...draft, prevHash, entryHash } });
-    return { accepted: true, entry };
+    try {
+      const entry = await table.create({ data: { ...draft, prevHash, entryHash } });
+      return { accepted: true, entry };
+    } catch (e) {
+      // A unique-constraint violation here is not a fault — it is the database
+      // correctly refusing a duplicate that the application-level check could not
+      // see because a concurrent request had not committed yet. Translate it into
+      // the SAME truthful refusal a sequential retry would receive, and return the
+      // ROW THAT WON so a retrying caller can be told what actually happened rather
+      // than being left guessing.
+      const code = e?.code ?? '';
+      const target = Array.isArray(e?.meta?.target) ? e.meta.target.join(',') : String(e?.meta?.target ?? '');
+      const isUnique = code === 'P2002' || /UNIQUE constraint failed/i.test(String(e?.message ?? ''));
+      if (isUnique && (target.includes('eventIdentity') || /eventIdentity/i.test(String(e?.message ?? '')))) {
+        const winner = fields.eventIdentity
+          ? await table.findFirst({ where: { merchantId, eventIdentity: fields.eventIdentity } })
+          : null;
+        return {
+          accepted: false,
+          denial_code: 'DUPLICATE_ATTRIBUTION',
+          denial_detail: winner
+            ? `this event is already recorded at seq=${winner.seq} — counting it again would inflate proof of value`
+            : 'this event is already recorded — counting it again would inflate proof of value',
+          existing: winner ?? null,
+          decided_by: 'database uniqueness constraint',
+        };
+      }
+      // A seq collision means two writers raced for the same chain position. The
+      // caller should retry; silently renumbering would corrupt the hash chain.
+      if (isUnique && /seq/i.test(target)) {
+        return {
+          accepted: false, denial_code: 'CHAIN_POSITION_CONTENDED',
+          denial_detail: 'another write took this chain position; retry',
+          decided_by: 'database uniqueness constraint',
+        };
+      }
+      throw e;
+    }
   }
 
   /** Balance in whole credits, derived by summing the chain in integer cents. */
@@ -193,11 +269,21 @@ export function createDemandCredits(prisma) {
         : { merchantId, kind: 'ATTRIBUTION', evidenceChainSha256: chainSha };
       const dup = await table.findFirst({ where: dupWhere });
       if (dup) return deny('DUPLICATE_ATTRIBUTION', `this action is already recorded at seq=${dup.seq} — duplicate counting would inflate proof of value`);
+      // The lookup above is kept as a FAST PATH — it answers the common sequential
+      // retry cheaply and with a clear message. It is explicitly NOT the guarantee.
+      // The guarantee is the unique constraint on (merchantId, eventIdentity),
+      // which is the only thing that holds under concurrency.
+      const identity = eventIdentityOf({
+        merchantId, actionKind, evidenceChainSha256: chainSha,
+        windowBucket: Math.floor(obs.getTime() / IDENTITY_WINDOW_MS),
+        idempotencyKey: text(idempotencyKey) ? idempotencyKey : null,
+      });
       return append(merchantId, {
         kind: 'ATTRIBUTION', amount: 0, actionKind,
         evidenceChain: chainJson, evidenceChainSha256: chainSha,
         observedAt: obs, placementSeq, reason: text(idempotencyKey) ? idempotencyKey : null,
         relationshipOwner: 'MERCHANT', exportableByMerchant: true,
+        eventIdentity: identity,
       });
     },
 

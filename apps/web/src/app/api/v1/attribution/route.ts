@@ -186,6 +186,32 @@ export async function POST(request: NextRequest) {
 
   if (!result?.accepted) {
     const code = result?.denial_code ?? 'ATTRIBUTION_REFUSED';
+    // A duplicate refused by the DATABASE constraint (not by the pre-insert lookup)
+    // is the concurrency case. Return the row that WON so a retrying caller learns
+    // what actually happened instead of guessing, and state which layer decided.
+    if (code === 'DUPLICATE_ATTRIBUTION') {
+      const existing = (result as { existing?: Record<string, unknown> }).existing ?? null;
+      return NextResponse.json(
+        {
+          api_version: API_VERSION, recorded: false, error: code,
+          detail: result?.denial_detail ?? 'this event is already recorded',
+          decided_by: (result as { decided_by?: string }).decided_by ?? 'application check',
+          existing_attribution: existing
+            ? { ledger_seq: existing.seq, observed_at: existing.observedAt, evidence_digest: existing.evidenceChainSha256 }
+            : null,
+        },
+        { status: 409, headers: { 'X-API-Version': API_VERSION, 'Cache-Control': 'no-store' } },
+      );
+    }
+    if (code === 'CHAIN_POSITION_CONTENDED') {
+      // Honest: this is retryable and NOT a duplicate. Saying 409 would tell the
+      // caller the action was already counted, which is false.
+      return NextResponse.json(
+        { api_version: API_VERSION, recorded: false, error: code,
+          detail: result?.denial_detail ?? 'chain position contended; retry' },
+        { status: 503, headers: { 'X-API-Version': API_VERSION, 'Cache-Control': 'no-store', 'Retry-After': '1' } },
+      );
+    }
     // A duplicate is a successful REFUSAL, not a server fault: the ledger
     // correctly declined to inflate proof of value. 409 says so honestly.
     const status = code === 'DUPLICATE_ATTRIBUTION' ? 409 : 400;
