@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "ae10aff",
-  "last_checkpoint_at": "2026-07-26T19:11:16.655398+00:00",
+  "last_checkpoint": "2a80d53",
+  "last_checkpoint_at": "2026-07-26T19:36:26.987699+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1010,10 +1010,28 @@
       "design_correction": "first version POSTed to its own API and failed with ECONNRESET; undici also ignores a manual Host header so it would have been refused 421 anyway. Now imports the ledger directly.",
       "proven_live": "handoff 303 -> MERCHANT_HANDOFF_VERIFIED, valueEligible true; merchant view reports 1 attributed action, cost/action 50, zero unproven rejections",
       "tests": "web 418/418"
+    },
+    {
+      "wall": "PAGE_BOUND_INTERACTION_CHALLENGE",
+      "commit": "2a80d53",
+      "self_found_flaw": "my own previous handoff minted AND consumed a token in one server request, so it proved only that the server ran its own route \u2014 yet graded MERCHANT_HANDOFF_VERIFIED",
+      "fix": "the challenge is minted during page render and embedded in the HTML, so presenting it proves the submission followed a real render",
+      "states": [
+        "REQUEST_RECEIVED",
+        "APPLICATION_HANDOFF_VERIFIED (no value \u2014 the app vouching for itself)",
+        "PAGE_INTERACTION_VERIFIED",
+        "MERCHANT_HANDOFF_VERIFIED",
+        "COMMERCIAL_OUTCOME_UNVERIFIED",
+        "VALUE_PROVEN (unreachable)"
+      ],
+      "honest_limit": "not personhood \u2014 a scripted browser renders pages and reads HTML; asserted in tests",
+      "proven_live": "render+submit -> MERCHANT_HANDOFF_VERIFIED eligible; direct POST -> APPLICATION_HANDOFF_VERIFIED not eligible; replay -> demoted; consumer always gets 303",
+      "falsification_proven": true,
+      "tests": "web 446/446 (28 new)"
     }
   ],
   "test_baseline": {
-    "web": "418/418",
+    "web": "446/446",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
