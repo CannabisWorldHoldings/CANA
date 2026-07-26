@@ -47,10 +47,43 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    const handoff = await recordVerifiedHandoff(prisma, {
-      brandId: brand.id,
-      retailerId: id,
-    });
+    // CONCURRENCY. recordVerifiedHandoff writes a LeadEvent inside a transaction,
+    // and concurrent submissions lose the SQLite write lock. My new integration
+    // test exposed this: TEN simultaneous handoffs all returned 500. The defect
+    // predates the evidence work — the route simply had never been exercised
+    // concurrently — but a consumer whose handoff fails because someone else
+    // clicked at the same moment is a broken product, not a bookkeeping problem.
+    //
+    // A lost lock race is TRANSIENT and the operation is idempotent from the
+    // consumer's side, so a bounded retry is correct. It is bounded deliberately:
+    // an unbounded retry converts contention into a queue that never drains.
+    let handoff;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        handoff = await recordVerifiedHandoff(prisma, { brandId: brand.id, retailerId: id });
+        break;
+      } catch (e) {
+        // A HandoffError is a REFUSAL (demonstration data, no safe destination) and
+        // must never be retried — retrying a refusal just delays the same answer.
+        // Measured, not guessed: 4 attempts absorbed only half of a 10-way burst,
+        // so the ceiling is 8. Still bounded — an unbounded retry turns contention
+        // into a queue that never drains — but high enough that a realistic
+        // simultaneous-click burst completes.
+        if (e instanceof HandoffError || attempt >= 8) throw e;
+        const msg = String((e as { message?: string })?.message ?? '');
+        const code = String((e as { code?: string })?.code ?? '');
+        // The real codes under SQLite contention, measured rather than guessed: my
+        // first list had SQLITE_BUSY and P2034 and caught NEITHER. Concurrent
+        // handoffs actually surface P1008 (socket timeout waiting for the write
+        // lock) and P2028 (transaction API error when the transaction is aborted).
+        const contended = /SQLITE_BUSY|database is locked|write conflict|deadlock|Socket timeout|Transaction (?:already closed|api error)|P2034|P1008|P2028/i
+          .test(`${code} ${msg}`);
+        if (!contended) throw e;
+        // Exponential backoff with jitter, so retries do not resynchronise into a
+        // second thundering herd.
+        await new Promise((r) => setTimeout(r, Math.min(800, 60 * 2 ** attempt) + Math.floor(Math.random() * 80)));
+      }
+    }
     // PAGE-BOUND EVIDENCE. The previous version minted a token here and consumed
     // it in the same request, so it could only prove this server ran its own route
     // — the client never held it. It nonetheless graded MERCHANT_HANDOFF_VERIFIED,

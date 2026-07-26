@@ -65,6 +65,7 @@ const API_ROUTES = [
   { path: '/api/health', method: 'GET', truthBearing: false },
   { path: '/api/v1/retailers', method: 'GET', truthBearing: true },
   { path: '/api/v1/deals', method: 'GET', truthBearing: true },
+  { path: '/api/v1/products', method: 'GET', truthBearing: true },
   { path: '/api/v1/attribution', method: 'POST', truthBearing: true, body: { retailer_id: 'x', action_kind: 'PHONE_CLICK' } },
 ];
 
