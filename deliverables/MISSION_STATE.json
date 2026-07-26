@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "6b3c35a",
-  "last_checkpoint_at": "2026-07-26T19:03:58.164185+00:00",
+  "last_checkpoint": "ae10aff",
+  "last_checkpoint_at": "2026-07-26T19:11:16.655398+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1000,6 +1000,15 @@
       "recorded_not_fixed": "I3/I4 window semantics \u2014 correct behaviour, already neutralised by grading REQUEST_RECEIVED as value-ineligible",
       "independent_rederivation": "the verifier re-ran 50/100/200 concurrent requests and dropped the unique index to prove it load-bearing",
       "falsification_proven": true,
+      "tests": "web 418/418"
+    },
+    {
+      "wall": "HANDOFF_ISSUES_INTERACTION_TOKENS",
+      "commit": "ae10aff",
+      "gap_closed": "nothing issued a token, so the stronger proof states were unreachable and grading was inert \u2014 always \"unproven\", which is honest and useless",
+      "surface": "the retailer handoff: a same-origin form POST from a rendered page with a server-verified destination",
+      "design_correction": "first version POSTed to its own API and failed with ECONNRESET; undici also ignores a manual Host header so it would have been refused 421 anyway. Now imports the ledger directly.",
+      "proven_live": "handoff 303 -> MERCHANT_HANDOFF_VERIFIED, valueEligible true; merchant view reports 1 attributed action, cost/action 50, zero unproven rejections",
       "tests": "web 418/418"
     }
   ],
