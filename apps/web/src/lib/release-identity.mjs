@@ -14,6 +14,25 @@
  * HEAD" is an assumption, and assumptions of exactly that shape have cost this
  * mission real time twice.
  *
+ * SCOPE NOTE — READ THIS BEFORE EXTENDING THIS MODULE.
+ *
+ * Two implementations of this idea were written in parallel: this one, which reads
+ * the SHA from a BUILD-TIME ENVIRONMENT VARIABLE, and the cPanel lane's, which reads
+ * it from the `receipt.json` the existing deploy pipeline already emits (see
+ * deploy/namecheap/build-artifact.mjs, which has captured `git rev-parse HEAD` into
+ * a receipt since before this work).
+ *
+ * THE LANE'S APPROACH IS STRONGER and is the primary path. An env var must be
+ * remembered at build time by whoever runs the build; a receipt file is produced by
+ * the pipeline whether or not anyone remembers. A mechanism that depends on human
+ * discipline to be present will be absent exactly when it matters.
+ *
+ * This module is retained as the ENV FALLBACK for build contexts that have no
+ * receipt (a plain `npm run build`, CI, a platform that injects its own commit var),
+ * and for the comparison helper below. It must never contradict the receipt: when
+ * both exist, the receipt wins, because it is the artifact the deployment actually
+ * shipped.
+ *
  * THE RULE THIS MODULE ENFORCES: an unknown SHA is reported as UNKNOWN, loudly and
  * explicitly. It is never guessed, never defaulted to "main", never filled in with a
  * timestamp that looks like an answer. A release endpoint that fabricates an

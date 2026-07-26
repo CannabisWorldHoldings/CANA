@@ -131,6 +131,15 @@ test('the module never shells out to git', () => {
   const src = execFileSync('node', ['-e',
     "console.log(require('fs').readFileSync('src/lib/release-identity.mjs','utf8'))"],
     { cwd: process.cwd(), encoding: 'utf8' });
-  assert.ok(!/child_process|execSync|spawnSync|rev-parse/.test(src),
-    'release identity must come from build-time capture, never a runtime git call');
+  // Strip COMMENTS before scanning. My first version grepped raw source, so writing
+  // a comment that explains why we do NOT shell out to git failed the test that
+  // checks we do not shell out to git. A security assertion that punishes its own
+  // documentation teaches people to delete the documentation.
+  const code = src
+    .replace(/\/\*[\s\S]*?\*\//g, '')   // block comments
+    .replace(/^\s*\/\/.*$/gm, '');        // line comments
+  assert.ok(!/child_process|execSync|spawnSync|execFileSync/.test(code),
+    'release identity must never spawn a process — a runtime git call works in dev and silently fails in production');
+  assert.ok(!/rev-parse/.test(code),
+    'no git invocation may appear in executable code');
 });
