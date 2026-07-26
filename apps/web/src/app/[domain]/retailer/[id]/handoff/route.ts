@@ -32,6 +32,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   // Recorded across the whole request so the response header can report it. A
   // deferred write is not a failure and must not read as one.
   let evidenceWriteState: string = 'EVIDENCE_WRITE_DEFERRED';
+  let evidenceDetail: string | null = null;
   let presentedChallenge: string | null = null;
   try {
     const form = await request.formData();
@@ -129,14 +130,33 @@ export async function POST(request: NextRequest, context: RouteContext) {
       //   CONSUMER_HANDOFF_SUCCEEDED — already true by this point; the 303 is issued
       //                                below regardless of anything that follows.
       //   EVIDENCE_WRITE_SUCCEEDED   — the LeadEvent and attribution were written.
-      //   EVIDENCE_WRITE_DEFERRED    — transient contention; safe to retry later.
+      //   EVIDENCE_WRITE_DEFERRED    — the write failed AND the record is spilled to
+      //                                durable storage, so it is genuinely recoverable.
+      //   EVIDENCE_WRITE_LOST        — the write failed AND the spill failed. Nothing
+      //                                will recover it. This state is the truth that
+      //                                DEFERRED used to hide.
       //   EVIDENCE_WRITE_FAILED      — a real error; must NOT be retried blindly.
       //   VALUE_ELIGIBLE             — set by the GRADE, independent of write success.
+      //
+      // VERIFIER FINDING F1 (MEDIUM), CONFIRMED AND REPAIRED HERE.
+      //
+      // This block previously took the BEST of two independent write outcomes instead
+      // of the WORST. `evidenceWriteState` was set from the LeadEvent write and then
+      // OVERWRITTEN to SUCCEEDED whenever the separate attribution call came back
+      // accepted or DUPLICATE. DUPLICATE is a read-only fast path that succeeds even
+      // while writes are locked — so a LeadEvent that was genuinely lost to contention
+      // reported EVIDENCE_WRITE_SUCCEEDED. Measured under an induced 9s write stall:
+      // 150 handoffs, header SUCCEEDED on all 150, only 148 rows persisted.
+      //
+      // That is precisely the collapse this comment block promises never happens, in
+      // the code the promise is written on. Two writes now keep two states and the
+      // header reports the WORST of them, because a report that a burst succeeded is
+      // only true if every part of it did.
       const leadWrite = await recordHandoffEvent(prisma, { brandId: brand.id, retailerId: id });
-      evidenceWriteState = leadWrite.state;
+      let leadState = leadWrite.state;
 
       const credits = createDemandCredits(prisma) as unknown as {
-        attribute: (a: Record<string, unknown>) => Promise<{ accepted?: boolean }>;
+        attribute: (a: Record<string, unknown>) => Promise<{ accepted?: boolean; denial_code?: string }>;
       };
       const attributed = await credits.attribute({
         merchantId: id, actionKind: 'HANDOFF', evidenceChain, observedAt,
@@ -144,21 +164,62 @@ export async function POST(request: NextRequest, context: RouteContext) {
         interactionNonce: nonce,
         destination: grade.value_eligible ? handoff.destination : null,
       });
-      // A refused DUPLICATE is a successful outcome for bookkeeping — the event is
-      // already recorded, and a replay must not be re-queued forever. Only a genuine
-      // write problem leaves the state deferred.
-      if (attributed?.accepted === true
-          || (attributed as { denial_code?: string })?.denial_code === 'DUPLICATE_ATTRIBUTION') {
-        if (evidenceWriteState !== 'EVIDENCE_WRITE_FAILED') {
-          evidenceWriteState = 'EVIDENCE_WRITE_SUCCEEDED';
-        }
+
+      // A refused DUPLICATE is a successful outcome for THE ATTRIBUTION — the event is
+      // already in the ledger and a replay must not be re-queued forever. It says
+      // nothing whatsoever about whether the LeadEvent was written, which is the
+      // inference that produced F1.
+      const attributionOk = attributed?.accepted === true
+        || attributed?.denial_code === 'DUPLICATE_ATTRIBUTION';
+      const attributionDenied = !attributionOk && typeof attributed?.denial_code === 'string';
+      let attributionState = attributionOk
+        ? 'EVIDENCE_WRITE_SUCCEEDED'
+        : (attributionDenied ? 'EVIDENCE_WRITE_FAILED' : 'EVIDENCE_WRITE_DEFERRED');
+
+      // SPILL what the database refused, so DEFERRED stops meaning LOST. Without a
+      // drain, "safe to retry later" was aspirational — nothing retried it.
+      const { spillEvidence } = await import('@/lib/evidence-spill.mjs');
+      const spill = spillEvidence as unknown as (r: Record<string, unknown>) =>
+        Promise<{ spilled: boolean }>;
+
+      if (leadState === 'EVIDENCE_WRITE_DEFERRED') {
+        const s = await spill({
+          kind: 'LEAD_EVENT', brandId: brand.id, retailerId: id,
+          eventType: 'HANDOFF_CLICK', occurredAt: observedAt.toISOString(),
+        });
+        if (!s.spilled) leadState = 'EVIDENCE_WRITE_LOST';
       }
+      if (attributionState === 'EVIDENCE_WRITE_DEFERRED') {
+        const s = await spill({
+          kind: 'ATTRIBUTION', merchantId: id, actionKind: 'HANDOFF', evidenceChain,
+          observedAt: observedAt.toISOString(), proofState: grade.state,
+          valueEligible: grade.value_eligible === true, interactionNonce: nonce,
+          destination: grade.value_eligible ? handoff.destination : null,
+        });
+        if (!s.spilled) attributionState = 'EVIDENCE_WRITE_LOST';
+      }
+
+      // WORST-OF, explicitly ordered. Anything other than "both wrote" is not a
+      // success, and the header must not round up to one.
+      const SEVERITY = ['EVIDENCE_WRITE_SUCCEEDED', 'EVIDENCE_WRITE_DEFERRED',
+                        'EVIDENCE_WRITE_LOST', 'EVIDENCE_WRITE_FAILED'];
+      evidenceWriteState = [leadState, attributionState]
+        .reduce((worst, s) => (SEVERITY.indexOf(s) > SEVERITY.indexOf(worst) ? s : worst));
+      // Both components are reported too, so an operator can see WHICH half degraded
+      // rather than inferring it. The aggregate alone cannot distinguish "the click
+      // log was lost" from "the ledger entry was lost", and those need different
+      // responses.
+      evidenceDetail = `lead=${leadState};attribution=${attributionState}`;
     } catch {
       // The handoff is the product; attribution is bookkeeping. A consumer must
       // never be blocked, delayed, or redirected differently because it failed.
       // The state stays DEFERRED so the situation is visible rather than silent.
+      // An exception escaping the bookkeeping block means we do not know what was
+      // written. Reporting SUCCEEDED because an earlier line happened to set it would
+      // be the same over-claim as F1, reached by a different route.
       if (evidenceWriteState === 'EVIDENCE_WRITE_SUCCEEDED') {
         evidenceWriteState = 'EVIDENCE_WRITE_DEFERRED';
+        evidenceDetail = 'bookkeeping threw after a partial write; state is not known';
       }
     }
 
@@ -169,6 +230,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     // would otherwise be invisible.
     response.headers.set('X-Consumer-Handoff', 'CONSUMER_HANDOFF_SUCCEEDED');
     response.headers.set('X-Evidence-Write', evidenceWriteState);
+    if (evidenceDetail) response.headers.set('X-Evidence-Write-Detail', evidenceDetail);
     return response;
   } catch (error) {
     if (error instanceof HandoffError) {

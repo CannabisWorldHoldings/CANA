@@ -67,6 +67,15 @@ const API_ROUTES = [
   { path: '/api/v1/deals', method: 'GET', truthBearing: true },
   { path: '/api/v1/products', method: 'GET', truthBearing: true },
   { path: '/api/v1/attribution', method: 'POST', truthBearing: true, body: { retailer_id: 'x', action_kind: 'PHONE_CLICK' } },
+  // Registered at integration, on the lanes' own reports. G10 exists precisely to
+  // catch a route that ships ungoverned, and it DID catch both of these — the
+  // product lane's full-suite run failed G10 by name. That is the gate working:
+  // a new public surface cannot reach main without someone deciding it is governed.
+  { path: '/api/v1/neighborhoods', method: 'GET', truthBearing: true },
+  // /api/release reports which commit is deployed. Not truth-bearing in the
+  // consumer sense — it publishes no merchant or product claim — but it must still
+  // satisfy the leak, header and error-shape gates like every other public route.
+  { path: '/api/release', method: 'GET', truthBearing: false },
 ];
 
 const PAGE_ROUTES = ['/', '/products', '/deals', '/compare', '/strains', '/neighborhoods',

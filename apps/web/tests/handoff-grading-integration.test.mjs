@@ -273,14 +273,43 @@ test('WRITE-INDEPENDENT: 100 simultaneous handoffs all succeed with zero 5xx', a
 test('WRITE-INDEPENDENT: the five states are recorded SEPARATELY, never collapsed', async () => {
   // "The consumer was handed off" and "we managed to record it" are different facts.
   // A system that merges them under-reports silently.
+  //
+  // THIS TEST USED TO OVERPROMISE, and an independent verifier said so. Its only
+  // assertion was that the header matched SUCCEEDED|DEFERRED|FAILED — which every
+  // possible value matches. It could not fail. It carried the name "never collapsed"
+  // while being structurally incapable of detecting a collapse, and a real one
+  // (finding F1) lived underneath it: the LeadEvent's state was overwritten by the
+  // ATTRIBUTION's success, so a lost click-log row reported SUCCEEDED.
+  //
+  // A test whose name promises more than its assertions can deliver is worse than no
+  // test, because it stops anyone looking.
   const rid = await merchant('STATES');
   const ch = await challengeFromRender(rid);
   const r = await req('POST', `/retailer/${rid}/handoff`, { form: { page_challenge: ch } });
   assert.equal(r.status, 303);
   assert.equal(r.headers?.['x-consumer-handoff'] ?? r.consumerHandoff, 'CONSUMER_HANDOFF_SUCCEEDED');
-  assert.match(String(r.headers?.['x-evidence-write'] ?? r.evidenceWrite),
-    /EVIDENCE_WRITE_(SUCCEEDED|DEFERRED|FAILED)/,
+
+  const aggregate = String(r.headers?.['x-evidence-write'] ?? r.evidenceWrite);
+  assert.match(aggregate, /EVIDENCE_WRITE_(SUCCEEDED|DEFERRED|LOST|FAILED)/,
     'the evidence-write state must be reported, not merged into the response code');
+
+  // THE ASSERTION THAT ACTUALLY BITES. Both write outcomes must be reported
+  // independently, because the aggregate alone cannot distinguish "the click log was
+  // lost" from "the ledger entry was lost" — and those need different responses.
+  const detail = String(r.headers?.['x-evidence-write-detail'] ?? '');
+  assert.match(detail, /lead=EVIDENCE_WRITE_\w+/, 'the LeadEvent write state must be reported separately');
+  assert.match(detail, /attribution=EVIDENCE_WRITE_\w+/, 'the attribution write state must be reported separately');
+
+  // And the aggregate must be the WORST of the two, never the best. That inversion is
+  // precisely what caused F1.
+  const SEVERITY = ['EVIDENCE_WRITE_SUCCEEDED', 'EVIDENCE_WRITE_DEFERRED',
+                    'EVIDENCE_WRITE_LOST', 'EVIDENCE_WRITE_FAILED'];
+  const parts = [...detail.matchAll(/=(EVIDENCE_WRITE_\w+)/g)].map((m) => m[1]);
+  assert.equal(parts.length, 2, 'exactly two component states must be reported');
+  const worst = parts.reduce((w, s) => (SEVERITY.indexOf(s) > SEVERITY.indexOf(w) ? s : w));
+  assert.equal(aggregate, worst,
+    `the aggregate must be the WORST component (${worst}), not the best — reporting success `
+    + 'because one of two writes landed is the exact over-claim finding F1 identified');
 });
 
 test('CONCURRENT submissions of one challenge yield at most ONE valued action', async () => {
