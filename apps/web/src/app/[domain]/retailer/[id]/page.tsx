@@ -192,6 +192,34 @@ export default async function RetailerDetailPage({
   const websiteUrl = safePublicWebsiteUrl(retailer.website);
   const canHandoff = isPubliclyVerified(retailer, asOf) && websiteUrl !== null;
 
+  // PAGE-BOUND EVIDENCE. Mint a challenge HERE, during the render, and embed it in
+  // the handoff form. A submission that later presents it proves it possessed bytes
+  // only this render produced — a real causal link from render to submission.
+  //
+  // The previous design issued and consumed a token inside the handoff request
+  // itself, so it could only ever prove the server ran its own route. The client
+  // never held it. Fixing the causal direction is the whole point.
+  let pageChallenge: string | null = null;
+  if (canHandoff && websiteUrl) {
+    try {
+      const secret = process.env.CANA_INTERACTION_SECRET ?? '';
+      if (secret) {
+        const { mintPageChallenge } = await import('@/lib/page-challenge.mjs');
+        const minted = mintPageChallenge({
+          secret, tenant: domain, merchantId: retailer.id,
+          pagePath: `/retailer/${retailer.id}`, actionKind: 'HANDOFF',
+          destination: websiteUrl,
+        }) as { challenge: string };
+        pageChallenge = minted.challenge;
+      }
+    } catch {
+      // A render must never fail because attribution bookkeeping could not mint.
+      // The handoff still works; it simply grades lower, which is the honest
+      // outcome rather than a broken page.
+      pageChallenge = null;
+    }
+  }
+
   // 3. Fetch only public catalog records associated with this retailer and brand.
   const catalogRecordWhere = publicCatalogRecordWhere(asOf);
   const dealWhere = {
@@ -344,6 +372,9 @@ export default async function RetailerDetailPage({
             method="post"
             className="w-full md:w-auto shrink-0"
           >
+            {pageChallenge && (
+              <input type="hidden" name="page_challenge" value={pageChallenge} />
+            )}
             <button 
               type="submit"
               className="w-full md:w-auto bg-brand-primary-fill-strong text-white font-extrabold text-sm px-6 py-3 rounded-lg hover:brightness-110 active:scale-98 transition-all shadow-md shadow-brand-primary/25 cursor-pointer"

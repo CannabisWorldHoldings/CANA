@@ -176,7 +176,29 @@ test('the handoff route enforces same-origin POST and never trusts a client redi
   assert.match(routeSource, /isSameOriginFormRequest\(request\)/);
   assert.match(routeSource, /recordVerifiedHandoff\(prisma/);
   assert.match(routeSource, /NextResponse\.redirect\(handoff\.destination, 303\)/);
-  assert.doesNotMatch(routeSource, /searchParams|request\.json|formData/);
+  // The property that matters is that the REDIRECT DESTINATION never comes from
+  // client input. The original assertion enforced that by banning any body read at
+  // all, which was a good proxy while the route read nothing — but it is a source-
+  // text check, not a behavioural one, and it now fires on a body read that cannot
+  // reach the redirect.
+  //
+  // The route reads exactly one field, page_challenge, and uses it ONLY to grade
+  // evidence. Verified behaviourally: a POST carrying destination, redirect and url
+  // pointing at attacker.example still redirects to the server-verified
+  // https://example.com/. So the assertions are now specific rather than blanket.
+  assert.doesNotMatch(routeSource, /searchParams/,
+    'the query string must never influence a handoff');
+  assert.doesNotMatch(routeSource, /request\.json/,
+    'a JSON body has no place in a same-origin form handoff');
+  // The redirect must be constructed from the server-resolved destination alone.
+  assert.match(routeSource, /NextResponse\.redirect\(handoff\.destination, 303\)/);
+  // And no client-supplied value may ever be interpolated into a redirect.
+  assert.doesNotMatch(routeSource, /redirect\((?!handoff\.destination)/,
+    'every redirect must use the server-verified destination');
+  // The ONLY field read from the body is the evidence challenge.
+  const bodyReads = [...routeSource.matchAll(/form\.get\(['"]([^'"]+)['"]\)/g)].map((m) => m[1]);
+  assert.deepEqual(bodyReads, ['page_challenge'],
+    `the route may read only page_challenge from the body, found: ${bodyReads.join(', ')}`);
   assert.match(
     pageSource,
     /action=\{`\/retailer\/\$\{retailer\.id\}\/handoff`\}/,
