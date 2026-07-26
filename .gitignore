@@ -40,3 +40,5 @@ node_modules/
 .cana-local/
 .attack-scratch/
 apps/web/_v*.mjs
+apps/web/prisma/dev.db-shm
+apps/web/prisma/dev.db-wal
