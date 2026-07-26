@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "54a0082",
-  "last_checkpoint_at": "2026-07-26T16:13:57.472048+00:00",
+  "last_checkpoint": "6b2e056",
+  "last_checkpoint_at": "2026-07-26T16:21:10.190015+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -860,6 +860,20 @@
       ],
       "falsification_proven": true,
       "tests": "packet 53/53 (was 36)"
+    },
+    {
+      "wall": "STRUCTURED_DATA_CONSOLIDATION",
+      "commit": "6b2e056",
+      "self_correction": "I built a duplicate structured-data module because my grep missed the existing one behind a helper; consolidated into the single wired module and deleted the duplicate rather than shipping two competing paths",
+      "defect_found": "a blank street address still emitted PostalAddress asserting Washington, DC \u2014 a fabricated location an answer engine could cite; also telephone: \"   \" from a truthy whitespace check",
+      "added": [
+        "field-level provenance for openingHours (requires hoursSource)",
+        "retailerAnswerJsonLd \u2014 omits unanswerable questions rather than answering vaguely",
+        "structuredDataAssertionReport \u2014 why a record was withheld"
+      ],
+      "proven_live": "demonstration retailer emits no Store/PostalAddress/FAQPage; verified fixture emits all three plus sourced openingHours and the licence answer",
+      "falsification_proven": true,
+      "tests": "web 327/327"
     }
   ],
   "test_baseline": {
