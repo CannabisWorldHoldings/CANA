@@ -1145,9 +1145,33 @@
         ],
         "secret_scan": "only match is the literal test constant 'test-secret-not-a-real-key'; no real secret, .env untracked",
         "verified_at": "2026-07-26T19:06:12.626706+00:00"
+      },
+      {
+        "package": "CANA-DELTA-01676e3-de3619e",
+        "type": "INCREMENTAL",
+        "drive_file_id": "1IECCp32x_sHY1n08tAqsInTSMmmKav6l",
+        "archive_sha256": "74655eb67a4d8633cecab9c373cae92196723b56d4d6802e90a16c0c1dab0dab",
+        "archive_bytes": 17381,
+        "basis": "01676e3",
+        "tip": "de3619e",
+        "tree": "bdc06be944edaf015f675d37ff858773ac4a5f7b",
+        "contents": [
+          "the real retailer handoff issues and consumes interaction tokens, making the stronger proof states reachable in production"
+        ],
+        "gates_passed": [
+          "byte size",
+          "sha-256 recomputed on read-back",
+          "7/7 inner hashes",
+          "SIX-artifact chain rebuilt from Drive bytes only to the identical tree, 0 fsck errors",
+          "applying the delta without its prerequisite fails loudly with HEAD unmoved",
+          "258/258 skills + 90 web tests from the Drive-reconstructed source",
+          "patch replay reaches the same tree"
+        ],
+        "secret_scan": "0 findings; report included in the package as SECRET-SCAN-REPORT.txt",
+        "verified_at": "2026-07-26T19:27:11.513499+00:00"
       }
     ],
-    "current_head_durable": "01676e3",
+    "current_head_durable": "de3619e",
     "restore_order": [
       {
         "step": 1,
@@ -1178,6 +1202,12 @@
         "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
         "prerequisite": "d4587a4",
         "reaches": "01676e3"
+      },
+      {
+        "step": 6,
+        "drive_file_id": "1IECCp32x_sHY1n08tAqsInTSMmmKav6l",
+        "prerequisite": "01676e3",
+        "reaches": "de3619e"
       }
     ],
     "chain_rebuilt_from_drive_only": true

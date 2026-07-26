@@ -1,0 +1,127 @@
+{
+  "package": "CANA-DELTA-01676e3-de3619e",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T19:24:58.334674+00:00",
+  "basis": {
+    "sha": "01676e3a66e0a4359a77222c74e8f48bee7a681d",
+    "short": "01676e3",
+    "why": "head of the fifth Drive artifact, already read-back verified and chain-proven"
+  },
+  "tip": {
+    "sha": "de3619e1dbab1da524c0b97299b859bcaa9dc96b",
+    "short": "de3619e",
+    "tree": "bdc06be944edaf015f675d37ff858773ac4a5f7b"
+  },
+  "commit_manifest": [
+    {
+      "sha": "de3619e1dbab1da524c0b97299b859bcaa9dc96b",
+      "short": "de3619e",
+      "date": "2026-07-26T15:11:16-04:00",
+      "author": "Hermes",
+      "subject": "chore: checkpoint \u2014 handoff issues interaction tokens, web 418/418",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "ae10affcc67ca85574e7a02e9d19e64586104c10",
+      "short": "ae10aff",
+      "date": "2026-07-26T15:11:03-04:00",
+      "author": "Hermes",
+      "subject": "feat(evidence): the real handoff surface now issues interaction tokens",
+      "files_changed": [
+        "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts"
+      ]
+    },
+    {
+      "sha": "1eeaa185e2a12d316692e58fa7c0e831128c9b09",
+      "short": "1eeaa18",
+      "date": "2026-07-26T15:06:12-04:00",
+      "author": "Hermes",
+      "subject": "docs(durability): head 01676e3 recoverable \u2014 five-artifact chain rebuilt from Drive",
+      "files_changed": [
+        "deliverables/DURABLE_DELTA_MANIFEST_01676e3.json",
+        "deliverables/MISSION_STATE.json"
+      ]
+    }
+  ],
+  "changed_file_manifest": [
+    {
+      "path": "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+      "touched_by": [
+        "ae10aff"
+      ]
+    },
+    {
+      "path": "deliverables/DURABLE_DELTA_MANIFEST_01676e3.json",
+      "touched_by": [
+        "1eeaa18"
+      ]
+    },
+    {
+      "path": "deliverables/MISSION_STATE.json",
+      "touched_by": [
+        "de3619e",
+        "1eeaa18"
+      ]
+    }
+  ],
+  "contents": [
+    "the real retailer handoff now issues and consumes interaction tokens, making INTERACTION_VERIFIED and MERCHANT_HANDOFF_VERIFIED reachable in production",
+    "fifth-artifact durability receipt"
+  ],
+  "restore_order_full_chain": [
+    {
+      "step": 1,
+      "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "type": "FULL",
+      "reaches": "54a0082"
+    },
+    {
+      "step": 2,
+      "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+      "prerequisite": "54a0082",
+      "reaches": "0ae1030"
+    },
+    {
+      "step": 3,
+      "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+      "prerequisite": "0ae1030",
+      "reaches": "ed40c16"
+    },
+    {
+      "step": 4,
+      "drive_file_id": "1NzffI9LsJCJj9al6BkMEBc6OOjU1_6vJ",
+      "prerequisite": "ed40c16",
+      "reaches": "d4587a4"
+    },
+    {
+      "step": 5,
+      "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
+      "prerequisite": "d4587a4",
+      "reaches": "01676e3"
+    },
+    {
+      "step": 6,
+      "drive_file_id": "PENDING_UPLOAD",
+      "prerequisite": "01676e3",
+      "reaches": "de3619e"
+    }
+  ],
+  "restore_commands": [
+    "tar -xzf CANA-DURABLE-20260726-v2.tar.gz",
+    "git clone CANA-DURABLE-20260726-v2/cana-ui-recover-ALL.bundle repo && cd repo",
+    "git fetch ../CANA-DELTA-54a0082-0ae1030/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "git fetch ../CANA-DELTA-0ae1030-ed40c16/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "git fetch ../CANA-DELTA-ed40c16-d4587a4/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "git fetch ../CANA-DELTA-d4587a4-01676e3/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "git fetch ../CANA-DELTA-01676e3-de3619e/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "ORDER IS ENFORCED: each bundle declares its prerequisite, so git refuses an out-of-order apply rather than half-applying it. A wrong sequence fails loudly, never silently."
+  ],
+  "test_receipts": {
+    "web": "418/418",
+    "skills": "258/258",
+    "e2e_binding": "PROVEN"
+  },
+  "schema_fingerprint": "86b6a806ad99836b727a919ba4591b291241bb04224b9e766c4da02877ceed8f"
+}
