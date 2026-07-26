@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "2f10e62",
-  "last_checkpoint_at": "2026-07-26T15:47:51.483061Z",
+  "last_checkpoint": "4840561",
+  "last_checkpoint_at": "2026-07-26T16:03:06.629883+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -808,10 +808,25 @@
       "wall": "TEST_DB_ISOLATION_RULES",
       "commit": "9c6e87b",
       "change": "codified one-writer-per-verification-run after a verifier chased my own fixture as a suspected attacker"
+    },
+    {
+      "wall": "ATTRIBUTION_ENDPOINT",
+      "commit": "4840561",
+      "gap_closed": "the ledger could compute proof of value but nothing wrote an ATTRIBUTION row from a real consumer action; every attributed action would have had to be hand-inserted",
+      "guards": [
+        "ledger is the only writer",
+        "server builds all evidence, client-supplied evidence refused not ignored",
+        "demonstration/unverified refused 409",
+        "tenant-scoped via menu graph",
+        "receipt claims nothing"
+      ],
+      "falsification_proven": true,
+      "tests": "web 276/276 (264 + 12 new)",
+      "owner_approval_required": false
     }
   ],
   "test_baseline": {
-    "web": "264/264",
+    "web": "276/276",
     "skills_total": 241,
     "e2e_binding": "PROVEN"
   },
