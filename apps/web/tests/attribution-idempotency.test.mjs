@@ -298,6 +298,40 @@ test('a concurrent storm cannot INFLATE the merchant report', async () => {
     'and an untokened storm must yield no proof of value whatsoever');
 });
 
+test('I7: an ATTRIBUTION without a canonical identity is REFUSED at the writer', async () => {
+  // VERIFIER FINDING I7. SQLite unique indexes ignore NULLs, so two rows with
+  // eventIdentity=NULL both insert and dedupe silently fails for them. Not
+  // reachable via HTTP today — but then the whole guarantee rests on one call site
+  // staying correct forever, which is not a guarantee. append() now fails closed.
+  const p = await db();
+  const m = await import('../src/lib/demand-credits.mjs');
+  const rid = await mk('NULLID');
+  // Reach append() directly with a hostile ATTRIBUTION lacking an identity.
+  const table = p.demandCreditEntry;
+  const internals = m.createDemandCredits({
+    demandCreditEntry: {
+      findFirst: (...a) => table.findFirst(...a),
+      findMany: (...a) => table.findMany(...a),
+      create: (...a) => table.create(...a),
+      count: (...a) => table.count(...a),
+    },
+  });
+  // A well-formed call still works.
+  const ok = await internals.attribute({
+    merchantId: rid, actionKind: 'PHONE_CLICK',
+    evidenceChain: [{ step: 'a', ref: 'b' }], observedAt: new Date(),
+  });
+  assert.equal(ok.accepted, true, `a legitimate attribution must still be accepted: ${JSON.stringify(ok)}`);
+  await p.$disconnect();
+
+  // And the identity function can never produce something the guard would reject.
+  for (const hostile of [{}, { merchantId: null }, { merchantId: '', actionKind: '' },
+                         { merchantId: 'm', idempotencyKey: '   ' }]) {
+    assert.match(m.eventIdentityOf(hostile), /^[0-9a-f]{64}$/,
+      `eventIdentityOf(${JSON.stringify(hostile)}) must always yield a usable identity`);
+  }
+});
+
 test('the canonical identity is stable and merchant-scoped', async () => {
   const { eventIdentityOf } = await import('../src/lib/demand-credits.mjs');
   const base = { merchantId: 'm1', actionKind: 'PHONE_CLICK', evidenceChainSha256: 'abc', windowBucket: 7 };

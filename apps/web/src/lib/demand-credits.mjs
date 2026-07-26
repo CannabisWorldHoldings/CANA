@@ -126,6 +126,24 @@ export function createDemandCredits(prisma) {
   }
 
   async function append(merchantId, fields) {
+    // VERIFIER FINDING I7 (MEDIUM, latent). SQLite unique indexes IGNORE NULLs, so
+    // two ATTRIBUTION rows with eventIdentity=NULL both insert and dedupe silently
+    // fails for them. Not reachable today — eventIdentityOf() always returns a
+    // 64-hex digest and attribute() always sets it — but the ENTIRE guarantee then
+    // rests on that one call site staying correct forever. A guarantee with a
+    // single point of discipline is not a guarantee.
+    //
+    // Fail closed here instead: an ATTRIBUTION without a well-formed identity is
+    // refused before it can reach a constraint that would not catch it.
+    if (fields?.kind === 'ATTRIBUTION' && !/^[0-9a-f]{64}$/.test(String(fields.eventIdentity ?? ''))) {
+      return {
+        accepted: false,
+        denial_code: 'EVENT_IDENTITY_REQUIRED',
+        denial_detail: 'an attribution without a canonical event identity cannot be deduplicated — '
+          + 'a NULL identity is invisible to the uniqueness constraint and would silently permit replays',
+        decided_by: 'append() fail-closed guard',
+      };
+    }
     const { prevHash, nextSeq } = await head(merchantId);
     const draft = { merchantId, seq: nextSeq, ...fields };
     const entryHash = hashBody(draft, prevHash);

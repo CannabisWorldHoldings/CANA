@@ -228,7 +228,18 @@ test('G10: the surface inventory is COMPLETE — a new route cannot escape this 
     for (const e of readdirSync(dir)) {
       const full = join(dir, e);
       if (statSync(full).isDirectory()) walk(full, `${prefix}/${e}`);
-      else if (e === 'route.ts') found.push(prefix || '/');
+      // VERIFIER FINDING III1 (HIGH, test-coverage). This matched ONLY 'route.ts'.
+      // Next's pageExtensions default is ['tsx','ts','jsx','js'] (verified in
+      // next/dist/server/config-shared.js), so route.js, route.jsx and route.tsx
+      // are all valid Route Handlers — three of four extensions escaped the gate
+      // whose entire stated purpose is that a new route CANNOT escape.
+      //
+      // Measured honestly: in THIS app a route.js and a route.tsx both 404 today,
+      // so it was not a live leak. But a gate that is narrower than the framework
+      // it governs is a gate that will silently stop governing the moment someone
+      // adds a handler in a permitted extension. The whole value of G10 is that it
+      // fails when the surface grows past it.
+      else if (/^route\.(?:m|c)?[jt]sx?$/.test(e)) found.push(prefix || '/');
     }
   };
   walk('src/app/api', '/api');
