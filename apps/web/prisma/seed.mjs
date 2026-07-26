@@ -4,6 +4,7 @@ import {
   createBootstrapCredentials,
   writeBootstrapCredentialFile,
 } from '../src/lib/auth/bootstrap-credentials.mjs';
+import { assertSeedTargetIsSafe } from './seed-safety.mjs';
 const prisma = new PrismaClient();
 
 const DEMONSTRATION_PROVENANCE = {
@@ -19,6 +20,16 @@ const DEMONSTRATION_PROVENANCE = {
 };
 
 async function main() {
+  // HARD SAFETY GATE, before anything else. This seed DELETES most of the
+  // schema and inserts DEMONSTRATION_ONLY rows; assertSeedTargetIsSafe throws
+  // (no override, no flag) unless the target is a local SQLite file that
+  // contains nothing but demonstration data. See prisma/seed-safety.mjs.
+  await assertSeedTargetIsSafe({
+    prisma,
+    databaseUrl: process.env.DATABASE_URL,
+    nodeEnv: process.env.NODE_ENV,
+  });
+
   const bootstrapCredentials = createBootstrapCredentials();
   const credentialPath = writeBootstrapCredentialFile(bootstrapCredentials);
 
