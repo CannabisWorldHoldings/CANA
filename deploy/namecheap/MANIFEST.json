@@ -1,0 +1,63 @@
+{
+  "name": "orderweeddc-namecheap-cpanel-release",
+  "target": {
+    "host": "Namecheap Stellar Business (cPanel, CloudLinux, Phusion Passenger)",
+    "runtime": "Node.js >= 20.9 via cPanel Setup Node.js App (selector path /opt/alt/alt-nodejsNN/root/usr/bin/node)",
+    "reverseProxy": "Passenger (reverse port binding; app must .listen() once on the supplied PORT)",
+    "appRoot": "~/apps/orderweeddc/current (staging: ~/apps/orderweeddc-staging/current via OWD_APP_HOME)",
+    "persistentData": "~/orderweeddc-data/prod.db (staging: ~/orderweeddc-staging-data via OWD_DATA_DIR)",
+    "backups": "~/orderweeddc-backups (override OWD_BACKUP_DIR)",
+    "capabilitiesEvidence": "deploy/namecheap/CAPABILITIES.md"
+  },
+  "artifact": {
+    "naming": "orderweeddc-<shortsha>.tar.gz (+ .sha256 sidecar)",
+    "builder": "deploy/namecheap/build-artifact.mjs (off-server ONLY; webpack standalone; Turbopack banned per 2026-07-23 incident)",
+    "identity": {
+      "buildTime": "release.json + receipt.json at artifact root, gitSha = full 40-hex commit",
+      "runtime": "GET /api/release -> RELEASE_SHA_PRESENT with the exact SHA; 503 RELEASE_SHA_MISSING/INVALID when absent or malformed; never fabricated",
+      "tests": "apps/web/tests/release-sha.test.mjs + isolated runtime test inside the builder"
+    },
+    "mustContain": [
+      "server.js", "app.js", ".next/static", "public", "node_modules (runtime, incl. .prisma rhel engine)",
+      "release.json", "receipt.json", "prisma/schema.prisma",
+      "bootstrap/orderweeddc-schema-template.db", "bootstrap-production-db.sh",
+      "migrate.sh", "restart.sh", "rollback.sh", "healthcheck.sh", "readycheck.sh",
+      "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs"
+    ],
+    "conditional": [
+      "prisma/migrations/** — shipped verbatim only when the migration lane has committed them; never authored by the builder"
+    ]
+  },
+  "commands": {
+    "build": "node deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
+    "deploy": "sh ~/uploads/deploy.sh orderweeddc-<shortsha>.tar.gz   (or verify-and-deploy.sh for the gated one-command path)",
+    "initializeDatabase": "cd <app-home>/current && sh bootstrap-production-db.sh   (first deploy only; guarded, idempotent, zero demo data)",
+    "migrate": "cd <app-home>/current && sh migrate.sh   (applies apps/web/prisma/migrations/** BY CONVENTION; hard-stops when the migration lane has not landed)",
+    "restart": "sh <app-home>/restart.sh   (touch tmp/restart.txt — Passenger rolling restart)",
+    "rollback": "sh <app-home>/rollback.sh   (code-only swap to previous; database never touched)",
+    "healthCheck": "sh healthcheck.sh <base-url>   (liveness: 200 + HEALTHY)",
+    "readinessCheck": "OWD_EXPECTED_SHA=<sha> sh readycheck.sh <base-url>   (health + provenance + SHA equality + render)",
+    "smokeTest": "sh smoke-test.sh <base-url>   (full read-only battery; writes an environment-labelled receipt)",
+    "workerOnce": "node worker.mjs --once   (cron tick: backup + health jobs; mkdir lock; SIGTERM-graceful)",
+    "workerCron": "17 3 * * * cd <app-home>/current && /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once backup >> ~/orderweeddc-backups/cron.out 2>&1",
+    "restoreBackup": "sh restore-backup.sh <backup.db> <target-path>   (checksum-gated; refuses to overwrite without FORCE=1)"
+  },
+  "endpoints": {
+    "health": "/api/health (200 HEALTHY | 503 UNHEALTHY)",
+    "release": "/api/release (200 RELEASE_SHA_PRESENT | 503 RELEASE_SHA_MISSING | 503 RELEASE_SHA_INVALID; Cache-Control: no-store)"
+  },
+  "environment": {
+    "manifest": "deploy/namecheap/ENV_MANIFEST.md (names only — values are owner-supplied at the cPanel panel, never in git)",
+    "template": "deploy/namecheap/env.production.example"
+  },
+  "receiptDiscipline": {
+    "rule": "NO staging receipt may state or imply that production is live.",
+    "enforcement": "smoke-test.sh labels every receipt 'staging' unless OWD_ENVIRONMENT=production AND OWD_CONFIRM_PRODUCTION=1; staging receipts carry an explicit no-production-claim sentence."
+  },
+  "runbooks": {
+    "staging": "deploy/namecheap/STAGING_RUNBOOK.md",
+    "productionCutover": "deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md",
+    "definitionOfDone": "deploy/namecheap/STAGING_DEFINITION_OF_DONE.md",
+    "gates": "deploy/namecheap/PRODUCTION_RELEASE_GATES.md"
+  }
+}

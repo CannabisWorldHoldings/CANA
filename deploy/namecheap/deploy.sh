@@ -10,8 +10,10 @@
 #   ~/orderweeddc-data/prod.db    <- persistent database, NEVER touched here
 set -eu
 
-APP_HOME="$HOME/apps/orderweeddc"
-UPLOADS="$HOME/uploads"
+# OWD_APP_HOME enables side-by-side STAGING installs
+# (e.g. OWD_APP_HOME=$HOME/apps/orderweeddc-staging). Default: production.
+APP_HOME="${OWD_APP_HOME:-$HOME/apps/orderweeddc}"
+UPLOADS="${OWD_UPLOADS:-$HOME/uploads}"
 TAR_NAME="${1:?usage: deploy.sh <artifact-tar.gz-name in ~/uploads>}"
 TAR_PATH="$UPLOADS/$TAR_NAME"
 
