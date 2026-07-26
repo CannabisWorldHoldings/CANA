@@ -27,17 +27,23 @@ export const CHANGE_KINDS = ['VISUAL', 'STRUCTURAL', 'OFFER', 'CONTENT', 'SEO', 
 export const PROMOTION_STAGES = ['PROPOSED', 'VALIDATED', 'SHADOW', 'CANARY', 'PROMOTED'];
 
 const sha = s => createHash('sha256').update(s).digest('hex');
+/** Whitespace-only strings are absent. Non-strings are NOT text (verifier MAJOR-1). */
+const text = v => typeof v === 'string' && v.trim().length > 0;
+/** Strict numeric range — rejects booleans, arrays, strings via coercion (verifier MAJOR-2). */
+const ratio = v => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1;
+/** Delimiter-safe hashing: length-prefix each part so 'a|b'+'c' cannot collide with 'a'+'b|c' (verifier MINOR). */
+const joinParts = (...parts) => parts.map(p => { const t = String(p ?? ''); return `${t.length}:${t}`; }).join('|');
 
 /** A typed, evidence-bound observation about a competitor surface. */
 export function makeChangeEvent({ source, surface, kind, observedAt, observation, evidenceRef, confidence }) {
   const errors = [];
-  if (!source) errors.push('source required');
-  if (!surface) errors.push('surface required');
+  if (!text(source)) errors.push('source required (non-blank string)');
+  if (!text(surface)) errors.push('surface required (non-blank string)');
   if (!CHANGE_KINDS.includes(kind)) errors.push(`kind must be one of ${CHANGE_KINDS.join('|')}`);
-  if (!observedAt) errors.push('observedAt required — an undated observation is not evidence');
-  if (!observation) errors.push('observation required');
-  if (!evidenceRef) errors.push('evidenceRef required — every event must cite a retrievable artifact');
-  if (confidence == null || confidence < 0 || confidence > 1) errors.push('confidence must be 0..1');
+  if (!text(observedAt)) errors.push('observedAt required — an undated observation is not evidence');
+  if (!text(observation)) errors.push('observation required (non-blank string)');
+  if (!text(evidenceRef)) errors.push('evidenceRef required — every event must cite a retrievable artifact');
+  if (!ratio(confidence)) errors.push('confidence must be a finite number in 0..1');
   const ev = {
     event_id: null, source, surface, kind, observed_at: observedAt, observation,
     evidence_ref: evidenceRef, confidence,
@@ -45,7 +51,8 @@ export function makeChangeEvent({ source, surface, kind, observedAt, observation
     freshness_state: 'HISTORICAL_REFERENCE_DATED',
     valid: errors.length === 0, errors,
   };
-  ev.event_id = 'ce_' + sha(`${source}|${surface}|${kind}|${observedAt}|${observation}`).slice(0, 16);
+  // Hash ALL identity-bearing fields, length-prefixed so delimiters cannot be injected.
+  ev.event_id = 'ce_' + sha(joinParts(source, surface, kind, observedAt, observation, evidenceRef, confidence)).slice(0, 16);
   return ev;
 }
 
@@ -57,12 +64,12 @@ export function makeChangeEvent({ source, surface, kind, observedAt, observation
 export function makeCandidate({ event, brittlePoint, hypothesis, improvement, falsificationTest, rollback, outcomeMetric, plane }) {
   const errors = [];
   if (!event?.valid) errors.push('candidate requires a VALID ChangeEvent');
-  if (!brittlePoint) errors.push('brittlePoint required — without it this is imitation, not improvement');
-  if (!hypothesis) errors.push('hypothesis required');
-  if (!improvement) errors.push('improvement required');
-  if (!falsificationTest) errors.push('falsificationTest required — a candidate that cannot fail is invalid');
-  if (!rollback) errors.push('rollback required');
-  if (!outcomeMetric) errors.push('outcomeMetric required — no unmeasured change may promote');
+  if (!text(brittlePoint)) errors.push('brittlePoint required (non-blank) — without it this is imitation, not improvement');
+  if (!text(hypothesis)) errors.push('hypothesis required (non-blank)');
+  if (!text(improvement)) errors.push('improvement required (non-blank)');
+  if (!text(falsificationTest)) errors.push('falsificationTest required (non-blank) — a candidate that cannot fail is invalid');
+  if (!text(rollback)) errors.push('rollback required (non-blank)');
+  if (!text(outcomeMetric)) errors.push('outcomeMetric required (non-blank) — no unmeasured change may promote');
   const c = {
     candidate_id: null, event_id: event?.event_id ?? null, plane: plane ?? 'UNASSIGNED',
     brittle_point: brittlePoint, hypothesis, improvement,
@@ -71,7 +78,7 @@ export function makeCandidate({ event, brittlePoint, hypothesis, improvement, fa
     // Never copy: recorded explicitly so the intent is auditable.
     originality_assertion: 'Mechanism extracted; no protected branding, layout, reviews or proprietary data copied.',
   };
-  c.candidate_id = 'cand_' + sha(`${c.event_id}|${brittlePoint}|${improvement}`).slice(0, 16);
+  c.candidate_id = 'cand_' + sha(joinParts(c.event_id, brittlePoint, improvement, falsificationTest, outcomeMetric)).slice(0, 16);
   return c;
 }
 
@@ -100,7 +107,18 @@ function deny(candidate, code, detail) {
 
 /** Winner Memory: only measured outcomes are remembered as lessons. */
 export function toWinnerMemory(candidate, outcome) {
+  // CRITICAL FIX (independent verifier): gating on the .stage STRING alone let a
+  // forged object literal {stage:'PROMOTED'} be stored as a validated lesson, and
+  // silently stored genuine DENIED court results. Winner Memory must verify the
+  // whole decision, and must see the measured improvement itself.
+  if (!candidate || typeof candidate !== 'object') return { stored: false, reason: 'candidate must be a court result object' };
   if (candidate.stage !== 'PROMOTED') return { stored: false, reason: 'only PROMOTED candidates enter Winner Memory' };
+  if (candidate.valid !== true) return { stored: false, reason: 'candidate is not valid' };
+  if (candidate.decision !== 'ALLOWED') return { stored: false, reason: `candidate decision is ${candidate.decision ?? 'absent'} — only ALLOWED court results may be remembered` };
+  if (candidate.denial_code != null) return { stored: false, reason: `candidate carries denial_code ${candidate.denial_code}` };
+  if (!candidate.receipt?.evidence_sha256) return { stored: false, reason: 'candidate lacks a court receipt — it never passed through promote()' };
+  if (!text(candidate.candidate_id) || !text(candidate.brittle_point)) return { stored: false, reason: 'candidate is missing identity or brittle point' };
+  if (outcome?.improved !== true) return { stored: false, reason: 'Winner Memory stores only measured improvements (outcome.improved must be true)' };
   return { stored: true, lesson_id: 'wm_' + sha(candidate.candidate_id).slice(0, 12),
     plane: candidate.plane, brittle_point: candidate.brittle_point, improvement: candidate.improvement,
     outcome_metric: candidate.outcome_metric, measured: outcome, learned_at: new Date().toISOString() };
@@ -115,11 +133,25 @@ if (has('selftest')) {
     observedAt: '2026-07-23', observation: 'first 5 results sponsored, no per-card badge',
     evidenceRef: 'leafly-field-recon-2026-07-23.md', confidence: 0.9 });
   t('valid event accepted', good.valid);
-  t('event id is deterministic', good.event_id === makeChangeEvent({ source: 'Leafly', surface: '/dispensaries/district-of-columbia', kind: 'ADVERTISING', observedAt: '2026-07-23', observation: 'first 5 results sponsored, no per-card badge', evidenceRef: 'x', confidence: 0.5 }).event_id);
+  // Determinism = identical inputs -> identical id. evidenceRef and confidence
+  // are now part of the hash (verifier: the old hash was not injective), so a
+  // DIFFERENT evidenceRef must produce a DIFFERENT id.
+  t('event id is deterministic for identical inputs', good.event_id === makeChangeEvent({ source: 'Leafly', surface: '/dispensaries/district-of-columbia', kind: 'ADVERTISING', observedAt: '2026-07-23', observation: 'first 5 results sponsored, no per-card badge', evidenceRef: 'leafly-field-recon-2026-07-23.md', confidence: 0.9 }).event_id);
+  t('event id changes when evidenceRef changes', good.event_id !== makeChangeEvent({ ...good, source: 'Leafly', surface: '/dispensaries/district-of-columbia', kind: 'ADVERTISING', observedAt: '2026-07-23', observation: 'first 5 results sponsored, no per-card badge', evidenceRef: 'other.md', confidence: 0.9 }).event_id);
+  t('delimiter injection cannot collide ids', makeChangeEvent({ ...good, source: 'a|b', surface: 'c' }).event_id !== makeChangeEvent({ ...good, source: 'a', surface: 'b|c' }).event_id);
   t('undated observation rejected', !makeChangeEvent({ ...good, observedAt: null }).valid);
   t('unsourced observation rejected', !makeChangeEvent({ ...good, evidenceRef: null }).valid);
   t('bad kind rejected', !makeChangeEvent({ ...good, kind: 'VIBES' }).valid);
   t('out-of-range confidence rejected', !makeChangeEvent({ ...good, confidence: 1.7 }).valid);
+  // MAJOR-1/2 regression guards from independent verification:
+  t('whitespace-only source rejected', !makeChangeEvent({ ...good, source: '   ' }).valid);
+  t('whitespace-only evidenceRef rejected', !makeChangeEvent({ ...good, evidenceRef: '\t' }).valid);
+  t('array masquerading as text rejected', !makeChangeEvent({ ...good, observation: [] }).valid);
+  t('object masquerading as text rejected', !makeChangeEvent({ ...good, surface: {} }).valid);
+  for (const bad of [false, true, '', ' ', [], [0.5], {}, '0.5']) {
+    t(`confidence coercion attack rejected: ${JSON.stringify(bad)}`, !makeChangeEvent({ ...good, confidence: bad }).valid);
+  }
+  t('whitespace-only brittlePoint rejected', !makeCandidate({ event: good, brittlePoint: '   ', hypothesis: 'h', improvement: 'i', falsificationTest: 'f', rollback: 'r', outcomeMetric: 'm' }).valid);
 
   const cand = makeCandidate({ event: good, plane: 'advertising',
     brittlePoint: 'disclosure is one header, not per-card',
@@ -149,7 +181,13 @@ if (has('selftest')) {
   t('receipt carries evidence hash', !!p.receipt.evidence_sha256);
 
   t('winner memory rejects unpromoted', toWinnerMemory(cand, {}).stored === false);
-  t('winner memory accepts promoted', toWinnerMemory(p, { delta: 1 }).stored === true);
+  t('winner memory accepts promoted WITH measured improvement', toWinnerMemory(p, { improved: true, delta: 1 }).stored === true);
+  t('winner memory refuses promoted WITHOUT measured improvement', toWinnerMemory(p, { delta: 1 }).stored === false);
+  // CRITICAL regression guards from independent verification:
+  t('winner memory refuses a FORGED object literal', toWinnerMemory({ stage: 'PROMOTED' }, { improved: true }).stored === false);
+  t('winner memory refuses a DENIED court result', toWinnerMemory(promote(p, { toStage: 'PROMOTED', evidence: { outcome_measurement: { improved: true } } }), { improved: true }).stored === false);
+  t('winner memory refuses a candidate with no court receipt', toWinnerMemory({ ...p, receipt: undefined }, { improved: true }).stored === false);
+  t('winner memory refuses non-object input', toWinnerMemory('PROMOTED', { improved: true }).stored === false);
 
   console.log(`\n  Signal-to-Fix self-test: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);
