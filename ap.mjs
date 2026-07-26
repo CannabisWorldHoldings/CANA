@@ -118,10 +118,28 @@ const audit = await page.evaluate(({ MIN_TAP_PX }) => {
     .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute('type') || 'text'}]`);
 
   // --- Tap targets (WCAG 2.2 AA)
-  out.a11y.smallTargets = interactive.map((el) => { const r = el.getBoundingClientRect();
+  // WCAG 2.2 SC 2.5.8 has an INLINE exception: a target in a sentence or block
+  // of text is exempt, because enlarging it would break the line. Counting
+  // inline links as violations produced 27 false positives on the homepage and
+  // would have pushed a real fix toward damaging body copy.
+  const inlineExempt = (el) => {
+    if (el.tagName !== 'A') return false;
+    const p = el.parentElement;
+    if (!p) return false;
+    const cs = getComputedStyle(el);
+    if (cs.display !== 'inline' && cs.display !== 'inline-block') return false;
+    // Exempt when the anchor sits among sibling text rather than standing alone.
+    const txt = (p.textContent || '').trim().length;
+    const own = (el.textContent || '').trim().length;
+    return txt > own + 2;
+  };
+  out.a11y.smallTargets = interactive
+    .filter((el) => !inlineExempt(el))
+    .map((el) => { const r = el.getBoundingClientRect();
       return { tag: el.tagName.toLowerCase(), w: Math.round(r.width), h: Math.round(r.height),
                label: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 24) }; })
     .filter((t) => t.w > 0 && t.h > 0 && (t.w < MIN_TAP_PX || t.h < MIN_TAP_PX));
+  out.a11y.inlineExemptCount = interactive.filter(inlineExempt).length;
 
   // --- Text contrast: sample real rendered text against its painted backdrop
   const bgOf = (el) => { let n = el;

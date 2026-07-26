@@ -56,7 +56,7 @@ export default async function CustomerWalletPage({ params }: Props) {
     return (
       <div className="flex-grow flex flex-col justify-center items-center p-8 bg-brand-background">
         <p className="text-red-600 font-bold">This host brand is not configured.</p>
-        <Link href="/" className="mt-4 text-sm text-brand-primary hover:underline">
+        <Link href="/" className="mt-4 text-sm text-brand-primary-text hover:underline">
           Return to the directory
         </Link>
       </div>
@@ -74,7 +74,7 @@ export default async function CustomerWalletPage({ params }: Props) {
           <div className="flex items-center justify-between gap-4">
             <Link
               href="/"
-              className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary"
+              className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text"
             >
               ← Back to listings
             </Link>
@@ -174,7 +174,7 @@ export default async function CustomerWalletPage({ params }: Props) {
                         <span
                           className={`font-black ${
                             transaction.pointsChanged >= 0
-                              ? 'text-brand-primary'
+                              ? 'text-brand-primary-text'
                               : 'text-red-600'
                           }`}
                         >
@@ -194,7 +194,7 @@ export default async function CustomerWalletPage({ params }: Props) {
           <aside className="space-y-6">
             <section className="rounded-2xl border border-brand-border bg-brand-surface p-5 space-y-4">
               <h2 className="font-display text-sm font-bold text-brand-text flex items-center gap-2">
-                <TrendingUp size={14} aria-hidden="true" className="text-brand-primary" />
+                <TrendingUp size={14} aria-hidden="true" className="text-brand-primary-text" />
                 Cross-brand balances
               </h2>
 
@@ -244,7 +244,7 @@ export default async function CustomerWalletPage({ params }: Props) {
             <section className="rounded-2xl border border-brand-border bg-brand-surface p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display text-sm font-bold text-brand-text flex items-center gap-1.5">
-                  <Star size={14} aria-hidden="true" className="text-brand-primary" />
+                  <Star size={14} aria-hidden="true" className="text-brand-primary-text" />
                   Saved Dispensaries
                 </h2>
                 <span className="text-[10px] font-bold text-brand-muted bg-brand-background border border-brand-border px-2 py-0.5 rounded-lg">
@@ -256,7 +256,7 @@ export default async function CustomerWalletPage({ params }: Props) {
               </p>
               <Link
                 href="/"
-                className="mt-2 block w-full text-center bg-brand-primary text-white font-bold text-xs py-2 px-3 rounded-xl hover:brightness-110 transition-all"
+                className="mt-2 block w-full text-center bg-brand-primary-fill-strong text-white font-bold text-xs py-2 px-3 rounded-xl hover:brightness-110 transition-all"
               >
                 Browse Directory →
               </Link>

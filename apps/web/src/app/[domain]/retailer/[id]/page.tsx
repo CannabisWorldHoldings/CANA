@@ -76,7 +76,7 @@ function RetailerPagination({
             pageKey,
             currentPage - 1,
           )}
-          className="font-bold text-brand-primary hover:underline"
+          className="font-bold text-brand-primary-text hover:underline"
         >
           Previous
         </Link>
@@ -94,7 +94,7 @@ function RetailerPagination({
             pageKey,
             currentPage + 1,
           )}
-          className="font-bold text-brand-primary hover:underline"
+          className="font-bold text-brand-primary-text hover:underline"
         >
           Next
         </Link>
@@ -266,7 +266,7 @@ export default async function RetailerDetailPage({
       
       {/* Back button */}
       <div>
-        <Link href="/" className="text-xs font-semibold text-brand-muted hover:text-brand-primary transition-colors flex items-center">
+        <Link href="/" className="text-xs font-semibold text-brand-muted hover:text-brand-primary-text transition-colors flex items-center">
           ← Back to directory
         </Link>
       </div>
@@ -287,7 +287,7 @@ export default async function RetailerDetailPage({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-brand-text">{retailer.name}</h1>
-            <span className="text-xs bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-bold px-2.5 py-0.5 rounded-full uppercase">
+            <span className="text-xs bg-brand-primary/10 border border-brand-primary/20 text-brand-primary-text font-bold px-2.5 py-0.5 rounded-full uppercase">
               {retailer.type}
             </span>
             <DataStatusBadge
@@ -303,7 +303,7 @@ export default async function RetailerDetailPage({
           </div>
 
           <p className="text-sm text-brand-muted">
-            <MapPin size={13} className="mr-1 inline text-brand-primary/70" aria-hidden="true" /> {retailer.address}, {retailer.city}, {retailer.state} {retailer.zip}
+            <MapPin size={13} className="mr-1 inline text-brand-primary-text/70" aria-hidden="true" /> {retailer.address}, {retailer.city}, {retailer.state} {retailer.zip}
           </p>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-brand-muted">
@@ -319,13 +319,13 @@ export default async function RetailerDetailPage({
             {websiteUrl && (
               <div className="flex items-center gap-x-4">
                 {(retailer.phone || retailer.hours) && <span>•</span>}
-                <div className="inline-flex items-center gap-1"><Globe size={11} aria-hidden="true" /> <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary underline transition-colors">{retailer.website}</a></div>
+                <div className="inline-flex items-center gap-1"><Globe size={11} aria-hidden="true" /> <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary-text underline transition-colors">{retailer.website}</a></div>
               </div>
             )}
             {retailer.email && (
               <div className="flex items-center gap-x-4">
                 {(retailer.phone || retailer.hours || retailer.website) && <span>•</span>}
-                <div className="inline-flex items-center gap-1"><Mail size={11} aria-hidden="true" /> <a href={`mailto:${retailer.email}`} className="hover:text-brand-primary underline transition-colors">{retailer.email}</a></div>
+                <div className="inline-flex items-center gap-1"><Mail size={11} aria-hidden="true" /> <a href={`mailto:${retailer.email}`} className="hover:text-brand-primary-text underline transition-colors">{retailer.email}</a></div>
               </div>
             )}
           </div>
@@ -340,7 +340,7 @@ export default async function RetailerDetailPage({
           >
             <button 
               type="submit"
-              className="w-full md:w-auto bg-brand-primary text-white font-extrabold text-sm px-6 py-3 rounded-lg hover:brightness-110 active:scale-98 transition-all shadow-md shadow-brand-primary/25 cursor-pointer"
+              className="w-full md:w-auto bg-brand-primary-fill-strong text-white font-extrabold text-sm px-6 py-3 rounded-lg hover:brightness-110 active:scale-98 transition-all shadow-md shadow-brand-primary/25 cursor-pointer"
             >
               Route to Retailer Menu / Contact →
             </button>
@@ -416,7 +416,7 @@ export default async function RetailerDetailPage({
                   defaultValue={typeof rawSearchParams.menuQuery === 'string' ? rawSearchParams.menuQuery : ''}
                   className="bg-brand-background border border-brand-border text-brand-text px-3 py-1.5 rounded text-xs focus:border-brand-primary focus:outline-none transition-colors"
                 />
-                <button type="submit" className="bg-brand-primary text-white text-xs font-bold px-3.5 py-1.5 rounded hover:brightness-110 transition-colors cursor-pointer">
+                <button type="submit" className="bg-brand-primary-fill-strong text-white text-xs font-bold px-3.5 py-1.5 rounded hover:brightness-110 transition-colors cursor-pointer">
                   Search
                 </button>
               </form>
@@ -428,7 +428,7 @@ export default async function RetailerDetailPage({
                 <Link
                   key={cat}
                   href={`/retailer/${retailer.id}?menuQuery=${cat === 'All' ? '' : cat}`}
-                  className="text-[11px] font-extrabold px-3 py-1 rounded-full border border-brand-border bg-brand-surface text-brand-muted hover:border-brand-primary hover:text-brand-primary transition-all"
+                  className="text-[11px] font-extrabold px-3 py-1 rounded-full border border-brand-border bg-brand-surface text-brand-muted hover:border-brand-primary hover:text-brand-primary-text transition-all"
                 >
                   {cat === 'Flower' ? '🌱 Flower' : cat === 'Vapes' ? '💨 Vapes' : cat === 'Edibles' ? '🍬 Edibles' : cat === 'Concentrates' ? '🧴 Concentrates' : cat}
                 </Link>
@@ -473,8 +473,8 @@ export default async function RetailerDetailPage({
                             <div className="text-[9px] uppercase text-brand-muted">
                               {entry.isDemonstration ? 'Sample price' : 'Listed price'}
                             </div>
-                            <div className="text-sm font-black text-brand-primary">${entry.price.toFixed(2)}</div>
-                            <span className="text-[10px] text-brand-primary/80 font-semibold bg-brand-primary/5 border border-brand-primary/10 px-2 py-0.5 rounded">
+                            <div className="text-sm font-black text-brand-primary-text">${entry.price.toFixed(2)}</div>
+                            <span className="text-[10px] text-brand-primary-text/80 font-semibold bg-brand-primary/5 border border-brand-primary/10 px-2 py-0.5 rounded">
                               {entry.isDemonstration ? 'Sample availability' : entry.inStock ? 'In stock' : 'Out of stock'}
                             </span>
                           </div>
@@ -503,7 +503,7 @@ export default async function RetailerDetailPage({
           <div className="rounded-2xl border border-brand-primary/30 bg-brand-surface p-5 space-y-4 shadow-[0_0_24px_rgba(46,226,127,0.05)]">
             <div className="flex items-center justify-between border-b border-brand-border pb-3">
               <h2 className="text-sm font-bold text-brand-text flex items-center">
-                <ShieldCheck size={14} className="mr-1.5 text-brand-primary" aria-hidden="true" /> Truth Card
+                <ShieldCheck size={14} className="mr-1.5 text-brand-primary-text" aria-hidden="true" /> Truth Card
               </h2>
               <DataStatusBadge
                 dataStatus={retailer.dataStatus}
@@ -562,7 +562,7 @@ export default async function RetailerDetailPage({
             <div className="pt-2 border-t border-brand-border">
               <Link 
                 href={`/retailer/${retailer.id}/correction`}
-                className="w-full text-center block text-[10px] font-bold text-brand-muted hover:text-brand-primary border border-brand-border hover:border-brand-primary/20 py-2 rounded transition-all bg-brand-background/40"
+                className="w-full text-center block text-[10px] font-bold text-brand-muted hover:text-brand-primary-text border border-brand-border hover:border-brand-primary/20 py-2 rounded transition-all bg-brand-background/40"
               >
                 <FileEdit size={11} className="mr-1 inline" aria-hidden="true" /> Submit Information Correction
               </Link>
@@ -590,7 +590,7 @@ export default async function RetailerDetailPage({
           {/* BUSINESS CLAIM CTA */}
           <div className="hero-aurora rounded-2xl border border-brand-primary/25 bg-brand-surface p-5 space-y-3">
             <h2 className="flex items-center gap-1.5 text-sm font-bold text-brand-text">
-              <BadgeCheck size={14} className="text-brand-primary" aria-hidden="true" />
+              <BadgeCheck size={14} className="text-brand-primary-text" aria-hidden="true" />
               Own this business?
             </h2>
             <p className="text-xs leading-relaxed text-brand-muted">
@@ -600,7 +600,7 @@ export default async function RetailerDetailPage({
             </p>
             <Link
               href="/business/claim"
-              className="block w-full rounded-lg bg-brand-primary px-4 py-2.5 text-center text-xs font-bold text-white transition-all hover:brightness-110"
+              className="block w-full rounded-lg bg-brand-primary-fill-strong px-4 py-2.5 text-center text-xs font-bold text-white transition-all hover:brightness-110"
             >
               Claim this listing →
             </Link>

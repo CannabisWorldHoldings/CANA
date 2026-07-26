@@ -24,7 +24,7 @@ export default async function AdminLoginPage({
   return (
     <main className="min-h-screen bg-[#0B0F12] text-brand-text flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
-        <span className="text-brand-primary font-black text-xs border border-brand-primary/20 bg-brand-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">
+        <span className="text-brand-primary-text font-black text-xs border border-brand-primary/20 bg-brand-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">
           Authorized Staff
         </span>
         <h1 className="text-3xl font-extrabold">Administrator Sign In</h1>

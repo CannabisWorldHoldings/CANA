@@ -63,7 +63,7 @@ export default async function BusinessClaimPage({
               key={benefit.title}
               className="rounded-xl border border-brand-border bg-brand-surface p-4 text-left"
             >
-              <benefit.icon size={16} className="text-brand-primary" aria-hidden="true" />
+              <benefit.icon size={16} className="text-brand-primary-text" aria-hidden="true" />
               <p className="mt-2 text-xs font-bold text-brand-text">{benefit.title}</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-600">{benefit.text}</p>
             </li>

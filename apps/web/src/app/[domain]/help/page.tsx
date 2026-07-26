@@ -45,13 +45,13 @@ export default async function HelpPage() {
       {/* Hero header */}
       <section className="hero-aurora border-b border-brand-border px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <Link href="/" className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary">
+          <Link href="/" className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary-text">
             ← Back to directory
           </Link>
           <p className="kicker mt-5 mb-3">Patient Guidance &amp; FAQ</p>
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-brand-text sm:text-4xl">
             Washington D.C. Medical Cannabis{' '}
-            <span className="text-brand-primary">Help Desk</span>
+            <span className="text-brand-primary-text">Help Desk</span>
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-brand-muted">
             Everything you need to know about D.C. ABCA medical cannabis regulations, patient registration, and verified dispensary listings.
@@ -68,7 +68,7 @@ export default async function HelpPage() {
               className="record-card rounded-2xl p-6 space-y-3"
             >
               <div className="flex items-start gap-3">
-                <span className="w-6 h-6 rounded-full bg-brand-primary text-white font-black text-xs flex items-center justify-center shrink-0">
+                <span className="w-6 h-6 rounded-full bg-brand-primary-fill-strong text-white font-black text-xs flex items-center justify-center shrink-0">
                   <HelpCircle size={12} aria-hidden="true" />
                 </span>
                 <h3 className="font-display text-base font-extrabold text-brand-text leading-snug">{faq.question}</h3>
@@ -87,7 +87,7 @@ export default async function HelpPage() {
           <div className="flex justify-center gap-4">
             <Link
               href="/business/claim"
-              className="bg-brand-primary text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition-all"
+              className="bg-brand-primary-fill-strong text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition-all"
             >
               Claim Your Business →
             </Link>

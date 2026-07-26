@@ -176,7 +176,7 @@ export default async function RetailerComparePage({
       <div>
         <Link
           href="/"
-          className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary"
+          className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text"
         >
           ← Back to directory
         </Link>
@@ -276,7 +276,7 @@ export default async function RetailerComparePage({
                     >
                       <Link
                         href={`/retailer/${retailer.id}`}
-                        className="text-lg font-black text-brand-text hover:text-brand-primary"
+                        className="text-lg font-black text-brand-text hover:text-brand-primary-text"
                       >
                         {retailer.name}
                       </Link>
@@ -332,7 +332,7 @@ export default async function RetailerComparePage({
                           href={retailer.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-semibold text-brand-primary hover:underline"
+                          className="font-semibold text-brand-primary-text hover:underline"
                         >
                           Open safe HTTPS source ↗
                         </a>

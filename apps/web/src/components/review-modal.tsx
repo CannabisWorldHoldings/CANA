@@ -106,7 +106,7 @@ export default function ReviewModal({ retailerName }: Props) {
                   </button>
                   <button
                     type="submit"
-                    className="bg-brand-primary text-white text-xs font-bold px-4 py-2 rounded hover:brightness-110 transition-colors"
+                    className="bg-brand-primary-fill-strong text-white text-xs font-bold px-4 py-2 rounded hover:brightness-110 transition-colors"
                   >
                     Submit Rating →
                   </button>

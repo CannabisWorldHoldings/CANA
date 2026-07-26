@@ -55,7 +55,7 @@ export default function MarketplaceFeaturedRetailers({
           </div>
           <a
             href="#directory"
-            className="hidden items-center gap-2 text-sm font-bold text-brand-primary sm:inline-flex"
+            className="hidden items-center gap-2 text-sm font-bold text-brand-primary-text sm:inline-flex"
           >
             View full directory
             <ArrowRight size={15} aria-hidden="true" />
@@ -102,7 +102,7 @@ export default function MarketplaceFeaturedRetailers({
                   <h3 className="font-display text-lg font-bold leading-tight text-brand-text">
                     <Link
                       href={`/retailer/${retailer.id}`}
-                      className="hover:text-brand-primary"
+                      className="hover:text-brand-primary-text"
                     >
                       {retailer.name}
                     </Link>
@@ -119,7 +119,7 @@ export default function MarketplaceFeaturedRetailers({
                 <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-brand-muted">
                   <MapPin
                     size={13}
-                    className="mt-0.5 shrink-0 text-brand-primary"
+                    className="mt-0.5 shrink-0 text-brand-primary-text"
                     aria-hidden="true"
                   />
                   {retailer.address}, {retailer.city}
@@ -127,7 +127,7 @@ export default function MarketplaceFeaturedRetailers({
                 <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-brand-muted">
                   <ScrollText
                     size={13}
-                    className="mt-0.5 shrink-0 text-brand-primary"
+                    className="mt-0.5 shrink-0 text-brand-primary-text"
                     aria-hidden="true"
                   />
                   Source: {retailer.dataSource}
@@ -136,7 +136,7 @@ export default function MarketplaceFeaturedRetailers({
                   <p className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-brand-muted">
                     <Clock
                       size={13}
-                      className="mt-0.5 shrink-0 text-brand-primary"
+                      className="mt-0.5 shrink-0 text-brand-primary-text"
                       aria-hidden="true"
                     />
                     {retailer.hours}
@@ -145,7 +145,7 @@ export default function MarketplaceFeaturedRetailers({
 
                 <Link
                   href={`/retailer/${retailer.id}`}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 text-xs font-bold text-brand-text transition-colors hover:border-brand-primary/50 hover:text-brand-primary"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-brand-border bg-brand-surface px-4 py-2.5 text-xs font-bold text-brand-text transition-colors hover:border-brand-primary/50 hover:text-brand-primary-text"
                 >
                   View record &amp; menu
                   <ArrowRight size={13} aria-hidden="true" />

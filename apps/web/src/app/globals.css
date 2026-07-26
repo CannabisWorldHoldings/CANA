@@ -52,6 +52,8 @@
   --color-brand-text: var(--brand-text);
   --color-brand-muted: var(--brand-muted);
   --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-onwhite: var(--brand-gold-onwhite);
+  --color-brand-primary-fill-strong: var(--brand-primary-fill-strong);
   --font-display: var(--font-family-display);
   --font-body: var(--font-family-body);
   --font-evidence: var(--font-family-evidence);
@@ -76,6 +78,12 @@
   --brand-text: #0f172a;
   --brand-muted: #5b6b76;
   --brand-gold: #b9840c;
+  /* Fill variants for WHITE text. The display fills above are chosen for
+     identity, not legibility: #b9840c is 3.30:1 and #0e9f5a is 3.43:1 against
+     white, both below the 4.5:1 needed for the small labels that sit on them
+     (the 9px SPONSORED chip, the 12px Business Portal button). */
+  --brand-gold-onwhite: #8c6206;
+  --brand-primary-fill-strong: #08663c;
 
   --font-family-display: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-family-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
@@ -259,8 +267,10 @@ h3 {
   font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
+  /* 0.68rem is normal-size text under WCAG, so it needs 4.5:1. The former
+     --brand-primary measured 3.25:1 here. */
   letter-spacing: 0.22em;
-  color: var(--brand-primary);
+  color: var(--brand-primary-text);
 }
 
 /* Leaflet popup restyle to match the dark tenant surface. */

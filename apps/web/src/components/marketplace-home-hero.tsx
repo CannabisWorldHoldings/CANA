@@ -64,13 +64,13 @@ export default function MarketplaceHomeHero({
 
       <div className="relative mx-auto grid min-h-[570px] max-w-screen-2xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-10 lg:py-16">
         <div className="max-w-2xl">
-          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-primary/35 bg-brand-background/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary backdrop-blur-md">
+          <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-primary/35 bg-brand-background/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary-text backdrop-blur-md">
             <span className="h-2 w-2 rounded-full bg-brand-primary" />
             Washington, D.C. cannabis discovery
           </p>
           <h1 className="max-w-3xl font-display text-5xl font-bold leading-[0.96] tracking-[-0.055em] text-brand-text sm:text-6xl lg:text-7xl">
             The D.C. market,
-            <span className="block text-brand-primary">without the guesswork.</span>
+            <span className="block text-brand-primary-text">without the guesswork.</span>
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-brand-muted sm:text-lg">
             Browse dispensaries, delivery services, products, offers, and
@@ -103,7 +103,7 @@ export default function MarketplaceHomeHero({
               >
                 <Icon
                   size={15}
-                  className="text-brand-primary"
+                  className="text-brand-primary-text"
                   aria-hidden="true"
                 />
                 {label}
@@ -123,7 +123,7 @@ export default function MarketplaceHomeHero({
                 What the evidence supports now
               </h2>
             </div>
-            <span className="rounded-full border border-brand-primary/25 bg-brand-primary/10 px-2.5 py-1 text-[10px] font-bold text-brand-primary">
+            <span className="rounded-full border border-brand-primary/25 bg-brand-primary/10 px-2.5 py-1 text-[10px] font-bold text-brand-primary-text">
               Live database
             </span>
           </div>
@@ -134,7 +134,7 @@ export default function MarketplaceHomeHero({
                 key={label}
                 className="flex items-center gap-3 py-3.5"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary-text">
                   <Icon size={17} aria-hidden="true" />
                 </span>
                 <dt className="text-sm font-medium text-brand-muted">{label}</dt>
@@ -148,7 +148,7 @@ export default function MarketplaceHomeHero({
           <p className="mt-3 flex items-center gap-2 rounded-xl bg-brand-primary/10 px-4 py-3 text-xs font-semibold leading-relaxed text-brand-text">
             <BadgeCheck
               size={16}
-              className="shrink-0 text-brand-primary"
+              className="shrink-0 text-brand-primary-text"
               aria-hidden="true"
             />
             Counts come from the current directory. Demonstration records remain

@@ -62,7 +62,7 @@ export default async function NeighborhoodsIndexPage({
         <div className="mx-auto max-w-7xl">
           <p className="kicker mb-4">Washington, D.C. · Coverage map</p>
           <h1 className="font-display text-4xl font-bold tracking-tight text-brand-text sm:text-5xl">
-            Cannabis by <span className="text-brand-primary">neighborhood</span>
+            Cannabis by <span className="text-brand-primary-text">neighborhood</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-brand-muted">
             Every neighborhood page lists retailers whose recorded coordinates
@@ -85,7 +85,7 @@ export default async function NeighborhoodsIndexPage({
                 className="record-card group flex flex-col rounded-2xl p-6"
               >
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/12 text-brand-primary ring-1 ring-brand-primary/25">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/12 text-brand-primary-text ring-1 ring-brand-primary/25">
                     <MapPin size={18} aria-hidden="true" />
                   </span>
                   <span className="evidence-mono rounded-full border border-brand-border bg-brand-background px-2.5 py-1 text-brand-muted">
@@ -101,7 +101,7 @@ export default async function NeighborhoodsIndexPage({
                 <p className="evidence-mono mt-3 text-brand-muted/70">
                   ZIP {config.zips.join(' · ')}
                 </p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-primary">
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-text">
                   View retailers
                   <ArrowRight size={12} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
                 </span>

@@ -212,7 +212,7 @@ export default async function PricingPage() {
                     <BadgeCheck
                       size={14}
                       aria-hidden="true"
-                      className="mt-0.5 shrink-0 text-brand-primary"
+                      className="mt-0.5 shrink-0 text-brand-primary-text"
                     />
                     {feature}
                   </li>
@@ -225,7 +225,7 @@ export default async function PricingPage() {
                 className={`mt-6 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all hover:brightness-110 ${
                   tier.highlight
                     ? 'bg-brand-primary text-black'
-                    : 'border border-brand-border bg-brand-background text-brand-text hover:border-brand-primary/50 hover:text-brand-primary'
+                    : 'border border-brand-border bg-brand-background text-brand-text hover:border-brand-primary/50 hover:text-brand-primary-text'
                 }`}
               >
                 {tier.cta}
@@ -243,7 +243,7 @@ export default async function PricingPage() {
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {PRINCIPLES.map((p) => (
               <div key={p.title} className="flex flex-col items-start gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/12 text-brand-primary ring-1 ring-brand-primary/25">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/12 text-brand-primary-text ring-1 ring-brand-primary/25">
                   <p.icon size={18} aria-hidden="true" />
                 </span>
                 <h3 className="font-display text-base font-bold text-brand-text">
@@ -277,7 +277,7 @@ export default async function PricingPage() {
       <section className="border-t border-brand-border px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl flex flex-col items-center gap-3 text-center">
           <span className="flex items-center gap-1.5 text-xs text-brand-muted">
-            <DollarSign size={12} aria-hidden="true" className="text-brand-primary" />
+            <DollarSign size={12} aria-hidden="true" className="text-brand-primary-text" />
             <strong className="text-brand-text">Founding pricing note:</strong> Featured and SiteMind rates are founding prices, subject to change at general launch. Existing subscribers keep their rate for the life of their active subscription. Sponsorship never affects organic directory ordering — ever.
           </span>
           <Link

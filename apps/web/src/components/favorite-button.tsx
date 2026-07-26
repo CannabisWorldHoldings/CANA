@@ -86,7 +86,7 @@ export default function FavoriteButton({ retailerId }: Props) {
       className={`text-xs font-bold px-2 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1 ${
         isFavorited
           ? 'bg-amber-500/10 border-amber-500/30 text-amber-600'
-          : 'bg-brand-background border-brand-border text-slate-400 hover:border-brand-primary hover:text-brand-primary'
+          : 'bg-brand-background border-brand-border text-slate-400 hover:border-brand-primary hover:text-brand-primary-text'
       }`}
     >
       <span aria-hidden="true">{isFavorited ? '★' : '☆'}</span>

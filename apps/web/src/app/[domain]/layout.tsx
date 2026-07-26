@@ -127,12 +127,12 @@ export default async function TenantLayout({ children, params }: { children: Rea
             aria-label={`${displayName} home`}
             className="flex shrink-0 items-center gap-2.5 text-xl font-bold tracking-[-0.04em] text-brand-text font-display"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary/15 text-brand-primary ring-1 ring-brand-primary/30">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary/15 text-brand-primary-text ring-1 ring-brand-primary/30">
               <Leaf size={16} strokeWidth={2.5} aria-hidden="true" />
             </span>
             {isCanonicalBrand ? (
               <span>
-                orderweed<span className="text-brand-primary">dc</span>
+                orderweed<span className="text-brand-primary-text">dc</span>
               </span>
             ) : (
               <span>{displayName}</span>
@@ -156,12 +156,12 @@ export default async function TenantLayout({ children, params }: { children: Rea
 
           <div className="flex items-center gap-3">
             <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 text-[11px] font-semibold text-brand-muted">
-              <ShieldCheck size={13} className="text-brand-primary" aria-hidden="true" />
+              <ShieldCheck size={13} className="text-brand-primary-text" aria-hidden="true" />
               Evidence-labeled data
             </span>
             <Link
               href={canonicalBusiness}
-              className="hidden sm:inline-flex rounded-lg bg-brand-primary px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              className="hidden sm:inline-flex rounded-lg bg-brand-primary-fill-strong px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110 active:scale-[0.98]"
             >
               Business Portal
             </Link>
@@ -192,12 +192,12 @@ export default async function TenantLayout({ children, params }: { children: Rea
           <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
             <div className="col-span-2 md:col-span-1">
               <p className="flex items-center gap-2 font-display text-lg font-bold text-brand-text">
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-primary/15 text-brand-primary">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand-primary/15 text-brand-primary-text">
                   <Leaf size={14} strokeWidth={2.5} aria-hidden="true" />
                 </span>
                 {isCanonicalBrand ? (
                   <span>
-                    orderweed<span className="text-brand-primary">dc</span>
+                    orderweed<span className="text-brand-primary-text">dc</span>
                   </span>
                 ) : (
                   displayName
@@ -214,29 +214,29 @@ export default async function TenantLayout({ children, params }: { children: Rea
             <nav aria-label="Explore">
               <p className="kicker mb-3">Explore</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/" className="transition-colors hover:text-brand-primary">Retailer directory</Link></li>
-                <li><Link href="/products" className="transition-colors hover:text-brand-primary">Products</Link></li>
-                <li><Link href="/deals" className="transition-colors hover:text-brand-primary">Verified deals</Link></li>
-                <li><Link href="/neighborhoods" className="transition-colors hover:text-brand-primary">Neighborhoods</Link></li>
-                <li><Link href="/education" className="transition-colors hover:text-brand-primary">Education hub</Link></li>
-                <li><Link href="/compare" className="transition-colors hover:text-brand-primary">Compare records</Link></li>
+                <li><Link href="/" className="transition-colors hover:text-brand-primary-text">Retailer directory</Link></li>
+                <li><Link href="/products" className="transition-colors hover:text-brand-primary-text">Products</Link></li>
+                <li><Link href="/deals" className="transition-colors hover:text-brand-primary-text">Verified deals</Link></li>
+                <li><Link href="/neighborhoods" className="transition-colors hover:text-brand-primary-text">Neighborhoods</Link></li>
+                <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">Education hub</Link></li>
+                <li><Link href="/compare" className="transition-colors hover:text-brand-primary-text">Compare records</Link></li>
               </ul>
             </nav>
             <nav aria-label="For business">
               <p className="kicker mb-3">For business</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/pricing" className="transition-colors hover:text-brand-primary">Published pricing</Link></li>
-                <li><Link href="/business/claim" className="transition-colors hover:text-brand-primary">Claim your listing</Link></li>
-                <li><Link href={canonicalBusiness} className="transition-colors hover:text-brand-primary">Business portal</Link></li>
-                <li><Link href={canonicalAdmin} className="transition-colors hover:text-brand-primary">Admin portal</Link></li>
+                <li><Link href="/pricing" className="transition-colors hover:text-brand-primary-text">Published pricing</Link></li>
+                <li><Link href="/business/claim" className="transition-colors hover:text-brand-primary-text">Claim your listing</Link></li>
+                <li><Link href={canonicalBusiness} className="transition-colors hover:text-brand-primary-text">Business portal</Link></li>
+                <li><Link href={canonicalAdmin} className="transition-colors hover:text-brand-primary-text">Admin portal</Link></li>
               </ul>
             </nav>
             <nav aria-label="Trust and legal">
               <p className="kicker mb-3">Trust &amp; legal</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/legal" className="transition-colors hover:text-brand-primary">Legal &amp; compliance</Link></li>
-                <li><Link href="/help" className="transition-colors hover:text-brand-primary">Help &amp; data policy</Link></li>
-                <li><Link href="/education" className="transition-colors hover:text-brand-primary">D.C. cannabis rules</Link></li>
+                <li><Link href="/legal" className="transition-colors hover:text-brand-primary-text">Legal &amp; compliance</Link></li>
+                <li><Link href="/help" className="transition-colors hover:text-brand-primary-text">Help &amp; data policy</Link></li>
+                <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">D.C. cannabis rules</Link></li>
               </ul>
             </nav>
           </div>

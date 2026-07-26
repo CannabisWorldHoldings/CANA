@@ -108,7 +108,7 @@ export default async function DealsHubPage({ params }: Props) {
       {/* Hero header */}
       <section className="hero-aurora border-b border-brand-border px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <Link href="/" className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary">
+          <Link href="/" className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary-text">
             ← Back to directory
           </Link>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-4">
@@ -116,7 +116,7 @@ export default async function DealsHubPage({ params }: Props) {
               <p className="kicker mb-3">Verified Promotion Hub</p>
               <h1 className="font-display text-3xl font-extrabold tracking-tight text-brand-text sm:text-4xl">
                 D.C. Dispensary{' '}
-                <span className="text-brand-primary">Deals &amp; Offers</span>
+                <span className="text-brand-primary-text">Deals &amp; Offers</span>
               </h1>
               <p className="mt-2 max-w-2xl text-sm text-brand-muted">
                 Discover active promotional discounts, daily specials, and verified promo codes from D.C. licensed cannabis retailers.
@@ -143,7 +143,7 @@ export default async function DealsHubPage({ params }: Props) {
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-12 text-center space-y-3">
             <p className="font-bold text-brand-text">No active deals found at this time.</p>
             <p className="text-xs max-w-md mx-auto text-brand-muted">Retailer promotions change frequently. Check back soon or browse our full business directory.</p>
-            <Link href="/" className="inline-block bg-brand-primary text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition-all">
+            <Link href="/" className="inline-block bg-brand-primary-fill-strong text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition-all">
               Explore Directory
             </Link>
           </div>
@@ -192,7 +192,7 @@ export default async function DealsHubPage({ params }: Props) {
                     </div>
                     <Link
                       href={`/retailer/${deal.retailer.id}`}
-                      className="text-xs font-bold text-brand-primary hover:underline"
+                      className="text-xs font-bold text-brand-primary-text hover:underline"
                     >
                       View Menu →
                     </Link>

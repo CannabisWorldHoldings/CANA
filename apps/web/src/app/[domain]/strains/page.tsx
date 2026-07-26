@@ -52,7 +52,7 @@ export default async function StrainsIndexPage({
         <div className="mx-auto max-w-7xl">
           <p className="kicker mb-4">Product knowledge · No effect guarantees</p>
           <h1 className="font-display text-4xl font-bold tracking-tight text-brand-text sm:text-5xl">
-            Strain types, <span className="text-brand-primary">honestly explained</span>
+            Strain types, <span className="text-brand-primary-text">honestly explained</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-brand-muted">
             Sativa, indica, hybrid, and CBD are industry labels — useful for
@@ -73,7 +73,7 @@ export default async function StrainsIndexPage({
                 href={`/strains/${slug}`}
                 className="record-card group flex flex-col rounded-2xl p-6"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/12 text-brand-primary ring-1 ring-brand-primary/25">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/12 text-brand-primary-text ring-1 ring-brand-primary/25">
                   <Sprout size={18} aria-hidden="true" />
                 </span>
                 <h2 className="mt-4 font-display text-xl font-bold text-brand-text transition-colors group-hover:text-brand-primary">
@@ -85,7 +85,7 @@ export default async function StrainsIndexPage({
                 <p className="evidence-mono mt-3 text-brand-muted/70">
                   {countBySlug[slug]} evidence-eligible records
                 </p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-primary">
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-primary-text">
                   Read the guide
                   <ArrowRight size={12} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
                 </span>

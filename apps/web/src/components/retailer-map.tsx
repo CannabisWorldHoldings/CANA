@@ -61,10 +61,10 @@ export default function RetailerMap({ retailers }: RetailerMapProps) {
           <Popup className="premium-popup">
             <div className="font-sans flex flex-col items-center min-w-[140px]">
               <span className="font-bold text-sm text-slate-900 mb-1 text-center leading-tight">{r.name}</span>
-              <span className="text-[10px] uppercase text-brand-primary font-black mb-3">{r.type}</span>
+              <span className="text-[10px] uppercase text-brand-primary-text font-black mb-3">{r.type}</span>
               <Link
                 href={`/retailer/${r.id}`}
-                className="text-xs bg-brand-primary hover:brightness-110 text-white font-bold px-4 py-1.5 rounded w-full text-center transition-all shadow"
+                className="text-xs bg-brand-primary-fill-strong hover:brightness-110 text-white font-bold px-4 py-1.5 rounded w-full text-center transition-all shadow"
               >
                 View Directory
               </Link>

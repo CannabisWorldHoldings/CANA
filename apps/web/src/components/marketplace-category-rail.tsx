@@ -103,11 +103,11 @@ export default function MarketplaceCategoryRail() {
               href={href}
               className="group flex min-w-0 items-center gap-3 border-b border-r border-brand-border px-4 py-4 transition-colors hover:bg-brand-raised xl:border-b-0"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary-text">
                 <Icon size={17} aria-hidden="true" />
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-xs font-bold text-brand-text group-hover:text-brand-primary">
+                <span className="block truncate text-xs font-bold text-brand-text group-hover:text-brand-primary-text">
                   {label}
                 </span>
                 <span className="mt-0.5 block truncate text-[10px] text-brand-muted">
@@ -131,7 +131,7 @@ export default function MarketplaceCategoryRail() {
           </div>
           <Link
             href="/products"
-            className="hidden items-center gap-2 text-sm font-bold text-brand-primary sm:inline-flex"
+            className="hidden items-center gap-2 text-sm font-bold text-brand-primary-text sm:inline-flex"
           >
             View all products
             <ArrowRight size={15} aria-hidden="true" />

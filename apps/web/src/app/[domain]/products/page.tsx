@@ -258,7 +258,7 @@ export default async function ProductDiscoveryPage({
         <div className="mx-auto max-w-7xl">
           <Link
             href="/"
-            className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary"
+            className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary-text"
           >
             ← Back to retailer directory
           </Link>
@@ -279,7 +279,7 @@ export default async function ProductDiscoveryPage({
               </p>
             </div>
             <div className="rounded-2xl border border-brand-primary/20 bg-brand-primary/5 p-4 text-xs leading-5 text-brand-muted">
-              <p className="font-black uppercase tracking-wider text-brand-primary">
+              <p className="font-black uppercase tracking-wider text-brand-primary-text">
                 TRANSPARENT RANKING
               </p>
               <p className="mt-1">
@@ -299,7 +299,7 @@ export default async function ProductDiscoveryPage({
             {hasFilters && (
               <Link
                 href="/products"
-                className="text-[10px] font-bold uppercase tracking-wider text-brand-primary hover:underline"
+                className="text-[10px] font-bold uppercase tracking-wider text-brand-primary-text hover:underline"
               >
                 Clear
               </Link>
@@ -441,7 +441,7 @@ export default async function ProductDiscoveryPage({
                 value={PRODUCT_DISCOVERY_STOCK_STATES[0]}
                 type="checkbox"
                 defaultChecked={filters.stock === 'IN_STOCK'}
-                className="mt-0.5 h-4 w-4 accent-[var(--brand-primary)]"
+                className="mt-0.5 h-6 w-6 accent-[var(--brand-primary)]"
               />
               <span>
                 Reported in stock
@@ -497,7 +497,7 @@ export default async function ProductDiscoveryPage({
                 className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-colors ${
                   filters.category === category
                     ? 'border-brand-primary bg-brand-primary text-white'
-                    : 'border-brand-border bg-brand-surface text-brand-muted hover:border-brand-primary hover:text-brand-primary'
+                    : 'border-brand-border bg-brand-surface text-brand-muted hover:border-brand-primary hover:text-brand-primary-text'
                 }`}
               >
                 {CATEGORY_LABELS[category]}
@@ -516,7 +516,7 @@ export default async function ProductDiscoveryPage({
               </p>
               <Link
                 href="/products"
-                className="mt-4 inline-block text-xs font-black text-brand-primary hover:underline"
+                className="mt-4 inline-block text-xs font-black text-brand-primary-text hover:underline"
               >
                 Reset discovery controls
               </Link>
@@ -656,7 +656,7 @@ export default async function ProductDiscoveryPage({
                       <div>
                         <Link
                           href={`/retailer/${entry.retailer.id}`}
-                          className="text-xs font-black text-brand-text transition-colors hover:text-brand-primary"
+                          className="text-xs font-black text-brand-text transition-colors hover:text-brand-primary-text"
                         >
                           {entry.retailer.name}
                         </Link>
@@ -669,7 +669,7 @@ export default async function ProductDiscoveryPage({
                       </div>
                       <Link
                         href={`/retailer/${entry.retailer.id}`}
-                        className="text-[10px] font-black uppercase tracking-wider text-brand-primary hover:underline"
+                        className="text-[10px] font-black uppercase tracking-wider text-brand-primary-text hover:underline"
                       >
                         Inspect retailer →
                       </Link>
@@ -694,7 +694,7 @@ export default async function ProductDiscoveryPage({
                                 href={sourceUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="font-bold text-brand-primary hover:underline"
+                                className="font-bold text-brand-primary-text hover:underline"
                               >
                                 cited source
                               </a>
@@ -728,7 +728,7 @@ export default async function ProductDiscoveryPage({
               {currentPage > 1 ? (
                 <Link
                   href={productDiscoveryHref(filters, currentPage - 1)}
-                  className="font-black text-brand-primary hover:underline"
+                  className="font-black text-brand-primary-text hover:underline"
                 >
                   Previous
                 </Link>
@@ -741,7 +741,7 @@ export default async function ProductDiscoveryPage({
               {currentPage < totalPages ? (
                 <Link
                   href={productDiscoveryHref(filters, currentPage + 1)}
-                  className="font-black text-brand-primary hover:underline"
+                  className="font-black text-brand-primary-text hover:underline"
                 >
                   Next
                 </Link>

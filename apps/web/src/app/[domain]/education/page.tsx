@@ -69,7 +69,7 @@ function EducationPagination({
       {currentPage > 1 ? (
         <Link
           href={educationHubHref(search, pageKey, currentPage - 1)}
-          className="font-bold text-brand-primary hover:underline"
+          className="font-bold text-brand-primary-text hover:underline"
         >
           Previous
         </Link>
@@ -82,7 +82,7 @@ function EducationPagination({
       {currentPage < totalPages ? (
         <Link
           href={educationHubHref(search, pageKey, currentPage + 1)}
-          className="font-bold text-brand-primary hover:underline"
+          className="font-bold text-brand-primary-text hover:underline"
         >
           Next
         </Link>
@@ -151,13 +151,13 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
       {/* Hero header */}
       <section className="hero-aurora border-b border-brand-border px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <Link href="/" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary">
+          <Link href="/" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
             ← Back to directory
           </Link>
           <p className="kicker mt-5 mb-3">Science &amp; Legislation</p>
           <h1 className="font-display text-2xl font-extrabold text-brand-text sm:text-3xl">
             D.C. Cannabis{' '}
-            <span className="text-brand-primary">Education &amp; Strain Guide</span>
+            <span className="text-brand-primary-text">Education &amp; Strain Guide</span>
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-brand-muted">
             Explore legal frameworks, terpene science guides, and cataloged strains in Washington D.C.
@@ -175,7 +175,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
           {/* Left Column: Educational Articles */}
           <div className="lg:col-span-2 space-y-6">
             <h2 className="font-display flex items-center gap-2 text-lg font-bold text-brand-text border-b border-brand-border pb-2">
-              <BookOpen size={18} aria-hidden="true" className="text-brand-primary" />
+              <BookOpen size={18} aria-hidden="true" className="text-brand-primary-text" />
               Published Articles
             </h2>
 
@@ -187,7 +187,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
               ) : (
                 articles.map((article) => (
                   <div key={article.id} className="record-card rounded-2xl p-5 space-y-3 hover:border-brand-primary/20 transition-all">
-                    <h3 className="font-display text-base font-bold text-brand-text hover:text-brand-primary transition-colors">
+                    <h3 className="font-display text-base font-bold text-brand-text hover:text-brand-primary-text transition-colors">
                       <Link href={`/education/${encodeURIComponent(article.slug)}`}>{article.title}</Link>
                     </h3>
                     <DataStatusBadge
@@ -222,7 +222,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
           <div className="space-y-6">
             <div className="rounded-2xl border border-brand-border bg-brand-surface p-5 space-y-4">
               <h2 className="font-display flex items-center gap-2 text-sm font-bold text-brand-text">
-                <Leaf size={16} aria-hidden="true" className="text-brand-primary" />
+                <Leaf size={16} aria-hidden="true" className="text-brand-primary-text" />
                 Strain Dictionary Glossary
               </h2>
 
@@ -247,7 +247,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
                     value={search.articlePage}
                   />
                 )}
-                <button type="submit" className="bg-brand-primary text-white font-bold text-xs px-3.5 py-1.5 rounded-xl hover:brightness-110 transition-all">
+                <button type="submit" className="bg-brand-primary-fill-strong text-white font-bold text-xs px-3.5 py-1.5 rounded-xl hover:brightness-110 transition-all">
                   Go
                 </button>
               </form>
@@ -260,7 +260,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
                     <div key={strain.id} className="bg-brand-background/40 border border-brand-border p-3.5 rounded-xl space-y-1">
                       <div className="flex justify-between items-start gap-2">
                         <h4 className="text-xs font-bold text-brand-text">{strain.name}</h4>
-                        <span className="text-[9px] bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        <span className="text-[9px] bg-brand-primary/10 border border-brand-primary/20 text-brand-primary-text font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
                           {strain.strainType}
                         </span>
                       </div>

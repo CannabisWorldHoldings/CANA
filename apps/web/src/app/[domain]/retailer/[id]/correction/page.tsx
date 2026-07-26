@@ -59,7 +59,7 @@ export default async function RetailerCorrectionPage({ params, searchParams }: P
   return (
     <div className="flex-grow flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-brand-background text-brand-text animate-fade-in">
       <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center space-y-2">
-        <Link href={`/retailer/${id}`} className="text-xs font-semibold text-brand-muted hover:text-brand-primary mb-3 inline-block transition-colors">
+        <Link href={`/retailer/${id}`} className="text-xs font-semibold text-brand-muted hover:text-brand-primary-text mb-3 inline-block transition-colors">
           ← Back to profile
         </Link>
         <br />
@@ -76,13 +76,13 @@ export default async function RetailerCorrectionPage({ params, searchParams }: P
         <div className="bg-brand-surface border border-brand-border py-8 px-4 shadow-sm sm:rounded-lg sm:px-10 space-y-6">
 
           {submitted ? (
-            <div className="bg-brand-primary/10 border border-brand-primary/20 text-brand-primary p-5 rounded-lg space-y-3">
+            <div className="bg-brand-primary/10 border border-brand-primary/20 text-brand-primary-text p-5 rounded-lg space-y-3">
               <h2 className="text-sm font-bold">📥 Correction Request Filed</h2>
               <p className="text-xs text-brand-muted leading-relaxed">
                 Your correction request and evidence reference were submitted for administrator review.
               </p>
               <div className="pt-2">
-                <Link href={`/retailer/${id}`} className="bg-brand-primary text-white font-bold text-xs px-4 py-2 rounded inline-block hover:brightness-110 transition-all">
+                <Link href={`/retailer/${id}`} className="bg-brand-primary-fill-strong text-white font-bold text-xs px-4 py-2 rounded inline-block hover:brightness-110 transition-all">
                   Return to Profile
                 </Link>
               </div>
@@ -188,7 +188,7 @@ export default async function RetailerCorrectionPage({ params, searchParams }: P
               <div>
                 <button
                   type="submit"
-                  className="w-full bg-brand-primary text-white font-extrabold text-sm py-3 px-4 rounded-md hover:brightness-110 active:scale-98 transition-all"
+                  className="w-full bg-brand-primary-fill-strong text-white font-extrabold text-sm py-3 px-4 rounded-md hover:brightness-110 active:scale-98 transition-all"
                 >
                   Submit Correction & Enter Queue
                 </button>

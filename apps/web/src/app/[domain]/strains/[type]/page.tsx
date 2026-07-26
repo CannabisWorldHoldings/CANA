@@ -92,14 +92,14 @@ export default async function StrainTypePage({ params }: Props) {
         <div className="mx-auto max-w-4xl">
           <Link
             href="/strains"
-            className="mb-6 inline-flex items-center gap-1 text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary"
+            className="mb-6 inline-flex items-center gap-1 text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text"
           >
             <ArrowLeft size={12} aria-hidden="true" /> All strain types
           </Link>
           <p className="kicker mb-4">Strain guide · Not medical advice</p>
           <h1 className="font-display text-4xl font-bold tracking-tight text-brand-text sm:text-5xl">
             {strain.name}{' '}
-            <span className="text-brand-primary">in Washington, D.C.</span>
+            <span className="text-brand-primary-text">in Washington, D.C.</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-brand-muted">
             {strain.summary}
@@ -107,7 +107,7 @@ export default async function StrainTypePage({ params }: Props) {
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
               href={`/products?strainType=${type}`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-5 py-2.5 text-xs font-bold text-white transition-all hover:brightness-110"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary-fill-strong px-5 py-2.5 text-xs font-bold text-white transition-all hover:brightness-110"
             >
               Browse {recordCount} evidence-eligible {strain.name.toLowerCase()} records
               <ArrowRight size={13} aria-hidden="true" />
@@ -168,7 +168,7 @@ export default async function StrainTypePage({ params }: Props) {
               <Link
                 key={category}
                 href={`/products?strainType=${type}&category=${encodeURIComponent(category)}`}
-                className="inline-flex items-center rounded-full border border-brand-border bg-brand-surface px-3 py-1 text-[11px] font-bold text-brand-muted transition-colors hover:border-brand-primary/50 hover:text-brand-primary"
+                className="inline-flex items-center rounded-full border border-brand-border bg-brand-surface px-3 py-1 text-[11px] font-bold text-brand-muted transition-colors hover:border-brand-primary/50 hover:text-brand-primary-text"
               >
                 {label}
               </Link>
@@ -180,7 +180,7 @@ export default async function StrainTypePage({ params }: Props) {
       <section className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
         <article className="rounded-2xl border border-brand-border bg-brand-surface p-6">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold text-brand-text">
-            <FlaskConical size={18} className="text-brand-primary" aria-hidden="true" />
+            <FlaskConical size={18} className="text-brand-primary-text" aria-hidden="true" />
             What the label actually tells you
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-brand-muted">
@@ -218,7 +218,7 @@ export default async function StrainTypePage({ params }: Props) {
                 <Link
                   key={slug}
                   href={`/strains/${slug}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-background px-3 py-1.5 text-xs font-bold text-brand-muted transition-colors hover:border-brand-primary/50 hover:text-brand-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-background px-3 py-1.5 text-xs font-bold text-brand-muted transition-colors hover:border-brand-primary/50 hover:text-brand-primary-text"
                 >
                   <Sprout size={11} aria-hidden="true" />
                   {other.name}
@@ -227,7 +227,7 @@ export default async function StrainTypePage({ params }: Props) {
             })}
             <Link
               href="/education"
-              className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1.5 text-xs font-bold text-brand-primary transition-colors hover:bg-brand-primary/20"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1.5 text-xs font-bold text-brand-primary-text transition-colors hover:bg-brand-primary/20"
             >
               Education hub →
             </Link>
@@ -237,7 +237,7 @@ export default async function StrainTypePage({ params }: Props) {
         <p className="text-center text-[11px] leading-relaxed text-brand-muted/80">
           Category labels are marketing shorthand, not clinical claims.
           Individual responses vary. 21+ only. See the{' '}
-          <Link href="/legal" className="underline hover:text-brand-primary">
+          <Link href="/legal" className="underline hover:text-brand-primary-text">
             legal &amp; compliance guide
           </Link>
           .

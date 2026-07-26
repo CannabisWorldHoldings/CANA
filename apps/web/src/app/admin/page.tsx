@@ -61,7 +61,7 @@ function QueuePagination({
       {currentPage > 1 ? (
         <Link
           href={adminQueueHref(pages, queueKey, currentPage - 1)}
-          className="font-bold text-brand-primary hover:underline"
+          className="font-bold text-brand-primary-text hover:underline"
         >
           Previous
         </Link>
@@ -74,7 +74,7 @@ function QueuePagination({
       {currentPage < totalPages ? (
         <Link
           href={adminQueueHref(pages, queueKey, currentPage + 1)}
-          className="font-bold text-brand-primary hover:underline"
+          className="font-bold text-brand-primary-text hover:underline"
         >
           Next
         </Link>
@@ -320,7 +320,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
           <span className="text-xs text-slate-600">{adminSession.email}</span>
           <Link
             href="/admin/site-intelligence"
-            className="border border-brand-primary/40 bg-brand-primary/10 text-brand-primary text-xs font-bold px-4 py-2.5 rounded-md hover:bg-brand-primary/15 transition-all inline-block"
+            className="border border-brand-primary/40 bg-brand-primary/10 text-brand-primary-text text-xs font-bold px-4 py-2.5 rounded-md hover:bg-brand-primary/15 transition-all inline-block"
           >
             Site Brain
           </Link>
@@ -350,7 +350,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         <div className="border border-brand-border bg-brand-surface p-5 rounded-lg">
           <div className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Retailers</div>
           <div className="text-2xl font-black text-brand-text mt-1">
-            {totalRetailers} <span className="text-xs text-brand-primary font-normal">({verifiedRetailers} Verified)</span>
+            {totalRetailers} <span className="text-xs text-brand-primary-text font-normal">({verifiedRetailers} Verified)</span>
           </div>
         </div>
         <div className="border border-brand-border bg-brand-surface p-5 rounded-lg">
@@ -520,7 +520,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
                         Contradiction: Field <span className="text-orange-400 font-bold">&quot;{dispute.fieldName}&quot;</span>
                       </div>
                       <div className="text-xs text-slate-600">
-                        Current: <span className="text-red-400">{dispute.oldValue || 'None'}</span> → Correction: <span className="text-brand-primary">{dispute.newValue}</span>
+                        Current: <span className="text-red-400">{dispute.oldValue || 'None'}</span> → Correction: <span className="text-brand-primary-text">{dispute.newValue}</span>
                       </div>
                       <div className="text-[10px] text-slate-500">
                         Submitted by: {dispute.filedBy} • Evidence: <span className="underline">{dispute.evidenceUrl}</span>
@@ -589,7 +589,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
                       <input type="hidden" name="retailerId" value={retailer.id} />
                       <button 
                         type="submit"
-                        className="bg-brand-surface border border-brand-border text-brand-primary font-bold text-xs px-3 py-1.5 rounded hover:bg-brand-primary/10 transition-all"
+                        className="bg-brand-surface border border-brand-border text-brand-primary-text font-bold text-xs px-3 py-1.5 rounded hover:bg-brand-primary/10 transition-all"
                       >
                         Mark Fresh / Audited
                       </button>
@@ -625,7 +625,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
                     <div>
                       <span className="font-semibold text-slate-700">{evt.retailer.name}</span>
                       <div className="text-[10px] text-slate-500">
-                        via <span className="text-brand-primary">{evt.brand.name}</span> ({evt.eventType})
+                        via <span className="text-brand-primary-text">{evt.brand.name}</span> ({evt.eventType})
                       </div>
                     </div>
                     <span className="text-[10px] text-slate-500 shrink-0">
@@ -647,7 +647,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
               {auditLogs.map((log) => (
                 <div key={log.id} className="text-[11px] border-b border-brand-border/40 pb-2 space-y-1">
                   <div className="flex justify-between font-bold text-slate-700">
-                    <span className="text-brand-primary">{log.action}</span>
+                    <span className="text-brand-primary-text">{log.action}</span>
                     <span className="text-[9px] text-slate-500">
                       {new Date(log.timestamp).toLocaleDateString()}
                     </span>

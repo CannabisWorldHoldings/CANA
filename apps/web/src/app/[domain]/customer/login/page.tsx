@@ -19,7 +19,7 @@ export default async function CustomerLoginPage({
   return (
     <div className="flex-grow flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 bg-brand-background text-brand-text">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
-        <span className="text-brand-primary font-black text-xs border border-brand-primary/20 bg-brand-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">
+        <span className="text-brand-primary-text font-black text-xs border border-brand-primary/20 bg-brand-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">
           Private customer access
         </span>
         <h1 className="text-3xl font-extrabold tracking-tight">
@@ -81,7 +81,7 @@ export default async function CustomerLoginPage({
 
             <button
               type="submit"
-              className="w-full bg-brand-primary text-white font-extrabold text-sm py-3 px-4 rounded-xl hover:brightness-110 transition-all"
+              className="w-full bg-brand-primary-fill-strong text-white font-extrabold text-sm py-3 px-4 rounded-xl hover:brightness-110 transition-all"
             >
               Sign in
             </button>

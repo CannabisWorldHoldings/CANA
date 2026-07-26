@@ -91,7 +91,7 @@ export default function AgeGate() {
         <div className="mt-7 flex flex-col gap-3">
           <button
             onClick={attest}
-            className="w-full cursor-pointer rounded-lg bg-brand-primary px-6 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.99]"
+            className="w-full cursor-pointer rounded-lg bg-brand-primary-fill-strong px-6 py-3 text-sm font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.99]"
           >
             Yes, I&apos;m 21 or older
           </button>
@@ -105,7 +105,7 @@ export default function AgeGate() {
         </div>
         <p className="mt-6 text-[11px] leading-relaxed text-brand-muted/80">
           By entering you confirm your age and accept the{' '}
-          <Link href="/legal" className="underline hover:text-brand-primary">
+          <Link href="/legal" className="underline hover:text-brand-primary-text">
             legal &amp; compliance notes
           </Link>
           . D.C. law: 21+, no public consumption, keep purchases within legal

@@ -56,7 +56,7 @@ export default function DosageCalculator() {
                 onClick={() => setExperience(level)}
                 className={`py-2 px-2 text-xs font-bold rounded-md capitalize transition-all border ${
                   experience === level
-                    ? 'bg-brand-primary text-white border-brand-primary'
+                    ? 'bg-brand-primary-fill-strong text-white border-brand-primary'
                     : 'bg-brand-background text-brand-muted border-brand-border hover:border-brand-primary hover:text-brand-text'
                 }`}
               >
@@ -77,7 +77,7 @@ export default function DosageCalculator() {
                 onClick={() => setFormType(type)}
                 className={`py-2 px-2 text-xs font-bold rounded-md capitalize transition-all border ${
                   formType === type
-                    ? 'bg-brand-primary text-white border-brand-primary'
+                    ? 'bg-brand-primary-fill-strong text-white border-brand-primary'
                     : 'bg-brand-background text-brand-muted border-brand-border hover:border-brand-primary hover:text-brand-text'
                 }`}
               >

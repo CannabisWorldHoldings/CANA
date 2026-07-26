@@ -78,7 +78,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
       <div className="flex-grow flex flex-col items-center justify-center p-8 bg-brand-background text-brand-text">
         <h1 className="text-2xl font-bold text-red-600 mb-2">404 - Brand Not Found</h1>
         <p className="text-brand-muted">The requested hostname is not configured on this network.</p>
-        <Link href={canonicalHome} className="mt-4 text-brand-primary hover:underline">
+        <Link href={canonicalHome} className="mt-4 text-brand-primary-text hover:underline">
           Go to Main Network Portal
         </Link>
       </div>
@@ -163,7 +163,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                 {isCanonicalBrand ? (
                   <>
                     D.C. cannabis,{' '}
-                    <span className="text-brand-primary">with receipts.</span>
+                    <span className="text-brand-primary-text">with receipts.</span>
                   </>
                 ) : (
                   brand.name
@@ -176,10 +176,10 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     'Explore listings with explicit source and freshness labels.'}
               </p>
               <p className="mt-5 inline-flex flex-wrap items-center gap-2 rounded-xl border border-brand-primary/20 bg-brand-primary/5 px-4 py-2.5 text-xs leading-relaxed text-brand-text/80">
-                <span className="font-bold text-brand-primary">New to D.C.&apos;s rules?</span>
+                <span className="font-bold text-brand-primary-text">New to D.C.&apos;s rules?</span>
                 Initiative 71, the gifting model, and the 21+ medical program —
                 explained in plain language.
-                <Link href="/legal" className="font-bold text-brand-primary hover:underline">
+                <Link href="/legal" className="font-bold text-brand-primary-text hover:underline">
                   Read the 2-minute guide →
                 </Link>
               </p>
@@ -374,7 +374,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     loading="lazy"
                     className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                   />
-                  <span className="block px-3 py-2 text-center text-xs font-bold text-brand-text transition-colors group-hover:text-brand-primary">
+                  <span className="block px-3 py-2 text-center text-xs font-bold text-brand-text transition-colors group-hover:text-brand-primary-text">
                     {label}
                   </span>
                 </Link>
@@ -392,11 +392,11 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           <div className="flex items-center justify-between text-sm text-brand-muted mb-2">
             <div>
               Showing{' '}
-              <span className="font-semibold text-brand-primary">
+              <span className="font-semibold text-brand-primary-text">
                 {firstResult}-{lastResult}
               </span>{' '}
               of{' '}
-              <span className="font-semibold text-brand-primary">
+              <span className="font-semibold text-brand-primary-text">
                 {totalResults}
               </span>{' '}
               labeled results
@@ -412,7 +412,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           {retailers.length === 0 ? (
             <div className="rounded-2xl border border-brand-border bg-brand-surface p-12 text-center">
               <p className="text-brand-muted">No retailers or listings found matching your filters.</p>
-              <Link href="/" className="mt-4 inline-block text-brand-primary font-semibold hover:underline">
+              <Link href="/" className="mt-4 inline-block text-brand-primary-text font-semibold hover:underline">
                 Reset Filters
               </Link>
             </div>
@@ -424,7 +424,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                 </legend>
                 <div className="flex flex-col gap-3 rounded-2xl border border-brand-primary/20 bg-brand-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-brand-primary">
+                    <p className="text-xs font-bold uppercase tracking-wider text-brand-primary-text">
                       orderweeddc Trust Lens
                     </p>
                     <p className="mt-1 text-xs text-brand-muted">
@@ -434,7 +434,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                   </div>
                   <button
                     type="submit"
-                    className="shrink-0 cursor-pointer rounded-lg bg-brand-primary px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110"
+                    className="shrink-0 cursor-pointer rounded-lg bg-brand-primary-fill-strong px-4 py-2 text-xs font-bold text-white transition-all hover:brightness-110"
                   >
                     Compare selected
                   </button>
@@ -465,7 +465,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                       {retailer.type}
                     </span>
                     {retailer.isSponsored && (
-                      <span className="absolute right-0 top-0 rounded-bl-lg bg-brand-gold px-1.5 py-0.5 text-[9px] font-black text-white">
+                      <span className="absolute right-0 top-0 rounded-bl-lg bg-brand-gold-onwhite px-1.5 py-0.5 text-[9px] font-black text-white">
                         SPONSORED
                       </span>
                     )}
@@ -484,20 +484,20 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                           name="retailer"
                           value={retailer.id}
                           aria-label={`Compare ${retailer.name}`}
-                          className="h-3 w-3 accent-[var(--brand-primary)]"
+                          className="h-6 w-6 accent-[var(--brand-primary)]"
                         />
                         Compare
                       </label>
                       <FavoriteButton retailerId={retailer.id} />
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-display text-lg font-bold text-brand-text transition-colors hover:text-brand-primary">
+                      <h2 className="font-display text-lg font-bold text-brand-text transition-colors hover:text-brand-primary-text">
                         <Link href={`/retailer/${retailer.id}`}>{retailer.name}</Link>
                       </h2>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                         retailer.type === 'storefront'
                           ? 'bg-blue-500/10 border border-blue-500/20 text-blue-700'
-                          : 'bg-brand-primary/10 border border-brand-primary/20 text-brand-primary'
+                          : 'bg-brand-primary/10 border border-brand-primary/20 text-brand-primary-text'
                       }`}>
                         {retailer.type}
                       </span>
@@ -512,12 +512,12 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
 
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-brand-muted">
                       <span className="inline-flex items-center gap-1">
-                        <MapPin size={13} aria-hidden="true" className="text-brand-primary/70" />
+                        <MapPin size={13} aria-hidden="true" className="text-brand-primary-text/70" />
                         {retailer.address}, {retailer.city}
                       </span>
                       <span aria-hidden="true">•</span>
                       <span className="inline-flex items-center gap-1">
-                        <ScrollText size={13} aria-hidden="true" className="text-brand-primary/70" />
+                        <ScrollText size={13} aria-hidden="true" className="text-brand-primary-text/70" />
                         Source: {retailer.dataSource}
                       </span>
                     </div>
@@ -530,7 +530,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                         verifiedAt: retailer.verifiedAt,
                         freshnessExpiresAt: retailer.freshnessExpiresAt,
                       }) && (
-                      <p className="evidence-mono text-brand-primary/90">
+                      <p className="evidence-mono text-brand-primary-text/90">
                         {relativeFreshnessLabel({
                           verifiedAt: retailer.verifiedAt,
                           freshnessExpiresAt: retailer.freshnessExpiresAt,
@@ -558,7 +558,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                         </span>
                       )}
                       {retailer.licenseStatus === 'VERIFIED' && !retailer.isDemonstration && (
-                        <span className="inline-flex items-center gap-1 rounded border border-brand-primary/25 bg-brand-primary/10 px-2 py-0.5 text-[9px] font-bold text-brand-primary">
+                        <span className="inline-flex items-center gap-1 rounded border border-brand-primary/25 bg-brand-primary/10 px-2 py-0.5 text-[9px] font-bold text-brand-primary-text">
                           <BadgeCheck size={9} aria-hidden="true" /> License verified · {retailer.licenseSource}
                         </span>
                       )}
@@ -569,7 +569,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                       {retailer.phone && (
                         <a
                           href={`tel:${retailer.phone}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-brand-border bg-brand-background px-2.5 py-1 text-[10px] font-bold text-brand-text transition-colors hover:border-brand-primary hover:text-brand-primary"
+                          className="inline-flex items-center gap-1 rounded-lg border border-brand-border bg-brand-background px-2.5 py-1 text-[10px] font-bold text-brand-text transition-colors hover:border-brand-primary hover:text-brand-primary-text"
                         >
                           <Phone size={10} aria-hidden="true" /> Call
                         </a>
@@ -580,7 +580,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg border border-brand-border bg-brand-background px-2.5 py-1 text-[10px] font-bold text-brand-text transition-colors hover:border-brand-primary hover:text-brand-primary"
+                        className="inline-flex items-center gap-1 rounded-lg border border-brand-border bg-brand-background px-2.5 py-1 text-[10px] font-bold text-brand-text transition-colors hover:border-brand-primary hover:text-brand-primary-text"
                       >
                         <Navigation size={10} aria-hidden="true" /> Directions
                       </a>
@@ -607,7 +607,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                       </div>
                       <Link
                         href={`/retailer/${retailer.id}`}
-                        className="font-bold text-brand-primary transition-colors hover:text-brand-secondary"
+                        className="font-bold text-brand-primary-text transition-colors hover:text-brand-secondary"
                       >
                         View Data Status &amp; Menu →
                       </Link>
@@ -630,7 +630,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     requestedFilters,
                     currentPage - 1,
                   )}
-                  className="text-xs font-bold text-brand-primary hover:underline"
+                  className="text-xs font-bold text-brand-primary-text hover:underline"
                 >
                   Previous
                 </Link>
@@ -646,7 +646,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     requestedFilters,
                     currentPage + 1,
                   )}
-                  className="text-xs font-bold text-brand-primary hover:underline"
+                  className="text-xs font-bold text-brand-primary-text hover:underline"
                 >
                   Next
                 </Link>
@@ -674,7 +674,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           {/* Neighborhood guide links (internal SEO mesh) */}
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-5">
             <h3 className="flex items-center gap-2 text-sm font-bold text-brand-text">
-              <MapPin size={14} className="text-brand-primary" aria-hidden="true" />
+              <MapPin size={14} className="text-brand-primary-text" aria-hidden="true" />
               Browse by neighborhood
             </h3>
             <ul className="mt-3 grid grid-cols-2 gap-1.5 text-xs">
@@ -688,7 +688,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                 <li key={slug}>
                   <Link
                     href={`/neighborhoods/${slug}`}
-                    className="block rounded-lg border border-brand-border bg-brand-background px-3 py-2 font-semibold text-brand-muted transition-colors hover:border-brand-primary/40 hover:text-brand-primary"
+                    className="block rounded-lg border border-brand-border bg-brand-background px-3 py-2 font-semibold text-brand-muted transition-colors hover:border-brand-primary/40 hover:text-brand-primary-text"
                   >
                     {label}
                   </Link>
@@ -697,7 +697,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
               <li>
                 <Link
                   href="/neighborhoods"
-                  className="block rounded-lg border border-brand-primary/30 bg-brand-primary/10 px-3 py-2 font-bold text-brand-primary transition-colors hover:bg-brand-primary/20"
+                  className="block rounded-lg border border-brand-primary/30 bg-brand-primary/10 px-3 py-2 font-bold text-brand-primary-text transition-colors hover:bg-brand-primary/20"
                 >
                   All neighborhoods →
                 </Link>
@@ -716,7 +716,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
             </p>
             <Link
               href="/legal"
-              className="inline-block text-xs font-bold text-brand-primary hover:underline"
+              className="inline-block text-xs font-bold text-brand-primary-text hover:underline"
             >
               Read the compliance guide →
             </Link>

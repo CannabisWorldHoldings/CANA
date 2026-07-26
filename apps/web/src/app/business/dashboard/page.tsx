@@ -292,7 +292,7 @@ export default async function BusinessDashboardPage({ searchParams }: Props) {
           <div className="flex items-center space-x-4">
             <span className={`text-[10px] font-bold px-2.5 py-1 rounded border ${
               retailer.licenseStatus === 'VERIFIED'
-                ? 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary'
+                ? 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary-text'
                 : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
             }`}>
               License Status: {retailer.licenseStatus}

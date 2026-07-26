@@ -35,7 +35,7 @@ export default async function LegalPage() {
           <p className="kicker mb-4">Trust &amp; legal</p>
           <h1 className="font-display text-4xl font-bold tracking-tight text-brand-text sm:text-5xl">
             D.C. cannabis rules,{' '}
-            <span className="text-brand-primary">in plain language</span>
+            <span className="text-brand-primary-text">in plain language</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-brand-muted">
             A short, source-aware orientation to Washington, D.C. cannabis
@@ -50,7 +50,7 @@ export default async function LegalPage() {
       <section className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
         <article className="rounded-2xl border border-brand-border bg-brand-surface p-6">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold text-brand-text">
-            <Scale size={18} className="text-brand-primary" aria-hidden="true" />
+            <Scale size={18} className="text-brand-primary-text" aria-hidden="true" />
             The basics
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-brand-muted">
@@ -83,7 +83,7 @@ export default async function LegalPage() {
 
         <article className="rounded-2xl border border-brand-border bg-brand-surface p-6">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold text-brand-text">
-            <ShieldCheck size={18} className="text-brand-primary" aria-hidden="true" />
+            <ShieldCheck size={18} className="text-brand-primary-text" aria-hidden="true" />
             How this platform handles truth
           </h2>
           <ul className="mt-4 space-y-3 text-sm leading-relaxed text-brand-muted">
@@ -128,7 +128,7 @@ export default async function LegalPage() {
             href="https://abca.dc.gov/"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-brand-primary hover:underline"
+            className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-brand-primary-text hover:underline"
           >
             D.C. ABCA — authority of record
             <ExternalLink size={13} aria-hidden="true" />
@@ -155,7 +155,7 @@ export default async function LegalPage() {
 
         <p className="text-center text-xs text-brand-muted">
           Questions about a specific record?{' '}
-          <Link href="/help" className="font-bold text-brand-primary hover:underline">
+          <Link href="/help" className="font-bold text-brand-primary-text hover:underline">
             Read the help &amp; data policy
           </Link>{' '}
           or submit a correction from any retailer page.

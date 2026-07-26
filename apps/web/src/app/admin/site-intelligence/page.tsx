@@ -129,7 +129,7 @@ export default async function SiteIntelligencePage() {
       <header className="flex flex-col gap-5 border-b border-brand-border pb-7 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-3xl space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-primary">
+            <span className="rounded-full border border-brand-primary/30 bg-brand-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-brand-primary-text">
               orderweeddc Site Intelligence
             </span>
             <span className="rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-sky-300">
@@ -236,7 +236,7 @@ export default async function SiteIntelligencePage() {
       <section className="rounded-xl border border-brand-border bg-brand-surface p-6">
         <div className="flex flex-col gap-2 border-b border-brand-border/70 pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary-text">
               Operating model
             </p>
             <h2 className="mt-1 text-xl font-black text-brand-text">
@@ -275,7 +275,7 @@ export default async function SiteIntelligencePage() {
       <section className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary-text">
               Growth radar
             </p>
             <h2 className="mt-1 text-xl font-black text-brand-text">
@@ -363,7 +363,7 @@ export default async function SiteIntelligencePage() {
 
       <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <article className="min-w-0 rounded-xl border border-brand-border bg-brand-surface p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary-text">
             Route memory
           </p>
           <h2 className="mt-1 text-xl font-black text-brand-text">
@@ -407,7 +407,7 @@ export default async function SiteIntelligencePage() {
         </article>
 
         <article className="rounded-xl border border-brand-border bg-brand-surface p-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary-text">
             Proof locker
           </p>
           <h2 className="mt-1 text-xl font-black text-brand-text">
@@ -469,7 +469,7 @@ export default async function SiteIntelligencePage() {
       <section aria-label="SiteMind Marketing Audit" className="space-y-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand-primary-text">
               SiteMind Marketing Audit v1
             </p>
             <h2 className="mt-1 text-xl font-black text-brand-text">

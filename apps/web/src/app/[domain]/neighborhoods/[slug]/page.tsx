@@ -173,18 +173,18 @@ export default async function NeighborhoodHubPage({ params }: Props) {
       <section className="hero-aurora border-b border-brand-border px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-wrap items-center gap-3 mb-2">
-            <Link href="/neighborhoods" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary">
+            <Link href="/neighborhoods" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
               ← All neighborhoods
             </Link>
             <span aria-hidden="true" className="text-brand-border">·</span>
-            <Link href="/" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary">
+            <Link href="/" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
               Home
             </Link>
           </div>
           <p className="kicker mt-4 mb-3">Geographic Demonstration</p>
           <h1 className="font-display text-2xl font-extrabold text-brand-text sm:text-3xl">
             {config.name}{' '}
-            <span className="text-brand-primary">Cannabis Directory</span>
+            <span className="text-brand-primary-text">Cannabis Directory</span>
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-brand-muted leading-relaxed">
             {config.description} Results below are not evidence of a business location, service area, or license.
@@ -223,14 +223,14 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                   }`}
                 >
                   {/* Pin label index */}
-                  <div className="w-10 h-10 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary font-bold flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-brand-primary/10 border border-brand-primary/20 text-brand-primary-text font-bold flex items-center justify-center shrink-0">
                     {i + 1}
                   </div>
 
                   {/* Details */}
                   <div className="flex-grow space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-display text-lg font-bold text-brand-text hover:text-brand-primary transition-colors">
+                      <h3 className="font-display text-lg font-bold text-brand-text hover:text-brand-primary-text transition-colors">
                         <Link href={`/retailer/${retailer.id}`}>{retailer.name}</Link>
                       </h3>
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-brand-border bg-brand-background text-brand-muted">
@@ -246,7 +246,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                     </div>
 
                     <p className="text-sm text-brand-muted flex items-center gap-1">
-                      <MapPin size={13} aria-hidden="true" className="text-brand-primary/70" />
+                      <MapPin size={13} aria-hidden="true" className="text-brand-primary-text/70" />
                       {retailer.address}, {retailer.city} ({getDistanceMiles(config.lat, config.lng, retailer.lat, retailer.lng).toFixed(1)} miles away)
                     </p>
 
@@ -269,7 +269,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                       </div>
                       <Link
                         href={`/retailer/${retailer.id}`}
-                        className="text-brand-primary font-bold hover:underline"
+                        className="text-brand-primary-text font-bold hover:underline"
                       >
                         View Data Status &amp; Menu →
                       </Link>
@@ -294,7 +294,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                   <dd className="mt-1.5 text-sm leading-relaxed text-brand-muted">
                     {entry.answer}{' '}
                     {entry.question.includes('legally') && (
-                      <Link href="/legal" className="font-bold text-brand-primary hover:underline">
+                      <Link href="/legal" className="font-bold text-brand-primary-text hover:underline">
                         See our legal guide
                       </Link>
                     )}
@@ -368,7 +368,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-5 text-xs text-brand-muted leading-relaxed">
             <h4 className="font-display font-bold text-brand-text mb-2">D.C. Cannabis Rules</h4>
             <p>New to D.C. cannabis? Read our plain-language overview of Initiative 71, the medical program, possession limits, and consumption rules.</p>
-            <Link href="/legal" className="mt-2 inline-block font-bold text-brand-primary hover:underline">
+            <Link href="/legal" className="mt-2 inline-block font-bold text-brand-primary-text hover:underline">
               Legal guide →
             </Link>
           </div>

@@ -30,7 +30,7 @@ export default function MobileNav({ links }: { links: NavLink[] }) {
                 <Link
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="block rounded-lg px-4 py-3 text-sm font-semibold text-brand-text transition-colors hover:bg-brand-raised hover:text-brand-primary"
+                  className="block rounded-lg px-4 py-3 text-sm font-semibold text-brand-text transition-colors hover:bg-brand-raised hover:text-brand-primary-text"
                 >
                   {link.label}
                 </Link>

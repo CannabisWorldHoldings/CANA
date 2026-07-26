@@ -39,11 +39,11 @@ export default function CartDrawer() {
       {/* Floating Cart Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-40 bg-brand-primary text-white font-extrabold text-xs px-4 py-3 rounded-full shadow-2xl hover:brightness-110 transition-all flex items-center gap-2 border border-brand-border cursor-pointer active:scale-95"
+        className="fixed bottom-6 right-6 z-40 bg-brand-primary-fill-strong text-white font-extrabold text-xs px-4 py-3 rounded-full shadow-2xl hover:brightness-110 transition-all flex items-center gap-2 border border-brand-border cursor-pointer active:scale-95"
       >
         <span>🛒</span>
         <span>Order Staging</span>
-        <span className="bg-white text-brand-primary font-black text-[10px] px-2 py-0.5 rounded-full">
+        <span className="bg-white text-brand-primary-text font-black text-[10px] px-2 py-0.5 rounded-full">
           {items.reduce((sum, i) => sum + i.quantity, 0)}
         </span>
       </button>
@@ -92,14 +92,14 @@ export default function CartDrawer() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => updateQuantity(item.id, -1)}
-                        className="w-6 h-6 rounded border border-brand-border bg-brand-surface text-xs font-bold flex items-center justify-center hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-colors"
+                        className="w-6 h-6 rounded border border-brand-border bg-brand-surface text-xs font-bold flex items-center justify-center hover:bg-brand-primary-fill-strong hover:text-white hover:border-brand-primary transition-colors"
                       >
                         -
                       </button>
                       <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
                       <button
                         onClick={() => updateQuantity(item.id, 1)}
-                        className="w-6 h-6 rounded border border-brand-border bg-brand-surface text-xs font-bold flex items-center justify-center hover:bg-brand-primary hover:text-white hover:border-brand-primary transition-colors"
+                        className="w-6 h-6 rounded border border-brand-border bg-brand-surface text-xs font-bold flex items-center justify-center hover:bg-brand-primary-fill-strong hover:text-white hover:border-brand-primary transition-colors"
                       >
                         +
                       </button>
@@ -126,7 +126,7 @@ export default function CartDrawer() {
               </p>
               <button
                 disabled={items.length === 0}
-                className="w-full bg-brand-primary text-white font-extrabold text-xs py-3 px-4 rounded-md hover:brightness-110 disabled:opacity-50 transition-all cursor-pointer shadow"
+                className="w-full bg-brand-primary-fill-strong text-white font-extrabold text-xs py-3 px-4 rounded-md hover:brightness-110 disabled:opacity-50 transition-all cursor-pointer shadow"
               >
                 Proceed to Staged Handoff →
               </button>

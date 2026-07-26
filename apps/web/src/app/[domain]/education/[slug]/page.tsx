@@ -121,7 +121,7 @@ export default async function EducationalArticleDetailPage({ params }: Props) {
       {/* Hero header */}
       <section className="hero-aurora border-b border-brand-border px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <Link href="/education" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary">
+          <Link href="/education" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
             ← Back to educational guide
           </Link>
           <p className="kicker mt-5 mb-3">Article</p>
