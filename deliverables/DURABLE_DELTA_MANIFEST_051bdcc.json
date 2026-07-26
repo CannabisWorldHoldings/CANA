@@ -1,0 +1,179 @@
+{
+  "package": "CANA-DELTA-4b01926-051bdcc",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T20:49:39.469789+00:00",
+  "basis": {
+    "short": "4b01926",
+    "why": "head of the seventh Drive artifact, read-back verified and chain-proven"
+  },
+  "tip": {
+    "sha": "051bdcc77bed6d2d849da9276fdc4d98db25bb1c",
+    "short": "051bdcc",
+    "tree": "dad293938293be530b5aeabac6260e202078470e"
+  },
+  "commit_manifest": [
+    {
+      "sha": "051bdcc77bed6d2d849da9276fdc4d98db25bb1c",
+      "short": "051bdcc",
+      "date": "2026-07-26T16:49:01-04:00",
+      "subject": "chore: ignore SQLite WAL sidecar files",
+      "files_changed": [
+        ".gitignore"
+      ]
+    },
+    {
+      "sha": "aeb21b58fb0e0e3a3b69167407ffee818db204a1",
+      "short": "aeb21b5",
+      "date": "2026-07-26T16:26:14-04:00",
+      "subject": "docs(verify): record verification 11 \u2014 the grade honesty audit",
+      "files_changed": [
+        "deliverables/INDEPENDENT_VERIFICATION_11_HANDOFF_GRADE.md",
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "4025f637d1cc0473156b2f0817129382bb6f57ff",
+      "short": "4025f63",
+      "date": "2026-07-26T16:25:36-04:00",
+      "subject": "feat(api+verify): products contract, and close verifier finding H26",
+      "files_changed": [
+        "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+        "apps/web/src/app/api/v1/products/route.ts",
+        "apps/web/tests/api-v1-products.test.mjs",
+        "apps/web/tests/handoff-grading-integration.test.mjs",
+        "apps/web/tests/release-gate.test.mjs"
+      ]
+    },
+    {
+      "sha": "281f4eedad2146a798cfb8356f10c3f2fa8daf0c",
+      "short": "281f4ee",
+      "date": "2026-07-26T15:44:11-04:00",
+      "subject": "docs(durability): 4b01926 recoverable \u2014 seven-artifact chain rebuilt from Drive",
+      "files_changed": [
+        "deliverables/DURABLE_DELTA_MANIFEST_4b01926.json",
+        "deliverables/MISSION_STATE.json"
+      ]
+    }
+  ],
+  "changed_file_manifest": [
+    {
+      "path": ".gitignore",
+      "touched_by": [
+        "051bdcc"
+      ]
+    },
+    {
+      "path": "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+      "touched_by": [
+        "4025f63"
+      ]
+    },
+    {
+      "path": "apps/web/src/app/api/v1/products/route.ts",
+      "touched_by": [
+        "4025f63"
+      ]
+    },
+    {
+      "path": "apps/web/tests/api-v1-products.test.mjs",
+      "touched_by": [
+        "4025f63"
+      ]
+    },
+    {
+      "path": "apps/web/tests/handoff-grading-integration.test.mjs",
+      "touched_by": [
+        "4025f63"
+      ]
+    },
+    {
+      "path": "apps/web/tests/release-gate.test.mjs",
+      "touched_by": [
+        "4025f63"
+      ]
+    },
+    {
+      "path": "deliverables/DURABLE_DELTA_MANIFEST_4b01926.json",
+      "touched_by": [
+        "281f4ee"
+      ]
+    },
+    {
+      "path": "deliverables/INDEPENDENT_VERIFICATION_11_HANDOFF_GRADE.md",
+      "touched_by": [
+        "aeb21b5"
+      ]
+    },
+    {
+      "path": "deliverables/MISSION_STATE.json",
+      "touched_by": [
+        "aeb21b5",
+        "281f4ee"
+      ]
+    }
+  ],
+  "contents": [
+    "API v1 products contract with independent potency field-gating",
+    "handoff grading integration suite closing verifier finding H26",
+    "bounded retry on measured contention codes plus WAL",
+    "verification 11 record \u2014 the grade honesty audit"
+  ],
+  "restore_order_full_chain": [
+    {
+      "step": 1,
+      "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "type": "FULL",
+      "reaches": "54a0082"
+    },
+    {
+      "step": 2,
+      "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+      "prerequisite": "54a0082",
+      "reaches": "0ae1030"
+    },
+    {
+      "step": 3,
+      "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+      "prerequisite": "0ae1030",
+      "reaches": "ed40c16"
+    },
+    {
+      "step": 4,
+      "drive_file_id": "1NzffI9LsJCJj9al6BkMEBc6OOjU1_6vJ",
+      "prerequisite": "ed40c16",
+      "reaches": "d4587a4"
+    },
+    {
+      "step": 5,
+      "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
+      "prerequisite": "d4587a4",
+      "reaches": "01676e3"
+    },
+    {
+      "step": 6,
+      "drive_file_id": "1IECCp32x_sHY1n08tAqsInTSMmmKav6l",
+      "prerequisite": "01676e3",
+      "reaches": "de3619e"
+    },
+    {
+      "step": 7,
+      "drive_file_id": "1RbokRnYTRB85fTe8K6F5o9Iyj2smQ-9e",
+      "prerequisite": "de3619e",
+      "reaches": "4b01926"
+    },
+    {
+      "step": 8,
+      "drive_file_id": "PENDING_UPLOAD",
+      "prerequisite": "4b01926",
+      "reaches": "051bdcc"
+    }
+  ],
+  "test_receipts": {
+    "web": "489/489",
+    "skills": "258/258",
+    "e2e_binding": "PROVEN"
+  },
+  "schema_fingerprint": "86b6a806ad99836b727a919ba4591b291241bb04224b9e766c4da02877ceed8f",
+  "migrations_present": [],
+  "known_reproducibility_gap": "WAL was enabled directly against the local dev.db, which is untracked. It is NOT in source control and will NOT survive a fresh database. Wall 2 addresses this; recorded here so a restore does not assume it."
+}
