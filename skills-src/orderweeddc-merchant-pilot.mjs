@@ -115,7 +115,37 @@ export function buildPilot({ retailer, audit, ledger = [], now = new Date() }) {
     if (sha(a.evidenceChain) !== a.evidenceChainSha256) return null;
     return parsed;
   };
-  const evidenced = attributions.filter((a) => evidenceSteps(a) !== null);
+  // ATTACK 5 + 6 + 7 (found pre-emptively, before the verifier reached them):
+  //
+  //  5. DUPLICATE: the same evidence chain on two ATTRIBUTION rows was counted
+  //     TWICE, HALVING cost_per_attributed_action from 75 to 37.5. A merchant
+  //     would be shown a flattering efficiency number manufactured by replaying
+  //     one action. The ledger has DUPLICATE_ATTRIBUTION protection, but the
+  //     pilot reads rows directly and must not assume the writer was honest.
+  //  6. REPLAY: the same digest reused across time is the same evidence, not a
+  //     second action. Deduping on the digest closes both.
+  //  7. FORGED OWNERSHIP: an ATTRIBUTION whose merchantId belongs to ANOTHER
+  //     merchant was credited to this one. relationshipOwner must also be the
+  //     merchant, and the row must be merchant-exportable, or the package's
+  //     "MERCHANT owns the relationship" claim is false.
+  const ownedByThisMerchant = (a) => {
+    // A row with no merchantId cannot be shown to belong here.
+    if (!text(a.merchantId) || a.merchantId !== retailer.id) return false;
+    // If ownership fields are present they must assert merchant ownership;
+    // absent is tolerated for older rows, but PLATFORM is refused outright.
+    if (text(a.relationshipOwner) && a.relationshipOwner !== 'MERCHANT') return false;
+    return true;
+  };
+  const seenDigests = new Set();
+  const evidenced = [];
+  let rejectedDuplicate = 0, rejectedForeign = 0;
+  for (const a of attributions) {
+    if (!ownedByThisMerchant(a)) { rejectedForeign++; continue; }
+    if (evidenceSteps(a) === null) continue;
+    if (seenDigests.has(a.evidenceChainSha256)) { rejectedDuplicate++; continue; }
+    seenDigests.add(a.evidenceChainSha256);
+    evidenced.push(a);
+  }
   const unevidenced = attributions.length - evidenced.length;
   const byKind = {};
   for (const a of evidenced) byKind[a.actionKind] = (byKind[a.actionKind] || 0) + 1;
@@ -172,8 +202,10 @@ export function buildPilot({ retailer, audit, ledger = [], now = new Date() }) {
       recorded: attributions.length,
       evidence_verified: evidenced.length,
       rejected_unverified: unevidenced,
+      rejected_duplicate_evidence: rejectedDuplicate,
+      rejected_foreign_merchant: rejectedForeign,
       by_kind: byKind,
-      rule: 'An action counts only when its stored evidence chain re-hashes to its recorded digest.',
+      rule: 'An action counts only when it belongs to THIS merchant, its evidence chain parses to at least one complete step, that chain re-hashes to its recorded digest, and its digest has not already been counted.',
     },
     proof_of_value: proofOfValue,
     proof_of_value_blockers: povBlockers,
@@ -199,7 +231,7 @@ if (has('selftest')) {
   const A = (o = {}) => ({ score: 62, counts: { pass: 18, warn: 2, fail: 10 }, generated_at: now.toISOString(),
     truth_label: 'LIVE_RECORD', top_actions: [{ rank: 1, weight: 5, finding: 'License status verified', evidence_field: 'Retailer.licenseStatus', observed: 'UNVERIFIED', action: 'submit evidence' }], ...o });
   const chain = JSON.stringify([{ step: 'render', ref: 'r1' }, { step: 'click', ref: 'r2' }]);
-  const attr = (o = {}) => ({ kind: 'ATTRIBUTION', actionKind: 'PHONE_CLICK', evidenceChain: chain, evidenceChainSha256: sha(chain), ...o });
+  const attr = (o = {}) => ({ kind: 'ATTRIBUTION', merchantId: 'r1', actionKind: 'PHONE_CLICK', evidenceChain: chain, evidenceChainSha256: sha(chain), ...o });
 
   t('refuses without an audit', !buildPilot({ retailer: R(), audit: null }).valid);
   t('refuses without a retailer', !buildPilot({ retailer: null, audit: A() }).valid);
@@ -257,6 +289,36 @@ if (has('selftest')) {
   const polluted = JSON.stringify([JSON.parse('{"__proto__":{"step":"x","ref":"y"}}')]);
   t('P1: prototype-polluted link rejected',
     buildPilot({ retailer: R(), audit: A(), ledger: [...spent, emptyChain(polluted)], now }).package.attribution.evidence_verified === 0);
+
+  // ---- ATTACK 5/6/7 regressions: duplicate, replay, forged ownership
+  const own = (o = {}) => ({ ...attr(o), merchantId: 'r1' });
+  const dupLedger = [...spent, own({ seq: 2 }), own({ seq: 3 })];
+  const pd = buildPilot({ retailer: R(), audit: A(), ledger: dupLedger, now }).package;
+  t('A5: duplicate evidence counted ONCE', pd.proof_of_value.attributed_actions === 1);
+  t('A5: cost per action is not halved by a replay', pd.proof_of_value.cost_per_attributed_action === 75);
+  t('A5: the duplicate rejection is REPORTED, not silent', pd.attribution.rejected_duplicate_evidence === 1);
+
+  const foreign = [...spent, { ...attr({ seq: 2 }), merchantId: 'SOMEONE_ELSE' }];
+  const pf = buildPilot({ retailer: R(), audit: A(), ledger: foreign, now }).package;
+  t('A7: another merchant\'s action is NOT credited', pf.attribution.evidence_verified === 0);
+  t('A7: the foreign rejection is REPORTED', pf.attribution.rejected_foreign_merchant === 1);
+  t('A7: foreign attribution cannot produce proof of value', pf.proof_of_value === null);
+
+  const { merchantId: _drop, ...attrNoOwner } = attr({ seq: 2 });
+  const noOwner = [...spent, attrNoOwner]; // merchantId genuinely absent
+  t('A7: an attribution with NO merchantId is refused',
+    buildPilot({ retailer: R(), audit: A(), ledger: noOwner, now }).package.attribution.evidence_verified === 0);
+  const platformOwned = [...spent, own({ seq: 2, relationshipOwner: 'PLATFORM' })];
+  t('A7: relationshipOwner PLATFORM is refused',
+    buildPilot({ retailer: R(), audit: A(), ledger: platformOwned, now }).package.attribution.evidence_verified === 0);
+  t('A7: relationshipOwner MERCHANT is accepted',
+    buildPilot({ retailer: R(), audit: A(), ledger: [...spent, own({ seq: 2, relationshipOwner: 'MERCHANT' })], now }).package.attribution.evidence_verified === 1);
+
+  // Two DISTINCT actions must still both count — dedupe must not over-suppress.
+  const chain2 = JSON.stringify([{ step: 'render', ref: 'other' }, { step: 'call', ref: 'x2' }]);
+  const twoReal = [...spent, own({ seq: 2 }), own({ seq: 3, evidenceChain: chain2, evidenceChainSha256: sha(chain2) })];
+  t('A5: two GENUINELY distinct actions both count',
+    buildPilot({ retailer: R(), audit: A(), ledger: twoReal, now }).package.proof_of_value.attributed_actions === 2);
 
   console.log(`\n  Merchant Pilot self-test: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);
