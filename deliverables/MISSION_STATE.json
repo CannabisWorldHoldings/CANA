@@ -1,0 +1,802 @@
+{
+  "mission": "CANA-governed, RSI/SiteMind-intelligent, Hermes-executed company OS growing ORDERWEEDDC",
+  "directive_version": "V9",
+  "updated": "2026-07-26T21:15Z",
+  "status": "ACTIVE",
+  "completion_court_passed": false,
+  "active_lane": "UI Refounding + Skill Foundation",
+  "verified_baseline": {
+    "v5_package": {
+      "validator": "PASS",
+      "checksums": "ALL_OK",
+      "zip_crc": "CLEAN",
+      "docs": 24,
+      "nested_archives": 3,
+      "reverify_needed": false
+    },
+    "mac_bundle": {
+      "bytes": 6186053094,
+      "sha256": "0ec9c44f77aee4342c0a783bb321af84f560cb33cbfa0bb20862f9b30efbf16a",
+      "size_match": true,
+      "sha_match": true,
+      "crc_entries": 7590,
+      "crc_clean": true,
+      "repos": 17,
+      "worktrees": 20,
+      "stashes": 0,
+      "local_only_commits": 1028,
+      "assets": 5894,
+      "secret_findings": 0,
+      "bundles_clone_verified": "8/8",
+      "bundled_commits": 302,
+      "fsck_errors": 0,
+      "immutable": true,
+      "reverify_needed": false
+    },
+    "cana": {
+      "unit_tests": "35/35",
+      "attack_court": "45/45",
+      "denial_codes_exact": true
+    },
+    "orderweeddc": {
+      "suite": "206/207",
+      "identical_on_pristine_main": true,
+      "one_failure": "PRE_EXISTING_sandbox_signal_timing"
+    },
+    "ui_repairs": {
+      "brand_assets_restored": 18,
+      "broken_images": "13->0",
+      "mobile_overlap": "1->0",
+      "desktop_overlap": 0
+    },
+    "github_writes": 0
+  },
+  "mac_to_remote_delta": {
+    "genuinely_local_only": [
+      "28ffe9dcaf3bc0deaff057a231fc91df2e4a8471"
+    ],
+    "already_on_remote": [
+      "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "25d6569ec74177a844847585251cf249e085bdc2",
+      "dfbc46030a79ed4c9a06596bed7f6994ca0f47a4",
+      "352ff70c056430368cb218fdd7d7de9edcbc8e1f"
+    ],
+    "recovered_additive": {
+      "components": 4,
+      "lines": 672,
+      "webp_assets": 9,
+      "branch": "recover/competitive-ui-day-night",
+      "commit": "3a7e122",
+      "build": "COMPILED_SUCCESSFULLY"
+    },
+    "pending_reimplementation": [
+      "apps/web/src/app/[domain]/layout.tsx",
+      "apps/web/src/app/[domain]/page.tsx",
+      "apps/web/src/app/globals.css"
+    ]
+  },
+  "owner_corrections": [
+    {
+      "id": "OC-005",
+      "correction": "A/B/C INVALID_FOR_OWNER_SELECTION - typeset approximation violated exact-logo law",
+      "resolution": "canonical ribbon asset recovered and bound; Brand Fidelity Court added; all 3 directions rebound"
+    },
+    {
+      "id": "OC-004",
+      "correction": "Displayed UI is REJECTED_CURRENT_UI_CANDIDATE",
+      "measured_proof": "headline 95154px2 vs wordmark 5255px2 = 18.1x; day canvas rgb(246,250,247) != #FFFFFF"
+    },
+    {
+      "id": "OC-003",
+      "correction": "16 recovered screenshots are HISTORICAL_HIGH_VALUE_REFERENCE - OWNER_APPROVAL_PENDING, not approved finals"
+    },
+    {
+      "id": "OC-002",
+      "correction": "Google Drive integration is READ & CREATE, not read-only"
+    },
+    {
+      "id": "OC-001",
+      "correction": "External SSD out of scope; never accessed"
+    },
+    {
+      "id": "OC-000",
+      "correction": "Eagle-eye frozen: reference/optional-verification only"
+    }
+  ],
+  "visual_genome": {
+    "owner_approved": 0,
+    "owner_rejected": 1,
+    "approval_pending": 16,
+    "anti_patterns": 9,
+    "competitor_reference": 0
+  },
+  "blockers": [
+    {
+      "id": "B-CANON",
+      "label": "CANONICAL_DESTINATION_BLOCKED",
+      "detail": "CannabisWorldHoldings/CANA returns 404 under princeleuel1-ops; org resolves publicly",
+      "owner_action": "create repo + grant write access",
+      "blocks": [
+        "canonical push",
+        "migration PR"
+      ],
+      "does_not_block": [
+        "UI work",
+        "skills",
+        "merchant audit",
+        "tests",
+        "architecture"
+      ]
+    }
+  ],
+  "integrations": {
+    "github": "READ (writes not performed)",
+    "google_drive": "READ & CREATE",
+    "browser_remote": "cannot reach sandbox localhost - use local Playwright",
+    "npm_registry": "GRANTED"
+  },
+  "branches": [
+    {
+      "repo": "~/workspace/ui-recover",
+      "branch": "recover/competitive-ui-day-night",
+      "commit": "3a7e122",
+      "pushed": false
+    },
+    {
+      "repo": "~/workspace/verify-clone",
+      "branch": "fix/mobile-cart-pill-overlap",
+      "commit": "9594dc3",
+      "pushed": false
+    }
+  ],
+  "next_actions": [
+    "Independently verify the governed execution packet",
+    "Versioned API contract implementation",
+    "TruthGraph and Winner Memory",
+    "Skills supply-chain court stages 3-7",
+    "SEO/AEO structured data expansion",
+    "Merchant pilot requires owner approval for real outreach"
+  ],
+  "ui_refounding": {
+    "rejected_baseline": {
+      "verdict": "FAIL",
+      "brand_viewport_pct": 0.41,
+      "headline_to_brand_ratio": 18.1,
+      "painted_canvas": "rgb(246,250,247)",
+      "violations": 3
+    },
+    "directions_built": 3,
+    "directions": [
+      {
+        "id": "A",
+        "name": "Maison",
+        "architecture": "wordmark as monumental centered hero, no competing slogan",
+        "route": "/lab/dir-a",
+        "brand_pct_desktop": 10.72,
+        "brand_pct_mobile": 42.22,
+        "court": "PASS x4"
+      },
+      {
+        "id": "B",
+        "name": "Nocturne",
+        "architecture": "full-bleed cinematic frame, brand locked bottom-left over image, no slogan",
+        "route": "/lab/dir-b",
+        "brand_pct_desktop": 7.1,
+        "brand_pct_mobile": 27.97,
+        "court": "PASS x4"
+      },
+      {
+        "id": "C",
+        "name": "Kiosk",
+        "architecture": "fixed vertical brand rail + results in first pixel",
+        "route": "/lab/dir-c",
+        "brand_pct_desktop": 5.57,
+        "brand_pct_mobile": 21.94,
+        "court": "PASS x4"
+      }
+    ],
+    "court_runs": "12/12 PASS for directions; baseline still FAILS (regression-verified)",
+    "owner_approved": false,
+    "known_defects": [
+      "C: theme pill overlaps Search at 1440px",
+      "C: ribbon flourish detaches from rotated mark",
+      "A: header nav truncates under toggle",
+      "all: hero+first-section only, not the 21-surface page family",
+      "wordmark is italic Space Grotesk approximation, not true custom cursive"
+    ],
+    "commit": "416fec8",
+    "directions_rebound_to_canonical": true,
+    "owner_selection_status": "A/B/C rebound to canonical asset; layout selection still open but no longer blocked by logo law"
+  },
+  "verifier_defects_found": [
+    {
+      "defect": "court silently skipped brand gates when wordmark not in <header>, emitting false PASS",
+      "fix": "detect via aria-label; missing brand is now explicit BRAND_NOT_FOUND violation",
+      "regression_verified": true
+    }
+  ],
+  "skills": {
+    "inventory_total": 15,
+    "relevant_to_mission": 0,
+    "custom_created": [
+      "orderweeddc-browser-court (draft, awaiting owner save)"
+    ],
+    "candidates_researched": 8,
+    "candidates_installed": 0,
+    "promotion_stages_complete": "2 of 7 (discover, static inspection)"
+  },
+  "brand": {
+    "canonical_source_proven": true,
+    "owner_disambiguation_required": false,
+    "primary": {
+      "sha256": "d6a4faf9b532bcda72b79bf9571140cfdfcd2c3d39301a8108acacc85929de0d",
+      "intrinsic": "1858x387",
+      "for_theme": "day"
+    },
+    "inverse": {
+      "sha256": "a426413d4c4a0f804de59882c7058f4e20d6a851b8c56d30957498e0131383c3",
+      "intrinsic": "1794x350",
+      "for_theme": "night"
+    },
+    "vector_master_found": false,
+    "owner_input_requested": "vector master for large-format print",
+    "enforcement_component": "apps/web/src/app/lab/brand-mark.tsx",
+    "rejected": [
+      "lab/wordmark.tsx typeset approximation (retained as court fixture)",
+      "logo-row-3 sans-serif variant"
+    ]
+  },
+  "courts": {
+    "browser_court": {
+      "status": "operational",
+      "matrix": "12/12 PASS",
+      "falsification": "still FAILS rejected baseline"
+    },
+    "brand_fidelity_court": {
+      "status": "operational",
+      "matrix": "12/12 PASS",
+      "falsification": "PROVEN - names TYPESET_SUBSTITUTE Space Grotesk italic 94px on fixture",
+      "known_limitation": "RESOLVED - now measures offsetWidth/offsetHeight pre-transform so rotation is not misread as distortion",
+      "falsification_reverified_after_fix": true
+    },
+    "planned": [
+      "visual quality",
+      "accessibility",
+      "performance",
+      "truth/data-state",
+      "conversion",
+      "responsive page-family"
+    ],
+    "signal_to_fix": {
+      "selftest": "42/42 (was 22)",
+      "independently_verified": true,
+      "verdict": "VALID_WITH_DEFECTS -> all closed",
+      "defects_found": {
+        "critical": 1,
+        "major": 2,
+        "minor": 2
+      },
+      "critical": "Winner Memory gated on the .stage string alone; forged {stage:'PROMOTED'} literals and genuine DENIED court results were stored as validated lessons. Now verifies stage+valid+decision+denial_code+receipt+measured improvement.",
+      "claims_falsified": [
+        "fail-closed (whitespace bypass)",
+        "Winner Memory only PROMOTED"
+      ],
+      "claims_confirmed": [
+        "no stage skipping (clean 5x5 diagonal)",
+        "measured improvement required",
+        "determinism",
+        "self-test can fail"
+      ],
+      "verifier_confirmed_strength": "re-entry attack FAILED - denials never advance stage, cannot launder a denied candidate"
+    },
+    "sponsorship_ordering_guard": {
+      "tests": "6/6",
+      "layers": [
+        "structural",
+        "behavioural",
+        "control"
+      ],
+      "control": "injects a sponsorship-ranked ordering and requires the guard to catch it"
+    },
+    "a11y_perf_court": {
+      "status": "OPERATIONAL",
+      "script": "skills/orderweeddc-a11y-perf-court/a11y_perf.mjs",
+      "dependency_free": "hand-written WCAG 2.2 AA checks; axe-core deliberately not installed pending skill security court",
+      "found_on_legacy_homepage": {
+        "contrast_failures": 18,
+        "worst_ratio": "3.25:1",
+        "small_tap_targets": 32,
+        "notable": "SPONSORED labels at 3.30:1 - a compliance problem for the M-001 disclosure itself"
+      },
+      "discrimination_proven": {
+        "/lab/sponsorship": "PASS",
+        "/": "FAIL",
+        "/lab/fixture-a11y": "FAIL 8/8 planted defects"
+      },
+      "perf_within_budget": {
+        "ttfb_ms": 50,
+        "transfer_kb": 30,
+        "cls": 0
+      },
+      "repair_applied": {
+        "contrast": "18 -> 0 on the legacy homepage",
+        "root_causes": [
+          "text-brand-primary on small text (31 files)",
+          "WHITE TEXT ON LIGHT FILLS \u2014 9px SPONSORED chip and 12px Business Portal button; the fill was the problem, not the text colour",
+          ".kicker eyebrow at 0.68rem is normal-size text"
+        ],
+        "tokens_added": [
+          "--brand-primary-text #08663c (7.06:1)",
+          "--brand-gold-onwhite #8c6206 (5.43:1)",
+          "--brand-primary-fill-strong #08663c (7.06:1)"
+        ],
+        "tap_targets": "32 -> 24 (checkboxes 12px/16px -> 24px)",
+        "court_refined": "WCAG 2.2 SC 2.5.8 inline-link exception now honoured; re-verified the court still detects all 8 planted fixture defects so precision improved without weakening",
+        "outstanding": "24 standalone nav/footer anchors still below 24px \u2014 real work, tracked",
+        "notable": "the M-001 SPONSORED disclosure was itself below AA \u2014 the compliance label was not compliant"
+      },
+      "homepage_verdict": "PASS on day+night x desktop+mobile; contrast 18->0, tap targets 32->0",
+      "surface_status": {
+        "/": "PASS day+night",
+        "/products": "PASS day+night",
+        "/neighborhoods/[slug]": "PASS day+night",
+        "/compare": "PASS day+night",
+        "/deals": "PASS day+night",
+        "/strains": "PASS day+night",
+        "/education": "PASS day+night"
+      },
+      "false_positive_fixed": "1x1 sr-only aria-hidden select counted as a tap target; aria-hidden and sr-only clip patterns now exempt; fixture still reports all 8 planted defects",
+      "debt_cleared": true
+    },
+    "known_failing": {
+      "browser_court": "FAIL on production homepage",
+      "brand_fidelity_court": "FAIL on production homepage",
+      "reason": "pre-existing owner-rejected design \u2014 canonical ribbon mark is not on the production hero, only in /lab/dir-*",
+      "not_a_regression": "/lab/dir-a passes both courts on day and night"
+    }
+  },
+  "commit": "8ddbeeb",
+  "v9": {
+    "handoff_sha256": "52791cabc61df26086a2619c4787bd84134b97dbb0d5b770021370173e25410a",
+    "internal_sha256sums": "8/8 OK",
+    "crc": "clean",
+    "labeled_checkpoint_files": 14,
+    "v5_contradiction": "RESOLVED - container hash differs (macOS 'V5 2.zip' re-zip) but inner SHA256SUMS all OK; content identity authoritative"
+  },
+  "merchant": {
+    "artifact": "MERCHANT_VISIBILITY_AUDIT_V1",
+    "status": "OPERATIONAL",
+    "engine": "skills/orderweeddc-merchant-visibility-audit/audit.mjs",
+    "checks": 30,
+    "weight_total": 103,
+    "ran_against": "real seeded DB: 5 retailers, 37 menu entries",
+    "seeded_scores": [
+      45,
+      46,
+      45,
+      46,
+      46
+    ],
+    "discrimination_falsified": {
+      "seeded": 45,
+      "remediated": 99,
+      "delta": 54,
+      "conclusion": "flat spread was correct - identical provenance gaps - not an audit defect"
+    },
+    "revenue_to_date": 0,
+    "pilot_run": false,
+    "independent_verification": {
+      "verifier": "independent subagent with passing+failing fixtures",
+      "verdict": "VALID_WITH_DEFECTS",
+      "defects": {
+        "critical": 0,
+        "major": 1,
+        "minor": 4
+      },
+      "claims_confirmed": [
+        "discriminates 45->100 delta +55",
+        "evidence_field on 982/982 checks",
+        "zero fabricated metrics",
+        "robust vs SQL metacharacters/10k names/unicode"
+      ],
+      "claims_falsified": [
+        "demonstration data could be labeled LIVE_RECORD"
+      ],
+      "all_defects_fixed": true,
+      "major_1": {
+        "defect": "denominator summed only checks that ran; empty menu scored 90 vs flawed-row 88, rewarding withheld data",
+        "fix": "empty menu now FAILS all 4 menu checks; denominator fixed at 103",
+        "after": {
+          "empty": 77,
+          "one_flawed_row": 87,
+          "ordering": "correct"
+        }
+      },
+      "truth_label_fix": "cross-checks isDemonstration + dataStatus pattern + all-demo menu, naming each reason"
+    }
+  },
+  "competitor_intelligence": {
+    "mechanism_matrix": {
+      "status": "COMPILED",
+      "mechanisms": 10,
+      "fields_per_mechanism": 19,
+      "evidence": "exported only - no recrawl, external SSD never accessed",
+      "scorecard": {
+        "shipped": 6,
+        "partial": 4,
+        "not_started": 1
+      },
+      "top_gap": "M-005 merchant-owned demand with attribution - the mechanism that converts truth advantages into revenue"
+    },
+    "signal_to_fix": {
+      "status": "OPERATIONAL",
+      "engine": "skills/cana-signal-to-fix/change_event.mjs",
+      "selftest": "22/22 including 11 denial paths",
+      "live_run": "5 valid candidates, 1 malformed row rejected with 6 named reasons",
+      "provider_neutral": true,
+      "note": "runs without model calls so it is not blocked by Hermes provider keys"
+    }
+  },
+  "seo": {
+    "hasCredential": {
+      "status": "SHIPPED",
+      "mechanism": "M-002",
+      "detail": "schema.org EducationalOccupationalCredential; fail-closed on licenseNumber AND licenseStatus=VERIFIED",
+      "tests": "7/7 falsification incl. PENDING_VERIFIED substring trap rejected",
+      "regression": "apps/web 213/214 (was 206/207, +7 new tests, same pre-existing failure)"
+    }
+  },
+  "revenue": {
+    "demand_credits_ledger": {
+      "status": "OPERATIONAL",
+      "mechanism": "M-005 - was the last NOT_STARTED",
+      "engine": "skills/cana-demand-credits/ledger.mjs",
+      "selftest": "40/40 with 20 denial paths",
+      "inversions": [
+        "merchant owns the customer (relationship_owner=MERCHANT, exportable)",
+        "credits buy placement never rank (RANK_PURCHASE_REFUSED)",
+        "no value without an evidence chain"
+      ],
+      "integrity": "append-only hash-chained; balance derived not stored; tamper detection proven",
+      "revenue_to_date": 0,
+      "pilot_run": false,
+      "persistence": "PRISMA \u2014 DemandCreditEntry model, append-only, gapless seq per merchant, no balance column",
+      "independently_verified": true,
+      "db_tests": "19/19 against a real disposable SQLite database (not mocks)",
+      "verification": {
+        "verdict": "VALID_WITH_DEFECTS",
+        "defects": {
+          "critical": 2,
+          "major": 5,
+          "minor": 3
+        },
+        "already_fixed_in_persisted_version": 6,
+        "crit_2_overflow": {
+          "defect": "two issue(1e308) calls summed balance to Infinity; spend never depleted = money from nothing",
+          "status": "CLOSED",
+          "fix": "MAX_ENTRY_AMOUNT 1e6 + MAX_MERCHANT_BALANCE 1e8 + balance() throws on non-safe-integer"
+        },
+        "crit_1_unanchored_chain": {
+          "defect": "an actor with full table write access can rewrite an amount and recompute all hashes; verifyChain accepts the forgery",
+          "status": "NOT_FIXABLE_BY_HASHING \u2014 DISCLOSED",
+          "reason": "property of an unanchored hash chain; replay proves consistency not authenticity",
+          "real_fix": "external anchor: signing key the writer does not hold, published head hash, or WORM storage \u2014 needs owner infrastructure decision",
+          "interim": "verifyChain returns anchor_caveat; a test asserts the caveat is present"
+        }
+      },
+      "hardening_beyond_prototype": [
+        "integer-cent accounting",
+        "domain amount ceiling",
+        "EXPIRY_IN_PAST",
+        "RANK_PURCHASE_REFUSED on any non-false value",
+        "DUPLICATE_ATTRIBUTION idempotency",
+        "EVIDENCE_CHAIN_TOO_LONG cap",
+        "hasOwnProperty link validation vs prototype pollution",
+        "cross-merchant isolation in refund/attribute lookups",
+        "proofOfValue re-hashes evidence instead of trusting a flag"
+      ]
+    },
+    "merchant_pilot": {
+      "status": "OPERATIONAL",
+      "engine": "skills/orderweeddc-merchant-pilot/pilot.mjs",
+      "selftest": "36/36 (was 23)",
+      "stages": [
+        "PROFILE_AUDITED",
+        "CORRECTIONS_AGREED",
+        "PLACEMENT_FUNDED",
+        "PLACEMENT_LIVE",
+        "ACTIONS_ATTRIBUTED",
+        "VALUE_PROVEN",
+        "CONTINUATION_DECIDED"
+      ],
+      "honesty_boundary": "proof_of_value REFUSES to exist unless evidence supports it and names every blocker; continuation_decision reports available:false with a reason rather than proposing an unjustified renewal",
+      "live_run": "Demo Retailer Alpha \u2014 baseline 45/100, 16 failing checks, 5 corrections, credits 500/75/425, stage PLACEMENT_LIVE 4 of 7, proof NOT ESTABLISHED with 2 blockers named",
+      "independently_verified": true,
+      "revenue_to_date": 0,
+      "pilots_sold": 0,
+      "verification": {
+        "initial_verdict": "INVALID",
+        "defects": {
+          "critical": 1,
+          "high": 2,
+          "medium": 3
+        },
+        "p1_critical": "'counts only when the evidence chain re-hashes' was a hash over ATTACKER-CONTROLLED bytes with zero content validation; evidenceChain='[]' became a verified attributed action producing proof_of_value 1 action at 75/action on a LIVE_RECORD \u2014 a fabricated commercial claim in the merchant's own package",
+        "fix": "parse the chain, require >=1 link with non-blank step AND ref via hasOwnProperty, then consult the digest",
+        "reverified_on_real_surface": "attribution 0 verified of 1 recorded; proof NOT ESTABLISHED",
+        "regression_variants": 13
+      }
+    }
+  },
+  "signal_to_fix_candidates": {
+    "total": 5,
+    "advanced": 1,
+    "candidate_1": {
+      "id": "cand_e6ff7c6220fa0403",
+      "stage": "VALIDATED",
+      "evidence": "6/6 sponsorship ordering guard",
+      "next_gate": "SHADOW - correctly DENIED, needs a real shadow observation"
+    }
+  },
+  "tests": {
+    "apps_web": "255/255",
+    "skill_selftests": {
+      "signal_to_fix": "42/42",
+      "demand_credits": "40/40",
+      "context_compiler": "39/39",
+      "governed_packet": "26/26",
+      "merchant_pilot": "36/36",
+      "total": 183
+    }
+  },
+  "owner_decisions_required": [
+    {
+      "id": "OD-LEDGER-ANCHOR",
+      "decision": "How to anchor the Demand Credit chain externally",
+      "options": [
+        "sign entries with a key the app writer does not hold",
+        "publish head hash to an external store",
+        "WORM/append-only storage"
+      ],
+      "why": "CRIT-1 cannot be closed in application code alone",
+      "blocks": "adversarial-grade integrity, not the pilot itself"
+    }
+  ],
+  "m001_sponsorship": {
+    "status": "IMPLEMENTED_AND_INDEPENDENTLY_VERIFIED",
+    "commit": "8552cd7",
+    "gate": "apps/web/src/lib/sponsorship-entitlement.mjs",
+    "badge": "apps/web/src/components/sponsorship-badge.tsx",
+    "live_page": "/lab/sponsorship",
+    "principle": "a badge NEVER renders from a boolean prop - only from a persisted, chain-linked Demand Credit SPEND",
+    "states": [
+      "ACTIVE",
+      "NONE",
+      "LOADING",
+      "EXPIRED",
+      "REFUNDED",
+      "UNAVAILABLE",
+      "INVALID_EVIDENCE"
+    ],
+    "attacks_repelled": {
+      "disguised_sponsorship": "INVALID_EVIDENCE",
+      "expired": "EXPIRED",
+      "forged_entitlement": "INVALID_EVIDENCE",
+      "refunded_credit": "REFUNDED",
+      "order_manipulation": "INVALID_EVIDENCE",
+      "missing_evidence": "NONE/UNAVAILABLE",
+      "duplicate_campaign": "suppressed"
+    },
+    "tests": "15/15 including 4 verifier regression guards",
+    "browser_verified": "desktop 1440x900 + mobile 390x844: exactly 1 visible badge across 9 scenarios on BOTH, bound to ledger hash, 0 console errors, 0 failed requests, no overflow",
+    "ordering_guard": "6/6 still passing",
+    "independent_verification": {
+      "verdict": "VALID_WITH_DEFECTS",
+      "defects": {
+        "high": 1,
+        "medium": 1,
+        "low": 1,
+        "info": 1
+      },
+      "all_closed": true,
+      "d1_high": "ASYMMETRIC FORGERY CHECK \u2014 SPEND was hash-link-checked but the ISSUE governing expiry was fully trusted; a forged unlinked ISSUE revived an expired campaign into a VISIBLE badge (deception-positive). Fixed: all entitlement-governing rows clear the same bar.",
+      "d2_medium": "refund sum had no sign/finiteness guard; a NEGATIVE refund revived a refunded placement and NaN nullified a refund set. Fixed: non-positive/non-finite refund fails closed.",
+      "d3_low": "dedupe delimiter collision \u2014 now length-prefixed",
+      "d4_info": "order-claim check now matches ledger strictness",
+      "confirmed_strengths": [
+        "no badge without valid entitlement",
+        "sponsorship never touches ordering (structural+behavioural+grep)",
+        "exactly 1 visible badge across 9 cards on both viewports",
+        "genuine display:none, hidden badges non-focusable",
+        "all 11 type-confusion variants on shouldRenderBadge rejected"
+      ]
+    },
+    "production_wired": true,
+    "production_surface": "apps/web/src/app/[domain]/page.tsx",
+    "replaced": "raw retailer.isSponsored boolean \u2014 an admin-settable flag with no paid placement behind it",
+    "ordering_proof": "entitled merchant renders position 5 of 5 (LAST) on the live page; a pay-to-rank system would have hoisted it",
+    "fail_closed_on_outage": "throwing ledger read -> ledgerAvailable=false -> all cards UNAVAILABLE -> no badges",
+    "negative_states_verified_against_real_db": {
+      "expired": "visible=0 EXPIRED",
+      "refunded": "visible=0 REFUNDED",
+      "forged": "visible=0 INVALID_EVIDENCE",
+      "disguised": "visible=0 INVALID_EVIDENCE",
+      "rankbuy": "visible=0 INVALID_EVIDENCE",
+      "valid": "visible=1 ACTIVE bound to ledger hash e70ec43f"
+    },
+    "verifier_risk_closed": "badge dereferenced evidence with a non-null assertion; a hand-built {state:'ACTIVE'} would have rendered undefined provenance. Now validates evidence shape.",
+    "production_independent_verification": {
+      "verdict": "VALID_WITH_DEFECTS",
+      "defects": {
+        "critical": 0,
+        "high": 0,
+        "medium": 1,
+        "low": 1
+      },
+      "medium_defect": "the forgery guard was a PRESENCE check not verification \u2014 a row with entryHash='x' rendered a real gold-ringed badge on the production homepage for a merchant who paid nothing",
+      "root_cause": "real hash verification already existed in demand-credits.mjs and was never called from the resolver; test fixtures used placeholder hashes so the gap was invisible to my own tests",
+      "fix": "exported hashBody as the single hashing authority; resolver now RECOMPUTES hashes for SPEND and ISSUE; fixtures compute genuine hashes",
+      "proven_live": "forged merchant 0 badges and honest merchant 1 badge (hash 93a97852bce8) simultaneously on the running app",
+      "extra_guards_added": [
+        "post-signature tampering",
+        "hash reuse from another row"
+      ],
+      "confirmed_by_verifier": [
+        "sponsorship does not affect ordering \u2014 byte-identical across 0/first/last/all-five entitled and a 12-row volume attempt",
+        "badge follows the entitlement not the isSponsored boolean",
+        "fail-closed on ledger outage",
+        "refund boundary exact",
+        "rank-buying refused",
+        "dedupe correct",
+        "no cross-merchant/slot/whitespace/case bleed",
+        "desktop+mobile a11y clean"
+      ],
+      "all_defects_closed": true
+    },
+    "production_surfaces_wired": 4,
+    "surfaces": [
+      "/ (homepage)",
+      "/products",
+      "/neighborhoods/[slug]",
+      "/compare"
+    ],
+    "shared_helper": "apps/web/src/lib/sponsorship-server.mjs \u2014 one resolver so surfaces cannot drift",
+    "drift_defect_found": "3 surfaces were still asserting sponsorship from the raw isSponsored boolean while the homepage required a ledger entitlement; the product would have contradicted itself about the same merchant",
+    "live_verification": "1 badge of 5 on homepage; 'organic listing' on products; no false ring on neighborhoods; ledger-derived wording on compare; 0 console errors everywhere"
+  },
+  "intelligence": {
+    "context_compiler": {
+      "status": "OPERATIONAL",
+      "engine": "skills/sitemind-context-compiler/compiler.mjs",
+      "selftest": "39/39 (was 25)",
+      "laws": [
+        "nothing unlabeled actuates",
+        "contradictions preserved never collapsed",
+        "staleness computed not assumed",
+        "packet sealed with a digest",
+        "budgeted with recorded exclusions"
+      ],
+      "live_run": "real MISSION_STATE.json -> 6 actionable, 8 reference-only, 0 excluded",
+      "defect_found_and_fixed": "state adapter over-tagged subjects, producing 13 false contradictions; a warning that cries wolf trains operators to ignore it",
+      "refuses": "will not seal a packet where nothing is actionable",
+      "independently_verified": true,
+      "verification": {
+        "initial_verdict": "INVALID",
+        "defects": {
+          "critical": 1,
+          "high": 3,
+          "medium": 1
+        },
+        "c1_critical": "future-dated observations produced NEGATIVE age so freshness read CURRENT \u2014 an impossible timestamp was the easiest way to make an untrustworthy fact actionable",
+        "high_fixes": [
+          "stringified valid_for_days disabled staleness entirely",
+          "UNDATED and DATED_NO_WINDOW facts were actionable",
+          "findContradictions used .find on subject tags so multi-subject facts escaped detection"
+        ]
+      }
+    },
+    "truthgraph": "NOT_STARTED",
+    "winner_memory": "NOT_STARTED",
+    "governed_execution": {
+      "status": "OPERATIONAL",
+      "engine": "skills/hermes-governed-packet/packet.mjs",
+      "selftest": "26/26 with 17 refusal paths",
+      "closes": "the Context Compiler sealed packets nobody consumed; CANA authority governed actions nobody compiled context for",
+      "laws": [
+        "no action without context",
+        "no action without authority",
+        "owner-only actions REFUSED not downgraded",
+        "packet sealed and bound to the context digest",
+        "no receipt without observable execution evidence"
+      ],
+      "owner_only_refused": [
+        "DEPLOY_PRODUCTION",
+        "MERGE_PROTECTED_MAIN",
+        "ACTIVATE_PAYMENT",
+        "SPEND_ADVERTISING",
+        "CONTACT_MERCHANT",
+        "PUBLIC_CLAIM",
+        "DNS_CHANGE",
+        "CREDENTIAL_DISCLOSURE",
+        "DELETE_PRODUCTION_DATA"
+      ],
+      "proven_end_to_end": "compiled live context 98227c0234c1 -> grant gr_a8fd5df826e8dbed -> packet 0fd85a2c809f -> EXECUTED the real a11y court -> receipt 08a9a7b4a4b3 with 2 evidence items",
+      "provider_neutral": true,
+      "independently_verified": false
+    }
+  },
+  "backend": {
+    "contract_map": "deliverables/BACKEND_CONTRACT_MAP.md",
+    "key_finding": "no general-purpose REST/JSON API \u2014 server components query Prisma directly; no versioned contract for mobile or partners",
+    "models": 23,
+    "route_handlers": 9,
+    "page_routes": 33,
+    "risks": [
+      "no versioned API",
+      "11 models scaffolded unused",
+      "amount is a bare Float with no CHECK",
+      "no migration history",
+      "unanchored ledger chain",
+      "RBAC unaudited"
+    ]
+  },
+  "operational_lesson": "Ledger rows must be written through the sanctioned demand-credits API. Hand-rolled SQL produced non-canonical hashes that now correctly fail verification.",
+  "benchmark_sigint_defect": {
+    "misclassified_for": "many cycles as 'pre-existing sandbox signal-timing'",
+    "actual_defect": "async SIGINT handler called process.exit(130) inside a finally awaiting async cleanup; Node does not hold the process open for a promise chain started from a signal handler, so it exited with the already-set exitCode 0",
+    "impact": "an INTERRUPTED benchmark reported SUCCESS \u2014 the simulated-success failure mode this program forbids",
+    "first_hypothesis_rejected": "a race with the 200ms SIGINT window \u2014 timed the benchmark at 2.7s, so the race story was wrong and I kept digging",
+    "fix": "set exitCode synchronously on signal; bounded 2s cleanup with unref'd force timer; re-entrancy guarded",
+    "verified": "SIGINT now yields exitCode=130"
+  },
+  "measurement_errors_caught": [
+    "reported a homepage regression 0 -> 38 targets; grep matched a perf number, not the target count",
+    "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
+    "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
+  ],
+  "last_checkpoint": "3536758",
+  "last_checkpoint_at": "2026-07-26T15:41:58.103874Z",
+  "completed_walls": [
+    {
+      "wall": "VERSIONED_PUBLIC_API_V1",
+      "commit": "1795db3",
+      "endpoint": "GET /api/v1/retailers",
+      "tests": "9 HTTP contract tests; suite 264/264",
+      "falsification_proven": true,
+      "falsification_method": "removed truth boundary from query + post-filter; boundary test failed with \"seeded demonstration retailers must be withheld from the public API\"",
+      "self_correction": "reverted a seeded DEMONSTRATION_ONLY retailer I had promoted to VERIFIED_CURRENT; tests now own a self-cleaning fixture so the seed is never mutated",
+      "owner_approval_required": false
+    },
+    {
+      "wall": "INDEPENDENT_VERIFICATION_07_REPAIRS",
+      "commit": "3536758",
+      "verifier_findings_confirmed": 5,
+      "findings": [
+        "P1 test suite blinded by ownership short-circuit (test integrity)",
+        "V2-A duplicate subject tag inflated claim count",
+        "V2-B case/whitespace subject escape hid contradictions",
+        "V2-C guidance pointed at a stale strongest authority",
+        "V2-D unbounded valid_for_days resurrected an ancient fact"
+      ],
+      "introduced_by_previous_fixes": 2,
+      "falsification_proven": true,
+      "regression_guards_added": 15,
+      "tests": {
+        "web": "264/264",
+        "merchant_pilot": "46/46",
+        "context_compiler": "54/54 (was 39)"
+      },
+      "promotion": "VERIFIED_BY_INDEPENDENT_ATTACK",
+      "owner_approval_required": false
+    }
+  ],
+  "test_baseline": {
+    "total": 264,
+    "passing": 264,
+    "previous_baseline": 255
+  },
+  "component_status": {
+    "orderweeddc-merchant-pilot": "VERIFIED_BY_INDEPENDENT_ATTACK",
+    "sitemind-context-compiler": "VERIFIED_BY_INDEPENDENT_ATTACK"
+  }
+}
