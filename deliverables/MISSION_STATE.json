@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "f389b21",
-  "last_checkpoint_at": "2026-07-26T18:39:22.541615+00:00",
+  "last_checkpoint": "84470ee",
+  "last_checkpoint_at": "2026-07-26T18:48:42.856934+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -967,10 +967,28 @@
       ],
       "falsification_proven": true,
       "tests": "web 386/386 (374 + 12)"
+    },
+    {
+      "wall": "GRADED_CONSUMER_EVIDENCE",
+      "commit": "84470ee",
+      "gap_closed": "the endpoint could not distinguish a curl loop from a real customer; its evidence proved a request arrived, not that a consumer acted",
+      "states": [
+        "REQUEST_RECEIVED (no value)",
+        "INTERACTION_VERIFIED",
+        "MERCHANT_HANDOFF_VERIFIED",
+        "COMMERCIAL_OUTCOME_UNVERIFIED",
+        "VALUE_PROVEN (unreachable by design)"
+      ],
+      "law_enforced": "growth-os L7 refuses REQUEST_RECEIVED rows from every merchant figure; the grade is stored, not recomputed",
+      "privacy": "no user identifier in the token; surface is a truncated hash; only the nonce is retained, for replay refusal",
+      "honest_limit": "a scripted real browser can still obtain a token \u2014 bot resistance is a separate problem and is not claimed",
+      "proven_live": "all five graded states verified over real HTTP including forged and replayed tokens",
+      "falsification_proven": true,
+      "tests": "web 417/417"
     }
   ],
   "test_baseline": {
-    "web": "386/386",
+    "web": "417/417",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
