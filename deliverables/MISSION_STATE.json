@@ -1014,8 +1014,37 @@
           "tests from code assembled entirely out of Drive: skills 258/258, e2e PROVEN, 63 web tests"
         ],
         "verified_at": "2026-07-26T16:41:30.986381+00:00"
+      },
+      {
+        "package": "CANA-DELTA-0ae1030-ed40c16",
+        "type": "INCREMENTAL",
+        "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+        "archive_sha256": "d3e051849d3d8f8129b070532cd68b75d7c595d4997e6e3896992979e80750e2",
+        "archive_bytes": 83931,
+        "basis": "0ae1030",
+        "tip": "ed40c16",
+        "tree": "6d4ecbedbd7b4b000bd1e24f2c3ce19e43a8c9fc",
+        "contents": [
+          "deals contract",
+          "pilot evidence chain end to end",
+          "release gate",
+          "verification 09 repairs incl. A6 HIGH replay bypass"
+        ],
+        "gates_passed": [
+          "byte size",
+          "sha-256 recomputed on read-back",
+          "11/11 inner hashes",
+          "chained onto the Drive-verified 0ae1030 to the identical tree, 0 fsck errors",
+          "258/258 skills from a three-artifact fully Drive-sourced chain"
+        ],
+        "verified_at": "2026-07-26T17:07:15.387191+00:00"
       }
     ],
-    "current_head_durable": "0ae1030"
+    "current_head_durable": "ed40c16",
+    "restore_order": [
+      "v2 full package 13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "delta 1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg (54a0082->0ae1030)",
+      "delta 143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M (0ae1030->ed40c16)"
+    ]
   }
 }
