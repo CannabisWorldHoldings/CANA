@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "f14c508",
-  "last_checkpoint_at": "2026-07-26T22:20:49.800527+00:00",
+  "last_checkpoint": "784fe42",
+  "last_checkpoint_at": "2026-07-26T22:28:33.058458+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1333,9 +1333,31 @@
           "258/258 skills + clean-database-court 8/8 + page-challenge 28/28 from the reconstruction"
         ],
         "verified_at": "2026-07-26T21:17:10.887158+00:00"
+      },
+      {
+        "package": "CANA-DELTA-f22042b-0808871",
+        "type": "INCREMENTAL",
+        "drive_file_id": "1ahokVpC32KQEmEFAgILM4Ws0w2w1A1fl",
+        "archive_sha256": "ff4f0042a2f914a90ccdf01b9771b4fbb2c19d32a88468848d01489d625b9c77",
+        "archive_bytes": 31019,
+        "basis": "f22042b",
+        "tip": "0808871",
+        "tree": "a2932a58a7db9506acf27d83b0a27abe5f221151",
+        "produced_by": "durability lane agent",
+        "gates_passed": [
+          "size",
+          "sha-256 recomputed on read-back",
+          "8/8 inner hashes",
+          "prerequisite declared",
+          "TEN-artifact chain rebuilt from Drive bytes only, identical tree, 0 fsck errors",
+          "258/258 skills + clean-database-court 10/10 + page-challenge 28/28 from the reconstruction",
+          "out-of-order refused with HEAD unmoved",
+          "4/4 patch replay to the same tree"
+        ],
+        "verified_at": "2026-07-26T22:28:33.058495+00:00"
       }
     ],
-    "current_head_durable": "f22042b",
+    "current_head_durable": "0808871",
     "restore_order": [
       {
         "step": 1,
@@ -1390,6 +1412,12 @@
         "drive_file_id": "1pqkZbxcenpODoi_FX0Xa6XFUzLJi7q2t",
         "prerequisite": "051bdcc",
         "reaches": "f22042b"
+      },
+      {
+        "step": 10,
+        "drive_file_id": "1ahokVpC32KQEmEFAgILM4Ws0w2w1A1fl",
+        "prerequisite": "f22042b",
+        "reaches": "0808871"
       }
     ],
     "chain_rebuilt_from_drive_only": true
@@ -1412,5 +1440,12 @@
       "product neighborhoods"
     ],
     "anchor_correction": "the db-config anchor was regenerated from the working tree rather than copied forward; the stale 55d5d69d would have made every lane report false drift"
+  },
+  "database_decision": {
+    "recommended": "MariaDB 11.4.9 via Prisma mysql provider",
+    "rejected": "PostgreSQL 10.23 \u2014 end of life 2022-11-10, no security patches for ~3y8m",
+    "evidence": "deliverables/DATABASE_DECISION.md, fifteen gates, claims tagged by confidence",
+    "chief_integrator_gate": "VARCHAR(191) truncation would silently destroy every evidence chain \u2014 a real 5-link chain is 359 chars, its digest does not recompute, and the truncated JSON does not parse. 21 columns need @db.Text.",
+    "provisioning": "OWNER ONLY \u2014 nothing provisioned"
   }
 }
