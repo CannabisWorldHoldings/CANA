@@ -137,6 +137,40 @@ export function retailerJsonLd({ retailer, origin }) {
     });
   }
   if (provenance.length > 0) jsonLd.additionalProperty = provenance;
+
+  // hasCredential: the machine-readable license claim. Competitor field recon
+  // (2026-07-23) found Leafly DISPLAYS ABCA numbers as page text but emits no
+  // license, credential, or provenance property in JSON-LD at all — the number
+  // is self-attested at onboarding with no verification process. Emitting a
+  // real EducationalOccupationalCredential is therefore uncontested
+  // machine-readable ground for answer engines.
+  //
+  // FAIL-CLOSED: requires BOTH a license number AND an explicit VERIFIED
+  // status. A number alone is display-only text and must never become a
+  // structured credential claim — that would reproduce the very
+  // "verification theater" this mechanism exists to beat.
+  const licenseVerified =
+    typeof retailer.licenseStatus === 'string' &&
+    retailer.licenseStatus.toUpperCase() === 'VERIFIED';
+  if (retailer.licenseNumber && licenseVerified) {
+    const credential = {
+      '@type': 'EducationalOccupationalCredential',
+      credentialCategory: 'Cannabis retailer license',
+      identifier: retailer.licenseNumber,
+      recognizedBy: {
+        '@type': 'GovernmentOrganization',
+        name:
+          retailer.licenseSource ||
+          'District of Columbia Alcoholic Beverage and Cannabis Administration',
+      },
+    };
+    // Only assert a validation date we actually observed.
+    const checked =
+      retailer.lastLicenseCheck?.toISOString?.() ??
+      retailer.verifiedAt?.toISOString?.();
+    if (checked) credential.dateCreated = checked;
+    jsonLd.hasCredential = credential;
+  }
   return jsonLd;
 }
 
