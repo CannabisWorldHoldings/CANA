@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "6b2e056",
-  "last_checkpoint_at": "2026-07-26T16:21:10.190015+00:00",
+  "last_checkpoint": "81da4d4",
+  "last_checkpoint_at": "2026-07-26T16:46:17.778759+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -874,10 +874,24 @@
       "proven_live": "demonstration retailer emits no Store/PostalAddress/FAQPage; verified fixture emits all three plus sourced openingHours and the licence answer",
       "falsification_proven": true,
       "tests": "web 327/327"
+    },
+    {
+      "wall": "API_V1_DEALS_CONTRACT",
+      "commit": "81da4d4",
+      "why_hardest": "a deal is a commercial offer, not a description \u2014 an expired deal republished by a partner sends a real person to a price that no longer exists",
+      "boundaries": [
+        "record freshness",
+        "offer validity (expiryDate + isActive)",
+        "retailer publishability across the JOIN"
+      ],
+      "join_leak_closed": "a verified live offer on a demonstration retailer is withheld; required removing BOTH the query and post-filter layers to break",
+      "no_discount_math": "the discount string passes through verbatim; a computed saving would invent an unverified number",
+      "falsification_proven": true,
+      "tests": "web 342/342 (327 + 15)"
     }
   ],
   "test_baseline": {
-    "web": "327/327",
+    "web": "342/342",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
