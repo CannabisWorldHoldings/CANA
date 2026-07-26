@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "3536758",
-  "last_checkpoint_at": "2026-07-26T15:41:58.103874Z",
+  "last_checkpoint": "2f10e62",
+  "last_checkpoint_at": "2026-07-26T15:47:51.483061Z",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -788,12 +788,32 @@
       },
       "promotion": "VERIFIED_BY_INDEPENDENT_ATTACK",
       "owner_approval_required": false
+    },
+    {
+      "wall": "HERMES_LAW_2B_CONTRADICTION_BLOCKING",
+      "commit": "4448821",
+      "change": "a contradiction on the action's own subject now REFUSES the packet instead of only being surfaced; stale strongest authority refused; subject matching shares the compiler's normalization",
+      "end_to_end": "PROVEN on real compiler output, not fixtures",
+      "falsification_proven": true,
+      "tests": "packet 36/36 (was 26)"
+    },
+    {
+      "wall": "VISIBILITY_AUDIT_FIRST_TESTS",
+      "commit": "2f10e62",
+      "change": "the component the merchant pilot depends on had NO self-test; added 23; --db no longer defaults to a shared database",
+      "falsification_proven": true,
+      "tests": "audit 23/23"
+    },
+    {
+      "wall": "TEST_DB_ISOLATION_RULES",
+      "commit": "9c6e87b",
+      "change": "codified one-writer-per-verification-run after a verifier chased my own fixture as a suspected attacker"
     }
   ],
   "test_baseline": {
-    "total": 264,
-    "passing": 264,
-    "previous_baseline": 255
+    "web": "264/264",
+    "skills_total": 241,
+    "e2e_binding": "PROVEN"
   },
   "component_status": {
     "orderweeddc-merchant-pilot": "VERIFIED_BY_INDEPENDENT_ATTACK",
