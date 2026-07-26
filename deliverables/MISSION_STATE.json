@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "4840561",
-  "last_checkpoint_at": "2026-07-26T16:03:06.629883+00:00",
+  "last_checkpoint": "4d68ca6",
+  "last_checkpoint_at": "2026-07-26T16:13:57.472048+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -823,16 +823,54 @@
       "falsification_proven": true,
       "tests": "web 276/276 (264 + 12 new)",
       "owner_approval_required": false
+    },
+    {
+      "wall": "MERCHANT_GROWTH_OS",
+      "commit": "8cefed3",
+      "gap_closed": "the merchant dashboard showed counts but nothing from the visibility audit, attribution ledger, or proof of value \u2014 the figures a merchant would spend against",
+      "laws": [
+        "evidence or silence",
+        "one action one count",
+        "ownership",
+        "demonstration is never a result",
+        "no unearned claim",
+        "derived never stored"
+      ],
+      "falsification_proven": true,
+      "tests": "26 (L1 6 / L2 2 / L3 8 / L4 6 failures when reverted)"
+    },
+    {
+      "wall": "AEO_STRUCTURED_DATA",
+      "commit": "eb04887",
+      "gap_closed": "JSON-LD existed on one page only; the retailer detail page \u2014 the most important for answer engines \u2014 emitted none",
+      "falsification_proven": true,
+      "tests": "25 (A1 15 / A2 3 / A4 7 failures when reverted)"
+    },
+    {
+      "wall": "VERIFICATION_08_REPAIRS",
+      "commit": "4d68ca6",
+      "attacks": 31,
+      "blocked": 28,
+      "confirmed": 3,
+      "critical_or_high_live_bypass": 0,
+      "findings": [
+        "#18 MEDIUM omitting intent.subjects disabled LAW 2b while the receipt still claimed it was checked",
+        "#17 LOW OWNER_ONLY exact-match let case/whitespace variants past",
+        "#15 LOW context digest checked for presence only, never recomputed"
+      ],
+      "falsification_proven": true,
+      "tests": "packet 53/53 (was 36)"
     }
   ],
   "test_baseline": {
-    "web": "276/276",
-    "skills_total": 241,
+    "web": "327/327",
+    "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
   "component_status": {
     "orderweeddc-merchant-pilot": "VERIFIED_BY_INDEPENDENT_ATTACK",
-    "sitemind-context-compiler": "VERIFIED_BY_INDEPENDENT_ATTACK"
+    "sitemind-context-compiler": "VERIFIED_BY_INDEPENDENT_ATTACK",
+    "hermes-governed-packet": "VERIFIED_BY_INDEPENDENT_ATTACK_08"
   },
   "durability": {
     "status": "PROVEN_BY_READ_BACK",
