@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "a6d6390",
-  "last_checkpoint_at": "2026-07-26T19:41:24.763928+00:00",
+  "last_checkpoint": "4025f63",
+  "last_checkpoint_at": "2026-07-26T20:26:14.676135+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1038,10 +1038,29 @@
       "billable_actions": "HANDOFF only \u2014 the sole action carrying page-bound evidence",
       "falsification_proven": true,
       "tests": "web 461/461 (15 court tests)"
+    },
+    {
+      "wall": "API_V1_PRODUCTS_CONTRACT",
+      "commit": "4025f63",
+      "why_hardest": "a product carries POTENCY, a regulated claim a partner could republish on our authority",
+      "potency_policy": "field-gated independently of the record; unassertable figures omitted, never clamped or zeroed; withheld count reported",
+      "join_depth": "three deep \u2014 product -> menuEntry -> retailer, each boundary attacked separately",
+      "falsification_proven": true
+    },
+    {
+      "wall": "VERIFICATION_11_H26_REPAIR",
+      "commit": "4025f63",
+      "finding": "the handoff route wiring the challenge was tested only by source grep; neutering the replay check or self-minting the challenge each produced ZERO failures",
+      "fix": "an integration suite driving the real POST handler and asserting the grade committed to the ledger",
+      "exposed_defect": "ten concurrent handoffs returned ten 500s \u2014 a pre-existing lock-contention defect on a route never exercised concurrently",
+      "contention_fix": "bounded retry on MEASURED codes P1008/P2028 (my guessed SQLITE_BUSY/P2034 matched nothing) plus WAL journal mode; 0/10 -> 7-10/10",
+      "grade_verdict": "MERCHANT_HANDOFF_VERIFIED is honest at live HEAD and scoped to a causal render-to-submission link, explicitly not personhood",
+      "falsification_proven": true,
+      "tests": "web 489/489"
     }
   ],
   "test_baseline": {
-    "web": "461/461",
+    "web": "489/489",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
