@@ -70,6 +70,10 @@ const found = await page.evaluate(() => {
       naturalWidth: el.naturalWidth || null,
       naturalHeight: el.naturalHeight || null,
       renderW: Math.round(r.width), renderH: Math.round(r.height),
+      // getBoundingClientRect() returns the ROTATED box. For a rail-mounted mark
+      // that inflates height and collapses width, faking ASPECT_DRIFT. offsetWidth/
+      // offsetHeight are pre-transform, so they describe the true letterform box.
+      layoutW: el.offsetWidth || null, layoutH: el.offsetHeight || null,
       top: Math.round(r.top), left: Math.round(r.left),
       objectFit: cs.objectFit, opacity: cs.opacity,
       filter: cs.filter, transform: cs.transform,
@@ -139,16 +143,19 @@ for (const m of found.marks) {
     const nat = `${m.naturalWidth}x${m.naturalHeight}`;
     if (nat !== canon.intrinsic) violations.push(`DECODED_SIZE_MISMATCH: ${m.src} decoded ${nat}, canonical ${canon.intrinsic}`);
   }
-  // Aspect drift = stretched/squashed letterform.
-  if (m.renderW > 0 && m.renderH > 0) {
-    const ar = m.renderW / m.renderH;
+  // Aspect drift = stretched/squashed letterform. Measure the PRE-TRANSFORM box:
+  // rotation is a legitimate layout choice and must not be reported as distortion.
+  const useW = m.layoutW || m.renderW, useH = m.layoutH || m.renderH;
+  const rotated = !!(m.transform && m.transform !== 'none');
+  if (useW > 0 && useH > 0) {
+    const ar = useW / useH;
     const drift = Math.abs(ar - canon.aspect) / canon.aspect;
     if (drift > ASPECT_TOLERANCE) {
-      violations.push(`ASPECT_DRIFT: ${m.assetId} rendered at ${ar.toFixed(2)} vs canonical ${canon.aspect.toFixed(2)} (${(drift * 100).toFixed(1)}% drift)`);
+      violations.push(`ASPECT_DRIFT: ${m.assetId} letterform box ${useW}x${useH} = ${ar.toFixed(2)} vs canonical ${canon.aspect.toFixed(2)} (${(drift * 100).toFixed(1)}% drift)${rotated ? ' [measured pre-transform]' : ''}`);
     }
   }
-  if (m.renderW < MIN_RENDER_WIDTH) {
-    violations.push(`RESOLUTION_TOO_LOW: ${m.assetId} rendered ${m.renderW}px wide (min ${MIN_RENDER_WIDTH}px for ribbon detail)`);
+  if (useW < MIN_RENDER_WIDTH) {
+    violations.push(`RESOLUTION_TOO_LOW: ${m.assetId} letterform ${useW}px wide (min ${MIN_RENDER_WIDTH}px for ribbon detail)`);
   }
   // Variant must match theme.
   if (canon.forTheme !== THEME) {
@@ -174,7 +181,8 @@ const report = {
 console.log(`\n=== BRAND FIDELITY COURT — ${THEME.toUpperCase()} ${WIDTH}x${HEIGHT} ===`);
 console.log(`  canonical marks found: ${found.marks.length}`);
 for (const m of found.marks) {
-  console.log(`    ${m.assetId} [${m.variant}] render ${m.renderW}x${m.renderH} · decoded ${m.naturalWidth}x${m.naturalHeight} · sha ${String(m.declaredSha).slice(0, 12)}…`);
+  const rot = m.transform && m.transform !== 'none';
+  console.log(`    ${m.assetId} [${m.variant}] letterform ${m.layoutW||m.renderW}x${m.layoutH||m.renderH}${rot ? ` (rotated; screen box ${m.renderW}x${m.renderH})` : ''} · decoded ${m.naturalWidth}x${m.naturalHeight} · sha ${String(m.declaredSha).slice(0, 12)}…`);
 }
 if (found.suspects.length) console.log(`  typeset suspects: ${found.suspects.length}`);
 console.log(`\n  VERDICT: ${report.verdict}`);
