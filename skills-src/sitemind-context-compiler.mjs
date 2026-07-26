@@ -39,6 +39,14 @@ const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > -1 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
 
+/**
+ * A fact may only drive actuation when its evidence is CURRENT. Hoisted to module
+ * scope so labelFact and findContradictions cannot drift apart: the contradiction
+ * summary must judge "is the strongest authority usable?" by the SAME rule the
+ * labeller uses to permit action.
+ */
+const FRESHNESS_ALLOWS_ACTUATION = new Set(['CURRENT']);
+
 /** Authority ranking from the V9 data-labeling contract. Lower index = stronger. */
 export const AUTHORITY_ORDER = Object.freeze([
   'OWNER_EXPLICIT_DIRECTIVE', 'OWNER_APPROVED_ARTIFACT', 'INDEPENDENTLY_VERIFIED_RECEIPT',
@@ -72,7 +80,19 @@ export function labelFact(raw, now = new Date()) {
   // sane positive finite window.
   const rawWindow = typeof raw?.valid_for_days === 'string' && raw.valid_for_days.trim() !== ''
     ? Number(raw.valid_for_days) : raw?.valid_for_days;
-  const validForDays = Number.isFinite(rawWindow) && rawWindow >= 0 ? rawWindow : null;
+  //
+  // V2-D (independent verifier, LOW): there was NO CEILING on the declared
+  // window, so valid_for_days = 1e9 kept a 2,398-day-old fact reading CURRENT
+  // and actionable — roughly 2.7 million years of self-declared validity. The
+  // design says staleness is COMPUTED, not asserted; an unbounded self-declared
+  // window hands that decision straight back to the fact's author. Cap it. A
+  // window beyond the ceiling is treated as an unusable declaration
+  // (DATED_NO_WINDOW -> not actionable) rather than silently clamped, because
+  // clamping would quietly rewrite the author's claim.
+  const MAX_VALID_FOR_DAYS = 3650; // 10 years; longer is not a freshness claim
+  const validForDays =
+    Number.isFinite(rawWindow) && rawWindow >= 0 && rawWindow <= MAX_VALID_FOR_DAYS
+      ? rawWindow : null;
   let freshness = 'UNDATED';
   let ageDays = null;
   if (observedAt && !Number.isNaN(observedAt.getTime())) {
@@ -95,7 +115,6 @@ export function labelFact(raw, now = new Date()) {
   // unknown cannot be shown to be current, and "we don't know when this was
   // true" is not a basis for action. DATED_NO_WINDOW is likewise refused: a date
   // with no declared validity window cannot be tested for staleness.
-  const FRESHNESS_ALLOWS_ACTUATION = new Set(['CURRENT']);
   const actionable =
     errors.length === 0 &&
     !NON_ACTUATING_AUTHORITY.has(raw.authority) &&
@@ -130,26 +149,59 @@ export function findContradictions(facts) {
   // so a fact tagged with several subjects was compared under one of them and
   // silently escaped contradiction detection under the others. Index under EVERY
   // subject a fact claims.
+  //
+  // TWO FURTHER DEFECTS the second independent verifier found in THIS fix:
+  //
+  //  V2-A (correctness regression the patch introduced): .filter + push let the
+  //     SAME fact enter one group twice when it carried a duplicate subject tag
+  //     (['subject:s','subject:s']), inflating claims.length. Two facts reported
+  //     as three conflicting claims is a fabricated count. Dedupe per fact.
+  //  V2-B (MEDIUM escape): subject tags were matched raw, so 'subject:Repo' and
+  //     'subject:repo ' were different subjects and a contradiction escaped
+  //     silently by trivial case/whitespace variation. LAW 2 says a
+  //     contradiction must never be silently collapsed; being silently MISSED is
+  //     the same harm. Subjects are normalized for GROUPING while the original
+  //     spelling is preserved for the operator.
+  const norm = (t) => t.trim().replace(/\s+/g, ' ').toLowerCase();
   const bySubject = new Map();
   for (const f of facts) {
-    for (const subj of f.tags.filter((t) => t.startsWith('subject:'))) {
-      if (!bySubject.has(subj)) bySubject.set(subj, []);
-      bySubject.get(subj).push(f);
+    const seenForThisFact = new Set();
+    for (const raw of f.tags.filter((t) => typeof t === 'string' && t.trim().toLowerCase().startsWith('subject:'))) {
+      const key = norm(raw);
+      if (seenForThisFact.has(key)) continue; // V2-A: one membership per fact
+      seenForThisFact.add(key);
+      if (!bySubject.has(key)) bySubject.set(key, { display: raw.trim(), facts: [] });
+      bySubject.get(key).facts.push(f);
     }
   }
   const out = [];
-  for (const [subject, group] of bySubject) {
+  for (const [key, { display, facts: group }] of bySubject) {
     const claims = new Set(group.map((g) => g.claim));
     if (claims.size > 1) {
       const sorted = [...group].sort((a, b) => a.authority_rank - b.authority_rank);
+      const strongest = sorted[0];
+      // V2-C (MEDIUM): the summary told the operator to prefer the strongest
+      // authority without checking whether that fact was still usable. A STALE
+      // OWNER_EXPLICIT_DIRECTIVE outranks a fresh live observation, so the
+      // guidance could point at evidence the compiler itself refuses to act on.
+      // Name that explicitly rather than leaving it inferable from per-claim
+      // freshness the reader may not cross-check.
+      const strongestActionable = FRESHNESS_ALLOWS_ACTUATION.has(strongest.freshness);
+      const freshestStrong = sorted.find((g) => FRESHNESS_ALLOWS_ACTUATION.has(g.freshness)) ?? null;
       out.push({
-        subject,
+        subject: display,
+        subject_key: key,
         claims: group.map((g) => ({ id: g.id, claim: g.claim, authority: g.authority, source: g.source, freshness: g.freshness })),
         // Record which is stronger WITHOUT deleting the weaker one.
-        strongest_authority: sorted[0].authority,
-        strongest_id: sorted[0].id,
+        strongest_authority: strongest.authority,
+        strongest_id: strongest.id,
+        strongest_is_actionable: strongestActionable,
+        strongest_freshness: strongest.freshness,
+        strongest_actionable_id: freshestStrong ? freshestStrong.id : null,
         resolution: 'PRESERVED_UNRESOLVED',
-        note: 'Both claims retained. Authority ranking indicates which to prefer, but the disagreement is itself evidence and must reach the operator.',
+        note: strongestActionable
+          ? 'Both claims retained. Authority ranking indicates which to prefer, but the disagreement is itself evidence and must reach the operator.'
+          : `Both claims retained. WARNING: the strongest authority (${strongest.id}, ${strongest.authority}) is ${strongest.freshness} and is NOT actionable. Do not prefer it on authority alone. ${freshestStrong ? `The strongest ACTIONABLE claim is ${freshestStrong.id} (${freshestStrong.authority}).` : 'NO claim on this subject is actionable.'}`,
       });
     }
   }
@@ -297,6 +349,61 @@ if (has('selftest')) {
   ]);
   t('C-HIGH: a multi-subject fact cannot hide a contradiction',
     multi.some((c) => c.subject === 'subject:repo' && c.claims.length === 2));
+
+  // ---- SECOND INDEPENDENT VERIFIER regressions (V2-A..V2-D)
+  // V2-A: a duplicate subject tag must not inflate the conflicting-claim count.
+  const dupTag = findContradictions([
+    labelFact(f({ id: 'd1', claim: 'x is true', tags: ['subject:s', 'subject:s'] }), now),
+    labelFact(f({ id: 'd2', claim: 'x is false', tags: ['subject:s'] }), now),
+  ]);
+  t('V2-A: a duplicate subject tag does NOT inflate the claim count',
+    dupTag.length === 1 && dupTag[0].claims.length === 2);
+  t('V2-A: no fact is listed twice in one contradiction',
+    new Set(dupTag[0].claims.map((c) => c.id)).size === dupTag[0].claims.length);
+
+  // V2-B: case and whitespace must not let a contradiction escape.
+  for (const [ta, tb] of [['subject:Repo', 'subject:repo'], ['subject:repo', 'subject:repo '],
+                          ['subject:REPO', ' subject:repo'], ['subject:re  po', 'subject:re po']]) {
+    const esc = findContradictions([
+      labelFact(f({ id: 'e1', claim: 'reachable', tags: [ta] }), now),
+      labelFact(f({ id: 'e2', claim: 'returns 404', tags: [tb] }), now),
+    ]);
+    t(`V2-B: ${JSON.stringify(ta)} vs ${JSON.stringify(tb)} cannot hide a contradiction`,
+      esc.length === 1 && esc[0].claims.length === 2);
+  }
+
+  // V2-C: guidance must not point at a stale strongest authority.
+  const old = new Date(now.getTime() - 400 * 86400_000).toISOString();
+  const staleStrong = findContradictions([
+    labelFact(f({ id: 'strong', claim: 'ship it', authority: 'OWNER_EXPLICIT_DIRECTIVE',
+                  tags: ['subject:release'], observed_at: old, valid_for_days: 7 }), now),
+    labelFact(f({ id: 'fresh', claim: 'do not ship', authority: 'LIVE_RUNTIME_OR_BROWSER_EVIDENCE',
+                  tags: ['subject:release'] }), now),
+  ]);
+  t('V2-C: a stale strongest authority is flagged NOT actionable',
+    staleStrong[0].strongest_id === 'strong' && staleStrong[0].strongest_is_actionable === false);
+  t('V2-C: the note WARNS instead of saying "prefer the stronger"',
+    /WARNING/.test(staleStrong[0].note) && /NOT actionable/.test(staleStrong[0].note));
+  t('V2-C: the strongest ACTIONABLE claim is named instead',
+    staleStrong[0].strongest_actionable_id === 'fresh');
+  // And when the strongest IS current, the original guidance stands.
+  const freshStrong = findContradictions([
+    labelFact(f({ id: 's2', claim: 'ship it', authority: 'OWNER_EXPLICIT_DIRECTIVE', tags: ['subject:r2'] }), now),
+    labelFact(f({ id: 'w2', claim: 'do not ship', authority: 'DERIVED_REPORT', tags: ['subject:r2'] }), now),
+  ]);
+  t('V2-C: a CURRENT strongest authority keeps normal guidance',
+    freshStrong[0].strongest_is_actionable === true && !/WARNING/.test(freshStrong[0].note));
+
+  // V2-D: an absurd self-declared window cannot resurrect an ancient fact.
+  const ancient = new Date(now.getTime() - 2398 * 86400_000).toISOString();
+  for (const w of [1e9, '1e9', 3651, 999999]) {
+    const lf = labelFact(f({ id: 'w', claim: 'ancient', observed_at: ancient, valid_for_days: w }), now);
+    t(`V2-D: valid_for_days ${JSON.stringify(w)} does not make an ancient fact actionable`,
+      lf.actionable === false && lf.freshness !== 'CURRENT');
+  }
+  // A window at the ceiling still works, so the cap is not a blanket refusal.
+  t('V2-D: a legitimate window at the ceiling is still honoured',
+    labelFact(f({ id: 'ok', claim: 'recent', valid_for_days: 3650 }), now).freshness === 'CURRENT');
 
   console.log(`\n  Context Compiler self-test: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);

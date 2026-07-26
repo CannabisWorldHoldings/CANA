@@ -138,10 +138,13 @@ export function buildPilot({ retailer, audit, ledger = [], now = new Date() }) {
   };
   const seenDigests = new Set();
   const evidenced = [];
-  let rejectedDuplicate = 0, rejectedForeign = 0;
+  let rejectedDuplicate = 0, rejectedForeign = 0, rejectedEvidence = 0;
   for (const a of attributions) {
     if (!ownedByThisMerchant(a)) { rejectedForeign++; continue; }
-    if (evidenceSteps(a) === null) continue;
+    // Counted separately from ownership. A single lumped "unverified" total let
+    // an OWNERSHIP rejection satisfy a test asserting an EVIDENCE rejection,
+    // which is how the P1 regression suite went blind.
+    if (evidenceSteps(a) === null) { rejectedEvidence++; continue; }
     if (seenDigests.has(a.evidenceChainSha256)) { rejectedDuplicate++; continue; }
     seenDigests.add(a.evidenceChainSha256);
     evidenced.push(a);
@@ -202,6 +205,8 @@ export function buildPilot({ retailer, audit, ledger = [], now = new Date() }) {
       recorded: attributions.length,
       evidence_verified: evidenced.length,
       rejected_unverified: unevidenced,
+      // Disaggregated so a rejection can never be credited to the wrong guard.
+      rejected_bad_evidence: rejectedEvidence,
       rejected_duplicate_evidence: rejectedDuplicate,
       rejected_foreign_merchant: rejectedForeign,
       by_kind: byKind,
@@ -277,18 +282,35 @@ if (has('selftest')) {
   t('owner-only actions are stated', p3.owner_only_actions.includes('activating real payment'));
 
   // ---- P1 CRITICAL regression: empty / malformed evidence chains
-  const emptyChain = (c) => ({ kind: 'ATTRIBUTION', actionKind: 'PHONE_CLICK', evidenceChain: c, evidenceChainSha256: sha(c) });
+  // VERIFIER FINDING (test integrity, MEDIUM): this helper originally omitted
+  // merchantId. Once the ATTACK-7 ownership guard landed, every row here was
+  // rejected as FOREIGN *before* the evidence validator ran, so the P1 suite
+  // passed for the wrong reason. The verifier proved it by deleting the entire
+  // evidence-validation block and still seeing 46/46. A test that cannot fail
+  // is not a test. These rows now carry correct ownership so the ONLY thing
+  // that can reject them is the evidence validation they exist to guard.
+  const emptyChain = (c) => ({
+    kind: 'ATTRIBUTION', actionKind: 'PHONE_CLICK', merchantId: 'r1',
+    relationshipOwner: 'MERCHANT',
+    evidenceChain: c, evidenceChainSha256: sha(c),
+  });
   for (const bad of ['[]', '[{}]', '""', 'null', '{}', '[null]', '[[]]', '[{"step":"x"}]', '[{"ref":"y"}]', '[{"step":"  ","ref":"y"}]', 'not json']) {
     const pk = buildPilot({ retailer: R(), audit: A(), ledger: [...spent, emptyChain(bad)], now }).package;
     t(`P1: evidenceChain ${JSON.stringify(bad).slice(0, 22)} is NOT evidence`,
-      pk.attribution.evidence_verified === 0 && pk.proof_of_value === null);
+      pk.attribution.evidence_verified === 0 && pk.proof_of_value === null
+      // The row must be refused BY THE EVIDENCE GUARD specifically, and must
+      // NOT have been silently discarded as foreign. This is what makes the
+      // test capable of failing when evidence validation is removed.
+      && pk.attribution.rejected_bad_evidence === 1
+      && pk.attribution.rejected_foreign_merchant === 0);
   }
   t('P1: a genuine multi-step chain still counts',
     buildPilot({ retailer: R(), audit: A(), ledger: full, now }).package.attribution.evidence_verified === 1);
   // A prototype-polluted link must not fake a step.
   const polluted = JSON.stringify([JSON.parse('{"__proto__":{"step":"x","ref":"y"}}')]);
+  const pp = buildPilot({ retailer: R(), audit: A(), ledger: [...spent, emptyChain(polluted)], now }).package;
   t('P1: prototype-polluted link rejected',
-    buildPilot({ retailer: R(), audit: A(), ledger: [...spent, emptyChain(polluted)], now }).package.attribution.evidence_verified === 0);
+    pp.attribution.evidence_verified === 0 && pp.attribution.rejected_bad_evidence === 1);
 
   // ---- ATTACK 5/6/7 regressions: duplicate, replay, forged ownership
   const own = (o = {}) => ({ ...attr(o), merchantId: 'r1' });
