@@ -1,0 +1,600 @@
+{
+  "package": "CANA-DURABLE-20260726",
+  "created_at": "2026-07-26T15:54:13.597594+00:00",
+  "purpose": "Durable off-sandbox recovery package. CannabisWorldHoldings/CANA is still 404 (owner action), so these commits exist only in the agent workspace. This package makes them recoverable by two independent paths.",
+  "source_repository": "local working repo ui-recover (git archive extraction, NO remote \u2014 no source repository was ever touched)",
+  "protected_baseline": {
+    "ref": "main / origin/main",
+    "sha": "487ece684a226339ab1a7a48a08a268266672329"
+  },
+  "current_head": {
+    "ref": "recover/competitive-ui-day-night",
+    "sha": "4e012faa77d1acc9b1695ce63212f33f875fefe2",
+    "short": "4e012fa"
+  },
+  "branches": [
+    {
+      "sha": "487ece684a226339ab1a7a48a08a268266672329",
+      "ref": "refs/heads/main"
+    },
+    {
+      "sha": "4e012faa77d1acc9b1695ce63212f33f875fefe2",
+      "ref": "refs/heads/recover/competitive-ui-day-night"
+    },
+    {
+      "sha": "487ece684a226339ab1a7a48a08a268266672329",
+      "ref": "refs/remotes/origin/HEAD"
+    },
+    {
+      "sha": "dfbc46030a79ed4c9a06596bed7f6994ca0f47a4",
+      "ref": "refs/remotes/origin/deploy/namecheap-production"
+    },
+    {
+      "sha": "25d6569ec74177a844847585251cf249e085bdc2",
+      "ref": "refs/remotes/origin/feature/world-class-upgrade"
+    },
+    {
+      "sha": "28c9ce31f60736b380026dceb5c642115c387f86",
+      "ref": "refs/remotes/origin/fix/artifact-fail-closed-repro"
+    },
+    {
+      "sha": "8a6f62446dc8efd85a90a845f8693bce496b89d2",
+      "ref": "refs/remotes/origin/fix/homepage-passenger-surgical-v2"
+    },
+    {
+      "sha": "352ff70c056430368cb218fdd7d7de9edcbc8e1f",
+      "ref": "refs/remotes/origin/hardening/incident-learning-2026-07-23"
+    },
+    {
+      "sha": "487ece684a226339ab1a7a48a08a268266672329",
+      "ref": "refs/remotes/origin/main"
+    },
+    {
+      "sha": "fccef021f6da51626b7452f24d5c23d2635812fa",
+      "ref": "refs/remotes/origin/revert-8-fix/artifact-fail-closed-repro"
+    },
+    {
+      "sha": "772dfed45b392d42547ce4d6a2e64b8c38374169",
+      "ref": "refs/remotes/origin/verify/pr7-pr8-final"
+    }
+  ],
+  "commit_totals": {
+    "reachable_from_all_refs": 87,
+    "ahead_of_protected_baseline": 36
+  },
+  "key_commits": {
+    "3536758": "verifier repairs \u2014 5 confirmed defects closed, 15 regression guards",
+    "1795db3": "API v1 retailers \u2014 truth boundary enforced, 9 HTTP contract tests",
+    "4448821": "LAW 2b \u2014 contradiction on the action subject BLOCKS the packet",
+    "2f10e62": "Visibility Audit \u2014 first self-tests (23), --db no longer defaults",
+    "9c6e87b": "test database isolation rules",
+    "4e012fa": "checkpoint \u2014 web 264/264, skills 241/241, e2e binding proven"
+  },
+  "commits": [
+    {
+      "sha": "4e012faa77d1acc9b1695ce63212f33f875fefe2",
+      "short": "4e012fa",
+      "author": "Hermes",
+      "date": "2026-07-26T11:47:51-04:00",
+      "subject": "chore: checkpoint \u2014 web 264/264, skills 241/241, e2e binding proven",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "2f10e62977885da4d900ab2af0a3562c15f40539",
+      "short": "2f10e62",
+      "author": "Hermes",
+      "date": "2026-07-26T11:47:12-04:00",
+      "subject": "test(audit): the visibility audit had NO self-test \u2014 the pilot depends on it",
+      "files_changed": [
+        "skills-src/merchant-visibility-audit.mjs"
+      ]
+    },
+    {
+      "sha": "44488213a2deccd4d220a43dd79b04deb5e7f1d8",
+      "short": "4448821",
+      "author": "Hermes",
+      "date": "2026-07-26T11:44:22-04:00",
+      "subject": "feat(hermes): LAW 2b \u2014 a contradiction on the action's own subject BLOCKS",
+      "files_changed": [
+        "skills-src/e2e-compiler-packet-binding.mjs",
+        "skills-src/hermes-governed-packet.mjs"
+      ]
+    },
+    {
+      "sha": "9c6e87bde66cbbc8e8b12837a94125aa7a4131ac",
+      "short": "9c6e87b",
+      "author": "Hermes",
+      "date": "2026-07-26T11:42:34-04:00",
+      "subject": "docs(tests): codify database isolation after a verifier confound",
+      "files_changed": [
+        "apps/web/tests/README-ISOLATION.md"
+      ]
+    },
+    {
+      "sha": "1ca731f994da689e08fd0d83ccfaf78c79b50108",
+      "short": "1ca731f",
+      "author": "Hermes",
+      "date": "2026-07-26T11:41:58-04:00",
+      "subject": "docs(verify): record verification 07 and promote both components",
+      "files_changed": [
+        "deliverables/INDEPENDENT_VERIFICATION_07_PILOT_COMPILER_REPAIRED.md",
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "35367583442e73ed72f1e4c74e0ab45cd7f03faf",
+      "short": "3536758",
+      "author": "Hermes",
+      "date": "2026-07-26T11:40:53-04:00",
+      "subject": "fix(verify): close 5 defects the SECOND independent verifier confirmed",
+      "files_changed": [
+        "skills-src/orderweeddc-merchant-pilot.mjs",
+        "skills-src/sitemind-context-compiler.mjs"
+      ]
+    },
+    {
+      "sha": "a935ebb3fc4ebaacda5dffefd0432ad9adc2aa63",
+      "short": "a935ebb",
+      "author": "Hermes",
+      "date": "2026-07-26T11:34:00-04:00",
+      "subject": "chore: remove one-off scratch harnesses",
+      "files_changed": [
+        "_pw_measure.mjs",
+        "apps/web/_verify_mutate.mjs"
+      ]
+    },
+    {
+      "sha": "1795db32e6bfe5f3354a417c617ed4347837cc1e",
+      "short": "1795db3",
+      "author": "Hermes",
+      "date": "2026-07-26T11:33:53-04:00",
+      "subject": "feat(api): versioned public API v1 for retailers with enforced truth boundary",
+      "files_changed": [
+        "apps/web/src/app/api/v1/retailers/route.ts",
+        "apps/web/tests/api-v1-contract.test.mjs"
+      ]
+    },
+    {
+      "sha": "2f3d46d887f8f9e702ea89ac3ab658c002cc4af8",
+      "short": "2f3d46d",
+      "author": "CANA Agent",
+      "date": "2026-07-26T11:21:10-04:00",
+      "subject": "fix(pilot): close duplicate-evidence and forged-ownership value inflation",
+      "files_changed": [
+        "skills-src/orderweeddc-merchant-pilot.mjs"
+      ]
+    },
+    {
+      "sha": "8ddbeeb8ef9e60998509929c8b8b045e7cb96037",
+      "short": "8ddbeeb",
+      "author": "CANA Agent",
+      "date": "2026-07-26T10:55:00-04:00",
+      "subject": "fix: close CRITICAL fabricated-value and future-dating bypasses",
+      "files_changed": [
+        "skills-src/orderweeddc-merchant-pilot.mjs",
+        "skills-src/sitemind-context-compiler.mjs"
+      ]
+    },
+    {
+      "sha": "47523ce891ace582c166e921a36a71e1a0b3f224",
+      "short": "47523ce",
+      "author": "CANA Agent",
+      "date": "2026-07-26T10:45:24-04:00",
+      "subject": "feat(hermes): governed execution packet \u2014 binds Context Compiler to CANA authority",
+      "files_changed": [
+        "skills-src/hermes-governed-packet.mjs"
+      ]
+    },
+    {
+      "sha": "0a7a121cebcdf74afdaa5f95c971446226092db5",
+      "short": "0a7a121",
+      "author": "CANA Agent",
+      "date": "2026-07-26T10:42:23-04:00",
+      "subject": "feat(revenue): merchant pilot package \u2014 the wedge assembled end to end",
+      "files_changed": [
+        "skills-src/orderweeddc-merchant-pilot.mjs"
+      ]
+    },
+    {
+      "sha": "baf067e6c254ad49277b954d7fe521cead71d7d3",
+      "short": "baf067e",
+      "author": "CANA Agent",
+      "date": "2026-07-26T10:40:25-04:00",
+      "subject": "fix(a11y): all 7 consumer surfaces pass day and night \u2014 target debt cleared",
+      "files_changed": [
+        "apps/web/src/app/[domain]/compare/page.tsx",
+        "apps/web/src/app/[domain]/education/page.tsx",
+        "apps/web/src/app/[domain]/neighborhoods/[slug]/page.tsx",
+        "apps/web/src/app/[domain]/products/page.tsx",
+        "apps/web/src/components/dosage-calculator.tsx"
+      ]
+    },
+    {
+      "sha": "fb6ca24c5ec4d8e8cdbdcffc76848c9bedff6395",
+      "short": "fb6ca24",
+      "author": "CANA Agent",
+      "date": "2026-07-26T10:28:46-04:00",
+      "subject": "fix(benchmark): interrupted runs now exit nonzero \u2014 suite reaches 255/255",
+      "files_changed": [
+        "apps/web/scripts/benchmark-product-discovery.mjs"
+      ]
+    },
+    {
+      "sha": "457bc749fb51a6c60cd6dee1d130cc9a97219627",
+      "short": "457bc74",
+      "author": "CANA Agent",
+      "date": "2026-07-26T10:07:50-04:00",
+      "subject": "fix(m-001): verify entitlement hashes instead of checking they exist",
+      "files_changed": [
+        "apps/web/src/lib/demand-credits.mjs",
+        "apps/web/src/lib/sponsorship-entitlement.mjs",
+        "apps/web/tests/sponsorship-entitlement.test.mjs"
+      ]
+    },
+    {
+      "sha": "36a3e41979e6a8ca6eee53b64eddb1b3fe667dad",
+      "short": "36a3e41",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:59:46-04:00",
+      "subject": "feat(m-001): extend entitlement gate to all four production surfaces",
+      "files_changed": [
+        "ap.mjs",
+        "apps/web/src/app/[domain]/compare/page.tsx",
+        "apps/web/src/app/[domain]/neighborhoods/[slug]/page.tsx",
+        "apps/web/src/app/[domain]/products/page.tsx",
+        "apps/web/src/lib/sponsorship-server.mjs"
+      ]
+    },
+    {
+      "sha": "78d4e19b6b89a02ab67cb1c7de968c167032552e",
+      "short": "78d4e19",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:51:10-04:00",
+      "subject": "docs(backend): contract map derived from the running system",
+      "files_changed": [
+        "_pw_measure.mjs",
+        "apps/web/_verify_mutate.mjs",
+        "apps/web/public/apple-touch-icon.png",
+        "apps/web/public/art/cat-accessories.jpg",
+        "apps/web/public/art/cat-concentrates.jpg",
+        "apps/web/public/art/cat-edibles.jpg",
+        "apps/web/public/art/cat-flower.jpg",
+        "apps/web/public/art/cat-pre-rolls.jpg",
+        "apps/web/public/art/cat-topicals.jpg",
+        "apps/web/public/art/cat-vapes.jpg",
+        "apps/web/public/art/hero-dc.jpg",
+        "apps/web/public/art/retailer-delivery.jpg",
+        "apps/web/public/art/retailer-storefront.jpg",
+        "apps/web/public/fonts/ibm-plex-mono-400-latin.woff2",
+        "apps/web/public/fonts/ibm-plex-mono-600-latin.woff2",
+        "apps/web/public/fonts/inter-var-latin.woff2",
+        "apps/web/public/fonts/space-grotesk-var-latin.woff2",
+        "apps/web/public/icon-192.png",
+        "apps/web/public/icon-512.png",
+        "apps/web/public/og-default.jpg"
+      ]
+    },
+    {
+      "sha": "549099dd2fef5094334cd1f7896f9f99b90a645e",
+      "short": "549099d",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:49:58-04:00",
+      "subject": "feat(sitemind): Context Compiler \u2014 sealed mission packets from labeled state",
+      "files_changed": [
+        "skills-src/sitemind-context-compiler.mjs"
+      ]
+    },
+    {
+      "sha": "85396015cc3e7f75fd19acf4cb09a3a78df41926",
+      "short": "8539601",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:46:55-04:00",
+      "subject": "feat(m-001): wire sponsorship entitlement into the PRODUCTION homepage",
+      "files_changed": [
+        "apps/web/src/app/[domain]/page.tsx",
+        "apps/web/src/components/sponsorship-badge.tsx",
+        "prod-spon.mjs"
+      ]
+    },
+    {
+      "sha": "192b53c4f9e0de362db2f05e112e2f9286d3ec81",
+      "short": "192b53c",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:38:40-04:00",
+      "subject": "fix(a11y): homepage now PASSES the accessibility court on desktop and mobile",
+      "files_changed": [
+        "apps/web/src/app/[domain]/layout.tsx",
+        "apps/web/src/app/[domain]/page.tsx"
+      ]
+    },
+    {
+      "sha": "b61ddaa93f3d6d35973d6bbf01bc6d21ea196381",
+      "short": "b61ddaa",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:19:09-04:00",
+      "subject": "fix(a11y): eliminate all homepage contrast failures (18 -> 0)",
+      "files_changed": [
+        "ap.mjs",
+        "apps/web/src/app/[domain]/compare/page.tsx",
+        "apps/web/src/app/[domain]/customer/login/page.tsx",
+        "apps/web/src/app/[domain]/deals/page.tsx",
+        "apps/web/src/app/[domain]/education/[slug]/page.tsx",
+        "apps/web/src/app/[domain]/education/page.tsx",
+        "apps/web/src/app/[domain]/help/page.tsx",
+        "apps/web/src/app/[domain]/layout.tsx",
+        "apps/web/src/app/[domain]/legal/page.tsx",
+        "apps/web/src/app/[domain]/neighborhoods/[slug]/page.tsx",
+        "apps/web/src/app/[domain]/neighborhoods/page.tsx",
+        "apps/web/src/app/[domain]/page.tsx",
+        "apps/web/src/app/[domain]/pricing/page.tsx",
+        "apps/web/src/app/[domain]/products/page.tsx",
+        "apps/web/src/app/[domain]/retailer/[id]/correction/page.tsx",
+        "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+        "apps/web/src/app/[domain]/strains/[type]/page.tsx",
+        "apps/web/src/app/[domain]/strains/page.tsx",
+        "apps/web/src/app/[domain]/wallet/page.tsx",
+        "apps/web/src/app/admin/login/page.tsx",
+        "apps/web/src/app/admin/page.tsx",
+        "apps/web/src/app/admin/site-intelligence/page.tsx",
+        "apps/web/src/app/business/claim/page.tsx",
+        "apps/web/src/app/business/dashboard/page.tsx",
+        "apps/web/src/app/globals.css",
+        "apps/web/src/components/age-gate.tsx",
+        "apps/web/src/components/cart-drawer.tsx",
+        "apps/web/src/components/dosage-calculator.tsx",
+        "apps/web/src/components/favorite-button.tsx",
+        "apps/web/src/components/marketplace-category-rail.tsx",
+        "apps/web/src/components/marketplace-featured-retailers.tsx",
+        "apps/web/src/components/marketplace-home-hero.tsx",
+        "apps/web/src/components/mobile-nav.tsx",
+        "apps/web/src/components/retailer-map.tsx",
+        "apps/web/src/components/review-modal.tsx"
+      ]
+    },
+    {
+      "sha": "e24deef5b4c5edba0b08199eb27ed8dba1ca6fe8",
+      "short": "e24deef",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:12:24-04:00",
+      "subject": "fix(m-001): close asymmetric forgery check + adversarial refund revival",
+      "files_changed": [
+        "apps/web/src/app/globals.css",
+        "apps/web/src/components/sponsorship-badge.tsx",
+        "apps/web/src/lib/sponsorship-entitlement.mjs",
+        "apps/web/tests/sponsorship-entitlement.test.mjs"
+      ]
+    },
+    {
+      "sha": "fe63cbc73bc697e14ed0a05888dd42a0b461b96d",
+      "short": "fe63cbc",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:07:48-04:00",
+      "subject": "feat(court): accessibility + performance court, falsification-proven",
+      "files_changed": [
+        "ap.mjs",
+        "apps/web/src/app/lab/fixture-a11y/page.tsx"
+      ]
+    },
+    {
+      "sha": "8552cd7cb682c3495f4fb6ff789d980b570a81f8",
+      "short": "8552cd7",
+      "author": "CANA Agent",
+      "date": "2026-07-26T09:00:42-04:00",
+      "subject": "feat(m-001): per-card sponsorship bound to the persisted Demand Credit contract",
+      "files_changed": [
+        "apps/web/src/app/lab/sponsorship/page.tsx",
+        "apps/web/src/components/sponsorship-badge.tsx",
+        "apps/web/src/lib/sponsorship-entitlement.mjs",
+        "apps/web/tests/sponsorship-entitlement.test.mjs",
+        "spon-court.mjs",
+        "spon-shot.mjs"
+      ]
+    },
+    {
+      "sha": "a68c739025e33ad97ed960b890e2675ed518bf23",
+      "short": "a68c739",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:37:55-04:00",
+      "subject": "fix(revenue): close CRITICAL overflow money-creation; disclose the unanchored-chain limit",
+      "files_changed": [
+        "apps/web/src/lib/demand-credits.mjs",
+        "apps/web/tests/demand-credits.test.mjs"
+      ]
+    },
+    {
+      "sha": "4d0c10e8d4b3af833affe9e67ca87d3b3ef7a9b7",
+      "short": "4d0c10e",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:35:37-04:00",
+      "subject": "feat(revenue): persist Demand Credits ledger to Prisma with DB-verified invariants",
+      "files_changed": [
+        "apps/web/prisma/schema.prisma",
+        "apps/web/src/lib/demand-credits.mjs",
+        "apps/web/tests/demand-credits.test.mjs"
+      ]
+    },
+    {
+      "sha": "3fec2478af8666b5ec09e3f8f395a9fafd8a14a6",
+      "short": "3fec247",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:25:34-04:00",
+      "subject": "fix(intel): close CRITICAL Winner Memory bypass + sponsorship ordering guard",
+      "files_changed": [
+        "apps/web/tests/sponsorship-ordering-guard.test.mjs",
+        "skills-src/cana-signal-to-fix.mjs"
+      ]
+    },
+    {
+      "sha": "02541d07554843ccda65273dc82dae5ea24b6027",
+      "short": "02541d0",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:21:32-04:00",
+      "subject": "feat(revenue): Demand Credits + attribution ledger \u2014 M-005, the last unbuilt mechanism",
+      "files_changed": [
+        "skills-src/cana-demand-credits.mjs"
+      ]
+    },
+    {
+      "sha": "26bf8726463cb392819e9d246eb1d07773526ddf",
+      "short": "26bf872",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:09:53-04:00",
+      "subject": "fix(merchant): repair all defects found by independent verification",
+      "files_changed": [
+        "mva.mjs",
+        "skills-src/merchant-visibility-audit.mjs"
+      ]
+    },
+    {
+      "sha": "61bd68ad59dddaef881bdf7a032d0999343d5c13",
+      "short": "61bd68a",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:07:42-04:00",
+      "subject": "feat(seo): emit hasCredential JSON-LD \u2014 Mechanism Matrix M-002 improvement",
+      "files_changed": [
+        "apps/web/src/lib/structured-data.mjs",
+        "apps/web/tests/has-credential.test.mjs"
+      ]
+    },
+    {
+      "sha": "e69a2e8d4cee73376b5256e0369f64b6cdd36e73",
+      "short": "e69a2e8",
+      "author": "CANA Agent",
+      "date": "2026-07-26T08:04:51-04:00",
+      "subject": "feat(intel): Mechanism Matrix + CANA Signal-to-Fix pipeline",
+      "files_changed": [
+        "skills-src/cana-signal-to-fix.mjs",
+        "skills-src/merchant-visibility-audit.mjs"
+      ]
+    },
+    {
+      "sha": "f205e6b1edbfc09399427c96d9f1e30e34c9b26b",
+      "short": "f205e6b",
+      "author": "CANA Agent",
+      "date": "2026-07-26T07:49:03-04:00",
+      "subject": "feat(merchant): MERCHANT_VISIBILITY_AUDIT_V1 \u2014 first sellable artifact",
+      "files_changed": [
+        "mva.mjs"
+      ]
+    },
+    {
+      "sha": "931fc4227d7736efa40cbcfd28670f1b943ec0ad",
+      "short": "931fc42",
+      "author": "CANA Agent",
+      "date": "2026-07-26T07:46:32-04:00",
+      "subject": "fix(court): measure logo aspect pre-transform, unblocking rotated marks",
+      "files_changed": [
+        "bf.mjs"
+      ]
+    },
+    {
+      "sha": "9a17a743ada55f363d04892d9f65034cb192057a",
+      "short": "9a17a74",
+      "author": "CANA Agent",
+      "date": "2026-07-26T07:12:07-04:00",
+      "subject": "feat(brand): bind canonical ribbon logo + Brand Fidelity Court",
+      "files_changed": [
+        "apps/web/public/brand/orderweeddc-icon-256.png",
+        "apps/web/public/brand/orderweeddc-ribbon-inverse.png",
+        "apps/web/public/brand/orderweeddc-ribbon-primary.png",
+        "apps/web/src/app/lab/brand-mark.tsx",
+        "apps/web/src/app/lab/dir-a/page.tsx",
+        "apps/web/src/app/lab/dir-b/page.tsx",
+        "apps/web/src/app/lab/dir-c/page.tsx",
+        "apps/web/src/app/lab/fixture-typeset/page.tsx",
+        "apps/web/src/app/lab/shell.tsx",
+        "bf.mjs"
+      ]
+    },
+    {
+      "sha": "416fec84747dc9365b91c78ed6fead28ffc1ef31",
+      "short": "416fec8",
+      "author": "CANA Agent",
+      "date": "2026-07-26T06:34:34-04:00",
+      "subject": "feat(lab): three materially different UI directions + browser court",
+      "files_changed": [
+        "apps/web/src/app/lab/dir-a/page.tsx",
+        "apps/web/src/app/lab/dir-b/page.tsx",
+        "apps/web/src/app/lab/dir-c/page.tsx",
+        "apps/web/src/app/lab/shell.tsx",
+        "apps/web/src/app/lab/wordmark.tsx",
+        "audit.mjs",
+        "bp.mjs",
+        "canvas.mjs",
+        "shoot-lab.mjs"
+      ]
+    },
+    {
+      "sha": "3a7e122fe04451bf694775f83b1b181cc5456a45",
+      "short": "3a7e122",
+      "author": "CANA Agent",
+      "date": "2026-07-26T05:48:18-04:00",
+      "subject": "recover(ui): restore local-only marketplace components and imagery from 28ffe9dc",
+      "files_changed": [
+        ".gitignore",
+        "apps/web/public/marketplace/hero-marketplace-v2.webp",
+        "apps/web/public/marketplace/product-0.webp",
+        "apps/web/public/marketplace/product-1.webp",
+        "apps/web/public/marketplace/product-2.webp",
+        "apps/web/public/marketplace/product-3.webp",
+        "apps/web/public/marketplace/retailer-0.webp",
+        "apps/web/public/marketplace/retailer-1.webp",
+        "apps/web/public/marketplace/retailer-2.webp",
+        "apps/web/public/marketplace/retailer-3.webp",
+        "apps/web/src/components/marketplace-category-rail.tsx",
+        "apps/web/src/components/marketplace-featured-retailers.tsx",
+        "apps/web/src/components/marketplace-home-hero.tsx",
+        "apps/web/src/components/marketplace-search-panel.tsx"
+      ]
+    }
+  ],
+  "test_receipts": {
+    "web_suite": "264/264 passing",
+    "skills": {
+      "cana-demand-credits": "40/40",
+      "cana-signal-to-fix": "42/42",
+      "hermes-governed-packet": "36/36",
+      "merchant-visibility-audit": "23/23",
+      "orderweeddc-merchant-pilot": "46/46",
+      "sitemind-context-compiler": "54/54"
+    },
+    "skills_total": "241/241",
+    "e2e_compiler_packet_binding": "PROVEN",
+    "verified_from_restored_clone": "yes \u2014 all 241 skill tests re-run from the bundle restore, not the working copy"
+  },
+  "secret_scan": {
+    "text_blobs_scanned_full_history": 1057,
+    "real_secrets": 0,
+    "resolved_false_positives": [
+      "brand-assets.b64.json / og-default.jpg \u2014 an AKIA-shaped byte run inside base64 JPEG data; decoded magic bytes ffd8ffe0 confirm JPEG, not a credential",
+      "test files \u2014 password literals are fixtures (StrongClaim!2026 etc.), not live credentials"
+    ],
+    "credential_files_tracked": "none \u2014 .env is gitignored and never entered any commit; .env.example has empty values"
+  },
+  "recovery_paths": {
+    "path_1_bundle": {
+      "file": "cana-ui-recover-ALL.bundle",
+      "restore": "git clone cana-ui-recover-ALL.bundle restored",
+      "verified": "clone succeeded; 0 fsck errors; all 11 source ref tips present; 87 commits reachable from all tips in BOTH source and restore; HEAD tree 99708e5321508d5c7f19d57db8660ec9e36bb0ae identical; all 241 skill tests pass FROM the restore"
+    },
+    "path_2_patches": {
+      "dir": "patches/ (36 files)",
+      "restore": "git checkout 487ece6 && git checkout -b replay && git am patches/*.patch",
+      "verified": "replayed 36/36 commits from the protected baseline to tree 99708e5321508d5c7f19d57db8660ec9e36bb0ae \u2014 byte-identical to the target head tree"
+    }
+  },
+  "rollback_instructions": [
+    "NOTHING in this package modifies a source repository. The working repo has no remote.",
+    "To discard all work after the protected baseline: git checkout main (487ece6). The baseline is untouched by every commit here.",
+    "To recover a single wall, apply only its patch from patches/ by number (see commits[] for the file inventory of each).",
+    "To verify any restore before trusting it: run each skills-src/*.mjs with --selftest and expect the counts in test_receipts, then run skills-src/e2e-compiler-packet-binding.mjs and expect PROVEN.",
+    "Never restore by copying the working tree alone \u2014 always restore via bundle or patch series so history and receipts travel with the code."
+  ],
+  "owner_blocked": [
+    "CannabisWorldHoldings/CANA does not exist / is not visible (404 anonymously AND under the connected token). No canonical destination, so no push and no migration PR is possible.",
+    "Final visual direction selection using the exact approved ribbon asset.",
+    "Authorization for real merchant outreach before any live pilot contact."
+  ]
+}
