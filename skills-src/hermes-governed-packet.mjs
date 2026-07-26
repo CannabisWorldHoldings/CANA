@@ -81,6 +81,14 @@ export function makeGrant({ capability, budgetUnits, expiresAt, issuedBy, now = 
  * Seal a governed packet binding CONTEXT to AUTHORITY.
  * Refuses if either side is missing or invalid.
  */
+/**
+ * Subject tags an intent touches, normalized the same way the Context Compiler
+ * normalizes them. If the two normalizations drift, a contradiction stops
+ * matching an intent and the block below goes silently blind — the same class of
+ * failure the second verifier found in the compiler itself (V2-B).
+ */
+const normSubject = (t) => String(t).trim().replace(/\s+/g, ' ').toLowerCase();
+
 export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
   const errors = [];
   // LAW 1
@@ -89,6 +97,33 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
   } else if (!Array.isArray(contextPacket.actionable_facts) || contextPacket.actionable_facts.length === 0) {
     errors.push('context contains no actionable facts — refusing to act on reference-only evidence');
   }
+  // LAW 2b — CONTRADICTION BLOCKING (was: surfaced only).
+  //
+  // The packet previously listed unresolved contradictions in the sealed body
+  // and let the action proceed. Surfacing is necessary but not sufficient: if
+  // the context disagrees with itself about the VERY SUBJECT the action touches,
+  // there is no coherent basis for the action, and "an operator will read the
+  // list" is not a control. A contradiction on an UNRELATED subject is still
+  // only surfaced — blocking every action on any disagreement anywhere would
+  // make the system inert and invite the guard being switched off.
+  const intentSubjects = new Set((intent?.subjects ?? []).map(normSubject));
+  const blocking = (contextPacket?.contradictions ?? []).filter((c) => {
+    const key = normSubject(c.subject_key ?? c.subject ?? '');
+    return intentSubjects.has(key);
+  });
+  for (const c of blocking) {
+    errors.push(`REFUSED: context contradicts itself on ${c.subject} — the subject this action acts on. `
+      + `Claims: ${(c.claims ?? []).map((x) => `${x.id}:${JSON.stringify(x.claim)}`).join(' vs ')}. `
+      + 'Resolve the contradiction or obtain an owner decision; a governed action cannot proceed on a subject whose truth is unsettled.');
+  }
+  // A contradiction whose strongest authority is STALE must never be resolved by
+  // authority alone, so it cannot be waved through even if it is non-blocking.
+  for (const c of contextPacket?.contradictions ?? []) {
+    if (c.strongest_is_actionable === false && intentSubjects.has(normSubject(c.subject_key ?? c.subject ?? ''))) {
+      errors.push(`REFUSED: the strongest authority on ${c.subject} is ${c.strongest_freshness} and not actionable`);
+    }
+  }
+
   // LAW 2
   if (!grant?.valid) errors.push(`authorization invalid: ${grant?.errors?.join('; ') ?? 'no grant'}`);
   // Intent must be concrete enough to audit.
@@ -120,6 +155,10 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
     // Surfaced deliberately: an operator must see that the context disagreed
     // with itself before an action runs on it.
     unresolved_contradictions: (contextPacket.contradictions ?? []).map((c) => c.subject),
+    // Recorded so a reader can tell that the contradictions listed above were
+    // checked against this action's subjects, not merely printed beside them.
+    intent_subjects: [...intentSubjects],
+    contradictions_checked_against_intent: true,
   };
   return { valid: true, errors: [], packet: { ...body, packet_digest: sha(JSON.stringify(body)) } };
 }
@@ -204,6 +243,47 @@ if (has('selftest')) {
 
   const withContra = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: 'subject:repo' }] }, grant: g(), intent, now });
   t('unresolved contradictions are SURFACED, not hidden', withContra.packet.unresolved_contradictions.includes('subject:repo'));
+
+  // ---- LAW 2b: a contradiction ON THE ACTION'S OWN SUBJECT must BLOCK.
+  // Surfacing alone let an action proceed on a subject whose truth was unsettled.
+  const contra = [{ subject: 'subject:repo', subject_key: 'subject:repo',
+    claims: [{ id: 'a', claim: 'reachable' }, { id: 'b', claim: '404' }] }];
+  const blocked = sealPacket({ contextPacket: { ...ctx, contradictions: contra },
+    grant: g(), intent: { ...intent, subjects: ['subject:repo'] }, now });
+  t('L2b: a contradiction on the action\'s subject REFUSES the packet', blocked.valid === false);
+  t('L2b: the refusal names the subject and both claims',
+    blocked.errors.some((e) => /contradicts itself on subject:repo/.test(e) && /a:"reachable"/.test(e) && /b:"404"/.test(e)));
+  t('L2b: a refused packet is not sealed', blocked.packet === null);
+
+  // Case and whitespace must not let an action slip past the block, exactly as
+  // in the compiler (V2-B). Normalization must match on both sides.
+  for (const [cs, is] of [['subject:Repo', 'subject:repo'], ['subject:repo', 'subject:repo '],
+                          ['subject:REPO', ' subject:repo']]) {
+    const r = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: cs, claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] },
+      grant: g(), intent: { ...intent, subjects: [is] }, now });
+    t(`L2b: ${JSON.stringify(cs)} vs intent ${JSON.stringify(is)} still blocks`, r.valid === false);
+  }
+
+  // A contradiction on an UNRELATED subject is surfaced but must NOT block, or
+  // the system becomes inert and the guard gets switched off.
+  const unrelated = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: 'subject:unrelated', claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] },
+    grant: g(), intent: { ...intent, subjects: ['subject:repo'] }, now });
+  t('L2b: an UNRELATED contradiction does not block', unrelated.valid === true);
+  t('L2b: but it is still surfaced in the sealed body',
+    unrelated.packet.unresolved_contradictions.includes('subject:unrelated'));
+
+  // A stale strongest authority (compiler V2-C) cannot be waved through.
+  const staleAuth = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: 'subject:release', subject_key: 'subject:release',
+      strongest_is_actionable: false, strongest_freshness: 'STALE',
+      claims: [{ id: 's', claim: 'ship' }, { id: 'f', claim: 'hold' }] }] },
+    grant: g(), intent: { ...intent, subjects: ['subject:release'] }, now });
+  t('L2b: a STALE strongest authority is refused, not preferred',
+    staleAuth.valid === false && staleAuth.errors.some((e) => /not actionable/.test(e)));
+
+  // The check must be recorded, so a reader can tell it happened.
+  t('L2b: the packet records that contradictions were checked against intent',
+    unrelated.packet.contradictions_checked_against_intent === true
+    && unrelated.packet.intent_subjects.includes('subject:repo'));
 
   const ok = makeReceipt({ packet: p.packet, outcome: { succeeded: true, budgetUsed: 3,
     evidence: [{ observation: 'court exited 0', ref: '/tmp/court.json' }] }, now });
