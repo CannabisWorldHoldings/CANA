@@ -1,0 +1,43 @@
+'use client';
+import { useEffect, useState } from 'react';
+export type Theme = 'day' | 'night';
+
+/** Lab shell: enforces exact canvas law (#FFFFFF / #000000) and a persistent toggle. */
+export function Lab({ theme: initial = 'day', children, label }: { theme?: Theme; children: React.ReactNode; label: string }) {
+  const [theme, setTheme] = useState<Theme>(initial);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('theme');
+    if (q === 'day' || q === 'night') { setTheme(q); return; }
+    const saved = window.localStorage.getItem('owd-lab-theme');
+    if (saved === 'day' || saved === 'night') setTheme(saved as Theme);
+  }, []);
+  useEffect(() => {
+    window.localStorage.setItem('owd-lab-theme', theme);
+    // Canvas law: html AND body must be exactly white or exactly black.
+    const c = theme === 'night' ? '#000000' : '#FFFFFF';
+    document.documentElement.style.background = c;
+    document.body.style.background = c;
+  }, [theme]);
+  const night = theme === 'night';
+  return (
+    <div
+      data-theme={theme}
+      style={{ background: night ? '#000000' : '#FFFFFF', color: night ? '#F4FBF7' : '#07120C', minHeight: '100vh' }}
+    >
+      <button
+        onClick={() => setTheme(night ? 'day' : 'night')}
+        aria-label={`Switch to ${night ? 'day' : 'night'} mode`}
+        style={{
+          position: 'fixed', top: 16, right: 16, zIndex: 90,
+          padding: '9px 15px', borderRadius: 999, cursor: 'pointer',
+          fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+          background: night ? '#0a5c37' : '#07120C', color: '#fff',
+          border: `1px solid ${night ? '#12d67f55' : '#00000022'}`,
+        }}
+      >
+        {night ? 'Night' : 'Day'} · {label}
+      </button>
+      {children}
+    </div>
+  );
+}
