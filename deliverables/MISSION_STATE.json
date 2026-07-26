@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "4025f63",
-  "last_checkpoint_at": "2026-07-26T20:26:14.676135+00:00",
+  "last_checkpoint": "a0ef280",
+  "last_checkpoint_at": "2026-07-26T21:14:16.340803+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1057,10 +1057,36 @@
       "grade_verdict": "MERCHANT_HANDOFF_VERIFIED is honest at live HEAD and scoped to a causal render-to-submission link, explicitly not personhood",
       "falsification_proven": true,
       "tests": "web 489/489"
+    },
+    {
+      "wall": "DATABASE_CONFIG_REPRODUCIBLE",
+      "commit": "72313e5",
+      "measured_defect": "a fresh database from the source-controlled schema reports journal_mode=delete; WAL existed only in the untracked local dev.db",
+      "fix": "db-config.mjs declares the settings as data with rationale, applies them idempotently at startup, and verifies by reading back",
+      "classification": "SQLITE = LOCAL_TEST_DATABASE_ONLY, on measured evidence; MariaDB 11.4.9 and PostgreSQL 10.23 available on the host; provisioning is an OWNER action",
+      "measured_correction": "I claimed busy_timeout and foreign_keys were lost on restart; a fresh process proved Prisma supplies both. The court now pins the real behaviour.",
+      "falsification_proven": true
+    },
+    {
+      "wall": "WRITE_INDEPENDENT_HANDOFF",
+      "commit": "a0ef280",
+      "before": "10 simultaneous handoffs -> 10 HTTP 500s",
+      "after": "100 -> 100x303, 200 -> 200x303, zero 5xx, zero wrong redirects",
+      "money_integrity": "300 handoffs against one challenge produced exactly ONE value-eligible attribution",
+      "states": [
+        "CONSUMER_HANDOFF_SUCCEEDED",
+        "EVIDENCE_WRITE_SUCCEEDED",
+        "EVIDENCE_WRITE_DEFERRED",
+        "EVIDENCE_WRITE_FAILED",
+        "VALUE_ELIGIBLE"
+      ],
+      "tests_reversed": "three legacy tests asserted the coupling that broke consumers; reversed to the stronger property rather than deleted",
+      "falsification_proven": true,
+      "tests": "web 500/500"
     }
   ],
   "test_baseline": {
-    "web": "489/489",
+    "web": "500/500",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
