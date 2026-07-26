@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "a0ef280",
-  "last_checkpoint_at": "2026-07-26T21:14:16.340803+00:00",
+  "last_checkpoint": "769c31e",
+  "last_checkpoint_at": "2026-07-26T21:40:18.012247+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1083,10 +1083,28 @@
       "tests_reversed": "three legacy tests asserted the coupling that broke consumers; reversed to the stronger property rather than deleted",
       "falsification_proven": true,
       "tests": "web 500/500"
+    },
+    {
+      "wall": "VERIFICATION_12_REPAIRS",
+      "commit": "769c31e",
+      "attacks": 28,
+      "upheld": [
+        "write-independence at 400 concurrent handoffs with zero 5xx and exactly one value-eligible row from ~1100 handoffs",
+        "DB_CLASSIFICATION honest from both directions"
+      ],
+      "findings": [
+        "F3 MEDIUM \u2014 synchronous declared persistent but is per-connection, in the module whose thesis is measured-not-assumed",
+        "F2 MEDIUM coverage \u2014 read-back verification unenforced by any test",
+        "F1 methodology trap \u2014 the suite must be run against a REBUILT server",
+        "F4 LOW by-design \u2014 value eligibility derives from the challenge, not the LeadEvent"
+      ],
+      "my_own_error": "my first F2 court ran inside a transaction where the pragma THROWS, so the sabotage passed; corrected to a case that succeeds and is silently ignored",
+      "falsification_proven": true,
+      "tests": "web 503/503"
     }
   ],
   "test_baseline": {
-    "web": "500/500",
+    "web": "503/503",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
