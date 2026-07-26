@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "2a80d53",
-  "last_checkpoint_at": "2026-07-26T19:36:26.987699+00:00",
+  "last_checkpoint": "a6d6390",
+  "last_checkpoint_at": "2026-07-26T19:41:24.763928+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1028,10 +1028,20 @@
       "proven_live": "render+submit -> MERCHANT_HANDOFF_VERIFIED eligible; direct POST -> APPLICATION_HANDOFF_VERIFIED not eligible; replay -> demoted; consumer always gets 303",
       "falsification_proven": true,
       "tests": "web 446/446 (28 new)"
+    },
+    {
+      "wall": "MERCHANT_PILOT_PACKAGE_V1",
+      "commit": "a6d6390",
+      "status": "PREPARED, NOT SENT, NOT AUTHORIZED \u2014 all 7 owner approvals unsigned",
+      "court": "a test suite reads the package as data and checks every claim against the real exported constants and behaviour, so the document fails when the code changes rather than becoming a lie",
+      "metric_ladder": "4 of 8 rows are NOT established (order intent, confirmed order, commercial outcome, revenue) and the package says so",
+      "billable_actions": "HANDOFF only \u2014 the sole action carrying page-bound evidence",
+      "falsification_proven": true,
+      "tests": "web 461/461 (15 court tests)"
     }
   ],
   "test_baseline": {
-    "web": "446/446",
+    "web": "461/461",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
