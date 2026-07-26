@@ -74,7 +74,7 @@ export function SponsorshipBadge({
       data-sponsorship-placement={ev.placement}
       data-sponsorship-entitlement={ev.entitlement_digest}
       data-sponsorship-affects-order="false"
-      className={`inline-flex items-center gap-1.5 rounded-full border border-brand-primary/40 bg-brand-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-brand-primary ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border border-brand-primary/40 bg-brand-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-brand-primary-text ${className}`}
       title="Paid placement. Sponsorship never changes the order of results."
     >
       <svg width="10" height="10" viewBox="0 0 12 12" aria-hidden="true" fill="currentColor">

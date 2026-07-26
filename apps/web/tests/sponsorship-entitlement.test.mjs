@@ -172,3 +172,60 @@ test('CONTROL: the gate can actually reject — it is not a rubber stamp', () =>
   // And the happy path still passes, so the gate is not simply always-deny.
   assert.equal(shouldRenderBadge(resolve([issue(), spend()]).state), true);
 });
+
+test('D-1 HIGH: a forged unlinked ISSUE cannot revive an EXPIRED campaign', () => {
+  // Independent verification: the resolver forgery-checked the SPEND but
+  // extended full trust to the ISSUE governing expiry. An unlinked forged ISSUE
+  // with a far-future expiry out-ranked the real expired funding and produced a
+  // visible ACTIVE badge — the deception-POSITIVE direction.
+  const r = resolve([
+    issue({ seq: 0, expiresAt: past, entryHash: 'hp' }),                     // real, expired
+    spend({ seq: 1 }),                                                        // legit, chain-linked
+    issue({ seq: 0.9, expiresAt: future, entryHash: null, prevHash: null }), // forged, unlinked
+  ]);
+  assert.equal(r.state, S.INVALID_EVIDENCE, 'an unlinked ISSUE must never govern expiry');
+  assert.equal(shouldRenderBadge(r.state), false);
+  assert.match(r.reason, /not chain-linked/);
+  // Control: the same shape with a properly linked newer ISSUE is legitimate.
+  const ok = resolve([
+    issue({ seq: 0, expiresAt: past, entryHash: 'hp' }),
+    spend({ seq: 1 }),
+    issue({ seq: 0.9, expiresAt: future, entryHash: 'hq', prevHash: 'hp' }),
+  ]);
+  assert.equal(ok.state, S.ACTIVE, 'a chain-linked newer funding legitimately governs');
+});
+
+test('D-2 MEDIUM: adversarial refund amounts cannot revive a refunded placement', () => {
+  // A NEGATIVE refund previously revived a fully-refunded placement, and a
+  // NaN/undefined amount silently nullified an entire refund set.
+  for (const bad of [-100, NaN, Infinity, -Infinity, undefined, null, '50', 0]) {
+    const r = resolve([issue(), spend(), refund({ amount: bad })]);
+    assert.equal(r.state, S.INVALID_EVIDENCE, `refund amount ${JSON.stringify(bad)} must fail closed`);
+    assert.equal(shouldRenderBadge(r.state), false);
+  }
+  // A negative refund alongside a real one must not net out to "not refunded".
+  const mixed = resolve([
+    issue(), spend(),
+    refund({ seq: 2, amount: 100, entryHash: 'h2' }),
+    refund({ seq: 3, amount: -100, entryHash: 'h3' }),
+  ]);
+  assert.equal(mixed.state, S.INVALID_EVIDENCE, 'a negative refund must not cancel a real one');
+});
+
+test('D-3 LOW: dedupe keys cannot collide via delimiter injection', () => {
+  const cards = [
+    { id: 'x', merchantId: 'a|b', placement: 'c', sponsorshipState: S.ACTIVE },
+    { id: 'y', merchantId: 'a', placement: 'b|c', sponsorshipState: S.ACTIVE },
+  ];
+  const allowed = dedupeSponsoredCards(cards);
+  assert.equal(allowed.size, 2, "'a|b'+'c' and 'a'+'b|c' are different campaigns and must not collide");
+});
+
+test('D-4 INFO: order-claim check matches the ledger strictness', () => {
+  for (const v of [true, 1, 'true', [], {}, 'yes']) {
+    const r = resolve([issue(), spend({ affectsOrganicOrder: v })]);
+    assert.equal(r.state, S.INVALID_EVIDENCE, `affectsOrganicOrder=${JSON.stringify(v)} must be refused`);
+  }
+  // null/undefined mean "not set" and are legitimate.
+  assert.equal(resolve([issue(), spend({ affectsOrganicOrder: null })]).state, S.ACTIVE);
+});

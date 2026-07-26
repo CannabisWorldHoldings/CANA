@@ -84,7 +84,9 @@ export function resolveSponsorship({
   const spend = spends[0];
 
   // A spend that ever claimed to alter ordering is not renderable, full stop.
-  if (spend.affectsOrganicOrder === true) {
+  // D-4: match the ledger's strictness. `=== true` let affectsOrganicOrder:1
+  // through; any non-false, non-null value is an attempted rank purchase.
+  if (spend.affectsOrganicOrder !== false && spend.affectsOrganicOrder != null) {
     return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, reason: 'entitlement claims to affect organic order — refused' };
   }
   // Disclosure text is part of the entitlement, not a UI decoration.
@@ -98,17 +100,40 @@ export function resolveSponsorship({
 
   // Refund check: cumulative refunds against this spend cancel the entitlement.
   const spentCents = Math.round(Math.abs(spend.amount) * 100);
-  const refundedCents = entries
-    .filter((e) => e && e.merchantId === merchantId && e.kind === 'REFUND' && e.originalSeq === spend.seq)
-    .reduce((s, e) => s + Math.round(e.amount * 100), 0);
+  const refundRows = entries
+    .filter((e) => e && e.merchantId === merchantId && e.kind === 'REFUND' && e.originalSeq === spend.seq);
+  // D-2 (independent verifier, MEDIUM): the sum had no finiteness or sign guard.
+  // A NEGATIVE refund revived a fully-refunded placement, and a NaN/undefined
+  // amount silently nullified an entire refund set — both keeping the badge
+  // ACTIVE. A refund row that is not a positive finite number is not evidence
+  // of anything; fail closed rather than quietly discounting it.
+  const badRefund = refundRows.find(
+    (e) => typeof e.amount !== 'number' || !Number.isFinite(e.amount) || e.amount <= 0,
+  );
+  if (badRefund) {
+    return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, spendSeq: spend.seq,
+      reason: `refund at seq=${badRefund.seq} has a non-positive or non-finite amount (${JSON.stringify(badRefund.amount)})` };
+  }
+  const refundedCents = refundRows.reduce((s, e) => s + Math.round(e.amount * 100), 0);
   if (refundedCents >= spentCents && spentCents > 0) {
     return { ...base, state: SPONSORSHIP_STATES.REFUNDED, spendSeq: spend.seq, reason: 'placement was fully refunded' };
   }
 
   // Expiry: governed by the ISSUE that funded this campaign.
+  //
+  // D-1 (independent verifier, HIGH): forgery-checking the SPEND while trusting
+  // the ISSUE was ASYMMETRIC. An unlinked forged ISSUE with a far-future expiry
+  // could out-rank the real expired funding and revive a dead campaign into a
+  // visible badge — the deception-positive direction. Every row that governs
+  // entitlement must clear the same bar.
   const issues = entries
     .filter((e) => e && e.merchantId === merchantId && e.kind === 'ISSUE' && e.seq < spend.seq)
     .sort((a, b) => b.seq - a.seq);
+  const unlinkedFunding = issues.find((e) => !text(e.entryHash) || !text(e.prevHash));
+  if (unlinkedFunding) {
+    return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, spendSeq: spend.seq,
+      reason: `funding ISSUE at seq=${unlinkedFunding.seq} is not chain-linked — possible forgery` };
+  }
   const funding = issues[0];
   if (!funding) {
     return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, spendSeq: spend.seq, reason: 'no funding ISSUE precedes this spend' };
@@ -154,7 +179,8 @@ export function dedupeSponsoredCards(cards) {
   const allowed = new Set();
   for (const c of cards) {
     if (!c || c.sponsorshipState !== SPONSORSHIP_STATES.ACTIVE) continue;
-    const key = `${c.merchantId}|${c.placement}`;
+    // D-3: length-prefixed so 'a|b'+'c' cannot collide with 'a'+'b|c'.
+    const key = `${String(c.merchantId ?? '').length}:${c.merchantId}|${String(c.placement ?? '').length}:${c.placement}`;
     if (seen.has(key)) continue; // duplicate campaign display — suppress
     seen.add(key);
     allowed.add(c.id);

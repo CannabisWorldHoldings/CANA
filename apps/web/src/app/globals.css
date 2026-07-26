@@ -43,6 +43,7 @@
 
 @theme inline {
   --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-text: var(--brand-primary-text);
   --color-brand-secondary: var(--brand-secondary);
   --color-brand-background: var(--brand-background);
   --color-brand-surface: var(--brand-surface);
@@ -61,6 +62,13 @@
      receive their palette from buildTenantTheme via inline CSS variables. */
   --brand-primary: #0e9f5a;
   --brand-secondary: #0a7443;
+  /* Accessible text-on-light green. --brand-primary (#0e9f5a) measures 3.43:1
+     against white — below the WCAG 2.2 AA 4.5:1 minimum for normal-size text —
+     so it must never colour small text, including the SPONSORED disclosure,
+     which is a compliance-bearing label. This token measures 7.06:1 and keeps
+     the deep-green identity. --brand-primary remains correct for FILLS, where
+     the white text on top carries the contrast. */
+  --brand-primary-text: #08663c;
   --brand-background: #ffffff;
   --brand-surface: #f7faf9;
   --brand-raised: #eef4f1;
