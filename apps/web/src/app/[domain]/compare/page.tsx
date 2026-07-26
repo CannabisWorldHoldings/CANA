@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DataStatusBadge } from '@/components/data-status-badge';
 import { prisma } from '@/lib/prisma';
+import { resolveSponsorshipFor } from '@/lib/sponsorship-server.mjs';
 import { isPubliclyVerified } from '@/lib/data-status.mjs';
 import {
   currentDealWhere,
@@ -131,6 +132,9 @@ export default async function RetailerComparePage({
           orderBy: { id: 'asc' },
           take: RETAILER_COMPARE_LIMIT,
         });
+
+  // M-001: sponsorship claims in the comparison table must come from the ledger.
+  const sponsorship = await resolveSponsorshipFor(prisma, records.map((r) => r.id));
 
   const recordsById = new Map(records.map((record) => [record.id, record]));
   const orderedRecords = selection.ids
@@ -402,8 +406,8 @@ export default async function RetailerComparePage({
                       key={retailer.id}
                       className="border-l border-brand-border px-5 py-4 text-sm text-brand-text"
                     >
-                      {retailer.isSponsored
-                        ? 'Yes — separated from trust state'
+                      {sponsorship.isActive(retailer.id)
+                        ? 'Yes — labeled placement, ordering unaffected'
                         : 'No paid placement recorded'}
                     </td>
                   ))}

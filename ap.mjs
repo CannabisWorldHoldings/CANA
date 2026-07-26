@@ -122,7 +122,20 @@ const audit = await page.evaluate(({ MIN_TAP_PX }) => {
   // of text is exempt, because enlarging it would break the line. Counting
   // inline links as violations produced 27 false positives on the homepage and
   // would have pushed a real fix toward damaging body copy.
+  // A control that is aria-hidden or visually-hidden (sr-only) is not a target
+  // a user can aim at — it exists for form submission or screen-reader text.
+  // The products page carries a 1x1 sr-only <select> that mirrors a visible
+  // control; counting it as a tap-target failure is a false positive.
+  const hiddenFromUsers = (el) => {
+    if (el.getAttribute('aria-hidden') === 'true') return true;
+    const r = el.getBoundingClientRect();
+    if (r.width <= 2 && r.height <= 2) return true;   // sr-only clip pattern
+    const cs = getComputedStyle(el);
+    if (cs.clip === 'rect(0px, 0px, 0px, 0px)' || cs.clipPath === 'inset(50%)') return true;
+    return false;
+  };
   const inlineExempt = (el) => {
+    if (hiddenFromUsers(el)) return true;
     if (el.tagName !== 'A') return false;
     const p = el.parentElement;
     if (!p) return false;

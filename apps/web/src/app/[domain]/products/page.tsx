@@ -20,6 +20,7 @@ import {
   productDiscoveryWhere,
 } from '@/lib/product-discovery.mjs';
 import { prisma } from '@/lib/prisma';
+import { resolveSponsorshipFor } from '@/lib/sponsorship-server.mjs';
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -215,6 +216,13 @@ export default async function ProductDiscoveryPage({
     take: PRODUCT_DISCOVERY_PAGE_SIZE,
   });
 
+  // M-001: the "sponsored placement / organic listing" line is a public claim,
+  // so it must come from the ledger rather than retailer.isSponsored.
+  const sponsorship = await resolveSponsorshipFor(
+    prisma,
+    entries.map((e) => e.retailer?.id).filter(Boolean),
+  );
+
   const hasFilters = Boolean(
     filters.query ||
       filters.category ||
@@ -258,7 +266,7 @@ export default async function ProductDiscoveryPage({
         <div className="mx-auto max-w-7xl">
           <Link
             href="/"
-            className="text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary-text"
+            className="inline-block py-1 text-xs font-bold text-brand-muted transition-colors hover:text-brand-primary-text"
           >
             ← Back to retailer directory
           </Link>
@@ -656,20 +664,20 @@ export default async function ProductDiscoveryPage({
                       <div>
                         <Link
                           href={`/retailer/${entry.retailer.id}`}
-                          className="text-xs font-black text-brand-text transition-colors hover:text-brand-primary-text"
+                          className="inline-block py-1 text-xs font-black text-brand-text transition-colors hover:text-brand-primary-text"
                         >
                           {entry.retailer.name}
                         </Link>
                         <p className="mt-0.5 text-[10px] uppercase tracking-wider text-brand-muted">
                           {entry.retailer.type}
-                          {entry.retailer.isSponsored
-                            ? ' · sponsored retailer'
+                          {sponsorship.isActive(entry.retailer.id)
+                            ? ' · sponsored placement'
                             : ' · organic listing'}
                         </p>
                       </div>
                       <Link
                         href={`/retailer/${entry.retailer.id}`}
-                        className="text-[10px] font-black uppercase tracking-wider text-brand-primary-text hover:underline"
+                        className="inline-block py-1 text-[10px] font-black uppercase tracking-wider text-brand-primary-text hover:underline"
                       >
                         Inspect retailer →
                       </Link>
@@ -728,7 +736,7 @@ export default async function ProductDiscoveryPage({
               {currentPage > 1 ? (
                 <Link
                   href={productDiscoveryHref(filters, currentPage - 1)}
-                  className="font-black text-brand-primary-text hover:underline"
+                  className="inline-block py-1 font-black text-brand-primary-text hover:underline"
                 >
                   Previous
                 </Link>
@@ -741,7 +749,7 @@ export default async function ProductDiscoveryPage({
               {currentPage < totalPages ? (
                 <Link
                   href={productDiscoveryHref(filters, currentPage + 1)}
-                  className="font-black text-brand-primary-text hover:underline"
+                  className="inline-block py-1 font-black text-brand-primary-text hover:underline"
                 >
                   Next
                 </Link>

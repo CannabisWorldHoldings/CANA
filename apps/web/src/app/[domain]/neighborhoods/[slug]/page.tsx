@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { resolveSponsorshipFor } from '@/lib/sponsorship-server.mjs';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { DataStatusBadge } from '@/components/data-status-badge';
@@ -148,6 +149,10 @@ export default async function NeighborhoodHubPage({ params }: Props) {
     take: NEIGHBORHOOD_CANDIDATE_LIMIT,
   });
 
+  // Sponsorship entitlements resolve from the PERSISTED ledger, never from
+  // retailer.isSponsored (M-001). Shared helper so every surface agrees.
+  const sponsorship = await resolveSponsorshipFor(prisma, allRetailers.map((r) => r.id));
+
   // Filter retailers located within 2.5 miles of the neighborhood center or matching zip code
   const neighborhoodRetailers = allRetailers.filter(r => {
     const distance = getDistanceMiles(config.lat, config.lng, r.lat, r.lng);
@@ -173,11 +178,11 @@ export default async function NeighborhoodHubPage({ params }: Props) {
       <section className="hero-aurora border-b border-brand-border px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-wrap items-center gap-3 mb-2">
-            <Link href="/neighborhoods" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
+            <Link href="/neighborhoods" className="inline-block py-1 text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
               ← All neighborhoods
             </Link>
             <span aria-hidden="true" className="text-brand-border">·</span>
-            <Link href="/" className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
+            <Link href="/" className="inline-block py-1 text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text">
               Home
             </Link>
           </div>
@@ -219,7 +224,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                 <div
                   key={retailer.id}
                   className={`record-card rounded-2xl p-5 flex flex-col gap-5 md:flex-row ${
-                    retailer.isSponsored ? 'ring-1 ring-brand-gold/25' : ''
+                    sponsorship.isActive(retailer.id) ? 'ring-1 ring-brand-gold/25' : ''
                   }`}
                 >
                   {/* Pin label index */}
@@ -231,7 +236,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                   <div className="flex-grow space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-display text-lg font-bold text-brand-text hover:text-brand-primary-text transition-colors">
-                        <Link href={`/retailer/${retailer.id}`}>{retailer.name}</Link>
+                        <Link href={`/retailer/${retailer.id}`} className="inline-block py-0.5">{retailer.name}</Link>
                       </h3>
                       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border border-brand-border bg-brand-background text-brand-muted">
                         {retailer.type}
@@ -269,7 +274,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                       </div>
                       <Link
                         href={`/retailer/${retailer.id}`}
-                        className="text-brand-primary-text font-bold hover:underline"
+                        className="inline-block py-1 text-brand-primary-text font-bold hover:underline"
                       >
                         View Data Status &amp; Menu →
                       </Link>
@@ -360,13 +365,13 @@ export default async function NeighborhoodHubPage({ params }: Props) {
 
           {/* Local Guide Callout */}
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-5 text-xs text-brand-muted leading-relaxed">
-            <h4 className="font-display font-bold text-brand-text mb-2">Coordinate Preview Notice</h4>
+            <h3 className="font-display font-bold text-brand-text mb-2">Coordinate Preview Notice</h3>
             These points and distance calculations exercise the interface with synthetic records. Confirm real locations, service areas, and license status with primary sources.
           </div>
 
           {/* Legal link callout */}
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-5 text-xs text-brand-muted leading-relaxed">
-            <h4 className="font-display font-bold text-brand-text mb-2">D.C. Cannabis Rules</h4>
+            <h3 className="font-display font-bold text-brand-text mb-2">D.C. Cannabis Rules</h3>
             <p>New to D.C. cannabis? Read our plain-language overview of Initiative 71, the medical program, possession limits, and consumption rules.</p>
             <Link href="/legal" className="mt-2 inline-block font-bold text-brand-primary-text hover:underline">
               Legal guide →
