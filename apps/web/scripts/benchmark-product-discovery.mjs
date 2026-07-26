@@ -665,13 +665,38 @@ async function runBenchmark({ mutation = 'none' } = {}) {
   let temporaryStateRemoved = false;
   let receipt;
 
-  const interruptCleanup = async () => {
-    try {
-      await removeTemporaryState(prisma, temporaryRoot);
-    } finally {
+  // SIGINT/SIGTERM must exit NONZERO so a supervisor can tell an interrupted
+  // run from a clean one.
+  //
+  // The previous handler was `async` and called process.exit(130) inside a
+  // `finally` that awaited an async cleanup. Node does not keep the process
+  // alive for a pending promise chain started from a signal handler, so the
+  // loop drained and the process exited with the already-set exitCode 0 —
+  // an interrupted benchmark reported success. Verified: SIGINT produced
+  // exitCode=0, signal=null.
+  //
+  // Fix: set the exit code SYNCHRONOUSLY and immediately, so the value is
+  // correct no matter when the process actually terminates. Cleanup is then
+  // attempted on a bounded budget and the process is forced down regardless,
+  // because a stuck teardown must not leave a zombie holding the temp dir.
+  let interrupted = false;
+  const interruptCleanup = (signal) => {
+    if (interrupted) return;          // a second Ctrl-C must not re-enter
+    interrupted = true;
+    process.exitCode = 130;           // synchronous: correct even if we are killed next tick
+    const force = setTimeout(() => {
       networkBoundary.restore();
       process.exit(130);
-    }
+    }, 2_000);
+    force.unref?.();
+    Promise.resolve()
+      .then(() => removeTemporaryState(prisma, temporaryRoot))
+      .catch(() => {})
+      .finally(() => {
+        clearTimeout(force);
+        networkBoundary.restore();
+        process.exit(130);
+      });
   };
   process.once('SIGINT', interruptCleanup);
   process.once('SIGTERM', interruptCleanup);
