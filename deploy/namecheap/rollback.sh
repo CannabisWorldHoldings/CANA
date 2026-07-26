@@ -4,7 +4,8 @@
 # The database is never touched: rollback swaps code only.
 set -eu
 
-APP_HOME="$HOME/apps/orderweeddc"
+# OWD_APP_HOME override supports staging installs; default is production.
+APP_HOME="${OWD_APP_HOME:-$HOME/apps/orderweeddc}"
 
 [ -d "$APP_HOME/previous" ] || { echo "ERROR: no previous release to roll back to"; exit 1; }
 [ -f "$APP_HOME/previous/server.js" ] || { echo "ERROR: previous release is incomplete"; exit 1; }

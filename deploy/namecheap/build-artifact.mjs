@@ -186,6 +186,29 @@ fs.copyFileSync(
   path.join(artifactRoot, 'app.js'),
 );
 
+// Release identity — the BUILD-TIME artifact behind GET /api/release.
+// A deployed tarball has no .git directory, so this file is the only honest
+// answer to "which commit is running". Written before packaging so the
+// isolated runtime test exercises the real wire contract, and validated in
+// the hard-stop checks below. Contract reader:
+// apps/web/src/app/api/release/release-identity.mjs.
+function writeReleaseIdentity() {
+  const releaseIdentity = {
+    gitSha,
+    shortSha,
+    artifact: artifactName,
+    builtAt: new Date().toISOString(),
+    bundler: 'webpack',
+    builder: 'deploy/namecheap/build-artifact.mjs',
+  };
+  fs.writeFileSync(
+    path.join(artifactRoot, 'release.json'),
+    JSON.stringify(releaseIdentity, null, 2),
+  );
+  return releaseIdentity;
+}
+const releaseIdentity = writeReleaseIdentity();
+
 fs.mkdirSync(path.join(artifactRoot, 'scripts'), { recursive: true });
 for (const script of [
   'scripts/init-production-db.mjs',
@@ -200,6 +223,12 @@ for (const opsScript of [
   'bootstrap-production-db.sh',
   'restart.sh',
   'rollback.sh',
+  'migrate.sh',
+  'healthcheck.sh',
+  'readycheck.sh',
+  'smoke-test.sh',
+  'worker.mjs',
+  'restore-backup.sh',
 ]) {
   fs.copyFileSync(
     path.join(repoRoot, 'deploy/namecheap', opsScript),
@@ -211,6 +240,13 @@ fs.copyFileSync(
   path.join(webRoot, 'prisma/schema.prisma'),
   path.join(artifactRoot, 'prisma/schema.prisma'),
 );
+// Committed migrations ship verbatim WHEN the migration lane has produced
+// them (apps/web/prisma/migrations/**). This builder never authors or edits
+// a migration — absence simply means migrate.sh hard-stops on the server.
+const migrationsDir = path.join(webRoot, 'prisma/migrations');
+if (fs.existsSync(migrationsDir)) {
+  copyDir(migrationsDir, path.join(artifactRoot, 'prisma/migrations'));
+}
 fs.mkdirSync(path.join(artifactRoot, 'docs/competitive'), { recursive: true });
 fs.copyFileSync(
   path.join(repoRoot, 'docs/competitive/dc-merchant-universe.json'),
@@ -288,6 +324,10 @@ checks['schema template is data-free'] =
 checks['bootstrap script present'] = fs.existsSync(
   path.join(artifactRoot, 'bootstrap-production-db.sh'),
 );
+checks['release.json present with full 40-hex gitSha'] =
+  fs.existsSync(path.join(artifactRoot, 'release.json')) &&
+  /^[0-9a-f]{40}$/.test(releaseIdentity.gitSha) &&
+  releaseIdentity.gitSha === gitSha;
 
 // Unresolved hashed-external scan across every compiled server JS file.
 // Turbopack emits externals like @prisma/client-2c3a283f134fdcb6 which are
@@ -496,6 +536,28 @@ async function isolatedRuntimeTest() {
         healthJson.services?.database?.details?.totalRetailers === 74,
       JSON.stringify(healthJson.services?.database?.details),
     );
+    // Release identity endpoint: the deployed runtime must name the exact
+    // commit it was built from — the SHA this very build recorded. A wrong,
+    // missing, or fabricated SHA fails the artifact before it can ship.
+    const releaseWire = JSON.parse(
+      capture(
+        `curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/release`,
+      ),
+    );
+    record(
+      '/api/release serves this build\'s exact gitSha (RELEASE_SHA_PRESENT)',
+      releaseWire.status === 'RELEASE_SHA_PRESENT' && releaseWire.gitSha === gitSha,
+      `${releaseWire.status} ${releaseWire.gitSha}`,
+    );
+    record(
+      '/api/release is never cached (Cache-Control: no-store)',
+      capture(
+        `curl -s -o /dev/null -D - -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/release`,
+      )
+        .toLowerCase()
+        .includes('no-store'),
+    );
+
     for (const [label, host, pathname, expected] of [
       ['homepage 200', 'orderweeddc.com', '/', '200'],
       ['pricing 200', 'orderweeddc.com', '/pricing', '200'],
