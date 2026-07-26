@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "769c31e",
-  "last_checkpoint_at": "2026-07-26T21:40:18.012247+00:00",
+  "last_checkpoint": "f14c508",
+  "last_checkpoint_at": "2026-07-26T22:20:49.800527+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1101,10 +1101,19 @@
       "my_own_error": "my first F2 court ran inside a transaction where the pragma THROWS, so the sabotage passed; corrected to a case that succeeds and is silently ignored",
       "falsification_proven": true,
       "tests": "web 503/503"
+    },
+    {
+      "wall": "RELEASE_IDENTITY",
+      "commit": "f14c508",
+      "gap_closed": "nothing exposed the deployed commit, so \"is the server running the code I think it is\" had no answer \u2014 and two false verdicts in this project came from stale builds",
+      "design": "captured at BUILD time in next.config.ts, never a runtime git call which works in dev and silently fails in production",
+      "core_rule": "an unknown sha reports UNKNOWN and is never fabricated; CANNOT TELL is never reported as NO MATCH",
+      "falsification_proven": true,
+      "tests": "web 515/515"
     }
   ],
   "test_baseline": {
-    "web": "503/503",
+    "web": "515/515",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
@@ -1384,5 +1393,24 @@
       }
     ],
     "chain_rebuilt_from_drive_only": true
+  },
+  "parallel_foundry": {
+    "chief_integrator": "authoritative branch recover/competitive-ui-day-night; only lane permitted to merge",
+    "ownership_map": "deliverables/FOUNDRY_OWNERSHIP_MAP.md",
+    "worktrees": [
+      "lane/migration @ /tmp/lanes/migration",
+      "lane/cpanel @ /tmp/lanes/cpanel",
+      "lane/product @ /tmp/lanes/product"
+    ],
+    "lanes_running": [
+      "durability f22042b..HEAD",
+      "host/database decision",
+      "migration",
+      "handoff+outbox verifier",
+      "cPanel release",
+      "security verifier",
+      "product neighborhoods"
+    ],
+    "anchor_correction": "the db-config anchor was regenerated from the working tree rather than copied forward; the stale 55d5d69d would have made every lane report false drift"
   }
 }
