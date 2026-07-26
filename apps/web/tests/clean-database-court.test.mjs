@@ -174,6 +174,47 @@ test('CONCURRENCY on a fresh configured database beats an unconfigured one', () 
     `a configured fresh database should absorb most of a 25-way burst, got ${configured.ok}/25`);
 });
 
+test('EVERY persistence claim is MEASURED, not asserted', async () => {
+  // VERIFIER FINDING F3. I marked `synchronous` persistent:true without measuring
+  // it. It is per-connection: set it on one connection and a fresh process reads
+  // the default back. Because the flag said persistent, it was excluded from
+  // PER_CONNECTION_PRAGMAS, so an extra pool connection would silently run FULL —
+  // defeating the WAL+NORMAL rationale the entry itself states.
+  //
+  // A declarative flag nobody checks is a comment with extra steps. This test sets
+  // every pragma in one process and reads each back in ANOTHER, then requires the
+  // declared flag to match what actually happened. It is impossible to add a wrong
+  // persistence claim without failing here.
+  const mod = await import('../src/lib/db-config.mjs');
+  const { dir, dbPath } = freshDatabase();
+  try {
+    inFreshProcess(dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
+    const afterRestart = inFreshProcess(dbPath, 'return await mod.readDatabaseConfig(prisma);');
+
+    for (const pragma of mod.REQUIRED_SQLITE_PRAGMAS) {
+      const got = afterRestart[pragma.name];
+      const want = typeof pragma.value === 'string' ? pragma.value.toLowerCase() : pragma.value;
+      const norm = typeof got === 'string' ? got.toLowerCase() : got;
+      const survived = norm === want;
+
+      if (pragma.persistent) {
+        assert.ok(survived,
+          `${pragma.name} is declared PERSISTENT but a fresh connection read ${JSON.stringify(norm)} instead of ${JSON.stringify(want)}`);
+      } else if (!pragma.supplied_by_connector) {
+        // Declared non-persistent AND not supplied by the connector: it genuinely
+        // must not survive, or the declaration is wrong in the other direction.
+        assert.ok(!survived,
+          `${pragma.name} is declared NON-persistent but survived a fresh connection — the declaration is wrong`);
+      }
+      // Whatever the answer, a non-persistent pragma must be in the reapply list.
+      if (!pragma.persistent) {
+        assert.ok(mod.PER_CONNECTION_PRAGMAS.some((c) => c.includes(pragma.name)),
+          `${pragma.name} is non-persistent and MUST appear in PER_CONNECTION_PRAGMAS`);
+      }
+    }
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('SQLite is CLASSIFIED, not quietly treated as production-ready', () => {
   return import('../src/lib/db-config.mjs').then((mod) => {
     const c = mod.DB_CLASSIFICATION;
@@ -187,6 +228,50 @@ test('SQLite is CLASSIFIED, not quietly treated as production-ready', () => {
     // Choosing and provisioning it is an owner action.
     assert.match(c.decision_owner, /OWNER/);
   });
+});
+
+test('F2: a pragma ACCEPTED but silently ignored makes ok FALSE', async () => {
+  // VERIFIER FINDING F2 (MEDIUM, test-coverage). The module promises "never silently
+  // succeed — verify by reading back". It does so at runtime, but dropping the
+  // mismatch term from `ok` left the whole 500-test suite green.
+  //
+  // MY FIRST ATTEMPT AT THIS TEST WAS WRONG. I ran initialization inside an open
+  // transaction, expecting SQLite to accept the pragma and ignore it. It does not —
+  // it THROWS ("cannot change into wal mode from within a transaction"), so
+  // `failures` was populated and `ok` was false for a reason that had nothing to do
+  // with the mismatch check. The sabotage passed and I nearly recorded a court that
+  // could not catch what it claimed to.
+  //
+  // The accepted-but-ignored case needs a pragma that SUCCEEDS and still does not
+  // read back. `PRAGMA journal_mode = wal` on an in-memory database is exactly that:
+  // SQLite accepts it and stays in `memory` mode. No throw, so `failures` is empty
+  // and ONLY the read-back check can catch it.
+  const mod = await import('../src/lib/db-config.mjs');
+  const fake = {
+    async $queryRawUnsafe(q) {
+      const m = /^PRAGMA\s+(\w+)(\s*=\s*(\S+))?/i.exec(q);
+      const name = m?.[1];
+      // Reads: report values that will NOT match what was requested for
+      // journal_mode, while every other pragma reads back correctly.
+      if (!m?.[2]) {
+        if (name === 'journal_mode') return [{ journal_mode: 'memory' }];
+        if (name === 'busy_timeout') return [{ busy_timeout: 5000 }];
+        if (name === 'synchronous') return [{ synchronous: 1 }];
+        if (name === 'foreign_keys') return [{ foreign_keys: 1 }];
+        return [{ [name]: null }];
+      }
+      // Writes: accept everything without error. This is the whole point — the
+      // statement SUCCEEDS and is silently ignored.
+      return [];
+    },
+  };
+  const r = await mod.initializeDatabaseConfig(fake);
+  assert.deepEqual(r.failures, [],
+    'this scenario must produce NO failures, or it is testing the wrong path');
+  assert.ok(r.mismatches.some((m) => m.pragma === 'journal_mode'),
+    `the ignored pragma must be reported by name, got ${JSON.stringify(r.mismatches)}`);
+  assert.equal(r.ok, false,
+    'a pragma accepted but silently ignored MUST make ok false — this is the read-back promise');
 });
 
 test('every required pragma states WHY it exists', () => {

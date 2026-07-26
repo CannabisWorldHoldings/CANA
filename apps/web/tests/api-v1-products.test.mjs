@@ -162,6 +162,27 @@ test('JOIN LEAK 2: a verified product reached only through an UNVERIFIED menu en
 });
 
 // ------------------------------------------------------------ potency boundary
+test('POTENCY: the range guard is enforced by the RUNNING BUILD', async () => {
+  // VERIFIER FINDING F1 (MEDIUM/HIGH, test-coverage). The verifier removed the
+  // `value < 0 || value > 100` check and reported the full suite still green. I
+  // reproduced it and found the opposite: it fails 2 tests — but ONLY against a
+  // REBUILT server. Next serves compiled bytes, so editing a route and re-running
+  // the suite without `npm run build` tests the OLD code. The finding was really a
+  // methodology trap, and it is a trap that would silently hide any future route
+  // regression, so it gets a guard of its own rather than a note.
+  //
+  // This asserts the served build actually enforces the boundary, by checking a
+  // value the fixture guarantees is out of range. If the running build predates the
+  // guard, this fails immediately and names the cause.
+  const b = await body();
+  const bad = b.data.find((d) => d.name === 'Prod BADTHC');
+  assert.ok(bad, 'the out-of-range fixture must be listed — its RECORD is verified');
+  assert.equal('thc_percent' in bad.potency, false,
+    'the RUNNING BUILD does not enforce the potency range — if you just edited the route, rebuild before trusting any result here');
+  assert.equal(b.truth_contract.potency_records_withheld >= 2, true,
+    'the served build must report withheld potency figures');
+});
+
 test('POTENCY: a plausible verified figure IS asserted', async () => {
   const b = await body();
   const good = b.data.find((d) => d.name === 'Prod GOOD');

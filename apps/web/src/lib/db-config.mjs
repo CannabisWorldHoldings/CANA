@@ -70,7 +70,14 @@ export const REQUIRED_SQLITE_PRAGMAS = Object.freeze([
     name: 'synchronous',
     value: 1, // NORMAL
     why: 'FULL fsyncs on every commit, which under WAL is unnecessary for durability against process crash and materially slows contended writes',
-    persistent: true,
+    // VERIFIER FINDING F3 (MEDIUM). I marked this persistent:true. It is NOT.
+    // Measured: set synchronous=1 on one connection, a fresh process reads 2.
+    // Because the flag said persistent, it was excluded from PER_CONNECTION_PRAGMAS,
+    // so any additional pool connection would silently run FULL — defeating the very
+    // WAL+NORMAL rationale this entry states. In a module whose thesis is "measured,
+    // not assumed", asserting persistence without measuring it was the exact error
+    // the module exists to prevent.
+    persistent: false,
   },
   {
     name: 'foreign_keys',
