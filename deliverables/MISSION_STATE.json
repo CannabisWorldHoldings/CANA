@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "3072659",
-  "last_checkpoint_at": "2026-07-26T17:05:46.842878+00:00",
+  "last_checkpoint": "f389b21",
+  "last_checkpoint_at": "2026-07-26T18:39:22.541615+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -948,10 +948,29 @@
       "a12_by_design": "a hand-inserted self-consistent row is counted; the ledger already documents that detecting a wholesale re-signed chain requires an external anchor",
       "falsification_proven": true,
       "tests": "web 374/374"
+    },
+    {
+      "wall": "TRANSACTIONAL_IDEMPOTENCY",
+      "commit": "f389b21",
+      "measured_defect": "50 simultaneous identical POSTs produced 2 committed rows and 47 lock-contention 503s; the pre-insert lookup is a check-then-act race",
+      "fix": "canonical eventIdentity column + @@unique([merchantId, eventIdentity]); the DB adjudicates, the lookup is only a fast path",
+      "measured_after": "50 simultaneous -> 1x201, 49x409, zero 5xx, exactly one committed row, 29 refusals decided by the constraint",
+      "also_proven": [
+        "survives process restart",
+        "4 processes x 8 requests -> one row",
+        "reordered JSON keys are the same event",
+        "wall-clock jitter is the same event",
+        "different action kind is a distinct event",
+        "shared key across merchants records both \u2014 no cross-tenant suppression",
+        "hash chain verifies with gapless seq after a storm",
+        "25-request storm reports ONE action, cost-per-action undeflated"
+      ],
+      "falsification_proven": true,
+      "tests": "web 386/386 (374 + 12)"
     }
   ],
   "test_baseline": {
-    "web": "374/374",
+    "web": "386/386",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
