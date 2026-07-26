@@ -214,29 +214,29 @@ export default async function TenantLayout({ children, params }: { children: Rea
             <nav aria-label="Explore">
               <p className="kicker mb-3">Explore</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/" className="transition-colors hover:text-brand-primary-text">Retailer directory</Link></li>
-                <li><Link href="/products" className="transition-colors hover:text-brand-primary-text">Products</Link></li>
-                <li><Link href="/deals" className="transition-colors hover:text-brand-primary-text">Verified deals</Link></li>
-                <li><Link href="/neighborhoods" className="transition-colors hover:text-brand-primary-text">Neighborhoods</Link></li>
-                <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">Education hub</Link></li>
-                <li><Link href="/compare" className="transition-colors hover:text-brand-primary-text">Compare records</Link></li>
+                <li><Link href="/" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Retailer directory</Link></li>
+                <li><Link href="/products" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Products</Link></li>
+                <li><Link href="/deals" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Verified deals</Link></li>
+                <li><Link href="/neighborhoods" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Neighborhoods</Link></li>
+                <li><Link href="/education" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Education hub</Link></li>
+                <li><Link href="/compare" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Compare records</Link></li>
               </ul>
             </nav>
             <nav aria-label="For business">
               <p className="kicker mb-3">For business</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/pricing" className="transition-colors hover:text-brand-primary-text">Published pricing</Link></li>
-                <li><Link href="/business/claim" className="transition-colors hover:text-brand-primary-text">Claim your listing</Link></li>
-                <li><Link href={canonicalBusiness} className="transition-colors hover:text-brand-primary-text">Business portal</Link></li>
-                <li><Link href={canonicalAdmin} className="transition-colors hover:text-brand-primary-text">Admin portal</Link></li>
+                <li><Link href="/pricing" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Published pricing</Link></li>
+                <li><Link href="/business/claim" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Claim your listing</Link></li>
+                <li><Link href={canonicalBusiness} className="inline-block py-1 transition-colors hover:text-brand-primary-text">Business portal</Link></li>
+                <li><Link href={canonicalAdmin} className="inline-block py-1 transition-colors hover:text-brand-primary-text">Admin portal</Link></li>
               </ul>
             </nav>
             <nav aria-label="Trust and legal">
               <p className="kicker mb-3">Trust &amp; legal</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/legal" className="transition-colors hover:text-brand-primary-text">Legal &amp; compliance</Link></li>
-                <li><Link href="/help" className="transition-colors hover:text-brand-primary-text">Help &amp; data policy</Link></li>
-                <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">D.C. cannabis rules</Link></li>
+                <li><Link href="/legal" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Legal &amp; compliance</Link></li>
+                <li><Link href="/help" className="inline-block py-1 transition-colors hover:text-brand-primary-text">Help &amp; data policy</Link></li>
+                <li><Link href="/education" className="inline-block py-1 transition-colors hover:text-brand-primary-text">D.C. cannabis rules</Link></li>
               </ul>
             </nav>
           </div>

@@ -179,7 +179,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                 <span className="font-bold text-brand-primary-text">New to D.C.&apos;s rules?</span>
                 Initiative 71, the gifting model, and the 21+ medical program —
                 explained in plain language.
-                <Link href="/legal" className="font-bold text-brand-primary-text hover:underline">
+                <Link href="/legal" className="inline-block py-1 font-bold text-brand-primary-text hover:underline">
                   Read the 2-minute guide →
                 </Link>
               </p>
@@ -492,7 +492,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-display text-lg font-bold text-brand-text transition-colors hover:text-brand-primary-text">
-                        <Link href={`/retailer/${retailer.id}`}>{retailer.name}</Link>
+                        <Link href={`/retailer/${retailer.id}`} className="inline-block py-0.5">{retailer.name}</Link>
                       </h2>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
                         retailer.type === 'storefront'
@@ -607,7 +607,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                       </div>
                       <Link
                         href={`/retailer/${retailer.id}`}
-                        className="font-bold text-brand-primary-text transition-colors hover:text-brand-secondary"
+                        className="inline-block py-1 font-bold text-brand-primary-text transition-colors hover:text-brand-secondary"
                       >
                         View Data Status &amp; Menu →
                       </Link>
