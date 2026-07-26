@@ -1,0 +1,75 @@
+{
+  "package": "CANA-DELTA-ed40c16-d4587a4",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T18:28:06.115117+00:00",
+  "basis": {
+    "sha": "ed40c16f43eace8184f87c245eaf285b5bc5098c",
+    "short": "ed40c16",
+    "why": "head of the third Drive artifact, already read-back verified and chain-proven"
+  },
+  "tip": {
+    "sha": "d4587a4f019e42bfec287df5c6b1b732fa5b0794",
+    "short": "d4587a4",
+    "tree": "1daba531b57d6fead8160fc1b8ff710ec59f05ab"
+  },
+  "commits": [
+    {
+      "sha": "d4587a4f019e42bfec287df5c6b1b732fa5b0794",
+      "short": "d4587a4",
+      "date": "2026-07-26T13:07:15-04:00",
+      "subject": "chore: checkpoint \u2014 head ed40c16 durable, web 374/374, skills 258/258",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ],
+      "stat": [
+        "deliverables/MISSION_STATE.json | 31 ++++++++++++++++++++++++++++++-",
+        "1 file changed, 30 insertions(+), 1 deletion(-)"
+      ]
+    }
+  ],
+  "restore_order_full_chain": [
+    {
+      "step": 1,
+      "artifact": "CANA-DURABLE-20260726-v2.tar.gz",
+      "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "type": "FULL",
+      "reaches": "54a0082"
+    },
+    {
+      "step": 2,
+      "artifact": "CANA-DELTA-54a0082-0ae1030.tar.gz",
+      "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+      "type": "INCREMENTAL",
+      "prerequisite": "54a0082",
+      "reaches": "0ae1030"
+    },
+    {
+      "step": 3,
+      "artifact": "CANA-DELTA-0ae1030-ed40c16.tar.gz",
+      "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+      "type": "INCREMENTAL",
+      "prerequisite": "0ae1030",
+      "reaches": "ed40c16"
+    },
+    {
+      "step": 4,
+      "artifact": "CANA-DELTA-ed40c16-d4587a4.tar.gz",
+      "drive_file_id": "PENDING_UPLOAD",
+      "type": "INCREMENTAL",
+      "prerequisite": "ed40c16",
+      "reaches": "d4587a4"
+    }
+  ],
+  "restore_commands": [
+    "tar -xzf CANA-DURABLE-20260726-v2.tar.gz && git clone CANA-DURABLE-20260726-v2/cana-ui-recover-ALL.bundle repo",
+    "cd repo && git fetch ../CANA-DELTA-54a0082-0ae1030/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "git fetch ../CANA-DELTA-0ae1030-ed40c16/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "git fetch ../CANA-DELTA-ed40c16-d4587a4/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "ORDER MATTERS: each bundle declares its prerequisite and git refuses to apply it out of order rather than half-applying."
+  ],
+  "test_receipts": {
+    "web": "374/374",
+    "skills": "258/258",
+    "e2e_binding": "PROVEN"
+  }
+}
