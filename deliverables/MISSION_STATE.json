@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "6af0dba",
-  "last_checkpoint_at": "2026-07-26T16:57:17.937874+00:00",
+  "last_checkpoint": "3072659",
+  "last_checkpoint_at": "2026-07-26T17:05:46.842878+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -931,17 +931,37 @@
       "falsification_proven": true,
       "tests": "web 368/368",
       "near_miss_recorded": "a sabotage-restore chain copied a stale snapshot over growth-os.mjs, silently reverting two verified fixes; targeted suites stayed green and only the FULL suite caught it. Isolation doc now requires hash-verified restores and unique per-session snapshots."
+    },
+    {
+      "wall": "VERIFICATION_09_REPAIRS",
+      "commit": "3072659",
+      "attacks": 33,
+      "blocked": 28,
+      "confirmed": 5,
+      "highest": "A6 HIGH live bypass \u2014 the server varied the evidence digest per request via a millisecond timestamp, so replay dedupe never fired; five identical POSTs produced five counted actions while a comment in the same function claimed it was impossible",
+      "others": [
+        "A8 the receipt now states it does not prove a human acted",
+        "B7 non-finite spend bounded",
+        "B8 audit score clamped",
+        "C4 one shared definition of licence-verified"
+      ],
+      "a12_by_design": "a hand-inserted self-consistent row is counted; the ledger already documents that detecting a wholesale re-signed chain requires an external anchor",
+      "falsification_proven": true,
+      "tests": "web 374/374"
     }
   ],
   "test_baseline": {
-    "web": "368/368",
+    "web": "374/374",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
   "component_status": {
     "orderweeddc-merchant-pilot": "VERIFIED_BY_INDEPENDENT_ATTACK",
     "sitemind-context-compiler": "VERIFIED_BY_INDEPENDENT_ATTACK",
-    "hermes-governed-packet": "VERIFIED_BY_INDEPENDENT_ATTACK_08"
+    "hermes-governed-packet": "VERIFIED_BY_INDEPENDENT_ATTACK_08",
+    "api-v1-attribution": "VERIFIED_BY_INDEPENDENT_ATTACK_09",
+    "merchant-growth-os": "VERIFIED_BY_INDEPENDENT_ATTACK_09",
+    "structured-data": "VERIFIED_BY_INDEPENDENT_ATTACK_09"
   },
   "durability": {
     "status": "PROVEN_BY_READ_BACK",
