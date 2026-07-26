@@ -96,6 +96,21 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
     errors.push('a sealed context packet is required — no action without compiled context');
   } else if (!Array.isArray(contextPacket.actionable_facts) || contextPacket.actionable_facts.length === 0) {
     errors.push('context contains no actionable facts — refusing to act on reference-only evidence');
+  } else {
+    // VERIFIER FINDING #15 (LOW). The digest was only checked for PRESENCE, so an
+    // arbitrary 64-hex string — or a digest copied from a different packet — bound
+    // into the receipt as though it attested to this context. A receipt whose
+    // context digest does not actually cover the context is not evidence.
+    //
+    // The compiler computes packet_digest as sha(JSON.stringify(body)) where body
+    // is the packet WITHOUT that field, so it can be recomputed here
+    // independently. This is the same "recompute, do not trust" rule already
+    // applied to evidence chains and the demand-credit hash chain.
+    const { packet_digest: claimed, ...body } = contextPacket;
+    if (sha(JSON.stringify(body)) !== claimed) {
+      errors.push('REFUSED: the context packet digest does not recompute over its own content — '
+        + 'a forged, copied, or stale digest cannot attest to this context');
+    }
   }
   // LAW 2b — CONTRADICTION BLOCKING (was: surfaced only).
   //
@@ -106,7 +121,27 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
   // list" is not a control. A contradiction on an UNRELATED subject is still
   // only surfaced — blocking every action on any disagreement anywhere would
   // make the system inert and invite the guard being switched off.
-  const intentSubjects = new Set((intent?.subjects ?? []).map(normSubject));
+  // VERIFIER FINDING #18 (MEDIUM). intentSubjects was built from caller-supplied
+  // metadata with an `?? []` fallback, so an action that simply OMITTED
+  // intent.subjects matched no contradiction and escaped LAW 2b entirely — while
+  // the sealed body still recorded contradictions_checked_against_intent: true.
+  // A guard that is opt-in on the caller's own metadata is not a guard, and a
+  // receipt that claims a check it did not perform is a false attestation, which
+  // is worse than no check at all.
+  //
+  // The fix is fail-closed: when a context carries contradictions, an intent MUST
+  // declare the subjects it acts on. An action that will not say what it touches
+  // cannot be shown not to touch the disputed subject.
+  const declaredSubjects = Array.isArray(intent?.subjects) ? intent.subjects : null;
+  const intentSubjects = new Set((declaredSubjects ?? []).map(normSubject));
+  const contradictionCount = (contextPacket?.contradictions ?? []).length;
+  if (contradictionCount > 0 && intentSubjects.size === 0) {
+    errors.push('REFUSED: the context contains ' + contradictionCount
+      + ' unresolved contradiction(s) and this intent declares no subjects. '
+      + 'intent.subjects is required whenever the context disagrees with itself: '
+      + 'an action that will not state what it acts on cannot be shown not to act '
+      + 'on the disputed subject.');
+  }
   const blocking = (contextPacket?.contradictions ?? []).filter((c) => {
     const key = normSubject(c.subject_key ?? c.subject ?? '');
     return intentSubjects.has(key);
@@ -131,9 +166,16 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
   if (!text(intent?.successTest)) errors.push('intent.successTest required — an action with no success test cannot be verified');
   if (!text(intent?.rollback)) errors.push('intent.rollback required');
   // LAW 3
-  if (OWNER_ONLY.includes(intent?.capability)) {
-    errors.push(`REFUSED: ${intent.capability} is owner-only`);
-  } else if (grant?.valid && intent?.capability !== grant.capability) {
+  // VERIFIER FINDING #17 (LOW, defence in depth). The OWNER_ONLY test was exact
+  // match, so 'activate_payment' and ' ACTIVATE_PAYMENT ' slipped past it. The
+  // real makeGrant refuses those, so this was not a live bypass — but this module
+  // normalizes subject tags precisely because case and whitespace must never
+  // decide a security question, and the same discipline has to apply here.
+  const normCap = (c) => String(c ?? '').trim().toUpperCase().replace(/[\s-]+/g, '_');
+  const capNormalized = normCap(intent?.capability);
+  if (OWNER_ONLY.some((c) => normCap(c) === capNormalized)) {
+    errors.push(`REFUSED: ${intent?.capability} is owner-only`);
+  } else if (grant?.valid && normCap(grant.capability) !== capNormalized) {
     errors.push(`intent capability ${intent?.capability} does not match grant ${grant.capability}`);
   }
 
@@ -212,8 +254,20 @@ if (has('selftest')) {
   const t = (n, c) => { c ? (pass++, console.log(`  ok   ${n}`)) : (fail++, console.log(`  FAIL ${n}`)); };
   const now = new Date('2026-07-26T12:00:00Z');
   const future = new Date(now.getTime() + 86400_000);
-  const ctx = { packet_digest: sha('ctx'), objective: 'run the browser court on the homepage',
-    actionable_facts: [{ id: 'f1', claim: 'server is running' }], contradictions: [] };
+  // The fixture must be SELF-CONSISTENT the way a real compiled packet is: its
+  // digest has to recompute over its own content. It previously hardcoded
+  // sha('ctx'), a digest that covered nothing — which is exactly the forgery
+  // finding #15 is about, sitting inside my own test helper.
+  const mkCtx = (over = {}) => {
+    const body = {
+      objective: 'run the browser court on the homepage',
+      actionable_facts: [{ id: 'f1', claim: 'server is running' }],
+      contradictions: [],
+      ...over,
+    };
+    return { ...body, packet_digest: sha(JSON.stringify(body)) };
+  };
+  const ctx = mkCtx();
   const g = () => makeGrant({ capability: 'RUN_BROWSER_COURT', budgetUnits: 10, expiresAt: future, issuedBy: 'CANA', now });
   const intent = { description: 'run the a11y court on /', capability: 'RUN_BROWSER_COURT',
     successTest: 'court exits zero', rollback: 'none required; read-only' };
@@ -232,7 +286,7 @@ if (has('selftest')) {
 
   t('NO ACTION WITHOUT CONTEXT', !sealPacket({ contextPacket: null, grant: g(), intent, now }).valid);
   t('refuses a context with no actionable facts',
-    !sealPacket({ contextPacket: { ...ctx, actionable_facts: [] }, grant: g(), intent, now }).valid);
+    !sealPacket({ contextPacket: mkCtx({ actionable_facts: [] }), grant: g(), intent, now }).valid);
   t('NO ACTION WITHOUT AUTHORITY', !sealPacket({ contextPacket: ctx, grant: { valid: false, errors: ['x'] }, intent, now }).valid);
   t('capability mismatch refused',
     !sealPacket({ contextPacket: ctx, grant: g(), intent: { ...intent, capability: 'RUN_TESTS' }, now }).valid);
@@ -241,14 +295,67 @@ if (has('selftest')) {
   t('missing success test refused', !sealPacket({ contextPacket: ctx, grant: g(), intent: { ...intent, successTest: '' }, now }).valid);
   t('missing rollback refused', !sealPacket({ contextPacket: ctx, grant: g(), intent: { ...intent, rollback: '  ' }, now }).valid);
 
-  const withContra = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: 'subject:repo' }] }, grant: g(), intent, now });
+  // This case previously sealed successfully with NO intent.subjects, which is
+  // precisely finding #18: the contradiction was surfaced but never blocked. Now
+  // an intent must declare its subjects whenever the context is in conflict, so
+  // the surfacing check declares an UNRELATED subject to stay valid.
+  const withContra = sealPacket({ contextPacket: mkCtx({ contradictions: [{ subject: 'subject:repo' }] }),
+    grant: g(), intent: { ...intent, subjects: ['subject:elsewhere'] }, now });
   t('unresolved contradictions are SURFACED, not hidden', withContra.packet.unresolved_contradictions.includes('subject:repo'));
+
+  // ---- FINDING #18 regression: the fail-closed subjects requirement.
+  const noSubjects = sealPacket({ contextPacket: mkCtx({ contradictions: [{ subject: 'subject:repo',
+      claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] }),
+    grant: g(), intent: { ...intent, subjects: undefined }, now });
+  t('F18: omitting intent.subjects with a contradiction present REFUSES the packet',
+    noSubjects.valid === false);
+  t('F18: the refusal explains that subjects are required',
+    noSubjects.errors.some((e) => /declares no subjects/.test(e)));
+  t('F18: a refused packet is not sealed, so it cannot claim it was checked',
+    noSubjects.packet === null);
+  for (const bad of [null, 'subject:repo', 42, {}]) {
+    const r = sealPacket({ contextPacket: mkCtx({ contradictions: [{ subject: 'subject:repo' }] }),
+      grant: g(), intent: { ...intent, subjects: bad }, now });
+    t(`F18: subjects ${JSON.stringify(bad)} is not a valid declaration`, r.valid === false);
+  }
+  // With NO contradictions, an intent need not declare subjects — the requirement
+  // is scoped to the situation that makes it necessary, not imposed everywhere.
+  t('F18: with no contradictions, omitting subjects is still fine',
+    sealPacket({ contextPacket: ctx, grant: g(), intent: { ...intent, subjects: undefined }, now }).valid === true);
+
+  // ---- FINDING #15 regression: the context digest must RECOMPUTE.
+  const forged = { ...ctx, packet_digest: 'deadbeef'.repeat(8) };
+  t('F15: an arbitrary 64-hex context digest is REFUSED',
+    sealPacket({ contextPacket: forged, grant: g(), intent, now }).valid === false);
+  // A digest copied from a DIFFERENT packet must not attest to this one.
+  const other = mkCtx({ objective: 'a different objective entirely' });
+  const copied = { ...ctx, packet_digest: other.packet_digest };
+  t('F15: a digest copied from another packet is REFUSED',
+    sealPacket({ contextPacket: copied, grant: g(), intent, now }).valid === false);
+  // Content edited after sealing must invalidate the digest.
+  const edited = { ...ctx, objective: 'silently changed after sealing' };
+  t('F15: editing the context after sealing invalidates the digest',
+    sealPacket({ contextPacket: edited, grant: g(), intent, now }).valid === false);
+  t('F15: the refusal says the digest does not recompute',
+    sealPacket({ contextPacket: forged, grant: g(), intent, now })
+      .errors.some((e) => /does not recompute/.test(e)));
+  // And a genuine packet still passes, so the guard is not a blanket refusal.
+  t('F15: a genuine self-consistent context still seals',
+    sealPacket({ contextPacket: mkCtx(), grant: g(), intent, now }).valid === true);
+
+  // ---- FINDING #17 regression: capability normalization.
+  for (const cap of ['activate_payment', ' ACTIVATE_PAYMENT ', 'Activate-Payment', 'activate payment']) {
+    const r = sealPacket({ contextPacket: ctx,
+      grant: { ...g(), capability: cap }, intent: { ...intent, capability: cap }, now });
+    t(`F17: owner-only ${JSON.stringify(cap)} is REFUSED, not slipped past`,
+      r.valid === false && r.errors.some((e) => /owner-only/.test(e)));
+  }
 
   // ---- LAW 2b: a contradiction ON THE ACTION'S OWN SUBJECT must BLOCK.
   // Surfacing alone let an action proceed on a subject whose truth was unsettled.
   const contra = [{ subject: 'subject:repo', subject_key: 'subject:repo',
     claims: [{ id: 'a', claim: 'reachable' }, { id: 'b', claim: '404' }] }];
-  const blocked = sealPacket({ contextPacket: { ...ctx, contradictions: contra },
+  const blocked = sealPacket({ contextPacket: mkCtx({ contradictions: contra }),
     grant: g(), intent: { ...intent, subjects: ['subject:repo'] }, now });
   t('L2b: a contradiction on the action\'s subject REFUSES the packet', blocked.valid === false);
   t('L2b: the refusal names the subject and both claims',
@@ -259,23 +366,23 @@ if (has('selftest')) {
   // in the compiler (V2-B). Normalization must match on both sides.
   for (const [cs, is] of [['subject:Repo', 'subject:repo'], ['subject:repo', 'subject:repo '],
                           ['subject:REPO', ' subject:repo']]) {
-    const r = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: cs, claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] },
+    const r = sealPacket({ contextPacket: mkCtx({ contradictions: [{ subject: cs, claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] }),
       grant: g(), intent: { ...intent, subjects: [is] }, now });
     t(`L2b: ${JSON.stringify(cs)} vs intent ${JSON.stringify(is)} still blocks`, r.valid === false);
   }
 
   // A contradiction on an UNRELATED subject is surfaced but must NOT block, or
   // the system becomes inert and the guard gets switched off.
-  const unrelated = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: 'subject:unrelated', claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] },
+  const unrelated = sealPacket({ contextPacket: mkCtx({ contradictions: [{ subject: 'subject:unrelated', claims: [{ id: 'a', claim: 'x' }, { id: 'b', claim: 'y' }] }] }),
     grant: g(), intent: { ...intent, subjects: ['subject:repo'] }, now });
   t('L2b: an UNRELATED contradiction does not block', unrelated.valid === true);
   t('L2b: but it is still surfaced in the sealed body',
     unrelated.packet.unresolved_contradictions.includes('subject:unrelated'));
 
   // A stale strongest authority (compiler V2-C) cannot be waved through.
-  const staleAuth = sealPacket({ contextPacket: { ...ctx, contradictions: [{ subject: 'subject:release', subject_key: 'subject:release',
+  const staleAuth = sealPacket({ contextPacket: mkCtx({ contradictions: [{ subject: 'subject:release', subject_key: 'subject:release',
       strongest_is_actionable: false, strongest_freshness: 'STALE',
-      claims: [{ id: 's', claim: 'ship' }, { id: 'f', claim: 'hold' }] }] },
+      claims: [{ id: 's', claim: 'ship' }, { id: 'f', claim: 'hold' }] }] }),
     grant: g(), intent: { ...intent, subjects: ['subject:release'] }, now });
   t('L2b: a STALE strongest authority is refused, not preferred',
     staleAuth.valid === false && staleAuth.errors.some((e) => /not actionable/.test(e)));
