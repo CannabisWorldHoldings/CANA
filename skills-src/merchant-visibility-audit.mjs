@@ -45,7 +45,12 @@ function truthLabel(r, db) {
     : 'LIVE_RECORD';
 }
 const has = k => process.argv.includes(`--${k}`);
-const DB = arg('db', 'prisma/dev.db');
+// ISOLATION RULE (tests/README-ISOLATION.md): a harness that reads or writes a
+// database must be TOLD which one. Defaulting to prisma/dev.db is how a
+// verification run and a test run end up sharing state, which already cost an
+// independent verifier real effort chasing a concurrent writer that was my own
+// test fixture.
+const DB = arg('db', null);
 const JSONOUT = arg('json', null);
 
 /** Weighted checks. Each returns {status, detail, evidence_field, remedy}. */
@@ -172,6 +177,100 @@ function conversionChecks(r, menuCount) {
 
 // ---- run
 // Node 24 ships a built-in SQLite; avoids a native-compile dependency.
+// ---------------- self-test (pure core, no database) ----------------
+if (has('selftest')) {
+  let pass = 0, fail = 0;
+  const t = (n, c) => { c ? (pass++, console.log(`  ok   ${n}`)) : (fail++, console.log(`  FAIL ${n}`)); };
+  // A stub standing in for SQLite. Returns whatever menu shape a case needs.
+  // The stub must answer menu queries CONSISTENTLY with the menuCount a case
+  // passes in; a stub that always reports an empty menu makes a complete record
+  // look incomplete and hides real scoring behaviour.
+  const stubDb = (menu = { c: 0, d: 0 }, rows = null) => ({
+    prepare: () => ({
+      get: () => menu,
+      all: () => rows ?? Array.from({ length: menu.c }, (_, i) => ({
+        id: `m${i}`, price: 25 + i, inStock: 1, isDemonstration: menu.d > i ? 1 : 0,
+        dataStatus: 'VERIFIED_CURRENT', name: `Product ${i}`,
+        sourceUrl: 'https://example.com/menu',
+      })),
+    }),
+  });
+  // A GENUINELY complete record. Note licenseStatus must be 'VERIFIED': the
+  // audit deliberately refuses 'ACTIVE' as evidence of verification, and my
+  // first fixture used ACTIVE and made a correct strict check look like a bug.
+  const now = new Date();
+  const R = (o = {}) => ({ id: 'r1', name: 'Test Retailer', type: 'DISPENSARY',
+    address: '1 Main St', city: 'Washington', state: 'DC', zip: '20001',
+    lat: 38.9, lng: -77.03, phone: '202-555-0100', email: 'hi@example.com',
+    website: 'https://example.com',
+    hours: 'Mon-Sun 9-9', hoursSource: 'merchant-confirmed',
+    licenseStatus: 'VERIFIED', licenseNumber: 'DC-1',
+    lastLicenseCheck: now.toISOString(), lastInfoCheck: now.toISOString(),
+    dataStatus: 'VERIFIED_CURRENT', dataSource: 'merchant-portal',
+    sourceUrl: 'https://example.com/about',
+    retrievedAt: now.toISOString(), verifiedAt: now.toISOString(),
+    freshnessExpiresAt: new Date(now.getTime() + 86400_000).toISOString(),
+    confidence: 0.95, isDemonstration: 0, ...o });
+
+  // ---- TRUTH LABEL: the claim the whole audit rests on.
+  t('a fully verified record reads LIVE_RECORD',
+    truthLabel(R(), stubDb()) === 'LIVE_RECORD');
+  t('isDemonstration=1 is DEMONSTRATION_ONLY',
+    /DEMONSTRATION_ONLY/.test(truthLabel(R({ isDemonstration: 1 }), stubDb())));
+  // The single-boolean bypass an earlier verifier falsified.
+  t('dataStatus alone is enough, even when the boolean says otherwise',
+    /DEMONSTRATION_ONLY/.test(truthLabel(R({ isDemonstration: 0, dataStatus: 'DEMONSTRATION_ONLY' }), stubDb())));
+  for (const ds of ['DEMO', 'synthetic-seed', 'SAMPLE_DATA', 'demonstration_only']) {
+    t(`dataStatus ${JSON.stringify(ds)} is caught`,
+      /DEMONSTRATION_ONLY/.test(truthLabel(R({ dataStatus: ds }), stubDb())));
+  }
+  t('an all-demonstration MENU makes the record non-live',
+    /every MenuEntry/.test(truthLabel(R(), stubDb({ c: 5, d: 5 }))));
+  t('a PARTLY demonstration menu does not alone condemn the record',
+    truthLabel(R(), stubDb({ c: 5, d: 4 })) === 'LIVE_RECORD');
+  t('an empty menu does not fabricate a demonstration reason',
+    truthLabel(R(), stubDb({ c: 0, d: 0 })) === 'LIVE_RECORD');
+  t('every reason is CITED, not summarised',
+    /Retailer.isDemonstration=1/.test(truthLabel(R({ isDemonstration: 1 }), stubDb())));
+
+  // ---- SCORING: a perfect record must not score 100 by accident, and a bare
+  // record must not score well. Both directions are checked.
+  const full = buildReport(R(), stubDb(), 12);
+  const bare = buildReport({ id: 'r2', name: 'Bare' }, stubDb(), 0);
+  t('a complete record scores well', full.score >= 80);
+  t('a bare record scores poorly', bare.score <= 40);
+  t('score is bounded 0..100', full.score <= 100 && bare.score >= 0);
+  t('weights are earned, never asserted', full.earned_weight <= full.total_weight);
+  t('counts sum to the number of checks',
+    full.counts.pass + full.counts.warn + full.counts.fail === full.checks.length);
+
+  // ---- EVIDENCE: every finding must cite a field, or it is an opinion.
+  t('EVERY check cites an evidence field',
+    full.checks.every((c) => typeof c.evidence_field === 'string' && c.evidence_field.length > 0));
+  t('every FAIL carries a remedy', bare.checks.filter((c) => c.status === 'FAIL').every((c) => !!c.remedy));
+  t('top actions are ordered by weight, heaviest first',
+    bare.top_actions.every((a, i, arr) => i === 0 || arr[i - 1].weight >= a.weight));
+  t('top actions cite fields and observations',
+    bare.top_actions.every((a) => !!a.evidence_field && a.observed !== undefined));
+
+  // ---- TRUTH CONTRACT: the audit must never imply a commercial outcome.
+  t('no ranking, traffic, lead or lift is claimed',
+    /No ranking, traffic, lead, or conversion-lift figure is claimed/.test(full.disclaimer));
+  t('the report never contains the word "guaranteed"',
+    !/guarantee/i.test(JSON.stringify(full)));
+  t('a demonstration record carries its label INTO the report',
+    /DEMONSTRATION_ONLY/.test(buildReport(R({ isDemonstration: 1 }), stubDb(), 3).truth_label));
+
+  console.log(`\n  Merchant Visibility Audit self-test: ${pass} passed, ${fail} failed`);
+  process.exit(fail === 0 ? 0 : 1);
+}
+
+if (!DB) {
+  console.error('  --db <path> is required. This harness never defaults to a database:');
+  console.error('  a shared default is how a verification run and a test run corrupt each other.');
+  process.exit(2);
+}
+
 let db;
 try {
   const { DatabaseSync } = require('node:sqlite');
@@ -189,6 +288,10 @@ if (!retailers.length) { console.error('No matching retailer.'); process.exit(1)
 const reports = [];
 for (const r of retailers) {
   const menuCount = db.prepare('SELECT COUNT(*) c FROM MenuEntry WHERE retailerId = ?').get(r.id).c;
+  reports.push(buildReport(r, db, menuCount));
+}
+
+function buildReport(r, db, menuCount) {
   const results = [
     ...CHECKS.map(c => ({ id: c.id, weight: c.weight, label: c.label, ...c.run(r) })),
     ...menuChecks(db, r.id),
@@ -202,7 +305,7 @@ for (const r of retailers) {
   const actions = [...fails].sort((a, b) => b.weight - a.weight).slice(0, 5)
     .map((f, i) => ({ rank: i + 1, weight: f.weight, finding: f.label, evidence_field: f.evidence_field, observed: f.detail, action: f.remedy }));
 
-  reports.push({
+  return {
     retailer: { id: r.id, name: r.name, type: r.type, is_demonstration: !!r.isDemonstration, data_status: r.dataStatus },
     audit_version: 'MERCHANT_VISIBILITY_AUDIT_V1',
     generated_at: new Date().toISOString(),
@@ -212,7 +315,7 @@ for (const r of retailers) {
     checks: results,
     top_actions: actions,
     disclaimer: 'Findings are derived only from observable database fields, each cited above. No ranking, traffic, lead, or conversion-lift figure is claimed or implied.',
-  });
+  };
 }
 
 for (const rep of reports) {
