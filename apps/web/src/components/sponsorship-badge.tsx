@@ -15,20 +15,27 @@ import { SPONSORSHIP_STATES, shouldRenderBadge } from '@/lib/sponsorship-entitle
  * Provenance attributes let the sponsorship court bind the pixel on screen to
  * the ledger row that paid for it.
  */
+export type SponsorshipEvidence = {
+  spend_seq: number;
+  entry_hash: string;
+  placement: string;
+  funded_by_seq: number;
+  expires_at: string;
+  entitlement_digest: string;
+};
+
+/**
+ * The resolver lives in .mjs and returns `evidence` as a plain object, so this
+ * accepts a structurally compatible shape rather than demanding a nominal type.
+ * Narrowing happens at the ACTIVE branch, where evidence is guaranteed present.
+ */
 export type SponsorshipView = {
   state: string;
   label: string | null;
   reason: string;
   spendSeq: number | null;
   affectsOrganicOrder: false;
-  evidence: {
-    spend_seq: number;
-    entry_hash: string;
-    placement: string;
-    funded_by_seq: number;
-    expires_at: string;
-    entitlement_digest: string;
-  } | null;
+  evidence: SponsorshipEvidence | object | null;
 };
 
 export function SponsorshipBadge({
@@ -64,7 +71,13 @@ export function SponsorshipBadge({
     );
   }
 
-  const ev = sponsorship!.evidence!;
+  const ev = sponsorship!.evidence as SponsorshipEvidence | null;
+  // Defence in depth: ACTIVE without evidence should be unreachable via the
+  // resolver, but a hand-built object could claim it. Render nothing rather
+  // than a badge with undefined provenance.
+  if (!ev || typeof ev.spend_seq !== 'number' || !ev.entry_hash) {
+    return <span data-sponsorship-state="INVALID_EVIDENCE" data-sponsorship-reason="ACTIVE without evidence" hidden />;
+  }
   return (
     <span
       // Provenance: binds this badge to the exact ledger row that entitles it.

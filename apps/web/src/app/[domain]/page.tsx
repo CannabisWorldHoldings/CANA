@@ -18,6 +18,8 @@ import { PUBLIC_PRODUCT_DESCRIPTION } from '@/lib/product-brand';
 import { currentPublicRecordWhere } from '@/lib/seo-truth.mjs';
 import { isPubliclyVerified } from '@/lib/data-status.mjs';
 import { relativeFreshnessLabel } from '@/lib/freshness.mjs';
+import { resolveSponsorship, dedupeSponsoredCards, SPONSORSHIP_STATES } from '@/lib/sponsorship-entitlement.mjs';
+import { SponsorshipBadge } from '@/components/sponsorship-badge';
 import {
   jsonLdScriptProps,
   retailerItemListJsonLd,
@@ -121,6 +123,60 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     skip: (currentPage - 1) * DIRECTORY_PAGE_SIZE,
     take: DIRECTORY_PAGE_SIZE,
   });
+
+  // SPONSORSHIP ENTITLEMENT (Mechanism Matrix M-001).
+  //
+  // The card badge is resolved from PERSISTED Demand Credit rows, never from
+  // retailer.isSponsored. That boolean is merely an intent flag a merchant or
+  // admin can set; rendering a disclosure from it would let a badge appear with
+  // no paid placement behind it — the exact unbacked-claim failure this gate
+  // exists to prevent.
+  //
+  // Ordering is computed ABOVE this block and is not re-sorted afterwards, so
+  // sponsorship structurally cannot influence organic order.
+  //
+  // FAIL CLOSED: if the ledger read throws, ledgerAvailable=false and every card
+  // resolves to UNAVAILABLE, which renders nothing. An outage silently removes
+  // badges rather than silently asserting unpaid sponsorship.
+  let ledgerRows: Awaited<ReturnType<typeof prisma.demandCreditEntry.findMany>> = [];
+  let ledgerAvailable = true;
+  try {
+    ledgerRows = await prisma.demandCreditEntry.findMany({
+      where: { merchantId: { in: retailers.map((r) => r.id) } },
+      orderBy: { seq: 'asc' },
+    });
+  } catch {
+    ledgerAvailable = false;
+  }
+  const sponsorshipByRetailer = new Map(
+    retailers.map((r) => [
+      r.id,
+      resolveSponsorship({
+        merchantId: r.id,
+        entries: ledgerRows,
+        placement: 'FEATURED_CARD',
+        ledgerAvailable,
+      }),
+    ]),
+  );
+  // One merchant may not occupy the same slot on multiple cards.
+  const sponsorshipAllowed = dedupeSponsoredCards(
+    retailers.map((r) => ({
+      id: r.id,
+      merchantId: r.id,
+      placement: 'FEATURED_CARD',
+      sponsorshipState: sponsorshipByRetailer.get(r.id)?.state,
+    })),
+  );
+  const sponsorshipFor = (id: string) => {
+    const s = sponsorshipByRetailer.get(id);
+    if (!s) return null;
+    if (s.state === SPONSORSHIP_STATES.ACTIVE && !sponsorshipAllowed.has(id)) {
+      return { ...s, state: SPONSORSHIP_STATES.NONE, label: null, evidence: null,
+               reason: 'duplicate campaign suppressed' };
+    }
+    return s;
+  };
   const firstResult =
     totalResults === 0 ? 0 : (currentPage - 1) * DIRECTORY_PAGE_SIZE + 1;
   const lastResult = Math.min(
@@ -443,7 +499,9 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                 <article
                   key={retailer.id}
                   className={`record-card rounded-2xl p-5 flex flex-col md:flex-row gap-5 ${
-                    retailer.isSponsored ? 'ring-1 ring-brand-gold/25' : ''
+                    sponsorshipFor(retailer.id)?.state === SPONSORSHIP_STATES.ACTIVE
+                      ? 'ring-1 ring-brand-gold/25'
+                      : ''
                   } ${isPubliclyVerified(retailer) ? 'record-card--verified' : ''}`}
                 >
                   {/* Retailer Thumbnail (illustrative artwork, not a photo of the business) */}
@@ -464,11 +522,9 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                       )}
                       {retailer.type}
                     </span>
-                    {retailer.isSponsored && (
-                      <span className="absolute right-0 top-0 rounded-bl-lg bg-brand-gold-onwhite px-1.5 py-0.5 text-[9px] font-black text-white">
-                        SPONSORED
-                      </span>
-                    )}
+                    <span className="absolute right-0 top-0">
+                      <SponsorshipBadge sponsorship={sponsorshipFor(retailer.id)} />
+                    </span>
                   </div>
 
                   {/* Retailer Details */}
