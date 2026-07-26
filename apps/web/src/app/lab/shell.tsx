@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react';
 export type Theme = 'day' | 'night';
 
 /** Lab shell: enforces exact canvas law (#FFFFFF / #000000) and a persistent toggle. */
-export function Lab({ theme: initial = 'day', children, label }: { theme?: Theme; children: React.ReactNode; label: string }) {
+export function Lab({ theme: initial = 'day', children, label }: {
+  theme?: Theme;
+  /** Children may be a render function receiving the live theme. */
+  children: React.ReactNode | ((theme: Theme) => React.ReactNode);
+  label: string;
+}) {
   const [theme, setTheme] = useState<Theme>(initial);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('theme');
@@ -37,7 +42,7 @@ export function Lab({ theme: initial = 'day', children, label }: { theme?: Theme
       >
         {night ? 'Night' : 'Day'} · {label}
       </button>
-      {children}
+      {typeof children === 'function' ? children(theme) : children}
     </div>
   );
 }

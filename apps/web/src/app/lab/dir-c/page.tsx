@@ -1,6 +1,6 @@
 'use client';
 import { Lab } from '../shell';
-import { Wordmark } from '../wordmark';
+import { BrandMark } from '../brand-mark';
 
 /**
  * DIRECTION C — "KIOSK"
@@ -12,14 +12,14 @@ import { Wordmark } from '../wordmark';
  */
 export default function DirectionC() {
   return (
-    <Lab label="C · Kiosk">
+    <Lab label="C · Kiosk">{(theme) => (<>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(190px, 22vw) 1fr', minHeight: '100vh' }} className="owd-kiosk">
         {/* FIXED BRAND RAIL — brand is permanent architecture, not a header afterthought. */}
         <aside style={{ borderRight: '1px solid currentColor', padding: '26px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'sticky', top: 0, height: '100vh' }}>
           <div style={{ fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.55 }}>Washington<br />D.C.</div>
           <div style={{ display: 'grid', placeItems: 'center', flex: 1 }}>
             <div style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}>
-              <Wordmark variant="primary" height={124} />
+              <BrandMark theme={theme} width={560} maxWidthVw={70} />
             </div>
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13 }}>
@@ -69,6 +69,6 @@ export default function DirectionC() {
         </main>
       </div>
       <style>{`@media (max-width: 820px){ .owd-kiosk{ grid-template-columns: 1fr !important; } .owd-kiosk > aside{ position: static !important; height: auto !important; flex-direction: row !important; align-items: center; border-right: none !important; border-bottom: 1px solid currentColor; } .owd-kiosk > aside > div:nth-child(2) > div{ transform: none !important; } .owd-kiosk > aside > nav{ display: none !important; } }`}</style>
-    </Lab>
+    </>)}</Lab>
   );
 }

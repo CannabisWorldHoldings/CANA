@@ -1,6 +1,6 @@
 'use client';
 import { Lab } from '../shell';
-import { Wordmark } from '../wordmark';
+import { BrandMark } from '../brand-mark';
 
 /**
  * DIRECTION A — "MAISON"
@@ -11,7 +11,7 @@ import { Wordmark } from '../wordmark';
  */
 export default function DirectionA() {
   return (
-    <Lab label="A · Maison">
+    <Lab label="A · Maison">{(theme) => (<>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '22px 5vw', fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.62 }}>
         <span>Washington, D.C.</span>
         <nav style={{ display: 'flex', gap: 26 }}>
@@ -25,7 +25,7 @@ export default function DirectionA() {
       {/* THE BRAND MOMENT — occupies the optical center, nothing rivals it. */}
       <section style={{ padding: '4vh 5vw 0', display: 'grid', placeItems: 'center', textAlign: 'center' }}>
         <div style={{ width: 'min(880px, 92vw)' }}>
-          <Wordmark variant="primary" height={172} className="owd-mark" />
+          <BrandMark theme={theme} width={840} maxWidthVw={88} />
         </div>
         <p style={{ marginTop: 30, fontSize: 15, lineHeight: 1.65, maxWidth: 470, opacity: 0.7 }}>
           Washington&rsquo;s cannabis directory, kept honest. Every menu, price and
@@ -71,6 +71,6 @@ export default function DirectionA() {
           ))}
         </div>
       </section>
-    </Lab>
+    </>)}</Lab>
   );
 }

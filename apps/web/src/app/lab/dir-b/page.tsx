@@ -1,6 +1,6 @@
 'use client';
 import { Lab } from '../shell';
-import { Wordmark } from '../wordmark';
+import { BrandMark } from '../brand-mark';
 
 /**
  * DIRECTION B — "NOCTURNE"
@@ -11,7 +11,7 @@ import { Wordmark } from '../wordmark';
  */
 export default function DirectionB() {
   return (
-    <Lab theme="night" label="B · Nocturne">
+    <Lab theme="night" label="B · Nocturne">{(theme) => (<>
       <header style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 4vw', color: '#fff' }}>
         <span style={{ fontSize: 11.5, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.8 }}>Washington, D.C. · 21+</span>
         <nav style={{ display: 'flex', gap: 24, fontSize: 12.5 }}>
@@ -31,7 +31,7 @@ export default function DirectionB() {
         {/* Brand locked bottom-left, at scale, over the image. */}
         <div style={{ position: 'absolute', left: '4vw', bottom: '7vh', right: '4vw' }}>
           <div style={{ width: 'min(720px, 86vw)' }}>
-            <Wordmark variant="inverse" height={140} />
+            <BrandMark theme={theme} width={660} maxWidthVw={84} />
           </div>
           <p style={{ marginTop: 18, color: '#E8F5EE', fontSize: 16, maxWidth: 430, lineHeight: 1.6, opacity: 0.9 }}>
             Find what&rsquo;s actually open, actually stocked, actually priced —
@@ -68,6 +68,6 @@ export default function DirectionB() {
           ))}
         </div>
       </section>
-    </Lab>
+    </>)}</Lab>
   );
 }
