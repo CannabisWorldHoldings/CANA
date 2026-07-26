@@ -539,15 +539,10 @@
     }
   },
   "tests": {
-    "apps_web": "255/255",
-    "skill_selftests": {
-      "signal_to_fix": "42/42",
-      "demand_credits": "40/40",
-      "context_compiler": "39/39",
-      "governed_packet": "26/26",
-      "merchant_pilot": "36/36",
-      "total": 183
-    }
+    "web": "583/583",
+    "packages": "13/13",
+    "deploy": "17/17",
+    "total": "613/613"
   },
   "owner_decisions_required": [
     {
@@ -754,8 +749,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "881c8ce",
-  "last_checkpoint_at": "2026-07-26T22:33:38.259597+00:00",
+  "last_checkpoint": "cff0ded",
+  "last_checkpoint_at": "2026-07-26T23:50:45.318522+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -1468,5 +1463,29 @@
       "environment manifest hash"
     ],
     "source": "deliverables/INDEPENDENT_VERIFICATION_13_SECURITY_RELEASE.md"
+  },
+  "foundry_integration": {
+    "lanes_merged": [
+      "product 54317ea",
+      "cpanel 9c65c7a",
+      "migration b0db9fd"
+    ],
+    "collisions": 0,
+    "note": "the ownership map held \u2014 three lanes, 30 files, zero overlapping paths",
+    "registered_at_integration": [
+      "/api/v1/neighborhoods (truth-bearing)",
+      "/api/release (not truth-bearing)"
+    ],
+    "g10_caught_both": "the release gate refused both new routes until someone decided they were governed"
+  },
+  "verifier_f1": {
+    "finding": "the handoff route took the BEST of two independent write outcomes, so a lost LeadEvent reported EVIDENCE_WRITE_SUCCEEDED",
+    "measured": "150 handoffs under a 9s write stall: header SUCCEEDED on all 150, 148 rows persisted",
+    "repaired_at": "cff0ded",
+    "new_state": "EVIDENCE_WRITE_LOST \u2014 the write AND the spill both failed; nothing will recover it",
+    "self_inflicted_defects_found_during_repair": [
+      "the spill was awaited in the consumer request path, so a stalled filesystem would stall the redirect",
+      "the deadline released the caller but could not cancel the open; the abandoned operation held the event loop, the test file took 884s and the full suite hit its ceiling with 78 files never run"
+    ]
   }
 }
