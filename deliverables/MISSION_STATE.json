@@ -915,6 +915,30 @@
         "head": "4e012fa"
       }
     ],
-    "verified_at": "2026-07-26T16:16:13.932980+00:00"
+    "verified_at": "2026-07-26T16:16:13.932980+00:00",
+    "delta_packages": [
+      {
+        "package": "CANA-DELTA-54a0082-0ae1030",
+        "type": "INCREMENTAL",
+        "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+        "archive_sha256": "4ce289ddaa83558fb065291dc01a7d58ee36800c25e09acf7704e6da9c3818d1",
+        "archive_bytes": 36897,
+        "bundle_bytes": 17643,
+        "basis": "54a0082",
+        "tip": "0ae1030",
+        "tree": "f6cafa55817328128461272a0be6b4b53bf5b7dd",
+        "basis_correction": "the directive named f4af31e, but that commit RECORDED the v2 upload so it postdates the package and is absent from it; a bundle on that basis would declare a prerequisite missing from the last durable artifact",
+        "gates_passed": [
+          "byte size",
+          "sha-256 recomputed on read-back",
+          "6/6 inner hashes",
+          "prerequisite 54a0082 declared in the Drive copy",
+          "chained onto the v2 Drive read-back to the identical tree, 0 fsck errors",
+          "tests from code assembled entirely out of Drive: skills 258/258, e2e PROVEN, 63 web tests"
+        ],
+        "verified_at": "2026-07-26T16:41:30.986381+00:00"
+      }
+    ],
+    "current_head_durable": "0ae1030"
   }
 }

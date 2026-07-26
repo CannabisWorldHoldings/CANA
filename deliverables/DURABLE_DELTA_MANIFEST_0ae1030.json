@@ -1,0 +1,71 @@
+{
+  "package": "CANA-DELTA-54a0082-0ae1030",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T16:38:53.228490+00:00",
+  "basis": {
+    "sha": "54a0082193f07eb0ee407495fea60daf400b5cf1",
+    "short": "54a0082",
+    "why": "This is the head of the v2 full package already read-back-verified in Drive. The directive named f4af31e as the basis, but f4af31e is the commit that RECORDED the v2 upload, so it came AFTER 54a0082 and is NOT inside that package. Building on f4af31e would have produced a bundle whose prerequisite is absent from the last durable artifact \u2014 a chain that silently cannot be replayed."
+  },
+  "tip": {
+    "sha": "0ae1030cad0b4e2a61851c1a175417b34890c410",
+    "short": "0ae1030",
+    "tree": "f6cafa55817328128461272a0be6b4b53bf5b7dd"
+  },
+  "undurable_commit_count": 3,
+  "commits": [
+    {
+      "sha": "0ae1030cad0b4e2a61851c1a175417b34890c410",
+      "short": "0ae1030",
+      "date": "2026-07-26T12:21:10-04:00",
+      "subject": "chore: checkpoint \u2014 structured data consolidated, web 327/327",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "6b2e05649d5a886414611cfe34806d5abe476107",
+      "short": "6b2e056",
+      "date": "2026-07-26T12:20:59-04:00",
+      "subject": "fix(aeo): consolidate structured data and stop a fabricated location",
+      "files_changed": [
+        "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+        "apps/web/src/lib/aeo-structured-data.mjs",
+        "apps/web/src/lib/structured-data.mjs",
+        "apps/web/tests/structured-data-truth.test.mjs"
+      ]
+    },
+    {
+      "sha": "f4af31e33379a9a7f1bd096ca6cc5a82d5f8c26e",
+      "short": "f4af31e",
+      "date": "2026-07-26T12:16:13-04:00",
+      "subject": "docs(durability): re-durabilize head 54a0082 to Drive \u2014 proven by read-back",
+      "files_changed": [
+        "deliverables/DURABLE_MANIFEST_20260726_v2.json",
+        "deliverables/MISSION_STATE.json"
+      ]
+    }
+  ],
+  "chain_instructions": [
+    "This package is INCREMENTAL. It is useless alone and says so: the bundle declares prerequisite 54a0082.",
+    "Restore the v2 full package first (Drive 13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja), then:",
+    "  git fetch /path/to/cana-delta.bundle HEAD && git checkout FETCH_HEAD",
+    "Or replay the patches: git checkout 54a0082 && git am patches/*.patch"
+  ],
+  "verification": {
+    "bundle_declares_prerequisite": "54a0082193f07eb0ee407495fea60daf400b5cf1",
+    "chained_onto_v2_drive_readback": "YES \u2014 fetched into the v2 read-back restore; HEAD became 0ae1030 with tree f6cafa55817328128461272a0be6b4b53bf5b7dd, identical to source",
+    "patch_replay": "3/3 commits replay from 54a0082 to the SAME tree f6cafa55817328128461272a0be6b4b53bf5b7dd",
+    "tests_from_chained_restore": "skills 258/258, e2e binding PROVEN, plus the delta's own web tests (structured-data-truth 25/25, growth-os 26/26)"
+  },
+  "test_receipts": {
+    "web_suite": "327/327",
+    "skills_total": "258/258",
+    "e2e_binding": "PROVEN"
+  },
+  "owner_blocked": [
+    "CannabisWorldHoldings/CANA creation",
+    "final visual direction",
+    "merchant outreach authorization"
+  ]
+}
