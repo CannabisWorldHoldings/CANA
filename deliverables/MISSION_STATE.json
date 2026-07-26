@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "84470ee",
-  "last_checkpoint_at": "2026-07-26T18:48:42.856934+00:00",
+  "last_checkpoint": "6b3c35a",
+  "last_checkpoint_at": "2026-07-26T19:03:58.164185+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -985,10 +985,26 @@
       "proven_live": "all five graded states verified over real HTTP including forged and replayed tokens",
       "falsification_proven": true,
       "tests": "web 417/417"
+    },
+    {
+      "wall": "VERIFICATION_10_REPAIRS",
+      "commit": "6b3c35a",
+      "attacks": 27,
+      "blocked": 25,
+      "confirmed": 2,
+      "live_bypasses": 0,
+      "findings": [
+        "III1 HIGH test-coverage \u2014 G10 matched only route.ts while Next permits tsx/ts/jsx/js",
+        "I7 MEDIUM latent \u2014 SQLite unique indexes ignore NULLs so a NULL eventIdentity bypasses dedupe"
+      ],
+      "recorded_not_fixed": "I3/I4 window semantics \u2014 correct behaviour, already neutralised by grading REQUEST_RECEIVED as value-ineligible",
+      "independent_rederivation": "the verifier re-ran 50/100/200 concurrent requests and dropped the unique index to prove it load-bearing",
+      "falsification_proven": true,
+      "tests": "web 418/418"
     }
   ],
   "test_baseline": {
-    "web": "417/417",
+    "web": "418/418",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
