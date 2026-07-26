@@ -1111,9 +1111,34 @@
           "patch replay reaches the same tree"
         ],
         "verified_at": "2026-07-26T18:30:17.625210+00:00"
+      },
+      {
+        "package": "CANA-DELTA-d4587a4-01676e3",
+        "type": "INCREMENTAL",
+        "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
+        "archive_sha256": "425b4656f555aadefb2439ed7ae1e29280092602804d478fdc7e88e1b220134e",
+        "archive_bytes": 75753,
+        "basis": "d4587a4",
+        "tip": "01676e3",
+        "tree": "8ad373aaeecf9f470e173ec3ac61d67b3fc094bc",
+        "contents": [
+          "transactional idempotency via DB uniqueness constraint",
+          "graded consumer evidence, five proof states",
+          "verification 10 repairs: G10 extension coverage, NULL-identity fail-closed"
+        ],
+        "gates_passed": [
+          "byte size",
+          "sha-256 recomputed on read-back",
+          "9/9 inner hashes",
+          "FIVE-artifact chain rebuilt from Drive bytes only to the identical tree, 0 fsck errors",
+          "258/258 skills + 90 web tests from the Drive-rebuilt chain",
+          "out-of-order restore REFUSED with a prerequisite error, not a wrong tree"
+        ],
+        "secret_scan": "only match is the literal test constant 'test-secret-not-a-real-key'; no real secret, .env untracked",
+        "verified_at": "2026-07-26T19:06:12.626706+00:00"
       }
     ],
-    "current_head_durable": "d4587a4",
+    "current_head_durable": "01676e3",
     "restore_order": [
       {
         "step": 1,
@@ -1138,6 +1163,12 @@
         "drive_file_id": "1NzffI9LsJCJj9al6BkMEBc6OOjU1_6vJ",
         "prerequisite": "ed40c16",
         "reaches": "d4587a4"
+      },
+      {
+        "step": 5,
+        "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
+        "prerequisite": "d4587a4",
+        "reaches": "01676e3"
       }
     ],
     "chain_rebuilt_from_drive_only": true

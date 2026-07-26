@@ -1,0 +1,139 @@
+{
+  "package": "CANA-DELTA-d4587a4-01676e3",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T19:04:30.600394+00:00",
+  "basis": {
+    "short": "d4587a4",
+    "why": "head of the fourth Drive artifact, already read-back verified and chain-proven"
+  },
+  "tip": {
+    "sha": "01676e3a66e0a4359a77222c74e8f48bee7a681d",
+    "short": "01676e3",
+    "tree": "8ad373aaeecf9f470e173ec3ac61d67b3fc094bc"
+  },
+  "commits": [
+    {
+      "sha": "01676e3a66e0a4359a77222c74e8f48bee7a681d",
+      "short": "01676e3",
+      "date": "2026-07-26T15:03:58-04:00",
+      "subject": "docs(verify): record verification 10 \u2014 27 attacks, 25 blocked, 2 repaired, 0 live bypasses",
+      "files_changed": [
+        "deliverables/INDEPENDENT_VERIFICATION_10_IDEMPOTENCY_DEALS_GATE_CHAIN.md",
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "6b3c35acc2681ba8c8bc21b56271491b1aacb887",
+      "short": "6b3c35a",
+      "date": "2026-07-26T15:03:24-04:00",
+      "subject": "fix(verify): close verification 10 \u2014 the gate was narrower than the framework",
+      "files_changed": [
+        "apps/web/src/lib/demand-credits.mjs",
+        "apps/web/tests/attribution-idempotency.test.mjs",
+        "apps/web/tests/release-gate.test.mjs"
+      ]
+    },
+    {
+      "sha": "1ebcc0c493a8d98bf136c0290089e29b6ff21cf1",
+      "short": "1ebcc0c",
+      "date": "2026-07-26T14:48:42-04:00",
+      "subject": "chore: checkpoint \u2014 graded consumer evidence, web 417/417",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "84470ee0843751e652d9af0e33f02e32c43264f5",
+      "short": "84470ee",
+      "date": "2026-07-26T14:48:29-04:00",
+      "subject": "feat(evidence): graded consumer proof \u2014 stop calling a request a consumer action",
+      "files_changed": [
+        ".gitignore",
+        "apps/web/prisma/schema.prisma",
+        "apps/web/src/app/api/v1/attribution/route.ts",
+        "apps/web/src/lib/demand-credits.mjs",
+        "apps/web/src/lib/growth-os.mjs",
+        "apps/web/src/lib/interaction-proof.mjs",
+        "apps/web/tests/api-v1-attribution.test.mjs",
+        "apps/web/tests/attribution-idempotency.test.mjs",
+        "apps/web/tests/growth-os.test.mjs",
+        "apps/web/tests/interaction-proof.test.mjs",
+        "apps/web/tests/pilot-evidence-chain.test.mjs"
+      ]
+    },
+    {
+      "sha": "f69544baa5cc02154e6ad746316dd329b87d3ed0",
+      "short": "f69544b",
+      "date": "2026-07-26T14:39:22-04:00",
+      "subject": "chore: checkpoint \u2014 transactional idempotency, web 386/386",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "f389b2134becf44ddfe8082d023cdc6b15a86682",
+      "short": "f389b21",
+      "date": "2026-07-26T14:39:06-04:00",
+      "subject": "fix(ledger): transactional idempotency \u2014 the DATABASE decides, not the application",
+      "files_changed": [
+        "apps/web/prisma/schema.prisma",
+        "apps/web/src/app/api/v1/attribution/route.ts",
+        "apps/web/src/lib/demand-credits.mjs",
+        "apps/web/tests/attribution-idempotency.test.mjs"
+      ]
+    },
+    {
+      "sha": "85fa117f698fa1fdf752a83e97f7ba431c4f242b",
+      "short": "85fa117",
+      "date": "2026-07-26T14:30:32-04:00",
+      "subject": "docs(durability): d4587a4 recoverable \u2014 whole chain rebuilt from Drive alone",
+      "files_changed": [
+        "deliverables/DURABILITY_CHAIN_RECEIPT_d4587a4.md",
+        "deliverables/DURABLE_DELTA_MANIFEST_d4587a4.json",
+        "deliverables/MISSION_STATE.json"
+      ]
+    }
+  ],
+  "contents": [
+    "transactional idempotency via a DB uniqueness constraint",
+    "graded consumer evidence with five proof states",
+    "verification 10 repairs: G10 extension coverage and NULL-identity fail-closed"
+  ],
+  "restore_order_full_chain": [
+    {
+      "step": 1,
+      "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "type": "FULL",
+      "reaches": "54a0082"
+    },
+    {
+      "step": 2,
+      "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+      "prerequisite": "54a0082",
+      "reaches": "0ae1030"
+    },
+    {
+      "step": 3,
+      "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+      "prerequisite": "0ae1030",
+      "reaches": "ed40c16"
+    },
+    {
+      "step": 4,
+      "drive_file_id": "1NzffI9LsJCJj9al6BkMEBc6OOjU1_6vJ",
+      "prerequisite": "ed40c16",
+      "reaches": "d4587a4"
+    },
+    {
+      "step": 5,
+      "drive_file_id": "PENDING_UPLOAD",
+      "prerequisite": "d4587a4",
+      "reaches": "01676e3"
+    }
+  ],
+  "test_receipts": {
+    "web": "418/418",
+    "skills": "258/258",
+    "e2e_binding": "PROVEN"
+  }
+}
