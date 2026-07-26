@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "93e5c6a",
-  "last_checkpoint_at": "2026-07-26T16:51:51.274313+00:00",
+  "last_checkpoint": "6af0dba",
+  "last_checkpoint_at": "2026-07-26T16:57:17.937874+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -911,10 +911,30 @@
       "falsification_proven": true,
       "tests": "web 357/357",
       "owner_gates": "CLOSED \u2014 no contact, no payment, no public claim; funding reference states no real payment occurred"
+    },
+    {
+      "wall": "RELEASE_GATE_LIVE_SURFACE",
+      "commit": "6af0dba",
+      "gap_closed": "four existing security suites are all static and none knew the v1 endpoints or Growth OS existed; a new route could ship outside every security suite with both suites green",
+      "gates": [
+        "G1 no internal detail leaks",
+        "G2 no demonstration data published",
+        "G3 authenticated surfaces refuse anonymously without leaking",
+        "G4 unknown tenant refused incl. Host authority tricks",
+        "G5 no unescaped echo",
+        "G6 truth-bearing routes never cached",
+        "G7 no unevidenced outcome claim",
+        "G8 no page 500s",
+        "G9 live security headers",
+        "G10 surface inventory complete"
+      ],
+      "falsification_proven": true,
+      "tests": "web 368/368",
+      "near_miss_recorded": "a sabotage-restore chain copied a stale snapshot over growth-os.mjs, silently reverting two verified fixes; targeted suites stayed green and only the FULL suite caught it. Isolation doc now requires hash-verified restores and unique per-session snapshots."
     }
   ],
   "test_baseline": {
-    "web": "357/357",
+    "web": "368/368",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
