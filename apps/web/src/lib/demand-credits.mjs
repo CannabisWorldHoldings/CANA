@@ -21,8 +21,28 @@ import { createHash } from 'node:crypto';
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 /** Whitespace-only strings are absent. Non-strings are not text. */
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
-/** Strict positive finite number — rejects "100", true, [], {} via coercion. */
-const money = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+/**
+ * Maximum credits in a single entry. Independent verification proved that two
+ * individually-"valid" 1e308 issues sum the derived balance to Infinity, after
+ * which spend never depletes — money created from nothing. A ledger needs a
+ * domain-realistic ceiling, not just finiteness.
+ *
+ * 1,000,000 credits is far above any plausible merchant placement budget
+ * (Weedmaps' blended average is ~$2,805/mo) while leaving ~9 orders of
+ * magnitude of headroom below MAX_SAFE_INTEGER cents.
+ */
+export const MAX_ENTRY_AMOUNT = 1_000_000;
+/** Ledger-wide ceiling so no accumulation of legal entries can reach overflow. */
+export const MAX_MERCHANT_BALANCE = 100_000_000;
+
+/**
+ * Strict positive finite number within the domain ceiling. Rejects "100", true,
+ * [], {} via coercion, AND rejects astronomically large values that would break
+ * summation. Amount must also be representable in whole cents.
+ */
+const money = (v) =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= MAX_ENTRY_AMOUNT
+  && Number.isSafeInteger(Math.round(v * 100));
 
 export const GENESIS_HASH = sha('orderweeddc:demand-credits:genesis');
 export const PLACEMENT_KINDS = Object.freeze(['FEATURED_CARD', 'NEIGHBORHOOD_BANNER', 'DEAL_SPOTLIGHT', 'BRAND_COLLECTION']);
@@ -85,6 +105,12 @@ export function createDemandCredits(prisma) {
       const exp = expiresAt instanceof Date ? expiresAt : (text(expiresAt) ? new Date(expiresAt) : null);
       if (!exp || Number.isNaN(exp.getTime())) return deny('EXPIRY_REQUIRED', 'credits must carry a valid expiry date');
       if (exp.getTime() <= Date.now()) return deny('EXPIRY_IN_PAST', `expiresAt ${exp.toISOString()} is not in the future — issuing pre-expired credits is meaningless`);
+      // Accumulation guard: many individually-legal issues must not be able to
+      // walk the balance toward overflow.
+      const projected = (await balance(merchantId)) + amount;
+      if (projected > MAX_MERCHANT_BALANCE) {
+        return deny('BALANCE_CEILING_EXCEEDED', `issuing ${amount} would take the balance to ${projected}, above the ${MAX_MERCHANT_BALANCE} ceiling`);
+      }
       return append(merchantId, { kind: 'ISSUE', amount, authorizationRef, expiresAt: exp });
     },
 

@@ -255,3 +255,47 @@ test('hostile merchantId values do not crash or pollute', async () => {
   // The table must still exist after the injection attempt.
   assert.ok((await prisma.demandCreditEntry.count()) > 0);
 });
+
+test('CRITICAL: money cannot be created from nothing via numeric overflow', async () => {
+  // Independent verification proved two individually-"valid" 1e308 issues sum
+  // the derived balance to Infinity, after which spend never depletes.
+  const M = 'merchant_overflow';
+  for (const huge of [1e308, Number.MAX_SAFE_INTEGER, Number.MAX_VALUE, 1e15]) {
+    const r = await credits.issue({ merchantId: M, amount: huge, authorizationRef: 'PO-O', expiresAt: future() });
+    assert.equal(r.denial_code, 'INVALID_AMOUNT', `amount=${huge} must be refused by the domain ceiling`);
+  }
+  assert.equal(await credits.balance(M), 0);
+  const bal = await credits.balance(M);
+  assert.ok(Number.isFinite(bal), 'balance must always be finite');
+});
+
+test('CRITICAL: accumulation of legal issues cannot walk the balance to overflow', async () => {
+  const M = 'merchant_ceiling';
+  // Each issue is individually legal; the ledger-wide ceiling stops accumulation.
+  let accepted = 0;
+  for (let i = 0; i < 120; i++) {
+    const r = await credits.issue({ merchantId: M, amount: 1_000_000, authorizationRef: `PO-${i}`, expiresAt: future() });
+    if (r.accepted) accepted++;
+    else { assert.equal(r.denial_code, 'BALANCE_CEILING_EXCEEDED'); break; }
+  }
+  const bal = await credits.balance(M);
+  assert.ok(Number.isFinite(bal), 'balance must remain finite');
+  assert.ok(bal <= 100_000_000, `balance ${bal} exceeded the ceiling`);
+  assert.ok(accepted > 0 && accepted <= 100, 'ceiling must bind after a bounded number of issues');
+});
+
+test('HONEST LIMIT: a fully re-signed chain verifies — replay proves consistency, not authenticity', async () => {
+  // Independent verification demonstrated that an actor with full table write
+  // access can rewrite an amount and recompute every hash, producing a
+  // self-consistent forgery. This is a property of unanchored hash chains, not
+  // a bug that more hashing can fix. Asserted here so the limit is never
+  // mistaken for a guarantee, and so verifyChain keeps disclosing it.
+  const M = 'merchant_forge';
+  await credits.issue({ merchantId: M, amount: 500, authorizationRef: 'PO-FG', expiresAt: future() });
+  await credits.spend({ merchantId: M, amount: 150, placement: 'FEATURED_CARD', disclosureLabel: 'Sponsored' });
+  assert.equal(await credits.balance(M), 350);
+  const v = await credits.verifyChain(M);
+  assert.equal(v.valid, true);
+  assert.ok(v.anchor_caveat.includes('external anchor'),
+    'verifyChain MUST disclose that replay cannot detect a wholesale re-signed chain');
+});
