@@ -1197,9 +1197,33 @@
         ],
         "secret_scan": "0 findings; report included in the package as SECRET-SCAN-REPORT.txt",
         "verified_at": "2026-07-26T19:27:11.513499+00:00"
+      },
+      {
+        "package": "CANA-DELTA-de3619e-4b01926",
+        "type": "INCREMENTAL",
+        "drive_file_id": "1RbokRnYTRB85fTe8K6F5o9Iyj2smQ-9e",
+        "archive_sha256": "670a66041eb16ea174d956eef84185aa9071d7759844017f32415ea42ef1df2b",
+        "archive_bytes": 65058,
+        "basis": "de3619e",
+        "tip": "4b01926",
+        "tree": "7f5d603eaa6277e2ce58c661c98ed66dcd1908ee",
+        "contents": [
+          "page-bound interaction challenge",
+          "court-enforced merchant pilot package V1 (NOT authorized)"
+        ],
+        "gates_passed": [
+          "byte size",
+          "sha-256 on read-back",
+          "9/9 inner hashes",
+          "SEVEN-artifact chain rebuilt from Drive bytes only, identical tree, 0 fsck errors",
+          "out-of-order apply refused with HEAD unmoved",
+          "258/258 skills + page-challenge 28, pilot-court 15, interaction-proof 26 from the rebuild"
+        ],
+        "secret_scan": "only self-describing test literals; no real secret; .env untracked",
+        "verified_at": "2026-07-26T19:44:11.919163+00:00"
       }
     ],
-    "current_head_durable": "de3619e",
+    "current_head_durable": "4b01926",
     "restore_order": [
       {
         "step": 1,
@@ -1236,6 +1260,12 @@
         "drive_file_id": "1IECCp32x_sHY1n08tAqsInTSMmmKav6l",
         "prerequisite": "01676e3",
         "reaches": "de3619e"
+      },
+      {
+        "step": 7,
+        "drive_file_id": "1RbokRnYTRB85fTe8K6F5o9Iyj2smQ-9e",
+        "prerequisite": "de3619e",
+        "reaches": "4b01926"
       }
     ],
     "chain_rebuilt_from_drive_only": true

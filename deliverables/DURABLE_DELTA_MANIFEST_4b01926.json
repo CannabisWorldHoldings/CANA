@@ -1,0 +1,195 @@
+{
+  "package": "CANA-DELTA-de3619e-4b01926",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T19:42:14.526408+00:00",
+  "basis": {
+    "short": "de3619e",
+    "why": "head of the sixth Drive artifact, read-back verified and chain-proven"
+  },
+  "tip": {
+    "sha": "4b01926f4a83ad3e87617679caef0c9e1281fc28",
+    "short": "4b01926",
+    "tree": "7f5d603eaa6277e2ce58c661c98ed66dcd1908ee"
+  },
+  "commit_manifest": [
+    {
+      "sha": "4b01926f4a83ad3e87617679caef0c9e1281fc28",
+      "short": "4b01926",
+      "date": "2026-07-26T15:41:47-04:00",
+      "subject": "chore: ignore verifier scratch probes at the web root",
+      "files_changed": [
+        ".gitignore"
+      ]
+    },
+    {
+      "sha": "c2846a2df40b11c53caba1813a672838eb87c50a",
+      "short": "c2846a2",
+      "date": "2026-07-26T15:41:24-04:00",
+      "subject": "chore: checkpoint \u2014 merchant pilot package V1, web 461/461",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "a6d63905875b3f4d6b150ed3d7cbd43592188392",
+      "short": "a6d6390",
+      "date": "2026-07-26T15:41:09-04:00",
+      "subject": "feat(pilot): merchant pilot package V1 \u2014 prepared, NOT authorized, court-enforced",
+      "files_changed": [
+        "apps/web/tests/pilot-package-court.test.mjs",
+        "deliverables/MERCHANT_PILOT_PACKAGE_V1.md"
+      ]
+    },
+    {
+      "sha": "c1d68fdf1295df49da8b1c19fda0716dc87b99df",
+      "short": "c1d68fd",
+      "date": "2026-07-26T15:36:27-04:00",
+      "subject": "chore: checkpoint \u2014 page-bound interaction challenge, web 446/446",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "2a80d5385776b205146426f80a8bf99b81f6887d",
+      "short": "2a80d53",
+      "date": "2026-07-26T15:36:12-04:00",
+      "subject": "feat(evidence): page-bound challenge \u2014 fix the causal direction of the proof",
+      "files_changed": [
+        "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+        "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+        "apps/web/src/lib/page-challenge.mjs",
+        "apps/web/tests/handoff.test.mjs",
+        "apps/web/tests/page-challenge.test.mjs"
+      ]
+    },
+    {
+      "sha": "e9aeaad01a3106747e4344f713f24e89ec7ae995",
+      "short": "e9aeaad",
+      "date": "2026-07-26T15:27:11-04:00",
+      "subject": "docs(durability): de3619e recoverable \u2014 six-artifact chain rebuilt from Drive",
+      "files_changed": [
+        "deliverables/DURABLE_DELTA_MANIFEST_de3619e.json",
+        "deliverables/MISSION_STATE.json"
+      ]
+    }
+  ],
+  "changed_file_manifest": [
+    {
+      "path": ".gitignore",
+      "touched_by": [
+        "4b01926"
+      ]
+    },
+    {
+      "path": "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+      "touched_by": [
+        "2a80d53"
+      ]
+    },
+    {
+      "path": "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+      "touched_by": [
+        "2a80d53"
+      ]
+    },
+    {
+      "path": "apps/web/src/lib/page-challenge.mjs",
+      "touched_by": [
+        "2a80d53"
+      ]
+    },
+    {
+      "path": "apps/web/tests/handoff.test.mjs",
+      "touched_by": [
+        "2a80d53"
+      ]
+    },
+    {
+      "path": "apps/web/tests/page-challenge.test.mjs",
+      "touched_by": [
+        "2a80d53"
+      ]
+    },
+    {
+      "path": "apps/web/tests/pilot-package-court.test.mjs",
+      "touched_by": [
+        "a6d6390"
+      ]
+    },
+    {
+      "path": "deliverables/DURABLE_DELTA_MANIFEST_de3619e.json",
+      "touched_by": [
+        "e9aeaad"
+      ]
+    },
+    {
+      "path": "deliverables/MERCHANT_PILOT_PACKAGE_V1.md",
+      "touched_by": [
+        "a6d6390"
+      ]
+    },
+    {
+      "path": "deliverables/MISSION_STATE.json",
+      "touched_by": [
+        "c2846a2",
+        "c1d68fd",
+        "e9aeaad"
+      ]
+    }
+  ],
+  "contents": [
+    "page-bound interaction challenge \u2014 evidence that a page was actually rendered",
+    "merchant pilot package V1, court-enforced against the running system",
+    "sixth-artifact durability receipt"
+  ],
+  "restore_order_full_chain": [
+    {
+      "step": 1,
+      "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "type": "FULL",
+      "reaches": "54a0082"
+    },
+    {
+      "step": 2,
+      "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+      "prerequisite": "54a0082",
+      "reaches": "0ae1030"
+    },
+    {
+      "step": 3,
+      "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+      "prerequisite": "0ae1030",
+      "reaches": "ed40c16"
+    },
+    {
+      "step": 4,
+      "drive_file_id": "1NzffI9LsJCJj9al6BkMEBc6OOjU1_6vJ",
+      "prerequisite": "ed40c16",
+      "reaches": "d4587a4"
+    },
+    {
+      "step": 5,
+      "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
+      "prerequisite": "d4587a4",
+      "reaches": "01676e3"
+    },
+    {
+      "step": 6,
+      "drive_file_id": "1IECCp32x_sHY1n08tAqsInTSMmmKav6l",
+      "prerequisite": "01676e3",
+      "reaches": "de3619e"
+    },
+    {
+      "step": 7,
+      "drive_file_id": "PENDING_UPLOAD",
+      "prerequisite": "de3619e",
+      "reaches": "4b01926"
+    }
+  ],
+  "test_receipts": {
+    "web": "461/461",
+    "skills": "258/258",
+    "e2e_binding": "PROVEN"
+  },
+  "schema_fingerprint": "86b6a806ad99836b727a919ba4591b291241bb04224b9e766c4da02877ceed8f"
+}
