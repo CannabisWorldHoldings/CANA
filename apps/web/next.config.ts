@@ -72,7 +72,32 @@ const privateSurfaceHeaders = [
   },
 ];
 
+/**
+ * RELEASE IDENTITY, CAPTURED AT BUILD TIME.
+ *
+ * A deployed artifact has no .git directory, so resolving this at runtime works in
+ * development and silently reports nothing in production — the worst combination,
+ * because it looks correct everywhere it is tested. It is captured here instead, at
+ * the one moment the source and the build are provably the same thing.
+ *
+ * If no SHA is supplied the value is left ABSENT rather than defaulted. The endpoint
+ * that reads it reports UNKNOWN explicitly. A fabricated identity would turn an
+ * operator's question into a confident wrong answer, and this project has already
+ * been misled twice by builds that were not the code under test.
+ */
+const releaseSha =
+  process.env.CANA_RELEASE_SHA
+  ?? process.env.VERCEL_GIT_COMMIT_SHA
+  ?? process.env.GIT_COMMIT
+  ?? process.env.SOURCE_COMMIT;
+
 const nextConfig: NextConfig = {
+  env: {
+    // Deliberately NOT NEXT_PUBLIC_: the release identity is served by an endpoint,
+    // not embedded in every client bundle. Shipping build metadata to browsers is
+    // free reconnaissance for no product benefit.
+    ...(releaseSha ? { CANA_RELEASE_SHA: releaseSha } : {}),
+  },
   poweredByHeader: false,
   // Deployment gate: standalone output is only enabled for artifact builds
   // (Namecheap/cPanel Passenger). Local `next start` and the HTTP test
