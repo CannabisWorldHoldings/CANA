@@ -345,7 +345,7 @@ export default async function NeighborhoodHubPage({ params }: Props) {
                     }}
                   >
                     <Link href={`/retailer/${r.id}`} className="flex flex-col items-center cursor-pointer">
-                      <div className="w-5 h-5 rounded-full bg-brand-primary text-brand-text font-black flex items-center justify-center shadow-lg hover:scale-125 transition-transform text-[10px]">
+                      <div className="w-6 h-6 rounded-full bg-brand-primary text-brand-text font-black flex items-center justify-center shadow-lg hover:scale-125 transition-transform text-[10px]">
                         {i + 1}
                       </div>
                       <span className="hidden group-hover:block absolute bottom-6 bg-brand-surface text-brand-text text-[9px] border border-brand-border px-2 py-0.5 rounded whitespace-nowrap shadow-xl z-20 font-sans">

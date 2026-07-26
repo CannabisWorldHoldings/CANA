@@ -188,7 +188,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
                 articles.map((article) => (
                   <div key={article.id} className="record-card rounded-2xl p-5 space-y-3 hover:border-brand-primary/20 transition-all">
                     <h3 className="font-display text-base font-bold text-brand-text hover:text-brand-primary-text transition-colors">
-                      <Link href={`/education/${encodeURIComponent(article.slug)}`}>{article.title}</Link>
+                      <Link href={`/education/${encodeURIComponent(article.slug)}`} className="inline-block py-0.5">{article.title}</Link>
                     </h3>
                     <DataStatusBadge
                       dataStatus={article.dataStatus}
@@ -259,7 +259,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
                   strains.map((strain) => (
                     <div key={strain.id} className="bg-brand-background/40 border border-brand-border p-3.5 rounded-xl space-y-1">
                       <div className="flex justify-between items-start gap-2">
-                        <h4 className="text-xs font-bold text-brand-text">{strain.name}</h4>
+                        <h3 className="text-xs font-bold text-brand-text">{strain.name}</h3>
                         <span className="text-[9px] bg-brand-primary/10 border border-brand-primary/20 text-brand-primary-text font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
                           {strain.strainType}
                         </span>

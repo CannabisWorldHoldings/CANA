@@ -39,7 +39,7 @@ export default function DosageCalculator() {
           <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted bg-brand-background border border-brand-border px-2.5 py-1 rounded">
             Interactive Guidance
           </span>
-          <h3 className="text-xl font-extrabold text-brand-text mt-1">Patient Dosage Estimator</h3>
+          <h2 className="text-xl font-extrabold text-brand-text mt-1">Patient Dosage Estimator</h2>
         </div>
         <span className="text-2xl">🧮</span>
       </div>

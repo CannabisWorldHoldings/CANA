@@ -180,7 +180,7 @@ export default async function RetailerComparePage({
       <div>
         <Link
           href="/"
-          className="text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text"
+          className="inline-block py-1.5 text-xs font-semibold text-brand-muted transition-colors hover:text-brand-primary-text"
         >
           ← Back to directory
         </Link>

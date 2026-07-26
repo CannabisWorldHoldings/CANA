@@ -449,7 +449,7 @@ export default async function ProductDiscoveryPage({
                 value={PRODUCT_DISCOVERY_STOCK_STATES[0]}
                 type="checkbox"
                 defaultChecked={filters.stock === 'IN_STOCK'}
-                className="mt-0.5 h-6 w-6 accent-[var(--brand-primary)]"
+                className="mt-0.5 h-6 w-6 shrink-0 accent-[var(--brand-primary)]"
               />
               <span>
                 Reported in stock
@@ -677,7 +677,7 @@ export default async function ProductDiscoveryPage({
                       </div>
                       <Link
                         href={`/retailer/${entry.retailer.id}`}
-                        className="inline-block py-1 text-[10px] font-black uppercase tracking-wider text-brand-primary-text hover:underline"
+                        className="inline-block py-1.5 text-[10px] font-black uppercase tracking-wider text-brand-primary-text hover:underline"
                       >
                         Inspect retailer →
                       </Link>
