@@ -39,3 +39,31 @@ When recomputing the `DemandCreditEntry` chain, note that `hashBody(entry, prevH
 takes `prevHash` as its SECOND ARGUMENT, not as a field on the entry, and the
 chain is per-merchant. Getting either wrong produces a false "chain broken"
 report; that mistake was made and corrected during verification 07.
+
+## Falsification restores must be HASH-VERIFIED
+
+Sabotaging a guard to prove it is load-bearing means editing a source file and then
+putting it back. That restore is a real failure mode, and it bit once:
+
+During the release-gate work, a chain of sabotage-and-restore cycles ended up
+copying a STALE snapshot over `growth-os.mjs`, silently reverting two verified
+defect fixes. Every targeted suite still passed, because the tests I re-ran were the
+ones for the guard I had just restored. Only the FULL suite caught it — 6 failures
+that had nothing to do with what I was working on.
+
+Rules, learned the hard way:
+
+1. Snapshot ONCE per file per session, to a uniquely named path. Reusing
+   `/tmp/x.good` across cycles is how a stale copy gets promoted.
+2. After every restore, compare the file's `sha256sum` to the snapshot and assert
+   they match. A restore that silently no-ops or restores the wrong version is
+   indistinguishable from success without this.
+3. Before every sabotage, `assert` the anchor string was actually found. A patch
+   whose anchor does not match reports a false PASS — the guard appears
+   falsifiable when nothing changed.
+4. Run the FULL suite before committing, never only the targeted file. A regression
+   introduced by a restore will not appear in the suite you are focused on.
+
+The near-miss is recorded rather than quietly fixed because the failure mode is
+invisible by construction: a bad restore leaves green tests everywhere you are
+looking.

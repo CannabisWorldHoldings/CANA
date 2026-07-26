@@ -114,12 +114,41 @@ export function buildGrowthView({ retailer, ledger = [], audit = null, menu = { 
   }
 
   // ---- L6 — spend derived from the chain, never read from a stored total.
+  //
+  // DEFECTS FOUND BY RUNNING THE CHAIN END TO END. Neither was catchable by a
+  // fixture I wrote myself, because my fixtures and my module shared one author.
+  //
+  //  E2E-1  The real ledger stores SPEND with a NEGATIVE amount (append is called
+  //         with `amount: -amount`) while my fixtures used positive values. A
+  //         genuine merchant's spend therefore summed negative, clamped to 0, and
+  //         proof of value was WITHHELD for a merchant who had actually paid.
+  //         Withholding is the safe direction, which is exactly why it could have
+  //         shipped unnoticed — nothing looks broken, the merchant simply never
+  //         sees the result they earned.
+  //  E2E-3  Normalizing the sign required rewriting this loop, and writing a guard
+  //         that actually bites revealed a second defect: a SPEND explicitly marked
+  //         relationshipOwner PLATFORM still funded the merchant's cost-per-action.
+  //         Platform money is not the merchant's money and must not underwrite a
+  //         merchant-facing claim.
+  //
+  //  (I also claimed ownedBy was DROPPING money rows for lacking relationshipOwner.
+  //   That was WRONG: reverting the "fix" failed zero tests, so it guarded nothing.
+  //   ownedBy tolerates an absent owner and refuses only a present non-MERCHANT
+  //   value. Recorded as a mistaken diagnosis rather than quietly kept as a fix.)
+  const belongsToMerchant = (row) => {
+    if (!text(row?.merchantId) || row.merchantId !== merchantId) return false;
+    if (text(row.relationshipOwner) && row.relationshipOwner !== 'MERCHANT') return false;
+    return true;
+  };
   let spentCents = 0, issuedCents = 0;
   for (const row of ledger) {
-    if (!ownedBy(row, merchantId)) continue;
-    if (row.kind === 'SPEND') spentCents += toCents(row.amount);
-    else if (row.kind === 'ISSUE') issuedCents += toCents(row.amount);
-    else if (row.kind === 'REFUND') spentCents -= toCents(row.amount);
+    if (!belongsToMerchant(row)) continue;
+    // Sign is NORMALIZED. Reading it raw is how a real spend became "no spend".
+    const cents = Math.abs(toCents(row.amount));
+    if (!Number.isFinite(cents)) continue;
+    if (row.kind === 'SPEND') spentCents += cents;
+    else if (row.kind === 'ISSUE') issuedCents += cents;
+    else if (row.kind === 'REFUND') spentCents -= cents;
   }
   const spent = fromCents(Math.max(0, spentCents));
 
