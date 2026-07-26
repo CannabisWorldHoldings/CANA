@@ -54,8 +54,16 @@ const fromCents = (c) => c / 100;
 
 const deny = (code, detail) => ({ accepted: false, denial_code: code, denial_detail: detail });
 
-/** Canonical serialization — key order is fixed so the hash is reproducible. */
-function hashBody(e, prevHash) {
+/**
+ * Canonical serialization — key order is fixed so the hash is reproducible.
+ *
+ * EXPORTED because the sponsorship resolver must RECOMPUTE this to verify a row
+ * rather than merely checking that entryHash is a non-blank string. An
+ * independent verifier proved that a presence check let a row with
+ * entryHash='x' render a real visible badge on the production homepage.
+ * Duplicating the algorithm there would let the two drift; one definition.
+ */
+export function hashBody(e, prevHash) {
   return sha(JSON.stringify({
     merchantId: e.merchantId, kind: e.kind, amount: e.amount, seq: e.seq,
     authorizationRef: e.authorizationRef ?? null, expiresAt: e.expiresAt ?? null,

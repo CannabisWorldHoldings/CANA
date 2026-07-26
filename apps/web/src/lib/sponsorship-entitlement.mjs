@@ -19,8 +19,41 @@
  * called from server components without I/O.
  */
 import { createHash } from 'node:crypto';
+import { hashBody } from './demand-credits.mjs';
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
+
+/**
+ * Recompute a row's hash and compare it to the recorded one.
+ *
+ * MEDIUM defect (independent verifier, production): the previous check only
+ * asserted that entryHash and prevHash were non-blank STRINGS. A row written
+ * directly to the table with entryHash='x', prevHash='y' therefore rendered a
+ * fully visible, gold-ringed "Sponsored placement" badge for a merchant who had
+ * paid nothing. The comment claimed "chain-linked"; the code checked presence.
+ *
+ * The real hashing authority already existed in demand-credits.mjs and was
+ * simply never called from here. It is now.
+ *
+ * Rows may arrive from Prisma (Date objects) or from a plain fixture (ISO
+ * strings). hashBody serializes via JSON.stringify, which renders a Date as an
+ * ISO string, so both shapes hash identically — but only when the value is
+ * genuinely a date. Normalize before hashing so a legitimate row is never
+ * rejected for a representation difference.
+ */
+function hashVerified(row) {
+  if (!text(row?.entryHash) || !text(row?.prevHash)) return false;
+  const norm = {
+    ...row,
+    expiresAt: row.expiresAt instanceof Date ? row.expiresAt.toISOString() : row.expiresAt ?? null,
+    observedAt: row.observedAt instanceof Date ? row.observedAt.toISOString() : row.observedAt ?? null,
+  };
+  try {
+    return hashBody(norm, row.prevHash) === row.entryHash;
+  } catch {
+    return false;
+  }
+}
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
 
 /** Every state a sponsorship slot can be in. Rendering must handle all of them. */
@@ -93,9 +126,10 @@ export function resolveSponsorship({
   if (!text(spend.disclosureLabel)) {
     return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, reason: 'entitlement carries no disclosure label' };
   }
-  // Forgery check: the row must hash-link into the chain.
-  if (!text(spend.entryHash) || !text(spend.prevHash)) {
-    return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, reason: 'entitlement is not chain-linked — possible forgery' };
+  // Forgery check: RECOMPUTE the hash. A presence check is not verification.
+  if (!hashVerified(spend)) {
+    return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE,
+      reason: 'entitlement hash does not verify against its content — forged or tampered row' };
   }
 
   // Refund check: cumulative refunds against this spend cancel the entitlement.
@@ -129,10 +163,10 @@ export function resolveSponsorship({
   const issues = entries
     .filter((e) => e && e.merchantId === merchantId && e.kind === 'ISSUE' && e.seq < spend.seq)
     .sort((a, b) => b.seq - a.seq);
-  const unlinkedFunding = issues.find((e) => !text(e.entryHash) || !text(e.prevHash));
+  const unlinkedFunding = issues.find((e) => !hashVerified(e));
   if (unlinkedFunding) {
     return { ...base, state: SPONSORSHIP_STATES.INVALID_EVIDENCE, spendSeq: spend.seq,
-      reason: `funding ISSUE at seq=${unlinkedFunding.seq} is not chain-linked — possible forgery` };
+      reason: `funding ISSUE at seq=${unlinkedFunding.seq} does not hash-verify — forged or tampered row` };
   }
   const funding = issues[0];
   if (!funding) {

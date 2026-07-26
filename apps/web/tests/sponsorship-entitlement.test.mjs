@@ -6,6 +6,7 @@ import {
   dedupeSponsoredCards,
   SPONSORSHIP_STATES as S,
 } from '../src/lib/sponsorship-entitlement.mjs';
+import { hashBody } from '../src/lib/demand-credits.mjs';
 
 /**
  * SPONSORSHIP ENTITLEMENT — attack suite for Mechanism Matrix M-001.
@@ -23,20 +24,43 @@ const M = 'merchant_alpha';
 const future = new Date(Date.now() + 30 * 86400_000);
 const past = new Date(Date.now() - 86400_000);
 
-const issue = (over = {}) => ({
-  merchantId: M, kind: 'ISSUE', seq: 0, amount: 500,
-  authorizationRef: 'PO-1', expiresAt: future,
-  prevHash: 'genesis', entryHash: 'h0', ...over,
-});
-const spend = (over = {}) => ({
-  merchantId: M, kind: 'SPEND', seq: 1, amount: -100,
-  placement: 'FEATURED_CARD', disclosureLabel: 'Sponsored placement',
-  affectsOrganicOrder: false, prevHash: 'h0', entryHash: 'h1', ...over,
-});
-const refund = (over = {}) => ({
-  merchantId: M, kind: 'REFUND', seq: 2, amount: 100,
-  originalSeq: 1, reason: 'under-delivered', prevHash: 'h1', entryHash: 'h2', ...over,
-});
+/**
+ * Fixtures compute GENUINE hashes.
+ *
+ * They previously used placeholders ('h0', 'h1'), which passed only because the
+ * resolver merely checked that entryHash was a non-blank string. An independent
+ * verifier proved that presence check let a row with entryHash='x' render a real
+ * badge in production. Now that the resolver recomputes the hash, a fixture with
+ * a fake hash MUST fail — so fixtures have to be honest too. Any test still
+ * wanting a forged row overrides entryHash explicitly.
+ */
+const signed = (row) => ({ ...row, entryHash: hashBody(row, row.prevHash) });
+
+const issue = (over = {}) => {
+  const { entryHash, ...rest } = over;
+  const row = signed({
+    merchantId: M, kind: 'ISSUE', seq: 0, amount: 500,
+    authorizationRef: 'PO-1', expiresAt: future, prevHash: 'genesis', ...rest,
+  });
+  return 'entryHash' in over ? { ...row, entryHash: over.entryHash } : row;
+};
+const spend = (over = {}) => {
+  const { entryHash, ...rest } = over;
+  const row = signed({
+    merchantId: M, kind: 'SPEND', seq: 1, amount: -100,
+    placement: 'FEATURED_CARD', disclosureLabel: 'Sponsored placement',
+    affectsOrganicOrder: false, prevHash: 'h0', ...rest,
+  });
+  return 'entryHash' in over ? { ...row, entryHash: over.entryHash } : row;
+};
+const refund = (over = {}) => {
+  const { entryHash, ...rest } = over;
+  const row = signed({
+    merchantId: M, kind: 'REFUND', seq: 2, amount: 100,
+    originalSeq: 1, reason: 'under-delivered', prevHash: 'h1', ...rest,
+  });
+  return 'entryHash' in over ? { ...row, entryHash: over.entryHash } : row;
+};
 
 const resolve = (entries, over = {}) =>
   resolveSponsorship({ merchantId: M, entries, placement: 'FEATURED_CARD', ...over });
@@ -47,7 +71,9 @@ test('HAPPY PATH: a chain-linked, funded, unexpired placement is ACTIVE', () => 
   assert.equal(r.label, 'Sponsored placement');
   assert.equal(r.affectsOrganicOrder, false);
   assert.equal(r.evidence.spend_seq, 1);
-  assert.equal(r.evidence.entry_hash, 'h1');
+  assert.equal(r.evidence.entry_hash, spend().entryHash,
+    'evidence must carry the row\'s genuine hash, not a placeholder');
+  assert.match(r.evidence.entry_hash, /^[0-9a-f]{64}$/, 'a real SHA-256, not a stub');
   assert.ok(r.evidence.entitlement_digest.length === 24);
   assert.equal(shouldRenderBadge(r.state), true);
 });
@@ -148,8 +174,8 @@ test('LOADING state is distinct and renders no claim', () => {
 test('the newest campaign governs when several exist for one slot', () => {
   const r = resolve([
     issue(),
-    spend({ seq: 1, disclosureLabel: 'Old campaign', entryHash: 'h1' }),
-    spend({ seq: 3, disclosureLabel: 'Current campaign', prevHash: 'h2', entryHash: 'h3' }),
+    spend({ seq: 1, disclosureLabel: 'Old campaign' }),
+    spend({ seq: 3, disclosureLabel: 'Current campaign', prevHash: 'h2' }),
   ]);
   assert.equal(r.state, S.ACTIVE);
   assert.equal(r.label, 'Current campaign');
@@ -179,18 +205,18 @@ test('D-1 HIGH: a forged unlinked ISSUE cannot revive an EXPIRED campaign', () =
   // with a far-future expiry out-ranked the real expired funding and produced a
   // visible ACTIVE badge — the deception-POSITIVE direction.
   const r = resolve([
-    issue({ seq: 0, expiresAt: past, entryHash: 'hp' }),                     // real, expired
+    issue({ seq: 0, expiresAt: past }),                                       // real, expired
     spend({ seq: 1 }),                                                        // legit, chain-linked
     issue({ seq: 0.9, expiresAt: future, entryHash: null, prevHash: null }), // forged, unlinked
   ]);
   assert.equal(r.state, S.INVALID_EVIDENCE, 'an unlinked ISSUE must never govern expiry');
   assert.equal(shouldRenderBadge(r.state), false);
-  assert.match(r.reason, /not chain-linked/);
+  assert.match(r.reason, /does not hash-verify/);
   // Control: the same shape with a properly linked newer ISSUE is legitimate.
   const ok = resolve([
-    issue({ seq: 0, expiresAt: past, entryHash: 'hp' }),
+    issue({ seq: 0, expiresAt: past }),
     spend({ seq: 1 }),
-    issue({ seq: 0.9, expiresAt: future, entryHash: 'hq', prevHash: 'hp' }),
+    issue({ seq: 0.9, expiresAt: future, prevHash: 'hp' }),
   ]);
   assert.equal(ok.state, S.ACTIVE, 'a chain-linked newer funding legitimately governs');
 });
@@ -228,4 +254,30 @@ test('D-4 INFO: order-claim check matches the ledger strictness', () => {
   }
   // null/undefined mean "not set" and are legitimate.
   assert.equal(resolve([issue(), spend({ affectsOrganicOrder: null })]).state, S.ACTIVE);
+});
+
+test('MEDIUM (production verifier): a forged row with a fake hash renders NO badge', () => {
+  // Reproduces the exact live exploit: a DemandCreditEntry written directly to
+  // the table with entryHash='x', prevHash='y' rendered a fully visible,
+  // gold-ringed "Sponsored placement" badge on the production homepage for a
+  // merchant who had paid nothing. The guard said "chain-linked"; the code only
+  // checked that the strings were non-blank.
+  const forged = resolve([
+    issue({ entryHash: 'y' }),
+    spend({ entryHash: 'x', prevHash: 'y' }),
+  ]);
+  assert.equal(forged.state, S.INVALID_EVIDENCE, 'a fake hash must not entitle a badge');
+  assert.equal(shouldRenderBadge(forged.state), false);
+  assert.match(forged.reason, /hash-verify|hash does not verify/);
+
+  // Tampering with a signed row must also fail: change the amount after signing.
+  const tampered = resolve([issue(), { ...spend(), amount: -1 }]);
+  assert.equal(tampered.state, S.INVALID_EVIDENCE, 'post-signature tampering must be detected');
+
+  // Swapping a valid hash from a DIFFERENT row must fail (no hash reuse).
+  const swapped = resolve([issue(), { ...spend(), entryHash: issue().entryHash }]);
+  assert.equal(swapped.state, S.INVALID_EVIDENCE, 'a hash from another row is not valid here');
+
+  // And the honest row still works, so this is verification, not blanket denial.
+  assert.equal(resolve([issue(), spend()]).state, S.ACTIVE);
 });
