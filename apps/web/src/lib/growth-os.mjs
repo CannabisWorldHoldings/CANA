@@ -105,8 +105,18 @@ export function buildGrowthView({ retailer, ledger = [], audit = null, menu = { 
   const seen = new Set();
   const counted = [];
   let rejectedForeign = 0, rejectedNoEvidence = 0, rejectedDuplicate = 0;
+  let rejectedUnprovenInteraction = 0;
   for (const row of attributions) {
     if (!ownedBy(row, merchantId)) { rejectedForeign++; continue; }
+    // L7 — GRADED EVIDENCE. A row whose proofState is REQUEST_RECEIVED records a
+    // true fact (a request arrived) but proves nothing about a consumer, so it
+    // must not reach a merchant-facing figure. Rows written before grading existed
+    // have a NULL proofState and are treated as ungraded legacy evidence: counted,
+    // because they passed the guards in force when they were written, and
+    // reported separately so the distinction is visible rather than buried.
+    if (typeof row.proofState === 'string' && row.valueEligible !== true) {
+      rejectedUnprovenInteraction++; continue;
+    }
     if (evidenceLinks(row) === null) { rejectedNoEvidence++; continue; }
     if (seen.has(row.evidenceChainSha256)) { rejectedDuplicate++; continue; }
     seen.add(row.evidenceChainSha256);
@@ -226,6 +236,10 @@ export function buildGrowthView({ retailer, ledger = [], audit = null, menu = { 
       rejected_foreign_merchant: rejectedForeign,
       rejected_unverifiable_evidence: rejectedNoEvidence,
       rejected_duplicate_evidence: rejectedDuplicate,
+      // Named separately: "we saw a request but cannot show a consumer acted" is a
+      // different fact from "the evidence was forged", and collapsing them would
+      // hide how much of a merchant's traffic is unproven.
+      rejected_unproven_interaction: rejectedUnprovenInteraction,
     },
     proof_of_value: proofOfValue,
     proof_of_value_blockers: blockers,

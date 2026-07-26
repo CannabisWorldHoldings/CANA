@@ -288,10 +288,14 @@ test('a concurrent storm cannot INFLATE the merchant report', async () => {
   await p.$disconnect();
   const { buildGrowthView } = await import('../src/lib/growth-os.mjs');
   const view = buildGrowthView({ retailer, ledger, menu: { total: 1, demonstration: 0 } });
-  assert.equal(view.proof_of_value.attributed_actions, 1,
-    '25 simultaneous requests must report ONE action, not 25');
-  assert.equal(view.proof_of_value.cost_per_attributed_action, 75,
-    'cost per action must not be deflated by a replay storm');
+  // Untokened requests are REQUEST_RECEIVED, so no VALUE is reported at all — the
+  // stronger outcome. What must still hold is that the storm produced ONE row, not
+  // 25: idempotency is a separate property from grading, and this test exists for
+  // idempotency.
+  assert.equal(view.attribution.rows_seen, 1,
+    '25 simultaneous requests must produce ONE row, not 25');
+  assert.equal(view.proof_of_value, null,
+    'and an untokened storm must yield no proof of value whatsoever');
 });
 
 test('the canonical identity is stable and merchant-scoped', async () => {

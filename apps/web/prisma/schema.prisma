@@ -485,6 +485,17 @@ model DemandCreditEntry {
   /// no matter how carefully it is written.
   eventIdentity        String?
 
+  /// GRADED CONSUMER EVIDENCE. REQUEST_RECEIVED means only that a request arrived;
+  /// it must never contribute to a merchant value figure. The grade is STORED
+  /// rather than recomputed so a later report cannot quietly re-grade history.
+  proofState           String?
+  valueEligible        Boolean   @default(false)
+  /// Nonce of the interaction token, retained ONLY to refuse a replay. Not the
+  /// token, and not a user identifier.
+  interactionNonce     String?
+  /// Where the consumer was handed off to, when a handoff was verified.
+  destination          String?
+
   @@unique([merchantId, seq])
   /// The constraint that actually enforces idempotency. Scoped to the merchant so a
   /// collision across merchants is impossible by construction, and a tenant cannot
@@ -493,4 +504,5 @@ model DemandCreditEntry {
   @@index([merchantId, kind])
   @@index([entryHash])
   @@index([eventIdentity])
+  @@index([merchantId, interactionNonce])
 }

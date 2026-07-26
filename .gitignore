@@ -38,3 +38,4 @@ node_modules/
 *.db
 .env
 .cana-local/
+.attack-scratch/

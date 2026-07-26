@@ -299,9 +299,17 @@ test('A8: the receipt states what it does NOT prove', async () => {
     body: { retailer_id: fixture.live.retailerId, action_kind: 'HANDOFF' },
   });
   const b = await r.json();
+  // The flat proves/does_not_prove pair was replaced by a GRADED contract, which
+  // says the same thing more precisely: an untokened POST is REQUEST_RECEIVED and
+  // explicitly not value-eligible.
   assert.equal(b.truth_contract.consumer_identity_bound, false);
-  assert.match(b.truth_contract.does_not_prove, /human consumer/i);
-  assert.match(b.truth_contract.proves, /a request arrived/i);
+  assert.equal(b.truth_contract.proof_state, 'REQUEST_RECEIVED',
+    'a POST with no interaction token cannot claim more than that a request arrived');
+  assert.equal(b.truth_contract.value_eligible, false,
+    'and it must carry NO merchant value');
+  assert.match(b.truth_contract.proves, /request arrived/i);
+  assert.match(b.truth_contract.does_not_prove, /consumer interacted/i);
+  assert.equal(b.truth_contract.outcome_state, 'COMMERCIAL_OUTCOME_UNVERIFIED');
   assert.ok(b.truth_contract.not_claimed.includes('that a human consumer performed this action'));
   assert.match(b.truth_contract.replay_protection, /window/i);
 });

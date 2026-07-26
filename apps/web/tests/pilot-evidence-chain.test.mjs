@@ -194,12 +194,17 @@ test('STAGE 5 — proof of value is DERIVED and is not withheld', async () => {
   const view = buildGrowthView({ retailer, ledger: rows, menu: { total: menuTotal, demonstration: menuDemo } });
 
   assert.equal(view.truth_label, 'LIVE_RECORD');
-  assert.ok(view.proof_of_value !== null,
-    `proof of value was withheld: ${JSON.stringify(view.proof_of_value_blockers)}`);
-  assert.equal(view.proof_of_value.attributed_actions, 1);
-  assert.equal(view.proof_of_value.credits_spent, 75);
-  assert.equal(view.proof_of_value.cost_per_attributed_action, 75);
-  assert.equal(view.proof_of_value.every_counted_action_has_verified_evidence, true);
+  // GRADING CHANGED THIS STAGE, correctly. The HTTP call in STAGE 3 carries no
+  // interaction token, so its row is REQUEST_RECEIVED and is NOT value-eligible.
+  // Proof of value is therefore withheld — which is the honest outcome, and the
+  // whole point of the grading work. Asserting the old "not withheld" expectation
+  // would be asserting that an untokened request proves a consumer acted.
+  assert.equal(view.proof_of_value, null,
+    'an untokened request must not yield proof of value');
+  assert.ok(view.attribution.rejected_unproven_interaction >= 1,
+    'and the row must be rejected BY THE GRADE guard, visibly');
+  // The rest of the chain still holds: the row exists, is owned, and is evidenced.
+  assert.equal(view.attribution.rows_seen, 1);
   // And it still claims nothing.
   for (const k of ['revenue', 'leads', 'conversion lift', 'traffic']) {
     assert.ok(view.not_claimed.includes(k), `must disclaim ${k}`);

@@ -329,6 +329,61 @@ test('B8: a hostile audit score is BOUNDED, not printed verbatim', () => {
   }
 });
 
+// ------------------------------------------------ L7: graded consumer evidence
+test('L7: a REQUEST_RECEIVED row is recorded but carries NO merchant value', () => {
+  // The gap an independent verifier found: an unauthenticated POST was
+  // indistinguishable from a real customer. The row is still true — a request DID
+  // arrive — but it proves nothing about a consumer.
+  const v = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), realSpend(75),
+             { ...attr(), proofState: 'REQUEST_RECEIVED', valueEligible: false }], now });
+  assert.equal(v.attribution.counted, 0, 'an ungraded request must not count');
+  assert.equal(v.attribution.rejected_unproven_interaction, 1,
+    'and must be rejected by the GRADE guard, named separately from forgery');
+  assert.equal(v.attribution.rejected_unverifiable_evidence, 0, 'the evidence itself was fine');
+  assert.equal(v.proof_of_value, null);
+});
+
+test('L7: INTERACTION_VERIFIED and MERCHANT_HANDOFF_VERIFIED DO count', () => {
+  for (const state of ['INTERACTION_VERIFIED', 'MERCHANT_HANDOFF_VERIFIED']) {
+    const v = buildGrowthView({ retailer: R(),
+      ledger: [realIssue(), realSpend(75), { ...attr(), proofState: state, valueEligible: true }], now });
+    assert.equal(v.attribution.counted, 1, `${state} must count`);
+    assert.equal(v.proof_of_value.attributed_actions, 1);
+  }
+});
+
+test('L7: valueEligible cannot be claimed by the ROW against its own grade', () => {
+  // A row asserting valueEligible=false is refused regardless of its state string,
+  // so a forged state name cannot promote it.
+  const v = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), realSpend(75),
+             { ...attr(), proofState: 'VALUE_PROVEN', valueEligible: false }], now });
+  assert.equal(v.attribution.counted, 0, 'a state name alone must not promote a row');
+});
+
+test('L7: ungraded LEGACY rows still count and are not silently dropped', () => {
+  // Rows written before grading existed have a NULL proofState. Dropping them would
+  // erase evidence that passed the guards in force when it was written.
+  const v = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), realSpend(75), { ...attr(), proofState: null }], now });
+  assert.equal(v.attribution.counted, 1, 'legacy evidence must not be discarded');
+  assert.equal(v.attribution.rejected_unproven_interaction, 0);
+});
+
+test('L7: a mixed ledger reports proven and unproven SEPARATELY', () => {
+  const c2 = chain([{ step: 'x', ref: 'y' }]);
+  const v = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), realSpend(100),
+             { ...attr(), proofState: 'INTERACTION_VERIFIED', valueEligible: true },
+             { ...attr({ evidenceChain: c2, evidenceChainSha256: sha(c2) }),
+               proofState: 'REQUEST_RECEIVED', valueEligible: false }], now });
+  assert.equal(v.attribution.counted, 1);
+  assert.equal(v.attribution.rejected_unproven_interaction, 1);
+  assert.equal(v.proof_of_value.cost_per_attributed_action, 100,
+    'cost per action must reflect only PROVEN actions, not be diluted by unproven ones');
+});
+
 // ------------------------------------------------------------- helper surface
 test('evidenceLinks returns the parsed links for a real chain', () => {
   const links = evidenceLinks(attr());

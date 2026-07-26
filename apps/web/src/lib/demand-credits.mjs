@@ -242,7 +242,9 @@ export function createDemandCredits(prisma) {
      * Record an attributed customer action. Never moves money (amount 0) and
      * requires a complete, dated evidence chain.
      */
-    async attribute({ merchantId, actionKind, evidenceChain, observedAt, placementSeq = null, idempotencyKey = null }) {
+    async attribute({ merchantId, actionKind, evidenceChain, observedAt, placementSeq = null,
+                      idempotencyKey = null, proofState = 'REQUEST_RECEIVED', valueEligible = false,
+                      interactionNonce = null, destination = null }) {
       if (!text(merchantId)) return deny('MERCHANT_REQUIRED', 'merchantId must be a non-blank string');
       if (!ACTION_KINDS.includes(actionKind)) return deny('UNKNOWN_ACTION', `${actionKind} not in ${ACTION_KINDS.join('|')}`);
       if (!Array.isArray(evidenceChain) || evidenceChain.length === 0) {
@@ -284,6 +286,10 @@ export function createDemandCredits(prisma) {
         observedAt: obs, placementSeq, reason: text(idempotencyKey) ? idempotencyKey : null,
         relationshipOwner: 'MERCHANT', exportableByMerchant: true,
         eventIdentity: identity,
+        // The grade travels WITH the row. Recomputing it at report time would let a
+        // later change silently re-grade history that was already reported.
+        proofState, valueEligible: valueEligible === true,
+        interactionNonce, destination,
       });
     },
 

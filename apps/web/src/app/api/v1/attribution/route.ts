@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createDemandCredits, ACTION_KINDS } from '@/lib/demand-credits.mjs';
 import { isPubliclyVerified } from '@/lib/data-status.mjs';
+import { verifyInteractionToken, gradeInteraction, contributesToValue } from '@/lib/interaction-proof.mjs';
 
 /**
  * PUBLIC API v1 — attribution.
@@ -158,6 +159,42 @@ export async function POST(request: NextRequest) {
     { step: 'server_receipt', ref: `api/v1/attribution#${API_VERSION}` },
   ];
 
+  // GRADED EVIDENCE. An independent verifier asked whether the four server-built
+  // links proved a CONSUMER acted. They did not — they proved a request arrived. A
+  // curl loop and a real customer were indistinguishable.
+  //
+  // The answer is not to claim more, it is to GRADE. An interaction token this
+  // server issued for a rendered surface, bound to this tenant/merchant/action and
+  // unexpired, raises the grade. Its absence does not block recording — a
+  // REQUEST_RECEIVED row is still a true record of a request — but it carries NO
+  // merchant value, and that is enforced below rather than described.
+  const secret = process.env.CANA_INTERACTION_SECRET ?? '';
+  const presentedToken = typeof body.interaction_token === 'string' ? body.interaction_token : null;
+  const destination = typeof body.destination === 'string' && body.destination.trim() !== ''
+    ? body.destination.trim().slice(0, 500) : null;
+
+  const tokenResult = presentedToken
+    ? verifyInteractionToken({
+        secret, token: presentedToken, tenant: host,
+        merchantId: String(retailer.id), actionKind, now: observedAt,
+      })
+    : null;
+
+  // Replay: a nonce already recorded for this merchant is not a second interaction.
+  let nonceAlreadySeen = false;
+  if (tokenResult?.valid && tokenResult.payload?.n) {
+    try {
+      const seen = await prisma.demandCreditEntry.findFirst({
+        where: { merchantId: String(retailer.id), kind: 'ATTRIBUTION',
+                 interactionNonce: tokenResult.payload.n },
+        select: { id: true },
+      });
+      nonceAlreadySeen = !!seen;
+    } catch { nonceAlreadySeen = false; }
+  }
+
+  const grade = gradeInteraction({ tokenResult, destination, nonceAlreadySeen });
+
   const credits = createDemandCredits(prisma);
   // The ledger's real contract is { accepted, denial_code, denial_detail } / { accepted, entry }.
   // My first draft assumed { ok, error } and would have treated EVERY successful
@@ -179,6 +216,10 @@ export async function POST(request: NextRequest) {
       evidenceChain,
       observedAt,
       idempotencyKey,
+      proofState: grade.state,
+      valueEligible: grade.value_eligible === true,
+      interactionNonce: tokenResult?.valid ? (tokenResult.payload?.n ?? null) : null,
+      destination: grade.state === 'MERCHANT_HANDOFF_VERIFIED' ? grade.destination : null,
     });
   } catch {
     return fail('LEDGER_UNAVAILABLE', 'the attribution ledger could not be written', 503);
@@ -247,8 +288,12 @@ export async function POST(request: NextRequest) {
         // The honest response is to say so in the receipt itself rather than let
         // "server-observed evidence" be read as more than it is. Overstating this
         // is exactly the fabricated-metric failure the whole system refuses.
-        proves: 'a request arrived claiming this action against a verified, tenant-scoped retailer, and the server built the evidence',
-        does_not_prove: 'that a human consumer performed the action — no session, IP, user-agent or interaction token is bound into this evidence',
+        proof_state: grade.state,
+        value_eligible: contributesToValue(grade.state),
+        proves: grade.proves,
+        does_not_prove: grade.does_not_prove,
+        outcome_state: grade.outcome_state ?? 'COMMERCIAL_OUTCOME_UNVERIFIED',
+        grading_notes: grade.notes,
         consumer_identity_bound: false,
         replay_protection: 'identical actions within a 5-minute window collapse to one evidence digest and are refused by the ledger',
         not_claimed: ['ranking position', 'traffic', 'popularity', 'lead', 'conversion lift', 'revenue',
