@@ -33,3 +33,8 @@ __pycache__/
 !.opencode/agents/
 .opencode/agents/*
 !.opencode/agents/cana-*.md
+node_modules/
+.next/
+*.db
+.env
+.cana-local/
