@@ -94,15 +94,25 @@ export function retailerJsonLd({ retailer, origin }) {
     '@id': `${url}#store`,
     name: retailer.name,
     url,
-    address: {
+  };
+  // DEFECT FOUND WHILE CONSOLIDATING: a record with a BLANK street address still
+  // emitted a PostalAddress asserting 'Washington, DC', because city and state
+  // fell back to defaults. That is a fabricated location — an answer engine could
+  // cite "Washington, DC" for a retailer whose address nobody recorded. The
+  // defaults are reasonable for a DC-only marketplace ONLY when there is a real
+  // street address to attach them to; with no street they invent a place.
+  //
+  // A partial address is worse than no address: it looks complete to a machine.
+  if (typeof retailer.address === 'string' && retailer.address.trim() !== '') {
+    jsonLd.address = {
       '@type': 'PostalAddress',
-      streetAddress: retailer.address,
-      addressLocality: retailer.city || 'Washington',
-      addressRegion: retailer.state || 'DC',
+      streetAddress: retailer.address.trim(),
+      addressLocality: (retailer.city || 'Washington').trim(),
+      addressRegion: (retailer.state || 'DC').trim(),
       ...(retailer.zip ? { postalCode: retailer.zip } : {}),
       addressCountry: 'US',
-    },
-  };
+    };
+  }
   if (Number.isFinite(retailer.lat) && Number.isFinite(retailer.lng)) {
     jsonLd.geo = {
       '@type': 'GeoCoordinates',
@@ -110,7 +120,21 @@ export function retailerJsonLd({ retailer, origin }) {
       longitude: retailer.lng,
     };
   }
-  if (retailer.phone) jsonLd.telephone = retailer.phone;
+  // A whitespace-only phone is truthy, so `if (retailer.phone)` emitted
+  // telephone: '   '. An empty contact field is not a contact.
+  if (typeof retailer.phone === 'string' && retailer.phone.trim() !== '') {
+    jsonLd.telephone = retailer.phone.trim();
+  }
+  // FIELD-LEVEL PROVENANCE. isPubliclyVerified() clears the RECORD, but it does
+  // not clear every FIELD on it. openingHours is asserted only when hoursSource
+  // is present: an answer engine may repeat opening hours to someone deciding
+  // whether to drive somewhere, so an unsourced value is the single field most
+  // likely to send a real person to a locked door. Record-level verification does
+  // not license a field nobody sourced.
+  if (typeof retailer.hours === 'string' && retailer.hours.trim() !== ''
+      && typeof retailer.hoursSource === 'string' && retailer.hoursSource.trim() !== '') {
+    jsonLd.openingHours = retailer.hours.trim();
+  }
   // Verification provenance: no major competitor emits machine-readable
   // trust signals. Only reached for records past the evidence boundary, so
   // every property states an observed fact.
@@ -319,4 +343,79 @@ export function dealOfferJsonLd({ deal, retailer, origin }) {
     jsonLd.validThrough = deal.expiryDate.toISOString();
   }
   return jsonLd;
+}
+
+/**
+ * A machine-readable answer block for answer engines: the questions a person
+ * actually asks, answered ONLY where the underlying field is sourced.
+ *
+ * An unanswerable question is OMITTED rather than answered vaguely. "Call to
+ * confirm" is not an answer, and an answer engine will quote it as one. A record
+ * with nothing answerable returns null, because an empty FAQPage is itself a
+ * false assertion of completeness.
+ */
+export function retailerAnswerJsonLd({ retailer, asOf = new Date() }) {
+  if (!retailer || !isPubliclyVerified(retailer, asOf)) return null;
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  const qa = [];
+  if (text(retailer.hours) && text(retailer.hoursSource)) {
+    qa.push({
+      '@type': 'Question',
+      name: `What are ${retailer.name} hours?`,
+      acceptedAnswer: { '@type': 'Answer', text: retailer.hours.trim() },
+    });
+  }
+  if (text(retailer.address) && text(retailer.city)) {
+    qa.push({
+      '@type': 'Question',
+      name: `Where is ${retailer.name} located?`,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: `${retailer.address.trim()}, ${retailer.city.trim()}${text(retailer.state) ? `, ${retailer.state.trim()}` : ''}`,
+      },
+    });
+  }
+  // 'VERIFIED' specifically. 'ACTIVE' is a licence STATE, not evidence that
+  // anyone verified it, and conflating the two is how an unchecked claim becomes
+  // a machine-readable assertion.
+  if (text(retailer.licenseNumber) && retailer.licenseStatus === 'VERIFIED') {
+    qa.push({
+      '@type': 'Question',
+      name: `Is ${retailer.name} licensed?`,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: `License ${retailer.licenseNumber.trim()} is recorded and verified.`,
+      },
+    });
+  }
+  if (qa.length === 0) return null;
+  return { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa };
+}
+
+/**
+ * Why a record was or was not asserted — for the operator, never shipped to the
+ * page. Without this, "no JSON-LD appeared" is indistinguishable from a bug, and
+ * a silently-empty structured-data surface is impossible to debug.
+ */
+export function structuredDataAssertionReport(retailer, asOf = new Date()) {
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  const asserted = !!retailer && isPubliclyVerified(retailer, asOf);
+  const blockers = [];
+  if (!retailer) blockers.push('no record');
+  else if (!asserted) {
+    if (retailer.isDemonstration === true) blockers.push('isDemonstration=true');
+    if (text(retailer.dataStatus)) blockers.push(`resolved status is not VERIFIED_CURRENT (dataStatus=${retailer.dataStatus})`);
+    if (!retailer.verifiedAt) blockers.push('verifiedAt is null — never verified');
+    if (!retailer.freshnessExpiresAt) blockers.push('freshnessExpiresAt is null — staleness cannot be tested');
+    if (blockers.length === 0) blockers.push('failed the public verification boundary');
+  }
+  return {
+    retailer_id: retailer?.id ?? null,
+    asserted,
+    blockers,
+    fields_withheld_for_missing_source:
+      text(retailer?.hours) && !text(retailer?.hoursSource)
+        ? ['openingHours (hoursSource absent)'] : [],
+    never_asserted: ['aggregateRating', 'priceRange', 'reviewCount', 'popularity', 'ranking'],
+  };
 }

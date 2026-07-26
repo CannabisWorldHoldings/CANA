@@ -16,6 +16,7 @@ import { requestOrigin } from '@/lib/server-request-url';
 import {
   breadcrumbJsonLd,
   jsonLdScriptProps,
+  retailerAnswerJsonLd,
   retailerJsonLd,
 } from '@/lib/structured-data.mjs';
 import { clampSeoText } from '@/lib/seo-meta.mjs';
@@ -253,6 +254,10 @@ export default async function RetailerDetailPage({
   // public verification, so machines never ingest synthetic business facts.
   const origin = await requestOrigin();
   const storeLd = retailerJsonLd({ retailer, origin: origin.origin });
+  // The answer block: the questions a person actually asks, answered only where
+  // the underlying field is sourced. Unanswerable questions are omitted rather
+  // than answered vaguely, and a record with nothing answerable yields null.
+  const answerLd = retailerAnswerJsonLd({ retailer });
   const breadcrumbLd = breadcrumbJsonLd([
     { name: 'Home', url: `${origin.origin}/` },
     { name: 'Retailers', url: `${origin.origin}/` },
@@ -263,6 +268,7 @@ export default async function RetailerDetailPage({
     <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 animate-fade-in space-y-8 flex-grow">
       {storeLd && <script {...jsonLdScriptProps(storeLd)} />}
       {breadcrumbLd && <script {...jsonLdScriptProps(breadcrumbLd)} />}
+      {answerLd && <script {...jsonLdScriptProps(answerLd)} />}
       
       {/* Back button */}
       <div>

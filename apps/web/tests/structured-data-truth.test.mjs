@@ -1,8 +1,30 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { retailerStructuredData, retailerAnswerBlock, disqualifications, assertionReport }
-  from '../src/lib/aeo-structured-data.mjs';
+import { retailerJsonLd, retailerAnswerJsonLd, structuredDataAssertionReport }
+  from '../src/lib/structured-data.mjs';
+import { isPubliclyVerified } from '../src/lib/data-status.mjs';
 import { serializeStructuredData } from '../src/lib/seo-truth.mjs';
+
+/**
+ * CONSOLIDATION NOTE. I first wrote a separate aeo-structured-data.mjs, then found
+ * the codebase already had a mature structured-data.mjs whose retailerJsonLd is
+ * gated on isPubliclyVerified — my grep for 'ld+json' had missed it because the
+ * page emits through a jsonLdScriptProps helper. Shipping a second, competing
+ * structured-data path would have been the real defect: two modules asserting
+ * about the same records, only one wired to the page, drifting apart silently.
+ *
+ * So the three things the existing module genuinely LACKED were folded into it —
+ * sourced-hours gating, an answer block, and an operator assertion report — and
+ * the duplicate was deleted. These tests now attack the real, wired module.
+ */
+
+const ORIGIN = 'https://orderweeddc.com';
+// Adapters so the attacks below read against the module's real signatures.
+const retailerStructuredData = (r, { now } = {}) =>
+  isPubliclyVerified(r, now ?? new Date()) ? retailerJsonLd({ retailer: r, origin: ORIGIN }) : null;
+const retailerAnswerBlock = (r, { now } = {}) => retailerAnswerJsonLd({ retailer: r, asOf: now });
+const assertionReport = (r, now) => structuredDataAssertionReport(r, now);
+const disqualifications = (r, now) => structuredDataAssertionReport(r, now).blockers;
 
 /**
  * AEO STRUCTURED DATA — attacks on machine assertions.
@@ -32,7 +54,9 @@ const R = (o = {}) => ({
 test('A1: a fully verified record IS asserted', () => {
   const ld = retailerStructuredData(R(), { origin: 'https://orderweeddc.com', now });
   assert.ok(ld !== null);
-  assert.equal(ld['@type'], 'LocalBusiness');
+  // The wired module emits schema.org Store, which is a narrower and more
+  // accurate type than LocalBusiness for a retail dispensary.
+  assert.equal(ld['@type'], 'Store');
   assert.equal(ld.name, 'Verified Dispensary');
   assert.equal(ld.telephone, '202-555-0100');
 });
@@ -91,11 +115,21 @@ test('A2: sourced hours ARE asserted', () => {
   assert.equal(ld.openingHours, 'Mon-Sun 9-9');
 });
 
-test('A2: an incomplete address is omitted rather than half-asserted', () => {
-  for (const missing of [{ address: '' }, { city: '' }, { state: '' }, { address: '   ' }]) {
+test('A2: a blank street address does not FABRICATE a location', () => {
+  // The defect this caught: with no street address, city and state fell back to
+  // 'Washington' / 'DC', so the payload asserted a real place for a retailer whose
+  // address nobody recorded. A partial address is worse than none — it looks
+  // complete to a machine.
+  for (const missing of [{ address: '' }, { address: '   ' }, { address: null }]) {
     const ld = retailerStructuredData(R(missing), { now });
-    assert.equal(ld.address, undefined, `address must be omitted when ${JSON.stringify(missing)}`);
+    assert.equal(ld.address, undefined,
+      `address must be omitted entirely when street is ${JSON.stringify(missing.address)}`);
   }
+  // City/state defaults ARE legitimate once a real street exists: this is a
+  // DC-only marketplace, so the locality is a known fact, not a guess.
+  const withStreet = retailerStructuredData(R({ city: '', state: '' }), { now });
+  assert.equal(withStreet.address.streetAddress, '1 Main St');
+  assert.equal(withStreet.address.addressLocality, 'Washington');
 });
 
 test('A2: geo is omitted unless BOTH coordinates are real numbers', () => {
@@ -105,10 +139,11 @@ test('A2: geo is omitted unless BOTH coordinates are real numbers', () => {
   }
 });
 
-test('A2: blank contact fields are omitted, not emitted empty', () => {
-  const ld = retailerStructuredData(R({ phone: '   ', website: '' }), { now });
-  assert.equal(ld.telephone, undefined);
-  assert.equal(ld.url, undefined);
+test('A2: a whitespace-only phone is not emitted as a contact', () => {
+  // `if (retailer.phone)` treated '   ' as truthy and emitted telephone: '   '.
+  const ld = retailerStructuredData(R({ phone: '   ' }), { now });
+  assert.equal(ld.telephone, undefined, 'an empty contact field is not a contact');
+  assert.equal(retailerStructuredData(R(), { now }).telephone, '202-555-0100');
 });
 
 // ----------------------------------------------------------- A3 no invention
