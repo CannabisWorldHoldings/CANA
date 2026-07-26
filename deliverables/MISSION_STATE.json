@@ -754,8 +754,8 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "81da4d4",
-  "last_checkpoint_at": "2026-07-26T16:46:17.778759+00:00",
+  "last_checkpoint": "93e5c6a",
+  "last_checkpoint_at": "2026-07-26T16:51:51.274313+00:00",
   "completed_walls": [
     {
       "wall": "VERSIONED_PUBLIC_API_V1",
@@ -888,10 +888,33 @@
       "no_discount_math": "the discount string passes through verbatim; a computed saving would invent an unverified number",
       "falsification_proven": true,
       "tests": "web 342/342 (327 + 15)"
+    },
+    {
+      "wall": "PILOT_EVIDENCE_CHAIN_END_TO_END",
+      "commit": "93e5c6a",
+      "why": "every component was attacked in isolation but the chain had never run end to end through real HTTP against real rows; components sharing an author can each be correct against their own fixture and disagree about a real row",
+      "stages": [
+        "audit",
+        "fund",
+        "spend",
+        "real HTTP attribution",
+        "proof of value",
+        "chain verify",
+        "merchant export",
+        "demonstration control"
+      ],
+      "defects_found_in_my_own_code": [
+        "E2E-1 the ledger stores SPEND negative while my fixtures used positive \u2014 proof of value was WITHHELD for a merchant who actually paid; withholding is the safe direction which is why it could ship unnoticed",
+        "E2E-3 a PLATFORM-owned SPEND still funded the merchant cost-per-action"
+      ],
+      "mistaken_diagnosis_recorded": "I claimed ownedBy dropped money rows for lacking relationshipOwner; falsifying it failed zero tests, so it guarded nothing",
+      "falsification_proven": true,
+      "tests": "web 357/357",
+      "owner_gates": "CLOSED \u2014 no contact, no payment, no public claim; funding reference states no real payment occurred"
     }
   ],
   "test_baseline": {
-    "web": "342/342",
+    "web": "357/357",
     "skills_total": 258,
     "e2e_binding": "PROVEN"
   },
