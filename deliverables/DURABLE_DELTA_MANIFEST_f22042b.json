@@ -1,0 +1,191 @@
+{
+  "package": "CANA-DELTA-051bdcc-f22042b",
+  "type": "INCREMENTAL",
+  "created_at": "2026-07-26T21:15:33.907753+00:00",
+  "basis": {
+    "short": "051bdcc",
+    "why": "head of the eighth Drive artifact, read-back verified and chain-proven"
+  },
+  "tip": {
+    "sha": "f22042bbc9e75172d6c1672a2ad662a4190d2f1a",
+    "short": "f22042b",
+    "tree": "a76f97f048c48edc435c2e465e117a9e61368f35"
+  },
+  "commit_manifest": [
+    {
+      "sha": "f22042bbc9e75172d6c1672a2ad662a4190d2f1a",
+      "short": "f22042b",
+      "date": "2026-07-26T17:14:16-04:00",
+      "subject": "chore: checkpoint \u2014 write-independent handoff and reproducible db config, web 500/500",
+      "files_changed": [
+        "deliverables/MISSION_STATE.json"
+      ]
+    },
+    {
+      "sha": "a0ef280195a046edf25e9a5b3789e414676bb5a5",
+      "short": "a0ef280",
+      "date": "2026-07-26T17:13:56-04:00",
+      "subject": "fix(handoff): the consumer redirect no longer depends on a database write lock",
+      "files_changed": [
+        "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+        "apps/web/src/lib/handoff.mjs",
+        "apps/web/tests/handoff-grading-integration.test.mjs",
+        "apps/web/tests/handoff.test.mjs",
+        "apps/web/tests/tenant-retailer.test.mjs"
+      ]
+    },
+    {
+      "sha": "72313e5d87fa2398d7b8fb2df624a3c33cc986fc",
+      "short": "72313e5",
+      "date": "2026-07-26T17:02:03-04:00",
+      "subject": "fix(db): the WAL setting was not reproducible \u2014 measured, fixed, and classified",
+      "files_changed": [
+        "apps/web/src/lib/db-config.mjs",
+        "apps/web/src/lib/prisma.ts",
+        "apps/web/tests/clean-database-court.test.mjs"
+      ]
+    },
+    {
+      "sha": "93a26ea93d26df13bdda7065901ea34c33f01eb2",
+      "short": "93a26ea",
+      "date": "2026-07-26T16:51:36-04:00",
+      "subject": "docs(durability): 051bdcc recoverable \u2014 eight-artifact chain rebuilt from Drive",
+      "files_changed": [
+        "deliverables/DURABLE_DELTA_MANIFEST_051bdcc.json",
+        "deliverables/MISSION_STATE.json"
+      ]
+    }
+  ],
+  "changed_file_manifest": [
+    {
+      "path": "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+      "touched_by": [
+        "a0ef280"
+      ]
+    },
+    {
+      "path": "apps/web/src/lib/db-config.mjs",
+      "touched_by": [
+        "72313e5"
+      ]
+    },
+    {
+      "path": "apps/web/src/lib/handoff.mjs",
+      "touched_by": [
+        "a0ef280"
+      ]
+    },
+    {
+      "path": "apps/web/src/lib/prisma.ts",
+      "touched_by": [
+        "72313e5"
+      ]
+    },
+    {
+      "path": "apps/web/tests/clean-database-court.test.mjs",
+      "touched_by": [
+        "72313e5"
+      ]
+    },
+    {
+      "path": "apps/web/tests/handoff-grading-integration.test.mjs",
+      "touched_by": [
+        "a0ef280"
+      ]
+    },
+    {
+      "path": "apps/web/tests/handoff.test.mjs",
+      "touched_by": [
+        "a0ef280"
+      ]
+    },
+    {
+      "path": "apps/web/tests/tenant-retailer.test.mjs",
+      "touched_by": [
+        "a0ef280"
+      ]
+    },
+    {
+      "path": "deliverables/DURABLE_DELTA_MANIFEST_051bdcc.json",
+      "touched_by": [
+        "93a26ea"
+      ]
+    },
+    {
+      "path": "deliverables/MISSION_STATE.json",
+      "touched_by": [
+        "f22042b",
+        "93a26ea"
+      ]
+    }
+  ],
+  "contents": [
+    "db-config.mjs \u2014 the WAL setting moved from an untracked file into source control",
+    "SQLite classified LOCAL_TEST_DATABASE_ONLY on measured evidence",
+    "write-independent handoff: 10->10x500 became 200->200x303",
+    "five evidence states recorded separately and surfaced"
+  ],
+  "resolves_prior_gap": "the eighth manifest recorded that WAL lived only in the untracked dev.db. This delta closes it: initialization is now source-controlled and applied at startup.",
+  "restore_order_full_chain": [
+    {
+      "step": 1,
+      "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
+      "type": "FULL",
+      "reaches": "54a0082"
+    },
+    {
+      "step": 2,
+      "drive_file_id": "1DWrPNfkruAgORUKETGIShr4XHVuBZ2Kg",
+      "prerequisite": "54a0082",
+      "reaches": "0ae1030"
+    },
+    {
+      "step": 3,
+      "drive_file_id": "143TkE5N0LKKQ1DEjo3uf_W9SlZZZ9-1M",
+      "prerequisite": "0ae1030",
+      "reaches": "ed40c16"
+    },
+    {
+      "step": 4,
+      "drive_file_id": "1NzffI9LsJCJj9al6BkMEBc6OOjU1_6vJ",
+      "prerequisite": "ed40c16",
+      "reaches": "d4587a4"
+    },
+    {
+      "step": 5,
+      "drive_file_id": "1MjpLcgD9zbiJZDDgdeVp-aaFhMOY7Ccz",
+      "prerequisite": "d4587a4",
+      "reaches": "01676e3"
+    },
+    {
+      "step": 6,
+      "drive_file_id": "1IECCp32x_sHY1n08tAqsInTSMmmKav6l",
+      "prerequisite": "01676e3",
+      "reaches": "de3619e"
+    },
+    {
+      "step": 7,
+      "drive_file_id": "1RbokRnYTRB85fTe8K6F5o9Iyj2smQ-9e",
+      "prerequisite": "de3619e",
+      "reaches": "4b01926"
+    },
+    {
+      "step": 8,
+      "drive_file_id": "1vcB4GCqaV9bzwHW1cEI4RecRRI2trYAp",
+      "prerequisite": "4b01926",
+      "reaches": "051bdcc"
+    },
+    {
+      "step": 9,
+      "drive_file_id": "PENDING_UPLOAD",
+      "prerequisite": "051bdcc",
+      "reaches": "f22042b"
+    }
+  ],
+  "test_receipts": {
+    "web": "500/500",
+    "skills": "258/258",
+    "e2e_binding": "PROVEN"
+  },
+  "schema_fingerprint": "86b6a806ad99836b727a919ba4591b291241bb04224b9e766c4da02877ceed8f"
+}

@@ -1286,9 +1286,29 @@
         ],
         "recorded_gap": "the manifest states plainly that WAL lives in the untracked dev.db and is NOT in source control",
         "verified_at": "2026-07-26T20:51:36.495681+00:00"
+      },
+      {
+        "package": "CANA-DELTA-051bdcc-f22042b",
+        "type": "INCREMENTAL",
+        "drive_file_id": "1pqkZbxcenpODoi_FX0Xa6XFUzLJi7q2t",
+        "archive_sha256": "bf7aa70968863edb496442692b03ba0b746a91440f64bcf2f0f1136c6da8f971",
+        "archive_bytes": 47064,
+        "basis": "051bdcc",
+        "tip": "f22042b",
+        "tree": "a76f97f048c48edc435c2e465e117a9e61368f35",
+        "resolves_prior_gap": "the eighth manifest recorded that WAL lived only in the untracked dev.db; this delta carries db-config.mjs, and the clean-database court PASSES FROM THE DRIVE RECONSTRUCTION",
+        "gates_passed": [
+          "byte size",
+          "sha-256 on read-back",
+          "7/7 inner hashes",
+          "NINE-artifact chain rebuilt from Drive bytes only, identical tree, 0 fsck errors",
+          "out-of-order apply refused with HEAD unmoved",
+          "258/258 skills + clean-database-court 8/8 + page-challenge 28/28 from the reconstruction"
+        ],
+        "verified_at": "2026-07-26T21:17:10.887158+00:00"
       }
     ],
-    "current_head_durable": "051bdcc",
+    "current_head_durable": "f22042b",
     "restore_order": [
       {
         "step": 1,
@@ -1337,6 +1357,12 @@
         "drive_file_id": "1vcB4GCqaV9bzwHW1cEI4RecRRI2trYAp",
         "prerequisite": "4b01926",
         "reaches": "051bdcc"
+      },
+      {
+        "step": 9,
+        "drive_file_id": "1pqkZbxcenpODoi_FX0Xa6XFUzLJi7q2t",
+        "prerequisite": "051bdcc",
+        "reaches": "f22042b"
       }
     ],
     "chain_rebuilt_from_drive_only": true
