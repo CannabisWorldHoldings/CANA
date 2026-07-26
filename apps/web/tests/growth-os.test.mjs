@@ -299,6 +299,36 @@ test('E2E: a non-finite amount cannot corrupt the total', () => {
   }
 });
 
+// -------------------------------------------- verifier findings B7 / B8 (latent)
+test('B7: a NON-FINITE spend total cannot render as NaN', () => {
+  // `spent <= 0` is false for NaN, so a non-finite total slipped past the blocker.
+  // Unreachable through the ledger API today, but this module reads rows directly
+  // and must not trust them.
+  for (const bad of [NaN, Infinity, -Infinity]) {
+    const v = buildGrowthView({ retailer: R(),
+      ledger: [{ kind: 'SPEND', merchantId: 'm1', amount: bad }, attr()], now });
+    const shown = v.proof_of_value?.credits_spent;
+    assert.ok(shown === undefined || Number.isFinite(shown),
+      `spend ${String(bad)} rendered as ${String(shown)}`);
+  }
+});
+
+test('B8: a hostile audit score is BOUNDED, not printed verbatim', () => {
+  // 999, -5, NaN and "high" were passed straight through as a measurement.
+  const cases = [[999, 100], [-5, 0], [62, 62], [61.6, 62]];
+  for (const [input, expected] of cases) {
+    const v = buildGrowthView({ retailer: R(), ledger: [],
+      audit: { score: input, counts: {}, top_actions: [] }, now });
+    assert.equal(v.visibility.score, expected, `score ${input} should render ${expected}`);
+  }
+  for (const bad of [NaN, 'high', null, undefined, {}, []]) {
+    const v = buildGrowthView({ retailer: R(), ledger: [],
+      audit: { score: bad, counts: {}, top_actions: [] }, now });
+    assert.ok(v.visibility.score === null || Number.isFinite(v.visibility.score),
+      `score ${JSON.stringify(bad)} rendered ${JSON.stringify(v.visibility.score)}`);
+  }
+});
+
 // ------------------------------------------------------------- helper surface
 test('evidenceLinks returns the parsed links for a real chain', () => {
   const links = evidenceLinks(attr());

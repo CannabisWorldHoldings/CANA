@@ -85,6 +85,22 @@ export function breadcrumbJsonLd(items) {
  * public evidence boundary. Demonstration/stale/disputed records return null
  * so no synthetic business facts ever reach search engines.
  */
+/**
+ * ONE definition of "this licence is verified", shared by every path that asserts
+ * it. VERIFIER FINDING C4: the credential block normalized case inline while the
+ * answer block required an exact 'VERIFIED', so licenceStatus 'verified' emitted a
+ * machine-readable CREDENTIAL but no answer saying the retailer was licensed. Two
+ * definitions of "verified" in one module is how one of them eventually drifts into
+ * asserting something the other refuses.
+ *
+ * Normalizing case and surrounding whitespace is deliberate — ' verified ' IS the
+ * genuine token. A near-miss like 'VERIFIED-ish' or 'ACTIVE' is still refused,
+ * because ACTIVE is a licence STATE, not evidence that anyone checked it.
+ */
+export function isLicenceVerified(status) {
+  return typeof status === 'string' && status.trim().toUpperCase() === 'VERIFIED';
+}
+
 export function retailerJsonLd({ retailer, origin }) {
   if (!retailer || !isPubliclyVerified(retailer)) return null;
   const url = `${origin}/retailer/${retailer.id}`;
@@ -173,9 +189,7 @@ export function retailerJsonLd({ retailer, origin }) {
   // status. A number alone is display-only text and must never become a
   // structured credential claim — that would reproduce the very
   // "verification theater" this mechanism exists to beat.
-  const licenseVerified =
-    typeof retailer.licenseStatus === 'string' &&
-    retailer.licenseStatus.toUpperCase() === 'VERIFIED';
+  const licenseVerified = isLicenceVerified(retailer.licenseStatus);
   if (retailer.licenseNumber && licenseVerified) {
     const credential = {
       '@type': 'EducationalOccupationalCredential',
@@ -378,7 +392,14 @@ export function retailerAnswerJsonLd({ retailer, asOf = new Date() }) {
   // 'VERIFIED' specifically. 'ACTIVE' is a licence STATE, not evidence that
   // anyone verified it, and conflating the two is how an unchecked claim becomes
   // a machine-readable assertion.
-  if (text(retailer.licenseNumber) && retailer.licenseStatus === 'VERIFIED') {
+  // VERIFIER FINDING C4 (LOW). hasCredential uses isVerified() — which normalizes
+  // case and whitespace — while this block required an exact 'VERIFIED'. So a
+  // retailer with licenseStatus 'verified' emitted a machine-readable CREDENTIAL
+  // but no answer saying it was licensed. Both paths assert the same fact about the
+  // same record, so they must agree on what counts as verified; two definitions of
+  // "verified" in one module is how one of them eventually drifts into asserting
+  // something the other refuses.
+  if (text(retailer.licenseNumber) && isLicenceVerified(retailer.licenseStatus)) {
     qa.push({
       '@type': 'Question',
       name: `Is ${retailer.name} licensed?`,

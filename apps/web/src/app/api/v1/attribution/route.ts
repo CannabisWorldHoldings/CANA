@@ -70,9 +70,21 @@ export async function POST(request: NextRequest) {
 
   const retailerId = typeof body.retailer_id === 'string' ? body.retailer_id.trim() : '';
   const actionKind = typeof body.action_kind === 'string' ? body.action_kind.trim() : '';
-  // An idempotency key is accepted but is NEVER the only defence: the ledger also
-  // dedupes on the evidence digest, so a caller cannot double-count by simply
-  // omitting or varying the key.
+  // VERIFIER FINDING A6 (HIGH). This comment previously claimed the ledger's
+  // digest-dedupe made an idempotency key unnecessary — "a caller cannot
+  // double-count by simply omitting or varying the key". That was FALSE, and
+  // falsified by the server's own behaviour: the evidence chain embedded
+  // observedAt.toISOString(), so every request produced a DIFFERENT digest and the
+  // ledger's dedupe could never fire. Five identical POSTs produced five counted
+  // actions with five distinct digests.
+  //
+  // A comment asserting a guard that does not exist is worse than no comment: it
+  // is the reason nobody looked. The fix has two parts —
+  //   (a) the evidence digest is no longer varied by a per-request timestamp, so
+  //       the ledger's dedupe can actually fire on a genuine replay, and
+  //   (b) an explicit dedupe window, because two DISTINCT consumer actions of the
+  //       same kind minutes apart are legitimately different events while five in
+  //       one second are not.
   const idempotencyKey =
     typeof body.idempotency_key === 'string' && body.idempotency_key.trim() !== ''
       ? body.idempotency_key.trim().slice(0, 200)
@@ -129,10 +141,20 @@ export async function POST(request: NextRequest) {
 
   // COMMITMENT 2 — the server builds every evidence link from what IT observed.
   const observedAt = new Date();
+  // DEDUPE WINDOW. The digest is bucketed to a coarse interval instead of an exact
+  // millisecond, so identical actions inside one window collapse to one digest and
+  // the ledger refuses the replay — while the SAME action in a later window is a
+  // genuinely distinct event and is correctly counted. A millisecond timestamp made
+  // every request unique, which is precisely what defeated the dedupe.
+  const DEDUPE_WINDOW_MS = 5 * 60_000;
+  const bucket = Math.floor(observedAt.getTime() / DEDUPE_WINDOW_MS);
   const evidenceChain = [
     { step: 'tenant_resolved', ref: `${host}#${brand.id}` },
     { step: 'retailer_verified_in_tenant', ref: `${retailer.id}#${String(retailer.dataStatus)}` },
-    { step: 'action_observed', ref: `${actionKind}@${observedAt.toISOString()}` },
+    // The window, not the millisecond. The exact observation time is still recorded
+    // on the ledger row itself (observedAt), so no precision is lost from the
+    // record — only from the DEDUPE KEY, which is the whole point.
+    { step: 'action_observed', ref: `${actionKind}@window:${bucket}` },
     { step: 'server_receipt', ref: `api/v1/attribution#${API_VERSION}` },
   ];
 
@@ -188,8 +210,24 @@ export async function POST(request: NextRequest) {
         evidence_built_by: 'server',
         client_supplied_evidence_accepted: false,
         demonstration_data_recorded: false,
-        not_claimed: ['ranking position', 'traffic', 'popularity', 'lead', 'conversion lift', 'revenue'],
-        note: 'This receipt states only that an action was observed and recorded with server-built evidence. It asserts no commercial outcome.',
+        // VERIFIER FINDING A8 (MEDIUM). Asked whether the four evidence links prove
+        // a CONSUMER acted, the verifier answered no, and it was right: the links
+        // reference the tenant, the retailer, the action kind and this endpoint —
+        // none references a person. No IP, session, user-agent or interaction
+        // token. The chain proves an HTTP REQUEST ARRIVED claiming an action
+        // against a valid, verified, tenant-scoped retailer. That is a real and
+        // useful thing to prove, and it is NOT proof of a human being.
+        //
+        // The honest response is to say so in the receipt itself rather than let
+        // "server-observed evidence" be read as more than it is. Overstating this
+        // is exactly the fabricated-metric failure the whole system refuses.
+        proves: 'a request arrived claiming this action against a verified, tenant-scoped retailer, and the server built the evidence',
+        does_not_prove: 'that a human consumer performed the action — no session, IP, user-agent or interaction token is bound into this evidence',
+        consumer_identity_bound: false,
+        replay_protection: 'identical actions within a 5-minute window collapse to one evidence digest and are refused by the ledger',
+        not_claimed: ['ranking position', 'traffic', 'popularity', 'lead', 'conversion lift', 'revenue',
+                      'that a human consumer performed this action'],
+        note: 'This receipt states only that an action was observed and recorded with server-built evidence. It asserts no commercial outcome and no proof of human interaction.',
       },
     },
     { status: 201, headers: { 'X-API-Version': API_VERSION, 'Cache-Control': 'no-store' } },

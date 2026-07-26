@@ -220,6 +220,92 @@ test('DUPLICATE actions are refused by the ledger, not counted twice', async () 
   assert.equal(b.recorded, false);
 });
 
+test('A6: REPEATED identical actions with NO key are refused, not counted', async () => {
+  // VERIFIER FINDING A6 (HIGH). The endpoint baked observedAt.toISOString() into the
+  // evidence chain, so every request produced a different digest and the ledger's
+  // dedupe could never fire. Five identical POSTs produced FIVE counted actions,
+  // while a code comment asserted this was impossible. An unauthenticated caller
+  // could inflate a merchant's attributed_actions and deflate cost-per-action.
+  const results = [];
+  for (let i = 0; i < 5; i++) {
+    const r = await post('/api/v1/attribution', {
+      body: { retailer_id: fixture.live.retailerId, action_kind: 'MENU_VIEW' },
+    });
+    results.push(r.status);
+  }
+  const recorded = results.filter((s) => s === 201).length;
+  const refused = results.filter((s) => s === 409).length;
+  assert.equal(recorded, 1, `five identical actions produced ${recorded} records — replay inflation`);
+  assert.equal(refused, 4, 'the other four must be refused as duplicates');
+});
+
+test('A6: the dedupe is NOT so blunt that it swallows distinct actions', async () => {
+  // The window dedupe must collapse REPLAYS without collapsing genuinely different
+  // events. All six action kinds are used elsewhere in this file, and every test
+  // shares one 5-minute window, so asking "is DIRECTIONS_CLICK accepted?" depends on
+  // test ORDER — which is not a property of the endpoint. Instead this uses its own
+  // fresh retailer, so the assertion is about the dedupe rule alone.
+  const { PrismaClient } = await import('@prisma/client');
+  const db = new PrismaClient();
+  const now = new Date();
+  const brand = await db.brand.findUnique({ where: { domain: TENANT }, select: { id: true } });
+  const r = await db.retailer.create({
+    data: {
+      name: 'Attr Fixture DEDUPE', type: 'DISPENSARY', address: '4 Test Way',
+      city: 'Washington', state: 'DC', zip: '20001', lat: 38.9, lng: -77.0,
+      dataStatus: 'VERIFIED_CURRENT', dataSource: 'attribution-contract-test',
+      retrievedAt: now, verifiedAt: now,
+      freshnessExpiresAt: new Date(now.getTime() + 86400_000),
+      confidence: 0.99, isDemonstration: false,
+    },
+    select: { id: true },
+  });
+  const prod = await db.product.create({ data: { name: 'Attr Product DEDUPE', category: 'FLOWER' }, select: { id: true } });
+  const me = await db.menuEntry.create({
+    data: { retailerId: r.id, productId: prod.id, price: 10, dataStatus: 'VERIFIED_CURRENT', isDemonstration: false },
+    select: { id: true },
+  });
+  await db.brandMenu.create({ data: { brandId: brand.id, menuEntryId: me.id } });
+  await db.$disconnect();
+
+  try {
+    // Four DIFFERENT kinds on a clean merchant must all be counted.
+    const kinds = ['PROFILE_VIEW', 'MENU_VIEW', 'PHONE_CLICK', 'DIRECTIONS_CLICK'];
+    const codes = [];
+    for (const k of kinds) {
+      const res = await post('/api/v1/attribution', { body: { retailer_id: r.id, action_kind: k } });
+      codes.push(res.status);
+    }
+    assert.deepEqual(codes, [201, 201, 201, 201],
+      `distinct action kinds must each count, got ${JSON.stringify(codes)}`);
+    // And a replay of one of them, same window, must be refused.
+    const replay = await post('/api/v1/attribution', { body: { retailer_id: r.id, action_kind: 'PHONE_CLICK' } });
+    assert.equal(replay.status, 409, 'a replay within the window must be refused');
+  } finally {
+    const db2 = new PrismaClient();
+    await db2.demandCreditEntry.deleteMany({ where: { merchantId: r.id } });
+    await db2.retailer.deleteMany({ where: { id: r.id } });
+    await db2.product.deleteMany({ where: { id: prod.id } });
+    await db2.$disconnect();
+  }
+});
+
+test('A8: the receipt states what it does NOT prove', async () => {
+  // VERIFIER FINDING A8. The four evidence links reference the tenant, retailer,
+  // action kind and endpoint — none references a person. The chain proves a REQUEST
+  // arrived, not that a human acted. Saying so is the difference between evidence
+  // and a fabricated metric.
+  const r = await post('/api/v1/attribution', {
+    body: { retailer_id: fixture.live.retailerId, action_kind: 'HANDOFF' },
+  });
+  const b = await r.json();
+  assert.equal(b.truth_contract.consumer_identity_bound, false);
+  assert.match(b.truth_contract.does_not_prove, /human consumer/i);
+  assert.match(b.truth_contract.proves, /a request arrived/i);
+  assert.ok(b.truth_contract.not_claimed.includes('that a human consumer performed this action'));
+  assert.match(b.truth_contract.replay_protection, /window/i);
+});
+
 test('unknown and malformed actions are refused', async () => {
   for (const kind of ['PURCHASE', 'phone_click', '', 'PHONE_CLICK; DROP TABLE', null, 42]) {
     const r = await post('/api/v1/attribution', {

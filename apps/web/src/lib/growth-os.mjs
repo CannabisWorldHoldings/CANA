@@ -150,7 +150,13 @@ export function buildGrowthView({ retailer, ledger = [], audit = null, menu = { 
     else if (row.kind === 'ISSUE') issuedCents += cents;
     else if (row.kind === 'REFUND') spentCents -= cents;
   }
-  const spent = fromCents(Math.max(0, spentCents));
+  // VERIFIER FINDING B7 (LOW, latent). `spent <= 0` is false for NaN, so a
+  // non-finite total slipped past the blocker and rendered as NaN on the merchant
+  // page. Unreachable through the ledger API today (it refuses INVALID_AMOUNT), so
+  // only a hand-inserted row could reach it — which is exactly the input this
+  // module must not trust, since it reads rows directly.
+  const spentRaw = Math.max(0, spentCents);
+  const spent = Number.isFinite(spentRaw) ? fromCents(spentRaw) : 0;
 
   const byKind = {};
   for (const row of counted) byKind[row.actionKind] = (byKind[row.actionKind] || 0) + 1;
@@ -201,8 +207,15 @@ export function buildGrowthView({ retailer, ledger = [], audit = null, menu = { 
     truth_label: isDemonstration
       ? `DEMONSTRATION_ONLY — not a live commercial result (${demoReasons.join('; ')})`
       : 'LIVE_RECORD',
+    // VERIFIER FINDING B8 (LOW, latent). audit.score was passed through verbatim,
+    // so 999, -5, NaN or "high" would render as a score. The live page passes no
+    // audit today, but a module that reads a caller-supplied number and prints it
+    // as a measurement must bound it or it is not a measurement.
     visibility: audit ? {
-      score: audit.score, counts: audit.counts,
+      score: Number.isFinite(Number(audit.score))
+        ? Math.min(100, Math.max(0, Math.round(Number(audit.score))))
+        : null,
+      counts: audit.counts,
       // The score is a measure of observable completeness, not of performance.
       means: 'Share of observable profile, menu, provenance and answerability fields that are present and sourced. It is not a ranking, a traffic estimate, or a performance score.',
     } : null,

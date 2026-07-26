@@ -208,6 +208,28 @@ test('A5: the serialized payload is still valid JSON after escaping', () => {
 });
 
 // ------------------------------------------------------------ operator report
+test('C4: the credential and the answer AGREE on what counts as verified', async () => {
+  // VERIFIER FINDING C4. The credential block normalized case inline while the
+  // answer block required an exact 'VERIFIED', so licenceStatus 'verified' emitted
+  // a machine-readable CREDENTIAL but no answer saying the retailer was licensed.
+  // Two definitions of "verified" in one module is how one drifts into asserting
+  // what the other refuses.
+  const { retailerJsonLd: ld, retailerAnswerJsonLd: ans } =
+    await import('../src/lib/structured-data.mjs');
+  for (const status of ['VERIFIED', 'verified', ' VERIFIED ', 'ACTIVE', 'VERIFIED-ish', 'verified ']) {
+    const rec = R({ licenseStatus: status });
+    const hasCredential = !!ld({ retailer: rec, origin: ORIGIN })?.hasCredential;
+    const hasAnswer = (ans({ retailer: rec })?.mainEntity ?? []).some((q) => /licensed/i.test(q.name));
+    assert.equal(hasCredential, hasAnswer,
+      `status ${JSON.stringify(status)}: credential=${hasCredential} but answer=${hasAnswer}`);
+  }
+  // And a near-miss is still refused by BOTH.
+  for (const status of ['ACTIVE', 'VERIFIED-ish', 'pending']) {
+    assert.equal(!!ld({ retailer: R({ licenseStatus: status }), origin: ORIGIN })?.hasCredential, false,
+      `${status} must not yield a credential`);
+  }
+});
+
 test('the assertion report explains WHY a record was withheld', () => {
   // Without this, "no JSON-LD appeared" is indistinguishable from a bug.
   const rep = assertionReport(R({ isDemonstration: true, dataStatus: 'DEMONSTRATION_ONLY' }), now);
