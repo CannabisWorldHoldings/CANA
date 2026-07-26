@@ -754,7 +754,7 @@
     "a sweep printed ALL SURFACES PASS while education failed; shell flag logic was broken",
     "cold-start flakiness produced spurious FAILs; warming the server gives a stable 14/14"
   ],
-  "last_checkpoint": "4d68ca6",
+  "last_checkpoint": "54a0082",
   "last_checkpoint_at": "2026-07-26T16:13:57.472048+00:00",
   "completed_walls": [
     {
@@ -874,24 +874,33 @@
   },
   "durability": {
     "status": "PROVEN_BY_READ_BACK",
-    "drive_file_id": "1Ukuwq8xHKaCy5D4-ILlNVRtGAer2bAlc",
+    "current_package": "CANA-DURABLE-20260726-v2",
+    "drive_file_id": "13G2rMEZeqvGBxpPE7VXDVFp1mZJY6mja",
     "drive_folder_id": "1uo1KJSpQqdIp_DAsm-LxYRDMlR4swVXP",
-    "archive_sha256": "ac410d757c11bf3456c1c43b70637f85e52b113f57fa6e98132456cbe352fe6f",
-    "archive_bytes": 6960884,
-    "head_durabilized": "4e012fa",
+    "archive_sha256": "c17a8791dbf15130bf33c3f51ee0c211a00a71a36244f7d62877444e4b1819d5",
+    "archive_bytes": 7050999,
+    "head_durabilized": "54a0082",
+    "tree": "d722d812bdc3bb4665a26aad251ea08d304e4585",
     "protected_baseline": "487ece6",
     "gates_passed": [
       "byte size",
-      "sha-256 recomputed on read-back",
-      "39/39 inner hashes",
+      "sha-256 recomputed locally on read-back",
+      "46/46 inner hashes",
       "bundle clone: 11/11 refs, 87 commits, 0 fsck errors, identical tree",
-      "241/241 tests pass FROM Drive-recovered code"
+      "258/258 skill tests + e2e binding PROVEN from Drive-recovered code"
     ],
     "recovery_paths": [
       "git bundle (all refs)",
-      "36-patch series from protected baseline"
+      "43-patch series from protected baseline"
     ],
-    "secret_scan": "1057 text blobs, 0 real secrets, 2 false positives resolved",
-    "verified_at": "2026-07-26T15:56:22.935795+00:00"
+    "secret_scan": "0 findings on the exact archive contents",
+    "superseded": [
+      {
+        "package": "CANA-DURABLE-20260726",
+        "drive_file_id": "1Ukuwq8xHKaCy5D4-ILlNVRtGAer2bAlc",
+        "head": "4e012fa"
+      }
+    ],
+    "verified_at": "2026-07-26T16:16:13.932980+00:00"
   }
 }
