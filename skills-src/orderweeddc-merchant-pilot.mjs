@@ -89,10 +89,33 @@ export function buildPilot({ retailer, audit, ledger = [], now = new Date() }) {
   const refunded = refunds.reduce((s, e) => s + cents(e.amount), 0) / 100;
 
   // ---- Stage 5: attributed actions, counted ONLY with a verified evidence chain
-  const evidenced = attributions.filter((a) => {
-    if (!text(a.evidenceChain) || !text(a.evidenceChainSha256)) return false;
-    return sha(a.evidenceChain) === a.evidenceChainSha256;
-  });
+  //
+  // P1 (independent verifier, CRITICAL): this was a hash check with ZERO content
+  // validation. The digest is computed over attacker-controlled bytes, so
+  // evidenceChain='[]' — a chain with no steps at all — hashed correctly and
+  // became a "verified attributed action", producing a full proof_of_value with
+  // cost_per_attributed_action on a LIVE_RECORD. A hash proves the content was
+  // not altered; it says nothing about whether the content is evidence.
+  //
+  // An evidence chain must therefore be PARSED and its steps validated before
+  // the hash is even consulted.
+  const evidenceSteps = (a) => {
+    if (!text(a.evidenceChain) || !text(a.evidenceChainSha256)) return null;
+    let parsed;
+    try { parsed = JSON.parse(a.evidenceChain); } catch { return null; }
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    // Every link must be an own-property object carrying a non-blank step and a
+    // retrievable ref. hasOwnProperty so a prototype-polluted object cannot fake it.
+    const ok = parsed.every((l) => l && typeof l === 'object' && !Array.isArray(l)
+      && Object.prototype.hasOwnProperty.call(l, 'step')
+      && Object.prototype.hasOwnProperty.call(l, 'ref')
+      && text(l.step) && text(l.ref));
+    if (!ok) return null;
+    // Only now does the digest matter: it proves these exact steps are unaltered.
+    if (sha(a.evidenceChain) !== a.evidenceChainSha256) return null;
+    return parsed;
+  };
+  const evidenced = attributions.filter((a) => evidenceSteps(a) !== null);
   const unevidenced = attributions.length - evidenced.length;
   const byKind = {};
   for (const a of evidenced) byKind[a.actionKind] = (byKind[a.actionKind] || 0) + 1;
@@ -220,6 +243,20 @@ if (has('selftest')) {
 
   t('package is sealed', /^[0-9a-f]{64}$/.test(p3.package_digest));
   t('owner-only actions are stated', p3.owner_only_actions.includes('activating real payment'));
+
+  // ---- P1 CRITICAL regression: empty / malformed evidence chains
+  const emptyChain = (c) => ({ kind: 'ATTRIBUTION', actionKind: 'PHONE_CLICK', evidenceChain: c, evidenceChainSha256: sha(c) });
+  for (const bad of ['[]', '[{}]', '""', 'null', '{}', '[null]', '[[]]', '[{"step":"x"}]', '[{"ref":"y"}]', '[{"step":"  ","ref":"y"}]', 'not json']) {
+    const pk = buildPilot({ retailer: R(), audit: A(), ledger: [...spent, emptyChain(bad)], now }).package;
+    t(`P1: evidenceChain ${JSON.stringify(bad).slice(0, 22)} is NOT evidence`,
+      pk.attribution.evidence_verified === 0 && pk.proof_of_value === null);
+  }
+  t('P1: a genuine multi-step chain still counts',
+    buildPilot({ retailer: R(), audit: A(), ledger: full, now }).package.attribution.evidence_verified === 1);
+  // A prototype-polluted link must not fake a step.
+  const polluted = JSON.stringify([JSON.parse('{"__proto__":{"step":"x","ref":"y"}}')]);
+  t('P1: prototype-polluted link rejected',
+    buildPilot({ retailer: R(), audit: A(), ledger: [...spent, emptyChain(polluted)], now }).package.attribution.evidence_verified === 0);
 
   console.log(`\n  Merchant Pilot self-test: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);

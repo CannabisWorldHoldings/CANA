@@ -66,28 +66,50 @@ export function labelFact(raw, now = new Date()) {
   if (!text(raw?.source)) errors.push('source required — an uncited fact is not a fact');
 
   const observedAt = raw?.observed_at ? new Date(raw.observed_at) : null;
-  const validForDays = Number.isFinite(raw?.valid_for_days) ? raw.valid_for_days : null;
+  // C-HIGH (independent verifier): a STRINGIFIED valid_for_days ('7') failed the
+  // Number.isFinite test, became null, and disabled staleness entirely — a
+  // 6.5-year-old fact stayed actionable. Coerce numeric strings, then demand a
+  // sane positive finite window.
+  const rawWindow = typeof raw?.valid_for_days === 'string' && raw.valid_for_days.trim() !== ''
+    ? Number(raw.valid_for_days) : raw?.valid_for_days;
+  const validForDays = Number.isFinite(rawWindow) && rawWindow >= 0 ? rawWindow : null;
   let freshness = 'UNDATED';
   let ageDays = null;
   if (observedAt && !Number.isNaN(observedAt.getTime())) {
     ageDays = Math.floor((now - observedAt) / 86400_000);
-    freshness = validForDays == null ? 'DATED_NO_WINDOW'
+    // C1 (independent verifier, CRITICAL): a FUTURE-dated observation produced a
+    // NEGATIVE age, so `ageDays <= validForDays` was trivially true and the fact
+    // read as CURRENT and actionable. An impossible timestamp is the strongest
+    // signal a fact is untrustworthy, and it had become the easiest way to make
+    // one drive actuation. A small clock-skew allowance is legitimate; a
+    // genuinely future observation is not.
+    const SKEW_DAYS = 1;
+    if (ageDays < -SKEW_DAYS) freshness = 'FUTURE_DATED';
+    else freshness = validForDays == null ? 'DATED_NO_WINDOW'
       : ageDays <= validForDays ? 'CURRENT' : 'STALE';
   }
 
   // LAW 1 + 3: actuation requires strong authority, an actuating truth state,
   // and non-stale evidence. Staleness is computed here, never asserted.
+  // C-HIGH: UNDATED facts were actionable. A fact whose observation time is
+  // unknown cannot be shown to be current, and "we don't know when this was
+  // true" is not a basis for action. DATED_NO_WINDOW is likewise refused: a date
+  // with no declared validity window cannot be tested for staleness.
+  const FRESHNESS_ALLOWS_ACTUATION = new Set(['CURRENT']);
   const actionable =
     errors.length === 0 &&
     !NON_ACTUATING_AUTHORITY.has(raw.authority) &&
     ACTUATION_TRUTH.has(raw.truth_status) &&
-    freshness !== 'STALE';
+    FRESHNESS_ALLOWS_ACTUATION.has(freshness);
 
   const reasons = [];
   if (errors.length) reasons.push('malformed');
   if (NON_ACTUATING_AUTHORITY.has(raw?.authority)) reasons.push(`authority ${raw.authority} is reference-only`);
   if (!ACTUATION_TRUTH.has(raw?.truth_status)) reasons.push(`truth_status ${raw?.truth_status} does not permit actuation`);
   if (freshness === 'STALE') reasons.push(`observation is ${ageDays}d old, past its ${validForDays}d window`);
+  if (freshness === 'FUTURE_DATED') reasons.push(`observation is dated ${Math.abs(ageDays)}d in the FUTURE — an impossible timestamp cannot be evidence`);
+  if (freshness === 'UNDATED') reasons.push('no observation date — a fact that cannot be dated cannot be shown to be current');
+  if (freshness === 'DATED_NO_WINDOW') reasons.push('no valid_for_days window — staleness cannot be evaluated');
 
   return {
     id: raw?.id, claim: raw?.claim, authority: raw?.authority, truth_status: raw?.truth_status,
@@ -104,12 +126,16 @@ export function labelFact(raw, now = new Date()) {
  * Two facts conflict when they share a subject tag but assert different claims.
  */
 export function findContradictions(facts) {
+  // C-HIGH (independent verifier): using .find took only the FIRST subject tag,
+  // so a fact tagged with several subjects was compared under one of them and
+  // silently escaped contradiction detection under the others. Index under EVERY
+  // subject a fact claims.
   const bySubject = new Map();
   for (const f of facts) {
-    const subj = f.tags.find((t) => t.startsWith('subject:'));
-    if (!subj) continue;
-    if (!bySubject.has(subj)) bySubject.set(subj, []);
-    bySubject.get(subj).push(f);
+    for (const subj of f.tags.filter((t) => t.startsWith('subject:'))) {
+      if (!bySubject.has(subj)) bySubject.set(subj, []);
+      bySubject.get(subj).push(f);
+    }
   }
   const out = [];
   for (const [subject, group] of bySubject) {
@@ -243,6 +269,34 @@ if (has('selftest')) {
     facts: Array.from({ length: 10 }, (_, i) => f({ id: `b${i}` })), now, maxFacts: 3 });
   t('context budget admits only maxFacts', budget.packet.counts.actionable + budget.packet.counts.reference === 3);
   t('budget exclusions are RECORDED', budget.packet.excluded.filter((e) => /budget/.test(e.reason)).length === 7);
+
+  // ---- C1 CRITICAL + HIGH regressions from independent verification
+  const future1 = labelFact(f({ observed_at: '2027-06-01', valid_for_days: 30 }), now);
+  t('C1: FUTURE-dated observation is NOT actionable', !future1.actionable && future1.freshness === 'FUTURE_DATED');
+  t('C1: future-dating reason names the impossibility',
+    future1.non_actionable_reasons.some((r) => /FUTURE/.test(r)));
+  t('C1: small clock skew is tolerated',
+    labelFact(f({ observed_at: new Date(now.getTime() + 3600_000).toISOString(), valid_for_days: 30 }), now).actionable);
+
+  t('C-HIGH: stringified valid_for_days still enforces staleness',
+    !labelFact(f({ observed_at: '2020-01-01', valid_for_days: '7' }), now).actionable);
+  t('C-HIGH: stringified window still allows a fresh fact',
+    labelFact(f({ observed_at: '2026-07-25', valid_for_days: '7' }), now).actionable);
+  t('C-HIGH: UNDATED fact is NOT actionable', !labelFact(f({ observed_at: null }), now).actionable);
+  t('C-HIGH: dated fact with NO window is NOT actionable',
+    !labelFact(f({ observed_at: '2026-07-25', valid_for_days: null }), now).actionable);
+  for (const bad of [-5, Infinity, NaN, [], {}, true]) {
+    t(`C-HIGH: valid_for_days ${JSON.stringify(bad)} does not disable staleness`,
+      !labelFact(f({ observed_at: '2020-01-01', valid_for_days: bad }), now).actionable);
+  }
+
+  // Multi-subject contradiction suppression.
+  const multi = findContradictions([
+    labelFact(f({ id: 'm1', claim: 'repo reachable', tags: ['subject:alpha', 'subject:repo'] }), now),
+    labelFact(f({ id: 'm2', claim: 'repo returns 404', tags: ['subject:repo'] }), now),
+  ]);
+  t('C-HIGH: a multi-subject fact cannot hide a contradiction',
+    multi.some((c) => c.subject === 'subject:repo' && c.claims.length === 2));
 
   console.log(`\n  Context Compiler self-test: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);
