@@ -244,6 +244,61 @@ test('L6: float amounts do not accumulate dust into a false figure', () => {
   assert.equal(v.proof_of_value.credits_spent, 0.3, '0.1 + 0.2 must be exactly 0.30');
 });
 
+// ---------------------------------------------- E2E: REAL ledger row shapes
+// These two defects survived 26 tests because every fixture above was shaped by
+// the same hand that wrote the module. Only driving the real chain end to end
+// exposed them. The rows below are shaped EXACTLY as demand-credits.mjs writes
+// them, so this block is the regression guard against fixture-vs-reality drift.
+const realIssue = (amount = 500) => ({ kind: 'ISSUE', merchantId: 'm1', amount,
+  authorizationRef: 'REF', expiresAt: new Date(now.getTime() + 86400_000) });
+// The ledger calls append with `amount: -amount` for SPEND, and sets NO
+// relationshipOwner on money rows.
+const realSpend = (amount = 75) => ({ kind: 'SPEND', merchantId: 'm1', amount: -amount,
+  placement: 'NEIGHBORHOOD_BANNER', disclosureLabel: 'Paid placement', affectsOrganicOrder: false });
+
+test('E2E-1: a NEGATIVE SPEND amount (how the ledger really stores it) counts', () => {
+  const v = buildGrowthView({ retailer: R(), ledger: [realIssue(), realSpend(75), attr()], now });
+  assert.ok(v.proof_of_value !== null,
+    `withheld for a merchant who really paid: ${JSON.stringify(v.proof_of_value_blockers)}`);
+  assert.equal(v.proof_of_value.credits_spent, 75, 'the sign must be normalized, not read raw');
+  assert.equal(v.proof_of_value.cost_per_attributed_action, 75);
+});
+
+test('E2E-2: money rows lacking relationshipOwner still count', () => {
+  // NOT a defect fix. I initially claimed ownedBy() dropped money rows because
+  // they carry no relationshipOwner; falsifying that "fix" failed ZERO tests,
+  // proving it guarded nothing — ownedBy tolerates an absent owner and refuses
+  // only a PRESENT non-MERCHANT value. This test pins the real behaviour so a
+  // future edit cannot introduce the defect I mistakenly thought I had fixed.
+  const v = buildGrowthView({ retailer: R(), ledger: [realIssue(), realSpend(), attr()], now });
+  assert.ok(realSpend().relationshipOwner === undefined, 'the real row genuinely lacks it');
+  assert.equal(v.proof_of_value.credits_spent, 75);
+  // The guard that DOES matter: a present, non-MERCHANT owner is still refused.
+  const hostile = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), { ...realSpend(), relationshipOwner: 'PLATFORM' }, attr()], now });
+  assert.equal(hostile.proof_of_value, null, 'a PLATFORM-owned spend must not fund a merchant claim');
+});
+
+test('E2E: a REFUND stored positive still reduces real spend', () => {
+  const v = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), realSpend(100), { kind: 'REFUND', merchantId: 'm1', amount: 25, reason: 'r', originalSeq: 1 }, attr()], now });
+  assert.equal(v.proof_of_value.credits_spent, 75);
+});
+
+test('E2E: another merchant\'s real money rows never enter this total', () => {
+  const v = buildGrowthView({ retailer: R(),
+    ledger: [realIssue(), realSpend(75), { kind: 'SPEND', merchantId: 'OTHER', amount: -9999 }, attr()], now });
+  assert.equal(v.proof_of_value.credits_spent, 75);
+});
+
+test('E2E: a non-finite amount cannot corrupt the total', () => {
+  for (const bad of [NaN, Infinity, -Infinity, 'abc', null, undefined]) {
+    const v = buildGrowthView({ retailer: R(),
+      ledger: [realIssue(), realSpend(75), { kind: 'SPEND', merchantId: 'm1', amount: bad }, attr()], now });
+    assert.equal(v.proof_of_value.credits_spent, 75, `amount ${JSON.stringify(bad)} must be ignored`);
+  }
+});
+
 // ------------------------------------------------------------- helper surface
 test('evidenceLinks returns the parsed links for a real chain', () => {
   const links = evidenceLinks(attr());
