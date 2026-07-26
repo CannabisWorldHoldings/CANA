@@ -81,3 +81,54 @@ cross-component courts → database cleanliness → commit → checkpoint → du
 Assert the anchor matched, preserve the pre-sabotage hash, run the intended failing
 test, restore exact bytes, verify the restored hash, then run the full relevant
 suite. A restore that silently no-ops has already cost this mission a near-miss.
+
+---
+
+# CYCLE CLOSED — all lanes integrated
+
+Every lane merged into `recover/competitive-ui-day-night` with **zero conflicts** and
+**zero file collisions**. That was the entire bet of this cycle and it is worth being
+precise about why it worked, because the result is easy to mistake for luck.
+
+| Lane | Candidate | Files | Merge |
+|---|---|---|---|
+| Product (neighborhoods) | `54317ea` | 2 | clean |
+| cPanel release | `9c65c7a` | 19 | clean |
+| Migration | `b0db9fd` | 9 | clean |
+| Chief Integrator (F1 repair) | `cff0ded` | 5 | — |
+
+Thirty files across schema, deployment and public API, four agents working
+simultaneously, no coordination during execution. The map did that: exclusive
+ownership declared BEFORE work started, prohibited files named explicitly, and a
+standing rule that only the Chief Integrator merges.
+
+## What the lanes could NOT do, and correctly did not
+
+Each lane hit at least one thing outside its boundary and **reported it instead of
+reaching for it**:
+
+- The product lane's route was refused by release-gate G10. It did not edit the gate —
+  that file belongs to the Chief Integrator. It reported the exact failure text.
+- The cPanel lane needed the same registration for `/api/release`, and asked.
+- The migration lane found `package.json` still running `db push` rather than
+  `migrate deploy`, and did not change it.
+- The cPanel lane needed `prisma/migrations/**` to exist for `migrate.sh`; it shipped
+  a hard-stop instead of inventing one, and the builder now picks the directory up
+  automatically because the migration lane created it in the same cycle.
+
+Both new public routes are now registered. G10 refusing them is the gate working
+exactly as designed: a new public surface cannot reach main until someone decides it
+is governed.
+
+## Two lanes found the same defect from opposite directions
+
+The migration lane's portability audit and my own independent measurement both landed
+on `String → VARCHAR(191)`. It reasoned forward from generated DDL; I measured a real
+405-character evidence chain and its broken digest. Same conclusion, two methods, one
+permanent guard in `tests/column-width-cutover-court.test.mjs`.
+
+## Boundaries now RETIRED
+
+The `/tmp/lanes/*` worktrees are merged and no longer authoritative. Any further work
+on those paths happens in the main tree. A new parallel cycle needs a NEW map — reusing
+this one would grant ownership that no longer means anything.
