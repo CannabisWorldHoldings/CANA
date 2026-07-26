@@ -1,3 +1,35 @@
+// PROVIDER PORTABILITY (migration lane audit, 2026-07-26).
+//
+// The provider below is the LOCAL TEST substrate (see DB_CLASSIFICATION in
+// src/lib/db-config.mjs). The schema is deliberately kept free of `@db.` native
+// types and enums so `prisma migrate diff` can emit DDL for sqlite, mysql
+// (MariaDB) and postgresql from this one file with only the provider line
+// swapped — that generation is exercised by tests/migration-court.test.mjs.
+//
+// Known provider differences that are DECISIONS AT CUTOVER, not silent drift
+// (verified against generated DDL for all three providers):
+//   1. String → VARCHAR(191) on MySQL/MariaDB. Long-content columns (
+//      DemandCreditEntry.evidenceChain, Article.content, AuditLog.details,
+//      StagingABCARetailer.rawJson, SiteObservation.summary/evidence/
+//      uncertainty/preparedAction, Product/Brand/Deal.description,
+//      Dispute.oldValue/newValue, LicenseEvidence.notes) MUST gain @db.Text
+//      in the MariaDB schema or inserts >191 chars fail (STRICT mode P2000).
+//      None of those columns is indexed, so no TEXT-prefix-index is needed;
+//      every indexed/unique String here is short (uuid/hex/hostname/slug).
+//   2. Float → DOUBLE. Money columns (DemandCreditEntry.amount,
+//      MenuEntry.price) stay binary floats on every provider; the application
+//      already does integer-cents arithmetic. Moving to Decimal(12,2) changes
+//      the Prisma client's returned type and is a cross-lane app change.
+//   3. DateTime → DATETIME(3)/TIMESTAMP(3): millisecond precision, which the
+//      ledger hash chain REQUIRES (observedAt/expiresAt are hashed into
+//      entryHash). Do not reduce the precision below (3).
+//   4. NULLs in unique indexes are DISTINCT (ignored) on sqlite, MySQL/InnoDB
+//      and postgres alike — @@unique([merchantId, eventIdentity]) depends on
+//      that for NULL-identity money rows; see the model comment below.
+//   5. MySQL utf8mb4_unicode_ci collation is case-INSENSITIVE; sqlite TEXT is
+//      case-sensitive. Uniques on User.email / Brand.domain become stricter on
+//      MariaDB — near-duplicate rows differing only by case must be resolved
+//      before import.
 datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
@@ -505,4 +537,9 @@ model DemandCreditEntry {
   @@index([entryHash])
   @@index([eventIdentity])
   @@index([merchantId, interactionNonce])
+  /// Ledger scans in chain order are seq-indexed already; export and ops
+  /// queries scan by wall-clock time. Added in migration
+  /// 20260726000100_ledger_recorded_at_index — the first post-baseline
+  /// migration, so forward migration is exercised rather than asserted.
+  @@index([merchantId, recordedAt])
 }
