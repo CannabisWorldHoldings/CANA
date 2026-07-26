@@ -80,49 +80,95 @@ export function safePublicReferenceUrl(value) {
   return parsed.toString();
 }
 
+/**
+ * RESOLVE THE DESTINATION — READ ONLY.
+ *
+ * THE DEFECT THIS SPLIT FIXES. Destination resolution used to live inside the same
+ * transaction as the LeadEvent write, so a consumer's redirect depended on winning a
+ * database WRITE LOCK. Measured: ten simultaneous handoffs produced ten HTTP 500s. A
+ * consumer whose handoff fails because someone else clicked at the same moment is a
+ * broken product, and no retry count turns that into a guarantee.
+ *
+ * Resolution needs no write. It reads a retailer, checks the truth boundary, and
+ * derives a safe URL. Separating it means the consumer's redirect can never be
+ * blocked by contention, because it never asks for a lock.
+ */
+export async function resolveHandoffDestination(
+  db,
+  { brandId, retailerId, asOf = new Date() },
+) {
+  const retailer = await db.retailer.findFirst({
+    where: tenantRetailerWhere(brandId, retailerId, asOf),
+    select: {
+      id: true,
+      website: true,
+      dataStatus: true,
+      isDemonstration: true,
+      verifiedAt: true,
+      freshnessExpiresAt: true,
+    },
+  });
+
+  if (!retailer || !isPubliclyVerified(retailer, asOf)) {
+    throw new HandoffError(
+      'Retailer handoff is unavailable for this record.',
+      'HANDOFF_NOT_CURRENT',
+    );
+  }
+
+  const destination = safePublicWebsiteUrl(retailer.website);
+  if (!destination) {
+    throw new HandoffError(
+      'Retailer handoff destination is unavailable.',
+      'HANDOFF_DESTINATION_UNAVAILABLE',
+    );
+  }
+
+  return { destination, retailerId: retailer.id };
+}
+
+/**
+ * Record the LeadEvent. Bookkeeping, deliberately separate from the redirect.
+ *
+ * Returns a STATE rather than throwing, because the caller must be able to tell
+ * "the consumer was handed off AND we recorded it" from "the consumer was handed off
+ * but we could not record it". Collapsing those two is how a system quietly
+ * under-reports and nobody notices.
+ */
+export async function recordHandoffEvent(db, { brandId, retailerId }) {
+  try {
+    const event = await db.leadEvent.create({
+      data: { brandId, retailerId, eventType: 'HANDOFF_CLICK' },
+    });
+    return { state: 'EVIDENCE_WRITE_SUCCEEDED', eventId: event.id };
+  } catch (error) {
+    const code = String(error?.code ?? '');
+    const msg = String(error?.message ?? '');
+    // Contention is TRANSIENT and the work is safe to retry later; a schema or
+    // constraint error is not, and must not be silently queued forever.
+    const contended = /SQLITE_BUSY|database is locked|write conflict|deadlock|Socket timeout|Transaction (?:already closed|api error)|P2034|P1008|P2028/i
+      .test(`${code} ${msg}`);
+    return {
+      state: contended ? 'EVIDENCE_WRITE_DEFERRED' : 'EVIDENCE_WRITE_FAILED',
+      error: `${code} ${msg}`.trim().slice(0, 200),
+    };
+  }
+}
+
+/**
+ * BACK-COMPATIBLE wrapper. Existing callers and tests expect one call that both
+ * resolves and records. It now composes the two halves, so the read cannot be
+ * blocked by the write even through this path.
+ */
 export async function recordVerifiedHandoff(
   db,
   { brandId, retailerId, asOf = new Date() },
 ) {
-  return db.$transaction(async (transaction) => {
-    const retailer = await transaction.retailer.findFirst({
-      where: tenantRetailerWhere(brandId, retailerId, asOf),
-      select: {
-        id: true,
-        website: true,
-        dataStatus: true,
-        isDemonstration: true,
-        verifiedAt: true,
-        freshnessExpiresAt: true,
-      },
-    });
-
-    if (!retailer || !isPubliclyVerified(retailer, asOf)) {
-      throw new HandoffError(
-        'Retailer handoff is unavailable for this record.',
-        'HANDOFF_NOT_CURRENT',
-      );
-    }
-
-    const destination = safePublicWebsiteUrl(retailer.website);
-    if (!destination) {
-      throw new HandoffError(
-        'Retailer handoff destination is unavailable.',
-        'HANDOFF_DESTINATION_UNAVAILABLE',
-      );
-    }
-
-    const event = await transaction.leadEvent.create({
-      data: {
-        brandId,
-        retailerId,
-        eventType: 'HANDOFF_CLICK',
-      },
-    });
-
-    return {
-      destination,
-      eventId: event.id,
-    };
-  });
+  const resolved = await resolveHandoffDestination(db, { brandId, retailerId, asOf });
+  const recorded = await recordHandoffEvent(db, { brandId, retailerId });
+  return {
+    destination: resolved.destination,
+    eventId: recorded.eventId ?? null,
+    evidenceWriteState: recorded.state,
+  };
 }

@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   HandoffError,
-  recordVerifiedHandoff,
+  resolveHandoffDestination,
+  recordHandoffEvent,
 } from '@/lib/handoff.mjs';
 import { isSameOriginFormRequest } from '@/lib/auth/request-policy.mjs';
 
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
   // The challenge arrives in the form body. Read it before anything else so a
   // parse failure cannot silently downgrade a legitimate submission unnoticed.
+  // Recorded across the whole request so the response header can report it. A
+  // deferred write is not a failure and must not read as one.
+  let evidenceWriteState: string = 'EVIDENCE_WRITE_DEFERRED';
   let presentedChallenge: string | null = null;
   try {
     const form = await request.formData();
@@ -47,43 +51,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   try {
-    // CONCURRENCY. recordVerifiedHandoff writes a LeadEvent inside a transaction,
-    // and concurrent submissions lose the SQLite write lock. My new integration
-    // test exposed this: TEN simultaneous handoffs all returned 500. The defect
-    // predates the evidence work — the route simply had never been exercised
-    // concurrently — but a consumer whose handoff fails because someone else
-    // clicked at the same moment is a broken product, not a bookkeeping problem.
-    //
-    // A lost lock race is TRANSIENT and the operation is idempotent from the
-    // consumer's side, so a bounded retry is correct. It is bounded deliberately:
-    // an unbounded retry converts contention into a queue that never drains.
-    let handoff;
-    for (let attempt = 0; ; attempt++) {
-      try {
-        handoff = await recordVerifiedHandoff(prisma, { brandId: brand.id, retailerId: id });
-        break;
-      } catch (e) {
-        // A HandoffError is a REFUSAL (demonstration data, no safe destination) and
-        // must never be retried — retrying a refusal just delays the same answer.
-        // Measured, not guessed: 4 attempts absorbed only half of a 10-way burst,
-        // so the ceiling is 8. Still bounded — an unbounded retry turns contention
-        // into a queue that never drains — but high enough that a realistic
-        // simultaneous-click burst completes.
-        if (e instanceof HandoffError || attempt >= 8) throw e;
-        const msg = String((e as { message?: string })?.message ?? '');
-        const code = String((e as { code?: string })?.code ?? '');
-        // The real codes under SQLite contention, measured rather than guessed: my
-        // first list had SQLITE_BUSY and P2034 and caught NEITHER. Concurrent
-        // handoffs actually surface P1008 (socket timeout waiting for the write
-        // lock) and P2028 (transaction API error when the transaction is aborted).
-        const contended = /SQLITE_BUSY|database is locked|write conflict|deadlock|Socket timeout|Transaction (?:already closed|api error)|P2034|P1008|P2028/i
-          .test(`${code} ${msg}`);
-        if (!contended) throw e;
-        // Exponential backoff with jitter, so retries do not resynchronise into a
-        // second thundering herd.
-        await new Promise((r) => setTimeout(r, Math.min(800, 60 * 2 ** attempt) + Math.floor(Math.random() * 80)));
-      }
-    }
+    // WRITE-INDEPENDENT REDIRECT. Resolution is READ ONLY, so the consumer's
+    // handoff can never be blocked by a write lock. Previously the destination came
+    // out of the same transaction as the LeadEvent write, and ten simultaneous
+    // handoffs produced ten HTTP 500s: a consumer failed because someone else
+    // clicked at the same moment. A bounded retry improved that to 7-10 of 10, which
+    // is a mitigation, not a guarantee. Removing the dependency entirely is.
+    const handoff = await resolveHandoffDestination(prisma, {
+      brandId: brand.id,
+      retailerId: id,
+    });
+
     // PAGE-BOUND EVIDENCE. The previous version minted a token here and consumed
     // it in the same request, so it could only prove this server ran its own route
     // — the client never held it. It nonetheless graded MERCHANT_HANDOFF_VERIFIED,
@@ -143,22 +121,54 @@ export async function POST(request: NextRequest, context: RouteContext) {
         { step: 'interaction_graded', ref: grade.state },
       ];
 
+      // BOOKKEEPING, fully decoupled from the consumer response. The five states
+      // below are recorded SEPARATELY and never collapsed, because "the consumer was
+      // handed off" and "we managed to record it" are different facts, and a system
+      // that conflates them under-reports silently.
+      //
+      //   CONSUMER_HANDOFF_SUCCEEDED — already true by this point; the 303 is issued
+      //                                below regardless of anything that follows.
+      //   EVIDENCE_WRITE_SUCCEEDED   — the LeadEvent and attribution were written.
+      //   EVIDENCE_WRITE_DEFERRED    — transient contention; safe to retry later.
+      //   EVIDENCE_WRITE_FAILED      — a real error; must NOT be retried blindly.
+      //   VALUE_ELIGIBLE             — set by the GRADE, independent of write success.
+      const leadWrite = await recordHandoffEvent(prisma, { brandId: brand.id, retailerId: id });
+      evidenceWriteState = leadWrite.state;
+
       const credits = createDemandCredits(prisma) as unknown as {
         attribute: (a: Record<string, unknown>) => Promise<{ accepted?: boolean }>;
       };
-      await credits.attribute({
+      const attributed = await credits.attribute({
         merchantId: id, actionKind: 'HANDOFF', evidenceChain, observedAt,
         proofState: grade.state, valueEligible: grade.value_eligible === true,
         interactionNonce: nonce,
         destination: grade.value_eligible ? handoff.destination : null,
       });
+      // A refused DUPLICATE is a successful outcome for bookkeeping — the event is
+      // already recorded, and a replay must not be re-queued forever. Only a genuine
+      // write problem leaves the state deferred.
+      if (attributed?.accepted === true
+          || (attributed as { denial_code?: string })?.denial_code === 'DUPLICATE_ATTRIBUTION') {
+        if (evidenceWriteState !== 'EVIDENCE_WRITE_FAILED') {
+          evidenceWriteState = 'EVIDENCE_WRITE_SUCCEEDED';
+        }
+      }
     } catch {
       // The handoff is the product; attribution is bookkeeping. A consumer must
       // never be blocked, delayed, or redirected differently because it failed.
+      // The state stays DEFERRED so the situation is visible rather than silent.
+      if (evidenceWriteState === 'EVIDENCE_WRITE_SUCCEEDED') {
+        evidenceWriteState = 'EVIDENCE_WRITE_DEFERRED';
+      }
     }
 
     const response = NextResponse.redirect(handoff.destination, 303);
     response.headers.set('Cache-Control', 'no-store');
+    // The states are surfaced, not merged. An operator can see that a consumer was
+    // handed off while bookkeeping was deferred, which is exactly the situation that
+    // would otherwise be invisible.
+    response.headers.set('X-Consumer-Handoff', 'CONSUMER_HANDOFF_SUCCEEDED');
+    response.headers.set('X-Evidence-Write', evidenceWriteState);
     return response;
   } catch (error) {
     if (error instanceof HandoffError) {

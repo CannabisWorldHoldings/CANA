@@ -89,8 +89,14 @@ test('retailer profile, metadata, handoff, and correction mutations share the te
   assert.doesNotMatch(correctionSource, /retailer\.findUnique/);
   assert.doesNotMatch(publicMutationSource, /retailer\.findUnique/);
   assert.match(
+    // The security property is that the retailer lookup is SCOPED BY THE TENANT
+    // PREDICATE — not that it sits inside a transaction. Handoff resolution is now a
+    // read outside any transaction, deliberately: keeping it inside one made a
+    // consumer's redirect depend on a write lock and produced ten HTTP 500s from ten
+    // simultaneous handoffs. The predicate is unchanged, so the tenant boundary is
+    // unchanged; only the transaction wrapper went away.
     handoffSource,
-    /transaction\.retailer\.findFirst\(\{\s*where: tenantRetailerWhere\(brandId, retailerId, asOf\)/,
+    /retailer\.findFirst\(\{\s*where: tenantRetailerWhere\(brandId, retailerId, asOf\)/,
   );
   assert.match(
     publicMutationSource,

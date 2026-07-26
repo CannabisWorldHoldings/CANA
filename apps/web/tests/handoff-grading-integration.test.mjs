@@ -50,6 +50,9 @@ function req(method, path, { origin = `http://${TENANT}`, form = null } = {}) {
         res.on('end', () => resolve({
           status: res.statusCode,
           location: res.headers.location ?? null,
+          headers: res.headers,
+          consumerHandoff: res.headers['x-consumer-handoff'] ?? null,
+          evidenceWrite: res.headers['x-evidence-write'] ?? null,
           body: out,
         }));
       },
@@ -240,6 +243,44 @@ test('a DEMONSTRATION retailer cannot produce a handoff at all', async () => {
   assert.ok(r.status >= 400, `demonstration data must not hand off, got ${r.status}`);
   const rows = await gradesFor(demo.id);
   assert.equal(rows.length, 0, 'and must record no attribution');
+});
+
+test('WRITE-INDEPENDENT: 100 simultaneous handoffs all succeed with zero 5xx', async () => {
+  // THE GUARANTEE THIS REPLACED A MITIGATION WITH. Destination resolution used to
+  // live inside the LeadEvent write transaction, so the consumer's redirect depended
+  // on winning a write lock: ten simultaneous handoffs produced TEN HTTP 500s. A
+  // bounded retry got that to 7-10 of 10 — a mitigation, not a guarantee. Resolution
+  // is now READ ONLY, so contention cannot reach the consumer at all.
+  const rid = await merchant('BURST100');
+  const ch = await challengeFromRender(rid);
+  const results = await Promise.all(
+    Array.from({ length: 100 }, () => req('POST', `/retailer/${rid}/handoff`, { form: { page_challenge: ch } })),
+  );
+  const ok = results.filter((r) => r.status === 303).length;
+  const server5xx = results.filter((r) => r.status >= 500).length;
+  assert.equal(server5xx, 0, `no consumer may receive a 5xx, got ${server5xx}`);
+  assert.equal(ok, 100, `every valid request must be handed off, got ${ok}/100`);
+  // And every one of them to the right place.
+  for (const r of results) {
+    assert.equal(r.location, 'https://example.com/', 'every redirect must be the verified destination');
+  }
+  // The money-integrity guarantee survives the burst.
+  const rows = await gradesFor(rid);
+  assert.equal(rows.filter((x) => x.valueEligible === true).length, 1,
+    'one challenge may fund exactly one valued action, however large the burst');
+});
+
+test('WRITE-INDEPENDENT: the five states are recorded SEPARATELY, never collapsed', async () => {
+  // "The consumer was handed off" and "we managed to record it" are different facts.
+  // A system that merges them under-reports silently.
+  const rid = await merchant('STATES');
+  const ch = await challengeFromRender(rid);
+  const r = await req('POST', `/retailer/${rid}/handoff`, { form: { page_challenge: ch } });
+  assert.equal(r.status, 303);
+  assert.equal(r.headers?.['x-consumer-handoff'] ?? r.consumerHandoff, 'CONSUMER_HANDOFF_SUCCEEDED');
+  assert.match(String(r.headers?.['x-evidence-write'] ?? r.evidenceWrite),
+    /EVIDENCE_WRITE_(SUCCEEDED|DEFERRED|FAILED)/,
+    'the evidence-write state must be reported, not merged into the response code');
 });
 
 test('CONCURRENT submissions of one challenge yield at most ONE valued action', async () => {
