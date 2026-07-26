@@ -39,3 +39,4 @@ node_modules/
 .env
 .cana-local/
 .attack-scratch/
+apps/web/_v*.mjs
