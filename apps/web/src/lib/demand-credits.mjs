@@ -1,0 +1,228 @@
+/**
+ * DEMAND CREDITS — persisted, append-only, hash-chained ledger.
+ *
+ * Mechanism Matrix M-005. The in-memory prototype proved the guards; this
+ * binds them to the database so a real merchant pilot can actually run.
+ *
+ * INVARIANTS (each enforced here, not merely documented):
+ *   1. APPEND-ONLY. No update or delete path exists in this module.
+ *   2. DERIVED BALANCE. Balance is summed from entries every time. There is no
+ *      balance column, so it cannot drift from the history that justifies it.
+ *   3. GAPLESS CHAIN. seq is unique per merchant and each entry binds the
+ *      previous entry's hash, so edits, reorders and truncation are detectable.
+ *   4. CREDITS BUY PLACEMENT, NEVER RANK.
+ *   5. NO VALUE WITHOUT AN EVIDENCE CHAIN.
+ *
+ * Every rejection returns a denial code — this module never throws to signal a
+ * business rule, so callers cannot accidentally swallow a refusal.
+ */
+import { createHash } from 'node:crypto';
+
+const sha = (s) => createHash('sha256').update(s).digest('hex');
+/** Whitespace-only strings are absent. Non-strings are not text. */
+const text = (v) => typeof v === 'string' && v.trim().length > 0;
+/** Strict positive finite number — rejects "100", true, [], {} via coercion. */
+const money = (v) => typeof v === 'number' && Number.isFinite(v) && v > 0;
+
+export const GENESIS_HASH = sha('orderweeddc:demand-credits:genesis');
+export const PLACEMENT_KINDS = Object.freeze(['FEATURED_CARD', 'NEIGHBORHOOD_BANNER', 'DEAL_SPOTLIGHT', 'BRAND_COLLECTION']);
+export const ACTION_KINDS = Object.freeze(['PROFILE_VIEW', 'MENU_VIEW', 'DIRECTIONS_CLICK', 'PHONE_CLICK', 'WEBSITE_CLICK', 'HANDOFF']);
+
+/** Money is held in integer cents internally so float dust cannot accumulate. */
+const toCents = (n) => Math.round(n * 100);
+const fromCents = (c) => c / 100;
+
+const deny = (code, detail) => ({ accepted: false, denial_code: code, denial_detail: detail });
+
+/** Canonical serialization — key order is fixed so the hash is reproducible. */
+function hashBody(e, prevHash) {
+  return sha(JSON.stringify({
+    merchantId: e.merchantId, kind: e.kind, amount: e.amount, seq: e.seq,
+    authorizationRef: e.authorizationRef ?? null, expiresAt: e.expiresAt ?? null,
+    placement: e.placement ?? null, disclosureLabel: e.disclosureLabel ?? null,
+    affectsOrganicOrder: e.affectsOrganicOrder ?? false,
+    originalSeq: e.originalSeq ?? null, reason: e.reason ?? null,
+    actionKind: e.actionKind ?? null, evidenceChainSha256: e.evidenceChainSha256 ?? null,
+    observedAt: e.observedAt ?? null, placementSeq: e.placementSeq ?? null,
+    prevHash,
+  }));
+}
+
+export function createDemandCredits(prisma) {
+  const table = prisma.demandCreditEntry;
+
+  /** Chain head for a merchant. Genesis when the merchant has no history. */
+  async function head(merchantId) {
+    const last = await table.findFirst({ where: { merchantId }, orderBy: { seq: 'desc' } });
+    return { prevHash: last?.entryHash ?? GENESIS_HASH, nextSeq: (last?.seq ?? -1) + 1 };
+  }
+
+  async function append(merchantId, fields) {
+    const { prevHash, nextSeq } = await head(merchantId);
+    const draft = { merchantId, seq: nextSeq, ...fields };
+    const entryHash = hashBody(draft, prevHash);
+    const entry = await table.create({ data: { ...draft, prevHash, entryHash } });
+    return { accepted: true, entry };
+  }
+
+  /** Balance in whole credits, derived by summing the chain in integer cents. */
+  async function balance(merchantId) {
+    const rows = await table.findMany({
+      where: { merchantId, kind: { in: ['ISSUE', 'SPEND', 'REFUND', 'EXPIRE'] } },
+      select: { amount: true },
+    });
+    return fromCents(rows.reduce((s, r) => s + toCents(r.amount), 0));
+  }
+
+  return {
+    balance,
+
+    /** Credits enter only with an authorization reference and an expiry. */
+    async issue({ merchantId, amount, authorizationRef, expiresAt }) {
+      if (!text(merchantId)) return deny('MERCHANT_REQUIRED', 'merchantId must be a non-blank string');
+      if (!money(amount)) return deny('INVALID_AMOUNT', `amount=${JSON.stringify(amount)} must be a positive finite number`);
+      if (!text(authorizationRef)) return deny('AUTHORIZATION_REQUIRED', 'credits cannot be issued without an authorization reference');
+      const exp = expiresAt instanceof Date ? expiresAt : (text(expiresAt) ? new Date(expiresAt) : null);
+      if (!exp || Number.isNaN(exp.getTime())) return deny('EXPIRY_REQUIRED', 'credits must carry a valid expiry date');
+      if (exp.getTime() <= Date.now()) return deny('EXPIRY_IN_PAST', `expiresAt ${exp.toISOString()} is not in the future — issuing pre-expired credits is meaningless`);
+      return append(merchantId, { kind: 'ISSUE', amount, authorizationRef, expiresAt: exp });
+    },
+
+    /**
+     * Spend on a labeled PLACEMENT. Refuses any spend that asserts influence
+     * over ordering, and any placement lacking a visible disclosure.
+     */
+    async spend({ merchantId, amount, placement, disclosureLabel, affectsOrganicOrder = false }) {
+      if (!text(merchantId)) return deny('MERCHANT_REQUIRED', 'merchantId must be a non-blank string');
+      if (!money(amount)) return deny('INVALID_AMOUNT', `amount=${JSON.stringify(amount)} must be a positive finite number`);
+      if (!PLACEMENT_KINDS.includes(placement)) return deny('UNKNOWN_PLACEMENT', `${placement} not in ${PLACEMENT_KINDS.join('|')}`);
+      // Strict: any truthy non-false value is treated as an attempted rank
+      // purchase. A loose `=== true` check would let affectsOrganicOrder:"true"
+      // or 1 record as false while the caller believed otherwise.
+      if (affectsOrganicOrder !== false && affectsOrganicOrder != null) {
+        return deny('RANK_PURCHASE_REFUSED', 'credits buy labeled placement, never organic ordering — sponsorship must not masquerade as rank');
+      }
+      if (!text(disclosureLabel)) return deny('DISCLOSURE_REQUIRED', 'every paid placement must carry a visible per-card disclosure label');
+      const bal = await balance(merchantId);
+      if (amount > bal) return deny('INSUFFICIENT_CREDITS', `spend ${amount} exceeds balance ${bal}`);
+      return append(merchantId, { kind: 'SPEND', amount: -amount, placement, disclosureLabel, affectsOrganicOrder: false });
+    },
+
+    /** Reverse a SPEND, capped cumulatively at the original amount. */
+    async refund({ merchantId, amount, reason, originalSeq }) {
+      if (!text(merchantId)) return deny('MERCHANT_REQUIRED', 'merchantId must be a non-blank string');
+      if (!money(amount)) return deny('INVALID_AMOUNT', `amount=${JSON.stringify(amount)}`);
+      if (!text(reason)) return deny('REASON_REQUIRED', 'refunds must state a reason');
+      if (!Number.isInteger(originalSeq)) return deny('ORIGINAL_SEQ_REQUIRED', 'originalSeq must be an integer');
+      // Ownership is part of the lookup: a merchant can never refund against
+      // another merchant's spend.
+      const orig = await table.findFirst({ where: { merchantId, seq: originalSeq, kind: 'SPEND' } });
+      if (!orig) return deny('ORIGINAL_SPEND_NOT_FOUND', `no SPEND at seq=${originalSeq} for this merchant`);
+      const origCents = Math.abs(toCents(orig.amount));
+      if (toCents(amount) > origCents) return deny('REFUND_EXCEEDS_SPEND', `refund ${amount} > original ${fromCents(origCents)}`);
+      const prior = await table.findMany({ where: { merchantId, kind: 'REFUND', originalSeq }, select: { amount: true } });
+      const already = prior.reduce((s, r) => s + toCents(r.amount), 0);
+      if (already + toCents(amount) > origCents) {
+        return deny('DOUBLE_REFUND_REFUSED', `already refunded ${fromCents(already)} of ${fromCents(origCents)}`);
+      }
+      return append(merchantId, { kind: 'REFUND', amount, reason, originalSeq });
+    },
+
+    /**
+     * Record an attributed customer action. Never moves money (amount 0) and
+     * requires a complete, dated evidence chain.
+     */
+    async attribute({ merchantId, actionKind, evidenceChain, observedAt, placementSeq = null, idempotencyKey = null }) {
+      if (!text(merchantId)) return deny('MERCHANT_REQUIRED', 'merchantId must be a non-blank string');
+      if (!ACTION_KINDS.includes(actionKind)) return deny('UNKNOWN_ACTION', `${actionKind} not in ${ACTION_KINDS.join('|')}`);
+      if (!Array.isArray(evidenceChain) || evidenceChain.length === 0) {
+        return deny('EVIDENCE_CHAIN_REQUIRED', 'an attributed action without an evidence chain is an invented metric');
+      }
+      if (evidenceChain.length > 64) return deny('EVIDENCE_CHAIN_TOO_LONG', `${evidenceChain.length} links exceeds the 64-link cap`);
+      // Use own-property access so a prototype-polluted object cannot fake a link.
+      const linkOk = (l) => l && typeof l === 'object'
+        && Object.prototype.hasOwnProperty.call(l, 'step') && Object.prototype.hasOwnProperty.call(l, 'ref')
+        && text(l.step) && text(l.ref);
+      if (!evidenceChain.every(linkOk)) return deny('EVIDENCE_LINK_INCOMPLETE', 'every evidence link needs its own non-blank step and ref');
+      const obs = observedAt instanceof Date ? observedAt : (text(observedAt) ? new Date(observedAt) : null);
+      if (!obs || Number.isNaN(obs.getTime())) return deny('OBSERVED_AT_REQUIRED', 'an undated action is not evidence');
+      if (placementSeq !== null) {
+        if (!Number.isInteger(placementSeq)) return deny('PLACEMENT_SEQ_INVALID', 'placementSeq must be an integer');
+        const p = await table.findFirst({ where: { merchantId, seq: placementSeq, kind: 'SPEND' } });
+        if (!p) return deny('PLACEMENT_NOT_FOUND', `no SPEND at seq=${placementSeq} for this merchant`);
+      }
+      const chainJson = JSON.stringify(evidenceChain);
+      const chainSha = sha(chainJson);
+      // Idempotency: the same evidence chain must not inflate proof-of-value twice.
+      const dupWhere = text(idempotencyKey)
+        ? { merchantId, kind: 'ATTRIBUTION', reason: idempotencyKey }
+        : { merchantId, kind: 'ATTRIBUTION', evidenceChainSha256: chainSha };
+      const dup = await table.findFirst({ where: dupWhere });
+      if (dup) return deny('DUPLICATE_ATTRIBUTION', `this action is already recorded at seq=${dup.seq} — duplicate counting would inflate proof of value`);
+      return append(merchantId, {
+        kind: 'ATTRIBUTION', amount: 0, actionKind,
+        evidenceChain: chainJson, evidenceChainSha256: chainSha,
+        observedAt: obs, placementSeq, reason: text(idempotencyKey) ? idempotencyKey : null,
+        relationshipOwner: 'MERCHANT', exportableByMerchant: true,
+      });
+    },
+
+    /**
+     * Replay the chain. Detects edits, reorders, truncation and seq gaps.
+     * NOTE: a fully self-consistent forgery by an actor with write access to the
+     * table cannot be detected by replay alone — that requires an external
+     * anchor. Reported honestly rather than overclaimed.
+     */
+    async verifyChain(merchantId) {
+      const rows = await table.findMany({ where: { merchantId }, orderBy: { seq: 'asc' } });
+      let prev = GENESIS_HASH;
+      for (let i = 0; i < rows.length; i++) {
+        const e = rows[i];
+        if (e.seq !== i) return { valid: false, brokenAt: e.seq, reason: `seq gap or reorder: expected ${i}, found ${e.seq}` };
+        if (e.prevHash !== prev) return { valid: false, brokenAt: e.seq, reason: 'prevHash does not match the preceding entry' };
+        if (hashBody(e, prev) !== e.entryHash) return { valid: false, brokenAt: e.seq, reason: 'entryHash does not match the recorded content' };
+        prev = e.entryHash;
+      }
+      return { valid: true, entries: rows.length, head: prev, anchor_caveat: 'Replay detects tampering by anyone without full table write access. It cannot detect a wholesale re-signed chain; that requires an external anchor.' };
+    },
+
+    /** Merchant export — the direct answer to "the platform owns your customers". */
+    async exportForMerchant(merchantId) {
+      const rows = await table.findMany({ where: { merchantId }, orderBy: { seq: 'asc' } });
+      return {
+        merchant_id: merchantId,
+        exported_at: new Date().toISOString(),
+        relationship_owner: 'MERCHANT',
+        portability_statement: 'These attributed customer relationships belong to the merchant. No lock-in clause restricts their use elsewhere.',
+        balance: await balance(merchantId),
+        attributed_actions: rows.filter((r) => r.kind === 'ATTRIBUTION'),
+        credit_entries: rows.filter((r) => r.kind !== 'ATTRIBUTION'),
+        chain_verification: await this.verifyChain(merchantId),
+      };
+    },
+
+    /** Proof of value — counts only actions carrying a verified evidence chain. */
+    async proofOfValue(merchantId) {
+      const rows = await table.findMany({ where: { merchantId }, orderBy: { seq: 'asc' } });
+      const acts = rows.filter((r) => r.kind === 'ATTRIBUTION');
+      const spentCents = rows.filter((r) => r.kind === 'SPEND').reduce((s, r) => s + Math.abs(toCents(r.amount)), 0);
+      const byKind = {};
+      for (const a of acts) byKind[a.actionKind] = (byKind[a.actionKind] || 0) + 1;
+      // Re-verify each stored chain against its recorded hash rather than
+      // trusting a flag: an action whose evidence no longer hashes correctly
+      // must not be counted as evidenced.
+      const evidenced = acts.filter((a) => a.evidenceChain && sha(a.evidenceChain) === a.evidenceChainSha256);
+      return {
+        merchant_id: merchantId,
+        credits_spent: fromCents(spentCents),
+        attributed_actions: acts.length,
+        actions_with_verified_evidence: evidenced.length,
+        actions_by_kind: byKind,
+        every_action_has_evidence: acts.length > 0 && evidenced.length === acts.length,
+        not_claimed: ['ranking position', 'traffic', 'impressions', 'leads', 'conversion lift'],
+        disclaimer: 'Counts only actions whose evidence chain re-hashes to its recorded digest. No ranking, traffic, or conversion-lift figure is claimed or implied.',
+        chain_verification: await this.verifyChain(merchantId),
+      };
+    },
+  };
+}

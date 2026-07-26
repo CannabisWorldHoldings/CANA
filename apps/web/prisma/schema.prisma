@@ -173,17 +173,17 @@ model LicenseEvidence {
 
 // Request to claim a listing by a business owner
 model ClaimRequest {
-  id                    String   @id @default(uuid())
+  id                    String    @id @default(uuid())
   retailerId            String
-  retailer              Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  retailer              Retailer  @relation(fields: [retailerId], references: [id], onDelete: Cascade)
   email                 String
   phone                 String
   requestedPasswordHash String?
-  status                String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status                String    @default("PENDING") // PENDING, APPROVED, REJECTED
   reviewedAt            DateTime?
   reviewedBy            String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([status, email])
   @@index([status, createdAt])
@@ -422,9 +422,57 @@ model StagingABCARetailer {
   licenseNumber String   @unique
   address       String?
   status        String?
-  rawJson       String?  // Store full CSV row as JSON string for review
+  rawJson       String? // Store full CSV row as JSON string for review
   ingestedAt    DateTime @default(now())
 
   @@index([licenseNumber])
   @@index([status])
+}
+
+/// Demand Credit ledger — append-only, hash-chained.
+///
+/// Persists the M-005 merchant-owned-demand mechanism. Rows are NEVER updated
+/// or deleted: balance is derived by summing the chain, so a mutation would
+/// silently change history. `entryHash` binds `prevHash`, making any edit,
+/// reorder, or truncation detectable by replaying the chain.
+///
+/// Deliberately NOT stored: any running balance column. A stored balance can
+/// drift from the entries that justify it; a derived one cannot.
+model DemandCreditEntry {
+  /// Monotonic position in the chain. Unique per merchant, gapless.
+  seq                  Int
+  id                   String    @id @default(uuid())
+  merchantId           String
+  /// ISSUE | SPEND | REFUND | EXPIRE | ATTRIBUTION
+  kind                 String
+  /// Signed: ISSUE/REFUND positive, SPEND negative, ATTRIBUTION always 0.
+  amount               Float
+  /// Chain integrity.
+  prevHash             String
+  entryHash            String    @unique
+  /// ISSUE: why these credits legitimately exist.
+  authorizationRef     String?
+  expiresAt            DateTime?
+  /// SPEND: placement slot + the visible disclosure that must accompany it.
+  placement            String?
+  disclosureLabel      String?
+  /// Recorded so a rank purchase can never be silently introduced later.
+  affectsOrganicOrder  Boolean   @default(false)
+  /// REFUND: which SPEND is being reversed, and why.
+  originalSeq          Int?
+  reason               String?
+  /// ATTRIBUTION: the evidence that makes the action a fact rather than a claim.
+  actionKind           String?
+  evidenceChain        String?
+  evidenceChainSha256  String?
+  observedAt           DateTime?
+  placementSeq         Int?
+  /// The inversion: the merchant keeps the customer relationship.
+  relationshipOwner    String?
+  exportableByMerchant Boolean   @default(false)
+  recordedAt           DateTime  @default(now())
+
+  @@unique([merchantId, seq])
+  @@index([merchantId, kind])
+  @@index([entryHash])
 }
