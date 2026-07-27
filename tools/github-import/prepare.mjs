@@ -9,6 +9,7 @@ export const CANONICAL_REPOSITORY = 'CannabisWorldHoldings/CANA';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const AUTHORITATIVE = 'recover/competitive-ui-day-night';
+export const INTEGRATION_BRANCH = 'integration/cana-technical-promotion-de4a497b';
 
 function command(commandName, args, {
   cwd = ROOT,
@@ -50,10 +51,11 @@ function parseArgs(args) {
   return parsed;
 }
 
-function classifyBranch(name, commit) {
+export function classifyBranch(name, commit) {
   if (name === 'main') return 'protected-main';
   if (name === AUTHORITATIVE) return 'authoritative-source';
   if (name === 'codex/cana-bottleneck-clearance') return 'candidate-bottleneck-lane';
+  if (name === INTEGRATION_BRANCH) return 'integration-traceability';
   if (name.startsWith('codex/')) return 'candidate-lane';
   if (name.startsWith('recover/')) return 'recovery-evidence';
   return commit === BASE ? 'base-evidence' : 'unclassified-owner-review-required';
@@ -207,8 +209,10 @@ export async function prepareGithubImport({ args = [] } = {}) {
   const commands = {
     canonicalRemoteSetup: `git remote add canonical ${canonicalRemoteUrl}`,
     fetchAfterAuthorization: 'git fetch --prune canonical',
+    protectedMainPushDryRun: `git push --dry-run canonical ${source.commit}:refs/heads/main`,
     authoritativePushDryRun: `git push --dry-run canonical ${AUTHORITATIVE}:refs/heads/${AUTHORITATIVE}`,
     candidatePushDryRun: 'git push --dry-run canonical codex/cana-bottleneck-clearance:refs/heads/codex/cana-bottleneck-clearance',
+    integrationPushDryRun: `git push --dry-run canonical ${INTEGRATION_BRANCH}:refs/heads/${INTEGRATION_BRANCH}`,
     protectedMainApply: `gh api --method PUT repos/${CANONICAL_REPOSITORY}/branches/main/protection --input tools/github-import/protected-main-policy.json`,
     integrationPullRequest: `gh pr create --repo ${CANONICAL_REPOSITORY} --base main --head codex/cana-bottleneck-clearance --template tools/github-import/PULL_REQUEST_TEMPLATE.md`,
     releaseTag: `git tag -s cana-candidate-${source.commit.slice(0, 12)} ${source.commit}`,

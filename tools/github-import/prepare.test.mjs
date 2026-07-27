@@ -12,6 +12,10 @@ test('the canonical import preparer is an offline callable surface', async () =>
   const module = await import('./prepare.mjs');
   assert.equal(typeof module.prepareGithubImport, 'function');
   assert.equal(module.CANONICAL_REPOSITORY, 'CannabisWorldHoldings/CANA');
+  assert.equal(
+    module.classifyBranch(module.INTEGRATION_BRANCH, 'a'.repeat(40)),
+    'integration-traceability',
+  );
 });
 
 test('protected main requires every candidate verification lane', () => {
@@ -21,10 +25,16 @@ test('protected main requires every candidate verification lane', () => {
   assert.equal(policy.enforce_admins, true);
   for (const context of [
     'candidate-unit',
+    'clean-build',
     'focused-verifier',
+    'full-verifier',
+    'clean-clone-verifier',
+    'release-verifier',
+    'migration-validation',
     'maria-verifier',
     'cpanel-verifier',
     'durability-proof',
+    'secret-scan',
     'github-import-offline',
   ]) {
     assert.ok(policy.required_status_checks.contexts.includes(context), context);

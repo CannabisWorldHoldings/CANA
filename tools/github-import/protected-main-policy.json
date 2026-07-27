@@ -3,10 +3,16 @@
     "strict": true,
     "contexts": [
       "candidate-unit",
+      "clean-build",
       "focused-verifier",
+      "full-verifier",
+      "clean-clone-verifier",
+      "release-verifier",
+      "migration-validation",
       "maria-verifier",
       "cpanel-verifier",
       "durability-proof",
+      "secret-scan",
       "github-import-offline"
     ]
   },

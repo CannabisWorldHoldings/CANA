@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "kind": "CANA canonical GitHub repository promotion receipt",
+  "recordedAt": "2026-07-27T10:00:00Z",
+  "overall": "PASS_WITH_PLAN_LIMITATIONS",
+  "repository": {
+    "id": 1313658987,
+    "nodeId": "R_kgDOTkzYaw",
+    "identity": "CannabisWorldHoldings/CANA",
+    "url": "https://github.com/CannabisWorldHoldings/CANA",
+    "gitUrl": "https://github.com/CannabisWorldHoldings/CANA.git",
+    "visibility": "PRIVATE",
+    "private": true,
+    "initiallyEmpty": true,
+    "initialEmptyApiEvidence": "Git Repository is empty (HTTP 409)",
+    "defaultBranch": "main",
+    "promotingAccount": "princeleuel1-ops",
+    "promotingPermission": "ADMIN"
+  },
+  "verifiedRelease": {
+    "branch": "main",
+    "commit": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+    "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378",
+    "historyPreservingMerge": "d84486b32fd424d196bc8b535d13396245875042",
+    "mergeParents": [
+      "c953ebcd25c46ef33af0700d7913a899d839bce8",
+      "de4a497b6c039a5dccc9c3fb9a470dc0bf610318"
+    ]
+  },
+  "push": {
+    "dryRun": "PASS",
+    "atomic": true,
+    "force": false,
+    "squash": false,
+    "pushedBranches": [
+      {
+        "name": "main",
+        "initialTip": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+        "purpose": "exact verified canonical release"
+      },
+      {
+        "name": "codex/cana-bottleneck-clearance",
+        "initialTip": "de4a497b6c039a5dccc9c3fb9a470dc0bf610318",
+        "purpose": "complete candidate traceability"
+      },
+      {
+        "name": "integration/cana-technical-promotion-de4a497b",
+        "initialTip": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+        "purpose": "integration and repository-promotion traceability",
+        "finalTipResolutionCommand": "git log -1 --format=%H -- docs/technical-promotion/CANONICAL_GITHUB_RECEIPT.json"
+      }
+    ],
+    "pushedTags": [],
+    "unpublishedBranches": [
+      "recover/competitive-ui-day-night"
+    ]
+  },
+  "outgoingHistory": {
+    "commitCount": 183,
+    "candidateCommitCount": 40,
+    "gitFsck": "PASS",
+    "realSecretFindings": 0,
+    "trackedDatabases": 0,
+    "trackedCaches": 0,
+    "trackedCredentialFiles": 0,
+    "trackedLocalOnlyArtifacts": 0,
+    "filesAtLeast10MiB": 0,
+    "maximumBlobBytes": 1169387,
+    "fullPatchSha256": "9a67462aaa3cc3600dd605b0e819702ffc00bb88c1d74fbb118954fbfef41c11",
+    "localSafetyReceiptSha256": "b7928e9ec8d76d66cf06f1e983e0983e7b2ffdbc2d8f46b637ae4fcfe696ad06"
+  },
+  "protections": {
+    "nativeMainBranchProtection": {
+      "configured": false,
+      "reason": "GitHub API returned HTTP 403: Upgrade to GitHub Pro or make this repository public."
+    },
+    "repositoryRulesets": {
+      "configured": false,
+      "reason": "GitHub API returned HTTP 403: Upgrade to GitHub Pro or make this repository public."
+    },
+    "releaseTagProtection": {
+      "configured": false,
+      "reason": "Repository rulesets are plan-blocked; the legacy tag-protection endpoint returned HTTP 404."
+    },
+    "secretScanning": {
+      "configured": false,
+      "reason": "GitHub API returned HTTP 422: Secret scanning is not available for this repository."
+    },
+    "availableControlsApplied": {
+      "allowMergeCommit": false,
+      "allowSquashMerge": false,
+      "allowRebaseMerge": true,
+      "deleteBranchOnMerge": true,
+      "webCommitSignoffRequired": true,
+      "actionsEnabled": true,
+      "allowedActions": "selected",
+      "allowedActionPatterns": [
+        "actions/checkout@*",
+        "actions/setup-node@*"
+      ],
+      "actionShaPinningRequired": true,
+      "defaultWorkflowPermissions": "read",
+      "workflowsCanApprovePullRequests": false,
+      "vulnerabilityAlerts": true,
+      "automatedSecurityFixes": true
+    }
+  },
+  "requiredChecks": {
+    "nativeRequiredStatusContextsConfigured": false,
+    "reason": "Native branch protection is unavailable on the current private-repository plan.",
+    "preparedWorkflow": ".github/workflows/cana-verify.yml",
+    "preparedPolicy": "tools/github-import/protected-main-policy.json",
+    "preparedContexts": [
+      "candidate-unit",
+      "clean-build",
+      "focused-verifier",
+      "full-verifier",
+      "clean-clone-verifier",
+      "release-verifier",
+      "migration-validation",
+      "maria-verifier",
+      "cpanel-verifier",
+      "durability-proof",
+      "secret-scan",
+      "github-import-offline"
+    ]
+  },
+  "remoteCloneVerification": {
+    "overall": "PASS",
+    "proofSha256": "82bed5db132ff6fce3be047c1c073cc52e0ba326bbfac1615c846d2235ea7e72",
+    "exactCommit": true,
+    "exactTree": true,
+    "traceableHistory": true,
+    "cleanGitState": true,
+    "gitFsckErrors": 0,
+    "cleanBuild": "PASS",
+    "focused": "PASS",
+    "full": "PASS",
+    "cleanClone": "PASS",
+    "release": "PASS",
+    "realSecretFindings": 0,
+    "receipts": {
+      "focused": "c0bf10b77f31b04a4ed0954c00564197dddd24c868b2b882e8b9ba572db79782",
+      "full": "04c8c500e02b16f8c3d3c05be6673a6ed961f6ffada79a037ac95dd4fcf6b914",
+      "cleanClone": "90b92b91c1c0404462ba58c8232a74c8ca374e480365d58087a33cdd9d18625d",
+      "release": "772b94abf962ebe3fde9b81e46f6c0a977a81aab2664010d173e917074ff40fe"
+    }
+  },
+  "releaseTag": {
+    "created": false,
+    "reason": "No signing key is configured and tag protection is unavailable. Publishing an unsigned mutable release tag would weaken traceability."
+  },
+  "rollback": {
+    "metadata": [
+      "git switch integration/cana-technical-promotion-de4a497b",
+      "git revert <repository-promotion-metadata-commit>",
+      "git push canonical integration/cana-technical-promotion-de4a497b"
+    ],
+    "verifiedRelease": [
+      "git revert --no-edit ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "git revert --no-edit 4e5b85b9b1a30c33f9399d9128911ee9e5afa06b",
+      "git revert --no-edit b0976d8fade1b1b46977a80feb3c468f4a63a7a5",
+      "git revert --no-edit -m 1 d84486b32fd424d196bc8b535d13396245875042"
+    ],
+    "forcePushPermitted": false,
+    "refDeletionRequiresSeparateOwnerAuthorization": true
+  },
+  "scope": {
+    "productChanged": false,
+    "businessSemanticsChanged": false,
+    "databaseChanged": false,
+    "deploymentPerformed": false,
+    "credentialsAdded": false,
+    "cPanelChanged": false,
+    "outreachPerformed": false,
+    "visualsChanged": false
+  }
+}

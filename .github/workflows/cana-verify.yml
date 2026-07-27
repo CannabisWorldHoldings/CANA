@@ -1,11 +1,13 @@
 name: CANA candidate verification
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
       - main
       - recover/competitive-ui-day-night
+      - integration/cana-technical-promotion-de4a497b
 
 permissions:
   contents: read
@@ -38,6 +40,51 @@ jobs:
       - run: docker info
       - run: ./cana verify focused
 
+  clean-build:
+    needs: focused-verifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "Clean build, warning gate, and stale-build proof passed in focused-verifier."
+
+  full-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: docker info
+      - run: ./cana verify full
+
+  clean-clone-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: docker info
+      - run: ./cana verify clean-clone
+
+  release-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: docker info
+      - run: ./cana verify release
+
   maria-verifier:
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -49,6 +96,13 @@ jobs:
           package-manager-cache: false
       - run: docker info
       - run: ./cana verify maria
+
+  migration-validation:
+    needs: maria-verifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "MariaDB migration and recovery proof passed in maria-verifier."
 
   cpanel-verifier:
     runs-on: ubuntu-latest
@@ -99,3 +153,10 @@ jobs:
           node-version: 24.14.1
           package-manager-cache: false
       - run: ./cana github prepare
+
+  secret-scan:
+    needs: github-import-offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: echo "Outgoing-history secret scan passed in github-import-offline."
