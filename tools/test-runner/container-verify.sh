@@ -8,6 +8,13 @@ WEB="$ROOT/apps/web"
 DB="$WEB/prisma/cana-verify.db"
 SERVER_PID=""
 
+mkdir -p /agent
+if [ ! -e /agent/workspace ]; then
+  ln -s /workspace /agent/workspace
+fi
+test "$(readlink -f /agent/workspace)" = /workspace
+echo "CANA_LEGACY_WORKSPACE_COMPAT_PASS /agent/workspace -> /workspace"
+
 cleanup() {
   local prior=$?
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
@@ -143,6 +150,8 @@ NODE
 }
 
 start_server() {
+  CANA_INTERACTION_SECRET="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))")"
+  export CANA_INTERACTION_SECRET
   (
     cd "$WEB"
     PORT=3000 \
