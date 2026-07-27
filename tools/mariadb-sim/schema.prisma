@@ -1,0 +1,547 @@
+// GENERATED PROVIDER CANDIDATE. Do not merge this provider flip into the live schema.
+// Regenerate with: node tools/mariadb-sim/generate-schema.mjs
+// PROVIDER PORTABILITY (migration lane audit, 2026-07-26).
+//
+// The provider below is the LOCAL TEST substrate (see DB_CLASSIFICATION in
+// src/lib/db-config.mjs). The schema is deliberately kept free of `@db.` native
+// types and enums so `prisma migrate diff` can emit DDL for sqlite, mysql
+// (MariaDB) and postgresql from this one file with only the provider line
+// swapped — that generation is exercised by tests/migration-court.test.mjs.
+//
+// Known provider differences that are DECISIONS AT CUTOVER, not silent drift
+// (verified against generated DDL for all three providers):
+//   1. String → VARCHAR(191) on MySQL/MariaDB. Long-content columns (
+//      DemandCreditEntry.evidenceChain, Article.content, AuditLog.details,
+//      StagingABCARetailer.rawJson, SiteObservation.summary/evidence/
+//      uncertainty/preparedAction, Product/Brand/Deal.description,
+//      Dispute.oldValue/newValue, LicenseEvidence.notes) MUST gain @db.Text
+//      in the MariaDB schema or inserts >191 chars fail (STRICT mode P2000).
+//      None of those columns is indexed, so no TEXT-prefix-index is needed;
+//      every indexed/unique String here is short (uuid/hex/hostname/slug).
+//   2. Float → DOUBLE. Money columns (DemandCreditEntry.amount,
+//      MenuEntry.price) stay binary floats on every provider; the application
+//      already does integer-cents arithmetic. Moving to Decimal(12,2) changes
+//      the Prisma client's returned type and is a cross-lane app change.
+//   3. DateTime → DATETIME(3)/TIMESTAMP(3): millisecond precision, which the
+//      ledger hash chain REQUIRES (observedAt/expiresAt are hashed into
+//      entryHash). Do not reduce the precision below (3).
+//   4. NULLs in unique indexes are DISTINCT (ignored) on sqlite, MySQL/InnoDB
+//      and postgres alike — @@unique([merchantId, eventIdentity]) depends on
+//      that for NULL-identity money rows; see the model comment below.
+//   5. MySQL utf8mb4_unicode_ci collation is case-INSENSITIVE; sqlite TEXT is
+//      case-sensitive. Uniques on User.email / Brand.domain become stricter on
+//      MariaDB — near-duplicate rows differing only by case must be resolved
+//      before import.
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // native: local dev/test/build machines. rhel-openssl-*: CloudLinux
+  // (RHEL-family) shared hosting used by the Namecheap production target.
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
+}
+
+// Parent Holdings Organization
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  brands    Brand[]
+}
+
+// Represents one of the 10 child companies/brands
+model Brand {
+  id              String           @id @default(uuid())
+  name            String
+  domain          String           @unique // Hostname used to match requests (e.g. orderweeddc.com, brand1.localhost)
+  description     String? @db.Text
+  logo            String? // Path or URL to brand logo
+  themePrimary    String           @default("#0e9f5a") // CSS primary color code
+  themeSecondary  String           @default("#0a7443")
+  themeBg         String           @default("#f6faf7")
+  themeSurface    String           @default("#ffffff")
+  themeText       String           @default("#0d1f18")
+  organizationId  String
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  leads           LeadEvent[]
+  menuSelections  BrandMenu[]
+  loyaltyAccounts LoyaltyAccount[]
+}
+
+// User model for shared network-wide customer identity and administrative access
+model User {
+  id                String           @id @default(uuid())
+  email             String           @unique
+  password          String // Hashed password
+  name              String?
+  role              String           @default("CUSTOMER") // ADMIN, RETAILER_MANAGER, CUSTOMER
+  managedRetailerId String?
+  managedRetailer   Retailer?        @relation("RetailerManagers", fields: [managedRetailerId], references: [id], onDelete: SetNull)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  auditLogs         AuditLog[]
+  loyaltyAccounts   LoyaltyAccount[]
+  sessions          Session[]
+}
+
+// Retailer (Dispensary, Delivery service, or Brand)
+model Retailer {
+  id                 String            @id @default(uuid())
+  name               String
+  type               String            @default("delivery") // delivery, storefront, brand
+  address            String
+  city               String            @default("Washington")
+  state              String            @default("DC")
+  zip                String?
+  lat                Float
+  lng                Float
+  phone              String?
+  website            String?
+  email              String?
+  hours              String            @default("10:00 AM - 8:00 PM")
+  hoursSource        String            @default("Retailer Submitted")
+  isOpen             Boolean           @default(true)
+  licenseStatus      String            @default("PENDING") // VERIFIED, PENDING, EXPIRED, UNVERIFIED
+  licenseSource      String            @default("DC ABCA Registry")
+  licenseNumber      String?           @unique
+  lastLicenseCheck   DateTime?
+  lastInfoCheck      DateTime?
+  menuUpdatedAt      DateTime?
+  dealUpdatedAt      DateTime?
+  isSponsored        Boolean           @default(false)
+  dataStatus         String            @default("AWAITING_VERIFICATION") // DEMONSTRATION_ONLY, AWAITING_VERIFICATION, VERIFIED_CURRENT, STALE, DISPUTED
+  dataSource         String            @default("Unspecified")
+  sourceUrl          String?
+  retrievedAt        DateTime?
+  verifiedAt         DateTime?
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  reviewedBy         String?
+  isDemonstration    Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  evidence           LicenseEvidence[]
+  menus              MenuEntry[]
+  deals              Deal[]
+  leads              LeadEvent[]
+  claims             ClaimRequest[]
+  disputes           Dispute[]
+  managers           User[]            @relation("RetailerManagers")
+
+  @@index([dataStatus, isDemonstration, freshnessExpiresAt])
+  @@index([type])
+  @@index([lastLicenseCheck])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// Pseudonymous rolling evidence for durable authentication throttling.
+// Raw email addresses and network addresses are never stored here.
+model AuthFailure {
+  id            String   @id @default(uuid())
+  accountDigest String
+  clientDigest  String
+  surface       String
+  occurredAt    DateTime @default(now())
+  expiresAt     DateTime
+
+  @@index([accountDigest, occurredAt])
+  @@index([clientDigest, occurredAt])
+  @@index([expiresAt])
+}
+
+// Pseudonymous, expiring reservations for public write abuse controls.
+// Raw network addresses, email addresses, license numbers, and corrections
+// are never stored here.
+model PublicSubmissionEvent {
+  id            String   @id @default(uuid())
+  clientDigest  String
+  subjectDigest String
+  surface       String
+  occurredAt    DateTime @default(now())
+  expiresAt     DateTime
+
+  @@unique([surface, subjectDigest])
+  @@index([surface, clientDigest, occurredAt])
+  @@index([surface, occurredAt])
+  @@index([expiresAt])
+}
+
+// Verification evidence submitted by a retailer or gathered by admins
+model LicenseEvidence {
+  id                 String    @id @default(uuid())
+  retailerId         String
+  retailer           Retailer  @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  documentUrl        String
+  verificationStatus String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  submittedAt        DateTime  @default(now())
+  verifiedAt         DateTime?
+  notes              String? @db.Text
+  dataStatus         String    @default("AWAITING_VERIFICATION")
+  dataSource         String    @default("Retailer submission")
+  sourceUrl          String?
+  retrievedAt        DateTime?
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  reviewedBy         String?
+  isDemonstration    Boolean   @default(false)
+
+  @@index([verificationStatus, submittedAt])
+}
+
+// Request to claim a listing by a business owner
+model ClaimRequest {
+  id                    String    @id @default(uuid())
+  retailerId            String
+  retailer              Retailer  @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  email                 String
+  phone                 String
+  requestedPasswordHash String?
+  status                String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedAt            DateTime?
+  reviewedBy            String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([status, email])
+  @@index([status, createdAt])
+}
+
+// Master Global Product Database (Unified catalog)
+model Product {
+  id                 String      @id @default(uuid())
+  name               String
+  description        String? @db.Text
+  category           String // flower, edibles, concentrates, accessories, etc.
+  strainType         String? // sativa, indica, hybrid, cbd
+  thcPercent         Float?
+  cbdPercent         Float?
+  image              String?
+  dataStatus         String      @default("AWAITING_VERIFICATION")
+  dataSource         String      @default("Unspecified")
+  sourceUrl          String?
+  retrievedAt        DateTime?
+  verifiedAt         DateTime?
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  reviewedBy         String?
+  isDemonstration    Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  menuEntries        MenuEntry[]
+
+  @@index([name])
+}
+
+// Menu Entry - Connects Products to Retailers with pricing
+model MenuEntry {
+  id                 String      @id @default(uuid())
+  retailerId         String
+  retailer           Retailer    @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  productId          String
+  product            Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  price              Float
+  quantity           Int?
+  inStock            Boolean     @default(true)
+  dataStatus         String      @default("AWAITING_VERIFICATION")
+  dataSource         String      @default("Unspecified")
+  sourceUrl          String?
+  retrievedAt        DateTime?
+  verifiedAt         DateTime?
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  reviewedBy         String?
+  isDemonstration    Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  brandMenus         BrandMenu[]
+
+  @@unique([retailerId, productId])
+  @@index([retailerId, updatedAt])
+}
+
+// Join table to determine which products/menu items are visible on which Brand platform
+model BrandMenu {
+  id          String    @id @default(uuid())
+  brandId     String
+  brand       Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  menuEntryId String
+  menuEntry   MenuEntry @relation(fields: [menuEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, menuEntryId])
+}
+
+// Retailer deals and promotions
+model Deal {
+  id                 String    @id @default(uuid())
+  retailerId         String
+  retailer           Retailer  @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  title              String
+  description        String? @db.Text
+  discount           String? // e.g. "20% off", "$10 off"
+  code               String? // promo code
+  expiryDate         DateTime
+  isActive           Boolean   @default(true)
+  dataStatus         String    @default("AWAITING_VERIFICATION")
+  dataSource         String    @default("Unspecified")
+  sourceUrl          String?
+  retrievedAt        DateTime?
+  verifiedAt         DateTime?
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  reviewedBy         String?
+  isDemonstration    Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([retailerId, createdAt])
+}
+
+// Analytics and Lead attribution events
+model LeadEvent {
+  id         String   @id @default(uuid())
+  brandId    String
+  brand      Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  retailerId String
+  retailer   Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  eventType  String // HANDOFF_CLICK, PHONE_CALL_CLICK, WEBSITE_CLICK, MENU_VIEW
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([retailerId, eventType, createdAt])
+}
+
+// System Audit Logs for security and release records
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String // e.g. "APPROVE_RETAILER", "UPDATE_BRAND_THEME", "AI_PROVIDER_CALL"
+  details   String @db.Text
+  timestamp DateTime @default(now())
+
+  @@index([timestamp])
+}
+
+// An administrator-captured, local evidence snapshot for the Site Brain.
+// Captures are bounded and never imply that external search or analytics
+// providers have been connected.
+model SiteIntelligenceSnapshot {
+  id                     String            @id @default(uuid())
+  fingerprint            String
+  schemaVersion          Int               @default(1)
+  capturedById           String
+  capturedAt             DateTime          @default(now())
+  asOf                   DateTime
+  routeInventoryHash     String
+  localEvidenceStatus    String
+  externalEvidenceStatus String
+  observationCount       Int
+  attentionCount         Int
+  blockedCount           Int
+  observations           SiteObservation[]
+
+  @@index([capturedAt])
+  @@index([fingerprint, capturedAt])
+}
+
+// One immutable finding inside a captured Site Brain snapshot.
+model SiteObservation {
+  id             String                   @id @default(uuid())
+  snapshotId     String
+  snapshot       SiteIntelligenceSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  observationKey String
+  plane          String
+  state          String
+  severity       String
+  title          String
+  summary        String @db.Text
+  evidence       String @db.Text
+  uncertainty    String @db.Text
+  preparedAction String @db.Text
+  authority      String
+  quantity       Int?
+  createdAt      DateTime                 @default(now())
+
+  @@unique([snapshotId, observationKey])
+  @@index([state, severity])
+}
+
+// Loyalty account mapping points earned per Brand/Company on the network
+model LoyaltyAccount {
+  id           String               @id @default(uuid())
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brandId      String
+  brand        Brand                @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  points       Int                  @default(0)
+  tier         String               @default("BRONZE") // BRONZE, SILVER, GOLD
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  transactions LoyaltyTransaction[]
+
+  @@unique([userId, brandId])
+}
+
+// History of points changes
+model LoyaltyTransaction {
+  id               String         @id @default(uuid())
+  loyaltyAccountId String
+  loyaltyAccount   LoyaltyAccount @relation(fields: [loyaltyAccountId], references: [id], onDelete: Cascade)
+  pointsChanged    Int
+  description      String @db.Text
+  createdAt        DateTime       @default(now())
+}
+
+// CMS Educational Articles
+model Article {
+  id                 String    @id @default(uuid())
+  title              String
+  slug               String    @unique
+  content            String @db.Text
+  image              String?
+  author             String    @default("Holding Editorial Staff")
+  dataStatus         String    @default("AWAITING_VERIFICATION")
+  dataSource         String    @default("Unspecified")
+  sourceUrl          String?
+  retrievedAt        DateTime?
+  verifiedAt         DateTime?
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  reviewedBy         String?
+  isDemonstration    Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+// Contradictions and Corrections Dispute Queue
+model Dispute {
+  id          String   @id @default(uuid())
+  retailerId  String
+  retailer    Retailer @relation(fields: [retailerId], references: [id], onDelete: Cascade)
+  filedBy     String // email/contact of submitter
+  fieldName   String // e.g. "address", "phone", "hours", "licenseNumber"
+  oldValue    String? @db.Text
+  newValue    String @db.Text
+  evidenceUrl String
+  reason      String   @default("Legacy submission (reason not recorded)")
+  status      String   @default("PENDING") // PENDING, RESOLVED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([retailerId, status, fieldName])
+  @@index([status, createdAt])
+}
+
+// Staging table for dry-run ingestion of DC ABCA Feed data
+model StagingABCARetailer {
+  id            String   @id @default(uuid())
+  tradeName     String
+  licenseNumber String   @unique
+  address       String?
+  status        String?
+  rawJson       String? @db.Text  // Store full CSV row as JSON string for review
+  ingestedAt    DateTime @default(now())
+
+  @@index([licenseNumber])
+  @@index([status])
+}
+
+/// Demand Credit ledger — append-only, hash-chained.
+///
+/// Persists the M-005 merchant-owned-demand mechanism. Rows are NEVER updated
+/// or deleted: balance is derived by summing the chain, so a mutation would
+/// silently change history. `entryHash` binds `prevHash`, making any edit,
+/// reorder, or truncation detectable by replaying the chain.
+///
+/// Deliberately NOT stored: any running balance column. A stored balance can
+/// drift from the entries that justify it; a derived one cannot.
+model DemandCreditEntry {
+  /// Monotonic position in the chain. Unique per merchant, gapless.
+  seq                  Int
+  id                   String    @id @default(uuid())
+  merchantId           String
+  /// ISSUE | SPEND | REFUND | EXPIRE | ATTRIBUTION
+  kind                 String
+  /// Signed: ISSUE/REFUND positive, SPEND negative, ATTRIBUTION always 0.
+  amount               Float
+  /// Chain integrity.
+  prevHash             String
+  entryHash            String    @unique
+  /// ISSUE: why these credits legitimately exist.
+  authorizationRef     String?
+  expiresAt            DateTime?
+  /// SPEND: placement slot + the visible disclosure that must accompany it.
+  placement            String?
+  disclosureLabel      String?
+  /// Recorded so a rank purchase can never be silently introduced later.
+  affectsOrganicOrder  Boolean   @default(false)
+  /// REFUND: which SPEND is being reversed, and why.
+  originalSeq          Int?
+  reason               String?
+  /// ATTRIBUTION: the evidence that makes the action a fact rather than a claim.
+  actionKind           String?
+  evidenceChain        String? @db.Text
+  evidenceChainSha256  String?
+  observedAt           DateTime?
+  placementSeq         Int?
+  /// The inversion: the merchant keeps the customer relationship.
+  relationshipOwner    String?
+  exportableByMerchant Boolean   @default(false)
+  recordedAt           DateTime  @default(now())
+
+  /// CANONICAL EVENT IDENTITY. The stable fingerprint of the real-world event this
+  /// row records, independent of transport, retry, key ordering or wall-clock
+  /// jitter. Nullable because only ATTRIBUTION rows carry one — money rows are
+  /// already serialized by the per-merchant seq.
+  ///
+  /// WHY A COLUMN AND NOT A LOOKUP. The application previously did
+  /// find-then-insert, which is a check-then-act race: 50 simultaneous identical
+  /// POSTs produced TWO committed rows because both requests read "no duplicate"
+  /// before either wrote. Only the database can decide this, and only with a
+  /// uniqueness constraint. An application-level guard cannot be made correct here
+  /// no matter how carefully it is written.
+  eventIdentity        String?
+
+  /// GRADED CONSUMER EVIDENCE. REQUEST_RECEIVED means only that a request arrived;
+  /// it must never contribute to a merchant value figure. The grade is STORED
+  /// rather than recomputed so a later report cannot quietly re-grade history.
+  proofState           String?
+  valueEligible        Boolean   @default(false)
+  /// Nonce of the interaction token, retained ONLY to refuse a replay. Not the
+  /// token, and not a user identifier.
+  interactionNonce     String?
+  /// Where the consumer was handed off to, when a handoff was verified.
+  destination          String?
+
+  @@unique([merchantId, seq])
+  /// The constraint that actually enforces idempotency. Scoped to the merchant so a
+  /// collision across merchants is impossible by construction, and a tenant cannot
+  /// suppress another tenant's event by guessing its identity.
+  @@unique([merchantId, eventIdentity])
+  @@index([merchantId, kind])
+  @@index([entryHash])
+  @@index([eventIdentity])
+  @@index([merchantId, interactionNonce])
+  /// Ledger scans in chain order are seq-indexed already; export and ops
+  /// queries scan by wall-clock time. Added in migration
+  /// 20260726000100_ledger_recorded_at_index — the first post-baseline
+  /// migration, so forward migration is exercised rather than asserted.
+  @@index([merchantId, recordedAt])
+}
