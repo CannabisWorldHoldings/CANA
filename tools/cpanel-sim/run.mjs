@@ -338,7 +338,7 @@ export async function runCpanelSimulation({ repoRoot }) {
       checks,
       'activation rollback',
       rolledBack === fs.realpathSync(oldRelease) &&
-        sqlite(database, 'SELECT value FROM persistent_probe WHERE id=1') === 'persistent-before',
+        sqlite(oldRelease, database, 'SELECT value FROM persistent_probe WHERE id=1') === 'persistent-before',
       `current -> ${oldName}; shared database persisted`,
     );
     web = await startWeb(root, oldRelease);
