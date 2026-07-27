@@ -32,6 +32,18 @@
         "tools/promotion-gate/**",
         "docs/technical-promotion/**"
       ]
+    },
+    "canonical_github_promotion_2026_07_27": {
+      "reason": "The owner explicitly authorized promotion to CannabisWorldHoldings/CANA, hosted verification preparation, and technical test repairs required to make the approved checks deterministic without changing runtime or business semantics.",
+      "paths": [
+        ".github/workflows/cana-verify.yml",
+        "apps/web/tests/interaction-proof.test.mjs",
+        "docs/CANONICAL_IMPORT_PLAN.md",
+        "docs/CANA_TECHNICAL_STATE.md",
+        "docs/technical-promotion/CANONICAL_GITHUB_RECEIPT.json",
+        "tools/github-import/**",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ]
     }
   },
   "owned_create_paths": [
@@ -62,6 +74,7 @@
     "apps/web/src/lib/site-intelligence.ts",
     "apps/web/src/lib/site-intelligence.server.ts",
     "apps/web/tests/site-intelligence.test.mjs",
+    "apps/web/tests/interaction-proof.test.mjs",
     "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
     "deploy/namecheap/smoke-test.sh",
     "deploy/namecheap/healthcheck.sh",
@@ -102,6 +115,7 @@
     "docs/RECOVERY_ARCHIVE_DISPOSITION.md",
     "apps/web/src/app/admin/site-intelligence/page.tsx",
     "apps/web/src/lib/site-intelligence.server.ts",
+    "apps/web/tests/interaction-proof.test.mjs",
     "apps/web/tests/site-intelligence.test.mjs",
     "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
     "deploy/namecheap/SIMULATION_NOTES.md"
