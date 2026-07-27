@@ -50,6 +50,7 @@
     "tools/mariadb-sim/candidate-cutover.sql",
     "tools/mariadb-sim/run.mjs",
     "tools/mariadb-sim/run.test.mjs",
+    "tools/durability/base-remote-receipt.json",
     "tools/durability/cli.mjs",
     "tools/durability/cli.test.mjs",
     "tools/cpanel-sim/run.mjs",
