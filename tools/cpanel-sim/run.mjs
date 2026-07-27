@@ -100,7 +100,8 @@ function runRealPrismaProof(source) {
     fs.writeFileSync(
       enginePrefetchSchema,
       `generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {
