@@ -3,7 +3,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
+import { hashBody } from '../../apps/web/src/lib/demand-credits.mjs';
 import {
   receiptDirectory,
   sha256Bytes,
@@ -12,8 +14,11 @@ import {
 } from '../test-runner/receipt.mjs';
 import { generateCandidate } from './generate-schema.mjs';
 
-export const MARIA_IMAGE = 'mariadb:11.4.9';
-const NODE_IMAGE = process.env.CANA_VERIFY_IMAGE ?? 'node:24.14.1-bookworm';
+export const MARIA_IMAGE =
+  'mariadb@sha256:54ac814d243128263e18cf818f7abb611bf43a7a95ce8aa102d18f527b1516d1';
+const APPROVED_NODE_IMAGE =
+  'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
+const NODE_IMAGE = process.env.CANA_VERIFY_IMAGE ?? APPROVED_NODE_IMAGE;
 const BASE_COMMIT = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 
 function command(commandName, args, {
@@ -209,21 +214,43 @@ function applyPrismaCandidate({
     '--name',
     clientContainer,
     '--network',
-    network,
-    '-e',
-    `DATABASE_URL=${databaseUrl}`,
+    'bridge',
     '-w',
     '/workspace',
     NODE_IMAGE,
     'bash',
     '-lc',
-    `git clone --quiet /candidate.bundle /workspace && git checkout --quiet ${commit} && cd apps/web && npm ci --no-audit --no-fund && npx prisma validate --schema ../../tools/mariadb-sim/schema.prisma && npx prisma db push --schema ../../tools/mariadb-sim/schema.prisma --skip-generate`,
+    'sleep infinity',
   ]);
-  command('docker', ['network', 'connect', 'bridge', clientContainer]);
   command('docker', ['cp', bundle, `${clientContainer}:/candidate.bundle`], {
     timeout: 120_000,
   });
-  const result = command('docker', ['start', '-a', clientContainer], {
+  command('docker', ['start', clientContainer]);
+  const install = command('docker', [
+    'exec',
+    clientContainer,
+    'bash',
+    '-lc',
+    `git clone --quiet /candidate.bundle /workspace && git checkout --quiet ${commit} && cd apps/web && npm ci --no-audit --no-fund`,
+  ], {
+    allowFailure: true,
+    timeout: 12 * 60_000,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (install.status !== 0) {
+    throw new Error(`provider-specific Prisma dependency install failed:\n${tail(install.stdout + install.stderr)}`);
+  }
+  command('docker', ['network', 'disconnect', 'bridge', clientContainer]);
+  command('docker', ['network', 'connect', network, clientContainer]);
+  const result = command('docker', [
+    'exec',
+    '-e',
+    `DATABASE_URL=${databaseUrl}`,
+    clientContainer,
+    'bash',
+    '-lc',
+    'cd /workspace/apps/web && npx prisma validate --schema ../../tools/mariadb-sim/schema.prisma && npx prisma db push --schema ../../tools/mariadb-sim/schema.prisma --skip-generate',
+  ], {
     allowFailure: true,
     timeout: 12 * 60_000,
     maxBuffer: 64 * 1024 * 1024,
@@ -240,6 +267,41 @@ function applyPrismaCandidate({
   return {
     outputSha256: sha256Bytes(result.stdout + result.stderr),
     outputTail: tail(result.stdout + result.stderr, 2_000),
+  };
+}
+
+async function runDbConfigInformationSchemaProbe({
+  repoRoot,
+  runRoot,
+  databaseContainer,
+  password,
+}) {
+  const sourceFile = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'db-config.mjs');
+  const instrumented = path.join(runRoot, 'db-config-probe.mjs');
+  fs.writeFileSync(
+    instrumented,
+    `${fs.readFileSync(sourceFile, 'utf8')}\nexport { probeApplicationTables as __canaProbeApplicationTables };\n`,
+    { encoding: 'utf8', mode: 0o600 },
+  );
+  const queries = [];
+  const prisma = {
+    async $queryRawUnsafe(statement) {
+      queries.push(statement);
+      return sql(databaseContainer, password, statement).stdout
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map((table_name) => ({ table_name }));
+    },
+  };
+  const module = await import(
+    `${pathToFileURL(instrumented).href}?run=${crypto.randomBytes(8).toString('hex')}`
+  );
+  const found = await module.__canaProbeApplicationTables(prisma, 'mysql');
+  return {
+    found,
+    query: queries.at(-1) ?? '',
+    sourceSha256: sha256File(sourceFile),
   };
 }
 
@@ -277,6 +339,11 @@ export async function runMariaSimulation({ repoRoot }) {
   };
   if (source.status) {
     throw new Error(`MariaDB verification refuses a dirty source:\n${source.status}`);
+  }
+  if (NODE_IMAGE !== APPROVED_NODE_IMAGE) {
+    throw new Error(
+      `CANA_VERIFY_IMAGE is not approved; expected immutable ${APPROVED_NODE_IMAGE}`,
+    );
   }
   command('docker', ['info'], { timeout: 30_000 });
   const mariaDigest = ensureImage(MARIA_IMAGE);
@@ -343,6 +410,21 @@ export async function runMariaSimulation({ repoRoot }) {
       'provider-specific Prisma candidate',
       prisma.outputTail.includes('Your database is now in sync'),
       `mysql candidate validated and pushed; output sha256 ${prisma.outputSha256}`,
+    );
+
+    const dbConfigProbe = await runDbConfigInformationSchemaProbe({
+      repoRoot,
+      runRoot,
+      databaseContainer,
+      password,
+    });
+    check(
+      checks,
+      'db-config information_schema provider branch',
+      dbConfigProbe.found &&
+        /information_schema\.tables/i.test(dbConfigProbe.query) &&
+        !/sqlite_master/i.test(dbConfigProbe.query),
+      `unchanged db-config ${dbConfigProbe.sourceSha256} executed its MariaDB branch and found Organization`,
     );
 
     const cutoverSql = fs.readFileSync(
@@ -511,38 +593,85 @@ export async function runMariaSimulation({ repoRoot }) {
       `SELECT COLUMN_TYPE FROM information_schema.COLUMNS
        WHERE TABLE_SCHEMA='cana' AND TABLE_NAME='DemandCreditEntry' AND COLUMN_NAME='observedAt'`,
     ).stdout.trim();
-    const fractional = sql(
+    const datetimeDraft = {
+      merchantId: 'merchant-chain',
+      kind: 'ATTRIBUTION',
+      amount: 0,
+      seq: 7,
+      observedAt: new Date('2026-07-27T01:23:45.987Z'),
+    };
+    const datetimeEntryHash = hashBody(datetimeDraft, '0'.repeat(64));
+    sql(
       databaseContainer,
       password,
-      `SELECT DATE_FORMAT(observedAt,'%f') FROM DemandCreditEntry WHERE eventIdentity=${hex('chain-405')}`,
-    ).stdout.trim();
+      `${createDemandInsert({
+        seq: datetimeDraft.seq,
+        merchant: datetimeDraft.merchantId,
+        entryHash: datetimeEntryHash,
+        eventIdentity: 'datetime-entry-hash',
+        evidenceChain: null,
+        digest: null,
+        observedAt: '2026-07-27 01:23:45.987654',
+      })}`,
+    );
+    const datetimeRow = sql(
+      databaseContainer,
+      password,
+      `SELECT entryHash,DATE_FORMAT(observedAt,'%Y-%m-%dT%H:%i:%s.%fZ')
+       FROM DemandCreditEntry WHERE eventIdentity=${hex('datetime-entry-hash')}`,
+    ).stdout.trim().split('\t');
+    const databaseObservedAt = new Date(
+      datetimeRow[1].replace(/(\.\d{3})\d{3}Z$/, '$1Z'),
+    );
+    const recomputedEntryHash = hashBody(
+      { ...datetimeDraft, observedAt: databaseObservedAt },
+      '0'.repeat(64),
+    );
     check(
       checks,
-      'DATETIME(3) precision',
-      datetimeType === 'datetime(3)' && fractional === '987000',
-      `${datetimeType}; inserted .987654 and round-tripped ${fractional}`,
+      'DATETIME(3) ledger entryHash round-trip',
+      datetimeType === 'datetime(3)' &&
+        datetimeRow[1].endsWith('.987000Z') &&
+        datetimeRow[0] === datetimeEntryHash &&
+        recomputedEntryHash === datetimeEntryHash,
+      `${datetimeType}; .987654 stored as .987000; persisted and recomputed entryHash ${datetimeEntryHash}`,
     );
 
     sql(
       databaseContainer,
       password,
-      `CREATE TABLE CollationProbe (
-         id INT PRIMARY KEY,
-         value VARCHAR(191) COLLATE utf8mb4_unicode_ci UNIQUE
-       ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-       INSERT INTO CollationProbe VALUES (1,'Case@Example.test')`,
+      `INSERT INTO Organization (id,name,createdAt,updatedAt)
+       VALUES ('org-collation','Collation Org',NOW(3),NOW(3));
+       INSERT INTO Brand (id,name,domain,organizationId,createdAt,updatedAt)
+       VALUES ('brand-collation-1','Brand One','Case.Example.test','org-collation',NOW(3),NOW(3));
+       INSERT INTO \`User\` (id,email,password,createdAt,updatedAt)
+       VALUES ('user-collation-1','Case@Example.test','not-a-real-password',NOW(3),NOW(3))`,
     );
-    const collision = sql(
+    const brandCollision = sql(
       databaseContainer,
       password,
-      "INSERT INTO CollationProbe VALUES (2,'case@example.test')",
+      `INSERT INTO Brand (id,name,domain,organizationId,createdAt,updatedAt)
+       VALUES ('brand-collation-2','Brand Two','case.example.test','org-collation',NOW(3),NOW(3))`,
       { allowFailure: true },
     );
     check(
       checks,
-      'utf8mb4 collation collision',
-      collision.status !== 0 && /Duplicate entry|1062/i.test(collision.stderr),
-      'case-only variants collide under utf8mb4_unicode_ci',
+      'Brand.domain utf8mb4 collation collision',
+      brandCollision.status !== 0 && /Duplicate entry|1062/i.test(brandCollision.stderr),
+      'case-only Brand.domain variants collide on the generated model unique constraint',
+    );
+    const userCollision = sql(
+      databaseContainer,
+      password,
+      `INSERT INTO \`User\` (id,email,password,createdAt,updatedAt)
+       VALUES ('user-collation-2','case@example.test','not-a-real-password',NOW(3),NOW(3))`,
+      { allowFailure: true },
+    );
+    check(
+      checks,
+      'User.email utf8mb4 collation collision',
+      userCollision.status !== 0 && /Duplicate entry|1062/i.test(userCollision.stderr),
+      'case-only User.email variants collide on the generated model unique constraint',
     );
 
     const duplicate = sql(
@@ -592,11 +721,34 @@ export async function runMariaSimulation({ repoRoot }) {
       })}`,
       { allowFailure: true },
     );
+    const secondNullMoney = sql(
+      databaseContainer,
+      password,
+      `${createDemandInsert({
+        seq: 2,
+        merchant: 'merchant-money',
+        entryHash: crypto.createHash('sha256').update('null-money-second').digest('hex'),
+        eventIdentity: null,
+        evidenceChain: null,
+        digest: null,
+        kind: 'ISSUE',
+      })}`,
+      { allowFailure: true },
+    );
+    const nullMoneyCount = sql(
+      databaseContainer,
+      password,
+      "SELECT COUNT(*) FROM DemandCreditEntry WHERE merchantId='merchant-money' AND eventIdentity IS NULL",
+    ).stdout.trim();
     check(
       checks,
-      'NULL event identity fail closed',
-      nullAttribution.status !== 0 && /CONSTRAINT|4025/i.test(nullAttribution.stderr) && nullMoney.status === 0,
-      'ATTRIBUTION NULL is rejected while a money-row NULL remains permitted',
+      'NULL-distinct unique index and attribution fail closed',
+      nullAttribution.status !== 0 &&
+        /CONSTRAINT|4025/i.test(nullAttribution.stderr) &&
+        nullMoney.status === 0 &&
+        secondNullMoney.status === 0 &&
+        nullMoneyCount === '2',
+      'two same-merchant money rows with NULL identity coexist while ATTRIBUTION NULL is rejected',
     );
 
     sql(
@@ -881,7 +1033,7 @@ export async function runMariaSimulation({ repoRoot }) {
   };
   const overall =
     !failure &&
-    checks.length === 23 &&
+    checks.length === 25 &&
     checks.every((entry) => entry.pass) &&
     Object.values(cleanup).every(Boolean)
       ? 'PASS'

@@ -1,9 +1,11 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { receiptDirectory, sha256File } from './receipt.mjs';
+import { sha256Bytes, sha256File } from './receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
@@ -37,10 +39,10 @@ function writeJson(file, value) {
   });
 }
 
-function allReceipts() {
-  return fs.readdirSync(receiptDirectory())
+function allReceipts(directory) {
+  return fs.readdirSync(directory)
     .filter((name) => name.endsWith('.json'))
-    .map((name) => path.join(receiptDirectory(), name))
+    .map((name) => path.join(directory, name))
     .map((file) => {
       try {
         return { file, body: JSON.parse(fs.readFileSync(file, 'utf8')) };
@@ -55,8 +57,10 @@ function latest(receipts, kind, predicate) {
   const candidates = receipts
     .filter(({ body }) => body.kind === kind && predicate(body))
     .sort((left, right) => String(left.body.recordedAt).localeCompare(String(right.body.recordedAt)));
-  const selected = candidates.at(-1);
-  if (!selected) throw new Error(`missing final receipt: ${kind}`);
+  if (candidates.length !== 1) {
+    throw new Error(`expected exactly one fresh final receipt for ${kind}, found ${candidates.length}`);
+  }
+  const selected = candidates[0];
   return {
     kind,
     file: selected.file,
@@ -73,6 +77,54 @@ function sourceIdentity(cwd = ROOT) {
     branch: git(['rev-parse', '--abbrev-ref', 'HEAD'], cwd),
     status: git(['status', '--porcelain'], cwd),
   };
+}
+
+function initializeFinalReceiptSession() {
+  const source = sourceIdentity();
+  if (source.status) throw new Error(`receipt session refuses a dirty source:\n${source.status}`);
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-final-receipt-'));
+  fs.chmodSync(root, 0o700);
+  const receiptRoot = path.join(root, 'receipts');
+  fs.mkdirSync(receiptRoot, { mode: 0o700 });
+  const sessionFile = path.join(root, 'session.json');
+  const session = {
+    schemaVersion: 1,
+    kind: 'cana-final-receipt-session',
+    sessionId: crypto.randomUUID(),
+    nonce: crypto.randomBytes(32).toString('hex'),
+    startedAt: new Date().toISOString(),
+    source,
+    receiptDirectory: receiptRoot,
+    trustedAttestation: false,
+  };
+  writeJson(sessionFile, session);
+  process.stdout.write(`${JSON.stringify({
+    sessionFile,
+    receiptDirectory: receiptRoot,
+    sessionId: session.sessionId,
+  }, null, 2)}\n`);
+  return sessionFile;
+}
+
+function finalReceiptSession(sessionFile, source) {
+  if (!sessionFile) throw new Error('final receipt requires --session <session.json>');
+  const absolute = path.resolve(sessionFile);
+  const session = JSON.parse(fs.readFileSync(absolute, 'utf8'));
+  const directory = path.resolve(session.receiptDirectory ?? '');
+  if (
+    session.schemaVersion !== 1 ||
+    session.kind !== 'cana-final-receipt-session' ||
+    !/^[0-9a-f-]{36}$/.test(session.sessionId ?? '') ||
+    !/^[0-9a-f]{64}$/.test(session.nonce ?? '') ||
+    session.source?.commit !== source.commit ||
+    session.source?.tree !== source.tree ||
+    path.dirname(absolute) !== path.dirname(directory) ||
+    path.basename(directory) !== 'receipts' ||
+    !fs.statSync(directory).isDirectory()
+  ) {
+    throw new Error('invalid or source-mismatched final receipt session');
+  }
+  return { file: absolute, body: session, directory };
 }
 
 function changedFiles(commit) {
@@ -156,9 +208,10 @@ function historicalFalsification() {
   ];
 }
 
-export function writeFinalCandidateReceipt() {
+export function writeFinalCandidateReceipt(sessionFile) {
   const source = sourceIdentity();
   if (source.status) throw new Error(`final receipt refuses a dirty source:\n${source.status}`);
+  const session = finalReceiptSession(sessionFile, source);
   const authoritative = sourceIdentity(AUTHORITATIVE_CHECKOUT);
   if (
     authoritative.commit !== BASE ||
@@ -191,7 +244,13 @@ export function writeFinalCandidateReceipt() {
   if (prohibitedChanged.length) {
     throw new Error(`prohibited files changed: ${prohibitedChanged.join(', ')}`);
   }
-  const receipts = exactFinalReceipts(allReceipts(), source);
+  const receipts = exactFinalReceipts(
+    allReceipts(session.directory).filter(
+      ({ body }) =>
+        Date.parse(body.recordedAt) >= Date.parse(session.body.startedAt),
+    ),
+    source,
+  );
   const commits = git([
     'log',
     '--reverse',
@@ -201,7 +260,7 @@ export function writeFinalCandidateReceipt() {
     const [commit, subject] = line.split('\t');
     return { commit, subject };
   });
-  const outputRoot = receiptDirectory();
+  const outputRoot = session.directory;
   const stamp = new Date().toISOString().replaceAll(':', '').replaceAll('.', '');
   const changedManifestFile = path.join(outputRoot, `candidate-changed-files-${stamp}.json`);
   const changedManifest = {
@@ -237,6 +296,15 @@ export function writeFinalCandidateReceipt() {
       state: 'LOCAL_ONLY_CANDIDATE',
       remotelyDurable: false,
       reason: 'No owner-authorized upload/download/hash round trip was executed for the candidate.',
+    },
+    receiptProvenance: {
+      sessionId: session.body.sessionId,
+      sessionNonceSha256: sha256Bytes(session.body.nonce),
+      startedAt: session.body.startedAt,
+      invocationPrivateDirectory: session.directory,
+      exactOneReceiptPerRequiredKind: true,
+      trustedAttestation: false,
+      boundary: 'Local invocation freshness and exact hashes are proven; an external trusted attestation is not claimed.',
     },
     commits,
     changedFileManifest: {
@@ -303,5 +371,13 @@ export function writeFinalCandidateReceipt() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  writeFinalCandidateReceipt();
+  if (process.argv[2] === '--init-session' && process.argv.length === 3) {
+    initializeFinalReceiptSession();
+  } else if (process.argv[2] === '--session' && process.argv[3] && process.argv.length === 4) {
+    writeFinalCandidateReceipt(process.argv[3]);
+  } else {
+    throw new Error(
+      'usage: write-final-receipt.mjs --init-session | --session <session.json>',
+    );
+  }
 }

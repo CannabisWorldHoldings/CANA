@@ -6,6 +6,7 @@
       "focused-verifier",
       "maria-verifier",
       "cpanel-verifier",
+      "durability-proof",
       "github-import-offline"
     ]
   },

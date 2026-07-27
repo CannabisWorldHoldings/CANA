@@ -13,12 +13,13 @@ The report classifies local branches, scans every outgoing commit patch for cred
 
 Even `git push --dry-run` is not executed because it contacts the owner-gated canonical repository. The preparer records every such command as `executed: false`.
 
-The proposed workflow uses read-only token permissions, exact Node 24.14.1, current `actions/checkout@v6` and `actions/setup-node@v6`, and these required checks:
+The proposed workflow uses read-only token permissions, exact Node 24.14.1, immutable reviewed commit SHAs for `actions/checkout` and `actions/setup-node`, and these required checks:
 
 - `candidate-unit`
 - `focused-verifier`
 - `maria-verifier`
 - `cpanel-verifier`
+- `durability-proof`
 - `github-import-offline`
 
 `protected-main-policy.json` requires strict up-to-date checks, administrator enforcement, code-owner review, one approval, last-push approval, conversation resolution, linear history, and refusal of force pushes/deletions.

@@ -22,6 +22,7 @@ test('protected main requires every candidate verification lane', () => {
     'focused-verifier',
     'maria-verifier',
     'cpanel-verifier',
+    'durability-proof',
     'github-import-offline',
   ]) {
     assert.ok(policy.required_status_checks.contexts.includes(context), context);

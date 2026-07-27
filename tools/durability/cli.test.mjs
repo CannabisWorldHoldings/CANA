@@ -7,12 +7,13 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-function cana(...args) {
+function cana(args, env = {}) {
   return spawnSync(path.join(ROOT, 'cana'), args, {
     cwd: ROOT,
     encoding: 'utf8',
     env: {
       ...process.env,
+      ...env,
       CANA_LOCAL_STATE_DIR: path.join(ROOT, '.cana-local', 'durability-test-never-created'),
     },
   });
@@ -33,14 +34,24 @@ test('base receipt records the superseding final Drive round trip', () => {
 });
 
 test('upload refuses without owner authorization and remote configuration', () => {
-  const result = cana('durability', 'upload');
+  const result = cana(['durability', 'upload']);
   assert.equal(result.status, 3);
-  assert.match(result.stderr, /owner authorization.*remote/i);
+  assert.match(result.stderr, /remote configuration/i);
+  assert.doesNotMatch(result.stdout, /REMOTELY_DURABLE/);
+});
+
+test('a caller-set authorization environment variable cannot authorize upload', () => {
+  const result = cana(
+    ['durability', 'upload', '--remote', 's3://example.invalid/candidate.tar.gz'],
+    { CANA_DURABILITY_OWNER_AUTHORIZED: 'YES' },
+  );
+  assert.equal(result.status, 3);
+  assert.match(result.stderr, /signed owner approval/i);
   assert.doesNotMatch(result.stdout, /REMOTELY_DURABLE/);
 });
 
 test('readback refuses without a recorded upload', () => {
-  const result = cana('durability', 'readback');
+  const result = cana(['durability', 'readback']);
   assert.equal(result.status, 3);
   assert.match(result.stderr, /recorded upload/i);
   assert.doesNotMatch(result.stdout, /REMOTELY_DURABLE/);

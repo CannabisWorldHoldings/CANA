@@ -15,6 +15,12 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const BASE_RECEIPT = path.join(ROOT, 'tools', 'durability', 'base-remote-receipt.json');
+const OWNER_KEY_CONFIG = path.join(
+  ROOT,
+  'tools',
+  'durability',
+  'owner-approval-key.json',
+);
 
 function command(commandName, args, {
   cwd = ROOT,
@@ -453,17 +459,81 @@ function remoteTransport(remote, source, destination, direction) {
   refusal('supported remote transports are s3:// and ssh:// only');
 }
 
+function configuredOwnerKey(parsed) {
+  if (!parsed.approval) {
+    refusal('operation requires a signed owner approval envelope');
+  }
+  const key = readJson(OWNER_KEY_CONFIG);
+  if (
+    key.state !== 'CONFIGURED_BY_OWNER' ||
+    key.algorithm !== 'Ed25519' ||
+    !key.keyId ||
+    !key.publicKeyPem
+  ) {
+    refusal('owner approval key is not configured; Chief Integrator reassignment is required');
+  }
+  return key;
+}
+
+function ownerApproval(parsed, expected, key = configuredOwnerKey(parsed)) {
+  const envelope = readJson(path.resolve(parsed.approval));
+  const payload = {
+    schemaVersion: 1,
+    action: expected.action,
+    commit: expected.commit,
+    tree: expected.tree,
+    remote: expected.remote,
+    artifactSha256: expected.artifactSha256,
+    ...(expected.uploadedAt ? { uploadedAt: expected.uploadedAt } : {}),
+    approvalId: envelope.payload?.approvalId,
+    approvedBy: envelope.payload?.approvedBy,
+    expiresAt: envelope.payload?.expiresAt,
+  };
+  if (
+    envelope.schemaVersion !== 1 ||
+    envelope.keyId !== key.keyId ||
+    envelope.algorithm !== 'Ed25519' ||
+    JSON.stringify(envelope.payload) !== JSON.stringify(payload) ||
+    typeof envelope.signature !== 'string'
+  ) {
+    refusal('owner approval envelope does not exactly bind this operation');
+  }
+  const expiresAt = Date.parse(payload.expiresAt);
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    refusal('owner approval envelope is expired or has an invalid expiry');
+  }
+  const signed = Buffer.from(JSON.stringify(payload));
+  const signature = Buffer.from(envelope.signature, 'base64');
+  if (!crypto.verify(null, signed, key.publicKeyPem, signature)) {
+    refusal('owner approval signature is invalid');
+  }
+  return {
+    keyId: key.keyId,
+    approvalId: payload.approvalId,
+    approvedBy: payload.approvedBy,
+    expiresAt: payload.expiresAt,
+    payloadSha256: sha256Bytes(signed),
+  };
+}
+
 function uploadDurability(parsed) {
   const remote = parsed.remote ?? process.env.CANA_DURABILITY_REMOTE;
-  if (process.env.CANA_DURABILITY_OWNER_AUTHORIZED !== 'YES' || !remote) {
-    refusal('upload requires explicit owner authorization and remote configuration');
-  }
+  if (!remote) refusal('upload requires remote configuration');
+  const key = configuredOwnerKey(parsed);
   const source = identity();
   prerequisites(source);
   const artifact = resolveArtifact(source, parsed);
   const tarball = tarballFor(artifact);
   if (!fs.existsSync(tarball)) refusal(`artifact tarball is missing: ${tarball}`);
   const transport = remoteTransport(remote, tarball, null, 'upload');
+  const artifactSha256 = sha256File(tarball);
+  const approval = ownerApproval(parsed, {
+    action: 'durability-upload',
+    commit: source.commit,
+    tree: source.tree,
+    remote: transport.sanitized,
+    artifactSha256,
+  }, key);
   command(transport.command, transport.args, { timeout: 30 * 60_000 });
   const state = {
     schemaVersion: 1,
@@ -471,8 +541,9 @@ function uploadDurability(parsed) {
     tree: source.tree,
     remote: transport.sanitized,
     artifact: tarball,
-    artifactSha256: sha256File(tarball),
+    artifactSha256,
     uploadedAt: new Date().toISOString(),
+    approval,
     readback: null,
     state: 'UPLOAD_RECORDED_READBACK_PENDING',
   };
@@ -485,13 +556,23 @@ function uploadDurability(parsed) {
   return state;
 }
 
-function readbackDurability() {
+function readbackDurability(parsed) {
   const stateFile = path.join(stateRoot(), 'upload-state.json');
   if (!fs.existsSync(stateFile)) refusal('readback requires a recorded upload');
-  if (process.env.CANA_DURABILITY_OWNER_AUTHORIZED !== 'YES') {
-    refusal('readback requires explicit owner authorization');
-  }
+  const source = identity();
+  prerequisites(source);
   const state = readJson(stateFile);
+  if (state.commit !== source.commit || state.tree !== source.tree) {
+    refusal('readback state does not belong to the current commit and tree');
+  }
+  const approval = ownerApproval(parsed, {
+    action: 'durability-readback',
+    commit: state.commit,
+    tree: state.tree,
+    remote: state.remote,
+    artifactSha256: state.artifactSha256,
+    uploadedAt: state.uploadedAt,
+  });
   const destination = path.join(
     os.tmpdir(),
     `cana-durability-readback-${crypto.randomBytes(8).toString('hex')}.tar.gz`,
@@ -508,6 +589,7 @@ function readbackDurability() {
       sha256: downloaded,
       bytes: fs.statSync(destination).size,
       verifiedAt: new Date().toISOString(),
+      approval,
     };
     state.state = 'REMOTELY_DURABLE';
     writeJson(stateFile, state);

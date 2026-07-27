@@ -6,7 +6,7 @@ Run:
 ./cana verify maria
 ```
 
-The runner starts `mariadb:11.4.9` on an internal Docker network with tmpfs data and no published host port. A disposable Node 24 client validates and pushes `tools/mariadb-sim/schema.prisma`, which is mechanically generated from the live SQLite schema by `generate-schema.mjs`.
+The runner starts the reviewed MariaDB 11.4.9 image by immutable digest on an internal Docker network with tmpfs data and no published host port. A disposable, digest-pinned Node 24 client installs dependencies without database credentials, loses registry egress, then receives the ephemeral database URL only on the internal network. It validates and pushes `tools/mariadb-sim/schema.prisma`, which is mechanically generated from the live SQLite schema by `generate-schema.mjs`.
 
 The provider flip and all required `@db.Text` annotations exist only in the candidate schema. The live `apps/web/prisma/schema.prisma` remains SQLite. `candidate-cutover.sql` adds a candidate-only check that rejects an `ATTRIBUTION` row with a NULL event identity while retaining NULL for money rows.
 
@@ -15,7 +15,10 @@ Executed scenarios include:
 - 405-byte, 1 KiB, representative 64-link and 65,535-byte JSON evidence chains;
 - host/database SHA-256 and JSON preservation after round trip;
 - strict and non-strict SQL modes, including truncation falsification;
-- DATETIME(3), case-insensitive collation collisions and duplicate identity;
+- the unchanged `db-config.mjs` information-schema provider branch;
+- DATETIME(3) with a persisted and recomputed ledger entryHash;
+- case-insensitive collisions on the generated `User.email` and `Brand.domain` uniques;
+- duplicate identity plus two same-merchant NULL identities under the relied-upon unique index;
 - sequence contention, deadlock with ordered retry and connection exhaustion/recovery;
 - empty, populated, old, interrupted and concurrent migration cases;
 - logical backup, destructive-in-simulation restore and transaction rollback.

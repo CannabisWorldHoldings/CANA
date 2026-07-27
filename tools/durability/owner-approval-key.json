@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "state": "UNCONFIGURED_OWNER_GATED",
+  "algorithm": "Ed25519",
+  "keyId": null,
+  "publicKeyPem": null
+}

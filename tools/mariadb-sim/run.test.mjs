@@ -31,7 +31,10 @@ test('the MariaDB candidate is provider-specific and annotates every approved lo
 test('the MariaDB runner exposes the exact 11.4 execution surface', async () => {
   const module = await import('./run.mjs');
   assert.equal(typeof module.runMariaSimulation, 'function');
-  assert.equal(module.MARIA_IMAGE, 'mariadb:11.4.9');
+  assert.equal(
+    module.MARIA_IMAGE,
+    'mariadb@sha256:54ac814d243128263e18cf818f7abb611bf43a7a95ce8aa102d18f527b1516d1',
+  );
 });
 
 test('the candidate SQL fails closed for ATTRIBUTION rows without event identity', () => {

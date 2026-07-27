@@ -5,8 +5,8 @@
 ./cana durability build
 ./cana durability verify
 ./cana durability restore [--target <new-path>]
-./cana durability upload [--remote <s3-or-ssh-url>]
-./cana durability readback
+./cana durability upload --remote <s3-or-ssh-url> --approval <signed-envelope.json>
+./cana durability readback --approval <signed-envelope.json>
 ```
 
 `status` distinguishes the remotely verified base frontier from the current candidate. `tools/durability/base-remote-receipt.json` records the user’s superseding Drive correction without changing the historical handoff receipt.
@@ -26,12 +26,9 @@
 
 ## Remote proof gate
 
-Upload supports only explicit `s3://` or `ssh://` destinations and requires:
+Upload supports only explicit `s3://` or `ssh://` destinations. A caller-set environment variable is never authorization. Both upload and readback require separate Ed25519-signed approval envelopes whose canonical payloads bind the action, exact commit and tree, sanitized remote, artifact SHA-256, approver, approval ID and expiry. Readback approval also binds the recorded upload time.
 
-```text
-CANA_DURABILITY_OWNER_AUTHORIZED=YES
-CANA_DURABILITY_REMOTE=<remote>
-```
+`tools/durability/owner-approval-key.json` intentionally contains no public key in this candidate. The owner or Chief Integrator must explicitly reassign that configuration and install the owner public key before either network operation can run. Until then every caller, including one that sets the legacy `CANA_DURABILITY_OWNER_AUTHORIZED=YES`, is refused.
 
 Upload alone records `UPLOAD_RECORDED_READBACK_PENDING`. `readback` independently downloads the artifact and compares its SHA-256. Only a matching upload/download round trip for the current commit permits `REMOTELY_DURABLE`.
 

@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24.14.1
           package-manager-cache: false
@@ -30,8 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24.14.1
           package-manager-cache: false
@@ -42,8 +42,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24.14.1
           package-manager-cache: false
@@ -54,22 +54,47 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24.14.1
           package-manager-cache: false
       - run: sudo apt-get update && sudo apt-get install -y sqlite3
       - run: ./cana verify cpanel
 
+  durability-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CANA_RECEIPT_DIR: ${{ runner.temp }}/cana-durability-receipts
+      CANA_LOCAL_STATE_DIR: ${{ runner.temp }}/cana-durability-state
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: docker info
+      - name: Build, independently verify, and restore durability artifact
+        run: |
+          install -d -m 0700 "$CANA_RECEIPT_DIR" "$CANA_LOCAL_STATE_DIR"
+          ./cana durability build
+          ./cana durability verify
+          ./cana durability restore --target "$RUNNER_TEMP/cana-durability-restore"
+          node tools/test-runner/assert-ci-durability.mjs \
+            "$CANA_RECEIPT_DIR" \
+            "$RUNNER_TEMP/cana-durability-restore"
+
   github-import-offline:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: 24.14.1
           package-manager-cache: false

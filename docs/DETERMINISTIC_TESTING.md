@@ -11,7 +11,7 @@ The root `./cana` command is the candidate lane’s verification surface:
 ./cana verify cpanel
 ```
 
-The four general profiles refuse a dirty source, create a detached worktree, restore a deliberate mutation by exact blob hash, bundle the committed source, and clone it inside `node:24.14.1-bookworm`. The container owns its database, build output, network namespace and server. No host port is published.
+The four general profiles refuse a dirty source, create a detached worktree, restore a deliberate mutation by exact blob hash, bundle the committed source, and clone it inside the reviewed Node 24.14.1 image pinned by digest. `CANA_VERIFY_IMAGE` is rejected unless it equals that immutable image. The container owns its database, build output, network namespace and server. No host port is published.
 
 HTTP profiles rebuild Next with webpack before startup, detect the absence of a stale build, generate a runtime-only interaction secret, and require `/api/release` to state the exact expected 40-character commit with `Cache-Control: no-store`. The runner recreates the repository’s legacy absolute test paths only inside the disposable container.
 

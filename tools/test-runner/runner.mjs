@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url';
 import { sha256Bytes, sha256File, writeReceipt } from './receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const IMAGE = process.env.CANA_VERIFY_IMAGE ?? 'node:24.14.1-bookworm';
+const APPROVED_IMAGE =
+  'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
+const IMAGE = process.env.CANA_VERIFY_IMAGE ?? APPROVED_IMAGE;
 const STANDARD_PROFILES = new Set(['focused', 'full', 'clean-clone', 'release']);
 const TIMEOUTS = {
   focused: 12 * 60_000,
@@ -70,6 +72,11 @@ function requireClean(source) {
 }
 
 function ensureDocker() {
+  if (IMAGE !== APPROVED_IMAGE) {
+    throw new Error(
+      `CANA_VERIFY_IMAGE is not approved; expected immutable ${APPROVED_IMAGE}`,
+    );
+  }
   command('docker', ['info'], { timeout: 30_000 });
   let inspect = command(
     'docker',
