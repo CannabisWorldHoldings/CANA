@@ -7,6 +7,11 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  assertBuildOutputClean,
+  buildOutputDiagnostics,
+} from './build-output.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function cana(...args) {
@@ -127,4 +132,21 @@ test('the full-suite entropy adapter is reproducible and still yields distinct v
   assert.match(left, /^[0-9a-f]{24}$/);
   assert.match(right, /^[0-9a-f]{24}$/);
   assert.notEqual(left, right);
+});
+
+test('the verifier rejects successful Next builds that contain compilation diagnostics', () => {
+  const attemptedImport = [
+    '⚠ Compiled with warnings in 5.4s',
+    '',
+    'Attempted import error: collectSiteIntelligenceSnapshot is not exported.',
+  ].join('\n');
+  assert.deepEqual(buildOutputDiagnostics('✓ Compiled successfully'), []);
+  assert.deepEqual(buildOutputDiagnostics(attemptedImport), [
+    'NEXT_COMPILED_WITH_WARNINGS',
+    'NEXT_ATTEMPTED_IMPORT_ERROR',
+  ]);
+  assert.throws(
+    () => assertBuildOutputClean(attemptedImport),
+    /NEXT_COMPILED_WITH_WARNINGS.*NEXT_ATTEMPTED_IMPORT_ERROR/s,
+  );
 });

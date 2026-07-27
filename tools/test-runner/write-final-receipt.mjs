@@ -180,6 +180,9 @@ function exactFinalReceipts(receipts, source) {
   if (selected.some((entry) => entry.overall !== 'PASS')) {
     throw new Error(`a required final receipt is not PASS: ${JSON.stringify(selected)}`);
   }
+  if (selected.slice(0, 4).some((entry) => entry.buildDiagnostics?.evidenceInOutput !== true)) {
+    throw new Error(`a standard verifier lacks clean build-diagnostic evidence: ${JSON.stringify(selected.slice(0, 4))}`);
+  }
   return selected;
 }
 
@@ -395,18 +398,22 @@ export function writeFinalCandidateReceipt(sessionFile) {
         changed: false,
       },
     ],
-    preExistingObservations: [
+    resolvedTechnicalObservations: [
       {
-        claim: 'Next build warns that collectSiteIntelligenceSnapshot is imported but not exported.',
+        claim: 'The database-backed collector no longer shares a resolver stem with site-intelligence.mjs, and standard verification fails on release-blocking Next build diagnostics.',
         importer: {
           file: 'apps/web/src/app/admin/site-intelligence/page.tsx',
           sha256: sha256File(path.join(ROOT, 'apps/web/src/app/admin/site-intelligence/page.tsx')),
         },
-        module: {
-          file: 'apps/web/src/lib/site-intelligence.mjs',
-          sha256: sha256File(path.join(ROOT, 'apps/web/src/lib/site-intelligence.mjs')),
+        collector: {
+          file: 'apps/web/src/lib/site-intelligence.server.ts',
+          sha256: sha256File(path.join(ROOT, 'apps/web/src/lib/site-intelligence.server.ts')),
         },
-        changed: false,
+        verifier: {
+          file: 'tools/test-runner/build-output.mjs',
+          sha256: sha256File(path.join(ROOT, 'tools/test-runner/build-output.mjs')),
+        },
+        changed: true,
       },
     ],
     rollback: {

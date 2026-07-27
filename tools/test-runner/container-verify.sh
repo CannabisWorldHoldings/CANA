@@ -56,12 +56,15 @@ npm ci --no-audit --no-fund
 
 build_web() {
   local started
+  local build_log
   started=$(date +%s)
+  build_log=$(mktemp)
   rm -rf "$WEB/.next"
   (
     cd "$WEB"
-    CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack
+    CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack 2>&1 | tee "$build_log"
   )
+  node "$ROOT/tools/test-runner/build-output.mjs" "$build_log"
   test -s "$WEB/.next/BUILD_ID"
   local built
   built=$(stat -c %Y "$WEB/.next/BUILD_ID")

@@ -270,6 +270,15 @@ async function standardVerification(profile) {
         required: true,
         evidenceInOutput: container.output.includes('CANA_STALE_BUILD_CHECK_PASS'),
       },
+      buildDiagnostics: {
+        required: true,
+        evidenceInOutput: container.output.includes('CANA_BUILD_DIAGNOSTICS_PASS warnings=0'),
+        policy: [
+          'NEXT_COMPILED_WITH_WARNINGS',
+          'NEXT_ATTEMPTED_IMPORT_ERROR',
+          'NEXT_MODULE_NOT_FOUND',
+        ],
+      },
       serverIdentity: {
         expectedCommit: source.commit,
         evidenceInOutput: container.output.includes(`"gitSha":"${source.commit}"`),

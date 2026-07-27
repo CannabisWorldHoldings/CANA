@@ -5,7 +5,7 @@ import {
   assertAdmin,
   requireAdmin,
 } from '@/lib/auth/session';
-import { collectSiteIntelligenceSnapshot } from '@/lib/site-intelligence';
+import { collectSiteIntelligenceSnapshot } from '@/lib/site-intelligence.server';
 import {
   persistSiteIntelligenceSnapshot,
   SITE_ROUTE_INVENTORY,

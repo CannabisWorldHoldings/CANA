@@ -11,7 +11,19 @@
   },
   "explicit_user_assignment": {
     "root_dispatcher": "cana",
-    "reason": "The lane directive requires the literal ./cana command surface. This path is not prohibited by the source ownership manifest."
+    "reason": "The lane directive requires the literal ./cana command surface. This path is not prohibited by the source ownership manifest.",
+    "technical_stewardship_2026_07_27": {
+      "reason": "The owner explicitly prioritized fixing the collectSiteIntelligenceSnapshot import/export warning and maintaining a concise technical state while preserving business semantics.",
+      "paths": [
+        "apps/web/src/app/admin/site-intelligence/page.tsx",
+        "apps/web/src/lib/site-intelligence.ts",
+        "apps/web/src/lib/site-intelligence.server.ts",
+        "apps/web/tests/site-intelligence.test.mjs",
+        "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
+        "docs/CANA_TECHNICAL_STATE.md",
+        "docs/RECOVERY_ARCHIVE_DISPOSITION.md"
+      ]
+    }
   },
   "owned_create_paths": [
     "cana",
@@ -25,6 +37,8 @@
     "docs/MARIADB_SIMULATION.md",
     "docs/DURABILITY_CLI.md",
     "docs/CANONICAL_IMPORT_PLAN.md",
+    "docs/CANA_TECHNICAL_STATE.md",
+    "docs/RECOVERY_ARCHIVE_DISPOSITION.md",
     "deploy/namecheap/SIMULATION_NOTES.md",
     ".github/workflows/*.yml",
     "apps/web/tests/mariadb-*.test.mjs",
@@ -33,6 +47,11 @@
   ],
   "owned_modify_paths": [
     "apps/web/tests/helpers/**",
+    "apps/web/src/app/admin/site-intelligence/page.tsx",
+    "apps/web/src/lib/site-intelligence.ts",
+    "apps/web/src/lib/site-intelligence.server.ts",
+    "apps/web/tests/site-intelligence.test.mjs",
+    "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
     "deploy/namecheap/smoke-test.sh",
     "deploy/namecheap/healthcheck.sh",
     "deploy/namecheap/readycheck.sh"
@@ -43,6 +62,7 @@
     "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
     "tools/test-runner/runner.mjs",
     "tools/test-runner/receipt.mjs",
+    "tools/test-runner/build-output.mjs",
     "tools/test-runner/runner.test.mjs",
     "tools/test-runner/write-final-receipt.mjs",
     "tools/mariadb-sim/generate-schema.mjs",
@@ -65,6 +85,12 @@
     "docs/MARIADB_SIMULATION.md",
     "docs/DURABILITY_CLI.md",
     "docs/CANONICAL_IMPORT_PLAN.md",
+    "docs/CANA_TECHNICAL_STATE.md",
+    "docs/RECOVERY_ARCHIVE_DISPOSITION.md",
+    "apps/web/src/app/admin/site-intelligence/page.tsx",
+    "apps/web/src/lib/site-intelligence.server.ts",
+    "apps/web/tests/site-intelligence.test.mjs",
+    "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
     "deploy/namecheap/SIMULATION_NOTES.md"
   ],
   "global_no_edit": [
