@@ -138,6 +138,19 @@ function makeImmutable(directory) {
   fs.chmodSync(directory, 0o555);
 }
 
+function makeWritable(directory) {
+  if (!fs.existsSync(directory)) return;
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      makeWritable(target);
+    } else {
+      fs.chmodSync(target, 0o644);
+    }
+  }
+  fs.chmodSync(directory, 0o755);
+}
+
 function activate(root, releaseName) {
   const next = path.join(root, 'current.next');
   fs.rmSync(next, { force: true });
@@ -725,8 +738,8 @@ export async function runCpanelSimulation({ repoRoot }) {
     failure = error instanceof Error ? error.message : String(error);
   } finally {
     if (web) await stopWeb(web);
-    fs.chmodSync(oldRelease, 0o755);
-    fs.chmodSync(newRelease, 0o755);
+    makeWritable(oldRelease);
+    makeWritable(newRelease);
     fs.rmSync(root, { recursive: true, force: true });
     runtimeRemoved = !fs.existsSync(root);
   }
