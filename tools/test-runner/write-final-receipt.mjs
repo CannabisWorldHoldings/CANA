@@ -221,6 +221,11 @@ function historicalFalsification() {
       restored: true,
     },
     {
+      scenario: 'real Prisma cPanel proof invoked repo-mode migrate from the wrong working directory',
+      receiptSha256: 'c2cbc4b533cacebaad8a0e0b3fbe6fc82cd7e102762fd0845817c35fb4c15cbc',
+      restored: true,
+    },
+    {
       scenario: 'full suite drew a random nonce that matched the phone-number heuristic',
       receiptSha256: '6ed9da68c6fae21972f7bcf19f04cdfc24e9d97357dc03d72e3b314f9fd829ff',
       restored: true,
