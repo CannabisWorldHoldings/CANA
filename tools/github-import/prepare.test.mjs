@@ -38,3 +38,12 @@ test('integration pull requests preserve evidence and owner gates', () => {
   assert.match(template, /provider flip.*not merged/i);
   assert.match(template, /rollback/i);
 });
+
+test('workflow leaves runtime equality unproven until an executed receipt is supplied', () => {
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify.yml'),
+    'utf8',
+  );
+  assert.match(workflow, /run: \.\/cana github prepare\s*$/m);
+  assert.doesNotMatch(workflow, /github prepare --runtime-sha/);
+});

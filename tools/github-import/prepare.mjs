@@ -121,13 +121,43 @@ function localStateDirectory(commit) {
   return directory;
 }
 
-function compareRuntime(sourceSha, runtimeSha) {
+function runtimeEvidence(parsed) {
+  if (parsed['runtime-receipt']) {
+    const file = path.resolve(parsed['runtime-receipt']);
+    const receipt = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (
+      receipt.environment !== 'CPANEL_SIMULATION' ||
+      receipt.overall !== 'PASS' ||
+      !/^[0-9a-f]{40}$/.test(receipt.source?.commit ?? '')
+    ) {
+      throw Object.assign(new Error('runtime receipt must be a passing CPANEL_SIMULATION release receipt'), { exitCode: 2 });
+    }
+    return {
+      sha: receipt.source.commit,
+      evidence: {
+        kind: 'CPANEL_SIMULATION release receipt',
+        file,
+        sha256: sha256File(file),
+      },
+    };
+  }
+  return {
+    sha: parsed['runtime-sha'],
+    evidence: parsed['runtime-sha']
+      ? { kind: 'caller-supplied SHA only', file: null, sha256: null }
+      : null,
+  };
+}
+
+function compareRuntime(sourceSha, runtime) {
+  const runtimeSha = runtime.sha;
   if (!runtimeSha) {
     return {
       status: 'UNPROVEN',
       releaseSha: sourceSha,
       cpanelRuntimeSha: null,
       equal: null,
+      evidence: null,
       claim: 'No runtime SHA was supplied. No production equality is claimed.',
     };
   }
@@ -139,7 +169,10 @@ function compareRuntime(sourceSha, runtimeSha) {
     releaseSha: sourceSha,
     cpanelRuntimeSha: runtimeSha,
     equal: runtimeSha === sourceSha,
-    claim: 'Comparison uses a caller-supplied or locally simulated runtime identity; it is not evidence of a live cPanel deployment.',
+    evidence: runtime.evidence,
+    claim: runtime.evidence?.kind === 'CPANEL_SIMULATION release receipt'
+      ? 'Comparison is bound to an executed local simulation receipt. It is not evidence of a live cPanel deployment.'
+      : 'Comparison uses only a caller-supplied runtime identity. It is not executed runtime evidence or proof of a live cPanel deployment.',
   };
 }
 
@@ -168,7 +201,7 @@ export async function prepareGithubImport({ args = [] } = {}) {
   const missingContexts = policy.required_status_checks.contexts.filter(
     (context) => !jobs.includes(context),
   );
-  const runtimeComparison = compareRuntime(source.commit, parsed['runtime-sha']);
+  const runtimeComparison = compareRuntime(source.commit, runtimeEvidence(parsed));
   const branchClassification = branches();
   const canonicalRemoteUrl = 'git@github.com:CannabisWorldHoldings/CANA.git';
   const commands = {
