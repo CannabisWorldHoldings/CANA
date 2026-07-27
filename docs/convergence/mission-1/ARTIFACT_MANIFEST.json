@@ -61,8 +61,8 @@
     },
     {
       "path": "docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json",
-      "bytes": 11119,
-      "sha256": "c122c267d531c1fc50c545678a9e5b66e6660f0d576f335e8ccc2315ab6c06f8"
+      "bytes": 11718,
+      "sha256": "53aa383749a75a9b780ce9d328e99122f8cc85e5925ea89bf69347bc74d27dfc"
     },
     {
       "path": "tools/convergence-census/generate-input-hashes.mjs",
@@ -80,5 +80,5 @@
       "sha256": "c8019e066b4edf58e55b162c6c0cae3d04908a6742ddd0e3afb7f4ed93056fb9"
     }
   ],
-  "artifact_set_sha256": "9d5b27db75cfb2688c90460914c698e79469ae21d90177f5d6cd5a650083cfd7"
+  "artifact_set_sha256": "5ec53011c7f9a20e4808380fc03f4b04823c43f1a81531582d9ef5a0bf4bb170"
 }

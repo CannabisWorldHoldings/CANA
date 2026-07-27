@@ -281,6 +281,17 @@
       "result": "Refuses unless the caller supplies an out-of-band reviewed 40-hex commit and tree."
     },
     {
+      "id": "census-key-file-ref-falsification",
+      "source": {
+        "path": "tools/convergence-census/verify.mjs"
+      },
+      "method": "A disposable clone changed one canonical-cana key-file ref, regenerated the artifact manifest, committed the sabotage, and supplied that clone's exact out-of-band commit and tree.",
+      "exit_code": 1,
+      "expected_refusal": true,
+      "result": "Refused the wrong key-file ref before reading its bytes: input census key-file identity or ref is invalid.",
+      "source_restoration": "NOT_APPLICABLE_DISPOSABLE_CLONE_MOVED_TO_TRASH"
+    },
+    {
       "id": "census-deterministic-generation",
       "source": {
         "paths": [
