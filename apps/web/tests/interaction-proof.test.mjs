@@ -212,15 +212,23 @@ test('the token binds NO user identifier', () => {
     /^(ip|ua|user_?agent|email|phone|uid|user_?id|session_?id|device_?id|fingerprint)$/i.test(k));
   assert.deepEqual(identifierKeys, [], `token payload carries identifier keys: ${identifierKeys.join(',')}`);
   // No value may look like an address, an email, or a raw phone number.
+  // Cryptographic nonce and surface-digest fields are constrained separately:
+  // an opaque hexadecimal value can contain a long digit run by chance.
+  const opaqueHexFields = new Set(['n', 's']);
   for (const [k, v] of Object.entries(payload)) {
     if (typeof v !== 'string') continue;
     assert.ok(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(v), `${k} looks like an IP: ${v}`);
     assert.ok(!/@/.test(v), `${k} looks like an email: ${v}`);
-    assert.ok(!/\+?\d[\d\s().-]{8,}/.test(v), `${k} looks like a phone number: ${v}`);
+    assert.ok(
+      opaqueHexFields.has(k) || !/\+?\d[\d\s().-]{8,}/.test(v),
+      `${k} looks like a phone number: ${v}`,
+    );
     assert.ok(!/Mozilla|Chrome|Safari|AppleWebKit/i.test(v), `${k} looks like a user agent: ${v}`);
   }
   // Only the expected fields exist at all.
   assert.deepEqual(Object.keys(payload).sort(), ['a', 'exp', 'iat', 'm', 'n', 's', 't', 'v']);
+  assert.match(payload.n, /^[0-9a-f]{24}$/);
+  assert.match(payload.s, /^[0-9a-f]{16}$/);
   assert.equal(PRIVACY_CONTRACT.ip_address_stored, false);
   assert.equal(PRIVACY_CONTRACT.user_agent_stored, false);
   assert.deepEqual(PRIVACY_CONTRACT.identifiers_collected, []);
