@@ -156,7 +156,7 @@ model EnginePrefetch {
       [
         'cp',
         enginePrefetchSchema,
-        `${dependencyContainer}:/tmp/cana-engine-prefetch.prisma`,
+        `${dependencyContainer}:/workspace/engine-prefetch.prisma`,
       ],
       { timeout: 30_000 },
     );
@@ -208,7 +208,7 @@ model EnginePrefetch {
         'prisma',
         'generate',
         '--schema',
-        '/tmp/cana-engine-prefetch.prisma',
+        '/workspace/engine-prefetch.prisma',
       ],
       { allowFailure: true, timeout: 5 * 60_000 },
     );
