@@ -40,6 +40,7 @@ const TRACKED_STATE = [
   'docs/technical-promotion/TECHNICAL_PROMOTION_STATE.md',
   'docs/technical-promotion/OWNER_ACTION_PACKET.md',
   'docs/technical-promotion/EVIDENCE_CHAIN_LIMITS.md',
+  'docs/technical-promotion/PROMOTION_CONTRACT.json',
 ];
 
 function command(commandName, args, { cwd = ROOT, allowFailure = false } = {}) {
@@ -351,6 +352,29 @@ function trackedState() {
   });
 }
 
+function promotionContract() {
+  const relative = 'docs/technical-promotion/PROMOTION_CONTRACT.json';
+  const contract = readJson(path.join(ROOT, relative));
+  if (
+    contract.schemaVersion !== 1 ||
+    contract.kind !== 'CANA technical promotion contract' ||
+    contract.integrationBranch !== INTEGRATION_BRANCH ||
+    contract.protected?.commit !== PROTECTED_COMMIT ||
+    contract.protected?.tree !== PROTECTED_TREE ||
+    contract.candidate?.commit !== CANDIDATE_COMMIT ||
+    contract.candidate?.tree !== CANDIDATE_TREE ||
+    contract.integrationMerge !== INTEGRATION_MERGE ||
+    JSON.stringify(contract.requiredReceipts) !== JSON.stringify(REQUIRED_RECEIPTS) ||
+    JSON.stringify(contract.requiredIndependentVerifiers) !==
+      JSON.stringify(REQUIRED_VERIFIERS) ||
+    contract.hostedClaims !== 'UNPROVEN' ||
+    contract.externalMutationAuthorized !== false
+  ) {
+    throw new Error('tracked promotion contract does not match executable promotion policy');
+  }
+  return { file: relative, sha256: sha256File(path.join(ROOT, relative)), body: contract };
+}
+
 function changedFiles(commit) {
   return git(['diff', '--name-only', `${PROTECTED_COMMIT}..${commit}`])
     .split('\n')
@@ -397,6 +421,7 @@ export function finalizePromotionSession(sessionFile, options) {
     throw new Error('evidence-chain decision is not bound to the clean promotion source');
   }
   const durableState = trackedState();
+  const contract = promotionContract();
   const outputRoot = path.resolve(
     options.outputDirectory ??
     path.join(ROOT, '.cana-local', 'promotion-gate', status.source.commit),
@@ -437,6 +462,10 @@ export function finalizePromotionSession(sessionFile, options) {
     ],
     prohibitedChanged,
     evidenceChain: analysis,
+    promotionContract: {
+      file: contract.file,
+      sha256: contract.sha256,
+    },
     trackedState: durableState,
     receipts: receipts.map(({ body: ignored, ...entry }) => entry),
     independentVerifiers: verifiers.map(({ body, ...entry }) => ({

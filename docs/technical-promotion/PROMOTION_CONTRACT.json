@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "kind": "CANA technical promotion contract",
+  "integrationBranch": "integration/cana-technical-promotion-de4a497b",
+  "protected": {
+    "branch": "recover/competitive-ui-day-night",
+    "commit": "c953ebcd25c46ef33af0700d7913a899d839bce8",
+    "tree": "f7c56f6dad3875ccba10dfadbd2d953baf5c1509"
+  },
+  "candidate": {
+    "branch": "codex/cana-bottleneck-clearance",
+    "commit": "de4a497b6c039a5dccc9c3fb9a470dc0bf610318",
+    "tree": "432cf8117f24a7401b29df4c403181dae8e7ec32",
+    "commitCountFromProtected": 40
+  },
+  "integrationMerge": "d84486b32fd424d196bc8b535d13396245875042",
+  "requiredReceipts": [
+    "verify-focused",
+    "verify-full",
+    "verify-clean-clone",
+    "verify-release",
+    "verify-maria",
+    "verify-cpanel",
+    "durability-build",
+    "durability-verify",
+    "durability-restore",
+    "github-import-prepare"
+  ],
+  "requiredIndependentVerifiers": [
+    "mariadb",
+    "deterministic-verifier",
+    "durability",
+    "cpanel",
+    "release-identity",
+    "security"
+  ],
+  "exactIdentityResolver": {
+    "commit": "git rev-parse HEAD",
+    "tree": "git rev-parse HEAD^{tree}",
+    "normalizedReceipt": "./cana promotion finalize --session <session.json> --verifier-dir <directory>"
+  },
+  "hostedClaims": "UNPROVEN",
+  "externalMutationAuthorized": false
+}
