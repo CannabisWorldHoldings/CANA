@@ -24,10 +24,11 @@ PRISMA_VERSION="$(npx --no-install prisma -v | sed -n 's/^prisma[[:space:]]*:[[:
 test "$PRISMA_VERSION" = "6.19.3"
 
 MIGRATION_OUTPUT="$(
+  cd apps/web
   OWD_DATA_DIR="$DATA" \
   OWD_DB_PATH="$DB" \
   OWD_NODE="$(command -v node)" \
-  sh deploy/namecheap/migrate.sh
+  sh ../../deploy/namecheap/migrate.sh
 )"
 printf '%s\n' "$MIGRATION_OUTPUT"
 grep -q 'MIGRATIONS APPLIED' <<<"$MIGRATION_OUTPUT"
