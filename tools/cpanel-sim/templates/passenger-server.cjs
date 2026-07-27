@@ -1,6 +1,8 @@
-import fs from 'node:fs';
-import http from 'node:http';
-import path from 'node:path';
+'use strict';
+
+const fs = require('node:fs');
+const http = require('node:http');
+const path = require('node:path');
 
 const releaseRoot = process.env.CANA_RELEASE_ROOT;
 const logs = process.env.CANA_SHARED_LOGS;
@@ -15,14 +17,15 @@ if (release.environment !== 'CPANEL_SIMULATION') {
 }
 
 fs.appendFileSync(
-  path.join(logs, 'web.jsonl'),
-  `${JSON.stringify({ event: 'web-start', gitSha: release.gitSha, at: new Date().toISOString() })}\n`,
+  path.join(logs, 'passenger-web.jsonl'),
+  `${JSON.stringify({ event: 'passenger-web-start', gitSha: release.gitSha, at: new Date().toISOString() })}\n`,
 );
 fs.writeFileSync(
-  path.join(spill, `startup-${release.gitSha}.json`),
+  path.join(spill, `passenger-startup-${release.gitSha}.json`),
   `${JSON.stringify({ environment: 'CPANEL_SIMULATION', gitSha: release.gitSha })}\n`,
 );
 
+const staticRoutes = new Set(['/', '/pricing', '/robots.txt', '/sitemap.xml', '/llms.txt']);
 const server = http.createServer((request, response) => {
   response.setHeader('content-type', 'application/json');
   response.setHeader('x-cana-environment', 'CPANEL_SIMULATION');
@@ -50,7 +53,7 @@ const server = http.createServer((request, response) => {
     }));
     return;
   }
-  if (['/', '/pricing', '/robots.txt', '/sitemap.xml', '/llms.txt'].includes(request.url)) {
+  if (staticRoutes.has(request.url)) {
     response.end(JSON.stringify({
       status: 'CPANEL_SIMULATION',
       route: request.url,
@@ -62,7 +65,7 @@ const server = http.createServer((request, response) => {
   response.end(JSON.stringify({ status: 'NOT_FOUND' }));
 });
 
-server.listen(0, '127.0.0.1', () => {
+server.listen(Number(process.env.PORT || 0), process.env.HOSTNAME || '127.0.0.1', () => {
   const address = server.address();
   fs.writeFileSync(portFile, `${address.port}\n`);
 });

@@ -202,25 +202,31 @@ function durabilityStatus() {
   const base = readJson(BASE_RECEIPT);
   const uploadStateFile = path.join(stateRoot(), 'upload-state.json');
   const upload = fs.existsSync(uploadStateFile) ? readJson(uploadStateFile) : null;
-  const currentRoundTrip =
+  const recordedCandidateRoundTrip =
     upload?.commit === source.commit &&
+    upload?.tree === source.tree &&
     upload?.readback?.sha256 === upload?.artifactSha256 &&
     upload?.readback?.verified === true;
   const atVerifiedBase = source.commit === base.commit && base.remote.uploadDownloadHashRoundTripVerified;
-  const state = currentRoundTrip || atVerifiedBase ? 'REMOTELY_DURABLE' : 'LOCAL_ONLY_CANDIDATE';
+  const state = atVerifiedBase ? 'REMOTELY_DURABLE' : 'LOCAL_ONLY_CANDIDATE';
   const ahead = Number(git(['rev-list', '--count', `${BASE}..${source.commit}`]));
   const body = {
     schemaVersion: 1,
     state,
     current: source,
-    remotelyDurableFrontier: currentRoundTrip ? source.commit : base.commit,
+    remotelyDurableFrontier: base.commit,
     baseCorrection: {
       archive: base.archive,
       driveFileId: base.remote.driveFileId,
       historicalReceiptModified: false,
     },
     candidateCommitsBeyondBase: ahead,
-    candidateRoundTrip: currentRoundTrip,
+    candidateRoundTrip: false,
+    recordedCandidateRoundTrip,
+    candidateStatusClaim:
+      recordedCandidateRoundTrip
+        ? 'A local round-trip record exists but is not trusted by passive status. Run a fresh signed readback to earn a REMOTELY_DURABLE receipt.'
+        : 'No candidate remote round trip is proven.',
   };
   process.stdout.write(`${JSON.stringify(body, null, 2)}\n`);
   return body;

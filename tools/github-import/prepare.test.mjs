@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -29,15 +31,46 @@ test('protected main requires every candidate verification lane', () => {
   }
 });
 
-test('integration pull requests preserve evidence and owner gates', () => {
-  const template = fs.readFileSync(
-    path.join(ROOT, 'tools', 'github-import', 'PULL_REQUEST_TEMPLATE.md'),
-    'utf8',
-  );
-  assert.match(template, /exact commit and tree/i);
-  assert.match(template, /owner-gated/i);
-  assert.match(template, /provider flip.*not merged/i);
-  assert.match(template, /rollback/i);
+test('offline preparation executes no owner-gated command', () => {
+  const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-github-prepare-test-'));
+  try {
+    const reportFile = path.join(scratch, 'report.json');
+    const result = spawnSync(
+      path.join(ROOT, 'cana'),
+      ['github', 'prepare', '--output', reportFile],
+      {
+        cwd: ROOT,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CANA_GITHUB_IMPORT_STATE_DIR: scratch,
+          CANA_RECEIPT_DIR: path.join(scratch, 'receipts'),
+        },
+      },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(fs.readFileSync(reportFile, 'utf8'));
+    assert.deepEqual(
+      {
+        accessed: report.canonical.accessed,
+        probed: report.canonical.probed,
+        mutated: report.canonical.mutated,
+      },
+      { accessed: false, probed: false, mutated: false },
+    );
+    assert.ok(
+      Object.values(report.commands).every(
+        (entry) => entry.executed === false && entry.ownerGated === true,
+      ),
+    );
+    assert.match(
+      report.commands.integrationPullRequest.command,
+      /CannabisWorldHoldings\/CANA/,
+    );
+    assert.match(report.rollback.git, /git revert/);
+  } finally {
+    fs.rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test('workflow leaves runtime equality unproven until an executed receipt is supplied', () => {

@@ -10,7 +10,20 @@ import { sha256File, writeReceipt } from '../test-runner/receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEMPLATES = path.join(ROOT, 'tools', 'cpanel-sim', 'templates');
+const NAMECHEAP = path.join(ROOT, 'deploy', 'namecheap');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
+const NAMECHEAP_SCRIPTS = [
+  'app.js',
+  'deploy.sh',
+  'restart.sh',
+  'rollback.sh',
+  'migrate.sh',
+  'healthcheck.sh',
+  'readycheck.sh',
+  'smoke-test.sh',
+  'restore-backup.sh',
+  'worker.mjs',
+];
 
 function command(commandName, args, {
   cwd = ROOT,
@@ -53,16 +66,63 @@ function releaseIdentity(commit, artifact) {
   };
 }
 
+function copyNamecheapScripts(target) {
+  fs.mkdirSync(target, { recursive: true });
+  const hashes = {};
+  for (const file of NAMECHEAP_SCRIPTS) {
+    const source = path.join(NAMECHEAP, file);
+    const destination = path.join(target, file);
+    fs.copyFileSync(source, destination);
+    if (file.endsWith('.sh')) fs.chmodSync(destination, 0o755);
+    hashes[file] = sha256File(source);
+  }
+  return hashes;
+}
+
 function createRelease(root, name, commit) {
   const release = path.join(root, 'releases', name);
   fs.mkdirSync(release, { recursive: true });
   fs.cpSync(TEMPLATES, release, { recursive: true });
+  copyNamecheapScripts(path.join(release, 'namecheap-scripts'));
   fs.writeFileSync(
     path.join(release, 'release.json'),
     `${JSON.stringify(releaseIdentity(commit, name), null, 2)}\n`,
   );
   command('git', ['archive', '--format=tar', '--output', path.join(release, 'source.tar'), commit]);
   return release;
+}
+
+function createNamecheapArtifact(root, name, commit) {
+  const buildRoot = path.join(root, 'namecheap-artifacts', name);
+  const release = path.join(buildRoot, name);
+  const uploads = path.join(root, 'account-home', 'uploads');
+  fs.mkdirSync(release, { recursive: true });
+  fs.mkdirSync(uploads, { recursive: true });
+  fs.cpSync(TEMPLATES, release, { recursive: true });
+  const scriptHashes = copyNamecheapScripts(release);
+  fs.copyFileSync(path.join(TEMPLATES, 'passenger-server.cjs'), path.join(release, 'server.js'));
+  fs.cpSync(path.join(ROOT, 'apps', 'web', 'prisma'), path.join(release, 'prisma'), {
+    recursive: true,
+  });
+  const prismaBin = path.join(release, 'node_modules', '.bin');
+  fs.mkdirSync(prismaBin, { recursive: true });
+  fs.copyFileSync(path.join(TEMPLATES, 'prisma'), path.join(prismaBin, 'prisma'));
+  fs.chmodSync(path.join(prismaBin, 'prisma'), 0o755);
+  const identity = releaseIdentity(commit, name);
+  fs.writeFileSync(path.join(release, 'release.json'), `${JSON.stringify(identity, null, 2)}\n`);
+  fs.writeFileSync(
+    path.join(release, 'receipt.json'),
+    `${JSON.stringify({
+      artifact: name,
+      gitSha: commit,
+      builtAt: identity.createdAt,
+      environment: 'CPANEL_SIMULATION',
+    }, null, 2)}\n`,
+  );
+  const tarName = `${name}.tar.gz`;
+  const tarFile = path.join(uploads, tarName);
+  command('tar', ['-czf', tarFile, '-C', buildRoot, name]);
+  return { tarName, tarFile, scriptHashes };
 }
 
 function makeImmutable(directory) {
@@ -121,6 +181,35 @@ async function startWeb(root, releaseRoot) {
   throw new Error('simulated web launcher did not publish its port');
 }
 
+async function startPassengerWeb(root, releaseRoot, database) {
+  const portFile = path.join(root, 'shared', 'logs', `passenger-port-${crypto.randomBytes(4).toString('hex')}`);
+  const logFile = path.join(root, 'shared', 'logs', 'passenger-process.log');
+  const descriptor = fs.openSync(logFile, 'a');
+  const child = spawn(process.execPath, [path.join(releaseRoot, 'app.js')], {
+    cwd: releaseRoot,
+    env: {
+      ...runtimeEnvironment(root, releaseRoot, portFile),
+      DATABASE_URL: `file:${database}`,
+      HOSTNAME: '127.0.0.1',
+      PORT: '0',
+    },
+    stdio: ['ignore', descriptor, descriptor],
+  });
+  fs.closeSync(descriptor);
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (fs.existsSync(portFile)) {
+      const port = Number(fs.readFileSync(portFile, 'utf8').trim());
+      if (Number.isInteger(port) && port > 0) return { child, port, portFile };
+    }
+    if (child.exitCode !== null) {
+      throw new Error(`existing Passenger launcher exited ${child.exitCode}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  child.kill('SIGKILL');
+  throw new Error('existing Passenger launcher did not publish its port');
+}
+
 async function stopWeb(processState) {
   if (!processState?.child || processState.child.exitCode !== null) return true;
   processState.child.kill('SIGTERM');
@@ -160,6 +249,263 @@ function stateDirectory(commit) {
   const directory = path.join(path.resolve(root), commit);
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
   return directory;
+}
+
+async function exerciseExistingNamecheapScripts({
+  root,
+  directories,
+  source,
+  checks,
+}) {
+  const accountHome = path.join(root, 'account-home');
+  const appHome = path.join(accountHome, 'apps', 'orderweeddc-staging');
+  const oldName = `orderweeddc-${BASE.slice(0, 12)}`;
+  const newName = `orderweeddc-${source.commit.slice(0, 12)}`;
+  const oldArtifact = createNamecheapArtifact(root, oldName, BASE);
+  const newArtifact = createNamecheapArtifact(root, newName, source.commit);
+  const database = path.join(directories.data, 'existing-prod.db');
+  const baseEnvironment = {
+    ...process.env,
+    HOME: accountHome,
+    OWD_APP_HOME: appHome,
+    OWD_UPLOADS: path.join(accountHome, 'uploads'),
+    OWD_DATA_DIR: directories.data,
+    OWD_BACKUP_DIR: directories.backups,
+    OWD_DB_PATH: database,
+    OWD_NODE: process.execPath,
+    TMPDIR: directories.logs,
+  };
+  const executed = [];
+  let passenger = null;
+  try {
+    for (const artifact of [oldArtifact, newArtifact]) {
+      const deployed = command('sh', [path.join(NAMECHEAP, 'deploy.sh'), artifact.tarName], {
+        env: baseEnvironment,
+      });
+      executed.push({
+        script: 'deploy.sh',
+        artifact: artifact.tarName,
+        output: deployed.stdout.trim(),
+      });
+    }
+    const current = path.join(appHome, 'current');
+    const previous = path.join(appHome, 'previous');
+    const currentReceipt = JSON.parse(fs.readFileSync(path.join(current, 'receipt.json'), 'utf8'));
+    const previousReceipt = JSON.parse(fs.readFileSync(path.join(previous, 'receipt.json'), 'utf8'));
+    const exactCopies = Object.entries(newArtifact.scriptHashes).every(
+      ([file, expected]) => sha256File(path.join(current, file)) === expected,
+    );
+    check(
+      checks,
+      'existing deploy script release swap',
+      currentReceipt.gitSha === source.commit &&
+        previousReceipt.gitSha === BASE &&
+        exactCopies &&
+        fs.existsSync(path.join(appHome, 'restart.sh')) &&
+        fs.existsSync(path.join(appHome, 'rollback.sh')),
+      `deploy.sh installed ${source.commit}, preserved ${BASE}, and copied exact existing scripts`,
+    );
+
+    const migration = command('sh', [path.join(current, 'migrate.sh')], {
+      cwd: current,
+      env: baseEnvironment,
+    });
+    executed.push({ script: 'migrate.sh', output: migration.stdout.trim() });
+    const migrationCount = sqlite(
+      current,
+      database,
+      'SELECT count(*) FROM _prisma_migrations',
+    );
+    const ledgerTable = sqlite(
+      current,
+      database,
+      "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='DemandCreditEntry'",
+    );
+    check(
+      checks,
+      'existing migration script',
+      migrationCount === '2' && ledgerTable === '1',
+      'migrate.sh applied both exact committed migration SQL files through the local Prisma contract adapter',
+    );
+
+    passenger = await startPassengerWeb(root, current, database);
+    const baseUrl = `http://127.0.0.1:${passenger.port}`;
+    const health = command('sh', [path.join(current, 'healthcheck.sh'), baseUrl], {
+      env: baseEnvironment,
+    });
+    executed.push({ script: 'healthcheck.sh', output: health.stdout.trim() });
+    check(
+      checks,
+      'existing health script',
+      /HEALTHY/.test(health.stdout),
+      `healthcheck.sh passed against ${baseUrl}`,
+    );
+
+    const ready = command('sh', [path.join(current, 'readycheck.sh'), baseUrl], {
+      env: { ...baseEnvironment, OWD_EXPECTED_SHA: source.commit },
+    });
+    executed.push({ script: 'readycheck.sh', output: ready.stdout.trim() });
+    check(
+      checks,
+      'existing readiness script',
+      /READY:/.test(ready.stdout) && /running SHA matches expected/.test(ready.stdout),
+      'readycheck.sh proved health, render path, release presence, and exact candidate SHA',
+    );
+
+    const smoke = command('sh', [path.join(current, 'smoke-test.sh'), baseUrl], {
+      cwd: current,
+      env: {
+        ...baseEnvironment,
+        OWD_EXPECTED_SHA: source.commit,
+        OWD_ENVIRONMENT: 'staging',
+        OWD_RECEIPT_DIR: directories.logs,
+      },
+    });
+    executed.push({ script: 'smoke-test.sh', output: smoke.stdout.trim() });
+    const smokeReceiptFile = fs.readdirSync(directories.logs)
+      .filter((name) => /^smoke-receipt-.*\.json$/.test(name))
+      .sort()
+      .at(-1);
+    const smokeReceipt = JSON.parse(
+      fs.readFileSync(path.join(directories.logs, smokeReceiptFile), 'utf8'),
+    );
+    check(
+      checks,
+      'existing smoke script',
+      smokeReceipt.environment === 'staging' &&
+        smokeReceipt.fail === 0 &&
+        smokeReceipt.runningSha === source.commit &&
+        /NO claim that production is live/.test(smokeReceipt.claim),
+      `smoke-test.sh passed ${smokeReceipt.pass} read-only checks with a staging-only receipt`,
+    );
+
+    const restartFile = path.join(current, 'tmp', 'restart.txt');
+    fs.utimesSync(restartFile, new Date(0), new Date(0));
+    const restart = command('sh', [path.join(appHome, 'restart.sh')], {
+      env: baseEnvironment,
+    });
+    executed.push({ script: 'restart.sh', output: restart.stdout.trim() });
+    check(
+      checks,
+      'existing restart script',
+      fs.statSync(restartFile).mtimeMs > 0,
+      'restart.sh updated only the simulated Passenger restart signal',
+    );
+
+    sqlite(
+      current,
+      database,
+      `CREATE TABLE cpanel_backup_probe(id INTEGER PRIMARY KEY,value TEXT NOT NULL);
+       INSERT INTO cpanel_backup_probe VALUES(1,'before-existing-backup')`,
+      'exec',
+    );
+    const worker = command(
+      process.execPath,
+      [path.join(current, 'worker.mjs'), '--once', 'backup'],
+      { cwd: current, env: baseEnvironment },
+    );
+    executed.push({ script: 'worker.mjs --once backup', output: worker.stdout.trim() });
+    const backupName = fs.readdirSync(directories.backups)
+      .filter((name) => /^prod-.*\.db$/.test(name))
+      .sort()
+      .at(-1);
+    const backupFile = path.join(directories.backups, backupName);
+    sqlite(
+      current,
+      database,
+      "UPDATE cpanel_backup_probe SET value='after-existing-backup' WHERE id=1",
+      'exec',
+    );
+    const restoreTarget = path.join(directories.data, 'existing-restore-check.db');
+    const restored = command(
+      'sh',
+      [path.join(current, 'restore-backup.sh'), backupFile, restoreTarget],
+      { cwd: current, env: baseEnvironment },
+    );
+    executed.push({ script: 'restore-backup.sh', output: restored.stdout.trim() });
+    check(
+      checks,
+      'existing backup and restore scripts',
+      sqlite(current, restoreTarget, 'SELECT value FROM cpanel_backup_probe WHERE id=1') ===
+        'before-existing-backup',
+      `worker.mjs produced ${backupName}; restore-backup.sh verified its sidecar and restored the sentinel`,
+    );
+
+    check(
+      checks,
+      'existing Passenger process termination',
+      await stopWeb(passenger),
+      'only the exact process spawned through deploy/namecheap/app.js was terminated',
+    );
+    passenger = null;
+
+    const rollback = command('sh', [path.join(appHome, 'rollback.sh')], {
+      env: baseEnvironment,
+    });
+    executed.push({ script: 'rollback.sh', output: rollback.stdout.trim() });
+    const rolledBackReceipt = JSON.parse(
+      fs.readFileSync(path.join(appHome, 'current', 'receipt.json'), 'utf8'),
+    );
+    passenger = await startPassengerWeb(root, path.join(appHome, 'current'), database);
+    const rollbackReady = command(
+      'sh',
+      [
+        path.join(appHome, 'current', 'readycheck.sh'),
+        `http://127.0.0.1:${passenger.port}`,
+      ],
+      { env: { ...baseEnvironment, OWD_EXPECTED_SHA: BASE } },
+    );
+    executed.push({ script: 'readycheck.sh after rollback', output: rollbackReady.stdout.trim() });
+    check(
+      checks,
+      'existing rollback script runtime',
+      rolledBackReceipt.gitSha === BASE && /READY:/.test(rollbackReady.stdout),
+      `rollback.sh restored and served ${BASE}`,
+    );
+    await stopWeb(passenger);
+    passenger = null;
+
+    const redeploy = command('sh', [path.join(NAMECHEAP, 'deploy.sh'), newArtifact.tarName], {
+      env: baseEnvironment,
+    });
+    executed.push({
+      script: 'deploy.sh reactivation',
+      artifact: newArtifact.tarName,
+      output: redeploy.stdout.trim(),
+    });
+    passenger = await startPassengerWeb(root, path.join(appHome, 'current'), database);
+    const finalReady = command(
+      'sh',
+      [
+        path.join(appHome, 'current', 'readycheck.sh'),
+        `http://127.0.0.1:${passenger.port}`,
+      ],
+      { env: { ...baseEnvironment, OWD_EXPECTED_SHA: source.commit } },
+    );
+    check(
+      checks,
+      'existing deploy script reactivation',
+      /READY:/.test(finalReady.stdout) &&
+        JSON.parse(fs.readFileSync(path.join(appHome, 'current', 'receipt.json'), 'utf8')).gitSha ===
+          source.commit,
+      `deploy.sh reactivated and served ${source.commit}`,
+    );
+    await stopWeb(passenger);
+    passenger = null;
+  } finally {
+    if (passenger) await stopWeb(passenger);
+  }
+  return {
+    environment: 'CPANEL_SIMULATION',
+    claim: 'Exact existing deploy/namecheap scripts executed only inside the local disposable account layout.',
+    scripts: newArtifact.scriptHashes,
+    artifacts: {
+      old: { file: path.basename(oldArtifact.tarFile), sha256: sha256File(oldArtifact.tarFile) },
+      candidate: { file: path.basename(newArtifact.tarFile), sha256: sha256File(newArtifact.tarFile) },
+    },
+    migrationAdapter: 'node:sqlite adapter executed the exact committed migration SQL; Prisma CLI binary execution is not claimed here',
+    executed,
+  };
 }
 
 export async function runCpanelSimulation({ repoRoot }) {
@@ -207,6 +553,7 @@ export async function runCpanelSimulation({ repoRoot }) {
   let runtimeRemoved = false;
   let backupSha256 = null;
   let finalPort = null;
+  let existingScriptEvidence = null;
 
   try {
     const currentTarget = fs.realpathSync(path.join(root, 'current'));
@@ -367,6 +714,13 @@ export async function runCpanelSimulation({ repoRoot }) {
     );
     check(checks, 'final process termination', await stopWeb(web), 'final web PID terminated');
     web = null;
+
+    existingScriptEvidence = await exerciseExistingNamecheapScripts({
+      root,
+      directories,
+      source,
+      checks,
+    });
   } catch (error) {
     failure = error instanceof Error ? error.message : String(error);
   } finally {
@@ -379,7 +733,7 @@ export async function runCpanelSimulation({ repoRoot }) {
 
   const overall =
     !failure &&
-    checks.length === 15 &&
+    checks.length === 25 &&
     checks.every((entry) => entry.pass) &&
     runtimeRemoved
       ? 'PASS'
@@ -404,6 +758,7 @@ export async function runCpanelSimulation({ repoRoot }) {
     },
     portIsolation: `ephemeral loopback port; final observed port ${finalPort}; no public listener`,
     backupSha256,
+    existingNamecheapScripts: existingScriptEvidence,
     checks,
     cleanup: {
       runtimeRemoved,

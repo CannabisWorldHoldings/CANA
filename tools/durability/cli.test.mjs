@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
@@ -13,8 +14,8 @@ function cana(args, env = {}) {
     encoding: 'utf8',
     env: {
       ...process.env,
-      ...env,
       CANA_LOCAL_STATE_DIR: path.join(ROOT, '.cana-local', 'durability-test-never-created'),
+      ...env,
     },
   });
 }
@@ -55,4 +56,36 @@ test('readback refuses without a recorded upload', () => {
   assert.equal(result.status, 3);
   assert.match(result.stderr, /recorded upload/i);
   assert.doesNotMatch(result.stdout, /REMOTELY_DURABLE/);
+});
+
+test('status refuses to trust a forged local round-trip record', () => {
+  const stateRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-durability-status-test-'));
+  try {
+    const commit = spawnSync('git', ['rev-parse', 'HEAD'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }).stdout.trim();
+    const tree = spawnSync('git', ['rev-parse', 'HEAD^{tree}'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }).stdout.trim();
+    fs.writeFileSync(
+      path.join(stateRoot, 'upload-state.json'),
+      `${JSON.stringify({
+        commit,
+        tree,
+        artifactSha256: 'a'.repeat(64),
+        readback: { verified: true, sha256: 'a'.repeat(64) },
+        state: 'REMOTELY_DURABLE',
+      })}\n`,
+    );
+    const result = cana(['durability', 'status'], { CANA_LOCAL_STATE_DIR: stateRoot });
+    assert.equal(result.status, 0);
+    const status = JSON.parse(result.stdout);
+    assert.equal(status.state, 'LOCAL_ONLY_CANDIDATE');
+    assert.equal(status.candidateRoundTrip, false);
+    assert.equal(status.recordedCandidateRoundTrip, true);
+  } finally {
+    fs.rmSync(stateRoot, { recursive: true, force: true });
+  }
 });

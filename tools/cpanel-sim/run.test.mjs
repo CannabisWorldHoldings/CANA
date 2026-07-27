@@ -22,6 +22,9 @@ test('the package contains explicit web worker migration backup and restore laun
     'app-server.mjs',
     'worker.mjs',
     'sqlite-tool.mjs',
+    'passenger-server.cjs',
+    'prisma-deploy-sim.mjs',
+    'prisma',
   ]) {
     assert.equal(fs.existsSync(path.join(TEMPLATES, file)), true, file);
   }
