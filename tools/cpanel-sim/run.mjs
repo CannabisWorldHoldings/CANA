@@ -277,7 +277,7 @@ async function exerciseExistingNamecheapScripts({
   const newName = `orderweeddc-${source.commit.slice(0, 12)}`;
   const oldArtifact = createNamecheapArtifact(root, oldName, BASE);
   const newArtifact = createNamecheapArtifact(root, newName, source.commit);
-  const database = path.join(directories.data, 'existing-prod.db');
+  const database = path.join(directories.data, 'prod.db');
   const baseEnvironment = {
     ...process.env,
     HOME: accountHome,
