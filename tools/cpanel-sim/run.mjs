@@ -96,6 +96,24 @@ function runRealPrismaProof(source) {
   let output = '';
   let executionNetwork = '';
   try {
+    const enginePrefetchSchema = path.join(runRoot, 'engine-prefetch.prisma');
+    fs.writeFileSync(
+      enginePrefetchSchema,
+      `generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:/tmp/cana-engine-prefetch.db"
+}
+
+model EnginePrefetch {
+  id Int @id
+}
+`,
+      { encoding: 'utf8', mode: 0o600 },
+    );
     command('git', ['bundle', 'create', bundle, 'HEAD'], {
       cwd: ROOT,
       timeout: 120_000,
@@ -133,6 +151,15 @@ function runRealPrismaProof(source) {
         { timeout: 30_000 },
       );
     }
+    command(
+      'docker',
+      [
+        'cp',
+        enginePrefetchSchema,
+        `${dependencyContainer}:/tmp/cana-engine-prefetch.prisma`,
+      ],
+      { timeout: 30_000 },
+    );
     const install = command(
       'docker',
       [
@@ -169,6 +196,28 @@ function runRealPrismaProof(source) {
     ) {
       throw new Error(
         `explicit Prisma 6.19.3 engine prefetch failed:\n${enginePrefetch.stdout}${enginePrefetch.stderr}`,
+      );
+    }
+    const clientEnginePrefetch = command(
+      'docker',
+      [
+        'exec',
+        dependencyContainer,
+        'npx',
+        '--no-install',
+        'prisma',
+        'generate',
+        '--schema',
+        '/tmp/cana-engine-prefetch.prisma',
+      ],
+      { allowFailure: true, timeout: 5 * 60_000 },
+    );
+    if (
+      clientEnginePrefetch.status !== 0 ||
+      !/Generated Prisma Client/i.test(clientEnginePrefetch.stdout)
+    ) {
+      throw new Error(
+        `explicit Prisma client-engine prefetch failed:\n${clientEnginePrefetch.stdout}${clientEnginePrefetch.stderr}`,
       );
     }
     command('docker', ['rm', '-f', dependencyContainer], { timeout: 30_000 });
@@ -273,6 +322,7 @@ function runRealPrismaProof(source) {
       sourceMounted: false,
       lifecycleScriptsEnabled: false,
       prismaEnginePrefetch: '6.19.3',
+      prismaClientEnginePrefetched: true,
       packageFiles,
     },
     executionNetwork,
@@ -916,6 +966,7 @@ export async function runCpanelSimulation({ repoRoot }) {
         realPrismaProof.dependencyFetch.sourceMounted === false &&
         realPrismaProof.dependencyFetch.lifecycleScriptsEnabled === false &&
         realPrismaProof.dependencyFetch.prismaEnginePrefetch === '6.19.3' &&
+        realPrismaProof.dependencyFetch.prismaClientEnginePrefetched === true &&
         realPrismaProof.executionNetwork === 'none',
       `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and both migrations after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
     );
