@@ -368,7 +368,7 @@ function verifyDurability(parsed) {
       timeout: 15 * 60_000,
       env: {
         ...process.env,
-        CANA_RECEIPT_DIR: receiptDirectory(),
+        CANA_RECEIPT_DIR: path.join(runRoot, 'focused-receipts'),
       },
     });
     if (focused.status !== 0) {
