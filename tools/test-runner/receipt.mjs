@@ -11,8 +11,35 @@ export function sha256File(file) {
   return sha256Bytes(fs.readFileSync(file));
 }
 
+function receiptSession() {
+  const sessionFile = process.env.CANA_RECEIPT_SESSION;
+  if (!sessionFile) return null;
+  const file = path.resolve(sessionFile);
+  const session = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const directory = path.resolve(session.receiptDirectory ?? '');
+  if (
+    session.schemaVersion !== 1 ||
+    session.kind !== 'cana-final-receipt-session' ||
+    !/^[0-9a-f-]{36}$/.test(session.sessionId ?? '') ||
+    !/^[0-9a-f]{64}$/.test(session.nonce ?? '') ||
+    path.dirname(file) !== path.dirname(directory) ||
+    path.basename(directory) !== 'receipts'
+  ) {
+    throw new Error('invalid CANA receipt session');
+  }
+  if (
+    process.env.CANA_RECEIPT_DIR &&
+    path.resolve(process.env.CANA_RECEIPT_DIR) !== directory
+  ) {
+    throw new Error('CANA receipt directory does not match its session');
+  }
+  return { file, session, directory };
+}
+
 export function receiptDirectory() {
+  const activeSession = receiptSession();
   const directory =
+    activeSession?.directory ??
     process.env.CANA_RECEIPT_DIR ??
     path.join(os.tmpdir(), 'cana-receipts');
   fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
@@ -20,6 +47,7 @@ export function receiptDirectory() {
 }
 
 export function writeReceipt(kind, payload) {
+  const activeSession = receiptSession();
   const safeKind = String(kind).replace(/[^a-z0-9_-]+/gi, '-').toLowerCase();
   const stamp = new Date().toISOString().replaceAll(':', '').replaceAll('.', '');
   const file = path.join(
@@ -27,10 +55,19 @@ export function writeReceipt(kind, payload) {
     `${safeKind}-${stamp}-${crypto.randomBytes(4).toString('hex')}.json`,
   );
   const body = {
+    ...payload,
     schemaVersion: 1,
     kind,
     recordedAt: new Date().toISOString(),
-    ...payload,
+    receiptSession: activeSession
+      ? {
+          sessionId: activeSession.session.sessionId,
+          nonceSha256: sha256Bytes(activeSession.session.nonce),
+          startedAt: activeSession.session.startedAt,
+          source: activeSession.session.source,
+          trustedAttestation: false,
+        }
+      : null,
   };
   const temporary = `${file}.tmp-${process.pid}`;
   fs.writeFileSync(temporary, `${JSON.stringify(body, null, 2)}\n`, {

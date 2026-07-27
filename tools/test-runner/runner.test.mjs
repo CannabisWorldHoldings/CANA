@@ -1,5 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,10 +10,15 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 function cana(...args) {
+  const env = {
+    ...process.env,
+    CANA_RECEIPT_DIR: path.join(ROOT, '.test-receipts-never-created'),
+  };
+  delete env.CANA_RECEIPT_SESSION;
   return spawnSync(path.join(ROOT, 'cana'), args, {
     cwd: ROOT,
     encoding: 'utf8',
-    env: { ...process.env, CANA_RECEIPT_DIR: path.join(ROOT, '.test-receipts-never-created') },
+    env,
   });
 }
 
@@ -18,6 +26,49 @@ test('the root dispatcher refuses an unknown verification profile', () => {
   const result = cana('verify', 'not-a-profile');
   assert.equal(result.status, 2);
   assert.match(result.stderr, /unknown verification profile/i);
+});
+
+test('receipts bind to the active session and cannot override envelope fields', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-receipt-test-'));
+  const directory = path.join(root, 'receipts');
+  const sessionFile = path.join(root, 'session.json');
+  fs.mkdirSync(directory, { mode: 0o700 });
+  const nonce = crypto.randomBytes(32).toString('hex');
+  fs.writeFileSync(sessionFile, JSON.stringify({
+    schemaVersion: 1,
+    kind: 'cana-final-receipt-session',
+    sessionId: crypto.randomUUID(),
+    nonce,
+    startedAt: new Date().toISOString(),
+    source: { commit: 'a'.repeat(40), tree: 'b'.repeat(40) },
+    receiptDirectory: directory,
+    trustedAttestation: false,
+  }), { mode: 0o600 });
+  const previousSession = process.env.CANA_RECEIPT_SESSION;
+  const previousDirectory = process.env.CANA_RECEIPT_DIR;
+  try {
+    process.env.CANA_RECEIPT_SESSION = sessionFile;
+    process.env.CANA_RECEIPT_DIR = directory;
+    const { writeReceipt } = await import('./receipt.mjs');
+    const receipt = writeReceipt('session-test', {
+      overall: 'PASS',
+      kind: 'forged-kind',
+      receiptSession: { sessionId: 'forged-session' },
+    });
+    assert.equal(receipt.body.kind, 'session-test');
+    assert.equal(receipt.body.receiptSession.sessionId, JSON.parse(fs.readFileSync(sessionFile)).sessionId);
+    assert.equal(
+      receipt.body.receiptSession.nonceSha256,
+      crypto.createHash('sha256').update(nonce).digest('hex'),
+    );
+    assert.equal(receipt.body.receiptSession.trustedAttestation, false);
+  } finally {
+    if (previousSession === undefined) delete process.env.CANA_RECEIPT_SESSION;
+    else process.env.CANA_RECEIPT_SESSION = previousSession;
+    if (previousDirectory === undefined) delete process.env.CANA_RECEIPT_DIR;
+    else process.env.CANA_RECEIPT_DIR = previousDirectory;
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('the root dispatcher refuses an unknown command', () => {

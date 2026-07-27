@@ -23,4 +23,6 @@ The executed simulation starts the web launcher on an ephemeral loopback port, c
 
 The retained tarball and release receipt are labelled `CPANEL_SIMULATION`. The runtime tree and only the child processes created by the runner are removed at the end.
 
+Migration, queries, backup and restore use the `node:sqlite` implementation shipped with the exact Node runtime. The package does not install or resolve a mutable host `sqlite3` system package.
+
 No real cPanel account, credential, DNS record, Passenger process, public listener or production data is contacted. The package and receipt do not prove a live deployment.

@@ -102,6 +102,10 @@ function initializeFinalReceiptSession() {
     sessionFile,
     receiptDirectory: receiptRoot,
     sessionId: session.sessionId,
+    environment: {
+      CANA_RECEIPT_SESSION: sessionFile,
+      CANA_RECEIPT_DIR: receiptRoot,
+    },
   }, null, 2)}\n`);
   return sessionFile;
 }
@@ -111,6 +115,8 @@ function finalReceiptSession(sessionFile, source) {
   const absolute = path.resolve(sessionFile);
   const session = JSON.parse(fs.readFileSync(absolute, 'utf8'));
   const directory = path.resolve(session.receiptDirectory ?? '');
+  const sessionStat = fs.statSync(absolute);
+  const directoryStat = fs.statSync(directory);
   if (
     session.schemaVersion !== 1 ||
     session.kind !== 'cana-final-receipt-session' ||
@@ -120,7 +126,11 @@ function finalReceiptSession(sessionFile, source) {
     session.source?.tree !== source.tree ||
     path.dirname(absolute) !== path.dirname(directory) ||
     path.basename(directory) !== 'receipts' ||
-    !fs.statSync(directory).isDirectory()
+    !directoryStat.isDirectory() ||
+    sessionStat.uid !== process.getuid() ||
+    directoryStat.uid !== process.getuid() ||
+    (sessionStat.mode & 0o077) !== 0 ||
+    (directoryStat.mode & 0o077) !== 0
   ) {
     throw new Error('invalid or source-mismatched final receipt session');
   }
@@ -244,11 +254,18 @@ export function writeFinalCandidateReceipt(sessionFile) {
   if (prohibitedChanged.length) {
     throw new Error(`prohibited files changed: ${prohibitedChanged.join(', ')}`);
   }
+  const sessionNonceSha256 = sha256Bytes(session.body.nonce);
+  const sessionReceipts = allReceipts(session.directory).filter(
+    ({ body }) =>
+      Date.parse(body.recordedAt) >= Date.parse(session.body.startedAt) &&
+      body.receiptSession?.sessionId === session.body.sessionId &&
+      body.receiptSession?.nonceSha256 === sessionNonceSha256 &&
+      body.receiptSession?.source?.commit === source.commit &&
+      body.receiptSession?.source?.tree === source.tree &&
+      body.receiptSession?.trustedAttestation === false,
+  );
   const receipts = exactFinalReceipts(
-    allReceipts(session.directory).filter(
-      ({ body }) =>
-        Date.parse(body.recordedAt) >= Date.parse(session.body.startedAt),
-    ),
+    sessionReceipts,
     source,
   );
   const commits = git([
@@ -299,12 +316,13 @@ export function writeFinalCandidateReceipt(sessionFile) {
     },
     receiptProvenance: {
       sessionId: session.body.sessionId,
-      sessionNonceSha256: sha256Bytes(session.body.nonce),
+      sessionNonceSha256,
       startedAt: session.body.startedAt,
       invocationPrivateDirectory: session.directory,
       exactOneReceiptPerRequiredKind: true,
+      receiptsCarrySessionBinding: true,
       trustedAttestation: false,
-      boundary: 'Local invocation freshness and exact hashes are proven; an external trusted attestation is not claimed.',
+      boundary: 'Local session consistency and exact hashes are proven. Freshness against a malicious local caller and external trusted attestation are not claimed.',
     },
     commits,
     changedFileManifest: {

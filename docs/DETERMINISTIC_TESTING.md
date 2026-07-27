@@ -30,6 +30,8 @@ Each invocation:
 
 A PASS receipt proves only its named profile at its recorded commit, tree, image digest and time. It is not a production deployment receipt and it cannot be reused after a commit changes.
 
+The final candidate aggregator first creates a mode-0600 session file and mode-0700 sibling receipt directory. When `CANA_RECEIPT_SESSION` is set, every receipt carries the session ID, nonce hash, start time and source identity; the aggregator accepts exactly one matching receipt per required kind. This proves local session consistency and exact hashes. It is deliberately labelled externally unattested and does not claim freshness against a malicious local caller.
+
 ## Known environment boundary
 
 The restored baseline’s Prisma 6.19.3 migration court fails on this macOS host when the SQLite file is absent, but passes unchanged in the exact Linux Node 24 substrate. The verifier therefore uses the Linux substrate; it does not weaken or edit the migration court.

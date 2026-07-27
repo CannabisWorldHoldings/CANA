@@ -15,12 +15,8 @@ import {
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const BASE_RECEIPT = path.join(ROOT, 'tools', 'durability', 'base-remote-receipt.json');
-const OWNER_KEY_CONFIG = path.join(
-  ROOT,
-  'tools',
-  'durability',
-  'owner-approval-key.json',
-);
+const OWNER_KEY_FILE = '/etc/cana/durability-owner-ed25519.pub';
+const OWNER_KEY_ID_FILE = '/etc/cana/durability-owner-key-id';
 
 function command(commandName, args, {
   cwd = ROOT,
@@ -463,16 +459,24 @@ function configuredOwnerKey(parsed) {
   if (!parsed.approval) {
     refusal('operation requires a signed owner approval envelope');
   }
-  const key = readJson(OWNER_KEY_CONFIG);
-  if (
-    key.state !== 'CONFIGURED_BY_OWNER' ||
-    key.algorithm !== 'Ed25519' ||
-    !key.keyId ||
-    !key.publicKeyPem
-  ) {
-    refusal('owner approval key is not configured; Chief Integrator reassignment is required');
+  if (!fs.existsSync(OWNER_KEY_FILE) || !fs.existsSync(OWNER_KEY_ID_FILE)) {
+    refusal('owner approval trust anchor is absent; Chief Integrator reassignment is required');
   }
-  return key;
+  for (const file of [OWNER_KEY_FILE, OWNER_KEY_ID_FILE]) {
+    const stat = fs.statSync(file);
+    if (!stat.isFile() || stat.uid !== 0 || (stat.mode & 0o022) !== 0) {
+      refusal(`owner trust material is not root-owned and write-protected: ${file}`);
+    }
+  }
+  const publicKey = crypto.createPublicKey(fs.readFileSync(OWNER_KEY_FILE, 'utf8'));
+  if (publicKey.asymmetricKeyType !== 'ed25519') {
+    refusal('owner trust anchor must be an Ed25519 public key');
+  }
+  const keyId = fs.readFileSync(OWNER_KEY_ID_FILE, 'utf8').trim();
+  if (!/^[A-Za-z0-9._-]{1,128}$/.test(keyId)) {
+    refusal('owner key ID is invalid');
+  }
+  return { keyId, publicKey };
 }
 
 function ownerApproval(parsed, expected, key = configuredOwnerKey(parsed)) {
@@ -504,7 +508,7 @@ function ownerApproval(parsed, expected, key = configuredOwnerKey(parsed)) {
   }
   const signed = Buffer.from(JSON.stringify(payload));
   const signature = Buffer.from(envelope.signature, 'base64');
-  if (!crypto.verify(null, signed, key.publicKeyPem, signature)) {
+  if (!crypto.verify(null, signed, key.publicKey, signature)) {
     refusal('owner approval signature is invalid');
   }
   return {

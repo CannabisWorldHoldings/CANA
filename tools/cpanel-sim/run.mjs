@@ -146,8 +146,11 @@ async function probe(port, pathname) {
   };
 }
 
-function sqlite(database, statement) {
-  return command('sqlite3', [database, statement]).stdout.trim();
+function sqlite(releaseRoot, database, statement, action = 'query') {
+  return command(
+    process.execPath,
+    [path.join(releaseRoot, 'sqlite-tool.mjs'), action, database, statement],
+  ).stdout.trim();
 }
 
 function stateDirectory(commit) {
@@ -227,17 +230,19 @@ export async function runCpanelSimulation({ repoRoot }) {
 
     const database = path.join(directories.data, 'cana.db');
     sqlite(
+      newRelease,
       database,
       `CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL);
        INSERT INTO schema_migrations VALUES(1,datetime('now'));
        CREATE TABLE persistent_probe(id INTEGER PRIMARY KEY,value TEXT NOT NULL);
        INSERT INTO persistent_probe VALUES(1,'persistent-before')`,
+      'exec',
     );
     command('sh', [path.join(newRelease, 'migrate.sh')], {
       env: runtimeEnvironment(root, newRelease, path.join(directories.logs, 'unused-port')),
     });
-    const versions = sqlite(database, 'SELECT group_concat(version) FROM schema_migrations ORDER BY version');
-    const persistentBefore = sqlite(database, 'SELECT value FROM persistent_probe WHERE id=1');
+    const versions = sqlite(newRelease, database, 'SELECT group_concat(version) FROM schema_migrations ORDER BY version');
+    const persistentBefore = sqlite(newRelease, database, 'SELECT value FROM persistent_probe WHERE id=1');
     check(
       checks,
       'shared-data migration',
@@ -308,14 +313,19 @@ export async function runCpanelSimulation({ repoRoot }) {
       },
     });
     backupSha256 = sha256File(backupFile);
-    sqlite(database, "UPDATE persistent_probe SET value='mutated-after-backup' WHERE id=1");
+    sqlite(
+      newRelease,
+      database,
+      "UPDATE persistent_probe SET value='mutated-after-backup' WHERE id=1",
+      'exec',
+    );
     command('sh', [path.join(newRelease, 'restore.sh')], {
       env: {
         ...runtimeEnvironment(root, newRelease, path.join(directories.logs, 'unused-port')),
         CANA_BACKUP_FILE: backupFile,
       },
     });
-    const restoredValue = sqlite(database, 'SELECT value FROM persistent_probe WHERE id=1');
+    const restoredValue = sqlite(newRelease, database, 'SELECT value FROM persistent_probe WHERE id=1');
     check(
       checks,
       'backup and restore',

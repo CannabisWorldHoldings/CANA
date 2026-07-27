@@ -28,7 +28,7 @@
 
 Upload supports only explicit `s3://` or `ssh://` destinations. A caller-set environment variable is never authorization. Both upload and readback require separate Ed25519-signed approval envelopes whose canonical payloads bind the action, exact commit and tree, sanitized remote, artifact SHA-256, approver, approval ID and expiry. Readback approval also binds the recorded upload time.
 
-`tools/durability/owner-approval-key.json` intentionally contains no public key in this candidate. The owner or Chief Integrator must explicitly reassign that configuration and install the owner public key before either network operation can run. Until then every caller, including one that sets the legacy `CANA_DURABILITY_OWNER_AUTHORIZED=YES`, is refused.
+The trust anchor is intentionally outside candidate-controlled paths. The owner or Chief Integrator must explicitly reassign configuration and install a root-owned, non-group/world-writable Ed25519 public key at `/etc/cana/durability-owner-ed25519.pub` plus its key ID at `/etc/cana/durability-owner-key-id`. Neither file exists in this candidate environment, so every caller, including one that sets the legacy `CANA_DURABILITY_OWNER_AUTHORIZED=YES`, is refused.
 
 Upload alone records `UPLOAD_RECORDED_READBACK_PENDING`. `readback` independently downloads the artifact and compares its SHA-256. Only a matching upload/download round trip for the current commit permits `REMOTELY_DURABLE`.
 
