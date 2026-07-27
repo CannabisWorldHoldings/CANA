@@ -1,8 +1,11 @@
 # CANA technical state
 
-Updated: 2026-07-27  
-Branch: `codex/cana-bottleneck-clearance`  
-Stewardship start: `e2eced1d55afcd1327c731b9d8f2e5f2a7bd19d1`  
+Updated: 2026-07-27
+
+Branch: `codex/cana-bottleneck-clearance`
+
+Stewardship start: `e2eced1d55afcd1327c731b9d8f2e5f2a7bd19d1`
+
 Authoritative base: `c953ebcd25c46ef33af0700d7913a899d839bce8`
 
 Resolve the exact commit containing this state:
