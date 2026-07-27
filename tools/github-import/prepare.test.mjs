@@ -94,3 +94,18 @@ test('workflow leaves runtime equality unproven until an executed receipt is sup
   assert.match(workflow, /run: \.\/cana github prepare\s*$/m);
   assert.doesNotMatch(workflow, /github prepare --runtime-sha/);
 });
+
+test('every hosted verification checkout preserves the protected base history', () => {
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify.yml'),
+    'utf8',
+  );
+  const checkoutCount = [...workflow.matchAll(/uses: actions\/checkout@[0-9a-f]{40}/g)].length;
+  const fullHistoryCheckoutCount = [
+    ...workflow.matchAll(
+      /uses: actions\/checkout@[0-9a-f]{40}\n\s+with:\n\s+fetch-depth: 0/g,
+    ),
+  ].length;
+  assert.ok(checkoutCount > 0);
+  assert.equal(fullHistoryCheckoutCount, checkoutCount);
+});
