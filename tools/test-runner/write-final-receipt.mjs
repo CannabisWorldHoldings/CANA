@@ -226,6 +226,36 @@ function historicalFalsification() {
       restored: true,
     },
     {
+      scenario: 'Maria dependency-removal probe used untyped Docker inspect and resolved the same-named volume',
+      receiptSha256: '7868f7178725cd300c359f97daf6b3e6c3ccb48cbc0346f0ba46a64d434e59aa',
+      restored: true,
+    },
+    {
+      scenario: 'Maria dependency-removal wait still used untyped Docker inspect',
+      receiptSha256: '79e2e2c4b5a3bdaf34d5ff5fa4bf83fc490cfb1f379ed2543f016fcb48cbcabf',
+      restored: true,
+    },
+    {
+      scenario: 'Maria offline client lacked the explicitly prefetched Prisma schema engine',
+      receiptSha256: '22b84e09beb2c6bafecc4dceccc23d2b1a6d955df2572dafd2e6806eb6a0af35',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel offline proof lacked a prefetched Prisma query engine',
+      receiptSha256: '95cef7c59435b5aec81655aa14ad00dc2b6f6204b78a385d425fea6b584a531f',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel query-engine probe was outside the manifest-only project root',
+      receiptSha256: '9f7b47e1684810f4420d4d3f4511c75ed34ca5af57517339fd0996afba381c0c',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel query-engine probe omitted the committed rhel binary target',
+      receiptSha256: 'bd4d47eb3d30f37cf37ffb3efeff3c940184e10aa6bde2865b139a6cbc332cce',
+      restored: true,
+    },
+    {
       scenario: 'full suite drew a random nonce that matched the phone-number heuristic',
       receiptSha256: '6ed9da68c6fae21972f7bcf19f04cdfc24e9d97357dc03d72e3b314f9fd829ff',
       restored: true,
