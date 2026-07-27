@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "superseding-base-durability-correction",
+  "recordedBy": "codex/cana-bottleneck-clearance",
+  "historicalReceiptModified": false,
+  "commit": "c953ebcd25c46ef33af0700d7913a899d839bce8",
+  "tree": "f7c56f6dad3875ccba10dfadbd2d953baf5c1509",
+  "authoritativeBranch": "recover/competitive-ui-day-night",
+  "archive": {
+    "name": "CANA_CODEX_HANDOFF_c953ebc.zip",
+    "size": 4724563,
+    "sha256": "08aa201e72e1131e26aa0a599bb32867e6be9ed0f13d62659f74daa27bd43ade"
+  },
+  "remote": {
+    "provider": "Google Drive",
+    "driveFileId": "17Ds8hRqyzqtdfUHEweA8Qa2HyqOk06Dg",
+    "uploadDownloadHashRoundTripVerified": true
+  },
+  "currentRemotelyDurableFrontier": "c953ebcd25c46ef33af0700d7913a899d839bce8",
+  "localOnlyDurabilityGap": "NONE",
+  "supersedes": [
+    "0808871 remote-frontier statements",
+    "18 commits remain local-only statements",
+    "REMOTE_UPLOAD_PENDING statements"
+  ]
+}

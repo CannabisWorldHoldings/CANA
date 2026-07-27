@@ -32,7 +32,7 @@ documents and implemented against CANA's real application state:
 The implementation lives in:
 
 - `apps/web/src/lib/site-intelligence.mjs`
-- `apps/web/src/lib/site-intelligence.ts`
+- `apps/web/src/lib/site-intelligence.server.ts`
 - `apps/web/src/app/admin/site-intelligence/page.tsx`
 - `apps/web/prisma/schema.prisma`
 

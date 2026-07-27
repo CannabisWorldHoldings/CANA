@@ -1,0 +1,502 @@
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+import { sha256Bytes, sha256File } from './receipt.mjs';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
+const BASE_TREE = 'f7c56f6dad3875ccba10dfadbd2d953baf5c1509';
+const AUTHORITATIVE_CHECKOUT = '/Users/Apple/Documents/New project/CANA-c953ebc/repo';
+const ARCHIVE = '/Users/Apple/Downloads/CANA_CODEX_HANDOFF_c953ebc.zip';
+const RECOVERY_ARCHIVE =
+  '/Users/Apple/Downloads/CANA_MAC_LOCAL_RECOVERY_BUNDLE_2026-07-26.zip';
+const RECOVERY_ARCHIVE_BYTES = 6_186_053_094;
+const RECOVERY_ARCHIVE_ENTRIES = 7_590;
+const RECOVERY_ARCHIVE_SHA256 =
+  '0ec9c44f77aee4342c0a783bb321af84f560cb33cbfa0bb20862f9b30efbf16a';
+
+function command(commandName, args, { cwd = ROOT, allowFailure = false } = {}) {
+  const result = spawnSync(commandName, args, {
+    cwd,
+    encoding: 'utf8',
+    maxBuffer: 128 * 1024 * 1024,
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  if (result.error) throw new Error(`${commandName} failed to start: ${result.error.message}`);
+  if (!allowFailure && result.status !== 0) {
+    throw new Error(`${commandName} ${args.join(' ')} exited ${result.status}\n${result.stderr || result.stdout}`);
+  }
+  return result;
+}
+
+function git(args, cwd = ROOT) {
+  return command('git', args, { cwd }).stdout.trim();
+}
+
+function writeJson(file, value) {
+  fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`, {
+    encoding: 'utf8',
+    mode: 0o600,
+    flag: 'wx',
+  });
+}
+
+function allReceipts(directory) {
+  return fs.readdirSync(directory)
+    .filter((name) => name.endsWith('.json'))
+    .map((name) => path.join(directory, name))
+    .map((file) => {
+      try {
+        return { file, body: JSON.parse(fs.readFileSync(file, 'utf8')) };
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function latest(receipts, kind, predicate) {
+  const candidates = receipts
+    .filter(({ body }) => body.kind === kind && predicate(body))
+    .sort((left, right) => String(left.body.recordedAt).localeCompare(String(right.body.recordedAt)));
+  if (candidates.length !== 1) {
+    throw new Error(`expected exactly one fresh final receipt for ${kind}, found ${candidates.length}`);
+  }
+  const selected = candidates[0];
+  return {
+    kind,
+    file: selected.file,
+    sha256: sha256File(selected.file),
+    overall: selected.body.overall,
+    recordedAt: selected.body.recordedAt,
+    buildDiagnostics: selected.body.buildDiagnostics ?? null,
+  };
+}
+
+function sourceIdentity(cwd = ROOT) {
+  return {
+    commit: git(['rev-parse', 'HEAD'], cwd),
+    tree: git(['rev-parse', 'HEAD^{tree}'], cwd),
+    branch: git(['rev-parse', '--abbrev-ref', 'HEAD'], cwd),
+    status: git(['status', '--porcelain'], cwd),
+  };
+}
+
+function initializeFinalReceiptSession() {
+  const source = sourceIdentity();
+  if (source.status) throw new Error(`receipt session refuses a dirty source:\n${source.status}`);
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-final-receipt-'));
+  fs.chmodSync(root, 0o700);
+  const receiptRoot = path.join(root, 'receipts');
+  fs.mkdirSync(receiptRoot, { mode: 0o700 });
+  const sessionFile = path.join(root, 'session.json');
+  const session = {
+    schemaVersion: 1,
+    kind: 'cana-final-receipt-session',
+    sessionId: crypto.randomUUID(),
+    nonce: crypto.randomBytes(32).toString('hex'),
+    startedAt: new Date().toISOString(),
+    source,
+    receiptDirectory: receiptRoot,
+    trustedAttestation: false,
+  };
+  writeJson(sessionFile, session);
+  process.stdout.write(`${JSON.stringify({
+    sessionFile,
+    receiptDirectory: receiptRoot,
+    sessionId: session.sessionId,
+    environment: {
+      CANA_RECEIPT_SESSION: sessionFile,
+      CANA_RECEIPT_DIR: receiptRoot,
+    },
+  }, null, 2)}\n`);
+  return sessionFile;
+}
+
+function finalReceiptSession(sessionFile, source) {
+  if (!sessionFile) throw new Error('final receipt requires --session <session.json>');
+  const absolute = path.resolve(sessionFile);
+  const session = JSON.parse(fs.readFileSync(absolute, 'utf8'));
+  const directory = path.resolve(session.receiptDirectory ?? '');
+  const sessionStat = fs.statSync(absolute);
+  const directoryStat = fs.statSync(directory);
+  if (
+    session.schemaVersion !== 1 ||
+    session.kind !== 'cana-final-receipt-session' ||
+    !/^[0-9a-f-]{36}$/.test(session.sessionId ?? '') ||
+    !/^[0-9a-f]{64}$/.test(session.nonce ?? '') ||
+    session.source?.commit !== source.commit ||
+    session.source?.tree !== source.tree ||
+    path.dirname(absolute) !== path.dirname(directory) ||
+    path.basename(directory) !== 'receipts' ||
+    !directoryStat.isDirectory() ||
+    sessionStat.uid !== process.getuid() ||
+    directoryStat.uid !== process.getuid() ||
+    (sessionStat.mode & 0o077) !== 0 ||
+    (directoryStat.mode & 0o077) !== 0
+  ) {
+    throw new Error('invalid or source-mismatched final receipt session');
+  }
+  return { file: absolute, body: session, directory };
+}
+
+function changedFiles(commit) {
+  return git(['diff', '--name-status', `${BASE}..${commit}`])
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [status, ...names] = line.split('\t');
+      const relative = names.at(-1);
+      const absolute = path.join(ROOT, relative);
+      return {
+        status,
+        path: relative,
+        sha256: fs.existsSync(absolute) && fs.statSync(absolute).isFile()
+          ? sha256File(absolute)
+          : null,
+      };
+    });
+}
+
+function exactFinalReceipts(receipts, source) {
+  const sameSource = (body) => body.source?.commit === source.commit && body.source?.tree === source.tree;
+  const selected = [
+    latest(receipts, 'verify-focused', sameSource),
+    latest(receipts, 'verify-full', sameSource),
+    latest(receipts, 'verify-clean-clone', sameSource),
+    latest(receipts, 'verify-release', sameSource),
+    latest(receipts, 'verify-maria', sameSource),
+    latest(receipts, 'verify-cpanel', sameSource),
+    latest(receipts, 'durability-build', sameSource),
+    latest(receipts, 'durability-verify', sameSource),
+    latest(
+      receipts,
+      'durability-restore',
+      (body) => body.restored?.commit === source.commit && body.restored?.tree === source.tree,
+    ),
+    latest(
+      receipts,
+      'github-import-prepare',
+      (body) => sameSource(body) && body.runtimeComparison?.status === 'PASS',
+    ),
+  ];
+  if (selected.some((entry) => entry.overall !== 'PASS')) {
+    throw new Error(`a required final receipt is not PASS: ${JSON.stringify(selected)}`);
+  }
+  if (selected.slice(0, 4).some((entry) => entry.buildDiagnostics?.evidenceInOutput !== true)) {
+    throw new Error(`a standard verifier lacks clean build-diagnostic evidence: ${JSON.stringify(selected.slice(0, 4))}`);
+  }
+  return selected;
+}
+
+function historicalFalsification() {
+  return [
+    {
+      scenario: 'full verifier archive omitted Git identity',
+      receiptSha256: 'eda2e7b94f9b5829ad3bd029fe41004e9b3979eeee5f39337d11c73c292a362d',
+      restored: true,
+    },
+    {
+      scenario: 'full verifier lacked legacy paths and runtime secret',
+      receiptSha256: '0b5647d854067016b46253b3c34b92327e7f7e350b2ac363aac0e0bc8a63acf7',
+      restored: true,
+    },
+    {
+      scenario: 'full verifier used the wrong legacy symlink shape',
+      receiptSha256: '1ebd46cbae0b64f7a46d1e9a40802b263bbb33872d1db68501b6319ceab4dbfe',
+      restored: true,
+    },
+    {
+      scenario: 'MariaDB client had no registry egress',
+      receiptSha256: 'ecc529dc9dfd7aad860efcff24cf95e87b5aba6e87ea96b5937cddc0dff56594',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel activation compared non-canonical macOS paths',
+      receiptSha256: 'be20c15d8c9b284c9e3cbfd131a62c2261bfa21805047e0b67526d6466a33029',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel package cleanup did not restore nested immutable directory permissions',
+      receiptSha256: '0cf31b882fa606472690cb80602ec49c19bb255df200505b172fb266d9bb773c',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel existing worker simulation used a non-production database basename',
+      receiptSha256: '6dd4adea3d6c6c547ee9c4c72305dcdf74a3f7e9e6032bcc97687881fdbdd165',
+      restored: true,
+    },
+    {
+      scenario: 'real Prisma cPanel proof invoked repo-mode migrate from the wrong working directory',
+      receiptSha256: 'c2cbc4b533cacebaad8a0e0b3fbe6fc82cd7e102762fd0845817c35fb4c15cbc',
+      restored: true,
+    },
+    {
+      scenario: 'Maria dependency-removal probe used untyped Docker inspect and resolved the same-named volume',
+      receiptSha256: '7868f7178725cd300c359f97daf6b3e6c3ccb48cbc0346f0ba46a64d434e59aa',
+      restored: true,
+    },
+    {
+      scenario: 'Maria dependency-removal wait still used untyped Docker inspect',
+      receiptSha256: '79e2e2c4b5a3bdaf34d5ff5fa4bf83fc490cfb1f379ed2543f016fcb48cbcabf',
+      restored: true,
+    },
+    {
+      scenario: 'Maria offline client lacked the explicitly prefetched Prisma schema engine',
+      receiptSha256: '22b84e09beb2c6bafecc4dceccc23d2b1a6d955df2572dafd2e6806eb6a0af35',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel offline proof lacked a prefetched Prisma query engine',
+      receiptSha256: '95cef7c59435b5aec81655aa14ad00dc2b6f6204b78a385d425fea6b584a531f',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel query-engine probe was outside the manifest-only project root',
+      receiptSha256: '9f7b47e1684810f4420d4d3f4511c75ed34ca5af57517339fd0996afba381c0c',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel query-engine probe omitted the committed rhel binary target',
+      receiptSha256: 'bd4d47eb3d30f37cf37ffb3efeff3c940184e10aa6bde2865b139a6cbc332cce',
+      restored: true,
+    },
+    {
+      scenario: 'full suite drew a random nonce that matched the phone-number heuristic',
+      receiptSha256: '6ed9da68c6fae21972f7bcf19f04cdfc24e9d97357dc03d72e3b314f9fd829ff',
+      restored: true,
+    },
+    {
+      scenario: 'stale cPanel receipt did not equal the newer GitHub package SHA',
+      receiptSha256: null,
+      restored: true,
+    },
+  ];
+}
+
+export function writeFinalCandidateReceipt(sessionFile) {
+  const source = sourceIdentity();
+  if (source.status) throw new Error(`final receipt refuses a dirty source:\n${source.status}`);
+  const session = finalReceiptSession(sessionFile, source);
+  const authoritative = sourceIdentity(AUTHORITATIVE_CHECKOUT);
+  if (
+    authoritative.commit !== BASE ||
+    authoritative.tree !== BASE_TREE ||
+    authoritative.branch !== 'recover/competitive-ui-day-night' ||
+    authoritative.status
+  ) {
+    throw new Error(`authoritative checkout changed: ${JSON.stringify(authoritative)}`);
+  }
+  const archive = {
+    file: ARCHIVE,
+    bytes: fs.statSync(ARCHIVE).size,
+    sha256: sha256File(ARCHIVE),
+  };
+  const baseCorrection = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'tools', 'durability', 'base-remote-receipt.json'), 'utf8'),
+  );
+  if (
+    archive.bytes !== baseCorrection.archive.size ||
+    archive.sha256 !== baseCorrection.archive.sha256
+  ) {
+    throw new Error(`supplied handoff archive drifted: ${JSON.stringify(archive)}`);
+  }
+  const recoveryEntries = command('unzip', ['-Z1', RECOVERY_ARCHIVE])
+    .stdout
+    .split('\n')
+    .filter(Boolean);
+  const recoveryUnsafePaths = recoveryEntries.filter((entry) => {
+    const parts = entry.split('/');
+    return entry.startsWith('/') || entry.includes('\\') || parts.includes('..');
+  });
+  const recoveryArchive = {
+    file: RECOVERY_ARCHIVE,
+    bytes: fs.statSync(RECOVERY_ARCHIVE).size,
+    sha256: sha256File(RECOVERY_ARCHIVE),
+    centralDirectoryEntries: recoveryEntries.length,
+    unsafePaths: recoveryUnsafePaths,
+  };
+  if (
+    recoveryArchive.bytes !== RECOVERY_ARCHIVE_BYTES ||
+    recoveryArchive.sha256 !== RECOVERY_ARCHIVE_SHA256 ||
+    recoveryArchive.centralDirectoryEntries !== RECOVERY_ARCHIVE_ENTRIES ||
+    recoveryArchive.unsafePaths.length !== 0
+  ) {
+    throw new Error(`Mac recovery archive drifted or is unsafe: ${JSON.stringify(recoveryArchive)}`);
+  }
+  command('unzip', ['-t', RECOVERY_ARCHIVE]);
+  const ownershipFile = path.join(ROOT, 'tools', 'test-runner', 'CODEX_CHANGED_FILE_OWNERSHIP.json');
+  const ownership = JSON.parse(fs.readFileSync(ownershipFile, 'utf8'));
+  const changed = changedFiles(source.commit);
+  const prohibitedChanged = changed
+    .filter((entry) => ownership.global_no_edit.includes(entry.path))
+    .map((entry) => entry.path);
+  if (prohibitedChanged.length) {
+    throw new Error(`prohibited files changed: ${prohibitedChanged.join(', ')}`);
+  }
+  const sessionNonceSha256 = sha256Bytes(session.body.nonce);
+  const sessionReceipts = allReceipts(session.directory).filter(
+    ({ body }) =>
+      Date.parse(body.recordedAt) >= Date.parse(session.body.startedAt) &&
+      body.receiptSession?.sessionId === session.body.sessionId &&
+      body.receiptSession?.nonceSha256 === sessionNonceSha256 &&
+      body.receiptSession?.source?.commit === source.commit &&
+      body.receiptSession?.source?.tree === source.tree &&
+      body.receiptSession?.trustedAttestation === false,
+  );
+  const receipts = exactFinalReceipts(
+    sessionReceipts,
+    source,
+  );
+  const commits = git([
+    'log',
+    '--reverse',
+    '--format=%H%x09%s',
+    `${BASE}..${source.commit}`,
+  ]).split('\n').filter(Boolean).map((line) => {
+    const [commit, subject] = line.split('\t');
+    return { commit, subject };
+  });
+  const outputRoot = session.directory;
+  const stamp = new Date().toISOString().replaceAll(':', '').replaceAll('.', '');
+  const changedManifestFile = path.join(outputRoot, `candidate-changed-files-${stamp}.json`);
+  const changedManifest = {
+    schemaVersion: 1,
+    kind: 'candidate-changed-file-manifest',
+    source,
+    base: { commit: BASE, tree: BASE_TREE },
+    ownershipManifest: {
+      file: 'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+      sha256: sha256File(ownershipFile),
+    },
+    count: changed.length,
+    files: changed,
+    prohibitedChanged,
+  };
+  writeJson(changedManifestFile, changedManifest);
+  const laneReceiptFile = path.join(outputRoot, `candidate-lane-final-${stamp}.json`);
+  const laneReceipt = {
+    schemaVersion: 1,
+    kind: 'CANA bottleneck-clearance final candidate receipt',
+    recordedAt: new Date().toISOString(),
+    overall: 'PASS',
+    source,
+    authoritative,
+    baseCorrection: {
+      historicalReceiptModified: false,
+      driveFileId: baseCorrection.remote.driveFileId,
+      remotelyDurableFrontier: baseCorrection.currentRemotelyDurableFrontier,
+      localOnlyDurabilityGapAtBase: baseCorrection.localOnlyDurabilityGap,
+      archive,
+    },
+    recoveryArchiveIntake: {
+      archive: recoveryArchive,
+      compressedDataCrc: 'PASS',
+      bulkExtracted: false,
+      disposition: {
+        file: 'docs/RECOVERY_ARCHIVE_DISPOSITION.md',
+        sha256: sha256File(path.join(ROOT, 'docs/RECOVERY_ARCHIVE_DISPOSITION.md')),
+      },
+    },
+    technicalState: {
+      file: 'docs/CANA_TECHNICAL_STATE.md',
+      sha256: sha256File(path.join(ROOT, 'docs/CANA_TECHNICAL_STATE.md')),
+    },
+    candidateDurability: {
+      state: 'LOCAL_ONLY_CANDIDATE',
+      remotelyDurable: false,
+      reason: 'No owner-authorized upload/download/hash round trip was executed for the candidate.',
+    },
+    receiptProvenance: {
+      sessionId: session.body.sessionId,
+      sessionNonceSha256,
+      startedAt: session.body.startedAt,
+      invocationPrivateDirectory: session.directory,
+      exactOneReceiptPerRequiredKind: true,
+      receiptsCarrySessionBinding: true,
+      trustedAttestation: false,
+      boundary: 'Local session consistency and exact hashes are proven. Freshness against a malicious local caller and external trusted attestation are not claimed.',
+    },
+    commits,
+    changedFileManifest: {
+      file: changedManifestFile,
+      sha256: sha256File(changedManifestFile),
+      count: changed.length,
+    },
+    ownershipManifest: {
+      file: ownershipFile,
+      sha256: sha256File(ownershipFile),
+      prohibitedChanged,
+    },
+    finalReceipts: receipts,
+    falsificationReceipts: historicalFalsification(),
+    prohibitedAreaDefects: [
+      {
+        claim: 'No finite approved evidence-chain byte maximum exists because 64 links are capped but step/ref bytes are not.',
+        file: 'apps/web/src/lib/demand-credits.mjs',
+        sha256: sha256File(path.join(ROOT, 'apps/web/src/lib/demand-credits.mjs')),
+        changed: false,
+      },
+    ],
+    resolvedTechnicalObservations: [
+      {
+        claim: 'The database-backed collector no longer shares a resolver stem with site-intelligence.mjs, and standard verification fails on release-blocking Next build diagnostics.',
+        importer: {
+          file: 'apps/web/src/app/admin/site-intelligence/page.tsx',
+          sha256: sha256File(path.join(ROOT, 'apps/web/src/app/admin/site-intelligence/page.tsx')),
+        },
+        collector: {
+          file: 'apps/web/src/lib/site-intelligence.server.ts',
+          sha256: sha256File(path.join(ROOT, 'apps/web/src/lib/site-intelligence.server.ts')),
+        },
+        verifier: {
+          file: 'tools/test-runner/build-output.mjs',
+          sha256: sha256File(path.join(ROOT, 'tools/test-runner/build-output.mjs')),
+        },
+        changed: true,
+      },
+    ],
+    rollback: {
+      candidateGit: `git revert ${commits.map((entry) => entry.commit).reverse().join(' ')}`,
+      abandonLane: `git branch -D codex/cana-bottleneck-clearance`,
+      authoritativeBranch: 'No rollback required; it was never modified.',
+      maria: 'Discard the candidate schema/SQL and ephemeral database; no provider flip was merged.',
+      cpanelSimulation: 'Activate the previous immutable release; no real account was contacted.',
+      durabilityRestore: 'Restore only to a new path from the verified candidate bundle.',
+    },
+    remainingUnprovenClaims: [
+      'Candidate commits are not remotely durable.',
+      'No finite business-approved evidence-chain byte maximum exists.',
+      'MariaDB evidence is local simulation, not hosted production behavior.',
+      'cPanel evidence is local simulation, not a live deployment.',
+      'Canonical GitHub access, branch protection, pushes, pull request, merge, tags and release are unexecuted.',
+      'GitHub Actions workflow is prepared locally but has not run on the canonical repository.',
+      'Real merchant, payment, ranking, revenue and production behavior remain outside this lane.',
+    ],
+    ownerGatedActions: ownership.owner_gated_actions,
+  };
+  writeJson(laneReceiptFile, laneReceipt);
+  process.stdout.write(`${JSON.stringify({
+    receipt: laneReceiptFile,
+    receiptSha256: sha256File(laneReceiptFile),
+    changedFileManifest: changedManifestFile,
+    changedFileManifestSha256: sha256File(changedManifestFile),
+  }, null, 2)}\n`);
+  return laneReceipt;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  if (process.argv[2] === '--init-session' && process.argv.length === 3) {
+    initializeFinalReceiptSession();
+  } else if (process.argv[2] === '--session' && process.argv[3] && process.argv.length === 4) {
+    writeFinalCandidateReceipt(process.argv[3]);
+  } else {
+    throw new Error(
+      'usage: write-final-receipt.mjs --init-session | --session <session.json>',
+    );
+  }
+}

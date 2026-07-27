@@ -1,0 +1,55 @@
+#!/usr/bin/env node
+'use strict';
+
+const HELP = `usage: ./cana <command>
+
+Verification:
+  ./cana verify focused
+  ./cana verify full
+  ./cana verify clean-clone
+  ./cana verify release
+  ./cana verify maria
+  ./cana verify cpanel
+
+Durability:
+  ./cana durability status
+  ./cana durability build
+  ./cana durability verify
+  ./cana durability restore
+  ./cana durability upload
+  ./cana durability readback
+
+Canonical import preparation:
+  ./cana github prepare
+`;
+
+async function main() {
+  const [scope, action, ...rest] = process.argv.slice(2);
+  if (!scope || scope === '--help' || scope === '-h' || scope === 'help') {
+    process.stdout.write(HELP);
+    return;
+  }
+  if (scope === 'verify') {
+    const { runVerification } = await import('./tools/test-runner/runner.mjs');
+    await runVerification(action, rest);
+    return;
+  }
+  if (scope === 'durability') {
+    const { runDurability } = await import('./tools/durability/cli.mjs');
+    await runDurability(action, rest);
+    return;
+  }
+  if (scope === 'github' && action === 'prepare') {
+    const { prepareGithubImport } = await import('./tools/github-import/prepare.mjs');
+    await prepareGithubImport({ args: rest });
+    return;
+  }
+  process.stderr.write(HELP);
+  process.exitCode = 2;
+}
+
+main().catch((error) => {
+  const message = error instanceof Error ? error.message : String(error);
+  process.stderr.write(`${message}\n`);
+  process.exitCode = Number(error?.exitCode) || 1;
+});

@@ -271,7 +271,7 @@ test('the Site Brain route is administrator-only and has no external execution p
     'utf8',
   );
   const collectorSource = fs.readFileSync(
-    path.join(webRoot, 'src/lib/site-intelligence.ts'),
+    path.join(webRoot, 'src/lib/site-intelligence.server.ts'),
     'utf8',
   );
   const adminLayoutSource = fs.readFileSync(
@@ -285,6 +285,11 @@ test('the Site Brain route is administrator-only and has no external execution p
 
   assert.match(pageSource, /await requireAdmin\(\)/);
   assert.match(pageSource, /await assertAdmin\(\)/);
+  assert.match(
+    pageSource,
+    /from ['"]@\/lib\/site-intelligence\.server['"]/,
+    'The database-backed collector must not share a resolver stem with site-intelligence.mjs.',
+  );
   assert.match(pageSource, /persistSiteIntelligenceSnapshot/);
   assert.match(
     pageSource,

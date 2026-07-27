@@ -1,0 +1,19 @@
+services:
+  maria:
+    image: mariadb@sha256:54ac814d243128263e18cf818f7abb611bf43a7a95ce8aa102d18f527b1516d1
+    environment:
+      MARIADB_DATABASE: cana
+      MARIADB_ROOT_PASSWORD: ${CANA_MARIA_ROOT_PASSWORD:?set a disposable simulation password}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    tmpfs:
+      - /var/lib/mysql:rw,noexec,nosuid,size=768m
+    networks:
+      - isolated
+
+networks:
+  isolated:
+    internal: true
