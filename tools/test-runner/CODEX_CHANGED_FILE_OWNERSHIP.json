@@ -1,0 +1,94 @@
+{
+  "lane": "CANA BOTTLENECK CLEARANCE",
+  "candidate_branch": "codex/cana-bottleneck-clearance",
+  "base_commit": "c953ebcd25c46ef33af0700d7913a899d839bce8",
+  "base_tree": "f7c56f6dad3875ccba10dfadbd2d953baf5c1509",
+  "chief_integrator": "Hyper Agent",
+  "authoritative_branch": "recover/competitive-ui-day-night",
+  "source_ownership_manifest": {
+    "sha256": "35fd405a506fdb9f5e8847f09aa55427ee2808015a61f4e5f3b3530fec100e69",
+    "binding": true
+  },
+  "explicit_user_assignment": {
+    "root_dispatcher": "cana",
+    "reason": "The lane directive requires the literal ./cana command surface. This path is not prohibited by the source ownership manifest."
+  },
+  "owned_create_paths": [
+    "cana",
+    "docker-compose.mariadb.yml",
+    "tools/test-runner/**",
+    "tools/mariadb-sim/**",
+    "tools/durability/**",
+    "tools/cpanel-sim/**",
+    "tools/github-import/**",
+    "docs/DETERMINISTIC_TESTING.md",
+    "docs/MARIADB_SIMULATION.md",
+    "docs/DURABILITY_CLI.md",
+    "docs/CANONICAL_IMPORT_PLAN.md",
+    "deploy/namecheap/SIMULATION_NOTES.md",
+    ".github/workflows/*.yml",
+    "apps/web/tests/mariadb-*.test.mjs",
+    "apps/web/tests/cpanel-sim-*.test.mjs",
+    "apps/web/tests/helpers/isolated-server.mjs"
+  ],
+  "owned_modify_paths": [
+    "apps/web/tests/helpers/**",
+    "deploy/namecheap/smoke-test.sh",
+    "deploy/namecheap/healthcheck.sh",
+    "deploy/namecheap/readycheck.sh"
+  ],
+  "planned_candidate_files": [
+    "cana",
+    "docker-compose.mariadb.yml",
+    "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+    "tools/test-runner/runner.mjs",
+    "tools/test-runner/receipt.mjs",
+    "tools/test-runner/runner.test.mjs",
+    "tools/test-runner/CANDIDATE_LANE_RECEIPT.json",
+    "tools/mariadb-sim/schema.prisma",
+    "tools/mariadb-sim/run.mjs",
+    "tools/mariadb-sim/run.test.mjs",
+    "tools/durability/cli.mjs",
+    "tools/durability/cli.test.mjs",
+    "tools/cpanel-sim/run.mjs",
+    "tools/cpanel-sim/run.test.mjs",
+    "tools/github-import/prepare.mjs",
+    "tools/github-import/prepare.test.mjs",
+    "tools/github-import/PULL_REQUEST_TEMPLATE.md",
+    "tools/github-import/protected-main-policy.json",
+    ".github/workflows/cana-verify.yml",
+    "docs/DETERMINISTIC_TESTING.md",
+    "docs/MARIADB_SIMULATION.md",
+    "docs/DURABILITY_CLI.md",
+    "docs/CANONICAL_IMPORT_PLAN.md",
+    "deploy/namecheap/SIMULATION_NOTES.md"
+  ],
+  "global_no_edit": [
+    "apps/web/src/lib/handoff.mjs",
+    "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
+    "apps/web/src/lib/prisma.ts",
+    "apps/web/src/lib/page-challenge.mjs",
+    "apps/web/src/lib/demand-credits.mjs",
+    "apps/web/src/lib/growth-os.mjs",
+    "apps/web/src/lib/evidence-spill.mjs",
+    "apps/web/tests/release-gate.test.mjs",
+    "apps/web/tests/column-width-cutover-court.test.mjs"
+  ],
+  "never_include_or_commit": [
+    ".env and any environment file",
+    "apps/web/prisma/*.db and any database file",
+    "apps/web/prisma/evidence-spill.jsonl",
+    "node_modules/",
+    ".next/ and build caches",
+    "credentials, tokens, API keys, or secret-bearing logs"
+  ],
+  "owner_gated_actions": [
+    "provision or contact a hosted database",
+    "contact or change a real cPanel account",
+    "probe, create, access, or push CannabisWorldHoldings/CANA",
+    "merge to or rewrite the authoritative branch",
+    "use production credentials",
+    "perform a public deployment or claim"
+  ],
+  "boundary_rule": "A defect in a prohibited path gets a minimal reproducer and exact hash-bound report; this lane does not repair it."
+}
