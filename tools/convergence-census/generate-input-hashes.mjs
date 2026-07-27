@@ -19,7 +19,15 @@ function requiredPath(name) {
 
 const sourceRoot = requiredPath('CANA_CENSUS_SOURCE_ROOT');
 const archivePath = requiredPath('RSI_HERMES_BASELINE_ARCHIVE');
-const gitExecutable = process.env.CANA_CENSUS_GIT?.trim() || 'git';
+const gitEnvironment = {
+  PATH: '/usr/bin:/bin',
+  LANG: 'C',
+  LC_ALL: 'C',
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_CONFIG_COUNT: '0',
+  GIT_TERMINAL_PROMPT: '0',
+};
 const outputPath = path.join(
   repositoryRoot,
   'docs/convergence/mission-1/INPUT_HASHES.json',
@@ -196,14 +204,16 @@ function sha256(value) {
 }
 
 function git(repository, ...args) {
-  return run(gitExecutable, ['-C', repository, ...args]).trim();
+  return run('git', ['-C', repository, ...args], {
+    env: gitEnvironment,
+  }).trim();
 }
 
 function gitBytes(repository, ref, filePath) {
   return run(
-    gitExecutable,
+    'git',
     ['-C', repository, 'show', `${ref}:${filePath}`],
-    { encoding: 'buffer' },
+    { encoding: 'buffer', env: gitEnvironment },
   );
 }
 

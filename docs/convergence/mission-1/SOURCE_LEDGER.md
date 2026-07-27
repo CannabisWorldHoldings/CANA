@@ -19,9 +19,10 @@ same-branch rewrite.
 Both generators use the fixed Mission 1 observation time by default. The input
 generator requires `CANA_CENSUS_SOURCE_ROOT` and `RSI_HERMES_BASELINE_ARCHIVE`,
 records stable logical location identifiers instead of checkout paths, and resolves
-`git` from `PATH` unless `CANA_CENSUS_GIT` is explicitly supplied. It is
-byte-deterministic for unchanged inputs across relocated canonical checkouts.
-`LOCAL_VERIFICATION_RECEIPTS.json` records the equality proof.
+`git` only through the fixed system search path `/usr/bin:/bin` with system and
+global Git configuration disabled. It is byte-deterministic for unchanged inputs
+across relocated canonical checkouts. `LOCAL_VERIFICATION_RECEIPTS.json` records the
+equality proof.
 
 This ledger is a census and candidate-branch design record. It does not claim that
 these new documents exist at the protected baseline. It does not activate a runtime, merge

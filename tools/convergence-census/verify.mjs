@@ -19,7 +19,15 @@ function requiredPath(name) {
 
 const sourceRoot = requiredPath('CANA_CENSUS_SOURCE_ROOT');
 const archivePath = requiredPath('RSI_HERMES_BASELINE_ARCHIVE');
-const gitExecutable = process.env.CANA_CENSUS_GIT?.trim() || 'git';
+const gitEnvironment = {
+  PATH: '/usr/bin:/bin',
+  LANG: 'C',
+  LC_ALL: 'C',
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_CONFIG_COUNT: '0',
+  GIT_TERMINAL_PROMPT: '0',
+};
 const artifactRoot = path.join(repositoryRoot, 'docs/convergence/mission-1');
 const artifactManifestPath = path.join(artifactRoot, 'ARTIFACT_MANIFEST.json');
 
@@ -291,7 +299,9 @@ function sha256(value) {
 }
 
 function git(repository, ...args) {
-  return run(gitExecutable, ['-C', repository, ...args]).trim();
+  return run('git', ['-C', repository, ...args], {
+    env: gitEnvironment,
+  }).trim();
 }
 
 function fail(message) {
@@ -484,21 +494,17 @@ for (const repository of hashes.repositories) {
       `${repository.id} tree mismatch: ${observedTree} != ${repository.tree}`,
     );
   }
-  run(gitExecutable, [
-    '-C',
-    localPath,
-    'fsck',
-    '--full',
-    '--strict',
-  ]);
+  run('git', ['-C', localPath, 'fsck', '--full', '--strict'], {
+    env: gitEnvironment,
+  });
 }
 
 for (const file of hashes.key_files) {
   const localPath = sourceDirectoryById[file.repository_id];
   const bytes = run(
-    gitExecutable,
+    'git',
     ['-C', localPath, 'show', `${file.ref}:${file.path}`],
-    { encoding: 'buffer' },
+    { encoding: 'buffer', env: gitEnvironment },
   );
   if (bytes.length !== file.bytes || sha256(bytes) !== file.sha256) {
     fail(

@@ -6,8 +6,8 @@
   "artifacts": [
     {
       "path": "docs/convergence/mission-1/SOURCE_LEDGER.md",
-      "bytes": 8415,
-      "sha256": "353efae15f7700046cc5250f127b1bed94a3aa72f2541aa739ddae0e3d65aaf7"
+      "bytes": 8463,
+      "sha256": "1eb53d54e5c061dab64ddd909b26d0254429638ff11ac6e84ef40880244c92d8"
     },
     {
       "path": "docs/convergence/mission-1/INPUT_HASHES.json",
@@ -61,13 +61,13 @@
     },
     {
       "path": "docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json",
-      "bytes": 11718,
-      "sha256": "53aa383749a75a9b780ce9d328e99122f8cc85e5925ea89bf69347bc74d27dfc"
+      "bytes": 12348,
+      "sha256": "6e615210cb5fc033d7715adcedaa06322c48971317630b53ea5a2a39ba0c3abb"
     },
     {
       "path": "tools/convergence-census/generate-input-hashes.mjs",
-      "bytes": 12043,
-      "sha256": "a97707ce6b9e2e90f7d282691a059ec00a4693f38511f20df5ef784e3b91c3bf"
+      "bytes": 12208,
+      "sha256": "0c028b624eb84b741929e766f64226fe10d639d687d4efd1c834a5f34ab22d44"
     },
     {
       "path": "tools/convergence-census/generate-artifact-manifest.mjs",
@@ -76,9 +76,9 @@
     },
     {
       "path": "tools/convergence-census/verify.mjs",
-      "bytes": 19611,
-      "sha256": "c8019e066b4edf58e55b162c6c0cae3d04908a6742ddd0e3afb7f4ed93056fb9"
+      "bytes": 19775,
+      "sha256": "bad5a1484e5264dd1ad844b2e569e829dc1bcbf7a7746f9ec779b3e614189b0e"
     }
   ],
-  "artifact_set_sha256": "5ec53011c7f9a20e4808380fc03f4b04823c43f1a81531582d9ef5a0bf4bb170"
+  "artifact_set_sha256": "baf5a8ed5e8fc9e34709467da7ac6545a35c5b7b91169c950305bd05e95434d9"
 }
