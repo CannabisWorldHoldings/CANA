@@ -37,6 +37,16 @@ test('the MariaDB runner exposes the exact 11.4 execution surface', async () => 
   );
 });
 
+test('candidate execution requires a manifest-only dependency fetch and internal network', () => {
+  const source = fs.readFileSync(
+    path.join(ROOT, 'tools', 'mariadb-sim', 'run.mjs'),
+    'utf8',
+  );
+  assert.match(source, /npm[\s\S]*ci[\s\S]*--ignore-scripts/);
+  assert.match(source, /candidate source became visible during dependency fetch/);
+  assert.match(source, /candidate execution network is not isolated/);
+});
+
 test('the candidate SQL fails closed for ATTRIBUTION rows without event identity', () => {
   const sql = fs.readFileSync(
     path.join(ROOT, 'tools', 'mariadb-sim', 'candidate-cutover.sql'),

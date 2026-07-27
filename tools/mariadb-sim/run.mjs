@@ -115,7 +115,7 @@ The application approves at most 64 evidence links but does not bound the serial
 
 ## Cleanup
 
-Database container removed: ${body.cleanup.databaseContainerRemoved}. Client container removed: ${body.cleanup.clientContainerRemoved}. Network removed: ${body.cleanup.networkRemoved}.
+Database container removed: ${body.cleanup.databaseContainerRemoved}. Client container removed: ${body.cleanup.clientContainerRemoved}. Dependency container removed: ${body.cleanup.dependencyContainerRemoved}. Dependency volume removed: ${body.cleanup.dependencyVolumeRemoved}. Network removed: ${body.cleanup.networkRemoved}.
 `;
 }
 
@@ -200,23 +200,100 @@ function applyPrismaCandidate({
   network,
   databaseContainer,
   clientContainer,
+  dependencyContainer,
+  dependencyVolume,
   password,
   commit,
 }) {
   const bundle = path.join(runRoot, 'candidate.bundle');
+  const packageFiles = [
+    'package.json',
+    'package-lock.json',
+    'apps/web/package.json',
+    'packages/ad-creative/package.json',
+    'packages/ai/package.json',
+  ];
   command('git', ['bundle', 'create', bundle, 'HEAD'], {
     cwd: repoRoot,
     timeout: 120_000,
   });
-  const databaseUrl = `mysql://root:${password}@maria:3306/cana`;
+  command('docker', ['volume', 'create', dependencyVolume], { timeout: 30_000 });
+  command('docker', [
+    'create',
+    '--name',
+    dependencyContainer,
+    '-w',
+    '/workspace',
+    '--mount',
+    `type=volume,source=${dependencyVolume},target=/workspace/node_modules`,
+    NODE_IMAGE,
+    'bash',
+    '-lc',
+    'sleep infinity',
+  ]);
+  command('docker', ['start', dependencyContainer], { timeout: 30_000 });
+  command('docker', [
+    'exec',
+    dependencyContainer,
+    'mkdir',
+    '-p',
+    '/workspace/apps/web',
+    '/workspace/packages/ad-creative',
+    '/workspace/packages/ai',
+  ]);
+  for (const file of packageFiles) {
+    command(
+      'docker',
+      ['cp', path.join(repoRoot, file), `${dependencyContainer}:/workspace/${file}`],
+      { timeout: 30_000 },
+    );
+  }
+  const install = command('docker', [
+    'exec',
+    dependencyContainer,
+    'npm',
+    'ci',
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund',
+  ], {
+    allowFailure: true,
+    timeout: 12 * 60_000,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  if (install.status !== 0) {
+    throw new Error(`provider-specific Prisma dependency install failed:\n${tail(install.stdout + install.stderr)}`);
+  }
+  const candidateAbsentDuringFetch = command(
+    'docker',
+    [
+      'exec',
+      dependencyContainer,
+      'bash',
+      '-lc',
+      'test ! -e /candidate.bundle && test ! -e /workspace/tools && test ! -e /workspace/.git',
+    ],
+    { allowFailure: true, timeout: 30_000 },
+  ).status === 0;
+  if (!candidateAbsentDuringFetch) {
+    throw new Error('candidate source became visible during dependency fetch');
+  }
+  command('docker', ['rm', '-f', dependencyContainer], { timeout: 30_000 });
+  const dependencyRemovedBeforeExecution =
+    command('docker', ['inspect', dependencyContainer], { allowFailure: true }).status !== 0;
+  if (!dependencyRemovedBeforeExecution) {
+    throw new Error('dependency fetch container survived into candidate execution');
+  }
   command('docker', [
     'create',
     '--name',
     clientContainer,
     '--network',
-    'bridge',
+    network,
     '-w',
     '/workspace',
+    '--mount',
+    `type=volume,source=${dependencyVolume},target=/workspace/node_modules`,
     NODE_IMAGE,
     'bash',
     '-lc',
@@ -226,22 +303,27 @@ function applyPrismaCandidate({
     timeout: 120_000,
   });
   command('docker', ['start', clientContainer]);
-  const install = command('docker', [
+  command('docker', [
     'exec',
     clientContainer,
     'bash',
     '-lc',
-    `git clone --quiet /candidate.bundle /workspace && git checkout --quiet ${commit} && cd apps/web && npm ci --no-audit --no-fund`,
-  ], {
-    allowFailure: true,
-    timeout: 12 * 60_000,
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  if (install.status !== 0) {
-    throw new Error(`provider-specific Prisma dependency install failed:\n${tail(install.stdout + install.stderr)}`);
+    `git clone --quiet /candidate.bundle /clone && git -C /clone checkout --quiet ${commit} && cp -a /clone/. /workspace/`,
+  ], { timeout: 120_000 });
+  const networkIsInternal =
+    command('docker', ['network', 'inspect', network, '--format', '{{.Internal}}']).stdout.trim() ===
+    'true';
+  const bridgeAttached =
+    command(
+      'docker',
+      ['inspect', clientContainer, '--format', '{{if index .NetworkSettings.Networks "bridge"}}true{{else}}false{{end}}'],
+    ).stdout.trim() === 'true';
+  if (!networkIsInternal || bridgeAttached) {
+    throw new Error(
+      `candidate execution network is not isolated: internal=${networkIsInternal} bridge=${bridgeAttached}`,
+    );
   }
-  command('docker', ['network', 'disconnect', 'bridge', clientContainer]);
-  command('docker', ['network', 'connect', network, clientContainer]);
+  const databaseUrl = `mysql://root:${password}@maria:3306/cana`;
   const result = command('docker', [
     'exec',
     '-e',
@@ -267,6 +349,13 @@ function applyPrismaCandidate({
   return {
     outputSha256: sha256Bytes(result.stdout + result.stderr),
     outputTail: tail(result.stdout + result.stderr, 2_000),
+    networkPolicy: {
+      dependencyFetchSourceMounted: false,
+      dependencyFetchLifecycleScriptsEnabled: false,
+      dependencyRemovedBeforeExecution,
+      candidateExecutionInternalOnly: networkIsInternal,
+      candidateExecutionBridgeAttached: bridgeAttached,
+    },
   };
 }
 
@@ -359,6 +448,8 @@ export async function runMariaSimulation({ repoRoot }) {
   const suffix = crypto.randomBytes(6).toString('hex');
   const databaseContainer = `cana-maria-db-${suffix}`;
   const clientContainer = `cana-maria-client-${suffix}`;
+  const dependencyContainer = `cana-maria-deps-${suffix}`;
+  const dependencyVolume = `cana-maria-deps-${suffix}`;
   const network = `cana-maria-net-${suffix}`;
   const password = crypto.randomBytes(24).toString('hex');
   const appPassword = crypto.randomBytes(24).toString('hex');
@@ -401,6 +492,8 @@ export async function runMariaSimulation({ repoRoot }) {
       network,
       databaseContainer,
       clientContainer,
+      dependencyContainer,
+      dependencyVolume,
       password,
       commit: source.commit,
     });
@@ -408,8 +501,13 @@ export async function runMariaSimulation({ repoRoot }) {
     check(
       checks,
       'provider-specific Prisma candidate',
-      prisma.outputTail.includes('Your database is now in sync'),
-      `mysql candidate validated and pushed; output sha256 ${prisma.outputSha256}`,
+      prisma.outputTail.includes('Your database is now in sync') &&
+        prisma.networkPolicy.dependencyFetchSourceMounted === false &&
+        prisma.networkPolicy.dependencyFetchLifecycleScriptsEnabled === false &&
+        prisma.networkPolicy.dependencyRemovedBeforeExecution === true &&
+        prisma.networkPolicy.candidateExecutionInternalOnly === true &&
+        prisma.networkPolicy.candidateExecutionBridgeAttached === false,
+      `mysql candidate validated and pushed after manifest-only, ignore-scripts dependency fetch; candidate execution internal-only; output sha256 ${prisma.outputSha256}`,
     );
 
     const dbConfigProbe = await runDbConfigInformationSchemaProbe({
@@ -1011,6 +1109,14 @@ export async function runMariaSimulation({ repoRoot }) {
   } catch (error) {
     failure = error instanceof Error ? error.message : String(error);
   } finally {
+    if (
+      command('docker', ['inspect', dependencyContainer], { allowFailure: true }).status === 0
+    ) {
+      command('docker', ['rm', '-f', dependencyContainer], {
+        allowFailure: true,
+        timeout: 30_000,
+      });
+    }
     if (clientCreated || command('docker', ['inspect', clientContainer], { allowFailure: true }).status === 0) {
       command('docker', ['rm', '-f', clientContainer], { allowFailure: true, timeout: 30_000 });
     }
@@ -1020,14 +1126,23 @@ export async function runMariaSimulation({ repoRoot }) {
     if (networkCreated) {
       command('docker', ['network', 'rm', network], { allowFailure: true, timeout: 30_000 });
     }
+    command('docker', ['volume', 'rm', dependencyVolume], {
+      allowFailure: true,
+      timeout: 30_000,
+    });
     fs.rmSync(runRoot, { recursive: true, force: true });
   }
 
   const cleanup = {
+    dependencyContainerRemoved:
+      command('docker', ['inspect', dependencyContainer], { allowFailure: true }).status !== 0,
     clientContainerRemoved:
       command('docker', ['inspect', clientContainer], { allowFailure: true }).status !== 0,
     databaseContainerRemoved:
       command('docker', ['inspect', databaseContainer], { allowFailure: true }).status !== 0,
+    dependencyVolumeRemoved:
+      command('docker', ['volume', 'inspect', dependencyVolume], { allowFailure: true }).status !==
+      0,
     networkRemoved:
       command('docker', ['network', 'inspect', network], { allowFailure: true }).status !== 0,
   };
@@ -1047,6 +1162,10 @@ export async function runMariaSimulation({ repoRoot }) {
       image: MARIA_IMAGE,
       digest: mariaDigest,
       network: 'internal Docker network; no host port published',
+      dependencyFetch:
+        'package manifests only; npm lifecycle scripts disabled; fetch container removed before source execution',
+      candidateExecutionNetwork:
+        'internal database network only; no bridge attachment or external egress',
       data: 'container tmpfs; removed after run',
     },
     candidate: {

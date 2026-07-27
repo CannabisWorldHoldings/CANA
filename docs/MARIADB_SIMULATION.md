@@ -6,7 +6,7 @@ Run:
 ./cana verify maria
 ```
 
-The runner starts the reviewed MariaDB 11.4.9 image by immutable digest on an internal Docker network with tmpfs data and no published host port. A disposable, digest-pinned Node 24 client installs dependencies without database credentials, loses registry egress, then receives the ephemeral database URL only on the internal network. It validates and pushes `tools/mariadb-sim/schema.prisma`, which is mechanically generated from the live SQLite schema by `generate-schema.mjs`.
+The runner starts the reviewed MariaDB 11.4.9 image by immutable digest on an internal Docker network with tmpfs data and no published host port. A disposable, digest-pinned Node 24 fetch container receives only the five workspace package manifests and runs `npm ci --ignore-scripts`; the candidate bundle and database credentials are absent. That container is removed before source execution. A separate client reconstructs the exact bundle with the fetched dependency volume attached and joins only the internal database network, with no Docker bridge or external egress. It then receives the ephemeral database URL, validates, and pushes `tools/mariadb-sim/schema.prisma`, which is mechanically generated from the live SQLite schema by `generate-schema.mjs`.
 
 The provider flip and all required `@db.Text` annotations exist only in the candidate schema. The live `apps/web/prisma/schema.prisma` remains SQLite. `candidate-cutover.sql` adds a candidate-only check that rejects an `ATTRIBUTION` row with a NULL event identity while retaining NULL for money rows.
 
@@ -23,7 +23,7 @@ Executed scenarios include:
 - empty, populated, old, interrupted and concurrent migration cases;
 - logical backup, destructive-in-simulation restore and transaction rollback.
 
-The logical backup is hash-checked during the run, restored, and then discarded with the database container. Machine and Markdown execution reports are written to the configured receipt directory.
+The logical backup is hash-checked during the run, restored, and then discarded with the database container. The dependency fetch container, candidate client, dependency volume, database container, and internal network are independently checked for removal. Machine and Markdown execution reports are written to the configured receipt directory.
 
 ## Remaining database claim
 

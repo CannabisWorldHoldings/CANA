@@ -32,6 +32,7 @@ test('the real Prisma proof is an executable container surface', () => {
   const proof = path.join(ROOT, 'tools', 'cpanel-sim', 'real-prisma-proof.sh');
   assert.equal(fs.existsSync(proof), true);
   const source = fs.readFileSync(proof, 'utf8');
+  assert.doesNotMatch(source, /\bnpm\s+(?:ci|install)\b/);
   assert.match(source, /npx --no-install prisma generate/);
   assert.match(source, /CHECKPOINTED/);
   assert.match(source, /db-inspect\.mjs/);

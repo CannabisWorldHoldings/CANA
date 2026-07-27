@@ -78,51 +78,156 @@ function runRealPrismaProof(source) {
   const imageRepoDigests = ensureProofImage();
   const runRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-cpanel-prisma-proof-'));
   const bundle = path.join(runRoot, 'source.bundle');
-  const name = `cana-cpanel-prisma-${crypto.randomBytes(6).toString('hex')}`;
-  let created = false;
+  const suffix = crypto.randomBytes(6).toString('hex');
+  const dependencyContainer = `cana-cpanel-deps-${suffix}`;
+  const proofContainer = `cana-cpanel-prisma-${suffix}`;
+  const dependencyVolume = `cana-cpanel-deps-${suffix}`;
+  const packageFiles = [
+    'package.json',
+    'package-lock.json',
+    'apps/web/package.json',
+    'packages/ad-creative/package.json',
+    'packages/ai/package.json',
+  ];
+  let dependencyCreated = false;
+  let proofCreated = false;
+  let volumeCreated = false;
   let result;
   let output = '';
+  let executionNetwork = '';
   try {
     command('git', ['bundle', 'create', bundle, 'HEAD'], {
       cwd: ROOT,
       timeout: 120_000,
     });
+    command('docker', ['volume', 'create', dependencyVolume], { timeout: 30_000 });
+    volumeCreated = true;
     command('docker', [
       'create',
       '--name',
-      name,
+      dependencyContainer,
       '-w',
       '/workspace',
+      '--mount',
+      `type=volume,source=${dependencyVolume},target=/workspace/node_modules`,
       IMAGE,
       'bash',
       '-lc',
-      `git clone --quiet /source.bundle /workspace && cd /workspace && git checkout --quiet ${source.commit} && bash tools/cpanel-sim/real-prisma-proof.sh ${source.commit}`,
+      'sleep infinity',
     ]);
-    created = true;
-    command('docker', ['cp', bundle, `${name}:/source.bundle`], { timeout: 120_000 });
-    result = command('docker', ['start', '-a', name], {
+    dependencyCreated = true;
+    command('docker', ['start', dependencyContainer], { timeout: 30_000 });
+    command('docker', [
+      'exec',
+      dependencyContainer,
+      'mkdir',
+      '-p',
+      '/workspace/apps/web',
+      '/workspace/packages/ad-creative',
+      '/workspace/packages/ai',
+    ]);
+    for (const file of packageFiles) {
+      command(
+        'docker',
+        ['cp', path.join(ROOT, file), `${dependencyContainer}:/workspace/${file}`],
+        { timeout: 30_000 },
+      );
+    }
+    const install = command(
+      'docker',
+      [
+        'exec',
+        dependencyContainer,
+        'npm',
+        'ci',
+        '--ignore-scripts',
+        '--no-audit',
+        '--no-fund',
+      ],
+      { allowFailure: true, timeout: 12 * 60_000 },
+    );
+    if (install.status !== 0) {
+      throw new Error(
+        `manifest-only dependency fetch failed:\n${install.stdout}${install.stderr}`,
+      );
+    }
+    command('docker', ['rm', '-f', dependencyContainer], { timeout: 30_000 });
+    dependencyCreated = false;
+    command('docker', [
+      'create',
+      '--name',
+      proofContainer,
+      '--network',
+      'none',
+      '-w',
+      '/workspace',
+      '--mount',
+      `type=volume,source=${dependencyVolume},target=/workspace/node_modules`,
+      IMAGE,
+      'bash',
+      '-lc',
+      `git clone --quiet /source.bundle /clone && git -C /clone checkout --quiet ${source.commit} && cp -a /clone/. /workspace/ && cd /workspace && bash tools/cpanel-sim/real-prisma-proof.sh ${source.commit}`,
+    ]);
+    proofCreated = true;
+    executionNetwork = command(
+      'docker',
+      ['inspect', proofContainer, '--format', '{{.HostConfig.NetworkMode}}'],
+      { timeout: 30_000 },
+    ).stdout.trim();
+    if (executionNetwork !== 'none') {
+      throw new Error(`real Prisma proof network is ${executionNetwork}, expected none`);
+    }
+    command('docker', ['cp', bundle, `${proofContainer}:/source.bundle`], {
+      timeout: 120_000,
+    });
+    result = command('docker', ['start', '-a', proofContainer], {
       allowFailure: true,
       timeout: 15 * 60_000,
     });
     output = `${result.stdout}${result.stderr}`;
   } finally {
-    if (created) {
+    if (proofCreated) {
       if (!output) {
-        const logs = command('docker', ['logs', name], {
+        const logs = command('docker', ['logs', proofContainer], {
           allowFailure: true,
           timeout: 30_000,
         });
         output = `${logs.stdout}${logs.stderr}`;
       }
-      command('docker', ['rm', '-f', name], { allowFailure: true, timeout: 30_000 });
+      command('docker', ['rm', '-f', proofContainer], {
+        allowFailure: true,
+        timeout: 30_000,
+      });
+    }
+    if (dependencyCreated) {
+      command('docker', ['rm', '-f', dependencyContainer], {
+        allowFailure: true,
+        timeout: 30_000,
+      });
+    }
+    if (volumeCreated) {
+      command('docker', ['volume', 'rm', dependencyVolume], {
+        allowFailure: true,
+        timeout: 30_000,
+      });
     }
     fs.rmSync(runRoot, { recursive: true, force: true });
   }
-  const remains = command(
+  const proofRemains = command(
     'docker',
-    ['ps', '-a', '--filter', `name=^/${name}$`, '--format', '{{.Names}}'],
+    ['ps', '-a', '--filter', `name=^/${proofContainer}$`, '--format', '{{.Names}}'],
     { timeout: 30_000 },
   ).stdout.trim();
+  const dependencyRemains = command(
+    'docker',
+    ['ps', '-a', '--filter', `name=^/${dependencyContainer}$`, '--format', '{{.Names}}'],
+    { timeout: 30_000 },
+  ).stdout.trim();
+  const volumeRemains = command(
+    'docker',
+    ['volume', 'inspect', dependencyVolume],
+    { allowFailure: true, timeout: 30_000 },
+  ).status === 0;
   const marker = output
     .split('\n')
     .find((line) => line.startsWith('CANA_REAL_PRISMA_PROOF '));
@@ -131,20 +236,32 @@ function runRealPrismaProof(source) {
     : null;
   if (
     result?.status !== 0 ||
-    remains ||
+    proofRemains ||
+    dependencyRemains ||
+    volumeRemains ||
     proof?.overall !== 'PASS' ||
     proof?.commit !== source.commit
   ) {
     throw new Error(
-      `real Prisma cPanel proof failed: exit=${result?.status ?? 'none'} remains=${remains || 'none'}\n${output.slice(-12_000)}`,
+      `real Prisma cPanel proof failed: exit=${result?.status ?? 'none'} proof-remains=${proofRemains || 'none'} dependency-remains=${dependencyRemains || 'none'} volume-remains=${volumeRemains}\n${output.slice(-12_000)}`,
     );
   }
   return {
     image: IMAGE,
     imageRepoDigests,
+    dependencyFetch: {
+      sourceMounted: false,
+      lifecycleScriptsEnabled: false,
+      packageFiles,
+    },
+    executionNetwork,
     outputSha256: sha256Bytes(output),
     outputTail: output.slice(-4_000),
-    cleanup: { containerRemoved: true },
+    cleanup: {
+      containerRemoved: true,
+      dependencyContainerRemoved: true,
+      volumeRemoved: true,
+    },
     proof,
   };
 }
@@ -774,8 +891,11 @@ export async function runCpanelSimulation({ repoRoot }) {
       'existing migration script with real Prisma CLI',
       realPrismaProof.proof.prismaVersion === '6.19.3' &&
         realPrismaProof.proof.migrationsApplied === 2 &&
-        realPrismaProof.proof.coreTables === 2,
-      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and applied both committed migrations`,
+        realPrismaProof.proof.coreTables === 2 &&
+        realPrismaProof.dependencyFetch.sourceMounted === false &&
+        realPrismaProof.dependencyFetch.lifecycleScriptsEnabled === false &&
+        realPrismaProof.executionNetwork === 'none',
+      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and both migrations after manifest-only, ignore-scripts fetch; proof network ${realPrismaProof.executionNetwork}`,
     );
     check(
       checks,

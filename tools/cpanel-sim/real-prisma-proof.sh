@@ -15,7 +15,6 @@ test -z "$(git -C "$ROOT" status --porcelain)"
 mkdir -p "$DATA" "$BACKUPS"
 
 cd "$ROOT"
-npm ci --no-audit --no-fund
 (
   cd apps/web
   npx --no-install prisma generate
