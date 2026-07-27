@@ -275,6 +275,32 @@
       "exit_code": 1,
       "expected_refusal": true,
       "result": "Refuses unless the caller supplies an out-of-band reviewed 40-hex commit and tree."
+    },
+    {
+      "id": "census-deterministic-generation",
+      "source": {
+        "paths": [
+          "tools/convergence-census/generate-input-hashes.mjs",
+          "tools/convergence-census/generate-artifact-manifest.mjs"
+        ]
+      },
+      "commands": [
+        [
+          "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+          "tools/convergence-census/generate-input-hashes.mjs"
+        ],
+        [
+          "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+          "tools/convergence-census/generate-artifact-manifest.mjs"
+        ]
+      ],
+      "repetitions": 2,
+      "exit_code": 0,
+      "result": {
+        "input_hashes_file_sha256_both_runs": "d8b9d5abbdf41e35df87b8134ae184186b2ab4bda90dfb9fb1713032b3097ca9",
+        "artifact_manifest_two_runs_equal": true,
+        "byte_deterministic": true
+      }
     }
   ],
   "failed_or_limited_attempts": [

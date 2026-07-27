@@ -16,6 +16,10 @@ The verifier requires `CANA_CENSUS_EXPECTED_REVISION` and
 those values from the checkout being tested. This avoids a self-authenticating
 same-branch rewrite.
 
+Both generators use the fixed Mission 1 observation time by default and are
+byte-deterministic for unchanged inputs. `LOCAL_VERIFICATION_RECEIPTS.json` records
+the two-run equality proof.
+
 This ledger is a census and candidate-branch design record. It does not claim that
 these new documents exist at the protected baseline. It does not activate a runtime, merge
 another repository, change production, or confer owner approval. Exact object and

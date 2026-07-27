@@ -44,7 +44,7 @@ const artifacts = paths.map((relativePath) => {
 const document = {
   schema_version: '1.0.0',
   generated_at:
-    process.env.CANA_CENSUS_GENERATED_AT || new Date().toISOString(),
+    process.env.CANA_CENSUS_GENERATED_AT || '2026-07-27T00:00:00.000Z',
   hash_algorithm: 'SHA-256',
   scope:
     'The 11 required Mission 1 deliverables, durable local receipts, and all census tools. This manifest intentionally does not hash itself.',

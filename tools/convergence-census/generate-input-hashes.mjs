@@ -287,7 +287,7 @@ const archiveInventoryDigest = sha256(
 const document = {
   schema_version: '1.0.0',
   generated_at:
-    process.env.CANA_CENSUS_GENERATED_AT || new Date().toISOString(),
+    process.env.CANA_CENSUS_GENERATED_AT || '2026-07-27T00:00:00.000Z',
   hash_algorithm: 'SHA-256',
   source_locations: {
     canonical_repository: repositoryRoot,
