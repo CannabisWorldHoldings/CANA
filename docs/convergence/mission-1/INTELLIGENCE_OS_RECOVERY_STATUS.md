@@ -24,7 +24,7 @@ Exact file sizes and SHA-256 values are bound in `INPUT_HASHES.json`.
 
 ## Independent execution
 
-In an isolated worktree, `/usr/bin/make verify` passed:
+In an isolated worktree, `SYSTEM_MAKE_UNDER_TEST verify` passed:
 
 - secret scan: clean
 - unit tests: 35/35

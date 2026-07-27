@@ -303,7 +303,7 @@
           "tools/convergence-census/verify.mjs"
         ]
       },
-      "method": "Placed an exit-97 fake git first in caller PATH and set the removed CANA_CENSUS_GIT override to /bin/false.",
+      "method": "Placed an exit-97 fake git first in caller PATH and set the removed CANA_CENSUS_GIT override to a false executable sentinel.",
       "exit_code": 0,
       "expected_result": true,
       "result": "The generator used the fixed /usr/bin:/bin child search path, emitted no fake-git marker, and reproduced INPUT_HASHES.json SHA-256 e52e04f77d2fdd707d9768a1ccc2db30c41d7c20c741864ab33989728c50da60.",

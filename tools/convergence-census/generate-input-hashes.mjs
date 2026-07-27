@@ -276,14 +276,17 @@ const keyFileHashes = keyFiles.map(([repositoryId, filePath]) => {
 });
 
 const archiveBytes = fs.readFileSync(archivePath);
-run('/usr/bin/unzip', ['-t', archivePath]);
-const archiveEntries = run('/usr/bin/unzip', ['-Z1', archivePath])
+run('unzip', ['-t', archivePath], { env: gitEnvironment });
+const archiveEntries = run('unzip', ['-Z1', archivePath], {
+  env: gitEnvironment,
+})
   .split('\n')
   .filter((entry) => entry && !entry.endsWith('/'))
   .sort()
   .map((entry) => {
-    const bytes = run('/usr/bin/unzip', ['-p', archivePath, entry], {
+    const bytes = run('unzip', ['-p', archivePath, entry], {
       encoding: 'buffer',
+      env: gitEnvironment,
     });
     return {
       path: entry,

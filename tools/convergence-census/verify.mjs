@@ -520,10 +520,11 @@ if (
 ) {
   fail('attached archive size or SHA-256 mismatch');
 }
-run('/usr/bin/unzip', ['-t', archivePath]);
+run('unzip', ['-t', archivePath], { env: gitEnvironment });
 for (const entry of hashes.archive.entries) {
-  const bytes = run('/usr/bin/unzip', ['-p', archivePath, entry.path], {
+  const bytes = run('unzip', ['-p', archivePath, entry.path], {
     encoding: 'buffer',
+    env: gitEnvironment,
   });
   if (bytes.length !== entry.bytes || sha256(bytes) !== entry.sha256) {
     fail(`archive entry mismatch: ${entry.path}`);
