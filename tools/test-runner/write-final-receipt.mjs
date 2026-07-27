@@ -12,6 +12,12 @@ const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const BASE_TREE = 'f7c56f6dad3875ccba10dfadbd2d953baf5c1509';
 const AUTHORITATIVE_CHECKOUT = '/Users/Apple/Documents/New project/CANA-c953ebc/repo';
 const ARCHIVE = '/Users/Apple/Downloads/CANA_CODEX_HANDOFF_c953ebc.zip';
+const RECOVERY_ARCHIVE =
+  '/Users/Apple/Downloads/CANA_MAC_LOCAL_RECOVERY_BUNDLE_2026-07-26.zip';
+const RECOVERY_ARCHIVE_BYTES = 6_186_053_094;
+const RECOVERY_ARCHIVE_ENTRIES = 7_590;
+const RECOVERY_ARCHIVE_SHA256 =
+  '0ec9c44f77aee4342c0a783bb321af84f560cb33cbfa0bb20862f9b30efbf16a';
 
 function command(commandName, args, { cwd = ROOT, allowFailure = false } = {}) {
   const result = spawnSync(commandName, args, {
@@ -67,6 +73,7 @@ function latest(receipts, kind, predicate) {
     sha256: sha256File(selected.file),
     overall: selected.body.overall,
     recordedAt: selected.body.recordedAt,
+    buildDiagnostics: selected.body.buildDiagnostics ?? null,
   };
 }
 
@@ -298,6 +305,30 @@ export function writeFinalCandidateReceipt(sessionFile) {
   ) {
     throw new Error(`supplied handoff archive drifted: ${JSON.stringify(archive)}`);
   }
+  const recoveryEntries = command('unzip', ['-Z1', RECOVERY_ARCHIVE])
+    .stdout
+    .split('\n')
+    .filter(Boolean);
+  const recoveryUnsafePaths = recoveryEntries.filter((entry) => {
+    const parts = entry.split('/');
+    return entry.startsWith('/') || entry.includes('\\') || parts.includes('..');
+  });
+  const recoveryArchive = {
+    file: RECOVERY_ARCHIVE,
+    bytes: fs.statSync(RECOVERY_ARCHIVE).size,
+    sha256: sha256File(RECOVERY_ARCHIVE),
+    centralDirectoryEntries: recoveryEntries.length,
+    unsafePaths: recoveryUnsafePaths,
+  };
+  if (
+    recoveryArchive.bytes !== RECOVERY_ARCHIVE_BYTES ||
+    recoveryArchive.sha256 !== RECOVERY_ARCHIVE_SHA256 ||
+    recoveryArchive.centralDirectoryEntries !== RECOVERY_ARCHIVE_ENTRIES ||
+    recoveryArchive.unsafePaths.length !== 0
+  ) {
+    throw new Error(`Mac recovery archive drifted or is unsafe: ${JSON.stringify(recoveryArchive)}`);
+  }
+  command('unzip', ['-t', RECOVERY_ARCHIVE]);
   const ownershipFile = path.join(ROOT, 'tools', 'test-runner', 'CODEX_CHANGED_FILE_OWNERSHIP.json');
   const ownership = JSON.parse(fs.readFileSync(ownershipFile, 'utf8'));
   const changed = changedFiles(source.commit);
@@ -361,6 +392,19 @@ export function writeFinalCandidateReceipt(sessionFile) {
       remotelyDurableFrontier: baseCorrection.currentRemotelyDurableFrontier,
       localOnlyDurabilityGapAtBase: baseCorrection.localOnlyDurabilityGap,
       archive,
+    },
+    recoveryArchiveIntake: {
+      archive: recoveryArchive,
+      compressedDataCrc: 'PASS',
+      bulkExtracted: false,
+      disposition: {
+        file: 'docs/RECOVERY_ARCHIVE_DISPOSITION.md',
+        sha256: sha256File(path.join(ROOT, 'docs/RECOVERY_ARCHIVE_DISPOSITION.md')),
+      },
+    },
+    technicalState: {
+      file: 'docs/CANA_TECHNICAL_STATE.md',
+      sha256: sha256File(path.join(ROOT, 'docs/CANA_TECHNICAL_STATE.md')),
     },
     candidateDurability: {
       state: 'LOCAL_ONLY_CANDIDATE',
