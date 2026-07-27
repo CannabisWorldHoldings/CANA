@@ -8,12 +8,12 @@ WEB="$ROOT/apps/web"
 DB="$WEB/prisma/cana-verify.db"
 SERVER_PID=""
 
-mkdir -p /agent
-if [ ! -e /agent/workspace ]; then
-  ln -s /workspace /agent/workspace
-fi
-test "$(readlink -f /agent/workspace)" = /workspace
-echo "CANA_LEGACY_WORKSPACE_COMPAT_PASS /agent/workspace -> /workspace"
+mkdir -p /agent/workspace
+ln -s /workspace /agent/workspace/ui-recover
+ln -s /workspace/deliverables /agent/workspace/deliverables
+test "$(readlink -f /agent/workspace/ui-recover)" = /workspace
+test "$(readlink -f /agent/workspace/deliverables)" = /workspace/deliverables
+echo "CANA_LEGACY_WORKSPACE_COMPAT_PASS ui-recover and deliverables mapped inside disposable container"
 
 cleanup() {
   local prior=$?
