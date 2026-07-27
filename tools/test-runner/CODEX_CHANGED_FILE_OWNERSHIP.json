@@ -23,6 +23,15 @@
         "docs/CANA_TECHNICAL_STATE.md",
         "docs/RECOVERY_ARCHIVE_DISPOSITION.md"
       ]
+    },
+    "technical_promotion_2026_07_27": {
+      "reason": "The owner explicitly assigned local technical integration, evidence-chain sizing, independent verification, normalized promotion state, rollback proof, and an owner-action packet while prohibiting business-semantic changes and external actions.",
+      "paths": [
+        "cana",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+        "tools/promotion-gate/**",
+        "docs/technical-promotion/**"
+      ]
     }
   },
   "owned_create_paths": [
@@ -33,6 +42,8 @@
     "tools/durability/**",
     "tools/cpanel-sim/**",
     "tools/github-import/**",
+    "tools/promotion-gate/**",
+    "docs/technical-promotion/**",
     "docs/DETERMINISTIC_TESTING.md",
     "docs/MARIADB_SIMULATION.md",
     "docs/DURABILITY_CLI.md",
@@ -80,6 +91,8 @@
     "tools/github-import/prepare.test.mjs",
     "tools/github-import/PULL_REQUEST_TEMPLATE.md",
     "tools/github-import/protected-main-policy.json",
+    "tools/promotion-gate/**",
+    "docs/technical-promotion/**",
     ".github/workflows/cana-verify.yml",
     "docs/DETERMINISTIC_TESTING.md",
     "docs/MARIADB_SIMULATION.md",
