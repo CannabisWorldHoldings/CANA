@@ -55,6 +55,7 @@
     "tools/durability/cli.test.mjs",
     "tools/cpanel-sim/run.mjs",
     "tools/cpanel-sim/run.test.mjs",
+    "tools/cpanel-sim/templates/**",
     "tools/github-import/prepare.mjs",
     "tools/github-import/prepare.test.mjs",
     "tools/github-import/PULL_REQUEST_TEMPLATE.md",
