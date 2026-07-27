@@ -35,6 +35,9 @@ test('offline preparation executes no owner-gated command', () => {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-github-prepare-test-'));
   try {
     const reportFile = path.join(scratch, 'report.json');
+    const childEnvironment = { ...process.env };
+    delete childEnvironment.CANA_RECEIPT_SESSION;
+    delete childEnvironment.CANA_RECEIPT_DIR;
     const result = spawnSync(
       path.join(ROOT, 'cana'),
       ['github', 'prepare', '--output', reportFile],
@@ -42,7 +45,7 @@ test('offline preparation executes no owner-gated command', () => {
         cwd: ROOT,
         encoding: 'utf8',
         env: {
-          ...process.env,
+          ...childEnvironment,
           CANA_GITHUB_IMPORT_STATE_DIR: scratch,
           CANA_RECEIPT_DIR: path.join(scratch, 'receipts'),
         },
