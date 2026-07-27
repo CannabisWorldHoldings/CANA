@@ -358,14 +358,16 @@ function verifyDurability(parsed) {
     if (patchTree !== manifest.source.tree) {
       refusal(`binary-patch reconstruction tree mismatch: ${patchTree}`);
     }
+    const focusedEnv = {
+      ...process.env,
+      CANA_RECEIPT_DIR: path.join(runRoot, 'focused-receipts'),
+    };
+    delete focusedEnv.CANA_RECEIPT_SESSION;
     focused = command(path.join(clone, 'cana'), ['verify', 'focused'], {
       cwd: clone,
       allowFailure: true,
       timeout: 15 * 60_000,
-      env: {
-        ...process.env,
-        CANA_RECEIPT_DIR: path.join(runRoot, 'focused-receipts'),
-      },
+      env: focusedEnv,
     });
     if (focused.status !== 0) {
       refusal(`focused execution in reconstructed clone failed:\n${focused.stdout}${focused.stderr}`);
