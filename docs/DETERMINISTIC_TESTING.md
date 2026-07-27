@@ -1,0 +1,35 @@
+# Deterministic CANA verification
+
+The root `./cana` command is the candidate lane’s verification surface:
+
+```text
+./cana verify focused
+./cana verify full
+./cana verify clean-clone
+./cana verify release
+./cana verify maria
+./cana verify cpanel
+```
+
+The four general profiles refuse a dirty source, create a detached worktree, restore a deliberate mutation by exact blob hash, bundle the committed source, and clone it inside `node:24.14.1-bookworm`. The container owns its database, build output, network namespace and server. No host port is published.
+
+HTTP profiles rebuild Next with webpack before startup, detect the absence of a stale build, generate a runtime-only interaction secret, and require `/api/release` to state the exact expected 40-character commit with `Cache-Control: no-store`. The runner recreates the repository’s legacy absolute test paths only inside the disposable container.
+
+Each invocation:
+
+- has a profile-specific wall-clock limit;
+- stops only the server or container it created;
+- checks container and worktree removal;
+- records hanging-handle and cleanup evidence;
+- writes a JSON receipt under `${CANA_RECEIPT_DIR:-<system-temp>/cana-receipts}`;
+- exits nonzero when the executed profile or cleanup fails.
+
+`maria` and `cpanel` dispatch to their specialized isolated runners. Neither is silently skipped when its substrate is unavailable.
+
+## Receipt boundary
+
+A PASS receipt proves only its named profile at its recorded commit, tree, image digest and time. It is not a production deployment receipt and it cannot be reused after a commit changes.
+
+## Known environment boundary
+
+The restored baseline’s Prisma 6.19.3 migration court fails on this macOS host when the SQLite file is absent, but passes unchanged in the exact Linux Node 24 substrate. The verifier therefore uses the Linux substrate; it does not weaken or edit the migration court.

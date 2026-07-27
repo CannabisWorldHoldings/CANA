@@ -44,7 +44,7 @@
     "tools/test-runner/runner.mjs",
     "tools/test-runner/receipt.mjs",
     "tools/test-runner/runner.test.mjs",
-    "tools/test-runner/CANDIDATE_LANE_RECEIPT.json",
+    "tools/test-runner/write-final-receipt.mjs",
     "tools/mariadb-sim/generate-schema.mjs",
     "tools/mariadb-sim/schema.prisma",
     "tools/mariadb-sim/candidate-cutover.sql",
