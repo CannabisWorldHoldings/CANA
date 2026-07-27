@@ -1,0 +1,76 @@
+name: CANA candidate verification
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - recover/competitive-ui-day-night
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cana-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  candidate-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs
+
+  focused-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: docker info
+      - run: ./cana verify focused
+
+  maria-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: docker info
+      - run: ./cana verify maria
+
+  cpanel-verifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: sudo apt-get update && sudo apt-get install -y sqlite3
+      - run: ./cana verify cpanel
+
+  github-import-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          package-manager-cache: false
+      - run: ./cana github prepare --runtime-sha "$GITHUB_SHA"
