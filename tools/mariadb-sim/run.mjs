@@ -219,6 +219,7 @@ function applyPrismaCandidate({
     '-lc',
     `git clone --quiet /candidate.bundle /workspace && git checkout --quiet ${commit} && cd apps/web && npm ci --no-audit --no-fund && npx prisma validate --schema ../../tools/mariadb-sim/schema.prisma && npx prisma db push --schema ../../tools/mariadb-sim/schema.prisma --skip-generate`,
   ]);
+  command('docker', ['network', 'connect', 'bridge', clientContainer]);
   command('docker', ['cp', bundle, `${clientContainer}:/candidate.bundle`], {
     timeout: 120_000,
   });
