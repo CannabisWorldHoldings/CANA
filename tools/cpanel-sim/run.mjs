@@ -210,7 +210,7 @@ export async function runCpanelSimulation({ repoRoot }) {
     check(
       checks,
       'immutable releases and activation pointer',
-      currentTarget === newRelease &&
+      currentTarget === fs.realpathSync(newRelease) &&
         (fs.statSync(newRelease).mode & 0o777) === 0o555 &&
         (fs.statSync(path.join(newRelease, 'release.json')).mode & 0o777) === 0o444,
       `current -> ${newName}; release dir 0555 and identity 0444`,
@@ -327,7 +327,8 @@ export async function runCpanelSimulation({ repoRoot }) {
     check(
       checks,
       'activation rollback',
-      rolledBack === oldRelease && sqlite(database, 'SELECT value FROM persistent_probe WHERE id=1') === 'persistent-before',
+      rolledBack === fs.realpathSync(oldRelease) &&
+        sqlite(database, 'SELECT value FROM persistent_probe WHERE id=1') === 'persistent-before',
       `current -> ${oldName}; shared database persisted`,
     );
     web = await startWeb(root, oldRelease);
@@ -349,7 +350,7 @@ export async function runCpanelSimulation({ repoRoot }) {
     check(
       checks,
       'reactivation smoke',
-      reactivated === newRelease &&
+      reactivated === fs.realpathSync(newRelease) &&
         finalHealth.body.status === 'HEALTHY' &&
         finalIdentity.body.gitSha === source.commit,
       `current -> ${newName}; final health and SHA pass`,
