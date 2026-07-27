@@ -53,7 +53,7 @@ build_web() {
   rm -rf "$WEB/.next"
   (
     cd "$WEB"
-    CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build
+    CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack
   )
   test -s "$WEB/.next/BUILD_ID"
   local built

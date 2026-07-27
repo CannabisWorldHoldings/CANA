@@ -129,13 +129,12 @@ function sabotageRestore(worktree, commit) {
   };
 }
 
-function archiveWorktree(worktree, destination) {
-  const archive = command(
+function bundleWorktree(worktree, destination) {
+  command(
     'git',
-    ['archive', '--format=tar', 'HEAD'],
-    { cwd: worktree, encoding: null, maxBuffer: 64 * 1024 * 1024 },
-  ).stdout;
-  fs.writeFileSync(destination, archive);
+    ['bundle', 'create', destination, 'HEAD'],
+    { cwd: worktree, timeout: 120_000, maxBuffer: 64 * 1024 * 1024 },
+  );
 }
 
 function cleanClone(runRoot, expected) {
@@ -156,7 +155,7 @@ function cleanClone(runRoot, expected) {
   };
 }
 
-function runContainer({ profile, sourceArchive, expected }) {
+function runContainer({ profile, sourceBundle, expected }) {
   const suffix = crypto.randomBytes(6).toString('hex');
   const name = `cana-verify-${profile.replaceAll('-', '')}-${suffix}`;
   let created = false;
@@ -172,10 +171,10 @@ function runContainer({ profile, sourceArchive, expected }) {
       IMAGE,
       'bash',
       '-lc',
-      `mkdir -p /workspace && tar -xf /source.tar -C /workspace && bash tools/test-runner/container-verify.sh ${profile} ${expected}`,
+      `git clone --quiet /source.bundle /workspace && cd /workspace && git checkout --quiet ${expected} && bash tools/test-runner/container-verify.sh ${profile} ${expected}`,
     ]);
     created = true;
-    command('docker', ['cp', sourceArchive, `${name}:/source.tar`], { timeout: 120_000 });
+    command('docker', ['cp', sourceBundle, `${name}:/source.bundle`], { timeout: 120_000 });
     result = command('docker', ['start', '-a', name], {
       allowFailure: true,
       timeout: TIMEOUTS[profile],
@@ -237,11 +236,11 @@ async function standardVerification(profile) {
       }
       archiveSource = reconstruction.clone;
     }
-    const sourceArchive = path.join(runRoot, 'source.tar');
-    archiveWorktree(archiveSource, sourceArchive);
+    const sourceBundle = path.join(runRoot, 'container-source.bundle');
+    bundleWorktree(archiveSource, sourceBundle);
     container = runContainer({
       profile,
-      sourceArchive,
+      sourceBundle,
       expected: source.commit,
     });
     if (!container.cleanup) {
