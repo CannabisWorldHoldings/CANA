@@ -196,7 +196,10 @@ function waitForMaria(container) {
 
 function waitForContainerRemoval(container) {
   for (let attempt = 0; attempt < 30; attempt += 1) {
-    if (command('docker', ['inspect', container], { allowFailure: true }).status !== 0) {
+    if (
+      command('docker', ['container', 'inspect', container], { allowFailure: true }).status !==
+      0
+    ) {
       return true;
     }
     sleep(100);
@@ -1119,7 +1122,9 @@ export async function runMariaSimulation({ repoRoot }) {
     failure = error instanceof Error ? error.message : String(error);
   } finally {
     if (
-      command('docker', ['inspect', dependencyContainer], { allowFailure: true }).status === 0
+      command('docker', ['container', 'inspect', dependencyContainer], {
+        allowFailure: true,
+      }).status === 0
     ) {
       command('docker', ['rm', '-f', dependencyContainer], {
         allowFailure: true,
@@ -1144,7 +1149,9 @@ export async function runMariaSimulation({ repoRoot }) {
 
   const cleanup = {
     dependencyContainerRemoved:
-      command('docker', ['inspect', dependencyContainer], { allowFailure: true }).status !== 0,
+      command('docker', ['container', 'inspect', dependencyContainer], {
+        allowFailure: true,
+      }).status !== 0,
     clientContainerRemoved:
       command('docker', ['inspect', clientContainer], { allowFailure: true }).status !== 0,
     databaseContainerRemoved:
