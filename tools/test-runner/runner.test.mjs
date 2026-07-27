@@ -11,6 +11,7 @@ import {
   assertBuildOutputClean,
   buildOutputDiagnostics,
 } from './build-output.mjs';
+import { sha256File } from './receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -149,4 +150,19 @@ test('the verifier rejects successful Next builds that contain compilation diagn
     () => assertBuildOutputClean(attemptedImport),
     /NEXT_COMPILED_WITH_WARNINGS.*NEXT_ATTEMPTED_IMPORT_ERROR/s,
   );
+});
+
+test('receipt file hashing streams across multiple bounded chunks', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-hash-test-'));
+  const file = path.join(root, 'multi-chunk.bin');
+  const content = Buffer.alloc((2 * 1024 * 1024) + 3, 0x5a);
+  try {
+    fs.writeFileSync(file, content);
+    assert.equal(
+      sha256File(file),
+      crypto.createHash('sha256').update(content).digest('hex'),
+    );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -8,7 +8,19 @@ export function sha256Bytes(value) {
 }
 
 export function sha256File(file) {
-  return sha256Bytes(fs.readFileSync(file));
+  const digest = crypto.createHash('sha256');
+  const descriptor = fs.openSync(file, 'r');
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
+  try {
+    let bytesRead;
+    do {
+      bytesRead = fs.readSync(descriptor, buffer, 0, buffer.length, null);
+      if (bytesRead > 0) digest.update(buffer.subarray(0, bytesRead));
+    } while (bytesRead > 0);
+  } finally {
+    fs.closeSync(descriptor);
+  }
+  return digest.digest('hex');
 }
 
 function receiptSession() {
