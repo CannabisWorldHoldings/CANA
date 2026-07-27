@@ -194,6 +194,16 @@ function waitForMaria(container) {
   throw new Error('MariaDB did not become healthy within 90 seconds');
 }
 
+function waitForContainerRemoval(container) {
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    if (command('docker', ['inspect', container], { allowFailure: true }).status !== 0) {
+      return true;
+    }
+    sleep(100);
+  }
+  return false;
+}
+
 function applyPrismaCandidate({
   repoRoot,
   runRoot,
@@ -279,8 +289,7 @@ function applyPrismaCandidate({
     throw new Error('candidate source became visible during dependency fetch');
   }
   command('docker', ['rm', '-f', dependencyContainer], { timeout: 30_000 });
-  const dependencyRemovedBeforeExecution =
-    command('docker', ['inspect', dependencyContainer], { allowFailure: true }).status !== 0;
+  const dependencyRemovedBeforeExecution = waitForContainerRemoval(dependencyContainer);
   if (!dependencyRemovedBeforeExecution) {
     throw new Error('dependency fetch container survived into candidate execution');
   }
