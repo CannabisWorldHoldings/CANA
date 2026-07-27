@@ -59,6 +59,7 @@ jobs:
         with:
           node-version: 24.14.1
           package-manager-cache: false
+      - run: docker info
       - run: ./cana verify cpanel
 
   durability-proof:

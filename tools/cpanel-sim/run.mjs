@@ -6,12 +6,15 @@ import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 
-import { sha256File, writeReceipt } from '../test-runner/receipt.mjs';
+import { sha256Bytes, sha256File, writeReceipt } from '../test-runner/receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEMPLATES = path.join(ROOT, 'tools', 'cpanel-sim', 'templates');
 const NAMECHEAP = path.join(ROOT, 'deploy', 'namecheap');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
+const APPROVED_IMAGE =
+  'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
+const IMAGE = process.env.CANA_CPANEL_IMAGE ?? APPROVED_IMAGE;
 const NAMECHEAP_SCRIPTS = [
   'app.js',
   'deploy.sh',
@@ -48,6 +51,102 @@ function command(commandName, args, {
 
 function git(args, options = {}) {
   return command('git', args, options).stdout.trim();
+}
+
+function ensureProofImage() {
+  if (IMAGE !== APPROVED_IMAGE) {
+    throw new Error(`CANA_CPANEL_IMAGE is not approved; expected immutable ${APPROVED_IMAGE}`);
+  }
+  command('docker', ['info'], { timeout: 30_000 });
+  let inspect = command(
+    'docker',
+    ['image', 'inspect', IMAGE, '--format', '{{json .RepoDigests}}'],
+    { allowFailure: true, timeout: 30_000 },
+  );
+  if (inspect.status !== 0) {
+    command('docker', ['pull', IMAGE], { timeout: 8 * 60_000 });
+    inspect = command(
+      'docker',
+      ['image', 'inspect', IMAGE, '--format', '{{json .RepoDigests}}'],
+      { timeout: 30_000 },
+    );
+  }
+  return inspect.stdout.trim();
+}
+
+function runRealPrismaProof(source) {
+  const imageRepoDigests = ensureProofImage();
+  const runRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-cpanel-prisma-proof-'));
+  const bundle = path.join(runRoot, 'source.bundle');
+  const name = `cana-cpanel-prisma-${crypto.randomBytes(6).toString('hex')}`;
+  let created = false;
+  let result;
+  let output = '';
+  try {
+    command('git', ['bundle', 'create', bundle, 'HEAD'], {
+      cwd: ROOT,
+      timeout: 120_000,
+    });
+    command('docker', [
+      'create',
+      '--name',
+      name,
+      '-w',
+      '/workspace',
+      IMAGE,
+      'bash',
+      '-lc',
+      `git clone --quiet /source.bundle /workspace && cd /workspace && git checkout --quiet ${source.commit} && bash tools/cpanel-sim/real-prisma-proof.sh ${source.commit}`,
+    ]);
+    created = true;
+    command('docker', ['cp', bundle, `${name}:/source.bundle`], { timeout: 120_000 });
+    result = command('docker', ['start', '-a', name], {
+      allowFailure: true,
+      timeout: 15 * 60_000,
+    });
+    output = `${result.stdout}${result.stderr}`;
+  } finally {
+    if (created) {
+      if (!output) {
+        const logs = command('docker', ['logs', name], {
+          allowFailure: true,
+          timeout: 30_000,
+        });
+        output = `${logs.stdout}${logs.stderr}`;
+      }
+      command('docker', ['rm', '-f', name], { allowFailure: true, timeout: 30_000 });
+    }
+    fs.rmSync(runRoot, { recursive: true, force: true });
+  }
+  const remains = command(
+    'docker',
+    ['ps', '-a', '--filter', `name=^/${name}$`, '--format', '{{.Names}}'],
+    { timeout: 30_000 },
+  ).stdout.trim();
+  const marker = output
+    .split('\n')
+    .find((line) => line.startsWith('CANA_REAL_PRISMA_PROOF '));
+  const proof = marker
+    ? JSON.parse(marker.slice('CANA_REAL_PRISMA_PROOF '.length))
+    : null;
+  if (
+    result?.status !== 0 ||
+    remains ||
+    proof?.overall !== 'PASS' ||
+    proof?.commit !== source.commit
+  ) {
+    throw new Error(
+      `real Prisma cPanel proof failed: exit=${result?.status ?? 'none'} remains=${remains || 'none'}\n${output.slice(-12_000)}`,
+    );
+  }
+  return {
+    image: IMAGE,
+    imageRepoDigests,
+    outputSha256: sha256Bytes(output),
+    outputTail: output.slice(-4_000),
+    cleanup: { containerRemoved: true },
+    proof,
+  };
 }
 
 function check(checks, name, pass, evidence) {
@@ -99,16 +198,11 @@ function createNamecheapArtifact(root, name, commit) {
   fs.mkdirSync(release, { recursive: true });
   fs.mkdirSync(uploads, { recursive: true });
   fs.cpSync(TEMPLATES, release, { recursive: true });
-  fs.rmSync(path.join(release, 'prisma'), { force: true });
   const scriptHashes = copyNamecheapScripts(release);
   fs.copyFileSync(path.join(TEMPLATES, 'passenger-server.cjs'), path.join(release, 'server.js'));
   fs.cpSync(path.join(ROOT, 'apps', 'web', 'prisma'), path.join(release, 'prisma'), {
     recursive: true,
   });
-  const prismaBin = path.join(release, 'node_modules', '.bin');
-  fs.mkdirSync(prismaBin, { recursive: true });
-  fs.copyFileSync(path.join(TEMPLATES, 'prisma'), path.join(prismaBin, 'prisma'));
-  fs.chmodSync(path.join(prismaBin, 'prisma'), 0o755);
   const identity = releaseIdentity(commit, name);
   fs.writeFileSync(path.join(release, 'release.json'), `${JSON.stringify(identity, null, 2)}\n`);
   fs.writeFileSync(
@@ -320,28 +414,6 @@ async function exerciseExistingNamecheapScripts({
       `deploy.sh installed ${source.commit}, preserved ${BASE}, and copied exact existing scripts`,
     );
 
-    const migration = command('sh', [path.join(current, 'migrate.sh')], {
-      cwd: current,
-      env: baseEnvironment,
-    });
-    executed.push({ script: 'migrate.sh', output: migration.stdout.trim() });
-    const migrationCount = sqlite(
-      current,
-      database,
-      'SELECT count(*) FROM _prisma_migrations',
-    );
-    const ledgerTable = sqlite(
-      current,
-      database,
-      "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='DemandCreditEntry'",
-    );
-    check(
-      checks,
-      'existing migration script',
-      migrationCount === '2' && ledgerTable === '1',
-      'migrate.sh applied both exact committed migration SQL files through the local Prisma contract adapter',
-    );
-
     passenger = await startPassengerWeb(root, current, database);
     const baseUrl = `http://127.0.0.1:${passenger.port}`;
     const health = command('sh', [path.join(current, 'healthcheck.sh'), baseUrl], {
@@ -404,45 +476,6 @@ async function exerciseExistingNamecheapScripts({
       'existing restart script',
       fs.statSync(restartFile).mtimeMs > 0,
       'restart.sh updated only the simulated Passenger restart signal',
-    );
-
-    sqlite(
-      current,
-      database,
-      `CREATE TABLE cpanel_backup_probe(id INTEGER PRIMARY KEY,value TEXT NOT NULL);
-       INSERT INTO cpanel_backup_probe VALUES(1,'before-existing-backup')`,
-      'exec',
-    );
-    const worker = command(
-      process.execPath,
-      [path.join(current, 'worker.mjs'), '--once', 'backup'],
-      { cwd: current, env: baseEnvironment },
-    );
-    executed.push({ script: 'worker.mjs --once backup', output: worker.stdout.trim() });
-    const backupName = fs.readdirSync(directories.backups)
-      .filter((name) => /^prod-.*\.db$/.test(name))
-      .sort()
-      .at(-1);
-    const backupFile = path.join(directories.backups, backupName);
-    sqlite(
-      current,
-      database,
-      "UPDATE cpanel_backup_probe SET value='after-existing-backup' WHERE id=1",
-      'exec',
-    );
-    const restoreTarget = path.join(directories.data, 'existing-restore-check.db');
-    const restored = command(
-      'sh',
-      [path.join(current, 'restore-backup.sh'), backupFile, restoreTarget],
-      { cwd: current, env: baseEnvironment },
-    );
-    executed.push({ script: 'restore-backup.sh', output: restored.stdout.trim() });
-    check(
-      checks,
-      'existing backup and restore scripts',
-      sqlite(current, restoreTarget, 'SELECT value FROM cpanel_backup_probe WHERE id=1') ===
-        'before-existing-backup',
-      `worker.mjs produced ${backupName}; restore-backup.sh verified its sidecar and restored the sentinel`,
     );
 
     check(
@@ -517,7 +550,6 @@ async function exerciseExistingNamecheapScripts({
       old: { file: path.basename(oldArtifact.tarFile), sha256: sha256File(oldArtifact.tarFile) },
       candidate: { file: path.basename(newArtifact.tarFile), sha256: sha256File(newArtifact.tarFile) },
     },
-    migrationAdapter: 'node:sqlite adapter executed the exact committed migration SQL; Prisma CLI binary execution is not claimed here',
     executed,
   };
 }
@@ -735,6 +767,31 @@ export async function runCpanelSimulation({ repoRoot }) {
       source,
       checks,
     });
+    const realPrismaProof = runRealPrismaProof(source);
+    existingScriptEvidence.realPrismaProof = realPrismaProof;
+    check(
+      checks,
+      'existing migration script with real Prisma CLI',
+      realPrismaProof.proof.prismaVersion === '6.19.3' &&
+        realPrismaProof.proof.migrationsApplied === 2 &&
+        realPrismaProof.proof.coreTables === 2,
+      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and applied both committed migrations`,
+    );
+    check(
+      checks,
+      'existing worker checkpoint and backup with real Prisma client',
+      realPrismaProof.proof.workerCheckpoint === 'CHECKPOINTED' &&
+        /^[0-9a-f]{64}$/.test(realPrismaProof.proof.backupSha256) &&
+        realPrismaProof.cleanup.containerRemoved,
+      `worker.mjs checkpointed through @prisma/client and wrote ${realPrismaProof.proof.backupSha256}`,
+    );
+    check(
+      checks,
+      'existing restore script schema inspection',
+      realPrismaProof.proof.restoreInspector === 'coreTablesPresent=true' &&
+        realPrismaProof.proof.restoredSentinel === 'before-real-backup',
+      'restore-backup.sh ran db-inspect.mjs and the restored database retained the pre-backup sentinel',
+    );
   } catch (error) {
     failure = error instanceof Error ? error.message : String(error);
   } finally {
@@ -747,7 +804,7 @@ export async function runCpanelSimulation({ repoRoot }) {
 
   const overall =
     !failure &&
-    checks.length === 25 &&
+    checks.length === 26 &&
     checks.every((entry) => entry.pass) &&
     runtimeRemoved
       ? 'PASS'

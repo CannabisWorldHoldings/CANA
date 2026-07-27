@@ -23,11 +23,18 @@ test('the package contains explicit web worker migration backup and restore laun
     'worker.mjs',
     'sqlite-tool.mjs',
     'passenger-server.cjs',
-    'prisma-deploy-sim.mjs',
-    'prisma',
   ]) {
     assert.equal(fs.existsSync(path.join(TEMPLATES, file)), true, file);
   }
+});
+
+test('the real Prisma proof is an executable container surface', () => {
+  const proof = path.join(ROOT, 'tools', 'cpanel-sim', 'real-prisma-proof.sh');
+  assert.equal(fs.existsSync(proof), true);
+  const source = fs.readFileSync(proof, 'utf8');
+  assert.match(source, /npx --no-install prisma generate/);
+  assert.match(source, /CHECKPOINTED/);
+  assert.match(source, /db-inspect\.mjs/);
 });
 
 test('the simulated web process labels itself and exposes all operational probes', () => {
