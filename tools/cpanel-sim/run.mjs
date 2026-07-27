@@ -151,6 +151,26 @@ function runRealPrismaProof(source) {
         `manifest-only dependency fetch failed:\n${install.stdout}${install.stderr}`,
       );
     }
+    const enginePrefetch = command(
+      'docker',
+      [
+        'exec',
+        dependencyContainer,
+        'npx',
+        '--no-install',
+        'prisma',
+        '-v',
+      ],
+      { allowFailure: true, timeout: 5 * 60_000 },
+    );
+    if (
+      enginePrefetch.status !== 0 ||
+      !/^prisma\s*:\s*6\.19\.3$/m.test(enginePrefetch.stdout)
+    ) {
+      throw new Error(
+        `explicit Prisma 6.19.3 engine prefetch failed:\n${enginePrefetch.stdout}${enginePrefetch.stderr}`,
+      );
+    }
     command('docker', ['rm', '-f', dependencyContainer], { timeout: 30_000 });
     dependencyCreated = false;
     command('docker', [
@@ -252,6 +272,7 @@ function runRealPrismaProof(source) {
     dependencyFetch: {
       sourceMounted: false,
       lifecycleScriptsEnabled: false,
+      prismaEnginePrefetch: '6.19.3',
       packageFiles,
     },
     executionNetwork,
@@ -894,8 +915,9 @@ export async function runCpanelSimulation({ repoRoot }) {
         realPrismaProof.proof.coreTables === 2 &&
         realPrismaProof.dependencyFetch.sourceMounted === false &&
         realPrismaProof.dependencyFetch.lifecycleScriptsEnabled === false &&
+        realPrismaProof.dependencyFetch.prismaEnginePrefetch === '6.19.3' &&
         realPrismaProof.executionNetwork === 'none',
-      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and both migrations after manifest-only, ignore-scripts fetch; proof network ${realPrismaProof.executionNetwork}`,
+      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and both migrations after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
     );
     check(
       checks,

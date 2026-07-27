@@ -277,6 +277,26 @@ function applyPrismaCandidate({
   if (install.status !== 0) {
     throw new Error(`provider-specific Prisma dependency install failed:\n${tail(install.stdout + install.stderr)}`);
   }
+  const enginePrefetch = command(
+    'docker',
+    [
+      'exec',
+      dependencyContainer,
+      'npx',
+      '--no-install',
+      'prisma',
+      '-v',
+    ],
+    { allowFailure: true, timeout: 5 * 60_000 },
+  );
+  if (
+    enginePrefetch.status !== 0 ||
+    !/^prisma\s*:\s*6\.19\.3$/m.test(enginePrefetch.stdout)
+  ) {
+    throw new Error(
+      `explicit Prisma 6.19.3 engine prefetch failed:\n${tail(enginePrefetch.stdout + enginePrefetch.stderr)}`,
+    );
+  }
   const candidateAbsentDuringFetch = command(
     'docker',
     [
@@ -364,6 +384,7 @@ function applyPrismaCandidate({
     networkPolicy: {
       dependencyFetchSourceMounted: false,
       dependencyFetchLifecycleScriptsEnabled: false,
+      dependencyFetchPrismaEngine: '6.19.3',
       dependencyRemovedBeforeExecution,
       candidateExecutionInternalOnly: networkIsInternal,
       candidateExecutionBridgeAttached: bridgeAttached,
@@ -516,6 +537,7 @@ export async function runMariaSimulation({ repoRoot }) {
       prisma.outputTail.includes('Your database is now in sync') &&
         prisma.networkPolicy.dependencyFetchSourceMounted === false &&
         prisma.networkPolicy.dependencyFetchLifecycleScriptsEnabled === false &&
+        prisma.networkPolicy.dependencyFetchPrismaEngine === '6.19.3' &&
         prisma.networkPolicy.dependencyRemovedBeforeExecution === true &&
         prisma.networkPolicy.candidateExecutionInternalOnly === true &&
         prisma.networkPolicy.candidateExecutionBridgeAttached === false,
@@ -1179,7 +1201,7 @@ export async function runMariaSimulation({ repoRoot }) {
       digest: mariaDigest,
       network: 'internal Docker network; no host port published',
       dependencyFetch:
-        'package manifests only; npm lifecycle scripts disabled; fetch container removed before source execution',
+        'package manifests only; npm lifecycle scripts disabled; Prisma 6.19.3 engines explicitly prefetched; fetch container removed before source execution',
       candidateExecutionNetwork:
         'internal database network only; no bridge attachment or external egress',
       data: 'container tmpfs; removed after run',
