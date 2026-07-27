@@ -8,12 +8,18 @@ import { fileURLToPath } from 'node:url';
 
 const toolRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(toolRoot, '../..');
-const sourceRoot =
-  process.env.CANA_CENSUS_SOURCE_ROOT ||
-  '/Users/Apple/Documents/New project/CANA-convergence-sources';
-const archivePath =
-  process.env.RSI_HERMES_BASELINE_ARCHIVE ||
-  '/Users/Apple/Downloads/RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23 (1).zip';
+
+function requiredPath(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} must identify the verified local input`);
+  }
+  return path.resolve(value);
+}
+
+const sourceRoot = requiredPath('CANA_CENSUS_SOURCE_ROOT');
+const archivePath = requiredPath('RSI_HERMES_BASELINE_ARCHIVE');
+const gitExecutable = process.env.CANA_CENSUS_GIT?.trim() || 'git';
 const outputPath = path.join(
   repositoryRoot,
   'docs/convergence/mission-1/INPUT_HASHES.json',
@@ -190,12 +196,12 @@ function sha256(value) {
 }
 
 function git(repository, ...args) {
-  return run('/opt/homebrew/bin/git', ['-C', repository, ...args]).trim();
+  return run(gitExecutable, ['-C', repository, ...args]).trim();
 }
 
 function gitBytes(repository, ref, filePath) {
   return run(
-    '/opt/homebrew/bin/git',
+    gitExecutable,
     ['-C', repository, 'show', `${ref}:${filePath}`],
     { encoding: 'buffer' },
   );
@@ -290,9 +296,9 @@ const document = {
     process.env.CANA_CENSUS_GENERATED_AT || '2026-07-27T00:00:00.000Z',
   hash_algorithm: 'SHA-256',
   source_locations: {
-    canonical_repository: repositoryRoot,
-    fresh_clone_root: sourceRoot,
-    attached_archive: archivePath,
+    canonical_repository: 'CANA_CANONICAL_CHECKOUT',
+    fresh_clone_root: 'CANA_CENSUS_SOURCE_ROOT',
+    attached_archive: 'RSI_HERMES_BASELINE_ARCHIVE',
   },
   repositories: repositoryInputs,
   observed_remote_only: [

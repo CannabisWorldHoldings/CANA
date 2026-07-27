@@ -16,9 +16,12 @@ The verifier requires `CANA_CENSUS_EXPECTED_REVISION` and
 those values from the checkout being tested. This avoids a self-authenticating
 same-branch rewrite.
 
-Both generators use the fixed Mission 1 observation time by default and are
-byte-deterministic for unchanged inputs. `LOCAL_VERIFICATION_RECEIPTS.json` records
-the two-run equality proof.
+Both generators use the fixed Mission 1 observation time by default. The input
+generator requires `CANA_CENSUS_SOURCE_ROOT` and `RSI_HERMES_BASELINE_ARCHIVE`,
+records stable logical location identifiers instead of checkout paths, and resolves
+`git` from `PATH` unless `CANA_CENSUS_GIT` is explicitly supplied. It is
+byte-deterministic for unchanged inputs across relocated canonical checkouts.
+`LOCAL_VERIFICATION_RECEIPTS.json` records the equality proof.
 
 This ledger is a census and candidate-branch design record. It does not claim that
 these new documents exist at the protected baseline. It does not activate a runtime, merge

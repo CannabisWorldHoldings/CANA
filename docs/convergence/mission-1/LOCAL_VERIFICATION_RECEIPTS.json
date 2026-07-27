@@ -269,9 +269,13 @@
         "path": "tools/convergence-census/verify.mjs"
       },
       "command": [
-        "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "node",
         "tools/convergence-census/verify.mjs"
       ],
+      "required_environment": {
+        "CANA_CENSUS_SOURCE_ROOT": "verified fresh-clone root",
+        "RSI_HERMES_BASELINE_ARCHIVE": "verified attached archive path"
+      },
       "exit_code": 1,
       "expected_refusal": true,
       "result": "Refuses unless the caller supplies an out-of-band reviewed 40-hex commit and tree."
@@ -286,20 +290,30 @@
       },
       "commands": [
         [
-          "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+          "node",
           "tools/convergence-census/generate-input-hashes.mjs"
         ],
         [
-          "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+          "node",
           "tools/convergence-census/generate-artifact-manifest.mjs"
         ]
       ],
+      "required_environment": {
+        "CANA_CENSUS_SOURCE_ROOT": "verified fresh-clone root",
+        "RSI_HERMES_BASELINE_ARCHIVE": "verified attached archive path"
+      },
       "repetitions": 2,
       "exit_code": 0,
       "result": {
-        "input_hashes_file_sha256_both_runs": "d8b9d5abbdf41e35df87b8134ae184186b2ab4bda90dfb9fb1713032b3097ca9",
+        "input_hashes_file_sha256_both_runs": "e52e04f77d2fdd707d9768a1ccc2db30c41d7c20c741864ab33989728c50da60",
         "artifact_manifest_two_runs_equal": true,
-        "byte_deterministic": true
+        "byte_deterministic": true,
+        "relocated_checkout_input_hash_equal": true,
+        "serialized_location_identifiers": [
+          "CANA_CANONICAL_CHECKOUT",
+          "CANA_CENSUS_SOURCE_ROOT",
+          "RSI_HERMES_BASELINE_ARCHIVE"
+        ]
       }
     }
   ],

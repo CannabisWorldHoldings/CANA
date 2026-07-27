@@ -3,9 +3,9 @@
   "generated_at": "2026-07-27T00:00:00.000Z",
   "hash_algorithm": "SHA-256",
   "source_locations": {
-    "canonical_repository": "/Users/Apple/Documents/New project/CANA-convergence-mission1",
-    "fresh_clone_root": "/Users/Apple/Documents/New project/CANA-convergence-sources",
-    "attached_archive": "/Users/Apple/Downloads/RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23 (1).zip"
+    "canonical_repository": "CANA_CANONICAL_CHECKOUT",
+    "fresh_clone_root": "CANA_CENSUS_SOURCE_ROOT",
+    "attached_archive": "RSI_HERMES_BASELINE_ARCHIVE"
   },
   "repositories": [
     {

@@ -8,12 +8,18 @@ import { fileURLToPath } from 'node:url';
 
 const toolRoot = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(toolRoot, '../..');
-const sourceRoot =
-  process.env.CANA_CENSUS_SOURCE_ROOT ||
-  '/Users/Apple/Documents/New project/CANA-convergence-sources';
-const archivePath =
-  process.env.RSI_HERMES_BASELINE_ARCHIVE ||
-  '/Users/Apple/Downloads/RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23 (1).zip';
+
+function requiredPath(name) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} must identify the verified local input`);
+  }
+  return path.resolve(value);
+}
+
+const sourceRoot = requiredPath('CANA_CENSUS_SOURCE_ROOT');
+const archivePath = requiredPath('RSI_HERMES_BASELINE_ARCHIVE');
+const gitExecutable = process.env.CANA_CENSUS_GIT?.trim() || 'git';
 const artifactRoot = path.join(repositoryRoot, 'docs/convergence/mission-1');
 const artifactManifestPath = path.join(artifactRoot, 'ARTIFACT_MANIFEST.json');
 
@@ -285,7 +291,7 @@ function sha256(value) {
 }
 
 function git(repository, ...args) {
-  return run('/opt/homebrew/bin/git', ['-C', repository, ...args]).trim();
+  return run(gitExecutable, ['-C', repository, ...args]).trim();
 }
 
 function fail(message) {
@@ -345,6 +351,17 @@ if (repositoryStatus) {
 const hashes = JSON.parse(
   fs.readFileSync(path.join(artifactRoot, 'INPUT_HASHES.json'), 'utf8'),
 );
+const expectedSourceLocations = {
+  canonical_repository: 'CANA_CANONICAL_CHECKOUT',
+  fresh_clone_root: 'CANA_CENSUS_SOURCE_ROOT',
+  attached_archive: 'RSI_HERMES_BASELINE_ARCHIVE',
+};
+if (
+  JSON.stringify(hashes.source_locations) !==
+  JSON.stringify(expectedSourceLocations)
+) {
+  fail('input census source locations must use stable logical identifiers');
+}
 const inclusion = JSON.parse(
   fs.readFileSync(
     path.join(artifactRoot, 'RUNTIME_INCLUSION_MANIFEST.json'),
@@ -403,11 +420,27 @@ for (const repositoryId of expectedRepositoryIdentities.keys()) {
   }
 }
 
-const observedKeyFiles = new Set(
-  hashes.key_files.map(
-    (file) => `${file.repository_id}\0${file.path}`,
-  ),
-);
+if (hashes.key_files.length !== expectedKeyFiles.size) {
+  fail('input census key-file count is incomplete or unexpected');
+}
+const observedKeyFiles = new Set();
+for (const file of hashes.key_files) {
+  const identity = `${file.repository_id}\0${file.path}`;
+  const expectedRepository = expectedRepositoryIdentities.get(
+    file.repository_id,
+  );
+  if (
+    !expectedKeyFiles.has(identity) ||
+    observedKeyFiles.has(identity) ||
+    !expectedRepository ||
+    file.ref !== expectedRepository.ref
+  ) {
+    fail(
+      `input census key-file identity or ref is invalid: ${file.repository_id}@${file.ref}:${file.path}`,
+    );
+  }
+  observedKeyFiles.add(identity);
+}
 if (
   observedKeyFiles.size !== expectedKeyFiles.size ||
   [...expectedKeyFiles].some((key) => !observedKeyFiles.has(key))
@@ -451,7 +484,7 @@ for (const repository of hashes.repositories) {
       `${repository.id} tree mismatch: ${observedTree} != ${repository.tree}`,
     );
   }
-  run('/opt/homebrew/bin/git', [
+  run(gitExecutable, [
     '-C',
     localPath,
     'fsck',
@@ -463,7 +496,7 @@ for (const repository of hashes.repositories) {
 for (const file of hashes.key_files) {
   const localPath = sourceDirectoryById[file.repository_id];
   const bytes = run(
-    '/opt/homebrew/bin/git',
+    gitExecutable,
     ['-C', localPath, 'show', `${file.ref}:${file.path}`],
     { encoding: 'buffer' },
   );
