@@ -11,6 +11,11 @@ Protected baseline tree: `fa1f6a9c55d604c8d7091a8115c1a4296be78378`
 Mission 1 artifact revision: current `codex/cana-convergence-mission-1` HEAD,
 resolved and printed by `tools/convergence-census/verify.mjs` after commit
 
+The verifier requires `CANA_CENSUS_EXPECTED_REVISION` and
+`CANA_CENSUS_EXPECTED_TREE` as out-of-band reviewed 40-hex identities. Do not derive
+those values from the checkout being tested. This avoids a self-authenticating
+same-branch rewrite.
+
 This ledger is a census and candidate-branch design record. It does not claim that
 these new documents exist at the protected baseline. It does not activate a runtime, merge
 another repository, change production, or confer owner approval. Exact object and
@@ -88,7 +93,8 @@ These results establish local behavior only. They do not prove production inclus
 hosted durability, owner approval, or a deployed self-improvement loop.
 Exact commands, runtimes, source identities, failure limits, and result summaries are
 in `LOCAL_VERIFICATION_RECEIPTS.json`. `ARTIFACT_MANIFEST.json` binds the complete
-Mission 1 content set; the census verifier recomputes it.
+Mission 1 content set; the census verifier enforces its exact path allowlist and
+recomputes it.
 
 ## Current source truths
 

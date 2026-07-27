@@ -264,7 +264,7 @@
       }
     },
     {
-      "id": "census-precommit-refusal",
+      "id": "census-unbound-revision-refusal",
       "source": {
         "path": "tools/convergence-census/verify.mjs"
       },
@@ -274,7 +274,7 @@
       ],
       "exit_code": 1,
       "expected_refusal": true,
-      "result": "Refused because required Mission 1 artifacts were not yet tracked by Git."
+      "result": "Refuses unless the caller supplies an out-of-band reviewed 40-hex commit and tree."
     }
   ],
   "failed_or_limited_attempts": [

@@ -31,6 +31,16 @@ const requiredArtifacts = [
   'CONVERGENCE_ROLLBACK_PLAN.md',
 ];
 
+const expectedManifestPaths = [
+  ...requiredArtifacts.map((artifact) =>
+    path.posix.join('docs/convergence/mission-1', artifact),
+  ),
+  'docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json',
+  'tools/convergence-census/generate-input-hashes.mjs',
+  'tools/convergence-census/generate-artifact-manifest.mjs',
+  'tools/convergence-census/verify.mjs',
+].sort();
+
 const allowedClassifications = new Set([
   'CANONICAL_ACTIVE',
   'REUSABLE_IMPORT',
@@ -116,18 +126,27 @@ for (const extra of ['ARTIFACT_MANIFEST.json', 'LOCAL_VERIFICATION_RECEIPTS.json
 }
 
 const trackedPaths = [
-  ...requiredArtifacts.map((artifact) =>
-    path.posix.join('docs/convergence/mission-1', artifact),
-  ),
+  ...expectedManifestPaths,
   'docs/convergence/mission-1/ARTIFACT_MANIFEST.json',
-  'docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json',
-  'tools/convergence-census/generate-input-hashes.mjs',
-  'tools/convergence-census/generate-artifact-manifest.mjs',
-  'tools/convergence-census/verify.mjs',
 ];
 const currentRevision = git(repositoryRoot, 'rev-parse', 'HEAD');
 const currentTree = git(repositoryRoot, 'rev-parse', 'HEAD^{tree}');
 const currentBranch = git(repositoryRoot, 'branch', '--show-current');
+const expectedRevision = process.env.CANA_CENSUS_EXPECTED_REVISION;
+const expectedTree = process.env.CANA_CENSUS_EXPECTED_TREE;
+if (!/^[0-9a-f]{40}$/.test(expectedRevision || '')) {
+  fail(
+    'CANA_CENSUS_EXPECTED_REVISION must be an out-of-band reviewed 40-hex commit',
+  );
+}
+if (!/^[0-9a-f]{40}$/.test(expectedTree || '')) {
+  fail('CANA_CENSUS_EXPECTED_TREE must be an out-of-band reviewed 40-hex tree');
+}
+if (currentRevision !== expectedRevision || currentTree !== expectedTree) {
+  fail(
+    `Mission 1 identity mismatch: ${currentRevision}/${currentTree} != ${expectedRevision}/${expectedTree}`,
+  );
+}
 if (currentBranch !== 'codex/cana-convergence-mission-1') {
   fail(`unexpected Mission 1 branch: ${currentBranch}`);
 }
@@ -158,6 +177,15 @@ const artifactManifest = JSON.parse(
   fs.readFileSync(artifactManifestPath, 'utf8'),
 );
 
+const observedManifestPaths = artifactManifest.artifacts
+  .map((artifact) => artifact.path)
+  .sort();
+if (
+  JSON.stringify(observedManifestPaths) !==
+  JSON.stringify(expectedManifestPaths)
+) {
+  fail('Mission 1 artifact manifest path set is incomplete or unexpected');
+}
 for (const artifact of artifactManifest.artifacts) {
   const bytes = fs.readFileSync(path.join(repositoryRoot, artifact.path));
   if (bytes.length !== artifact.bytes || sha256(bytes) !== artifact.sha256) {
