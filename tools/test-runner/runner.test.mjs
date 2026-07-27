@@ -97,3 +97,34 @@ test('help names every required verification and durability surface', () => {
     assert.match(result.stdout, new RegExp(command.replaceAll('-', '\\-')));
   }
 });
+
+test('the full-suite entropy adapter is reproducible and still yields distinct values', () => {
+  const preload = path.join(ROOT, 'tools', 'test-runner', 'deterministic-crypto.cjs');
+  const evaluate = () => spawnSync(
+    process.execPath,
+    [
+      '--require',
+      preload,
+      '-e',
+      'const c=require("node:crypto");process.stdout.write(`${c.randomBytes(12).toString("hex")}\\n${c.randomBytes(12).toString("hex")}\\n`)',
+    ],
+    {
+      cwd: ROOT,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        CANA_DETERMINISTIC_TEST_RANDOM: '1',
+        CANA_DETERMINISTIC_TEST_SEED: 'fixed-verifier-seed',
+      },
+    },
+  );
+  const first = evaluate();
+  const second = evaluate();
+  assert.equal(first.status, 0, first.stderr);
+  assert.equal(second.status, 0, second.stderr);
+  assert.equal(first.stdout, second.stdout);
+  const [left, right] = first.stdout.trim().split('\n');
+  assert.match(left, /^[0-9a-f]{24}$/);
+  assert.match(right, /^[0-9a-f]{24}$/);
+  assert.notEqual(left, right);
+});

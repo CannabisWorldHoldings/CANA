@@ -204,7 +204,11 @@ case "$PROFILE" in
     start_server
     (
       cd "$WEB"
-      DATABASE_URL="file:$DB" node --test --test-concurrency=1 tests/*.test.mjs
+      CANA_DETERMINISTIC_TEST_RANDOM=1 \
+      CANA_DETERMINISTIC_TEST_SEED="$EXPECTED_SHA" \
+      NODE_OPTIONS="--require=$ROOT/tools/test-runner/deterministic-crypto.cjs${NODE_OPTIONS:+ $NODE_OPTIONS}" \
+      DATABASE_URL="file:$DB" \
+      node --test --test-concurrency=1 tests/*.test.mjs
     )
     (
       cd "$ROOT"

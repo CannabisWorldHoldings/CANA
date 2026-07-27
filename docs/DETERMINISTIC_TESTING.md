@@ -15,6 +15,8 @@ The four general profiles refuse a dirty source, create a detached worktree, res
 
 HTTP profiles rebuild Next with webpack before startup, detect the absence of a stale build, generate a runtime-only interaction secret, and require `/api/release` to state the exact expected 40-character commit with `Cache-Control: no-store`. The runner recreates the repository’s legacy absolute test paths only inside the disposable container.
 
+The full test process loads a verification-only entropy adapter seeded by the expected commit. It preserves distinct sequential byte strings but makes repeated full-suite runs reproducible, preventing random privacy-test values from occasionally resembling phone numbers. The adapter is activated only for the disposable `node --test` process; the application server and product source continue to use the runtime's real cryptographic entropy.
+
 Each invocation:
 
 - has a profile-specific wall-clock limit;

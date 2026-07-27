@@ -211,6 +211,21 @@ function historicalFalsification() {
       restored: true,
     },
     {
+      scenario: 'cPanel package cleanup did not restore nested immutable directory permissions',
+      receiptSha256: '0cf31b882fa606472690cb80602ec49c19bb255df200505b172fb266d9bb773c',
+      restored: true,
+    },
+    {
+      scenario: 'cPanel existing worker simulation used a non-production database basename',
+      receiptSha256: '6dd4adea3d6c6c547ee9c4c72305dcdf74a3f7e9e6032bcc97687881fdbdd165',
+      restored: true,
+    },
+    {
+      scenario: 'full suite drew a random nonce that matched the phone-number heuristic',
+      receiptSha256: '6ed9da68c6fae21972f7bcf19f04cdfc24e9d97357dc03d72e3b314f9fd829ff',
+      restored: true,
+    },
+    {
       scenario: 'stale cPanel receipt did not equal the newer GitHub package SHA',
       receiptSha256: null,
       restored: true,
