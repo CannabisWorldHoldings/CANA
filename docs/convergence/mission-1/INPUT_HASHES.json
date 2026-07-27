@@ -1,0 +1,825 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-07-27T00:00:00.000Z",
+  "hash_algorithm": "SHA-256",
+  "source_locations": {
+    "canonical_repository": "/Users/Apple/Documents/New project/CANA-convergence-mission1",
+    "fresh_clone_root": "/Users/Apple/Documents/New project/CANA-convergence-sources",
+    "attached_archive": "/Users/Apple/Downloads/RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23 (1).zip"
+  },
+  "repositories": [
+    {
+      "id": "canonical-cana",
+      "remote": "https://github.com/CannabisWorldHoldings/CANA.git",
+      "visibility": "private",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378",
+      "commit_count_from_root": 183,
+      "root_commits": [
+        "d2c741254b01037d264eafe730ecefede25ad3e1"
+      ]
+    },
+    {
+      "id": "rsi-baseline",
+      "remote": "https://github.com/princeleuel1-ops/RSI.git",
+      "visibility": "public",
+      "ref": "a6410cdca2450b8bf176009673928735e4b821e7",
+      "tree": "8173517df10e61967c9cefc9aef4c3fe55d1b406",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "a6410cdca2450b8bf176009673928735e4b821e7"
+      ]
+    },
+    {
+      "id": "orderweeddcrsi-main",
+      "remote": "https://github.com/cannabisworldholdings-afk/ORDERWEEDDCRSI-.git",
+      "visibility": "public",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "tree": "58e1f3b1e116519d2fb28d6613c509484eb03d0a",
+      "commit_count_from_root": 21,
+      "root_commits": [
+        "be0cbe2e418dd7faf2ffd866e8ead5205d577bc0"
+      ]
+    },
+    {
+      "id": "orderweeddcrsi-pr-1",
+      "remote": "https://github.com/cannabisworldholdings-afk/ORDERWEEDDCRSI-.git",
+      "visibility": "public",
+      "ref": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "tree": "017ac908ee8747f6d1c9ac139106f19b1a64337b",
+      "commit_count_from_root": 22,
+      "root_commits": [
+        "be0cbe2e418dd7faf2ffd866e8ead5205d577bc0"
+      ]
+    },
+    {
+      "id": "orderweeddc",
+      "remote": "https://github.com/princeleuel1-ops/orderweeddc.git",
+      "visibility": "public",
+      "ref": "487ece684a226339ab1a7a48a08a268266672329",
+      "tree": "5e2c8e8e775fbad2839a1b24fdf227367cfa6b7f",
+      "commit_count_from_root": 37,
+      "root_commits": [
+        "d2c741254b01037d264eafe730ecefede25ad3e1"
+      ]
+    },
+    {
+      "id": "rsi-sitemind-core",
+      "remote": "https://github.com/princeleuel1-ops/rsi-sitemind-core.git",
+      "visibility": "public",
+      "ref": "12246cdad148f934ebe0162ce76592e47937d559",
+      "tree": "efa0f6bcbe40f14023b39cc1a3529ed4b6896915",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "12246cdad148f934ebe0162ce76592e47937d559"
+      ]
+    },
+    {
+      "id": "rsi-hermes-bridge",
+      "remote": "https://github.com/princeleuel1-ops/rsi-hermes-bridge.git",
+      "visibility": "public",
+      "ref": "d5cc516e9c428c617ba3cfc302d4d3f1f6f8e71f",
+      "tree": "2510b96250ef61f812e5405aaeb0b9f0793d58ef",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "d5cc516e9c428c617ba3cfc302d4d3f1f6f8e71f"
+      ]
+    },
+    {
+      "id": "rsi-hermes-runtime-overlay",
+      "remote": "https://github.com/princeleuel1-ops/rsi-hermes-runtime.git",
+      "visibility": "public",
+      "ref": "7f8428975490c65a808ef27a47d2d93f5058cccd",
+      "tree": "ad3b67a4d2f8c50be029af9a5e4e8d3c1fe09b5d",
+      "commit_count_from_root": 17291,
+      "root_commits": [
+        "21d80ca68346dfdb8d3556015a723a9217f8566f"
+      ]
+    },
+    {
+      "id": "hermes-pin-781968b",
+      "remote": "https://github.com/NousResearch/hermes-agent.git",
+      "visibility": "public",
+      "ref": "781968be5e1ec2c253b617409f8bfba652c10186",
+      "tree": "6759673ab41c40ec98bf9432dace682874b06190",
+      "commit_count_from_root": 17274,
+      "root_commits": [
+        "21d80ca68346dfdb8d3556015a723a9217f8566f"
+      ]
+    },
+    {
+      "id": "hermes-pin-d9165d7",
+      "remote": "https://github.com/NousResearch/hermes-agent.git",
+      "visibility": "public",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "tree": "040ecbb5ae51003f633f50adc792df49eae9d740",
+      "commit_count_from_root": 17290,
+      "root_commits": [
+        "21d80ca68346dfdb8d3556015a723a9217f8566f"
+      ]
+    },
+    {
+      "id": "rsi-evaluations",
+      "remote": "https://github.com/princeleuel1-ops/rsi-evaluations.git",
+      "visibility": "public",
+      "ref": "4cc2c2fd6a5bc57859c9dbe54edb469eed6e6f51",
+      "tree": "4f8be076cad14b0570c7b8fc0402cd7d0f03d273",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "4cc2c2fd6a5bc57859c9dbe54edb469eed6e6f51"
+      ]
+    },
+    {
+      "id": "rsi-domain-connectors",
+      "remote": "https://github.com/princeleuel1-ops/rsi-domain-connectors.git",
+      "visibility": "public",
+      "ref": "b0f6d06f5508ebf29e9116747d70af0d144025c4",
+      "tree": "c119126970a5719cfdfe54fb2b6fedbc6f6d3a6e",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "b0f6d06f5508ebf29e9116747d70af0d144025c4"
+      ]
+    },
+    {
+      "id": "rsi-skills",
+      "remote": "https://github.com/princeleuel1-ops/rsi-skills.git",
+      "visibility": "public",
+      "ref": "1e7c9fb0d093e2bc52a88633b53aba8a03e5d4df",
+      "tree": "bfd5ad9f6a654a97d07b2b17fb3420acb32eff56",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "1e7c9fb0d093e2bc52a88633b53aba8a03e5d4df"
+      ]
+    },
+    {
+      "id": "rsi-deployment",
+      "remote": "https://github.com/princeleuel1-ops/rsi-deployment.git",
+      "visibility": "public",
+      "ref": "c72d5443de1ce2921462fd6fdb5a4aa2a62bb1e6",
+      "tree": "8370b7d55b3962e3891d41e233a80187bb90e46d",
+      "commit_count_from_root": 1,
+      "root_commits": [
+        "c72d5443de1ce2921462fd6fdb5a4aa2a62bb1e6"
+      ]
+    }
+  ],
+  "observed_remote_only": [
+    {
+      "id": "hermes-upstream-main-observed-2026-07-27",
+      "repository": "NousResearch/hermes-agent",
+      "ref": "main",
+      "commit": "d71033a4077a6dfdcdb42c9e9eeab4c41e4a7012",
+      "tree": "129a441930d11bc6bace9c72e81c960289008898",
+      "commit_verification": "verified",
+      "role": "UNSELECTED_UPDATE_INPUT"
+    }
+  ],
+  "key_files": [
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": "deliverables/MISSION_STATE.json",
+      "bytes": 66347,
+      "sha256": "a3a702aaba96237acef1727e53c92c186033944cab4d2cf46574a66665319aef"
+    },
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": "skills-src/sitemind-context-compiler.mjs",
+      "bytes": 27181,
+      "sha256": "5f58f9cfdc74b0d36b9a69490f220a0a35d13732d82d0e81ae266965008a198e"
+    },
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": "skills-src/cana-signal-to-fix.mjs",
+      "bytes": 16008,
+      "sha256": "ca3e1b1c137b78c4244b2976177dc56c2e2c8035f2d78ad68eea7a9133d8ab8d"
+    },
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": "skills-src/hermes-governed-packet.mjs",
+      "bytes": 24997,
+      "sha256": "86939371d8b46707b120d268b012660b1475a38340f7a8dd09f45d7d569505d1"
+    },
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": "skills-src/e2e-compiler-packet-binding.mjs",
+      "bytes": 3093,
+      "sha256": "53e06af34f22ff53921d5b870df75ff462a1724c82e98fda012ba6645d2bad3c"
+    },
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": "CANA_LOOP_ENGINE/supervisor.py",
+      "bytes": 55196,
+      "sha256": "c8bd17021ef8d8381030e02f1ac4f2d82edc792509a968f8576fe1b214764e60"
+    },
+    {
+      "repository_id": "canonical-cana",
+      "ref": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+      "path": ".cana-governor-v3/scripts/cana_governor.py",
+      "bytes": 38292,
+      "sha256": "3a411bd1da94e21e3bede60d257b6497c805f60c32ba22bc4b201f6dcf2fd12b"
+    },
+    {
+      "repository_id": "rsi-baseline",
+      "ref": "a6410cdca2450b8bf176009673928735e4b821e7",
+      "path": "SOURCE_IDENTITY.md",
+      "bytes": 1232,
+      "sha256": "e7c64a603e244c654e5787e3c243dddf09e285c473561aa4ccea04c4f0d693e6"
+    },
+    {
+      "repository_id": "rsi-baseline",
+      "ref": "a6410cdca2450b8bf176009673928735e4b821e7",
+      "path": "VERIFY_RECEIPT.json",
+      "bytes": 5676,
+      "sha256": "bd1b50a94780a47d2c0f8e58bd4e03d0e3624d9f57888b6768a982a868088cb0"
+    },
+    {
+      "repository_id": "rsi-baseline",
+      "ref": "a6410cdca2450b8bf176009673928735e4b821e7",
+      "path": "repos/rsi-hermes-runtime/UPSTREAM_PIN.json",
+      "bytes": 245,
+      "sha256": "de759588dd9992cbcefff82f18432d791ceb00fa1257178a2b7f17c151efe73d"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "runtime/db.py",
+      "bytes": 8709,
+      "sha256": "44de28fd33c2e4410e8a0c9575e6901233f7b0e0a25a8b0ec48a3923c02318e9"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "runtime/mission.py",
+      "bytes": 7493,
+      "sha256": "6d42b6adc9c7fe540b4b3a0adbc1e199dcb93af5bb50cc45f8b2a88b9edc9bc8"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "runtime/rsi.py",
+      "bytes": 23952,
+      "sha256": "eecaae0822b455c76d57dd395ed31db0bb0990379f21e71f649d7cafaf68a288"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "runtime/evidence.py",
+      "bytes": 3472,
+      "sha256": "28a4bef9d6b36444c0395bd72a15126d75b9229be4e001aa4eb07d4f17a210c1"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "runtime/model_router.py",
+      "bytes": 14668,
+      "sha256": "82171390b66d3c0deab315283c5d9045086c1d6d09f0dd945c92015e41a1d8b8"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "runtime/pipeline.py",
+      "bytes": 12687,
+      "sha256": "6a5aa9714ff55e8fdfc364635667bf44a6aaf3b310bc10ded8f9f16d1d39d723"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "tests/test_core.py",
+      "bytes": 17312,
+      "sha256": "9821dbc84c55c68705cde7cb4260703f3568e5abfef95298cef51401a291ba74"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "Makefile",
+      "bytes": 2095,
+      "sha256": "b1d06a160efd161da0c94f3a7d5d3e273863ea9e1ca980d45e1d9729b364a207"
+    },
+    {
+      "repository_id": "orderweeddcrsi-main",
+      "ref": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "path": "vendor/HERMES_UPSTREAM_PIN.json",
+      "bytes": 2095,
+      "sha256": "167464b3c55b972171731b016ea1dba7a28d932eac7cf245cc614c1f4cea1d68"
+    },
+    {
+      "repository_id": "orderweeddcrsi-pr-1",
+      "ref": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "path": "CANA_HERMES/adapter/parent.py",
+      "bytes": 9627,
+      "sha256": "8f39e05679dc2c12566e9c70ea38489d174fb6a0575dbd916596dbd9ab253b8f"
+    },
+    {
+      "repository_id": "orderweeddcrsi-pr-1",
+      "ref": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "path": "CANA_HERMES/adapter/upstream.py",
+      "bytes": 4458,
+      "sha256": "5c71dfdcc365282525602809cdfece84b31a9a88172a8cdcf254ebd08246cad1"
+    },
+    {
+      "repository_id": "orderweeddcrsi-pr-1",
+      "ref": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "path": "CANA_HERMES/tests/test_parent.py",
+      "bytes": 11227,
+      "sha256": "a86b7e2406bacd5aae8a78ee75a47e855efb88513488cceda2bd23da40ab4afd"
+    },
+    {
+      "repository_id": "orderweeddcrsi-pr-1",
+      "ref": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "path": "scripts/hermes_revenue_proof.py",
+      "bytes": 3140,
+      "sha256": "50f1f454eab3dc79e696cac95ce06943a30a85fe5d7fc6143d231e67b03936a2"
+    },
+    {
+      "repository_id": "orderweeddc",
+      "ref": "487ece684a226339ab1a7a48a08a268266672329",
+      "path": "deploy/namecheap/build-artifact.mjs",
+      "bytes": 23329,
+      "sha256": "dca45109e5316253feff6b1856e9ed99d76a29ad3e775e91322e492c65e82424"
+    },
+    {
+      "repository_id": "orderweeddc",
+      "ref": "487ece684a226339ab1a7a48a08a268266672329",
+      "path": "apps/web/src/lib/site-intelligence.mjs",
+      "bytes": 18784,
+      "sha256": "1e517eeaa54a035a5cfe1d68d749919dbd157bbf270fc6ceec7292a6bcb6b8fb"
+    },
+    {
+      "repository_id": "orderweeddc",
+      "ref": "487ece684a226339ab1a7a48a08a268266672329",
+      "path": "apps/web/src/lib/sitemind.mjs",
+      "bytes": 30957,
+      "sha256": "e37ac2fd159d88d8a6fde56019be23a511018459277950fd946174eee6c6d547"
+    },
+    {
+      "repository_id": "rsi-hermes-runtime-overlay",
+      "ref": "7f8428975490c65a808ef27a47d2d93f5058cccd",
+      "path": ".github/workflows/upstream-candidate.yml",
+      "bytes": 3060,
+      "sha256": "f0734fb355c18b293bc68919666c5383e1f27a125181c6e42e6f0c090d8bccab"
+    },
+    {
+      "repository_id": "rsi-hermes-runtime-overlay",
+      "ref": "7f8428975490c65a808ef27a47d2d93f5058cccd",
+      "path": "UPSTREAM_PIN.json",
+      "bytes": 245,
+      "sha256": "de759588dd9992cbcefff82f18432d791ceb00fa1257178a2b7f17c151efe73d"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "LICENSE",
+      "bytes": 1070,
+      "sha256": "821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "SECURITY.md",
+      "bytes": 15533,
+      "sha256": "567383f57f408508d4ff27649bf7b6f8723e3b293742c8d912e340791d835c77"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "pyproject.toml",
+      "bytes": 19582,
+      "sha256": "35462080afc8177258babd430dcdc2ac654fdf69332cc4370fec555295f7eaba"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "agent/credential_pool.py",
+      "bytes": 125241,
+      "sha256": "bae44a6559dc32aedcfc5a6c4b3650982f7fa014eaa76243f2173ddaa49162d8"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "agent/prompt_builder.py",
+      "bytes": 101647,
+      "sha256": "d338e874e24eb0b4213c0f81864043b1ef476a151ca7d20e48d687a588ea2b57"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/agent/test_credential_pool.py",
+      "bytes": 135568,
+      "sha256": "3482d21417e90fee6c0bf96109b3edffa802672273ca085166f41a06135f39aa"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/agent/test_turn_context.py",
+      "bytes": 17321,
+      "sha256": "36fdf634dbd9079ebc8875bbe9f06f3a734eccb5831237bbeb5028d822e8e282"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/agent/test_turn_context_overflow_warning.py",
+      "bytes": 14451,
+      "sha256": "d2553db78974ea9e8628c5ee821030f3339e251c1a1a20bcc5bf6c456f55f685"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/gateway/test_telegram_noise_filter.py",
+      "bytes": 15627,
+      "sha256": "5e19b05da725461ab7b2094ce943b152ccb61aa5e6f41535d879989ab2f4f934"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/hermes_cli/test_auth_profile_fallback.py",
+      "bytes": 23356,
+      "sha256": "186dcb530a3fa1e262c6c6fb4974b22513ad0a6089c6fba5a31f972eb4049562"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/hermes_cli/test_kanban_worktree_isolation.py",
+      "bytes": 6661,
+      "sha256": "a46e22dd1cbab19c4568357b63647583a7f3cd367529e44c2b967d2663b006c7"
+    },
+    {
+      "repository_id": "hermes-pin-d9165d7",
+      "ref": "d9165d7a678d4105f42921a7fc1886df3804531b",
+      "path": "tests/hermes_cli/test_update_autostash.py",
+      "bytes": 48739,
+      "sha256": "e811c186e1585f9a2145450695654314f7e725daebfb976f2d16df0c3c1da19d"
+    }
+  ],
+  "archive": {
+    "filename": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23 (1).zip",
+    "bytes": 60056,
+    "sha256": "d2eac504df659c35bfa344e1d8102600456bc63408608bb29fc8843faa717ce5",
+    "crc_check": "PASS",
+    "file_count": 71,
+    "inventory_sha256": "82b9fc8856a8fa2f10164e5a7153b435582a12fe1663b8fb903558ff4da12a44",
+    "entries": [
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/ARCHITECTURE.md",
+        "bytes": 1132,
+        "sha256": "675abf95b964b5c6353aca9b69b4172af9b8dfa6ea5920c0f58ab998860391ed"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/IMPLEMENTATION_REPORT.md",
+        "bytes": 5242,
+        "sha256": "bc05986e51a7d4719f5b3a23d6f2a573c047de860a1f1a58351ce3d64fe5dbdd"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/MANIFEST.sha256",
+        "bytes": 7595,
+        "sha256": "48e02b9a2fa7f9d33f4a3d3ef80e5e109520fb8c163d6d87cf54c5197eedf683"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/README.md",
+        "bytes": 1979,
+        "sha256": "278283e0ec812dbad41a115ffb88cf560d4fc2eb3c8cb5f80576380b4d2968c7"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/REPOSITORY_MANIFEST.json",
+        "bytes": 795,
+        "sha256": "f12b7b06febcc15a1afe181d297683ca90fe6f49b2a897e765940c60612bf812"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/SOURCE_IDENTITY.md",
+        "bytes": 1232,
+        "sha256": "e7c64a603e244c654e5787e3c243dddf09e285c473561aa4ccea04c4f0d693e6"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/VERIFY_RECEIPT.json",
+        "bytes": 5676,
+        "sha256": "bd1b50a94780a47d2c0f8e58bd4e03d0e3624d9f57888b6768a982a868088cb0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/.env.example",
+        "bytes": 159,
+        "sha256": "3f985404e9e0e9b6549336b755b6f01e018572c643376ddea41c6fabced2d49e"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/CPANEL_EDGE_GUIDE.md",
+        "bytes": 630,
+        "sha256": "911610192c0ad2e890bb9664db9b7d54c229d15f9eddbae97a39767f1d511880"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/Caddyfile",
+        "bytes": 215,
+        "sha256": "0e05016e622fdef74f000df6f961137cf0d0035be6761c64e9dd8474ea8893e4"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/README.md",
+        "bytes": 194,
+        "sha256": "bb544934181fd681711325b3ec2578651414b4edc30069b883d93e1cb1c1fa3b"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/docker-compose.yml",
+        "bytes": 1702,
+        "sha256": "41b2f44a629180a4fa73daa1b13becc45783c39396732d6b7c9076d86aaa719d"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/docker/api.Dockerfile",
+        "bytes": 265,
+        "sha256": "36407b36766336710bcce457710a8fd9e1ee2a4c83a5d0ab58b710da28a51080"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/docker/worker.Dockerfile",
+        "bytes": 421,
+        "sha256": "6ceb4966e24907abf4776c7efef04469d289bc5276be90162336565e4ba2018e"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/runtime/index.html",
+        "bytes": 2034,
+        "sha256": "47079292544695de9ecdf8de60875422e3c8d2c08c632cc88ce4ed9539f1561b"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/runtime/minimal_api.py",
+        "bytes": 565,
+        "sha256": "d5c283ee5948ffc42d09fb2f5b2c75fa218d4eb9a3bd9608b85819a5b629843f"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-deployment/runtime/minimal_worker.py",
+        "bytes": 150,
+        "sha256": "4c6fd2c3502a8b41ac57605e9777dd4f3a478df69ef4b574bcfbd88fb772d04f"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/README.md",
+        "bytes": 186,
+        "sha256": "dc39cffcf2113fdcd54e22b11080cc5501c6f660f72233beb7137c79d5197cd2"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/pyproject.toml",
+        "bytes": 219,
+        "sha256": "e307837ebea23c5bdfde9b3bb9d0e6b9e7728aefd44f94862b0436d2e2148bd2"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/src/rsi_domain_connectors/__init__.py",
+        "bytes": 189,
+        "sha256": "54e36420c7aa1124cbaad81c417f0e8c114b2a5763d484d52bc1776fce0f8eff"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/src/rsi_domain_connectors/base.py",
+        "bytes": 690,
+        "sha256": "e1458d4a62585e580752da6eb854acb74fe297ecb71d747a043c788715c10ae6"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/src/rsi_domain_connectors/mock.py",
+        "bytes": 1326,
+        "sha256": "7652aadb70b7ded1933113498ca38bddecc06db4070e0a4daa8a663988b8bdd5"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-domain-connectors/tests/test_mock_connector.py",
+        "bytes": 545,
+        "sha256": "ab6754ed9038834d1c9edccd67e3473e8715cdaedeea03b115b89a8442e14b61"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-evaluations/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-evaluations/ATTACK_COURT_RECEIPT.json",
+        "bytes": 3786,
+        "sha256": "5ea9a9d7b31da346eb804dc087180b03bda5ed9d1122a4134a73862975e66609"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-evaluations/README.md",
+        "bytes": 133,
+        "sha256": "5ddaf818100aa1de5f3dc2f552a67a2e52eb7aff06685224509cc43135d3bcaf"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-evaluations/run_attack_court.py",
+        "bytes": 6120,
+        "sha256": "10f272180be6022a342abb42b33e0ae2dff3605f8eaac9b3bc5485b342bf01ec"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/README.md",
+        "bytes": 206,
+        "sha256": "be6839b10c58d19fe81130fcb3fb216c221b23124b1125f92df53326059b7f7a"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/plugin.yaml",
+        "bytes": 247,
+        "sha256": "3c0cbac27b29d98013f09c6b1f03e9e3f9d0dbd4695145478ec3fd3d1be6a75b"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/pyproject.toml",
+        "bytes": 277,
+        "sha256": "83d09805145573c624d8796dcc03a542a2e8ee5e9b705695a56fdf5d5a149e2f"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/schemas/action-contract.schema.json",
+        "bytes": 2800,
+        "sha256": "bc7f465edf4d0db9b087fc7439f51ea76ee02c2f45e9093550f623f681d9c782"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/schemas/worker-capability.schema.json",
+        "bytes": 2348,
+        "sha256": "b85b421b5b971f00a8b8b4ad480a7e9bfa54b162f17e3dd1da2bdde15e0c1802"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/src/rsi_hermes_bridge/__init__.py",
+        "bytes": 70,
+        "sha256": "238581df8df4a94d0c990862f50456abce2f0a36fe0b6cb94b22aef99f076d47"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/src/rsi_hermes_bridge/executor.py",
+        "bytes": 2655,
+        "sha256": "fe247eb49d2f8a39258a6fcd8ce95ef4e8e48ebf28e1a89a0db62096a48c2120"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-bridge/src/rsi_hermes_bridge/hermes_plugin.py",
+        "bytes": 1705,
+        "sha256": "519c73e3cb8b1160613fabb7e5fd0d2e774873f30b0b46f97e87870d21e19cd6"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/.github/workflows/upstream-candidate.yml",
+        "bytes": 3060,
+        "sha256": "f0734fb355c18b293bc68919666c5383e1f27a125181c6e42e6f0c090d8bccab"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/HERMES_LICENSE.txt",
+        "bytes": 1070,
+        "sha256": "821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/POLICY.md",
+        "bytes": 391,
+        "sha256": "204e1861adae4bd3550d82ac47101f3f3aa4bbd8de401d3783fe86e190b718aa"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/README.md",
+        "bytes": 925,
+        "sha256": "4a2f1915555467e9319b3e037d9c656554271544210cba50de5ce6f14bd2db07"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/THIRD_PARTY_NOTICES.md",
+        "bytes": 157,
+        "sha256": "0f02e6fbdb98f11269d2fedfcb48e35515ae4713a16655d55eb1726c7c163685"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/UPSTREAM_PIN.json",
+        "bytes": 245,
+        "sha256": "de759588dd9992cbcefff82f18432d791ceb00fa1257178a2b7f17c151efe73d"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-hermes-runtime/scripts/sync_upstream_candidate.sh",
+        "bytes": 778,
+        "sha256": "a3458644c717260c93dda69e3bc65eb4d1db9f6154523c4d831f37766491f729"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/README.md",
+        "bytes": 246,
+        "sha256": "a6286e02167f52ba40e9a151a82208453d25d81843d32b932ad0f56a9b3b7ecf"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/pyproject.toml",
+        "bytes": 334,
+        "sha256": "9f3ef7bfc27a791ff8664c27169f2b738e29a7f88c5268fbc343be3ca7a5c0b2"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/__init__.py",
+        "bytes": 1136,
+        "sha256": "067dd7dbb552876ca389e16a8e727fb2c7d6cc40cd0d2b9f320c87e7e13361a3"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/canonical.py",
+        "bytes": 1031,
+        "sha256": "6d7ccda43c651ae6c8abdd9e0ad4f38ca9f17ede09fd7f790229e50253b39585"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/coevolution.py",
+        "bytes": 3608,
+        "sha256": "148c3ac0fb37f99ae923a18e03a9167f24634a21c966edf86b54cab9137f34ad"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/crypto.py",
+        "bytes": 1940,
+        "sha256": "54104b64cdb22c0fd1b5492da31efcd13ecb1ffb1f2eaf31482f3f5c41e5c080"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/governor.py",
+        "bytes": 6933,
+        "sha256": "49d7b224e3a160dcd757f07b6216d78a8b6cc9e788567b3cd4b0780250cc7f5c"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/ledger.py",
+        "bytes": 3400,
+        "sha256": "8d6c0c919371a2ec9d31d3a26404a183580812d91309f090b10370d80b678f2b"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/management.py",
+        "bytes": 2759,
+        "sha256": "5b78d933231b5e7dbd15317f7912c1c6d8f34ec59940df5957a1c774aa92e6ff"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/models.py",
+        "bytes": 5385,
+        "sha256": "8edbfcc2b6ecab498255a1dbb7fc06a62341ed10865c97d667f593c01316c3d9"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/onboarding.py",
+        "bytes": 2868,
+        "sha256": "92d25d08b752f769b8ce75e08da573854c99a6ec5df29ff5e2bc01ac46edfffd"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/src/rsi_sitemind_core/promotion.py",
+        "bytes": 2249,
+        "sha256": "7902aaa2336bcb5e1dab3215d3bf16fea3413acdac3ed7d2c6287e11450215f0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/tests/test_coevolution_management.py",
+        "bytes": 1959,
+        "sha256": "66eb779dfd12638cb215d0dc5d966d63baed8bc678d8d64e0159ef719084a377"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/tests/test_governor.py",
+        "bytes": 5933,
+        "sha256": "25bd2b689bcd170f60eb517c2fd9f7d2baeefecb1beb7492877f249532e2aebc"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-sitemind-core/tests/test_ledger_onboarding_promotion.py",
+        "bytes": 3225,
+        "sha256": "e1aea1c75aae03f41aad27a633a76af46570d2ed7708de0dcfe754a31cb590cb"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-skills/.gitignore",
+        "bytes": 43,
+        "sha256": "aff7fe12c96628c07ed3719fc0b1a1f309484e681f1a67ef8f10d2e402e5cde0"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-skills/README.md",
+        "bytes": 188,
+        "sha256": "c70632e13def1b2a1a4ffae9603c6872c7108c4e514fca5aac7a3a86775e8ed8"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-skills/candidate-learning/SKILL.md",
+        "bytes": 949,
+        "sha256": "ed869e78b777f0d6e0ca9996996f0d86105129f61b1ceecf4dd10c4aadb1999c"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-skills/daily-growth-loop/SKILL.md",
+        "bytes": 815,
+        "sha256": "d5db85502b22486af037a98572eacd0ebf7c4efb96014e514b9f750149d63389"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-skills/domain-onboarding/SKILL.md",
+        "bytes": 1015,
+        "sha256": "916ac1725af3dcf0d2417c26a90a75150318999122933d29c2bc4b85d0af9f66"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/repos/rsi-skills/paid-growth/SKILL.md",
+        "bytes": 1001,
+        "sha256": "eb45ad7948dd0becd3fb2b6fd52eb10fecb02f092974a228874e715910690daa"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/scripts/install_into_existing_rsi.sh",
+        "bytes": 940,
+        "sha256": "a492ac0a87065eccb5051c2dc865b63b343fcd2c2b2a4f7efc8aa262f6a2cd60"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/scripts/publish_repositories.sh",
+        "bytes": 2499,
+        "sha256": "2ff1d83b6624530d519e9294f419b7914d546d580242c5c1a7867451fcbc9e49"
+      },
+      {
+        "path": "RSI_HERMES_COEVOLUTION_BASELINE_2026-07-23/scripts/verify_all.py",
+        "bytes": 1973,
+        "sha256": "bd79aadbe67d73ec8e92d6c2d691bfd1bdbfefc8905951c03fae648a62224b55"
+      }
+    ]
+  },
+  "input_set_sha256": "612637fb904cc9b74ccdc255cc22b40a65fa468e7472448d6797a642acf3ede2"
+}

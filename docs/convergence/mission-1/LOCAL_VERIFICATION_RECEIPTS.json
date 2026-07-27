@@ -1,0 +1,294 @@
+{
+  "schema_version": "1.0.0",
+  "observed_at": "2026-07-27",
+  "scope": "Local and isolated execution evidence used by the Mission 1 design. These receipts do not establish hosted or production behavior.",
+  "environments": {
+    "node": {
+      "version": "v26.5.0",
+      "executable": "/opt/homebrew/Cellar/node/26.5.0/bin/node"
+    },
+    "python_311": {
+      "version": "3.11.14",
+      "runner": "/Users/Apple/.local/bin/uv 0.9.26",
+      "test_executable": "/Users/Apple/Documents/New project/CANA-convergence-mission1/.cana-local/convergence-mission1/venvs/hermes-d916-pr1/bin/python"
+    },
+    "system_python": {
+      "version": "3.9.6",
+      "executable": "/Applications/Xcode.app/Contents/Developer/usr/bin/python3"
+    }
+  },
+  "receipts": [
+    {
+      "id": "canonical-cana-context-compiler",
+      "source": {
+        "repository": "CannabisWorldHoldings/CANA",
+        "commit": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+        "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378",
+        "path": "skills-src/sitemind-context-compiler.mjs"
+      },
+      "command": [
+        "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "skills-src/sitemind-context-compiler.mjs",
+        "--selftest"
+      ],
+      "exit_code": 0,
+      "result": "54 passed, 0 failed"
+    },
+    {
+      "id": "canonical-cana-signal-to-fix",
+      "source": {
+        "repository": "CannabisWorldHoldings/CANA",
+        "commit": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+        "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378",
+        "path": "skills-src/cana-signal-to-fix.mjs"
+      },
+      "command": [
+        "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "skills-src/cana-signal-to-fix.mjs",
+        "--selftest"
+      ],
+      "exit_code": 0,
+      "result": "42 passed, 0 failed"
+    },
+    {
+      "id": "canonical-cana-governed-packet",
+      "source": {
+        "repository": "CannabisWorldHoldings/CANA",
+        "commit": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+        "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378",
+        "path": "skills-src/hermes-governed-packet.mjs"
+      },
+      "command": [
+        "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "skills-src/hermes-governed-packet.mjs",
+        "--selftest"
+      ],
+      "exit_code": 0,
+      "result": "53 passed, 0 failed"
+    },
+    {
+      "id": "canonical-cana-compiler-packet-binding",
+      "source": {
+        "repository": "CannabisWorldHoldings/CANA",
+        "commit": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+        "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378",
+        "path": "skills-src/e2e-compiler-packet-binding.mjs"
+      },
+      "command": [
+        "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "skills-src/e2e-compiler-packet-binding.mjs"
+      ],
+      "exit_code": 0,
+      "result": "END-TO-END BINDING: PROVEN"
+    },
+    {
+      "id": "rsi-sitemind-core",
+      "source": {
+        "repository": "princeleuel1-ops/rsi-sitemind-core",
+        "commit": "12246cdad148f934ebe0162ce76592e47937d559",
+        "tree": "efa0f6bcbe40f14023b39cc1a3529ed4b6896915"
+      },
+      "command": [
+        "/Users/Apple/.local/bin/uv",
+        "run",
+        "--with",
+        "pytest",
+        "--python",
+        "3.11",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "exit_code": 0,
+      "result": "17 passed in 1.05s"
+    },
+    {
+      "id": "rsi-domain-connectors",
+      "source": {
+        "repository": "princeleuel1-ops/rsi-domain-connectors",
+        "commit": "b0f6d06f5508ebf29e9116747d70af0d144025c4",
+        "tree": "c119126970a5719cfdfe54fb2b6fedbc6f6d3a6e"
+      },
+      "command": [
+        "/Users/Apple/.local/bin/uv",
+        "run",
+        "--with",
+        "pytest",
+        "--python",
+        "3.11",
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "exit_code": 0,
+      "result": "1 passed in 0.01s"
+    },
+    {
+      "id": "rsi-attack-court",
+      "source": {
+        "repository": "princeleuel1-ops/rsi-evaluations",
+        "commit": "4cc2c2fd6a5bc57859c9dbe54edb469eed6e6f51",
+        "tree": "4f8be076cad14b0570c7b8fc0402cd7d0f03d273",
+        "receipt": "ATTACK_COURT_RECEIPT.json"
+      },
+      "command": [
+        "env",
+        "PYTHONPATH=<exact sibling component src directories>",
+        "/Users/Apple/Documents/New project/CANA-convergence-mission1/.cana-local/convergence-mission1/venvs/rsi-census/bin/python",
+        "run_attack_court.py"
+      ],
+      "exit_code": 0,
+      "result": {
+        "passed": true,
+        "total": 19,
+        "passed_count": 19,
+        "tracked_receipt_unchanged": true
+      }
+    },
+    {
+      "id": "intelligence-os-combined-verify",
+      "source": {
+        "repository": "cannabisworldholdings-afk/ORDERWEEDDCRSI-",
+        "commit": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+        "tree": "58e1f3b1e116519d2fb28d6613c509484eb03d0a",
+        "isolated_worktree": ".cana-local/convergence-mission1/worktrees/orderweeddcrsi-evidence"
+      },
+      "command": [
+        "/usr/bin/make",
+        "verify"
+      ],
+      "exit_code": 0,
+      "result": {
+        "secret_scan": "clean",
+        "unit_tests": "35/35",
+        "vertical_slice": "11/11",
+        "attack_court": "45/45",
+        "mock_shadow": "23/23",
+        "crash_recovery": "VERIFIED",
+        "restart_durability": "VERIFIED",
+        "provider": "NONE_SELECTED",
+        "signer": "DEV_TAMPER_EVIDENT",
+        "business_outcome": "UNKNOWN"
+      }
+    },
+    {
+      "id": "hermes-d916-focused",
+      "source": {
+        "repository": "NousResearch/hermes-agent",
+        "commit": "d9165d7a678d4105f42921a7fc1886df3804531b",
+        "tree": "040ecbb5ae51003f633f50adc792df49eae9d740",
+        "isolated_worktree": ".cana-local/convergence-mission1/worktrees/hermes-d916-evidence",
+        "clean_before_execution": true,
+        "clean_after_evidence_cleanup": true
+      },
+      "command": [
+        "<python_311.test_executable>",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "tests/agent/test_credential_pool.py",
+        "tests/agent/test_turn_context.py",
+        "tests/agent/test_turn_context_overflow_warning.py",
+        "tests/gateway/test_telegram_noise_filter.py",
+        "tests/hermes_cli/test_auth_profile_fallback.py",
+        "tests/hermes_cli/test_kanban_worktree_isolation.py",
+        "tests/hermes_cli/test_update_autostash.py"
+      ],
+      "exit_code": 0,
+      "result": "821 passed in 61.98s",
+      "cleanup_note": "One ignored test-owned gateway guard marker was moved to ignored quarantine; tracked and source bytes never changed."
+    },
+    {
+      "id": "draft-pr-1-bounded-adapter",
+      "source": {
+        "repository": "cannabisworldholdings-afk/ORDERWEEDDCRSI-",
+        "commit": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+        "tree": "017ac908ee8747f6d1c9ac139106f19b1a64337b",
+        "hermes_commit": "d9165d7a678d4105f42921a7fc1886df3804531b",
+        "hermes_tree": "040ecbb5ae51003f633f50adc792df49eae9d740"
+      },
+      "environment": {
+        "HERMES_UPSTREAM_PATH": ".cana-local/convergence-mission1/worktrees/hermes-d916-evidence",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "provider_credentials": "ABSENT"
+      },
+      "command": [
+        "<python_311.test_executable>",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "CANA_HERMES/tests/test_parent.py"
+      ],
+      "exit_code": 0,
+      "result": "10 passed in 14.92s"
+    },
+    {
+      "id": "draft-pr-1-local-proof",
+      "source": {
+        "repository": "cannabisworldholdings-afk/ORDERWEEDDCRSI-",
+        "commit": "6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+        "tree": "017ac908ee8747f6d1c9ac139106f19b1a64337b",
+        "hermes_commit": "d9165d7a678d4105f42921a7fc1886df3804531b",
+        "hermes_tree": "040ecbb5ae51003f633f50adc792df49eae9d740"
+      },
+      "command": [
+        "<python_311.test_executable>",
+        "scripts/hermes_revenue_proof.py"
+      ],
+      "exit_code": 0,
+      "result": {
+        "upstream_sha": "d9165d7a678d4105f42921a7fc1886df3804531b",
+        "upstream_worktree_clean": true,
+        "extension_surface": "agent.prompt_builder.build_skills_system_prompt",
+        "receipt_rows": 1,
+        "lesson_rows_for_mission": 1,
+        "next_mission_rows": 1,
+        "outbox_rows": 0,
+        "model_calls": 0,
+        "provider_connected": "NONE",
+        "provider_spend_usd": 0,
+        "external_effects": [],
+        "production_modified": false,
+        "business_outcome": "UNKNOWN",
+        "approval_authority": "LOCAL_DEV_FIXTURE_NOT_OWNER_APPROVAL"
+      }
+    },
+    {
+      "id": "census-precommit-refusal",
+      "source": {
+        "path": "tools/convergence-census/verify.mjs"
+      },
+      "command": [
+        "/opt/homebrew/Cellar/node/26.5.0/bin/node",
+        "tools/convergence-census/verify.mjs"
+      ],
+      "exit_code": 1,
+      "expected_refusal": true,
+      "result": "Refused because required Mission 1 artifacts were not yet tracked by Git."
+    }
+  ],
+  "failed_or_limited_attempts": [
+    {
+      "surface": "attached archive original verify_all.py",
+      "result": "Historical runner could not execute two pytest commands because pytest was absent; its 19/19 attack court passed. Current component tests were rerun separately above."
+    },
+    {
+      "surface": "Hermes candidate production promotion",
+      "result": "NOT RUN and not claimed. The focused tests and draft adapter proof do not approve the runtime."
+    },
+    {
+      "surface": "hosted and product runtime",
+      "result": "UNPROVEN; no runtime was activated or deployed."
+    }
+  ]
+}

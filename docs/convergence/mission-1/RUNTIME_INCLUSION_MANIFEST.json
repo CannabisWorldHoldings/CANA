@@ -1,0 +1,320 @@
+{
+  "schema_version": "1.0.0",
+  "observed_at": "2026-07-27",
+  "status": "DESIGN_ONLY_NO_RUNTIME_ACTIVATED",
+  "authority_chain": [
+    "OWNER_CONSTITUTION",
+    "CANA_DURABLE_AUTHORITY",
+    "RSI_SITEMIND_INTELLIGENCE",
+    "HERMES_EXECUTION_SLOT",
+    "BOUNDED_SPECIALIST_WORKERS",
+    "ORDERWEEDDC_PRODUCT"
+  ],
+  "inclusion_field_semantics": {
+    "included_in_cana_source": "Present in the Mission 1 candidate branch, not necessarily in the protected baseline.",
+    "included_in_orderweeddc_artifact": "Copied or traced into the exact observed ORDERWEEDDC build artifact."
+  },
+  "protected_baseline": {
+    "repository": "CannabisWorldHoldings/CANA",
+    "commit": "ed9b32b4434f2916f90b83f52f892789db9929c4",
+    "tree": "fa1f6a9c55d604c8d7091a8115c1a4296be78378"
+  },
+  "mission1_artifact": {
+    "branch": "codex/cana-convergence-mission-1",
+    "revision": "CURRENT_GIT_HEAD_RECORDED_BY_VERIFIER",
+    "artifact_manifest": "docs/convergence/mission-1/ARTIFACT_MANIFEST.json",
+    "protected_baseline_contains_mission1_documents": false
+  },
+  "product_artifact_observation": {
+    "repository": "princeleuel1-ops/orderweeddc",
+    "commit": "487ece684a226339ab1a7a48a08a268266672329",
+    "tree": "5e2c8e8e775fbad2839a1b24fdf227367cfa6b7f",
+    "inclusion_authority": "deploy/namecheap/build-artifact.mjs",
+    "convergence_runtime_included": false
+  },
+  "canonical_owners": [
+    {
+      "component": "authority",
+      "owner": "OWNER_CONSTITUTION"
+    },
+    {
+      "component": "mission_state",
+      "owner": "CANA_DURABLE_AUTHORITY"
+    },
+    {
+      "component": "policy",
+      "owner": "RSI_SITEMIND_INTELLIGENCE"
+    },
+    {
+      "component": "context_compiler",
+      "owner": "RSI_SITEMIND_INTELLIGENCE"
+    },
+    {
+      "component": "truthgraph",
+      "owner": "RSI_SITEMIND_INTELLIGENCE"
+    },
+    {
+      "component": "winner_memory",
+      "owner": "RSI_SITEMIND_INTELLIGENCE"
+    },
+    {
+      "component": "signal_to_fix",
+      "owner": "RSI_SITEMIND_INTELLIGENCE"
+    },
+    {
+      "component": "evidence",
+      "owner": "CANA_DURABLE_AUTHORITY"
+    },
+    {
+      "component": "provider_routing",
+      "owner": "RSI_SITEMIND_INTELLIGENCE"
+    },
+    {
+      "component": "capabilities",
+      "owner": "CANA_DURABLE_AUTHORITY"
+    },
+    {
+      "component": "hermes_execution",
+      "owner": "HERMES_EXECUTION_SLOT"
+    },
+    {
+      "component": "update_watching",
+      "owner": "CANA_DURABLE_AUTHORITY"
+    },
+    {
+      "component": "intelligence_os_state",
+      "owner": "INTELLIGENCE_OS_STORE"
+    }
+  ],
+  "components": [
+    {
+      "id": "cana-authority",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "codex/cana-convergence-mission-1@CURRENT_GIT_HEAD",
+      "paths": [
+        "docs/convergence/mission-1/AUTHORITY_CONTRACT.md"
+      ],
+      "classification": "PARTIAL_IMPLEMENTATION",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "historical-mission-state",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        "deliverables/MISSION_STATE.json"
+      ],
+      "classification": "HISTORICAL_REFERENCE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "context-compiler",
+      "owner": "RSI_SITEMIND_INTELLIGENCE",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        "skills-src/sitemind-context-compiler.mjs"
+      ],
+      "classification": "CANONICAL_ACTIVE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "signal-to-fix",
+      "owner": "RSI_SITEMIND_INTELLIGENCE",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        "skills-src/cana-signal-to-fix.mjs"
+      ],
+      "classification": "CANONICAL_ACTIVE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "governed-packet",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        "skills-src/hermes-governed-packet.mjs"
+      ],
+      "classification": "CANONICAL_ACTIVE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "truthgraph",
+      "owner": "RSI_SITEMIND_INTELLIGENCE",
+      "source": null,
+      "paths": [],
+      "classification": "MISSING",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "winner-memory",
+      "owner": "RSI_SITEMIND_INTELLIGENCE",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        "skills-src/cana-signal-to-fix.mjs"
+      ],
+      "classification": "PARTIAL_IMPLEMENTATION",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "intelligence-os-runtime-seams",
+      "owner": "INTELLIGENCE_OS_STORE",
+      "source": "cannabisworldholdings-afk/ORDERWEEDDCRSI-@125c81b",
+      "paths": [
+        "runtime/db.py",
+        "runtime/mission.py",
+        "runtime/rsi.py",
+        "runtime/evidence.py",
+        "runtime/model_router.py",
+        "runtime/pipeline.py"
+      ],
+      "classification": "REUSABLE_IMPORT",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "orderweeddc-product-intelligence",
+      "owner": "ORDERWEEDDC_PRODUCT",
+      "source": "princeleuel1-ops/orderweeddc@487ece6",
+      "paths": [
+        "apps/web/src/lib/site-intelligence.mjs",
+        "apps/web/src/lib/sitemind.mjs"
+      ],
+      "classification": "CANONICAL_ACTIVE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": true
+    },
+    {
+      "id": "rsi-sitemind-contracts",
+      "owner": "RSI_SITEMIND_INTELLIGENCE",
+      "source": "princeleuel1-ops/rsi-sitemind-core@12246cd",
+      "paths": [
+        "rsi_sitemind_core/"
+      ],
+      "classification": "REUSABLE_IMPORT",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "rsi-hermes-bridge",
+      "owner": "RSI_SITEMIND_INTELLIGENCE",
+      "source": "princeleuel1-ops/rsi-hermes-bridge@d5cc516",
+      "paths": [
+        "rsi_hermes_bridge/"
+      ],
+      "classification": "REUSABLE_IMPORT",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "hermes-781968b",
+      "owner": "HERMES_EXECUTION_SLOT",
+      "source": "NousResearch/hermes-agent@781968be5e1ec2c253b617409f8bfba652c10186",
+      "paths": [],
+      "classification": "HISTORICAL_REFERENCE",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "hermes-d9165d7",
+      "owner": "HERMES_EXECUTION_SLOT",
+      "source": "NousResearch/hermes-agent@d9165d7a678d4105f42921a7fc1886df3804531b",
+      "paths": [],
+      "classification": "BLOCKED",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "hermes-governed-overlay",
+      "owner": "HERMES_EXECUTION_SLOT",
+      "source": "princeleuel1-ops/rsi-hermes-runtime@7f8428975490c65a808ef27a47d2d93f5058cccd",
+      "paths": [
+        "UPSTREAM_PIN.json",
+        ".github/workflows/upstream-candidate.yml"
+      ],
+      "classification": "PARTIAL_IMPLEMENTATION",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "hermes-update-watch-approval-path",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "princeleuel1-ops/rsi-hermes-runtime@7f8428975490c65a808ef27a47d2d93f5058cccd",
+      "paths": [
+        ".github/workflows/upstream-candidate.yml"
+      ],
+      "classification": "BLOCKED",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "draft-pr-1-overlay",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "cannabisworldholdings-afk/ORDERWEEDDCRSI-@6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "paths": [
+        "CANA_HERMES/",
+        "runtime/mission.py"
+      ],
+      "classification": "PARTIAL_IMPLEMENTATION",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "draft-pr-1-parallel-authority",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "cannabisworldholdings-afk/ORDERWEEDDCRSI-@6a6c5affc7dae4fb04598dedae45bb19e25f26e3",
+      "paths": [
+        "CANA_HERMES/"
+      ],
+      "classification": "DUPLICATE",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "cana-loop-engine",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        "CANA_LOOP_ENGINE/"
+      ],
+      "classification": "HISTORICAL_REFERENCE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "legacy-cana-governor",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "CannabisWorldHoldings/CANA@ed9b32b",
+      "paths": [
+        ".cana-governor-v3/",
+        ".opencode/agents/"
+      ],
+      "classification": "HISTORICAL_REFERENCE",
+      "included_in_cana_source": true,
+      "included_in_orderweeddc_artifact": false
+    },
+    {
+      "id": "rsi-baseline-deployment-scaffold",
+      "owner": "CANA_DURABLE_AUTHORITY",
+      "source": "princeleuel1-ops/rsi-deployment@c72d544",
+      "paths": [],
+      "classification": "HISTORICAL_REFERENCE",
+      "included_in_cana_source": false,
+      "included_in_orderweeddc_artifact": false
+    }
+  ],
+  "unproven_hosted_claims": [
+    "convergence runtime inclusion",
+    "Hermes production approval",
+    "hosted Intelligence OS durability",
+    "production provider routing",
+    "external side-effect safety",
+    "real causal business improvement"
+  ]
+}
