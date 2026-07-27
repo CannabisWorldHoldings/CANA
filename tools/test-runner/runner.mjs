@@ -229,7 +229,7 @@ async function standardVerification(profile) {
   let container = null;
   let reconstruction = null;
   let sabotage = null;
-  let receipt;
+  let receiptPayload;
   try {
     sabotage = sabotageRestore(worktree, source.commit);
     if (!sabotage.mutationDetected || !sabotage.restorationExact) {
@@ -253,10 +253,9 @@ async function standardVerification(profile) {
     if (!container.cleanup) {
       throw new Error(`verification container ${container.name} was not removed`);
     }
-    receipt = writeReceipt(`verify-${profile}`, {
+    receiptPayload = {
       overall: container.passed ? 'PASS' : 'FAIL',
       startedAt,
-      finishedAt: new Date().toISOString(),
       source,
       isolation: {
         worktree: true,
@@ -295,7 +294,7 @@ async function standardVerification(profile) {
         outputSha256: container.outputSha256,
         outputTail: tail(container.output),
       },
-    });
+    };
   } finally {
     worktreeCleanup = removeWorktree(worktree);
     fs.rmSync(runRoot, { recursive: true, force: true });
@@ -303,6 +302,14 @@ async function standardVerification(profile) {
   if (!worktreeCleanup.removed) {
     throw new Error(`isolated worktree cleanup failed: ${worktreeCleanup.detail}`);
   }
+  const receipt = writeReceipt(`verify-${profile}`, {
+    ...receiptPayload,
+    finishedAt: new Date().toISOString(),
+    worktree: {
+      cleanup: true,
+      detail: worktreeCleanup.detail,
+    },
+  });
   console.log(`receipt: ${receipt.file}`);
   console.log(`receipt sha256: ${receipt.sha256}`);
   if (!container?.passed) {
