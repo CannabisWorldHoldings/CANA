@@ -62,7 +62,10 @@ build_web() {
   rm -rf "$WEB/.next"
   (
     cd "$WEB"
-    DATABASE_URL="file:$DB" CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack 2>&1 | tee "$build_log"
+    DATABASE_URL="file:$DB" \
+    CANA_BUILD_DATABASE_IS_DISPOSABLE=1 \
+    CANA_RELEASE_SHA="$EXPECTED_SHA" \
+    npm run build -- --webpack 2>&1 | tee "$build_log"
   )
   node "$ROOT/tools/test-runner/build-output.mjs" "$build_log"
   test -s "$WEB/.next/BUILD_ID"

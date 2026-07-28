@@ -158,10 +158,27 @@ run('npx prisma generate', {
   cwd: webRoot,
   env: releaseChildEnvironment(),
 });
-run('npx next build --webpack', {
-  cwd: webRoot,
-  env: { ...process.env, NEXT_OUTPUT: 'standalone', NODE_ENV: 'production' },
-});
+const buildDatabaseRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-build-db-'));
+const buildDatabasePath = path.join(buildDatabaseRoot, 'build.db');
+const buildDatabaseUrl = `file:${buildDatabasePath}`;
+try {
+  fs.writeFileSync(buildDatabasePath, '', { flag: 'wx' });
+  run('npx prisma migrate deploy --schema prisma/schema.prisma', {
+    cwd: webRoot,
+    env: releaseChildEnvironment({ DATABASE_URL: buildDatabaseUrl }),
+  });
+  run('npx next build --webpack', {
+    cwd: webRoot,
+    env: releaseChildEnvironment({
+      DATABASE_URL: buildDatabaseUrl,
+      CANA_BUILD_DATABASE_IS_DISPOSABLE: '1',
+      NEXT_OUTPUT: 'standalone',
+      NODE_ENV: 'production',
+    }),
+  });
+} finally {
+  fs.rmSync(buildDatabaseRoot, { recursive: true, force: true });
+}
 
 // ---------------------------------------------------------------------------
 // Phase 3 — assemble

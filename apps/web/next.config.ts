@@ -140,33 +140,8 @@ const nextConfig: NextConfig = {
 };
 
 async function assertProductionBuildDatabaseReady() {
-  const databaseUrl = process.env.DATABASE_URL?.trim();
-  if (!databaseUrl) {
-    throw new Error("Production build requires an explicit DATABASE_URL");
-  }
-
-  const [{ PrismaClient }, databaseConfig] = await Promise.all([
-    import("@prisma/client"),
-    import("./src/lib/db-config.mjs"),
-  ]);
-  const provider = databaseConfig.databaseProviderOf(databaseUrl);
-  if (provider !== "sqlite") {
-    throw new Error(`Production build database provider must match the current sqlite schema; received ${provider}`);
-  }
-
-  const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
-  try {
-    const initialized = await databaseConfig.initializeDatabaseConfig(prisma);
-    if (!initialized.ok) {
-      throw new Error(`Production build database initialization failed: ${JSON.stringify(initialized)}`);
-    }
-    const readiness = await databaseConfig.databaseReadiness(prisma, { provider });
-    if (!readiness.ready) {
-      throw new Error(`Production build database is not ready: ${JSON.stringify(readiness.checks)}`);
-    }
-  } finally {
-    await prisma.$disconnect();
-  }
+  const buildDatabase = await import("./src/lib/build-database.mjs");
+  await buildDatabase.assertProductionBuildDatabaseReady();
 }
 
 export default async function config(phase: string): Promise<NextConfig> {
