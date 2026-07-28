@@ -17,6 +17,19 @@ const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const BASE_RECEIPT = path.join(ROOT, 'tools', 'durability', 'base-remote-receipt.json');
 const OWNER_KEY_FILE = '/etc/cana/durability-owner-ed25519.pub';
 const OWNER_KEY_ID_FILE = '/etc/cana/durability-owner-key-id';
+const STAGE_A_ASSIGNMENT = 'stage_a_foundation_2026_07_28';
+const STAGE_A_ASSIGNMENT_SHA256 =
+  'c4535e12ddecb93df7e1c1ededa14f7be354b4b06f16670c6cac0518961ca618';
+const CHANGED_FILE_OWNERSHIP_SHA256 =
+  '4cddcb8f9ca7710d7126941711d72b3b98b82d7958402f017e884dc6432e41ab';
+export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
+  'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
+  'apps/web/src/lib/interaction-proof.mjs',
+  'apps/web/src/lib/structured-data.mjs',
+  'apps/web/tests/interaction-proof.test.mjs',
+  'apps/web/tests/structured-data-truth.test.mjs',
+  'docs/verification/STAGE_A_DETERMINISM_LEDGER.md',
+]);
 
 function command(commandName, args, {
   cwd = ROOT,
@@ -95,13 +108,172 @@ function parseArgs(args) {
   return parsed;
 }
 
-function matchOwned(relative, pattern) {
+export function matchOwned(relative, pattern) {
   if (pattern.endsWith('/**')) return relative.startsWith(pattern.slice(0, -2));
   if (pattern.endsWith('/*.yml')) {
     const directory = pattern.slice(0, -6);
     return path.posix.dirname(relative) === directory && relative.endsWith('.yml');
   }
   return relative === pattern;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function exactKeys(value, keys) {
+  return (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...keys].sort())
+  );
+}
+
+export function validateOwnershipManifest(ownership) {
+  if (
+    !ownership ||
+    typeof ownership !== 'object' ||
+    !ownership.explicit_user_assignment ||
+    !Array.isArray(ownership.owned_create_paths) ||
+    !Array.isArray(ownership.owned_modify_paths) ||
+    !Array.isArray(ownership.planned_candidate_files)
+  ) {
+    refusal('ownership manifest is malformed');
+  }
+
+  const assignment = ownership.explicit_user_assignment[STAGE_A_ASSIGNMENT];
+  if (
+    !exactKeys(assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'approval_sha256',
+      'entries',
+    ]) ||
+    !Array.isArray(assignment.entries)
+  ) {
+    refusal('Stage A ownership assignment is malformed');
+  }
+
+  const entryKeys = [
+    'path',
+    'canonical_owner',
+    'reason',
+    'approving_lineage',
+    'commit_provenance',
+    'permitted_change_class',
+    'material_kind',
+    'authorization_effect',
+  ];
+  const provenanceKeys = ['commit', 'tree', 'relationship'];
+  const authorizedOwners = new Set([
+    'web-truth-structured-data',
+    'privacy-preserving-interaction-proof',
+    'verification-evidence',
+  ]);
+  const permittedChangeClasses = new Set([
+    'structured-data-time-determinism',
+    'privacy-preserving-nonce-determinism',
+    'verification-evidence',
+  ]);
+  const materialKinds = new Set(['runtime', 'test', 'evidence']);
+
+  for (const entry of assignment.entries) {
+    if (
+      !exactKeys(entry, entryKeys) ||
+      !exactKeys(entry.commit_provenance, provenanceKeys) ||
+      typeof entry.path !== 'string' ||
+      entry.path.length === 0 ||
+      entry.path.startsWith('/') ||
+      entry.path.includes('\\') ||
+      entry.path.includes('*') ||
+      entry.path.includes('..') ||
+      path.posix.normalize(entry.path) !== entry.path ||
+      !authorizedOwners.has(entry.canonical_owner) ||
+      typeof entry.reason !== 'string' ||
+      entry.reason.length === 0 ||
+      typeof entry.approving_lineage !== 'string' ||
+      entry.approving_lineage.length === 0 ||
+      !/^[0-9a-f]{40}$/.test(entry.commit_provenance.commit) ||
+      !/^[0-9a-f]{40}$/.test(entry.commit_provenance.tree) ||
+      typeof entry.commit_provenance.relationship !== 'string' ||
+      entry.commit_provenance.relationship.length === 0 ||
+      !permittedChangeClasses.has(entry.permitted_change_class) ||
+      !materialKinds.has(entry.material_kind) ||
+      entry.authorization_effect !== 'durability-path-ownership-only'
+    ) {
+      refusal(`malformed Stage A ownership entry: ${entry?.path ?? '<missing path>'}`);
+    }
+  }
+
+  const entryPaths = assignment.entries.map((entry) => entry.path);
+  if (new Set(entryPaths).size !== entryPaths.length) {
+    refusal('duplicate Stage A ownership entry');
+  }
+  if (
+    JSON.stringify([...entryPaths].sort()) !==
+    JSON.stringify([...STAGE_A_AUTHORIZED_PATHS].sort())
+  ) {
+    refusal('Stage A ownership paths do not match the exact owner-authorized set');
+  }
+
+  const allOwnedPaths = [...ownership.owned_create_paths, ...ownership.owned_modify_paths];
+  if (new Set(allOwnedPaths).size !== allOwnedPaths.length) {
+    refusal('duplicate changed-file ownership is not allowed');
+  }
+  for (const authorizedPath of STAGE_A_AUTHORIZED_PATHS) {
+    const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
+    if (exactOccurrences !== 1) {
+      refusal(`Stage A path must have exactly one exact ownership entry: ${authorizedPath}`);
+    }
+    const plannedOccurrences = ownership.planned_candidate_files.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (plannedOccurrences !== 1) {
+      refusal(`Stage A path must have exactly one planned-candidate entry: ${authorizedPath}`);
+    }
+  }
+
+  const ownershipDigest = sha256Bytes(canonicalJson({
+    root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
+    owned_create_paths: ownership.owned_create_paths,
+    owned_modify_paths: ownership.owned_modify_paths,
+  }));
+  if (ownershipDigest !== CHANGED_FILE_OWNERSHIP_SHA256) {
+    refusal('changed-file ownership patterns failed the owner-approved scope digest');
+  }
+
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+  const actualDigest = sha256Bytes(canonicalJson(approvalPayload));
+  if (
+    recordedDigest !== STAGE_A_ASSIGNMENT_SHA256 ||
+    actualDigest !== STAGE_A_ASSIGNMENT_SHA256
+  ) {
+    refusal('Stage A ownership assignment failed its owner-approval digest');
+  }
+  return assignment;
+}
+
+export function ownershipPatterns(ownership) {
+  validateOwnershipManifest(ownership);
+  return [
+    ownership.explicit_user_assignment.root_dispatcher,
+    ...ownership.owned_create_paths,
+    ...ownership.owned_modify_paths,
+  ];
+}
+
+export function unownedPaths(changed, ownership) {
+  const patterns = ownershipPatterns(ownership);
+  return changed.filter((file) => !patterns.some((pattern) => matchOwned(file, pattern)));
 }
 
 function prerequisites(source) {
@@ -124,12 +296,7 @@ function prerequisites(source) {
     .filter(Boolean);
   const prohibited = changed.filter((file) => ownership.global_no_edit.includes(file));
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
-  const patterns = [
-    ownership.explicit_user_assignment.root_dispatcher,
-    ...ownership.owned_create_paths,
-    ...ownership.owned_modify_paths,
-  ];
-  const unowned = changed.filter((file) => !patterns.some((pattern) => matchOwned(file, pattern)));
+  const unowned = unownedPaths(changed, ownership);
   if (unowned.length) refusal(`outgoing paths lack lane ownership:\n${unowned.join('\n')}`);
   return { changed, fsck: 'PASS', prohibited: [], unowned: [] };
 }

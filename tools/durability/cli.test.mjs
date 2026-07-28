@@ -6,7 +6,20 @@ import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import {
+  matchOwned,
+  ownershipPatterns,
+  STAGE_A_AUTHORIZED_PATHS,
+  validateOwnershipManifest,
+} from './cli.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const OWNERSHIP_FILE = path.join(
+  ROOT,
+  'tools',
+  'test-runner',
+  'CODEX_CHANGED_FILE_OWNERSHIP.json',
+);
 
 function cana(args, env = {}) {
   return spawnSync(path.join(ROOT, 'cana'), args, {
@@ -19,6 +32,125 @@ function cana(args, env = {}) {
     },
   });
 }
+
+function ownership() {
+  return JSON.parse(fs.readFileSync(OWNERSHIP_FILE, 'utf8'));
+}
+
+test('the six owner-approved Stage A paths have exact changed-file ownership', () => {
+  const manifest = ownership();
+  const assignment = validateOwnershipManifest(manifest);
+  const patterns = ownershipPatterns(manifest);
+  assert.equal(assignment.entries.length, 6);
+  assert.deepEqual(
+    assignment.entries.map((entry) => entry.path).sort(),
+    [...STAGE_A_AUTHORIZED_PATHS].sort(),
+  );
+  for (const authorizedPath of STAGE_A_AUTHORIZED_PATHS) {
+    assert.ok(patterns.some((pattern) => matchOwned(authorizedPath, pattern)));
+  }
+});
+
+test('the Stage A assignment records canonical provenance for structured-data paths', () => {
+  const assignment = validateOwnershipManifest(ownership());
+  const structuredDataEntries = assignment.entries.filter(
+    (entry) => entry.canonical_owner === 'web-truth-structured-data',
+  );
+  assert.equal(structuredDataEntries.length, 3);
+  for (const entry of structuredDataEntries) {
+    assert.equal(
+      entry.commit_provenance.commit,
+      'bf9127467e075d9e3348122cd8b5d849ff7674af',
+    );
+    assert.equal(entry.commit_provenance.relationship, 'canonical-main');
+  }
+});
+
+test('an unlisted Stage A neighboring path remains unowned', () => {
+  const patterns = ownershipPatterns(ownership());
+  assert.equal(
+    patterns.some((pattern) =>
+      matchOwned('apps/web/src/lib/interaction-proof-neighbor.mjs', pattern),
+    ),
+    false,
+  );
+});
+
+test('a directory wildcard cannot replace an exact Stage A path', () => {
+  const manifest = ownership();
+  manifest.owned_modify_paths.push('apps/web/src/lib/**');
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /owner-approved scope digest/,
+  );
+});
+
+test('Stage A ownership-assignment tampering fails the approval digest', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.stage_a_foundation_2026_07_28.scope =
+    'Neighboring files are also authorized.';
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /failed its owner-approval digest/,
+  );
+});
+
+test('duplicate changed-file ownership is rejected', () => {
+  const manifest = ownership();
+  manifest.owned_create_paths.push(STAGE_A_AUTHORIZED_PATHS[0]);
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /duplicate changed-file ownership/,
+  );
+});
+
+test('malformed Stage A ownership entries are rejected', () => {
+  const manifest = ownership();
+  delete manifest.explicit_user_assignment.stage_a_foundation_2026_07_28.entries[0]
+    .material_kind;
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /malformed Stage A ownership entry/,
+  );
+});
+
+test('a Stage A path cannot change canonical owner without approval-digest failure', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.stage_a_foundation_2026_07_28.entries[0]
+    .canonical_owner = 'verification-evidence';
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /failed its owner-approval digest/,
+  );
+});
+
+test('Stage A path authorization cannot acquire runtime permissions', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.stage_a_foundation_2026_07_28.entries[0]
+    .runtime_permissions = ['provider-connect'];
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /malformed Stage A ownership entry/,
+  );
+  const assignment = validateOwnershipManifest(ownership());
+  assert.match(assignment.authorization_effect, /no runtime, provider, credential/);
+  assert.ok(
+    assignment.entries.every(
+      (entry) => entry.authorization_effect === 'durability-path-ownership-only',
+    ),
+  );
+});
+
+test('removing one required exact entry recreates the durability ownership failure', () => {
+  const manifest = ownership();
+  manifest.owned_modify_paths = manifest.owned_modify_paths.filter(
+    (entry) => entry !== STAGE_A_AUTHORIZED_PATHS[0],
+  );
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /must have exactly one exact ownership entry/,
+  );
+});
 
 test('base receipt records the superseding final Drive round trip', () => {
   const receipt = JSON.parse(

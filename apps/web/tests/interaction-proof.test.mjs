@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHmac } from 'node:crypto';
+import crypto, { createHmac } from 'node:crypto';
 import {
   issueInteractionToken, verifyInteractionToken, gradeInteraction,
   contributesToValue, PROOF_STATES, VALUE_ELIGIBLE, TOKEN_TTL_MS, PRIVACY_CONTRACT,
@@ -29,6 +29,22 @@ const issue = (o = {}) => issueInteractionToken({
 const verify = (token, o = {}) => verifyInteractionToken({
   secret: SECRET, token, tenant: TENANT, merchantId: MERCHANT, actionKind: ACTION, now, ...o,
 });
+
+const identifierKeyPattern =
+  /^(ip|ua|user_?agent|email|phone|uid|user_?id|account_?id|session_?id|device_?id|fingerprint)$/i;
+const phoneValuePattern = /\+?\d[\d\s().-]{8,}/;
+
+function assertPrivacySafePayload(payload) {
+  const identifierKeys = Object.keys(payload).filter((key) => identifierKeyPattern.test(key));
+  assert.deepEqual(identifierKeys, [], `token payload carries identifier keys: ${identifierKeys.join(',')}`);
+  for (const [key, value] of Object.entries(payload)) {
+    if (typeof value !== 'string') continue;
+    assert.ok(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(value), `${key} looks like an IP: ${value}`);
+    assert.ok(!/@/.test(value), `${key} looks like an email: ${value}`);
+    assert.ok(!phoneValuePattern.test(value), `${key} looks like a phone number: ${value}`);
+    assert.ok(!/Mozilla|Chrome|Safari|AppleWebKit/i.test(value), `${key} looks like a user agent: ${value}`);
+  }
+}
 
 // ------------------------------------------------------------- grade ordering
 test('the proof states are ordered weakest to strongest', () => {
@@ -184,6 +200,98 @@ test('each issued token carries a distinct nonce', () => {
   assert.equal(seen.size, 50, 'nonces must not repeat, or replay detection is meaningless');
 });
 
+test('the captured random bytes retain 96 bits without phone-like nonce text', (t) => {
+  const captured = Buffer.from('4bcc9706226655410b89a675', 'hex');
+  t.mock.method(crypto, 'randomBytes', (size) => {
+    assert.equal(size, 12);
+    return Buffer.from(captured);
+  });
+  const { payload } = issue();
+  assert.equal(payload.n, 'elmmjhagccggffebalijkghf');
+  assert.match(payload.n, /^[a-p]{24}$/);
+  assert.equal(payload.n.length * Math.log2(16), 96);
+  assertPrivacySafePayload(payload);
+});
+
+test('user identifiers cannot influence claims, signing input, receipts, logs, or persistence', (t) => {
+  const captured = Buffer.from('4bcc9706226655410b89a675', 'hex');
+  const logs = [];
+  t.mock.method(crypto, 'randomBytes', () => Buffer.from(captured));
+  for (const method of ['log', 'info', 'warn', 'error']) {
+    t.mock.method(console, method, (...args) => logs.push(args.join(' ')));
+  }
+
+  const baseline = issue();
+  const variants = [
+    { phone: '+1 (202) 555-0100' },
+    { phone: '2025550100' },
+    { email: 'Person+tag@example.com' },
+    { email: 'person+tag@example.com' },
+    { userId: 'account-12345' },
+    { accountId: 'account-12345' },
+  ];
+  for (const identifiers of variants) {
+    assert.deepEqual(issue(identifiers), baseline);
+  }
+
+  const [signingInput] = baseline.token.split('.');
+  const receipt = gradeInteraction({ tokenResult: verify(baseline.token) });
+  const persistedProof = { interactionNonce: baseline.payload.n };
+  for (const identifier of [
+    '+1 (202) 555-0100',
+    '2025550100',
+    'Person+tag@example.com',
+    'person+tag@example.com',
+    'account-12345',
+  ]) {
+    for (const material of [
+      JSON.stringify(baseline.payload),
+      signingInput,
+      baseline.token,
+      JSON.stringify(receipt),
+      JSON.stringify(logs),
+      JSON.stringify(persistedProof),
+    ]) {
+      assert.ok(!material.includes(identifier), `identifier leaked into evidence material: ${identifier}`);
+    }
+  }
+  assert.deepEqual(logs, []);
+});
+
+test('the privacy court still rejects deliberately inserted phone and email values', () => {
+  const { payload } = issue();
+  assert.throws(
+    () => assertPrivacySafePayload({ ...payload, phone: '+1 (202) 555-0100' }),
+    /identifier keys|phone number/,
+  );
+  assert.throws(
+    () => assertPrivacySafePayload({ ...payload, email: 'person@example.com' }),
+    /identifier keys|email/,
+  );
+  assert.throws(
+    () => assertPrivacySafePayload({ ...payload, n: '+1 (202) 555-0100' }),
+    /phone number/,
+  );
+});
+
+test('legacy hexadecimal nonces remain verifiable', () => {
+  const payload = {
+    v: 1,
+    t: TENANT,
+    m: MERCHANT,
+    a: ACTION,
+    s: null,
+    n: '4bcc9706226655410b89a675',
+    iat: now.getTime(),
+    exp: now.getTime() + TOKEN_TTL_MS,
+  };
+  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = createHmac('sha256', SECRET).update(body).digest('base64url');
+  const result = verify(`${body}.${signature}`);
+  assert.equal(result.valid, true);
+  assert.equal(result.payload.n, payload.n);
+});
+
 // ------------------------------------------------- direct API / bot behaviour
 test('a DIRECT API call with no rendered interaction cannot be value-eligible', () => {
   // This is the exact gap the verifier found: an unauthenticated POST looked
@@ -208,17 +316,7 @@ test('the token binds NO user identifier', () => {
   // version matched "PHONE" inside the action kind PHONE_CLICK and failed on a
   // token that leaked nothing. A privacy test that fires on a legitimate enum would
   // be noise, and noise is how a real privacy guard ends up disabled.
-  const identifierKeys = Object.keys(payload).filter((k) =>
-    /^(ip|ua|user_?agent|email|phone|uid|user_?id|session_?id|device_?id|fingerprint)$/i.test(k));
-  assert.deepEqual(identifierKeys, [], `token payload carries identifier keys: ${identifierKeys.join(',')}`);
-  // No value may look like an address, an email, or a raw phone number.
-  for (const [k, v] of Object.entries(payload)) {
-    if (typeof v !== 'string') continue;
-    assert.ok(!/\b\d{1,3}(\.\d{1,3}){3}\b/.test(v), `${k} looks like an IP: ${v}`);
-    assert.ok(!/@/.test(v), `${k} looks like an email: ${v}`);
-    assert.ok(!/\+?\d[\d\s().-]{8,}/.test(v), `${k} looks like a phone number: ${v}`);
-    assert.ok(!/Mozilla|Chrome|Safari|AppleWebKit/i.test(v), `${k} looks like a user agent: ${v}`);
-  }
+  assertPrivacySafePayload(payload);
   // Only the expected fields exist at all.
   assert.deepEqual(Object.keys(payload).sort(), ['a', 'exp', 'iat', 'm', 'n', 's', 't', 'v']);
   assert.equal(PRIVACY_CONTRACT.ip_address_stored, false);
