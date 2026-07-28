@@ -7,11 +7,151 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const HISTORICAL_BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
+const HISTORY_REQUIRED_JOBS = [
+  'candidate-unit',
+  'maria-verifier',
+  'cpanel-verifier',
+  'durability-proof',
+  'github-import-offline',
+];
+
+function transformJob(workflow, job, transform) {
+  const marker = `  ${job}:\n`;
+  const start = workflow.indexOf(marker);
+  assert.notEqual(start, -1, `missing workflow job ${job}`);
+  const bodyStart = start + marker.length;
+  const nextJob = workflow.slice(bodyStart).match(/\n  [a-z0-9-]+:\n/);
+  const end = nextJob ? bodyStart + nextJob.index : workflow.length;
+  return `${workflow.slice(0, start)}${transform(workflow.slice(start, end))}${workflow.slice(end)}`;
+}
 
 test('the canonical import preparer is an offline callable surface', async () => {
   const module = await import('./prepare.mjs');
   assert.equal(typeof module.prepareGithubImport, 'function');
+  assert.equal(typeof module.validateWorkflowDefinition, 'function');
   assert.equal(module.CANONICAL_REPOSITORY, 'CannabisWorldHoldings/CANA');
+});
+
+test('workflow policy rejects runner context before step execution', async () => {
+  const { validateWorkflowDefinition } = await import('./prepare.mjs');
+  const invalidWorkflow = `name: Invalid
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  durability-proof:
+    runs-on: ubuntu-latest
+    env:
+      CANA_RECEIPT_DIR: \${{ runner.temp }}/receipts
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+`;
+  const validation = validateWorkflowDefinition(invalidWorkflow, {
+    requiredJobs: ['durability-proof'],
+  });
+  assert.equal(validation.overall, 'FAIL');
+  assert.deepEqual(
+    validation.preRunnerContextReferences.map(({ job, line }) => ({ job, line })),
+    [{ job: 'durability-proof', line: 10 }],
+  );
+});
+
+test('canonical workflow is structurally valid, complete, read-only, and SHA-pinned', async () => {
+  const { validateWorkflowDefinition } = await import('./prepare.mjs');
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify.yml'),
+    'utf8',
+  );
+  const requiredJobs = [
+    'candidate-unit',
+    'focused-verifier',
+    'maria-verifier',
+    'cpanel-verifier',
+    'durability-proof',
+    'github-import-offline',
+  ];
+  const validation = validateWorkflowDefinition(workflow, {
+    requiredJobs,
+    historyRequiredJobs: HISTORY_REQUIRED_JOBS,
+  });
+  assert.equal(validation.overall, 'PASS');
+  assert.equal(validation.structurallyValid, true);
+  assert.deepEqual(validation.jobs, requiredJobs);
+  assert.deepEqual(validation.missingRequiredJobs, []);
+  assert.deepEqual(validation.fullHistoryJobs, HISTORY_REQUIRED_JOBS);
+  assert.deepEqual(validation.missingFullHistoryJobs, []);
+  assert.deepEqual(validation.checkoutRefOverrides, []);
+  assert.deepEqual(
+    validation.checkoutSteps
+      .filter(({ job }) => job === 'focused-verifier')
+      .map(({ inputs }) => inputs),
+    [{}],
+  );
+  assert.ok(
+    validation.checkoutSteps.every(
+      ({ actionRef }) => actionRef === 'd23441a48e516b6c34aea4fa41551a30e30af803',
+    ),
+  );
+  assert.deepEqual(validation.preRunnerContextReferences, []);
+  assert.equal(validation.permissionsReadOnly, true);
+  assert.deepEqual(validation.topLevelPermissions, { contents: 'read' });
+  assert.deepEqual(validation.jobPermissionBlocks, []);
+  assert.deepEqual(validation.unpinnedActions, []);
+});
+
+test('workflow policy requires complete history for every historical verification job', async () => {
+  const { validateWorkflowDefinition } = await import('./prepare.mjs');
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify.yml'),
+    'utf8',
+  );
+  for (const job of HISTORY_REQUIRED_JOBS) {
+    const withoutFullHistory = transformJob(workflow, job, (block) => {
+      const changed = block.replace(/\n        with:\n          fetch-depth: 0/, '');
+      assert.notEqual(changed, block, `missing fetch-depth fixture for ${job}`);
+      return changed;
+    });
+    const validation = validateWorkflowDefinition(withoutFullHistory, {
+      historyRequiredJobs: HISTORY_REQUIRED_JOBS,
+    });
+    assert.equal(validation.overall, 'FAIL', job);
+    assert.deepEqual(validation.missingFullHistoryJobs, [job]);
+  }
+});
+
+test('workflow policy preserves the synthetic pull-request merge checkout', async () => {
+  const { validateWorkflowDefinition } = await import('./prepare.mjs');
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify.yml'),
+    'utf8',
+  );
+  const withHeadOverride = transformJob(workflow, 'candidate-unit', (block) =>
+    block.replace(
+      '          fetch-depth: 0\n',
+      '          fetch-depth: 0\n          ref: ${{ github.event.pull_request.head.sha }}\n',
+    ),
+  );
+  const validation = validateWorkflowDefinition(withHeadOverride, {
+    historyRequiredJobs: HISTORY_REQUIRED_JOBS,
+  });
+  assert.equal(validation.overall, 'FAIL');
+  assert.deepEqual(validation.checkoutRefOverrides, [
+    {
+      job: 'candidate-unit',
+      line: 22,
+      ref: '${{ github.event.pull_request.head.sha }}',
+    },
+  ]);
+});
+
+test('the historical verification base resolves in the complete checkout', () => {
+  const result = spawnSync('git', ['cat-file', '-e', `${HISTORICAL_BASE}^{commit}`], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, result.stderr);
 });
 
 test('protected main requires every candidate verification lane', () => {
