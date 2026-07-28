@@ -9,7 +9,10 @@ import { fileURLToPath } from 'node:url';
 import {
   matchOwned,
   ownershipPatterns,
+  PR2_AUTHORIZED_PATHS,
+  pr2OwnershipAssignment,
   STAGE_A_AUTHORIZED_PATHS,
+  unownedPaths,
   validateOwnershipManifest,
 } from './cli.mjs';
 
@@ -149,6 +152,154 @@ test('removing one required exact entry recreates the durability ownership failu
   assert.throws(
     () => validateOwnershipManifest(manifest),
     /must have exactly one exact ownership entry/,
+  );
+});
+
+test('the four owner-approved PR #2 paths have exact narrow ownership metadata', () => {
+  const manifest = ownership();
+  const assignment = pr2OwnershipAssignment(manifest);
+  const patterns = ownershipPatterns(manifest);
+  assert.equal(assignment.entries.length, 4);
+  assert.deepEqual(
+    assignment.entries.map((entry) => entry.path).sort(),
+    [...PR2_AUTHORIZED_PATHS].sort(),
+  );
+  for (const entry of assignment.entries) {
+    assert.ok(patterns.some((pattern) => matchOwned(entry.path, pattern)));
+    assert.equal(entry.commit_provenance.commit, '8be302b300921734019dc5d4b861611fe9c2186d');
+    assert.equal(entry.commit_provenance.tree, '45b43356f17e76f47e62764baa9e9b1ca1d56c1c');
+    assert.equal(entry.commit_provenance.relationship, 'approved-pr2-lineage');
+    assert.equal(entry.authorization_effect, 'durability-path-ownership-only');
+    assert.equal(entry.ownership_authorizes_execution, false);
+    assert.equal(entry.ownership_authorizes_deployment, false);
+    assert.equal(entry.ownership_authorizes_credentials, false);
+    assert.equal(entry.ownership_authorizes_production_change, false);
+  }
+});
+
+test('the existing container verifier remains owned without a new exact assignment', () => {
+  const manifest = ownership();
+  const patterns = ownershipPatterns(manifest);
+  const containerVerifier = 'tools/test-runner/container-verify.sh';
+  assert.ok(patterns.some((pattern) => matchOwned(containerVerifier, pattern)));
+  assert.equal(
+    pr2OwnershipAssignment(manifest).entries.some(
+      (entry) => entry.path === containerVerifier,
+    ),
+    false,
+  );
+});
+
+test('PR #2 ownership does not admit neighboring application, test or deployment files', () => {
+  const patterns = ownershipPatterns(ownership());
+  for (const neighboringPath of [
+    'apps/web/next.config.neighbor.ts',
+    'apps/web/src/lib/build-database-neighbor.mjs',
+    'apps/web/tests/build-database-neighbor.test.mjs',
+    'deploy/namecheap/deploy-neighbor.mjs',
+  ]) {
+    assert.equal(
+      patterns.some((pattern) => matchOwned(neighboringPath, pattern)),
+      false,
+      neighboringPath,
+    );
+  }
+});
+
+test('PR #2 ownership rejects directory wildcards and recursive authority', () => {
+  for (const broadPattern of ['apps/web/*.ts', 'apps/web/src/lib/**']) {
+    const manifest = ownership();
+    manifest.owned_modify_paths.push(broadPattern);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /owner-approved scope digest/,
+    );
+  }
+});
+
+test('duplicate and conflicting PR #2 lane ownership are rejected', () => {
+  const manifest = ownership();
+  const conflicting = structuredClone(
+    manifest.explicit_user_assignment.pr2_exact_ownership_2026_07_28.entries[0],
+  );
+  conflicting.canonical_owner = 'deterministic-build-database';
+  manifest.explicit_user_assignment.pr2_exact_ownership_2026_07_28.entries.push(
+    conflicting,
+  );
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /duplicate PR #2 ownership entry/,
+  );
+});
+
+test('malformed PR #2 ownership entries are rejected', () => {
+  const manifest = ownership();
+  delete manifest.explicit_user_assignment.pr2_exact_ownership_2026_07_28.entries[0]
+    .material_class;
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /malformed PR #2 ownership entry/,
+  );
+});
+
+test('a PR #2 path cannot silently change canonical owner', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.pr2_exact_ownership_2026_07_28.entries[0]
+    .canonical_owner = 'deterministic-build-database';
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /failed its owner-approval digest/,
+  );
+});
+
+test('removing any exact PR #2 entry recreates the durability ownership failure', () => {
+  for (const requiredPath of PR2_AUTHORIZED_PATHS) {
+    const manifest = ownership();
+    manifest.owned_modify_paths = manifest.owned_modify_paths.filter(
+      (entry) => entry !== requiredPath,
+    );
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /must have exactly one exact ownership entry/,
+    );
+  }
+});
+
+test('PR #2 ownership cannot acquire execution, deployment, credential or production authority', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.pr2_exact_ownership_2026_07_28.entries[0]
+    .ownership_authorizes_execution = true;
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /malformed PR #2 ownership entry/,
+  );
+  const assignment = pr2OwnershipAssignment(ownership());
+  assert.match(
+    assignment.authorization_effect,
+    /no runtime execution, provider, credential, deployment, production/,
+  );
+});
+
+test('PR #2 assignment tampering fails the owner-approval digest', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.pr2_exact_ownership_2026_07_28.scope =
+    'Neighboring files are authorized.';
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /failed its owner-approval digest/,
+  );
+});
+
+test('the exact five-file PR #2 change set is durability-owned after reconciliation', () => {
+  assert.deepEqual(
+    unownedPaths(
+      [
+        ...PR2_AUTHORIZED_PATHS,
+        'tools/test-runner/container-verify.sh',
+      ],
+      ownership(),
+    ),
+    [],
   );
 });
 

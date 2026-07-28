@@ -20,8 +20,11 @@ const OWNER_KEY_ID_FILE = '/etc/cana/durability-owner-key-id';
 const STAGE_A_ASSIGNMENT = 'stage_a_foundation_2026_07_28';
 const STAGE_A_ASSIGNMENT_SHA256 =
   'c4535e12ddecb93df7e1c1ededa14f7be354b4b06f16670c6cac0518961ca618';
+const PR2_ASSIGNMENT = 'pr2_exact_ownership_2026_07_28';
+const PR2_ASSIGNMENT_SHA256 =
+  '8f5f291e6c68206962ee1be729efc68d36a60c11a110eb0a05850cf91317fbb9';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '4cddcb8f9ca7710d7126941711d72b3b98b82d7958402f017e884dc6432e41ab';
+  '62ca925e6c9cec678a5e2311060e4047b609fd22f684b448539408017e2b8de2';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -29,6 +32,12 @@ export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/tests/interaction-proof.test.mjs',
   'apps/web/tests/structured-data-truth.test.mjs',
   'docs/verification/STAGE_A_DETERMINISM_LEDGER.md',
+]);
+export const PR2_AUTHORIZED_PATHS = Object.freeze([
+  'apps/web/next.config.ts',
+  'apps/web/src/lib/build-database.mjs',
+  'apps/web/tests/build-database-gate.test.mjs',
+  'deploy/namecheap/build-artifact.mjs',
 ]);
 
 function command(commandName, args, {
@@ -242,6 +251,124 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+  const actualDigest = sha256Bytes(canonicalJson(approvalPayload));
+  if (
+    recordedDigest !== STAGE_A_ASSIGNMENT_SHA256 ||
+    actualDigest !== STAGE_A_ASSIGNMENT_SHA256
+  ) {
+    refusal('Stage A ownership assignment failed its owner-approval digest');
+  }
+
+  const pr2Assignment = ownership.explicit_user_assignment[PR2_ASSIGNMENT];
+  if (
+    !exactKeys(pr2Assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'approval_sha256',
+      'entries',
+    ]) ||
+    !Array.isArray(pr2Assignment.entries)
+  ) {
+    refusal('PR #2 ownership assignment is malformed');
+  }
+
+  const pr2EntryKeys = [
+    'path',
+    'canonical_owner',
+    'reason',
+    'approving_lineage',
+    'commit_provenance',
+    'originating_commits',
+    'permitted_change_class',
+    'material_kind',
+    'material_class',
+    'authorization_effect',
+    'ownership_authorizes_execution',
+    'ownership_authorizes_deployment',
+    'ownership_authorizes_credentials',
+    'ownership_authorizes_production_change',
+  ];
+  const pr2AuthorizedOwners = new Set([
+    'deterministic-web-build',
+    'deterministic-build-database',
+    'build-database-verification',
+    'namecheap-artifact-construction',
+  ]);
+  const pr2PermittedChangeClasses = new Set([
+    'deterministic-web-build-configuration',
+    'deterministic-build-database-handling',
+    'build-database-negative-verification',
+    'deterministic-artifact-construction',
+  ]);
+  const pr2MaterialClasses = new Set([
+    'runtime-build-configuration',
+    'web-build-tooling',
+    'test-verification-material',
+    'deployment-artifact-builder',
+  ]);
+
+  for (const entry of pr2Assignment.entries) {
+    if (
+      !exactKeys(entry, pr2EntryKeys) ||
+      !exactKeys(entry.commit_provenance, provenanceKeys) ||
+      typeof entry.path !== 'string' ||
+      entry.path.length === 0 ||
+      entry.path.startsWith('/') ||
+      entry.path.includes('\\') ||
+      entry.path.includes('*') ||
+      entry.path.includes('..') ||
+      path.posix.normalize(entry.path) !== entry.path ||
+      !pr2AuthorizedOwners.has(entry.canonical_owner) ||
+      typeof entry.reason !== 'string' ||
+      entry.reason.length === 0 ||
+      typeof entry.approving_lineage !== 'string' ||
+      entry.approving_lineage.length === 0 ||
+      !/^[0-9a-f]{40}$/.test(entry.commit_provenance.commit) ||
+      !/^[0-9a-f]{40}$/.test(entry.commit_provenance.tree) ||
+      typeof entry.commit_provenance.relationship !== 'string' ||
+      entry.commit_provenance.relationship.length === 0 ||
+      !Array.isArray(entry.originating_commits) ||
+      entry.originating_commits.length === 0 ||
+      entry.originating_commits.some((commit) => !/^[0-9a-f]{40}$/.test(commit)) ||
+      !pr2PermittedChangeClasses.has(entry.permitted_change_class) ||
+      !materialKinds.has(entry.material_kind) ||
+      !pr2MaterialClasses.has(entry.material_class) ||
+      entry.authorization_effect !== 'durability-path-ownership-only' ||
+      entry.ownership_authorizes_execution !== false ||
+      entry.ownership_authorizes_deployment !== false ||
+      entry.ownership_authorizes_credentials !== false ||
+      entry.ownership_authorizes_production_change !== false
+    ) {
+      refusal(`malformed PR #2 ownership entry: ${entry?.path ?? '<missing path>'}`);
+    }
+  }
+
+  const pr2EntryPaths = pr2Assignment.entries.map((entry) => entry.path);
+  if (new Set(pr2EntryPaths).size !== pr2EntryPaths.length) {
+    refusal('duplicate PR #2 ownership entry');
+  }
+  if (
+    JSON.stringify([...pr2EntryPaths].sort()) !==
+    JSON.stringify([...PR2_AUTHORIZED_PATHS].sort())
+  ) {
+    refusal('PR #2 ownership paths do not match the exact owner-authorized set');
+  }
+
+  for (const authorizedPath of PR2_AUTHORIZED_PATHS) {
+    const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
+    if (exactOccurrences !== 1) {
+      refusal(`PR #2 path must have exactly one exact ownership entry: ${authorizedPath}`);
+    }
+    const plannedOccurrences = ownership.planned_candidate_files.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (plannedOccurrences !== 1) {
+      refusal(`PR #2 path must have exactly one planned-candidate entry: ${authorizedPath}`);
+    }
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -251,15 +378,20 @@ export function validateOwnershipManifest(ownership) {
     refusal('changed-file ownership patterns failed the owner-approved scope digest');
   }
 
-  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
-  const actualDigest = sha256Bytes(canonicalJson(approvalPayload));
+  const { approval_sha256: pr2RecordedDigest, ...pr2ApprovalPayload } = pr2Assignment;
+  const pr2ActualDigest = sha256Bytes(canonicalJson(pr2ApprovalPayload));
   if (
-    recordedDigest !== STAGE_A_ASSIGNMENT_SHA256 ||
-    actualDigest !== STAGE_A_ASSIGNMENT_SHA256
+    pr2RecordedDigest !== PR2_ASSIGNMENT_SHA256 ||
+    pr2ActualDigest !== PR2_ASSIGNMENT_SHA256
   ) {
-    refusal('Stage A ownership assignment failed its owner-approval digest');
+    refusal('PR #2 ownership assignment failed its owner-approval digest');
   }
   return assignment;
+}
+
+export function pr2OwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[PR2_ASSIGNMENT];
 }
 
 export function ownershipPatterns(ownership) {

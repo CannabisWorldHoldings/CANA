@@ -124,6 +124,105 @@
           "authorization_effect": "durability-path-ownership-only"
         }
       ]
+    },
+    "pr2_exact_ownership_2026_07_28": {
+      "authorization": "AUTHORIZE CANA PR #2 — EXACT OWNERSHIP RECONCILIATION AND COMPLETION",
+      "scope": "Four owner-approved exact PR #2 paths only; no wildcard, recursive, neighboring-path, execution, deployment, credential, production, provider, schema, verification-bypass or self-promotion authority.",
+      "authorization_effect": "Durability changed-file ownership only; no runtime execution, provider, credential, deployment, production, schema, external-effect, verification-bypass or self-promotion authority.",
+      "approval_sha256": "8f5f291e6c68206962ee1be729efc68d36a60c11a110eb0a05850cf91317fbb9",
+      "entries": [
+        {
+          "path": "apps/web/next.config.ts",
+          "canonical_owner": "deterministic-web-build",
+          "reason": "Authorize deterministic web build configuration and build-time database exclusion gates for the preserved PR #2 implementation only.",
+          "approving_lineage": "owner-authorized-pr2-exact-ownership-reconciliation",
+          "commit_provenance": {
+            "commit": "8be302b300921734019dc5d4b861611fe9c2186d",
+            "tree": "45b43356f17e76f47e62764baa9e9b1ca1d56c1c",
+            "relationship": "approved-pr2-lineage"
+          },
+          "originating_commits": [
+            "c4b5229971f6b73880bf8f2fbc6e270c907ce4e9",
+            "c832b43b8041b828d9cbae0e9a70f694abfd15e2"
+          ],
+          "permitted_change_class": "deterministic-web-build-configuration",
+          "material_kind": "runtime",
+          "material_class": "runtime-build-configuration",
+          "authorization_effect": "durability-path-ownership-only",
+          "ownership_authorizes_execution": false,
+          "ownership_authorizes_deployment": false,
+          "ownership_authorizes_credentials": false,
+          "ownership_authorizes_production_change": false
+        },
+        {
+          "path": "apps/web/src/lib/build-database.mjs",
+          "canonical_owner": "deterministic-build-database",
+          "reason": "Authorize deterministic build-database preparation, validation and fail-closed handling for the preserved PR #2 implementation only.",
+          "approving_lineage": "owner-authorized-pr2-exact-ownership-reconciliation",
+          "commit_provenance": {
+            "commit": "8be302b300921734019dc5d4b861611fe9c2186d",
+            "tree": "45b43356f17e76f47e62764baa9e9b1ca1d56c1c",
+            "relationship": "approved-pr2-lineage"
+          },
+          "originating_commits": [
+            "c832b43b8041b828d9cbae0e9a70f694abfd15e2"
+          ],
+          "permitted_change_class": "deterministic-build-database-handling",
+          "material_kind": "runtime",
+          "material_class": "web-build-tooling",
+          "authorization_effect": "durability-path-ownership-only",
+          "ownership_authorizes_execution": false,
+          "ownership_authorizes_deployment": false,
+          "ownership_authorizes_credentials": false,
+          "ownership_authorizes_production_change": false
+        },
+        {
+          "path": "apps/web/tests/build-database-gate.test.mjs",
+          "canonical_owner": "build-database-verification",
+          "reason": "Authorize negative courts for database exclusion, deterministic preparation and fail-closed build handling for the preserved PR #2 implementation only.",
+          "approving_lineage": "owner-authorized-pr2-exact-ownership-reconciliation",
+          "commit_provenance": {
+            "commit": "8be302b300921734019dc5d4b861611fe9c2186d",
+            "tree": "45b43356f17e76f47e62764baa9e9b1ca1d56c1c",
+            "relationship": "approved-pr2-lineage"
+          },
+          "originating_commits": [
+            "c4b5229971f6b73880bf8f2fbc6e270c907ce4e9",
+            "c832b43b8041b828d9cbae0e9a70f694abfd15e2"
+          ],
+          "permitted_change_class": "build-database-negative-verification",
+          "material_kind": "test",
+          "material_class": "test-verification-material",
+          "authorization_effect": "durability-path-ownership-only",
+          "ownership_authorizes_execution": false,
+          "ownership_authorizes_deployment": false,
+          "ownership_authorizes_credentials": false,
+          "ownership_authorizes_production_change": false
+        },
+        {
+          "path": "deploy/namecheap/build-artifact.mjs",
+          "canonical_owner": "namecheap-artifact-construction",
+          "reason": "Authorize deterministic construction and validation of a Namecheap-compatible build artifact without embedding forbidden databases or secrets; this is not deployment authorization.",
+          "approving_lineage": "owner-authorized-pr2-exact-ownership-reconciliation",
+          "commit_provenance": {
+            "commit": "8be302b300921734019dc5d4b861611fe9c2186d",
+            "tree": "45b43356f17e76f47e62764baa9e9b1ca1d56c1c",
+            "relationship": "approved-pr2-lineage"
+          },
+          "originating_commits": [
+            "c832b43b8041b828d9cbae0e9a70f694abfd15e2",
+            "8be302b300921734019dc5d4b861611fe9c2186d"
+          ],
+          "permitted_change_class": "deterministic-artifact-construction",
+          "material_kind": "runtime",
+          "material_class": "deployment-artifact-builder",
+          "authorization_effect": "durability-path-ownership-only",
+          "ownership_authorizes_execution": false,
+          "ownership_authorizes_deployment": false,
+          "ownership_authorizes_credentials": false,
+          "ownership_authorizes_production_change": false
+        }
+      ]
     }
   },
   "owned_create_paths": [
@@ -161,6 +260,10 @@
     "apps/web/src/lib/structured-data.mjs",
     "apps/web/tests/interaction-proof.test.mjs",
     "apps/web/tests/structured-data-truth.test.mjs",
+    "apps/web/next.config.ts",
+    "apps/web/src/lib/build-database.mjs",
+    "apps/web/tests/build-database-gate.test.mjs",
+    "deploy/namecheap/build-artifact.mjs",
     "deploy/namecheap/smoke-test.sh",
     "deploy/namecheap/healthcheck.sh",
     "deploy/namecheap/readycheck.sh"
@@ -196,6 +299,10 @@
     "apps/web/src/lib/structured-data.mjs",
     "apps/web/tests/interaction-proof.test.mjs",
     "apps/web/tests/structured-data-truth.test.mjs",
+    "apps/web/next.config.ts",
+    "apps/web/src/lib/build-database.mjs",
+    "apps/web/tests/build-database-gate.test.mjs",
+    "deploy/namecheap/build-artifact.mjs",
     "docs/verification/STAGE_A_DETERMINISM_LEDGER.md",
     ".github/workflows/cana-verify.yml",
     "docs/DETERMINISTIC_TESTING.md",
