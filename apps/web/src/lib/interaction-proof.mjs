@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
+import crypto, { createHmac, timingSafeEqual, createHash } from 'node:crypto';
 
 /**
  * CONSUMER INTERACTION PROOF — graded evidence, honestly labelled.
@@ -38,6 +38,17 @@ import { createHmac, randomBytes, timingSafeEqual, createHash } from 'node:crypt
 
 const text = (v) => typeof v === 'string' && v.trim() !== '';
 const sha = (s) => createHash('sha256').update(s).digest('hex');
+const NONCE_BYTES = 12;
+const NONCE_ALPHABET = 'abcdefghijklmnop';
+
+function encodeNonce(bytes) {
+  let encoded = '';
+  for (const byte of bytes) {
+    encoded += NONCE_ALPHABET[byte >> 4];
+    encoded += NONCE_ALPHABET[byte & 0x0f];
+  }
+  return encoded;
+}
 
 /** Evidence grades, weakest first. Order is meaningful and is asserted in tests. */
 export const PROOF_STATES = Object.freeze([
@@ -77,7 +88,7 @@ export function issueInteractionToken({ secret, tenant, merchantId, actionKind, 
     // A privacy-safe surface identity: which page, not which person.
     s: text(surface) ? sha(surface.trim()).slice(0, 16) : null,
     // Nonce makes each issued token single-use-checkable without storing the token.
-    n: randomBytes(12).toString('hex'),
+    n: encodeNonce(crypto.randomBytes(NONCE_BYTES)),
     iat: now.getTime(),
     exp: now.getTime() + TOKEN_TTL_MS,
   };
