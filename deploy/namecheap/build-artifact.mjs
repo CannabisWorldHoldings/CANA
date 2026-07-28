@@ -154,14 +154,14 @@ if (process.env.CLEAN_INSTALL === '1') {
 // Phase 2 — assets, prisma client, webpack standalone build
 // ---------------------------------------------------------------------------
 run('node scripts/restore-brand-assets.mjs', { cwd: webRoot });
-run('npx prisma generate', {
-  cwd: webRoot,
-  env: releaseChildEnvironment(),
-});
 const buildDatabaseRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-build-db-'));
 const buildDatabasePath = path.join(buildDatabaseRoot, 'build.db');
 const buildDatabaseUrl = `file:${buildDatabasePath}`;
 try {
+  run('npx prisma generate', {
+    cwd: webRoot,
+    env: releaseChildEnvironment({ DATABASE_URL: buildDatabaseUrl }),
+  });
   fs.writeFileSync(buildDatabasePath, '', { flag: 'wx' });
   run('npx prisma migrate deploy --schema prisma/schema.prisma', {
     cwd: webRoot,
