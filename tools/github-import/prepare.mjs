@@ -112,6 +112,96 @@ function workflowJobs(workflow) {
   return jobs;
 }
 
+export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {}) {
+  const lines = workflow.split('\n');
+  const jobs = workflowJobs(workflow);
+  const missingRequiredJobs = requiredJobs.filter((job) => !jobs.includes(job));
+  const preRunnerContextReferences = [];
+  const unpinnedActions = [];
+  const jobPermissionBlocks = [];
+  const topLevelPermissions = {};
+  let currentJob = null;
+  let inJobs = false;
+  let inSteps = false;
+  let inTopLevelPermissions = false;
+
+  for (const [index, line] of lines.entries()) {
+    const lineNumber = index + 1;
+    if (line === 'jobs:') {
+      inJobs = true;
+      currentJob = null;
+      inSteps = false;
+      continue;
+    }
+    if (line === 'permissions:') {
+      inTopLevelPermissions = true;
+      continue;
+    }
+    if (inTopLevelPermissions) {
+      const permission = line.match(/^  ([a-z-]+):\s*(\S+)\s*$/);
+      if (permission) {
+        topLevelPermissions[permission[1]] = permission[2];
+        continue;
+      }
+      if (line.trim()) inTopLevelPermissions = false;
+    }
+
+    const job = inJobs ? line.match(/^  ([a-z0-9-]+):$/) : null;
+    if (job) {
+      currentJob = job[1];
+      inSteps = false;
+      continue;
+    }
+    if (currentJob && line === '    steps:') {
+      inSteps = true;
+      continue;
+    }
+    if (currentJob && /^    permissions:\s*$/.test(line)) {
+      jobPermissionBlocks.push({ job: currentJob, line: lineNumber });
+    }
+    if (line.includes('${{ runner.') && (!currentJob || !inSteps || line.search(/\S/) < 8)) {
+      preRunnerContextReferences.push({ job: currentJob, line: lineNumber, value: line.trim() });
+    }
+
+    const action = line.match(/^\s*-\s+uses:\s+([^@\s]+)@([^\s#]+)\s*$/);
+    if (action && !/^[0-9a-f]{40}$/.test(action[2])) {
+      unpinnedActions.push({ action: action[1], ref: action[2], line: lineNumber });
+    }
+  }
+
+  const permissionEntries = Object.entries(topLevelPermissions);
+  const permissionsReadOnly =
+    permissionEntries.length === 1 &&
+    topLevelPermissions.contents === 'read' &&
+    jobPermissionBlocks.length === 0;
+  const structurallyValid =
+    !workflow.includes('\t') &&
+    /^name:\s+\S/m.test(workflow) &&
+    /^on:\s*$/m.test(workflow) &&
+    /^jobs:\s*$/m.test(workflow) &&
+    jobs.length > 0;
+  const overall =
+    structurallyValid &&
+    missingRequiredJobs.length === 0 &&
+    preRunnerContextReferences.length === 0 &&
+    permissionsReadOnly &&
+    unpinnedActions.length === 0
+      ? 'PASS'
+      : 'FAIL';
+
+  return {
+    overall,
+    structurallyValid,
+    jobs,
+    missingRequiredJobs,
+    preRunnerContextReferences,
+    permissionsReadOnly,
+    topLevelPermissions,
+    jobPermissionBlocks,
+    unpinnedActions,
+  };
+}
+
 function localStateDirectory(commit) {
   const root =
     process.env.CANA_GITHUB_IMPORT_STATE_DIR ??
@@ -197,10 +287,11 @@ export async function prepareGithubImport({ args = [] } = {}) {
   const workflowFile = path.join(ROOT, '.github', 'workflows', 'cana-verify.yml');
   const policy = JSON.parse(fs.readFileSync(policyFile, 'utf8'));
   const workflow = fs.readFileSync(workflowFile, 'utf8');
-  const jobs = workflowJobs(workflow);
-  const missingContexts = policy.required_status_checks.contexts.filter(
-    (context) => !jobs.includes(context),
-  );
+  const workflowValidation = validateWorkflowDefinition(workflow, {
+    requiredJobs: policy.required_status_checks.contexts,
+  });
+  const jobs = workflowValidation.jobs;
+  const missingContexts = workflowValidation.missingRequiredJobs;
   const runtimeComparison = compareRuntime(source.commit, runtimeEvidence(parsed));
   const branchClassification = branches();
   const canonicalRemoteUrl = 'git@github.com:CannabisWorldHoldings/CANA.git';
@@ -221,7 +312,7 @@ export async function prepareGithubImport({ args = [] } = {}) {
     .filter(Boolean);
   const overall =
     findings.length === 0 &&
-    missingContexts.length === 0 &&
+    workflowValidation.overall === 'PASS' &&
     policy.enforce_admins === true &&
     policy.required_status_checks.strict === true &&
     runtimeComparison.status !== 'FAIL'
@@ -266,6 +357,7 @@ export async function prepareGithubImport({ args = [] } = {}) {
       jobs,
       tokenPermissions: 'contents: read',
       networkMutationSteps: false,
+      validation: workflowValidation,
     },
     commands: Object.fromEntries(
       Object.entries(commands).map(([name, value]) => [
