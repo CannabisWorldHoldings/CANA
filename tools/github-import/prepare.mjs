@@ -9,6 +9,13 @@ export const CANONICAL_REPOSITORY = 'CannabisWorldHoldings/CANA';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const AUTHORITATIVE = 'recover/competitive-ui-day-night';
+const HISTORY_REQUIRED_JOBS = [
+  'candidate-unit',
+  'maria-verifier',
+  'cpanel-verifier',
+  'durability-proof',
+  'github-import-offline',
+];
 
 function command(commandName, args, {
   cwd = ROOT,
@@ -112,15 +119,20 @@ function workflowJobs(workflow) {
   return jobs;
 }
 
-export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {}) {
+export function validateWorkflowDefinition(
+  workflow,
+  { requiredJobs = [], historyRequiredJobs = [] } = {},
+) {
   const lines = workflow.split('\n');
   const jobs = workflowJobs(workflow);
   const missingRequiredJobs = requiredJobs.filter((job) => !jobs.includes(job));
   const preRunnerContextReferences = [];
   const unpinnedActions = [];
+  const checkoutSteps = [];
   const jobPermissionBlocks = [];
   const topLevelPermissions = {};
   let currentJob = null;
+  let currentCheckout = null;
   let inJobs = false;
   let inSteps = false;
   let inTopLevelPermissions = false;
@@ -130,6 +142,7 @@ export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {})
     if (line === 'jobs:') {
       inJobs = true;
       currentJob = null;
+      currentCheckout = null;
       inSteps = false;
       continue;
     }
@@ -149,6 +162,7 @@ export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {})
     const job = inJobs ? line.match(/^  ([a-z0-9-]+):$/) : null;
     if (job) {
       currentJob = job[1];
+      currentCheckout = null;
       inSteps = false;
       continue;
     }
@@ -163,12 +177,35 @@ export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {})
       preRunnerContextReferences.push({ job: currentJob, line: lineNumber, value: line.trim() });
     }
 
+    if (/^      -\s+/.test(line)) currentCheckout = null;
     const action = line.match(/^\s*-\s+uses:\s+([^@\s]+)@([^\s#]+)\s*$/);
     if (action && !/^[0-9a-f]{40}$/.test(action[2])) {
       unpinnedActions.push({ action: action[1], ref: action[2], line: lineNumber });
     }
+    if (action?.[1] === 'actions/checkout') {
+      currentCheckout = {
+        job: currentJob,
+        line: lineNumber,
+        actionRef: action[2],
+        inputs: {},
+      };
+      checkoutSteps.push(currentCheckout);
+    }
+    const checkoutInput = line.match(/^          ([a-z0-9-]+):\s*(.*?)\s*$/);
+    if (currentCheckout && checkoutInput) {
+      currentCheckout.inputs[checkoutInput[1]] = checkoutInput[2];
+    }
   }
 
+  const fullHistoryJobs = checkoutSteps
+    .filter((checkout) => checkout.inputs['fetch-depth'] === '0')
+    .map((checkout) => checkout.job);
+  const missingFullHistoryJobs = historyRequiredJobs.filter(
+    (job) => !fullHistoryJobs.includes(job),
+  );
+  const checkoutRefOverrides = checkoutSteps
+    .filter((checkout) => Object.hasOwn(checkout.inputs, 'ref'))
+    .map(({ job, line, inputs }) => ({ job, line, ref: inputs.ref }));
   const permissionEntries = Object.entries(topLevelPermissions);
   const permissionsReadOnly =
     permissionEntries.length === 1 &&
@@ -183,6 +220,8 @@ export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {})
   const overall =
     structurallyValid &&
     missingRequiredJobs.length === 0 &&
+    missingFullHistoryJobs.length === 0 &&
+    checkoutRefOverrides.length === 0 &&
     preRunnerContextReferences.length === 0 &&
     permissionsReadOnly &&
     unpinnedActions.length === 0
@@ -194,6 +233,10 @@ export function validateWorkflowDefinition(workflow, { requiredJobs = [] } = {})
     structurallyValid,
     jobs,
     missingRequiredJobs,
+    checkoutSteps,
+    fullHistoryJobs,
+    missingFullHistoryJobs,
+    checkoutRefOverrides,
     preRunnerContextReferences,
     permissionsReadOnly,
     topLevelPermissions,
@@ -289,6 +332,7 @@ export async function prepareGithubImport({ args = [] } = {}) {
   const workflow = fs.readFileSync(workflowFile, 'utf8');
   const workflowValidation = validateWorkflowDefinition(workflow, {
     requiredJobs: policy.required_status_checks.contexts,
+    historyRequiredJobs: HISTORY_REQUIRED_JOBS,
   });
   const jobs = workflowValidation.jobs;
   const missingContexts = workflowValidation.missingRequiredJobs;
