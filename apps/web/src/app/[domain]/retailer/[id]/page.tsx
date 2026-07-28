@@ -281,11 +281,11 @@ export default async function RetailerDetailPage({
   // Truth boundary: structured data is only emitted for records that passed
   // public verification, so machines never ingest synthetic business facts.
   const origin = await requestOrigin();
-  const storeLd = retailerJsonLd({ retailer, origin: origin.origin });
+  const storeLd = retailerJsonLd({ retailer, origin: origin.origin, asOf });
   // The answer block: the questions a person actually asks, answered only where
   // the underlying field is sourced. Unanswerable questions are omitted rather
   // than answered vaguely, and a record with nothing answerable yields null.
-  const answerLd = retailerAnswerJsonLd({ retailer });
+  const answerLd = retailerAnswerJsonLd({ retailer, asOf });
   const breadcrumbLd = breadcrumbJsonLd([
     { name: 'Home', url: `${origin.origin}/` },
     { name: 'Retailers', url: `${origin.origin}/` },

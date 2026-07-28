@@ -101,8 +101,13 @@ export function isLicenceVerified(status) {
   return typeof status === 'string' && status.trim().toUpperCase() === 'VERIFIED';
 }
 
-export function retailerJsonLd({ retailer, origin }) {
-  if (!retailer || !isPubliclyVerified(retailer)) return null;
+function isValidAsOf(asOf) {
+  return asOf instanceof Date && !Number.isNaN(asOf.getTime());
+}
+
+export function retailerJsonLd({ retailer, origin, asOf = new Date() }) {
+  if (!isValidAsOf(asOf)) return null;
+  if (!retailer || !isPubliclyVerified(retailer, asOf)) return null;
   const url = `${origin}/retailer/${retailer.id}`;
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -369,7 +374,7 @@ export function dealOfferJsonLd({ deal, retailer, origin }) {
  * false assertion of completeness.
  */
 export function retailerAnswerJsonLd({ retailer, asOf = new Date() }) {
-  if (!retailer || !isPubliclyVerified(retailer, asOf)) return null;
+  if (!isValidAsOf(asOf) || !retailer || !isPubliclyVerified(retailer, asOf)) return null;
   const text = (v) => typeof v === 'string' && v.trim() !== '';
   const qa = [];
   if (text(retailer.hours) && text(retailer.hoursSource)) {
@@ -420,9 +425,11 @@ export function retailerAnswerJsonLd({ retailer, asOf = new Date() }) {
  */
 export function structuredDataAssertionReport(retailer, asOf = new Date()) {
   const text = (v) => typeof v === 'string' && v.trim() !== '';
-  const asserted = !!retailer && isPubliclyVerified(retailer, asOf);
+  const validAsOf = isValidAsOf(asOf);
+  const asserted = validAsOf && !!retailer && isPubliclyVerified(retailer, asOf);
   const blockers = [];
-  if (!retailer) blockers.push('no record');
+  if (!validAsOf) blockers.push('asOf is invalid — freshness cannot be tested');
+  else if (!retailer) blockers.push('no record');
   else if (!asserted) {
     if (retailer.isDemonstration === true) blockers.push('isDemonstration=true');
     if (text(retailer.dataStatus)) blockers.push(`resolved status is not VERIFIED_CURRENT (dataStatus=${retailer.dataStatus})`);

@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { retailerJsonLd, retailerAnswerJsonLd, structuredDataAssertionReport }
   from '../src/lib/structured-data.mjs';
-import { isPubliclyVerified } from '../src/lib/data-status.mjs';
 import { serializeStructuredData } from '../src/lib/seo-truth.mjs';
 
 /**
@@ -21,7 +21,7 @@ import { serializeStructuredData } from '../src/lib/seo-truth.mjs';
 const ORIGIN = 'https://orderweeddc.com';
 // Adapters so the attacks below read against the module's real signatures.
 const retailerStructuredData = (r, { now } = {}) =>
-  isPubliclyVerified(r, now ?? new Date()) ? retailerJsonLd({ retailer: r, origin: ORIGIN }) : null;
+  retailerJsonLd({ retailer: r, origin: ORIGIN, asOf: now });
 const retailerAnswerBlock = (r, { now } = {}) => retailerAnswerJsonLd({ retailer: r, asOf: now });
 const assertionReport = (r, now) => structuredDataAssertionReport(r, now);
 const disqualifications = (r, now) => structuredDataAssertionReport(r, now).blockers;
@@ -52,7 +52,7 @@ const R = (o = {}) => ({
 
 // -------------------------------------------------------- A1 demonstration
 test('A1: a fully verified record IS asserted', () => {
-  const ld = retailerStructuredData(R(), { origin: 'https://orderweeddc.com', now });
+  const ld = retailerStructuredData(R(), { now });
   assert.ok(ld !== null);
   // The wired module emits schema.org Store, which is a narrower and more
   // accurate type than LocalBusiness for a retail dispensary.
@@ -100,6 +100,39 @@ test('A4: a malformed freshness date is not asserted', () => {
 
 test('A4: expiring exactly now is treated as expired, not current', () => {
   assert.equal(retailerStructuredData(R({ freshnessExpiresAt: now }), { now }), null);
+});
+
+test('A4: an explicit asOf overrides the live clock before and after expiry', () => {
+  const beforeExpiry = new Date(future.getTime() - 1);
+  const afterExpiry = new Date(future.getTime() + 1);
+  assert.ok(retailerJsonLd({ retailer: R(), origin: ORIGIN, asOf: beforeExpiry }) !== null,
+    'the live clock must not reject a record that is current at the explicit asOf');
+  assert.equal(retailerJsonLd({ retailer: R(), origin: ORIGIN, asOf: afterExpiry }), null,
+    'the same record must be rejected after expiry at the explicit asOf');
+});
+
+test('A4: the retailer page shares its request-scoped asOf with every retailer assertion', () => {
+  const pageSource = readFileSync(
+    new URL('../src/app/[domain]/retailer/[id]/page.tsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(pageSource, /const asOf = new Date\(\);/);
+  assert.match(pageSource, /retailerJsonLd\(\{ retailer, origin: origin\.origin, asOf \}\)/);
+  assert.match(pageSource, /retailerAnswerJsonLd\(\{ retailer, asOf \}\)/);
+});
+
+test('A4: a malformed explicit asOf fails closed', () => {
+  for (const invalid of [new Date('invalid'), 'not-a-date', NaN, null]) {
+    assert.equal(retailerJsonLd({ retailer: R(), origin: ORIGIN, asOf: invalid }), null,
+      `malformed asOf ${String(invalid)} must not bypass freshness`);
+    assert.equal(retailerAnswerJsonLd({ retailer: R(), asOf: invalid }), null,
+      `malformed asOf ${String(invalid)} must not enable an answer block`);
+    const report = structuredDataAssertionReport(R(), invalid);
+    assert.equal(report.asserted, false,
+      `malformed asOf ${String(invalid)} must not produce an asserted report`);
+    assert.ok(report.blockers.some((blocker) => blocker.includes('asOf is invalid')),
+      `malformed asOf ${String(invalid)} must be identified in the report`);
+  }
 });
 
 // ------------------------------------------------- A2 field-level provenance
@@ -218,14 +251,14 @@ test('C4: the credential and the answer AGREE on what counts as verified', async
     await import('../src/lib/structured-data.mjs');
   for (const status of ['VERIFIED', 'verified', ' VERIFIED ', 'ACTIVE', 'VERIFIED-ish', 'verified ']) {
     const rec = R({ licenseStatus: status });
-    const hasCredential = !!ld({ retailer: rec, origin: ORIGIN })?.hasCredential;
-    const hasAnswer = (ans({ retailer: rec })?.mainEntity ?? []).some((q) => /licensed/i.test(q.name));
+    const hasCredential = !!ld({ retailer: rec, origin: ORIGIN, asOf: now })?.hasCredential;
+    const hasAnswer = (ans({ retailer: rec, asOf: now })?.mainEntity ?? []).some((q) => /licensed/i.test(q.name));
     assert.equal(hasCredential, hasAnswer,
       `status ${JSON.stringify(status)}: credential=${hasCredential} but answer=${hasAnswer}`);
   }
   // And a near-miss is still refused by BOTH.
   for (const status of ['ACTIVE', 'VERIFIED-ish', 'pending']) {
-    assert.equal(!!ld({ retailer: R({ licenseStatus: status }), origin: ORIGIN })?.hasCredential, false,
+    assert.equal(!!ld({ retailer: R({ licenseStatus: status }), origin: ORIGIN, asOf: now })?.hasCredential, false,
       `${status} must not yield a credential`);
   }
 });
