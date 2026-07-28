@@ -34,6 +34,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createBuildDatabaseWorkspace } from '../../apps/web/src/lib/build-database.mjs';
 import { auditArtifactExclusions } from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
@@ -154,30 +155,29 @@ if (process.env.CLEAN_INSTALL === '1') {
 // Phase 2 — assets, prisma client, webpack standalone build
 // ---------------------------------------------------------------------------
 run('node scripts/restore-brand-assets.mjs', { cwd: webRoot });
-const buildDatabaseRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-build-db-'));
-const buildDatabasePath = path.join(buildDatabaseRoot, 'build.db');
-const buildDatabaseUrl = `file:${buildDatabasePath}`;
+const buildDatabase = createBuildDatabaseWorkspace();
 try {
   run('npx prisma generate', {
     cwd: webRoot,
-    env: releaseChildEnvironment({ DATABASE_URL: buildDatabaseUrl }),
+    env: releaseChildEnvironment({ DATABASE_URL: buildDatabase.databaseUrl }),
   });
-  fs.writeFileSync(buildDatabasePath, '', { flag: 'wx' });
   run('npx prisma migrate deploy --schema prisma/schema.prisma', {
     cwd: webRoot,
-    env: releaseChildEnvironment({ DATABASE_URL: buildDatabaseUrl }),
+    env: releaseChildEnvironment({ DATABASE_URL: buildDatabase.databaseUrl }),
   });
   run('npx next build --webpack', {
     cwd: webRoot,
     env: releaseChildEnvironment({
-      DATABASE_URL: buildDatabaseUrl,
+      DATABASE_URL: buildDatabase.databaseUrl,
       CANA_BUILD_DATABASE_IS_DISPOSABLE: '1',
+      CANA_BUILD_DATABASE_ROOT: buildDatabase.rootPath,
+      CANA_BUILD_DATABASE_OWNERSHIP_PROOF: buildDatabase.ownershipProof,
       NEXT_OUTPUT: 'standalone',
       NODE_ENV: 'production',
     }),
   });
 } finally {
-  fs.rmSync(buildDatabaseRoot, { recursive: true, force: true });
+  buildDatabase.cleanup();
 }
 
 // ---------------------------------------------------------------------------

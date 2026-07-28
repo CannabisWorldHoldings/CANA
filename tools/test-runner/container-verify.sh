@@ -5,7 +5,9 @@ PROFILE="${1:?verification profile required}"
 EXPECTED_SHA="${2:?expected commit required}"
 ROOT=/workspace
 WEB="$ROOT/apps/web"
-DB="$WEB/prisma/cana-verify.db"
+DB=""
+BUILD_DATABASE_ROOT=""
+BUILD_DATABASE_OWNERSHIP_PROOF=""
 SERVER_PID=""
 
 mkdir -p /agent/workspace
@@ -29,6 +31,18 @@ cleanup() {
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     echo "CANA_CLEANUP_FAILED server pid $SERVER_PID is still alive" >&2
     exit 70
+  fi
+  if [ -n "$BUILD_DATABASE_ROOT" ]; then
+    case "$BUILD_DATABASE_ROOT" in
+      /tmp/cana-build-database-*)
+        test ! -L "$BUILD_DATABASE_ROOT"
+        rm -rf -- "$BUILD_DATABASE_ROOT"
+        ;;
+      *)
+        echo "CANA_CLEANUP_FAILED refusing unexpected build database root: $BUILD_DATABASE_ROOT" >&2
+        exit 71
+        ;;
+    esac
   fi
   echo "CANA_CLEANUP_PASS owned server terminated; container namespace owns port 3000"
   exit "$prior"
@@ -54,6 +68,24 @@ npm ci --no-audit --no-fund
   npx --no-install prisma generate
 )
 
+BUILD_DATABASE_WORKSPACE="$(
+  cd "$WEB"
+  node --input-type=module -e '
+    import { createBuildDatabaseWorkspace } from "./src/lib/build-database.mjs";
+    const workspace = createBuildDatabaseWorkspace();
+    process.stdout.write(JSON.stringify({
+      rootPath: workspace.rootPath,
+      databasePath: workspace.databasePath,
+      ownershipProof: workspace.ownershipProof
+    }));
+  '
+)"
+BUILD_DATABASE_ROOT="$(node -p 'JSON.parse(process.argv[1]).rootPath' "$BUILD_DATABASE_WORKSPACE")"
+DB="$(node -p 'JSON.parse(process.argv[1]).databasePath' "$BUILD_DATABASE_WORKSPACE")"
+BUILD_DATABASE_OWNERSHIP_PROOF="$(node -p 'JSON.parse(process.argv[1]).ownershipProof' "$BUILD_DATABASE_WORKSPACE")"
+test -d "$BUILD_DATABASE_ROOT"
+test -f "$DB"
+
 build_web() {
   local started
   local build_log
@@ -64,6 +96,8 @@ build_web() {
     cd "$WEB"
     DATABASE_URL="file:$DB" \
     CANA_BUILD_DATABASE_IS_DISPOSABLE=1 \
+    CANA_BUILD_DATABASE_ROOT="$BUILD_DATABASE_ROOT" \
+    CANA_BUILD_DATABASE_OWNERSHIP_PROOF="$BUILD_DATABASE_OWNERSHIP_PROOF" \
     CANA_RELEASE_SHA="$EXPECTED_SHA" \
     npm run build -- --webpack 2>&1 | tee "$build_log"
   )
@@ -76,7 +110,6 @@ build_web() {
 }
 
 prepare_build_database() {
-  : > "$DB"
   (
     cd "$WEB"
     DATABASE_URL="file:$DB" npx --no-install prisma migrate deploy --schema prisma/schema.prisma
