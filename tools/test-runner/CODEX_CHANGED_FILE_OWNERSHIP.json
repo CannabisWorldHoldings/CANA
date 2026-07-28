@@ -32,6 +32,98 @@
         "tools/promotion-gate/**",
         "docs/technical-promotion/**"
       ]
+    },
+    "stage_a_foundation_2026_07_28": {
+      "authorization": "ACTIVATE CANA STAGE A FOUNDATION INTEGRATION",
+      "scope": "Six owner-approved exact paths only; no wildcard or neighboring-path authority.",
+      "authorization_effect": "Durability changed-file ownership only; no runtime, provider, credential, deployment, production, or external-effect authority.",
+      "approval_sha256": "c4535e12ddecb93df7e1c1ededa14f7be354b4b06f16670c6cac0518961ca618",
+      "entries": [
+        {
+          "path": "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+          "canonical_owner": "web-truth-structured-data",
+          "reason": "Authorize the canonical retailer-page request-scoped structured-data time wiring already present on canonical main.",
+          "approving_lineage": "canonical-main-stage-a-structured-data-stabilization",
+          "commit_provenance": {
+            "commit": "bf9127467e075d9e3348122cd8b5d849ff7674af",
+            "tree": "287fef5e543f53dbc48de67886b775017f5f6def",
+            "relationship": "canonical-main"
+          },
+          "permitted_change_class": "structured-data-time-determinism",
+          "material_kind": "runtime",
+          "authorization_effect": "durability-path-ownership-only"
+        },
+        {
+          "path": "apps/web/src/lib/structured-data.mjs",
+          "canonical_owner": "web-truth-structured-data",
+          "reason": "Authorize the canonical structured-data freshness and eligibility time propagation already present on canonical main.",
+          "approving_lineage": "canonical-main-stage-a-structured-data-stabilization",
+          "commit_provenance": {
+            "commit": "bf9127467e075d9e3348122cd8b5d849ff7674af",
+            "tree": "287fef5e543f53dbc48de67886b775017f5f6def",
+            "relationship": "canonical-main"
+          },
+          "permitted_change_class": "structured-data-time-determinism",
+          "material_kind": "runtime",
+          "authorization_effect": "durability-path-ownership-only"
+        },
+        {
+          "path": "apps/web/tests/structured-data-truth.test.mjs",
+          "canonical_owner": "web-truth-structured-data",
+          "reason": "Authorize the canonical structured-data time-boundary regression court already present on canonical main.",
+          "approving_lineage": "canonical-main-stage-a-structured-data-stabilization",
+          "commit_provenance": {
+            "commit": "bf9127467e075d9e3348122cd8b5d849ff7674af",
+            "tree": "287fef5e543f53dbc48de67886b775017f5f6def",
+            "relationship": "canonical-main"
+          },
+          "permitted_change_class": "structured-data-time-determinism",
+          "material_kind": "test",
+          "authorization_effect": "durability-path-ownership-only"
+        },
+        {
+          "path": "apps/web/src/lib/interaction-proof.mjs",
+          "canonical_owner": "privacy-preserving-interaction-proof",
+          "reason": "Authorize the preserved digit-free nonce encoding repair without changing signing, entropy, expiry, replay, or verification semantics.",
+          "approving_lineage": "preserved-stage-a-determinism-repair",
+          "commit_provenance": {
+            "commit": "a1c5f6ae942155498d286b32159945c99e7f8d24",
+            "tree": "d8db320c6995373aaea4eb54c3f69c4509e17073",
+            "relationship": "preserved-determinism"
+          },
+          "permitted_change_class": "privacy-preserving-nonce-determinism",
+          "material_kind": "runtime",
+          "authorization_effect": "durability-path-ownership-only"
+        },
+        {
+          "path": "apps/web/tests/interaction-proof.test.mjs",
+          "canonical_owner": "privacy-preserving-interaction-proof",
+          "reason": "Authorize the preserved interaction-proof privacy, compatibility, tampering, replay, expiry, and entropy regression courts.",
+          "approving_lineage": "preserved-stage-a-determinism-repair",
+          "commit_provenance": {
+            "commit": "a1c5f6ae942155498d286b32159945c99e7f8d24",
+            "tree": "d8db320c6995373aaea4eb54c3f69c4509e17073",
+            "relationship": "preserved-determinism"
+          },
+          "permitted_change_class": "privacy-preserving-nonce-determinism",
+          "material_kind": "test",
+          "authorization_effect": "durability-path-ownership-only"
+        },
+        {
+          "path": "docs/verification/STAGE_A_DETERMINISM_LEDGER.md",
+          "canonical_owner": "verification-evidence",
+          "reason": "Authorize the preserved bounded determinism census and verification evidence ledger.",
+          "approving_lineage": "preserved-stage-a-determinism-repair",
+          "commit_provenance": {
+            "commit": "42440e34722c76f063c8450c2eaf8770840e6370",
+            "tree": "2c0c6911e779c731c3c252664b4456fb5708137e",
+            "relationship": "preserved-determinism"
+          },
+          "permitted_change_class": "verification-evidence",
+          "material_kind": "evidence",
+          "authorization_effect": "durability-path-ownership-only"
+        }
+      ]
     }
   },
   "owned_create_paths": [
@@ -52,6 +144,7 @@
     "docs/RECOVERY_ARCHIVE_DISPOSITION.md",
     "deploy/namecheap/SIMULATION_NOTES.md",
     ".github/workflows/*.yml",
+    "docs/verification/STAGE_A_DETERMINISM_LEDGER.md",
     "apps/web/tests/mariadb-*.test.mjs",
     "apps/web/tests/cpanel-sim-*.test.mjs",
     "apps/web/tests/helpers/isolated-server.mjs"
@@ -63,6 +156,11 @@
     "apps/web/src/lib/site-intelligence.server.ts",
     "apps/web/tests/site-intelligence.test.mjs",
     "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
+    "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+    "apps/web/src/lib/interaction-proof.mjs",
+    "apps/web/src/lib/structured-data.mjs",
+    "apps/web/tests/interaction-proof.test.mjs",
+    "apps/web/tests/structured-data-truth.test.mjs",
     "deploy/namecheap/smoke-test.sh",
     "deploy/namecheap/healthcheck.sh",
     "deploy/namecheap/readycheck.sh"
@@ -93,6 +191,12 @@
     "tools/github-import/protected-main-policy.json",
     "tools/promotion-gate/**",
     "docs/technical-promotion/**",
+    "apps/web/src/app/[domain]/retailer/[id]/page.tsx",
+    "apps/web/src/lib/interaction-proof.mjs",
+    "apps/web/src/lib/structured-data.mjs",
+    "apps/web/tests/interaction-proof.test.mjs",
+    "apps/web/tests/structured-data-truth.test.mjs",
+    "docs/verification/STAGE_A_DETERMINISM_LEDGER.md",
     ".github/workflows/cana-verify.yml",
     "docs/DETERMINISTIC_TESTING.md",
     "docs/MARIADB_SIMULATION.md",
