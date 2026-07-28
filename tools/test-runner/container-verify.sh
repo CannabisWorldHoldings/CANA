@@ -62,7 +62,7 @@ build_web() {
   rm -rf "$WEB/.next"
   (
     cd "$WEB"
-    CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack 2>&1 | tee "$build_log"
+    DATABASE_URL="file:$DB" CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack 2>&1 | tee "$build_log"
   )
   node "$ROOT/tools/test-runner/build-output.mjs" "$build_log"
   test -s "$WEB/.next/BUILD_ID"
@@ -72,11 +72,17 @@ build_web() {
   echo "CANA_STALE_BUILD_CHECK_PASS build-id=$(cat "$WEB/.next/BUILD_ID")"
 }
 
-prepare_database() {
+prepare_build_database() {
   : > "$DB"
   (
     cd "$WEB"
     DATABASE_URL="file:$DB" npx --no-install prisma migrate deploy --schema prisma/schema.prisma
+  )
+}
+
+seed_database() {
+  (
+    cd "$WEB"
     DATABASE_URL="file:$DB" NODE_ENV=development node prisma/seed.mjs
   )
 }
@@ -171,6 +177,7 @@ start_server() {
 
 case "$PROFILE" in
   focused|clean-clone)
+    prepare_build_database
     build_web
     (
       cd "$WEB"
@@ -189,8 +196,9 @@ case "$PROFILE" in
     )
     ;;
   release)
+    prepare_build_database
     build_web
-    prepare_database
+    seed_database
     write_release_identity
     start_server
     (
@@ -201,8 +209,9 @@ case "$PROFILE" in
     )
     ;;
   full)
+    prepare_build_database
     build_web
-    prepare_database
+    seed_database
     write_release_identity
     start_server
     (
