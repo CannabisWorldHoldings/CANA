@@ -11,7 +11,59 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 test('the canonical import preparer is an offline callable surface', async () => {
   const module = await import('./prepare.mjs');
   assert.equal(typeof module.prepareGithubImport, 'function');
+  assert.equal(typeof module.validateWorkflowDefinition, 'function');
   assert.equal(module.CANONICAL_REPOSITORY, 'CannabisWorldHoldings/CANA');
+});
+
+test('workflow policy rejects runner context before step execution', async () => {
+  const { validateWorkflowDefinition } = await import('./prepare.mjs');
+  const invalidWorkflow = `name: Invalid
+on:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  durability-proof:
+    runs-on: ubuntu-latest
+    env:
+      CANA_RECEIPT_DIR: \${{ runner.temp }}/receipts
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+`;
+  const validation = validateWorkflowDefinition(invalidWorkflow, {
+    requiredJobs: ['durability-proof'],
+  });
+  assert.equal(validation.overall, 'FAIL');
+  assert.deepEqual(
+    validation.preRunnerContextReferences.map(({ job, line }) => ({ job, line })),
+    [{ job: 'durability-proof', line: 10 }],
+  );
+});
+
+test('canonical workflow is structurally valid, complete, read-only, and SHA-pinned', async () => {
+  const { validateWorkflowDefinition } = await import('./prepare.mjs');
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify.yml'),
+    'utf8',
+  );
+  const requiredJobs = [
+    'candidate-unit',
+    'focused-verifier',
+    'maria-verifier',
+    'cpanel-verifier',
+    'durability-proof',
+    'github-import-offline',
+  ];
+  const validation = validateWorkflowDefinition(workflow, { requiredJobs });
+  assert.equal(validation.overall, 'PASS');
+  assert.equal(validation.structurallyValid, true);
+  assert.deepEqual(validation.jobs, requiredJobs);
+  assert.deepEqual(validation.missingRequiredJobs, []);
+  assert.deepEqual(validation.preRunnerContextReferences, []);
+  assert.equal(validation.permissionsReadOnly, true);
+  assert.deepEqual(validation.topLevelPermissions, { contents: 'read' });
+  assert.deepEqual(validation.jobPermissionBlocks, []);
+  assert.deepEqual(validation.unpinnedActions, []);
 });
 
 test('protected main requires every candidate verification lane', () => {
