@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { tenantRewriteRules } from "./src/lib/tenant-rewrite.mjs";
 
 const isDevelopment = process.env.NODE_ENV === "development";
@@ -138,4 +139,14 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+async function assertProductionBuildDatabaseReady() {
+  const buildDatabase = await import("./src/lib/build-database.mjs");
+  await buildDatabase.installProductionBuildDatabase();
+}
+
+export default async function config(phase: string): Promise<NextConfig> {
+  if (phase === PHASE_PRODUCTION_BUILD) {
+    await assertProductionBuildDatabaseReady();
+  }
+  return nextConfig;
+}

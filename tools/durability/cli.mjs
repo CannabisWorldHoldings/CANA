@@ -22,9 +22,9 @@ const STAGE_A_ASSIGNMENT_SHA256 =
   'c4535e12ddecb93df7e1c1ededa14f7be354b4b06f16670c6cac0518961ca618';
 const PR2_ASSIGNMENT = 'pr2_exact_ownership_2026_07_28';
 const PR2_ASSIGNMENT_SHA256 =
-  '8f5f291e6c68206962ee1be729efc68d36a60c11a110eb0a05850cf91317fbb9';
+  'bd0659b9aae3db694661e1c8f4b6ccc6c4df473a3e518c5d55c8b032be4b3c02';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '62ca925e6c9cec678a5e2311060e4047b609fd22f684b448539408017e2b8de2';
+  '1ea0fb7bceb6cbd003ee3dce9c0e68bf99da6100f30544b60ec037ce2b3b8ff4';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -36,6 +36,7 @@ export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
 export const PR2_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/next.config.ts',
   'apps/web/src/lib/build-database.mjs',
+  'apps/web/src/lib/db-config.mjs',
   'apps/web/tests/build-database-gate.test.mjs',
   'deploy/namecheap/build-artifact.mjs',
 ]);

@@ -5,7 +5,8 @@ PROFILE="${1:?verification profile required}"
 EXPECTED_SHA="${2:?expected commit required}"
 ROOT=/workspace
 WEB="$ROOT/apps/web"
-DB="$WEB/prisma/cana-verify.db"
+DB=""
+BUILD_DATABASE_ROOT=""
 SERVER_PID=""
 
 mkdir -p /agent/workspace
@@ -29,6 +30,18 @@ cleanup() {
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     echo "CANA_CLEANUP_FAILED server pid $SERVER_PID is still alive" >&2
     exit 70
+  fi
+  if [ -n "$BUILD_DATABASE_ROOT" ]; then
+    case "$BUILD_DATABASE_ROOT" in
+      /tmp/cana-container-database-*)
+        test ! -L "$BUILD_DATABASE_ROOT"
+        rm -rf -- "$BUILD_DATABASE_ROOT"
+        ;;
+      *)
+        echo "CANA_CLEANUP_FAILED refusing unexpected build database root: $BUILD_DATABASE_ROOT" >&2
+        exit 71
+        ;;
+    esac
   fi
   echo "CANA_CLEANUP_PASS owned server terminated; container namespace owns port 3000"
   exit "$prior"
@@ -54,6 +67,17 @@ npm ci --no-audit --no-fund
   npx --no-install prisma generate
 )
 
+BUILD_DATABASE_ROOT="$(mktemp -d /tmp/cana-container-database-XXXXXX)"
+chmod 700 "$BUILD_DATABASE_ROOT"
+DB="$BUILD_DATABASE_ROOT/runtime.db"
+(
+  umask 077
+  set -o noclobber
+  : > "$DB"
+)
+test -d "$BUILD_DATABASE_ROOT"
+test -f "$DB"
+
 build_web() {
   local started
   local build_log
@@ -62,7 +86,8 @@ build_web() {
   rm -rf "$WEB/.next"
   (
     cd "$WEB"
-    CANA_RELEASE_SHA="$EXPECTED_SHA" npm run build -- --webpack 2>&1 | tee "$build_log"
+    CANA_RELEASE_SHA="$EXPECTED_SHA" \
+    npm run build -- --webpack 2>&1 | tee "$build_log"
   )
   node "$ROOT/tools/test-runner/build-output.mjs" "$build_log"
   test -s "$WEB/.next/BUILD_ID"
@@ -72,11 +97,16 @@ build_web() {
   echo "CANA_STALE_BUILD_CHECK_PASS build-id=$(cat "$WEB/.next/BUILD_ID")"
 }
 
-prepare_database() {
-  : > "$DB"
+prepare_build_database() {
   (
     cd "$WEB"
     DATABASE_URL="file:$DB" npx --no-install prisma migrate deploy --schema prisma/schema.prisma
+  )
+}
+
+seed_database() {
+  (
+    cd "$WEB"
     DATABASE_URL="file:$DB" NODE_ENV=development node prisma/seed.mjs
   )
 }
@@ -171,6 +201,7 @@ start_server() {
 
 case "$PROFILE" in
   focused|clean-clone)
+    prepare_build_database
     build_web
     (
       cd "$WEB"
@@ -189,8 +220,9 @@ case "$PROFILE" in
     )
     ;;
   release)
+    prepare_build_database
     build_web
-    prepare_database
+    seed_database
     write_release_identity
     start_server
     (
@@ -201,8 +233,9 @@ case "$PROFILE" in
     )
     ;;
   full)
+    prepare_build_database
     build_web
-    prepare_database
+    seed_database
     write_release_identity
     start_server
     (
