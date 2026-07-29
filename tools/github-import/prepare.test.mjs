@@ -99,6 +99,11 @@ test('canonical workflow is structurally valid, complete, read-only, and SHA-pin
   assert.deepEqual(validation.topLevelPermissions, { contents: 'read' });
   assert.deepEqual(validation.jobPermissionBlocks, []);
   assert.deepEqual(validation.unpinnedActions, []);
+  assert.match(
+    workflow,
+    /node --test [^\n]*tools\/mission-2\/mission-2\.test\.mjs/,
+    'candidate-unit must execute the Mission 2 contract and adversarial courts',
+  );
 });
 
 test('workflow policy requires complete history for every historical verification job', async () => {
