@@ -1,0 +1,30 @@
+# Mission 2 commit ledger
+
+Protected base:
+
+- commit: `70a7200fbdbfd46bdcef7143863e33caf6f9d6fe`
+- tree: `b7f979a2d1d82b9dbc0b23a015eefaa1402a1dec`
+
+Traceable Mission 2 commits:
+
+| Commit | Intent |
+|---|---|
+| `d14537b37fdec1b0a12531eaf2d3f26aabf66160` | bind the mission to the protected base |
+| `c34fcfdaa0962e42a6c6b17e3487ff9452ecdcb2` | add the durable CANA autonomy kernel |
+| `0d65ec83a136689810bcab5988865cc2ff667a11` | execute the Minimum Alive Loop in shadow mode |
+| `6657c04e593e916b1d6f8b4cf49d9b1bb70e3a97` | add the Mission 2 courts to the candidate workflow |
+| `1f56364965537ba6526842325e848d7b031ebf24` | record contracts, repairs, and Mission 3 boundaries |
+
+The exact ownership-reconciliation and final-evidence commits are recorded by their
+full identities in the final external verification receipt after the branch is
+sealed. This avoids a self-referential commit claim. No commit in this lineage may
+be rebased, squashed, amended, or reconstructed.
+
+Rollback is a deterministic execution operation, not a history rewrite. The
+legitimate-loop receipt proves exact byte restoration in its isolated worktree.
+If the canonical Mission 2 merge must later be reversed, use a separately reviewed
+branch and:
+
+```bash
+git revert -m 1 <MISSION_2_CANONICAL_MERGE_COMMIT>
+```
