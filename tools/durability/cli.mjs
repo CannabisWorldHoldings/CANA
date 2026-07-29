@@ -28,9 +28,9 @@ const MISSION1_ASSIGNMENT_SHA256 =
   '3fa119b9e88c1c1cfadf76c751258e8d48325afa4899986715a6a11b8afa7f02';
 const MISSION2_ASSIGNMENT = 'mission2_minimum_alive_loop_2026_07_29';
 const MISSION2_ASSIGNMENT_SHA256 =
-  '5ceee867675b72bc890e3da54f3274534181400a4aadbc0a98a6b056a96e4883';
+  'bb485f9d518c18acf59882a1bcf0e9bdd80060b6f16ba6e4f2f380a82a4d6987';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '0ffeaf3d71a0415017d29b88b28a14c0d6b7dda0626a74083aa31f66df94118d';
+  '7b72f33aea1c89d90f2ffade066f4dde55c84b0e6162b64ff8c3644de8ce8e09';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -95,6 +95,7 @@ export const MISSION2_AUTHORIZED_PATHS = Object.freeze([
   'tools/mission-2/foundry.mjs',
   'tools/mission-2/intelligence-contracts.mjs',
   'tools/mission-2/kernel.mjs',
+  'tools/mission-2/lease.mjs',
   'tools/mission-2/mission-2.test.mjs',
   'tools/mission-2/mock-executor.mjs',
   'tools/mission-2/run-fixtures.mjs',
