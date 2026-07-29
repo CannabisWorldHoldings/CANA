@@ -14,6 +14,8 @@ import {
   MISSION1_VALIDATOR_PATHS,
   MISSION2_AUTHORIZED_PATHS,
   mission2OwnershipAssignment,
+  MISSION3_M001_AUTHORIZED_PATHS,
+  mission3M001OwnershipAssignment,
   ownershipPatterns,
   PR2_AUTHORIZED_PATHS,
   pr2OwnershipAssignment,
@@ -514,6 +516,96 @@ test('Mission 2 ownership cannot broaden authority or lose a required path', () 
   assert.throws(
     () => validateOwnershipManifest(removed),
     /must have exactly one exact ownership entry/,
+  );
+});
+
+test('the exact Mission 3 M001 surfaces have narrow durability ownership', () => {
+  const manifest = ownership();
+  const assignment = mission3M001OwnershipAssignment(manifest);
+  const handoff = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        ROOT,
+        'docs',
+        'convergence',
+        'mission-3',
+        'M001_CANONICAL_HANDOFF_PACKET.json',
+      ),
+      'utf8',
+    ),
+  );
+  assert.deepEqual(
+    [...assignment.authorized_paths].sort(),
+    [...MISSION3_M001_AUTHORIZED_PATHS].sort(),
+  );
+  assert.deepEqual(
+    [...handoff.owned_files].sort(),
+    [...MISSION3_M001_AUTHORIZED_PATHS].sort(),
+  );
+  assert.deepEqual(unownedPaths(MISSION3_M001_AUTHORIZED_PATHS, manifest), []);
+  assert.equal(assignment.package_003_sha256, handoff.package_003.sha256);
+  assert.equal(assignment.handoff_hash, handoff.handoff_hash);
+  assert.equal(assignment.authorization_effect.includes('no live-data'), true);
+  assert.equal(assignment.authorization_effect.includes('no provider'), true);
+  assert.equal(assignment.authorization_effect.includes('no production'), true);
+});
+
+test('Mission 3 M001 ownership admits no neighboring path or wildcard', () => {
+  const patterns = ownershipPatterns(ownership());
+  for (const neighboringPath of [
+    'docs/convergence/mission-3/M002_DELTA_MAP.json',
+    'tools/growth-foundry/m001/live-source.mjs',
+    'tools/growth-foundry/m002/claim-graph.mjs',
+  ]) {
+    assert.equal(
+      patterns.some((pattern) => matchOwned(neighboringPath, pattern)),
+      false,
+      neighboringPath,
+    );
+  }
+
+  const wildcard = ownership();
+  wildcard.owned_create_paths.push('tools/growth-foundry/m001/**');
+  assert.throws(
+    () => validateOwnershipManifest(wildcard),
+    /owner-approved scope digest/,
+  );
+});
+
+test('Mission 3 M001 ownership rejects tampering, duplicates and authority broadening', () => {
+  const tampered = ownership();
+  tampered.explicit_user_assignment.mission3_m001_shadow_slice_2026_07_29
+    .handoff_hash = '0'.repeat(64);
+  assert.throws(
+    () => validateOwnershipManifest(tampered),
+    /Mission 3 M001 ownership assignment is malformed/,
+  );
+
+  const duplicate = ownership();
+  duplicate.explicit_user_assignment.mission3_m001_shadow_slice_2026_07_29
+    .authorized_paths.push(MISSION3_M001_AUTHORIZED_PATHS[0]);
+  assert.throws(
+    () => validateOwnershipManifest(duplicate),
+    /Mission 3 M001 ownership assignment is malformed/,
+  );
+
+  const authority = ownership();
+  authority.explicit_user_assignment.mission3_m001_shadow_slice_2026_07_29
+    .runtime_permissions = ['provider-connect'];
+  assert.throws(
+    () => validateOwnershipManifest(authority),
+    /Mission 3 M001 ownership assignment is malformed/,
+  );
+});
+
+test('removing one M001 exact path recreates the durability ownership failure', () => {
+  const removed = ownership();
+  removed.owned_create_paths = removed.owned_create_paths.filter(
+    (entry) => entry !== 'tools/growth-foundry/m001/claim-graph.mjs',
+  );
+  assert.throws(
+    () => validateOwnershipManifest(removed),
+    /Mission 3 M001 path must have exactly one exact ownership entry/,
   );
 });
 

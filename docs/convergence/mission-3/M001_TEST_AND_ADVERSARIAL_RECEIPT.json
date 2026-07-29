@@ -1,0 +1,111 @@
+{
+  "schema_version": "cana.mission-3-m001-test-and-adversarial-receipt/1.0.0",
+  "mechanism_identity": "CANA-GF-M001-VERIFIED-LOCAL-ELIGIBILITY-AND-AVAILABILITY-GRAPH",
+  "implementation_commit": "a902d24025270b5cd3821b301ea6af743e8f417a",
+  "implementation_tree": "bc21abe7f951b3f8876b2e9a17dee4ae8bfbd923",
+  "overall": "PASS",
+  "focused_courts": {
+    "m001": {
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "root_working_directory": "PASS",
+      "intended_working_directory": "PASS",
+      "canonical_node_24_container": "PASS",
+      "container_node_version": "v24.14.1",
+      "container_node_path": "/usr/local/bin/node"
+    },
+    "mission_2_and_policy": {
+      "tests": 89,
+      "passed": 89,
+      "failed": 0,
+      "includes": [
+        "tools/mission-2/mission-2.test.mjs",
+        "tools/durability/cli.test.mjs",
+        "tools/github-import/prepare.test.mjs",
+        "tools/growth-foundry/m001/claim-graph.test.mjs"
+      ]
+    }
+  },
+  "adversarial_proofs": [
+    "exact provenance retained",
+    "expired consequential truth withheld",
+    "merchant evidence cannot establish official regulatory truth",
+    "all seven source-authority rules enforced",
+    "contradictory observations preserved",
+    "correction history retained without deletion",
+    "sponsorship cannot influence truth, confidence, contradiction visibility or organic relevance",
+    "cross-tenant and cross-workspace records rejected",
+    "duplicate identities rejected",
+    "Package 003, handoff and graph replay or tampering rejected",
+    "malformed timestamps, impossible expiry and TTL broadening rejected",
+    "source hash mismatch rejected",
+    "forged provenance rejected even when source and observation repeat the same declared hash",
+    "independent verification required",
+    "retirement renders no current truth",
+    "repeated output deterministic",
+    "no live D.C. record admitted"
+  ],
+  "canonical_verification": [
+    {
+      "gate": "focused",
+      "result": "PASS",
+      "receipt_sha256": "60b6533ef378911f0d407a4d420bfe93ead64017a94569258efea7a8c72ed454"
+    },
+    {
+      "gate": "full",
+      "result": "PASS",
+      "receipt_sha256": "816f0dd9dc8bac2adfecb886cf9afaff8d79f32753a2fa839e456740c69bed5b"
+    },
+    {
+      "gate": "clean-clone",
+      "result": "PASS",
+      "receipt_sha256": "a66f98b3044a1b4a18a843d22329471029df180b766c0456b228f866f2e5300f"
+    },
+    {
+      "gate": "release",
+      "result": "PASS",
+      "receipt_sha256": "3a4877d92a5b65c2f734ee71447e9dd884261b1906b0a6ec28545f5f55890c37"
+    },
+    {
+      "gate": "durability-build",
+      "result": "PASS",
+      "receipt_sha256": "dce590e7ff17352a954114a0f6f623a71267e645720ea1be2e109a32ab60fec3"
+    },
+    {
+      "gate": "durability-verify",
+      "result": "PASS",
+      "receipt_sha256": "0bff42fbac08e14aa51c163cea6825af5614692b430443e727f2c214386585c0"
+    },
+    {
+      "gate": "durability-restore",
+      "result": "PASS",
+      "receipt_sha256": "c50b889bdc70593e158f38f274283c2d45fc96574349c4d6970a6a42dbafea3c"
+    },
+    {
+      "gate": "mariadb",
+      "result": "PASS",
+      "receipt_sha256": "9ae5ef0d502f883f9e825bb384e6681e0a877e69287ba511b11103407443eb50"
+    },
+    {
+      "gate": "cpanel",
+      "result": "PASS",
+      "receipt_sha256": "f60e45eea811c8159f83fdb32ed58875a54bdc3eb99a735f35b6b1af2bfafd7e"
+    }
+  ],
+  "production_build": "PASS_IN_PINNED_FULL_CLEAN_CLONE_AND_RELEASE_GATES",
+  "migration": "PASS_IN_PINNED_FOCUSED_FULL_CLEAN_CLONE_AND_RELEASE_GATES",
+  "dependency_audit": {
+    "result": "PASS",
+    "production_vulnerabilities": 0,
+    "report_sha256": "f6dde5ec70f97401deffb3800e0aa838c960429c5ca13f02201e87433e1fa73c"
+  },
+  "secret_scan": "PASS_IN_DURABILITY_BUILD",
+  "git_fsck": "PASS",
+  "package_003_negative_fixture": {
+    "case_count": 51,
+    "sha256": "4817c83d7fcf2dc4bc2cd546ff117baa7c1b46d810c614642f57ac6521aaedfe",
+    "reuse": "HASH_BOUND_REFERENCE_ONLY"
+  },
+  "recorded_at": "2026-07-29T20:24:44.000Z"
+}

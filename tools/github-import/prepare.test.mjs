@@ -104,6 +104,11 @@ test('canonical workflow is structurally valid, complete, read-only, and SHA-pin
     /node --test [^\n]*tools\/mission-2\/mission-2\.test\.mjs/,
     'candidate-unit must execute the Mission 2 contract and adversarial courts',
   );
+  assert.match(
+    workflow,
+    /node --test [^\n]*tools\/growth-foundry\/m001\/claim-graph\.test\.mjs/,
+    'candidate-unit must execute the Mission 3 M001 claim-graph courts',
+  );
 });
 
 test('workflow policy requires complete history for every historical verification job', async () => {

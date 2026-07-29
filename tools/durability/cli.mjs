@@ -29,8 +29,11 @@ const MISSION1_ASSIGNMENT_SHA256 =
 const MISSION2_ASSIGNMENT = 'mission2_minimum_alive_loop_2026_07_29';
 const MISSION2_ASSIGNMENT_SHA256 =
   'ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970';
+const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
+const MISSION3_M001_ASSIGNMENT_SHA256 =
+  '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'c7dceda18972256ad2825cc9c30317ec4db6222fc9e784399a2f05fdc0331c25';
+  '363add6343b3778fe7a701c090eb287bea0c8e59c0d6003ec92fa897f485c762';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -103,6 +106,21 @@ export const MISSION2_AUTHORIZED_PATHS = Object.freeze([
   'tools/mission-2/verifier.mjs',
   'tools/mission-2/verifier-process.mjs',
   'tools/mission-2/verifier-worker.mjs',
+  'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+]);
+export const MISSION3_M001_AUTHORIZED_PATHS = Object.freeze([
+  '.github/workflows/cana-verify.yml',
+  'docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md',
+  'docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json',
+  'docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json',
+  'docs/convergence/mission-3/M001_DELTA_MAP.json',
+  'docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json',
+  'docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json',
+  'tools/durability/cli.mjs',
+  'tools/durability/cli.test.mjs',
+  'tools/github-import/prepare.test.mjs',
+  'tools/growth-foundry/m001/claim-graph.mjs',
+  'tools/growth-foundry/m001/claim-graph.test.mjs',
   'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
 ]);
 
@@ -565,6 +583,76 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const mission3M001Assignment =
+    ownership.explicit_user_assignment[MISSION3_M001_ASSIGNMENT];
+  if (
+    !exactKeys(mission3M001Assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'base_commit',
+      'base_tree',
+      'package_003_sha256',
+      'handoff_hash',
+      'authorized_paths',
+      'approval_sha256',
+    ]) ||
+    mission3M001Assignment.authorization !==
+      'ACTIVATE CANA MISSION 3 — M001 CANONICAL SHADOW SLICE' ||
+    mission3M001Assignment.base_commit !==
+      'c4d058f5602e6db2196cccba782e1daeaa3a3ce7' ||
+    mission3M001Assignment.base_tree !==
+      'e6d21f2b9303e33bd0c357c125269bf9619b63d0' ||
+    mission3M001Assignment.package_003_sha256 !==
+      '173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc' ||
+    mission3M001Assignment.handoff_hash !==
+      'baf1492a1aaa3290886b8f3cd77e68515fe15775618dc5fc173ed235a02b9cd3' ||
+    !Array.isArray(mission3M001Assignment.authorized_paths) ||
+    JSON.stringify([...mission3M001Assignment.authorized_paths].sort()) !==
+      JSON.stringify([...MISSION3_M001_AUTHORIZED_PATHS].sort()) ||
+    !mission3M001Assignment.scope.includes('no wildcard') ||
+    !mission3M001Assignment.authorization_effect.includes('no live-data') ||
+    !mission3M001Assignment.authorization_effect.includes('no provider') ||
+    !mission3M001Assignment.authorization_effect.includes('no production')
+  ) {
+    refusal('Mission 3 M001 ownership assignment is malformed');
+  }
+
+  const mission3M001Paths = mission3M001Assignment.authorized_paths;
+  if (
+    new Set(mission3M001Paths).size !== mission3M001Paths.length ||
+    mission3M001Paths.some(
+      (entry) =>
+        typeof entry !== 'string' ||
+        entry.length === 0 ||
+        entry.startsWith('/') ||
+        entry.includes('\\') ||
+        entry.includes('*') ||
+        entry.includes('..') ||
+        path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('Mission 3 M001 ownership paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of MISSION3_M001_AUTHORIZED_PATHS) {
+    const exactOccurrences = allOwnedPaths.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (exactOccurrences !== 1) {
+      refusal(
+        `Mission 3 M001 path must have exactly one exact ownership entry: ${authorizedPath}`,
+      );
+    }
+    const plannedOccurrences = ownership.planned_candidate_files.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (plannedOccurrences !== 1) {
+      refusal(
+        `Mission 3 M001 path must have exactly one planned-candidate entry: ${authorizedPath}`,
+      );
+    }
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -608,6 +696,19 @@ export function validateOwnershipManifest(ownership) {
   ) {
     refusal('Mission 2 ownership assignment failed its owner-approval digest');
   }
+  const {
+    approval_sha256: mission3M001RecordedDigest,
+    ...mission3M001ApprovalPayload
+  } = mission3M001Assignment;
+  const mission3M001ActualDigest = sha256Bytes(
+    canonicalJson(mission3M001ApprovalPayload),
+  );
+  if (
+    mission3M001RecordedDigest !== MISSION3_M001_ASSIGNMENT_SHA256 ||
+    mission3M001ActualDigest !== MISSION3_M001_ASSIGNMENT_SHA256
+  ) {
+    refusal('Mission 3 M001 ownership assignment failed its owner-approval digest');
+  }
   return assignment;
 }
 
@@ -624,6 +725,11 @@ export function mission1OwnershipAssignment(ownership) {
 export function mission2OwnershipAssignment(ownership) {
   validateOwnershipManifest(ownership);
   return ownership.explicit_user_assignment[MISSION2_ASSIGNMENT];
+}
+
+export function mission3M001OwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[MISSION3_M001_ASSIGNMENT];
 }
 
 export function ownershipPatterns(ownership) {
