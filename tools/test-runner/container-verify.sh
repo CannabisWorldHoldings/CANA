@@ -7,7 +7,6 @@ ROOT=/workspace
 WEB="$ROOT/apps/web"
 DB=""
 BUILD_DATABASE_ROOT=""
-BUILD_DATABASE_OWNERSHIP_PROOF=""
 SERVER_PID=""
 
 mkdir -p /agent/workspace
@@ -34,7 +33,7 @@ cleanup() {
   fi
   if [ -n "$BUILD_DATABASE_ROOT" ]; then
     case "$BUILD_DATABASE_ROOT" in
-      /tmp/cana-build-database-*)
+      /tmp/cana-container-database-*)
         test ! -L "$BUILD_DATABASE_ROOT"
         rm -rf -- "$BUILD_DATABASE_ROOT"
         ;;
@@ -68,21 +67,14 @@ npm ci --no-audit --no-fund
   npx --no-install prisma generate
 )
 
-BUILD_DATABASE_WORKSPACE="$(
-  cd "$WEB"
-  node --input-type=module -e '
-    import { createBuildDatabaseWorkspace } from "./src/lib/build-database.mjs";
-    const workspace = createBuildDatabaseWorkspace();
-    process.stdout.write(JSON.stringify({
-      rootPath: workspace.rootPath,
-      databasePath: workspace.databasePath,
-      ownershipProof: workspace.ownershipProof
-    }));
-  '
-)"
-BUILD_DATABASE_ROOT="$(node -p 'JSON.parse(process.argv[1]).rootPath' "$BUILD_DATABASE_WORKSPACE")"
-DB="$(node -p 'JSON.parse(process.argv[1]).databasePath' "$BUILD_DATABASE_WORKSPACE")"
-BUILD_DATABASE_OWNERSHIP_PROOF="$(node -p 'JSON.parse(process.argv[1]).ownershipProof' "$BUILD_DATABASE_WORKSPACE")"
+BUILD_DATABASE_ROOT="$(mktemp -d /tmp/cana-container-database-XXXXXX)"
+chmod 700 "$BUILD_DATABASE_ROOT"
+DB="$BUILD_DATABASE_ROOT/runtime.db"
+(
+  umask 077
+  set -o noclobber
+  : > "$DB"
+)
 test -d "$BUILD_DATABASE_ROOT"
 test -f "$DB"
 
@@ -94,10 +86,6 @@ build_web() {
   rm -rf "$WEB/.next"
   (
     cd "$WEB"
-    DATABASE_URL="file:$DB" \
-    CANA_BUILD_DATABASE_IS_DISPOSABLE=1 \
-    CANA_BUILD_DATABASE_ROOT="$BUILD_DATABASE_ROOT" \
-    CANA_BUILD_DATABASE_OWNERSHIP_PROOF="$BUILD_DATABASE_OWNERSHIP_PROOF" \
     CANA_RELEASE_SHA="$EXPECTED_SHA" \
     npm run build -- --webpack 2>&1 | tee "$build_log"
   )

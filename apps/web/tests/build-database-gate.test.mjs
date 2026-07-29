@@ -1,20 +1,29 @@
-import { spawnSync, execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import {
   assertProductionBuildDatabaseReady,
   createBuildDatabaseWorkspace,
+  prepareProductionBuildDatabase,
 } from '../src/lib/build-database.mjs';
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(webRoot, '../..');
 const prismaCli = path.join(repoRoot, 'node_modules', 'prisma', 'build', 'index.js');
-const npmCli = path.resolve(path.dirname(process.execPath), '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js');
+const npmCli = path.resolve(
+  path.dirname(process.execPath),
+  '..',
+  'lib',
+  'node_modules',
+  'npm',
+  'bin',
+  'npm-cli.js',
+);
 let tempRoot;
 
 before(() => {
@@ -32,63 +41,75 @@ function assertCode(code) {
   };
 }
 
-function workspaceOptions(workspace, overrides = {}) {
-  return {
-    databaseUrl: workspace.databaseUrl,
-    disposable: '1',
-    buildDatabaseRoot: workspace.rootPath,
-    ownershipProof: workspace.ownershipProof,
-    ...overrides,
-  };
+function migrate(databaseUrl) {
+  const result = spawnSync(
+    process.execPath,
+    [prismaCli, 'migrate', 'deploy', '--schema', 'prisma/schema.prisma'],
+    {
+      cwd: webRoot,
+      env: { ...process.env, DATABASE_URL: databaseUrl },
+      encoding: 'utf8',
+      timeout: 120_000,
+    },
+  );
+  assert.equal(result.status, 0, result.stderr || result.stdout);
 }
 
-function migrateWorkspace(workspace) {
-  execFileSync(process.execPath, [prismaCli, 'migrate', 'deploy', '--schema', 'prisma/schema.prisma'], {
-    cwd: webRoot,
-    env: { ...process.env, DATABASE_URL: workspace.databaseUrl, DEBUG: 'prisma:*' },
-    stdio: 'pipe',
-  });
-}
-
-async function withWorkspace(run) {
-  const workspace = createBuildDatabaseWorkspace();
+async function withPreparedWorkspace(run) {
+  const prepared = await prepareProductionBuildDatabase();
   try {
-    return await run(workspace);
+    return await run(prepared);
   } finally {
-    workspace.cleanup();
+    prepared.workspace.cleanup();
   }
 }
 
-test('production build rejects missing DATABASE_URL instead of accepting a false-green receipt', () => {
-  const env = { ...process.env };
-  delete env.DATABASE_URL;
-  delete env.CANA_BUILD_DATABASE_IS_DISPOSABLE;
-  const result = spawnSync(process.execPath, [npmCli, 'run', 'build'], {
+function forgedWorkspace(databasePath, rootPath = path.dirname(databasePath)) {
+  return Object.freeze({
+    rootPath,
+    databasePath,
+    databaseUrl: pathToFileURL(databasePath).href,
+    cleanup() {},
+  });
+}
+
+test('production build ignores a disposable flag and arbitrary existing database', () => {
+  const databasePath = path.join(tempRoot, 'production-like.db');
+  fs.writeFileSync(databasePath, '', { flag: 'wx', mode: 0o600 });
+  migrate(pathToFileURL(databasePath).href);
+  const before = fs.readFileSync(databasePath);
+  const result = spawnSync(process.execPath, [npmCli, 'run', 'build', '--', '--webpack'], {
     cwd: webRoot,
-    env,
+    env: {
+      ...process.env,
+      DATABASE_URL: pathToFileURL(databasePath).href,
+      CANA_BUILD_DATABASE_IS_DISPOSABLE: '1',
+      CANA_BUILD_DATABASE_ROOT: path.dirname(databasePath),
+      CANA_BUILD_DATABASE_OWNERSHIP_PROOF: 'f'.repeat(64),
+    },
     encoding: 'utf8',
-    timeout: 120_000,
+    timeout: 180_000,
   });
 
   assert.equal(result.signal, null, `build timed out or was killed: ${result.signal}`);
-  assert.notEqual(result.status, 0, 'build accepted missing DATABASE_URL with exit 0');
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(fs.readFileSync(databasePath), before);
 });
 
-test('database gate requires an explicit disposable-build boundary', async () => {
-  await assert.rejects(
-    assertProductionBuildDatabaseReady({ databaseUrl: `file:${path.join(tempRoot, 'unmarked.db')}` }),
-    assertCode('DISPOSABLE_DATABASE_REQUIRED'),
-  );
-});
-
-test('database gate rejects a disposable flag without build ownership proof', async () => {
+test('database gate rejects disposable flags and forged build ownership', async () => {
   const databasePath = path.join(tempRoot, 'unowned.db');
-  fs.writeFileSync(databasePath, '', { flag: 'wx' });
+  fs.writeFileSync(databasePath, '', { flag: 'wx', mode: 0o600 });
   await assert.rejects(
     assertProductionBuildDatabaseReady({
       databaseUrl: pathToFileURL(databasePath).href,
       disposable: '1',
+      buildDatabaseRoot: tempRoot,
+      ownershipProof: 'a'.repeat(64),
     }),
+    assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
+  );
+  await assert.rejects(
+    assertProductionBuildDatabaseReady({ workspace: forgedWorkspace(databasePath) }),
     assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
   );
 });
@@ -96,18 +117,18 @@ test('database gate rejects a disposable flag without build ownership proof', as
 test('database gate rejects existing and production-like SQLite databases', async () => {
   for (const name of ['existing.db', 'production.db']) {
     const databasePath = path.join(tempRoot, name);
-    fs.writeFileSync(databasePath, '', { flag: 'wx' });
+    fs.writeFileSync(databasePath, '', { flag: 'wx', mode: 0o600 });
+    migrate(pathToFileURL(databasePath).href);
+    const before = fs.readFileSync(databasePath);
     await assert.rejects(
-      assertProductionBuildDatabaseReady({
-        databaseUrl: pathToFileURL(databasePath).href,
-        disposable: '1',
-      }),
+      assertProductionBuildDatabaseReady({ workspace: forgedWorkspace(databasePath) }),
       assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
     );
+    assert.deepEqual(fs.readFileSync(databasePath), before);
   }
 });
 
-test('database gate rejects malformed, remote, traversal, and network file URLs', async () => {
+test('malformed, remote, traversal, and network URLs cannot acquire a build capability', async () => {
   const rejected = [
     'file:///tmp/cana%ZZ/build.db',
     'file://remote-host/tmp/build.db',
@@ -121,145 +142,175 @@ test('database gate rejects malformed, remote, traversal, and network file URLs'
   ];
   for (const databaseUrl of rejected) {
     await assert.rejects(
-      assertProductionBuildDatabaseReady({ databaseUrl, disposable: '1' }),
-      assertCode('BUILD_DATABASE_URL_UNSAFE'),
+      assertProductionBuildDatabaseReady({
+        workspace: Object.freeze({
+          rootPath: tempRoot,
+          databasePath: path.join(tempRoot, 'build.db'),
+          databaseUrl,
+          cleanup() {},
+        }),
+      }),
+      assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
       databaseUrl,
     );
   }
 });
 
-test('database gate rejects an absolute database path outside the owned root', async () => {
-  await withWorkspace(async (workspace) => {
-    const outsidePath = path.join(tempRoot, 'outside.db');
-    fs.writeFileSync(outsidePath, '', { flag: 'wx' });
-    await assert.rejects(
-      assertProductionBuildDatabaseReady(workspaceOptions(workspace, {
-        databaseUrl: pathToFileURL(outsidePath).href,
-      })),
-      assertCode('BUILD_DATABASE_PATH_OUTSIDE_ROOT'),
-    );
-  });
-});
-
-test('database gate rejects a path that only shares the owned root prefix', async () => {
-  await withWorkspace(async (workspace) => {
-    const siblingRoot = `${workspace.rootPath}-sibling`;
-    const siblingPath = path.join(siblingRoot, 'build.db');
-    fs.mkdirSync(siblingRoot);
-    fs.writeFileSync(siblingPath, '', { flag: 'wx' });
-    try {
+test('absolute outside-root and textual-prefix paths cannot acquire build authority', async () => {
+  const ownedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-build-database-forged-'));
+  const siblingRoot = `${ownedRoot}-sibling`;
+  const outsidePath = path.join(tempRoot, 'outside.db');
+  const siblingPath = path.join(siblingRoot, 'build.db');
+  fs.mkdirSync(siblingRoot);
+  fs.writeFileSync(outsidePath, '', { flag: 'wx', mode: 0o600 });
+  fs.writeFileSync(siblingPath, '', { flag: 'wx', mode: 0o600 });
+  try {
+    for (const databasePath of [outsidePath, siblingPath]) {
       await assert.rejects(
-        assertProductionBuildDatabaseReady(workspaceOptions(workspace, {
-          databaseUrl: pathToFileURL(siblingPath).href,
-        })),
-        assertCode('BUILD_DATABASE_PATH_OUTSIDE_ROOT'),
+        assertProductionBuildDatabaseReady({
+          workspace: forgedWorkspace(databasePath, ownedRoot),
+        }),
+        assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
       );
-    } finally {
-      fs.rmSync(siblingRoot, { recursive: true, force: true });
     }
-  });
+  } finally {
+    fs.rmSync(ownedRoot, { recursive: true, force: true });
+    fs.rmSync(siblingRoot, { recursive: true, force: true });
+  }
 });
 
 test('database gate rejects a symlink database target', async () => {
-  await withWorkspace(async (workspace) => {
+  await withPreparedWorkspace(async ({ workspace }) => {
     const originalPath = `${workspace.databasePath}.original`;
     fs.renameSync(workspace.databasePath, originalPath);
     fs.symlinkSync(originalPath, workspace.databasePath);
     await assert.rejects(
-      assertProductionBuildDatabaseReady(workspaceOptions(workspace)),
-      assertCode('BUILD_DATABASE_SYMLINK_REJECTED'),
+      assertProductionBuildDatabaseReady({ workspace }),
+      (error) => ['BUILD_DATABASE_ROOT_UNSAFE', 'BUILD_DATABASE_SYMLINK_REJECTED'].includes(error?.code),
     );
+    fs.rmSync(workspace.databasePath);
+    fs.renameSync(originalPath, workspace.databasePath);
   });
 });
 
-test('database gate rejects a symlinked parent directory', async () => {
-  await withWorkspace(async (workspace) => {
-    const linkedParent = path.join(workspace.rootPath, 'linked-parent');
-    fs.symlinkSync(workspace.rootPath, linkedParent, 'dir');
+test('symlinked parent directories cannot acquire a build capability', async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-build-database-forged-'));
+  const linkedParent = path.join(root, 'linked-parent');
+  fs.symlinkSync(root, linkedParent, 'dir');
+  try {
     await assert.rejects(
-      assertProductionBuildDatabaseReady(workspaceOptions(workspace, {
-        databaseUrl: pathToFileURL(path.join(linkedParent, 'build.db')).href,
-      })),
-      assertCode('BUILD_DATABASE_SYMLINK_REJECTED'),
+      assertProductionBuildDatabaseReady({
+        workspace: forgedWorkspace(path.join(linkedParent, 'build.db'), root),
+      }),
+      assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
     );
-  });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
-test('database gate rejects a temporary root that is itself symlinked', async () => {
-  await withWorkspace(async (workspace) => {
-    const rootLink = path.join(tempRoot, 'root-link');
-    fs.symlinkSync(workspace.rootPath, rootLink, 'dir');
-    try {
-      await assert.rejects(
-        assertProductionBuildDatabaseReady(workspaceOptions(workspace, {
-          buildDatabaseRoot: rootLink,
-          databaseUrl: pathToFileURL(path.join(rootLink, 'build.db')).href,
-        })),
-        assertCode('BUILD_DATABASE_ROOT_UNSAFE'),
-      );
-    } finally {
-      fs.rmSync(rootLink, { force: true });
-    }
-  });
-});
-
-test('database gate detects replacement of the validated target before use', async () => {
-  await withWorkspace(async (workspace) => {
-    migrateWorkspace(workspace);
+test('database gate rejects a temporary root replaced by a symlink', async () => {
+  await withPreparedWorkspace(async ({ workspace }) => {
+    const originalRoot = `${workspace.rootPath}.original`;
+    fs.renameSync(workspace.rootPath, originalRoot);
+    fs.symlinkSync(originalRoot, workspace.rootPath, 'dir');
     await assert.rejects(
-      assertProductionBuildDatabaseReady(workspaceOptions(workspace, {
+      assertProductionBuildDatabaseReady({ workspace }),
+      assertCode('BUILD_DATABASE_ROOT_UNSAFE'),
+    );
+    fs.rmSync(workspace.rootPath);
+    fs.renameSync(originalRoot, workspace.rootPath);
+  });
+});
+
+test('database gate detects replacement of the validated target before open', async () => {
+  await withPreparedWorkspace(async ({ workspace }) => {
+    await assert.rejects(
+      assertProductionBuildDatabaseReady({
+        workspace,
         beforeDatabaseOpen() {
           fs.renameSync(workspace.databasePath, `${workspace.databasePath}.replaced`);
           fs.writeFileSync(workspace.databasePath, '', { flag: 'wx', mode: 0o600 });
         },
-      })),
+      }),
       assertCode('BUILD_DATABASE_IDENTITY_CHANGED'),
     );
+    fs.rmSync(workspace.databasePath);
+    fs.renameSync(`${workspace.databasePath}.replaced`, workspace.databasePath);
   });
 });
 
-test('database gate rejects a connectable but unmigrated build-owned database', async () => {
-  await withWorkspace(async (workspace) => {
+test('database gate detects swap and restoration while Prisma opens the target', async () => {
+  await withPreparedWorkspace(async ({ workspace }) => {
+    const attackerPath = path.join(tempRoot, 'swap-restore-attacker.db');
+    fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
+    migrate(pathToFileURL(attackerPath).href);
+    const ownedPath = `${workspace.databasePath}.owned`;
     await assert.rejects(
-      assertProductionBuildDatabaseReady(workspaceOptions(workspace)),
-      assertCode('DATABASE_NOT_READY'),
+      assertProductionBuildDatabaseReady({
+        workspace,
+        async connectDatabase(prisma) {
+          fs.renameSync(workspace.databasePath, ownedPath);
+          fs.renameSync(attackerPath, workspace.databasePath);
+          await prisma.$connect();
+          fs.renameSync(workspace.databasePath, attackerPath);
+          fs.renameSync(ownedPath, workspace.databasePath);
+        },
+      }),
+      assertCode('BUILD_DATABASE_OPEN_IDENTITY_MISMATCH'),
     );
   });
 });
 
-test('database gate accepts only a migrated database exclusively created by this build', async () => {
-  await withWorkspace(async (workspace) => {
-    const before = fs.lstatSync(workspace.databasePath);
-    migrateWorkspace(workspace);
-    const result = await assertProductionBuildDatabaseReady(workspaceOptions(workspace));
-    const after = fs.lstatSync(workspace.databasePath);
+test('atomic cleanup refuses a replacement root without deleting it', async () => {
+  const owned = await prepareProductionBuildDatabase();
+  const replacement = createBuildDatabaseWorkspace();
+  const ownedAside = `${owned.workspace.rootPath}.owned`;
+  const replacementAside = `${replacement.rootPath}.replacement`;
+  fs.renameSync(owned.workspace.rootPath, ownedAside);
+  fs.renameSync(replacement.rootPath, owned.workspace.rootPath);
+  await assert.rejects(
+    async () => owned.workspace.cleanup(),
+    assertCode('BUILD_DATABASE_CLEANUP_REFUSED'),
+  );
+  assert.equal(fs.existsSync(owned.workspace.rootPath), true);
+  assert.equal(fs.existsSync(path.join(owned.workspace.rootPath, 'build.db')), true);
+  fs.renameSync(owned.workspace.rootPath, replacementAside);
+  fs.renameSync(ownedAside, owned.workspace.rootPath);
+  fs.renameSync(replacementAside, replacement.rootPath);
+  owned.workspace.cleanup();
+  replacement.cleanup();
+});
 
+test('atomic cleanup refuses unowned root content without deleting it', async () => {
+  const { workspace } = await prepareProductionBuildDatabase();
+  const unownedPath = path.join(workspace.rootPath, 'unowned.txt');
+  fs.writeFileSync(unownedPath, 'must survive refusal', { flag: 'wx', mode: 0o600 });
+  await assert.rejects(
+    async () => workspace.cleanup(),
+    assertCode('BUILD_DATABASE_CLEANUP_REFUSED'),
+  );
+  assert.equal(fs.readFileSync(unownedPath, 'utf8'), 'must survive refusal');
+  fs.unlinkSync(unownedPath);
+  workspace.cleanup();
+});
+
+test('gate accepts only its initialized process-local database capability', async () => {
+  await withPreparedWorkspace(async ({ workspace, result }) => {
+    const before = fs.lstatSync(workspace.databasePath);
+    const repeated = await assertProductionBuildDatabaseReady({ workspace });
+    const after = fs.lstatSync(workspace.databasePath);
     assert.equal(result.provider, 'sqlite');
-    assert.equal(result.checks.every((check) => check.pass), true);
+    assert.equal(repeated.provider, 'sqlite');
+    assert.equal(repeated.checks.every((check) => check.pass), true);
     assert.equal(`${after.dev}:${after.ino}`, `${before.dev}:${before.ino}`);
-    assert.equal(fs.existsSync(workspace.rootPath), true);
   });
 });
 
-test('build-owned database cleanup removes the exclusive root and target', () => {
-  const workspace = createBuildDatabaseWorkspace();
+test('build-owned database cleanup removes the exclusive root and target', async () => {
+  const { workspace } = await prepareProductionBuildDatabase();
   assert.equal(fs.existsSync(workspace.databasePath), true);
-  assert.equal(fs.lstatSync(workspace.databasePath).isFile(), true);
   workspace.cleanup();
   assert.equal(fs.existsSync(workspace.rootPath), false);
-});
-
-test('legacy existing-file acceptance is closed even when the disposable flag is set', async () => {
-  const databasePath = path.join(tempRoot, 'legacy-ready.db');
-  fs.writeFileSync(databasePath, '', { flag: 'wx' });
-  const databaseUrl = pathToFileURL(databasePath).href;
-  execFileSync(process.execPath, [prismaCli, 'migrate', 'deploy', '--schema', 'prisma/schema.prisma'], {
-    cwd: webRoot,
-    env: { ...process.env, DATABASE_URL: databaseUrl, DEBUG: 'prisma:*' },
-    stdio: 'pipe',
-  });
-  await assert.rejects(
-    assertProductionBuildDatabaseReady({ databaseUrl, disposable: '1' }),
-    assertCode('BUILD_DATABASE_OWNERSHIP_REQUIRED'),
-  );
+  workspace.cleanup();
 });

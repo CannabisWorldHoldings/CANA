@@ -141,7 +141,7 @@ const nextConfig: NextConfig = {
 
 async function assertProductionBuildDatabaseReady() {
   const buildDatabase = await import("./src/lib/build-database.mjs");
-  await buildDatabase.assertProductionBuildDatabaseReady();
+  await buildDatabase.installProductionBuildDatabase();
 }
 
 export default async function config(phase: string): Promise<NextConfig> {

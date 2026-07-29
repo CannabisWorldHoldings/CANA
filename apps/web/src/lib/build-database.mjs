@@ -1,18 +1,22 @@
 import { PrismaClient } from '@prisma/client';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  databaseProviderOf,
   databaseReadiness,
+  ensureDatabaseMigrated,
   initializeDatabaseConfig,
 } from './db-config.mjs';
 
 const BUILD_DATABASE_ROOT_PREFIX = 'cana-build-database-';
 const BUILD_DATABASE_NAME = 'build.db';
-const OWNERSHIP_PROOF_NAME = '.cana-build-database-ownership.json';
+const BUILD_DATABASE_SIDECARS = [`${BUILD_DATABASE_NAME}-shm`, `${BUILD_DATABASE_NAME}-wal`];
+const OWNERSHIP_TABLE = '__cana_build_database_ownership';
+const workspaceState = new WeakMap();
+const cleanedWorkspaces = new WeakSet();
+let installedWorkspace;
 
 export class ProductionBuildDatabaseError extends Error {
   constructor(code, message) {
@@ -37,58 +41,12 @@ function sameIdentity(left, right) {
   return left.dev === right.dev && left.ino === right.ino;
 }
 
-function lstatIdentity(target) {
-  return identityOf(fs.lstatSync(target, { bigint: true }));
-}
-
 function pathIsContained(root, target) {
   const relative = path.relative(root, target);
-  return relative === '' || (
-    relative !== '..'
+  return relative !== ''
+    && relative !== '..'
     && !relative.startsWith(`..${path.sep}`)
-    && !path.isAbsolute(relative)
-  );
-}
-
-function parseLocalBuildDatabaseUrl(databaseUrl) {
-  const rawPath = databaseUrl.slice('file:'.length).split(/[?#]/u, 1)[0].replaceAll('\\', '/');
-  if (
-    !rawPath.startsWith('/')
-    || /(^|\/)(?:\.\.|%2e%2e|%2e\.|\.%2e)(?:\/|$)/iu.test(rawPath)
-  ) {
-    refusal('BUILD_DATABASE_URL_UNSAFE', 'Build database URL must not contain traversal');
-  }
-
-  let parsed;
-  let databasePath;
-  try {
-    parsed = new URL(databaseUrl);
-    if (
-      parsed.protocol !== 'file:'
-      || parsed.host !== ''
-      || parsed.username !== ''
-      || parsed.password !== ''
-      || parsed.port !== ''
-      || parsed.search !== ''
-      || parsed.hash !== ''
-    ) {
-      refusal('BUILD_DATABASE_URL_UNSAFE', 'Build database must use a local file URL without unsupported components');
-    }
-    databasePath = fileURLToPath(parsed);
-  } catch (error) {
-    if (error instanceof ProductionBuildDatabaseError) throw error;
-    refusal('BUILD_DATABASE_URL_UNSAFE', 'Build database URL is malformed');
-  }
-
-  if (
-    !path.isAbsolute(databasePath)
-    || databasePath.includes('\0')
-    || databasePath.startsWith('//')
-    || databasePath.startsWith('\\\\')
-  ) {
-    refusal('BUILD_DATABASE_URL_UNSAFE', 'Build database URL must resolve to an absolute local path');
-  }
-  return path.normalize(databasePath);
+    && !path.isAbsolute(relative);
 }
 
 function secureDirectoryStats(directory, code) {
@@ -111,13 +69,11 @@ function secureDirectoryStats(directory, code) {
 }
 
 function assertNoSymlinkComponents(rootPath, targetPath) {
-  const relative = path.relative(rootPath, targetPath);
-  if (!pathIsContained(rootPath, targetPath) || relative === '') {
+  if (!pathIsContained(rootPath, targetPath)) {
     refusal('BUILD_DATABASE_PATH_OUTSIDE_ROOT', 'Build database must be contained inside its owned root');
   }
-
   let current = rootPath;
-  for (const component of relative.split(path.sep)) {
+  for (const component of path.relative(rootPath, targetPath).split(path.sep)) {
     current = path.join(current, component);
     let stats;
     try {
@@ -131,111 +87,134 @@ function assertNoSymlinkComponents(rootPath, targetPath) {
   }
 }
 
-function readOwnershipProof({
-  databasePath,
-  buildDatabaseRoot,
-  ownershipProof,
-}) {
-  if (!buildDatabaseRoot || !ownershipProof) {
+function stateFor(workspace) {
+  const state = workspaceState.get(workspace);
+  if (!state || state.cleaned) {
     refusal(
       'BUILD_DATABASE_OWNERSHIP_REQUIRED',
-      'Production build requires build-created database ownership proof',
+      'Production build requires a live process-local database capability',
     );
   }
-  if (!path.isAbsolute(buildDatabaseRoot) || buildDatabaseRoot.includes('\0')) {
-    refusal('BUILD_DATABASE_ROOT_UNSAFE', 'Build database root must be an absolute local path');
-  }
-
-  const normalizedRoot = path.normalize(buildDatabaseRoot);
-  const rootStats = secureDirectoryStats(normalizedRoot, 'BUILD_DATABASE_ROOT_UNSAFE');
-  const canonicalTemporaryRoot = fs.realpathSync(os.tmpdir());
-  const realRoot = fs.realpathSync(normalizedRoot);
-  if (
-    realRoot !== normalizedRoot
-    || path.dirname(realRoot) !== canonicalTemporaryRoot
-    || !path.basename(realRoot).startsWith(BUILD_DATABASE_ROOT_PREFIX)
-  ) {
-    refusal('BUILD_DATABASE_ROOT_UNSAFE', 'Build database root is not a canonical build-owned temporary directory');
-  }
-  if (!pathIsContained(realRoot, databasePath)) {
-    refusal('BUILD_DATABASE_PATH_OUTSIDE_ROOT', 'Build database is outside its owned temporary root');
-  }
-
-  assertNoSymlinkComponents(realRoot, databasePath);
-  const realDatabasePath = fs.realpathSync(databasePath);
-  if (realDatabasePath !== databasePath || !pathIsContained(realRoot, realDatabasePath)) {
-    refusal('BUILD_DATABASE_SYMLINK_REJECTED', 'Build database must resolve inside its owned root without symbolic links');
-  }
-
-  const databaseStats = fs.lstatSync(databasePath, { bigint: true });
-  if (!databaseStats.isFile() || databaseStats.isSymbolicLink() || databaseStats.nlink !== 1n) {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database must be one exclusively owned regular file');
-  }
-  if ((Number(databaseStats.mode) & 0o077) !== 0) {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database must not be group or world accessible');
-  }
-  if (typeof process.getuid === 'function' && Number(databaseStats.uid) !== process.getuid()) {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database must be owned by the current build user');
-  }
-
-  const proofPath = path.join(realRoot, OWNERSHIP_PROOF_NAME);
-  assertNoSymlinkComponents(realRoot, proofPath);
-  const proofStats = fs.lstatSync(proofPath, { bigint: true });
-  if (!proofStats.isFile() || proofStats.isSymbolicLink() || proofStats.nlink !== 1n) {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database ownership proof must be a regular file');
-  }
-  if ((Number(proofStats.mode) & 0o077) !== 0) {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database ownership proof must not be group or world accessible');
-  }
-
-  let proof;
-  try {
-    proof = JSON.parse(fs.readFileSync(proofPath, 'utf8'));
-  } catch {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database ownership proof is malformed');
-  }
-  const suppliedToken = String(ownershipProof);
-  const recordedToken = String(proof.token ?? '');
-  if (
-    proof.schemaVersion !== 1
-    || !/^[0-9a-f]{64}$/u.test(suppliedToken)
-    || !/^[0-9a-f]{64}$/u.test(recordedToken)
-    || !timingSafeEqual(Buffer.from(suppliedToken, 'hex'), Buffer.from(recordedToken, 'hex'))
-    || proof.rootPath !== realRoot
-    || proof.databasePath !== databasePath
-    || !sameIdentity(proof.rootIdentity ?? {}, identityOf(rootStats))
-    || !sameIdentity(proof.databaseIdentity ?? {}, identityOf(databaseStats))
-  ) {
-    refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database ownership proof does not match the current build');
-  }
-
-  return {
-    rootPath: realRoot,
-    rootIdentity: identityOf(rootStats),
-    databasePath,
-    databaseIdentity: identityOf(databaseStats),
-  };
+  return state;
 }
 
-function assertDatabaseIdentity(ownership) {
+function assertWorkspaceIdentity(workspace) {
+  const state = stateFor(workspace);
   let rootStats;
   let databaseStats;
+  let descriptorStats;
   try {
-    rootStats = fs.lstatSync(ownership.rootPath, { bigint: true });
-    databaseStats = fs.lstatSync(ownership.databasePath, { bigint: true });
+    rootStats = fs.lstatSync(state.rootPath, { bigint: true });
+    databaseStats = fs.lstatSync(state.databasePath, { bigint: true });
+    descriptorStats = fs.fstatSync(state.descriptor, { bigint: true });
   } catch {
     refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
   }
+  const canonicalTemporaryRoot = fs.realpathSync(os.tmpdir());
+  const realRoot = fs.realpathSync(state.rootPath);
+  const realDatabasePath = fs.realpathSync(state.databasePath);
+  if (
+    realRoot !== state.rootPath
+    || path.dirname(realRoot) !== canonicalTemporaryRoot
+    || !path.basename(realRoot).startsWith(BUILD_DATABASE_ROOT_PREFIX)
+    || state.databasePath !== path.join(realRoot, BUILD_DATABASE_NAME)
+    || fileURLToPath(workspace.databaseUrl) !== state.databasePath
+    || realDatabasePath !== state.databasePath
+    || !pathIsContained(realRoot, realDatabasePath)
+  ) {
+    refusal('BUILD_DATABASE_ROOT_UNSAFE', 'Build database is not inside its canonical owned temporary root');
+  }
+  assertNoSymlinkComponents(realRoot, realDatabasePath);
   if (
     rootStats.isSymbolicLink()
     || databaseStats.isSymbolicLink()
     || !databaseStats.isFile()
     || databaseStats.nlink !== 1n
-    || !sameIdentity(ownership.rootIdentity, identityOf(rootStats))
-    || !sameIdentity(ownership.databaseIdentity, identityOf(databaseStats))
+    || !sameIdentity(state.rootIdentity, identityOf(rootStats))
+    || !sameIdentity(state.databaseIdentity, identityOf(databaseStats))
+    || !sameIdentity(state.databaseIdentity, identityOf(descriptorStats))
+    || (Number(databaseStats.mode) & 0o077) !== 0
+    || (
+      typeof process.getuid === 'function'
+      && Number(databaseStats.uid) !== process.getuid()
+    )
   ) {
     refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
   }
+  return state;
+}
+
+function cleanupWorkspace(workspace) {
+  if (cleanedWorkspaces.has(workspace)) return;
+  const state = stateFor(workspace);
+  const quarantinePath = `${state.rootPath}.cleanup-${randomBytes(16).toString('hex')}`;
+  fs.renameSync(state.rootPath, quarantinePath);
+  const restoreQuarantine = () => {
+    try {
+      fs.lstatSync(state.rootPath);
+    } catch {
+      fs.renameSync(quarantinePath, state.rootPath);
+    }
+  };
+  let quarantinedRoot;
+  let quarantinedDatabase;
+  let entries;
+  let sidecars;
+  try {
+    quarantinedRoot = fs.lstatSync(quarantinePath, { bigint: true });
+    quarantinedDatabase = fs.lstatSync(
+      path.join(quarantinePath, BUILD_DATABASE_NAME),
+      { bigint: true },
+    );
+    entries = fs.readdirSync(quarantinePath).sort();
+    sidecars = entries
+      .filter((entry) => entry !== BUILD_DATABASE_NAME)
+      .map((entry) => fs.lstatSync(path.join(quarantinePath, entry), { bigint: true }));
+  } catch {
+    restoreQuarantine();
+    refusal(
+      'BUILD_DATABASE_CLEANUP_REFUSED',
+      'Atomic quarantine could not prove the complete build-owned database root',
+    );
+  }
+  if (
+    !sameIdentity(state.rootIdentity, identityOf(quarantinedRoot))
+    || !sameIdentity(state.databaseIdentity, identityOf(quarantinedDatabase))
+    || entries.some(
+      (entry) => entry !== BUILD_DATABASE_NAME && !BUILD_DATABASE_SIDECARS.includes(entry),
+    )
+    || sidecars.some((stats) => (
+      !stats.isFile()
+      || stats.isSymbolicLink()
+      || stats.nlink !== 1n
+      || (Number(stats.mode) & 0o077) !== 0
+      || (
+        typeof process.getuid === 'function'
+        && Number(stats.uid) !== process.getuid()
+      )
+    ))
+  ) {
+    restoreQuarantine();
+    refusal(
+      'BUILD_DATABASE_CLEANUP_REFUSED',
+      'Atomic quarantine captured content not owned by this build',
+    );
+  }
+  fs.closeSync(state.descriptor);
+  state.descriptor = undefined;
+  for (const sidecar of BUILD_DATABASE_SIDECARS) {
+    const sidecarPath = path.join(quarantinePath, sidecar);
+    try {
+      fs.unlinkSync(sidecarPath);
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+    }
+  }
+  fs.unlinkSync(path.join(quarantinePath, BUILD_DATABASE_NAME));
+  fs.rmdirSync(quarantinePath);
+  state.cleaned = true;
+  workspaceState.delete(workspace);
+  cleanedWorkspaces.add(workspace);
 }
 
 export function createBuildDatabaseWorkspace() {
@@ -244,92 +223,105 @@ export function createBuildDatabaseWorkspace() {
   fs.chmodSync(rootPath, 0o700);
   const rootStats = secureDirectoryStats(rootPath, 'BUILD_DATABASE_ROOT_UNSAFE');
   const databasePath = path.join(rootPath, BUILD_DATABASE_NAME);
-  const noFollow = fs.constants.O_NOFOLLOW ?? 0;
   const descriptor = fs.openSync(
     databasePath,
-    fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_RDWR | noFollow,
+    fs.constants.O_CREAT
+      | fs.constants.O_EXCL
+      | fs.constants.O_RDWR
+      | (fs.constants.O_NOFOLLOW ?? 0),
     0o600,
   );
-  fs.closeSync(descriptor);
-  const databaseStats = fs.lstatSync(databasePath, { bigint: true });
-  const ownershipProof = randomBytes(32).toString('hex');
-  fs.writeFileSync(
-    path.join(rootPath, OWNERSHIP_PROOF_NAME),
-    `${JSON.stringify({
-      schemaVersion: 1,
-      token: ownershipProof,
-      rootPath,
-      databasePath,
-      rootIdentity: identityOf(rootStats),
-      databaseIdentity: identityOf(databaseStats),
-    })}\n`,
-    { encoding: 'utf8', flag: 'wx', mode: 0o600 },
-  );
-
-  let cleaned = false;
-  return {
+  const databaseStats = fs.fstatSync(descriptor, { bigint: true });
+  const workspace = Object.freeze({
     rootPath,
     databasePath,
     databaseUrl: pathToFileURL(databasePath).href,
-    ownershipProof,
     cleanup() {
-      if (cleaned) return;
-      const currentRootIdentity = lstatIdentity(rootPath);
-      if (!sameIdentity(identityOf(rootStats), currentRootIdentity)) {
-        refusal('BUILD_DATABASE_CLEANUP_REFUSED', 'Build database root identity changed before cleanup');
-      }
-      fs.rmSync(rootPath, { recursive: true, force: false });
-      cleaned = true;
+      cleanupWorkspace(workspace);
     },
-  };
+  });
+  workspaceState.set(workspace, {
+    rootPath,
+    databasePath,
+    rootIdentity: identityOf(rootStats),
+    databaseIdentity: identityOf(databaseStats),
+    descriptor,
+    marker: randomBytes(32).toString('hex'),
+    initialized: false,
+    cleaned: false,
+  });
+  return workspace;
+}
+
+async function initializeWorkspace(workspace) {
+  const state = assertWorkspaceIdentity(workspace);
+  const migration = await ensureDatabaseMigrated({ databaseUrl: workspace.databaseUrl });
+  if (!migration.ok) {
+    refusal(
+      'DATABASE_MIGRATION_FAILED',
+      `Production build database migration failed: ${migration.error ?? migration.state}`,
+    );
+  }
+  assertWorkspaceIdentity(workspace);
+  const prisma = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
+  try {
+    await prisma.$connect();
+    assertWorkspaceIdentity(workspace);
+    await prisma.$executeRawUnsafe(
+      `CREATE TABLE IF NOT EXISTS "${OWNERSHIP_TABLE}" (marker TEXT NOT NULL PRIMARY KEY)`,
+    );
+    await prisma.$executeRawUnsafe(`DELETE FROM "${OWNERSHIP_TABLE}"`);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "${OWNERSHIP_TABLE}" (marker) VALUES (?)`,
+      state.marker,
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+  assertWorkspaceIdentity(workspace);
+  state.initialized = true;
 }
 
 export async function assertProductionBuildDatabaseReady({
-  databaseUrl = process.env.DATABASE_URL,
-  disposable = process.env.CANA_BUILD_DATABASE_IS_DISPOSABLE,
-  buildDatabaseRoot = process.env.CANA_BUILD_DATABASE_ROOT,
-  ownershipProof = process.env.CANA_BUILD_DATABASE_OWNERSHIP_PROOF,
+  workspace,
   beforeDatabaseOpen,
+  connectDatabase,
 } = {}) {
-  const normalizedUrl = String(databaseUrl ?? '').trim();
-  if (!normalizedUrl) {
-    throw new ProductionBuildDatabaseError(
-      'DATABASE_URL_REQUIRED',
-      'Production build requires an explicit DATABASE_URL',
-    );
+  const state = assertWorkspaceIdentity(workspace);
+  if (!state.initialized) {
+    refusal('BUILD_DATABASE_NOT_INITIALIZED', 'Build-owned database has not completed initialization');
   }
-  if (disposable !== '1') {
-    throw new ProductionBuildDatabaseError(
-      'DISPOSABLE_DATABASE_REQUIRED',
-      'Production build requires an explicitly disposable database',
-    );
-  }
-
-  const provider = databaseProviderOf(normalizedUrl);
-  if (provider !== 'sqlite') {
-    throw new ProductionBuildDatabaseError(
-      'BUILD_DATABASE_PROVIDER_MISMATCH',
-      `Disposable build database must match the current sqlite schema; received ${provider}`,
-    );
-  }
-
-  const databasePath = parseLocalBuildDatabaseUrl(normalizedUrl);
-  const ownership = readOwnershipProof({
-    databasePath,
-    buildDatabaseRoot,
-    ownershipProof,
-  });
   await beforeDatabaseOpen?.();
-  assertDatabaseIdentity(ownership);
+  assertWorkspaceIdentity(workspace);
 
-  const prisma = new PrismaClient({ datasources: { db: { url: normalizedUrl } } });
+  const prisma = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
   let result;
   try {
-    await prisma.$connect();
-    assertDatabaseIdentity(ownership);
+    await (connectDatabase ? connectDatabase(prisma) : prisma.$connect());
+    let markers;
+    try {
+      markers = await prisma.$queryRawUnsafe(
+        `SELECT marker FROM "${OWNERSHIP_TABLE}" ORDER BY marker`,
+      );
+    } catch {
+      refusal(
+        'BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
+        'Opened database does not contain this build process ownership marker',
+      );
+    }
+    if (
+      markers.length !== 1
+      || markers[0]?.marker !== state.marker
+    ) {
+      refusal(
+        'BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
+        'Opened database is not the process-local database created by this build',
+      );
+    }
+    assertWorkspaceIdentity(workspace);
     const initialized = await initializeDatabaseConfig(prisma);
     if (!initialized.ok) {
-      throw new ProductionBuildDatabaseError(
+      refusal(
         'DATABASE_INITIALIZATION_FAILED',
         `Production build database initialization failed for: ${[
           ...initialized.failures.map((failure) => failure.pragma),
@@ -337,22 +329,56 @@ export async function assertProductionBuildDatabaseReady({
         ].join(', ')}`,
       );
     }
-    assertDatabaseIdentity(ownership);
-    const readiness = await databaseReadiness(prisma, { provider });
+    assertWorkspaceIdentity(workspace);
+    const readiness = await databaseReadiness(prisma, { provider: 'sqlite' });
     if (!readiness.ready) {
-      throw new ProductionBuildDatabaseError(
+      refusal(
         'DATABASE_NOT_READY',
         `Production build database is not ready: ${readiness.checks
           .filter((check) => !check.pass)
           .map((check) => check.name)
-        .join(', ')}`,
+          .join(', ')}`,
       );
     }
-    assertDatabaseIdentity(ownership);
-    result = { provider, checks: readiness.checks };
+    assertWorkspaceIdentity(workspace);
+    result = { provider: 'sqlite', checks: readiness.checks };
   } finally {
     await prisma.$disconnect();
   }
-  assertDatabaseIdentity(ownership);
+  assertWorkspaceIdentity(workspace);
   return result;
+}
+
+export async function prepareProductionBuildDatabase(options = {}) {
+  const workspace = createBuildDatabaseWorkspace();
+  try {
+    await initializeWorkspace(workspace);
+    const result = await assertProductionBuildDatabaseReady({ workspace, ...options });
+    return { workspace, result };
+  } catch (error) {
+    workspace.cleanup();
+    throw error;
+  }
+}
+
+export async function installProductionBuildDatabase() {
+  if (installedWorkspace) return installedWorkspace.result;
+  const installed = await prepareProductionBuildDatabase();
+  installedWorkspace = installed;
+  process.env.DATABASE_URL = installed.workspace.databaseUrl;
+  const cleanup = () => {
+    if (installedWorkspace) {
+      installedWorkspace.workspace.cleanup();
+      installedWorkspace = undefined;
+    }
+  };
+  process.once('beforeExit', cleanup);
+  process.once('exit', cleanup);
+  for (const signal of ['SIGHUP', 'SIGINT', 'SIGTERM']) {
+    process.once(signal, () => {
+      cleanup();
+      process.kill(process.pid, signal);
+    });
+  }
+  return installed.result;
 }
