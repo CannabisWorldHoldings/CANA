@@ -316,6 +316,31 @@
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
       "approval_sha256": "ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970"
+    },
+    "mission3_m001_shadow_slice_2026_07_29": {
+      "authorization": "ACTIVATE CANA MISSION 3 — M001 CANONICAL SHADOW SLICE",
+      "scope": "The thirteen exact Mission 3 M001 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, live-data, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
+      "authorization_effect": "Durability changed-file ownership only; no live-data authority, no provider authority, no Hermes authority, no credential authority, no deployment authority, no production authority, no external-effect authority, no verification-bypass authority and no self-promotion authority.",
+      "base_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
+      "base_tree": "e6d21f2b9303e33bd0c357c125269bf9619b63d0",
+      "package_003_sha256": "173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
+      "handoff_hash": "baf1492a1aaa3290886b8f3cd77e68515fe15775618dc5fc173ed235a02b9cd3",
+      "authorized_paths": [
+        ".github/workflows/cana-verify.yml",
+        "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+        "docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+        "docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+        "docs/convergence/mission-3/M001_DELTA_MAP.json",
+        "docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+        "docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+        "tools/durability/cli.mjs",
+        "tools/durability/cli.test.mjs",
+        "tools/github-import/prepare.test.mjs",
+        "tools/growth-foundry/m001/claim-graph.mjs",
+        "tools/growth-foundry/m001/claim-graph.test.mjs",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ],
+      "approval_sha256": "8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452"
     }
   },
   "owned_create_paths": [
@@ -386,7 +411,15 @@
     "tools/mission-2/verifier.mjs",
     "tools/mission-2/verifier-process.mjs",
     "tools/mission-2/verifier-worker.mjs",
-    "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+    "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+    "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+    "docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+    "docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+    "docs/convergence/mission-3/M001_DELTA_MAP.json",
+    "docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+    "docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+    "tools/growth-foundry/m001/claim-graph.mjs",
+    "tools/growth-foundry/m001/claim-graph.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/tests/helpers/**",
@@ -501,7 +534,15 @@
     "tools/mission-2/store.mjs",
     "tools/mission-2/verifier.mjs",
     "tools/mission-2/verifier-process.mjs",
-    "tools/mission-2/verifier-worker.mjs"
+    "tools/mission-2/verifier-worker.mjs",
+    "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+    "docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+    "docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+    "docs/convergence/mission-3/M001_DELTA_MAP.json",
+    "docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+    "docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+    "tools/growth-foundry/m001/claim-graph.mjs",
+    "tools/growth-foundry/m001/claim-graph.test.mjs"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",

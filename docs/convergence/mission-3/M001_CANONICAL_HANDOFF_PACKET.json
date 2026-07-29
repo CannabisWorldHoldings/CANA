@@ -1,0 +1,263 @@
+{
+  "schema_version": "cana.mission-3-m001-canonical-handoff/1.0.0",
+  "mechanism_identity": "CANA-GF-M001-VERIFIED-LOCAL-ELIGIBILITY-AND-AVAILABILITY-GRAPH",
+  "mechanism_version": "0.3.0-candidate",
+  "package_003": {
+    "filename": "CANA_GROWTH_FOUNDRY_RECONCILED_PACKAGE_003_2026-07-29.zip",
+    "sha256": "173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
+    "byte_size": 2005686,
+    "file_count": 84,
+    "packet_hash": "5457ab2cb5e9c75cb62544705f58aa7132e65bb09d3603e8f171b12b1eedcecc",
+    "mission_2_normalized_source_packet_hash": "f33f8db25786e44ac15ebfcf60bd700d284ce945fcd09382ee7056c78bd3b117",
+    "packet_hash_domain": "PACKAGE_003_PYTHON_CANONICAL_JSON",
+    "source_manifest_hash": "6343607e1fc69b5371ff1eba51ca0d5b193527cbf1f01932561a354f0ce330f8",
+    "manifest_set_hash": "3728ab5dd29193af3f52c2d62eec1becf04b7b837b9a8c2fafd6e4ce9f6a90b6"
+  },
+  "canonical_repository": "CannabisWorldHoldings/CANA",
+  "canonical_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
+  "canonical_tree": "e6d21f2b9303e33bd0c357c125269bf9619b63d0",
+  "tenant_id": "tenant_cana",
+  "workspace_id": "workspace_orderweeddc_growth_foundry",
+  "owned_files": [
+    ".github/workflows/cana-verify.yml",
+    "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+    "docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+    "docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+    "docs/convergence/mission-3/M001_DELTA_MAP.json",
+    "docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+    "docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+    "tools/durability/cli.mjs",
+    "tools/durability/cli.test.mjs",
+    "tools/github-import/prepare.test.mjs",
+    "tools/growth-foundry/m001/claim-graph.mjs",
+    "tools/growth-foundry/m001/claim-graph.test.mjs",
+    "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+  ],
+  "deterministic_operation": {
+    "kind": "REPLACE_EXACT_TEXT",
+    "path": "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+    "find": "Implementation status: `AUTHORIZED_NOT_IMPLEMENTED`",
+    "replace": "Implementation status: `IMPLEMENTED_SHADOW_ONLY`"
+  },
+  "executor_identity": "CODEX_MISSION3_M001_IMPLEMENTER_V1",
+  "independent_verifier_identity": "CANA_M001_INDEPENDENT_REPLAY_VERIFIER_V1",
+  "foundry_handoff": {
+    "schema_version": "cana.foundry/codex_handoff_packet/1.0.0",
+    "type": "CODEX_HANDOFF_PACKET",
+    "tenant_id": "tenant_cana",
+    "workspace_id": "workspace_orderweeddc_growth_foundry",
+    "provenance": "PACKAGE_003_SHA256_173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
+    "source_hash": "6343607e1fc69b5371ff1eba51ca0d5b193527cbf1f01932561a354f0ce330f8",
+    "truth_state": "AUTHORIZED_FOR_SHADOW_TEST",
+    "mechanism_candidate_id": "mechanism_candidate_b40b9dbf4e9f1142328939b9",
+    "authorized_adapter": "DETERMINISTIC_MOCK",
+    "provider": "NONE",
+    "hermes": "DISABLED",
+    "budget_usd": 0,
+    "record_id": "codex_handoff_packet_25718a08b5cb2051f151622d",
+    "packet_hash": "62dae24540f2e9381f613568265b22376384b6558994088cdae621cc0374bb36"
+  },
+  "context_packet": {
+    "schema_version": "cana.context-packet/2.0.0",
+    "compiler_version": "sitemind-context-compiler/mission-2-adapter-1",
+    "tenant_id": "tenant_cana",
+    "workspace_id": "workspace_orderweeddc_growth_foundry",
+    "source_repository": "CannabisWorldHoldings/CANA",
+    "source_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
+    "source_tree": "e6d21f2b9303e33bd0c357c125269bf9619b63d0",
+    "permitted_files": [
+      ".github/workflows/cana-verify.yml",
+      "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+      "docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+      "docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+      "docs/convergence/mission-3/M001_DELTA_MAP.json",
+      "docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+      "docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+      "tools/durability/cli.mjs",
+      "tools/durability/cli.test.mjs",
+      "tools/github-import/prepare.test.mjs",
+      "tools/growth-foundry/m001/claim-graph.mjs",
+      "tools/growth-foundry/m001/claim-graph.test.mjs",
+      "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+    ],
+    "evidence_sha256": [
+      "173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc"
+    ],
+    "compiled_context": {
+      "objective": "Implement and falsify the fixture-only M001 verified local eligibility and availability claim graph",
+      "compiled_at": "2026-07-29T18:30:00.000Z",
+      "actionable_facts": [
+        {
+          "id": "m001_package_003_owner_authorization",
+          "claim": "Package 003 M001 is hash-verified, source-manifest-bound and owner-authorized for one deterministic synthetic shadow implementation.",
+          "authority": "OWNER_EXPLICIT_DIRECTIVE",
+          "truth_status": "VERIFIED",
+          "source": "CANA Package 003 and owner authorization@c4d058f5602e6db2196cccba782e1daeaa3a3ce7:173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
+          "observed_at": "2026-07-29T18:00:00.000Z",
+          "freshness": "CURRENT",
+          "age_days": 0,
+          "valid_for_days": 7,
+          "actionable": true,
+          "non_actionable_reasons": [],
+          "tags": [
+            "subject:CANA-GF-M001",
+            "mode:SYNTHETIC_SHADOW_ONLY",
+            "target:.github/workflows/cana-verify.yml",
+            "target:docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+            "target:docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+            "target:docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+            "target:docs/convergence/mission-3/M001_DELTA_MAP.json",
+            "target:docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+            "target:docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+            "target:tools/durability/cli.mjs",
+            "target:tools/durability/cli.test.mjs",
+            "target:tools/github-import/prepare.test.mjs",
+            "target:tools/growth-foundry/m001/claim-graph.mjs",
+            "target:tools/growth-foundry/m001/claim-graph.test.mjs",
+            "target:tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+          ]
+        }
+      ],
+      "reference_facts": [],
+      "contradictions": [],
+      "excluded": [],
+      "counts": {
+        "actionable": 1,
+        "reference": 0,
+        "contradictions": 0,
+        "excluded": 0
+      },
+      "actuation_rule": "Only actionable_facts may drive an action. reference_facts inform reasoning but must not be cited as justification for actuation.",
+      "packet_digest": "353ea4126a679de3960e3355567e029f983d9966dd6ada6d05fc9cd76d7473f3"
+    },
+    "canonical_bytes": "{\"compiled_context\":{\"actionable_facts\":[{\"actionable\":true,\"age_days\":0,\"authority\":\"OWNER_EXPLICIT_DIRECTIVE\",\"claim\":\"Package 003 M001 is hash-verified, source-manifest-bound and owner-authorized for one deterministic synthetic shadow implementation.\",\"freshness\":\"CURRENT\",\"id\":\"m001_package_003_owner_authorization\",\"non_actionable_reasons\":[],\"observed_at\":\"2026-07-29T18:00:00.000Z\",\"source\":\"CANA Package 003 and owner authorization@c4d058f5602e6db2196cccba782e1daeaa3a3ce7:173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc\",\"tags\":[\"subject:CANA-GF-M001\",\"mode:SYNTHETIC_SHADOW_ONLY\",\"target:.github/workflows/cana-verify.yml\",\"target:docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md\",\"target:docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json\",\"target:docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json\",\"target:docs/convergence/mission-3/M001_DELTA_MAP.json\",\"target:docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json\",\"target:docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json\",\"target:tools/durability/cli.mjs\",\"target:tools/durability/cli.test.mjs\",\"target:tools/github-import/prepare.test.mjs\",\"target:tools/growth-foundry/m001/claim-graph.mjs\",\"target:tools/growth-foundry/m001/claim-graph.test.mjs\",\"target:tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json\"],\"truth_status\":\"VERIFIED\",\"valid_for_days\":7}],\"actuation_rule\":\"Only actionable_facts may drive an action. reference_facts inform reasoning but must not be cited as justification for actuation.\",\"compiled_at\":\"2026-07-29T18:30:00.000Z\",\"contradictions\":[],\"counts\":{\"actionable\":1,\"contradictions\":0,\"excluded\":0,\"reference\":0},\"excluded\":[],\"objective\":\"Implement and falsify the fixture-only M001 verified local eligibility and availability claim graph\",\"packet_digest\":\"353ea4126a679de3960e3355567e029f983d9966dd6ada6d05fc9cd76d7473f3\",\"reference_facts\":[]},\"compiler_version\":\"sitemind-context-compiler/mission-2-adapter-1\",\"evidence_sha256\":[\"173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc\"],\"permitted_files\":[\".github/workflows/cana-verify.yml\",\"docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md\",\"docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json\",\"docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json\",\"docs/convergence/mission-3/M001_DELTA_MAP.json\",\"docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json\",\"docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json\",\"tools/durability/cli.mjs\",\"tools/durability/cli.test.mjs\",\"tools/github-import/prepare.test.mjs\",\"tools/growth-foundry/m001/claim-graph.mjs\",\"tools/growth-foundry/m001/claim-graph.test.mjs\",\"tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json\"],\"schema_version\":\"cana.context-packet/2.0.0\",\"source_commit\":\"c4d058f5602e6db2196cccba782e1daeaa3a3ce7\",\"source_repository\":\"CannabisWorldHoldings/CANA\",\"source_tree\":\"e6d21f2b9303e33bd0c357c125269bf9619b63d0\",\"tenant_id\":\"tenant_cana\",\"workspace_id\":\"workspace_orderweeddc_growth_foundry\"}",
+    "packet_hash": "c29fd6a11b2a365e8e1161050a8ef3769dd022df0ff3e50f5cb46c29f0ab9cb2"
+  },
+  "mission_contract": {
+    "schema_version": "cana.mission/2.0.0",
+    "mission_id": "cana_gf_m001_verified_local_eligibility_availability_graph_shadow",
+    "tenant_id": "tenant_cana",
+    "workspace_id": "workspace_orderweeddc_growth_foundry",
+    "mission_type": "GROWTH_FOUNDRY_M001_SYNTHETIC_SHADOW_SLICE",
+    "objective": "Implement and falsify the fixture-only M001 verified local eligibility and availability claim graph",
+    "originating_signal": {
+      "signal_id": "package_003_m001_owner_authorization",
+      "evidence_ref": "sha256:173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc"
+    },
+    "source_repository": "CannabisWorldHoldings/CANA",
+    "source_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
+    "source_tree": "e6d21f2b9303e33bd0c357c125269bf9619b63d0",
+    "source_evidence_references": [
+      "sha256:173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
+      "sha256:5457ab2cb5e9c75cb62544705f58aa7132e65bb09d3603e8f171b12b1eedcecc",
+      "sha256:6343607e1fc69b5371ff1eba51ca0d5b193527cbf1f01932561a354f0ce330f8"
+    ],
+    "context_compiler_version": "sitemind-context-compiler/mission-2-adapter-1",
+    "context_packet_hash": "c29fd6a11b2a365e8e1161050a8ef3769dd022df0ff3e50f5cb46c29f0ab9cb2",
+    "authority_identity": "CANA_DURABLE_AUTHORITY",
+    "authorization_identity": "CANA_AUTHORIZATION_EVALUATOR_V1",
+    "permitted_files": [
+      ".github/workflows/cana-verify.yml",
+      "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+      "docs/convergence/mission-3/M001_ADMISSION_AND_AUTHORIZATION_RECEIPT.json",
+      "docs/convergence/mission-3/M001_CANONICAL_HANDOFF_PACKET.json",
+      "docs/convergence/mission-3/M001_DELTA_MAP.json",
+      "docs/convergence/mission-3/M001_IMPLEMENTATION_RESULT.json",
+      "docs/convergence/mission-3/M001_TEST_AND_ADVERSARIAL_RECEIPT.json",
+      "tools/durability/cli.mjs",
+      "tools/durability/cli.test.mjs",
+      "tools/github-import/prepare.test.mjs",
+      "tools/growth-foundry/m001/claim-graph.mjs",
+      "tools/growth-foundry/m001/claim-graph.test.mjs",
+      "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+    ],
+    "permitted_resources": [
+      "DETERMINISTIC_SYNTHETIC_FIXTURES",
+      "ISOLATED_GIT_BRANCH"
+    ],
+    "permitted_capabilities": [
+      "COMPILE_CONTEXT",
+      "GENERATE_REPORT",
+      "READ_REPOSITORY",
+      "RUN_TESTS",
+      "WRITE_LOCAL_BRANCH"
+    ],
+    "provider_state": "NONE",
+    "hermes_state": "DISABLED",
+    "approved_hermes_pin": "NONE",
+    "budget": {
+      "currency": "USD",
+      "maximum": 0,
+      "spent": 0
+    },
+    "external_effect_policy": "NONE",
+    "production_access": "NONE",
+    "timeout_ms": 120000,
+    "expires_at": "2026-08-05T18:30:00.000Z",
+    "success_criteria": [
+      "The exact Package 003 claim classes and authority rules pass deterministic synthetic courts",
+      "Stale, expired, unsupported and conflicted consequential claims render UNKNOWN or VERIFY DIRECTLY",
+      "Corrections preserve prior evidence and sponsorship cannot affect truth or relevance",
+      "Independent exact-SHA replay approves and exact rollback restores the pre-mission tree"
+    ],
+    "verifier_identity": "CANA_M001_INDEPENDENT_REPLAY_VERIFIER_V1",
+    "verification_contract": {
+      "operation": {
+        "kind": "REPLACE_EXACT_TEXT",
+        "path": "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md",
+        "find": "Implementation status: `AUTHORIZED_NOT_IMPLEMENTED`",
+        "replace": "Implementation status: `IMPLEMENTED_SHADOW_ONLY`"
+      },
+      "expected_text": "IMPLEMENTED_SHADOW_ONLY"
+    },
+    "rollback_procedure": {
+      "kind": "EXACT_BYTES",
+      "description": "Revert the canonical merge commit on a separately reviewed branch and verify the exact pre-mission tree"
+    },
+    "current_lifecycle_state": "MISSION_SEALED",
+    "latest_checkpoint": null,
+    "execution_attempts": [],
+    "evidence_references": [],
+    "failure_history": [],
+    "promotion_status": "NOT_EVALUATED",
+    "next_eligible_action": "AUTHORIZE",
+    "contract_hash": "5c5546d54d1d4d1e9a6e95f3f9e1e7d7fcb10f232476574fa5014f644f3b3cd0"
+  },
+  "tests": [
+    "tools/growth-foundry/m001/claim-graph.test.mjs",
+    "tools/mission-2/mission-2.test.mjs",
+    "tools/durability/cli.test.mjs",
+    "tools/github-import/prepare.test.mjs"
+  ],
+  "reused_package_003_negative_fixture": {
+    "path": "08_ADMISSION/fixtures/negative/negative_cases.json",
+    "sha256": "4817c83d7fcf2dc4bc2cd546ff117baa7c1b46d810c614642f57ac6521aaedfe",
+    "case_count": 51
+  },
+  "stop_rules": [
+    "Stop if a consequential claim lacks permitted provenance.",
+    "Stop if exact tenant/workspace binding cannot be proven.",
+    "Stop if contradiction or uncertainty is deleted.",
+    "Stop if implementation requires external effects, provider, Hermes, production access, or spend.",
+    "Stop if independent verifier identity or exact rollback is missing."
+  ],
+  "rollback": {
+    "kind": "EXACT_BYTES",
+    "description": "Revert the canonical merge commit on a separately reviewed branch and verify the exact pre-mission tree"
+  },
+  "expires_at": "2026-08-05T18:30:00.000Z",
+  "evidence_requirements": [
+    "exact source bytes or hash-bound accessible source",
+    "canonical commit/tree",
+    "claim-level provenance",
+    "capture and expiry timestamps",
+    "authorization receipt",
+    "execution receipt if later implemented",
+    "separate verifier receipt before promotion",
+    "rollback receipt"
+  ],
+  "implementation_state": "AUTHORIZED_NOT_IMPLEMENTED",
+  "deployment_state": "NOT_DEPLOYED",
+  "value_state": "VALUE_NOT_ESTABLISHED",
+  "handoff_hash": "baf1492a1aaa3290886b8f3cd77e68515fe15775618dc5fc173ed235a02b9cd3"
+}

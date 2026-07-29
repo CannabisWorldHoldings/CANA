@@ -1,0 +1,177 @@
+{
+  "schema_version": "cana.mission-3-m001-delta-map/1.0.0",
+  "mission": "CANA-GF-M001-VERIFIED-LOCAL-ELIGIBILITY-AND-AVAILABILITY-GRAPH",
+  "package_003_sha256": "173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
+  "package_003_packet_hash": "5457ab2cb5e9c75cb62544705f58aa7132e65bb09d3603e8f171b12b1eedcecc",
+  "package_003_source_manifest_hash": "6343607e1fc69b5371ff1eba51ca0d5b193527cbf1f01932561a354f0ce330f8",
+  "canonical_base_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
+  "canonical_base_tree": "e6d21f2b9303e33bd0c357c125269bf9619b63d0",
+  "canonical_base_is_current_main": true,
+  "requirements": [
+    {
+      "requirement": "Canonical serialization, SHA-256 identity, deterministic IDs and exact schema admission",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "tools/mission-2/canonical.mjs",
+        "tools/mission-2/contracts.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs"
+      ],
+      "action": "Reuse directly without wrappers or renamed copies."
+    },
+    {
+      "requirement": "CANA authorization, zero budget, no provider, Hermes disabled and no production or external effects",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "tools/mission-2/authorization.mjs",
+        "tools/mission-2/contracts.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs"
+      ],
+      "action": "Create the M001 mission and authorization receipt through these exact interfaces."
+    },
+    {
+      "requirement": "Tenant and workspace binding, durable state, leases, heartbeat, retry and restart recovery",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "tools/mission-2/context.mjs",
+        "tools/mission-2/store.mjs",
+        "tools/mission-2/lease.mjs",
+        "tools/mission-2/kernel.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs"
+      ],
+      "action": "Reuse for admission evidence; do not create a second store, lease or lifecycle."
+    },
+    {
+      "requirement": "Foundry Source Record, Insight Capsule, Contradiction Record, Research Gap, Mechanism Candidate, Codex Handoff Packet, Implementation Result and Owner Decision Request schemas",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "tools/mission-2/contracts.mjs",
+        "tools/mission-2/foundry.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs"
+      ],
+      "action": "Validate the Package 003 records and create the M001 Codex Handoff Packet with validateFoundryRecord."
+    },
+    {
+      "requirement": "Independent separate-process falsification and exact-byte rollback",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "tools/mission-2/verifier.mjs",
+        "tools/mission-2/verifier-process.mjs",
+        "tools/mission-2/mock-executor.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs"
+      ],
+      "action": "Reuse the verifier and rollback contracts; final candidate replay is assigned to a non-editing lane."
+    },
+    {
+      "requirement": "Evidence-derived freshness labels with an explicit frozen clock",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "apps/web/src/lib/freshness.mjs"
+      ],
+      "tests": [
+        "apps/web/tests/freshness.test.mjs",
+        "apps/web/tests/structured-data-truth.test.mjs"
+      ],
+      "action": "Reuse the established explicit-clock rule; M001 adds claim-class expiry evaluation only."
+    },
+    {
+      "requirement": "Sponsorship disclosure cannot alter organic ordering",
+      "classification": "ALREADY_PRESENT_AND_TESTED",
+      "paths": [
+        "apps/web/src/lib/sponsorship-entitlement.mjs",
+        "apps/web/src/lib/sponsorship-server.mjs"
+      ],
+      "tests": [
+        "apps/web/tests/sponsorship-entitlement.test.mjs",
+        "apps/web/tests/sponsorship-ordering-guard.test.mjs"
+      ],
+      "action": "Reuse unchanged; the synthetic graph records the stricter Package 003 non-interference fields."
+    },
+    {
+      "requirement": "Distinct synthetic platform, organization, operator, location, listing, service, area, offer and product identities",
+      "classification": "MISSING_REQUIRED",
+      "paths": [
+        "tools/growth-foundry/m001/claim-graph.mjs"
+      ],
+      "tests": [
+        "tools/growth-foundry/m001/claim-graph.test.mjs"
+      ],
+      "action": "Add one deterministic in-memory graph with exact identity and scope validation."
+    },
+    {
+      "requirement": "Package 003 claim classes, source-authority matrix, source hashes, provenance, uncertainty and safe fallback",
+      "classification": "MISSING_REQUIRED",
+      "paths": [
+        "tools/growth-foundry/m001/claim-graph.mjs"
+      ],
+      "tests": [
+        "tools/growth-foundry/m001/claim-graph.test.mjs"
+      ],
+      "action": "Implement the seven admitted claim classes without redesigning their TTL, authority or expiry rules."
+    },
+    {
+      "requirement": "Contradictory observations, correction history, supersession and retirement",
+      "classification": "PRESENT_REQUIRES_NARROW_EXTENSION",
+      "paths": [
+        "tools/mission-2/contracts.mjs",
+        "tools/growth-foundry/m001/claim-graph.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs",
+        "tools/growth-foundry/m001/claim-graph.test.mjs"
+      ],
+      "action": "Reuse Foundry contradiction semantics and add claim-version behavior without modifying Mission 2."
+    },
+    {
+      "requirement": "Claim-graph cross-tenant and cross-workspace refusal",
+      "classification": "PRESENT_REQUIRES_NARROW_EXTENSION",
+      "paths": [
+        "tools/mission-2/context.mjs",
+        "tools/mission-2/store.mjs",
+        "tools/growth-foundry/m001/claim-graph.mjs"
+      ],
+      "tests": [
+        "tools/mission-2/mission-2.test.mjs",
+        "tools/growth-foundry/m001/claim-graph.test.mjs"
+      ],
+      "action": "Apply the existing fail-closed equality rule to every new synthetic record."
+    },
+    {
+      "requirement": "Routes, databases, migrations, analytics, networks, live sources, merchants, public UI, deployment, providers and Hermes",
+      "classification": "OUTSIDE_AUTHORIZED_SCOPE",
+      "paths": [],
+      "tests": [],
+      "action": "Do not implement or connect."
+    }
+  ],
+  "path_decision": {
+    "proposed_paths_conflict": false,
+    "implementation_paths": [
+      "tools/growth-foundry/m001/claim-graph.mjs",
+      "tools/growth-foundry/m001/claim-graph.test.mjs",
+      "docs/convergence/m001/READ_ONLY_SHADOW_CONTRACT.md"
+    ],
+    "supporting_validator_paths": [
+      "tools/durability/cli.mjs",
+      "tools/durability/cli.test.mjs",
+      "tools/github-import/prepare.test.mjs",
+      "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+      ".github/workflows/cana-verify.yml"
+    ],
+    "reason": "No canonical growth-foundry or claim-graph module exists. The implementation paths are isolated from web routes and preserve Mission 2 as the sole lifecycle and authority foundation. Existing durability and workflow policy surfaces require a narrow exact-path extension so the new files are owned and the M001 court is mandatory; the canonical handoff includes those supporting paths explicitly."
+  },
+  "production_unchanged": true,
+  "hermes": "DISABLED",
+  "approved_hermes_pin": "NONE",
+  "provider": "NONE",
+  "budget_usd": 0
+}
