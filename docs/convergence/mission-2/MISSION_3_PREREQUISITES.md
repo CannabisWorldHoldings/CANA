@@ -10,6 +10,8 @@ The following remain unproven or owner-gated after Mission 2:
 - production, hosted, Namecheap, cPanel production, DNS, or public artifact
   inclusion of the Mission 2 runtime;
 - hosted durable-store backup, restore, failover, tenancy, or load behavior;
+- production custody, rotation, hardware isolation, or disaster recovery for the
+  local lease-signing and durable-head integrity keys;
 - external-effect execution or idempotency under real external systems;
 - real merchant, customer, ranking, revenue, conversion, or causal business value;
 - `VALUE_PROVEN` admission for any Mission 2 fixture or technical mechanism;

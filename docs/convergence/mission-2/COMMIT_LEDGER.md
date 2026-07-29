@@ -24,6 +24,7 @@ Traceable Mission 2 commits:
 | `cb9860d4297d153b51a9bf803506b8e35efbb11b` | own the exact Mission 2 execution-lease surface |
 | `4eac8fd66d7f9187333ebf8e2aff76a5a7186c2d` | make authority receipts and durable storage restart-safe |
 | `cff07669db234e121b1b73065da4cd8b65084de5` | independently reproduce authorization and verifier admission decisions |
+| `b6a438d8bf94348481677172f0259eaaa8c9483f` | sign worker leases, isolate verifier execution, enforce exact Foundry schemas, and make execution/rollback crash-safe |
 
 The exact ownership-reconciliation and final-evidence commits are recorded by their
 full identities in the final external verification receipt after the branch is

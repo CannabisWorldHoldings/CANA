@@ -276,7 +276,7 @@
     },
     "mission2_minimum_alive_loop_2026_07_29": {
       "authorization": "ACTIVATE CANA MISSION 2 — MINIMUM ALIVE LOOP AND AUTONOMY FOUNDATION",
-      "scope": "The thirty-one exact Mission 2 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
+      "scope": "The thirty-three exact Mission 2 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability changed-file ownership only; no provider authority, no Hermes authority, no credential authority, no deployment authority, no production authority, no external-effect authority, no verification-bypass authority and no self-promotion authority.",
       "base_commit": "70a7200fbdbfd46bdcef7143863e33caf6f9d6fe",
       "base_tree": "b7f979a2d1d82b9dbc0b23a015eefaa1402a1dec",
@@ -311,9 +311,11 @@
         "tools/mission-2/run-fixtures.mjs",
         "tools/mission-2/store.mjs",
         "tools/mission-2/verifier.mjs",
+        "tools/mission-2/verifier-process.mjs",
+        "tools/mission-2/verifier-worker.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
-      "approval_sha256": "bb485f9d518c18acf59882a1bcf0e9bdd80060b6f16ba6e4f2f380a82a4d6987"
+      "approval_sha256": "ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970"
     }
   },
   "owned_create_paths": [
@@ -382,6 +384,8 @@
     "tools/mission-2/run-fixtures.mjs",
     "tools/mission-2/store.mjs",
     "tools/mission-2/verifier.mjs",
+    "tools/mission-2/verifier-process.mjs",
+    "tools/mission-2/verifier-worker.mjs",
     "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
   ],
   "owned_modify_paths": [
@@ -493,7 +497,9 @@
     "tools/mission-2/mock-executor.mjs",
     "tools/mission-2/run-fixtures.mjs",
     "tools/mission-2/store.mjs",
-    "tools/mission-2/verifier.mjs"
+    "tools/mission-2/verifier.mjs",
+    "tools/mission-2/verifier-process.mjs",
+    "tools/mission-2/verifier-worker.mjs"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",

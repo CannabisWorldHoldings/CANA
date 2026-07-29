@@ -14,7 +14,7 @@ import { compileMinimalContext } from './context.mjs';
 import { authorizeMission } from './authorization.mjs';
 import { MissionStore } from './store.mjs';
 import { DeterministicMockExecutor } from './mock-executor.mjs';
-import { IndependentVerifier } from './verifier.mjs';
+import { runIndependentVerification } from './verifier-process.mjs';
 import { AutonomyKernel } from './kernel.mjs';
 import { buildMeasuredErrorControllerFixture, TRANSCRIPT_FIXTURE_LABEL } from './foundry.mjs';
 import { IntelligenceOsReadModel } from './intelligence-contracts.mjs';
@@ -29,6 +29,10 @@ const TENANT = 'tenant_cana';
 const WORKSPACE = 'workspace_mission_2_shadow';
 const EXECUTOR_ID = 'DETERMINISTIC_MOCK_EXECUTOR_V1';
 const VERIFIER_ID = 'INDEPENDENT_FALSIFICATION_VERIFIER_V1';
+const LEASE_AUTHORITY_SEED = Buffer.from(
+  sha256('CANA_MISSION_2_DETERMINISTIC_FIXTURE_LEASE_AUTHORITY'),
+  'hex',
+);
 const TARGET = 'docs/CANA_TECHNICAL_STATE.md';
 const NOTICE = [
   '> **Canonical status supersession (2026-07-29):** This document preserves the',
@@ -158,7 +162,7 @@ function buildMission({ seed, context, missionType, evidenceHash }) {
 
 function executeLifecycle({ sandbox, seed, context, mission, authorization, operation, expectedText, truthClaim }) {
   const storeRoot = fs.mkdtempSync(path.join(os.tmpdir(), `${mission.mission_id}-store-`));
-  let store = new MissionStore(storeRoot);
+  let store = new MissionStore(storeRoot, { leaseAuthoritySeed: LEASE_AUTHORITY_SEED });
   let kernel = new AutonomyKernel({ store, clock: () => NOW });
   kernel.observeSignal(seed, {
     signal_id: mission.originating_signal.signal_id,
@@ -170,7 +174,10 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   kernel.sealMission(mission);
   kernel.recordAuthorization(mission, authorization);
   const lease = kernel.dispatch(mission, EXECUTOR_ID, 60_000);
-  const executor = new DeterministicMockExecutor(EXECUTOR_ID);
+  const executor = new DeterministicMockExecutor(
+    EXECUTOR_ID,
+    store.leaseAuthority().publicKey,
+  );
   const interrupted = executor.execute({
     mission,
     authorization: structuredClone(authorization),
@@ -202,8 +209,7 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   };
   kernel.recordExecution(mission, restoredAuthorization, structuredClone(restoredLease), restoredExecution);
   kernel.captureEvidence(mission, restoredExecution);
-  const verifier = new IndependentVerifier(VERIFIER_ID);
-  const verification = verifier.verify({
+  const verification = runIndependentVerification({
     mission,
     authorization: restoredAuthorization,
     executionReceipt: restoredExecution,
@@ -212,12 +218,14 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
     lease: restoredLease,
     now: NOW,
     expectedText,
+    leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
   });
   const restoredVerification = structuredClone(verification);
   const verificationContext = {
     sandboxRoot: sandbox,
     operation,
     lease: restoredLease,
+    leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
     expectedText,
   };
   kernel.recordVerification(
@@ -255,6 +263,7 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
     context,
     authorization: restoredAuthorization,
     lease: restoredLease,
+    leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
     interruption: {
       interrupted: interrupted.interrupted,
       checkpoint: interrupted.checkpoint,
@@ -550,7 +559,7 @@ function runInvalidCourts(legitimate) {
   record('WRONG_SOURCE_TREE', 'WRONG_SOURCE_TREE', () => compileMinimalContext({ mission: seed, facts: [{ ...baseFact, source_tree: 'b'.repeat(40) }], now: NOW }));
   record('UNAUTHORIZED_FILE', 'UNAUTHORIZED_CONTEXT_FILE', () => compileMinimalContext({ mission: seed, facts: [{ ...baseFact, target_files: ['docs/other.md'] }], now: NOW }));
   record('EXPIRED_AUTHORIZATION', 'AUTHORIZATION_EXPIRED', () => authorizeMission({ mission, contextPacket: context, now: new Date(EXPIRES), executorIdentity: EXECUTOR_ID }));
-  record('FORGED_RECEIPT', 'VERIFIER_REJECTED_FORGERY', () => new IndependentVerifier(VERIFIER_ID).verify({
+  record('FORGED_RECEIPT', 'VERIFIER_REJECTED_FORGERY', () => runIndependentVerification({
     mission,
     authorization,
     executionReceipt: {
@@ -569,6 +578,7 @@ function runInvalidCourts(legitimate) {
     lease: legitimate.lifecycle.lease,
     now: NOW,
     expectedText: 'Canonical status supersession',
+    leaseAuthorityPublicKey: legitimate.lifecycle.leaseAuthorityPublicKey,
   }));
   record('PACKET_TAMPERING', 'CONTEXT_HASH_MISMATCH', () => authorizeMission({ mission, contextPacket: { ...context, packet_hash: '0'.repeat(64) }, now: NOW, executorIdentity: EXECUTOR_ID }));
   record('WIDENED_CAPABILITY', 'CAPABILITY_BROADENING_DENIED', () => createMissionContract({ ...mission, contract_hash: undefined, permitted_capabilities: [...mission.permitted_capabilities, 'DEPLOY_PRODUCTION'] }));

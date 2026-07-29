@@ -28,9 +28,9 @@ const MISSION1_ASSIGNMENT_SHA256 =
   '3fa119b9e88c1c1cfadf76c751258e8d48325afa4899986715a6a11b8afa7f02';
 const MISSION2_ASSIGNMENT = 'mission2_minimum_alive_loop_2026_07_29';
 const MISSION2_ASSIGNMENT_SHA256 =
-  'bb485f9d518c18acf59882a1bcf0e9bdd80060b6f16ba6e4f2f380a82a4d6987';
+  'ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '7b72f33aea1c89d90f2ffade066f4dde55c84b0e6162b64ff8c3644de8ce8e09';
+  '508ef52dc705b96de7dfe5ee37c6583aa8a5c18576c71126187f77a41626699e';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -101,6 +101,8 @@ export const MISSION2_AUTHORIZED_PATHS = Object.freeze([
   'tools/mission-2/run-fixtures.mjs',
   'tools/mission-2/store.mjs',
   'tools/mission-2/verifier.mjs',
+  'tools/mission-2/verifier-process.mjs',
+  'tools/mission-2/verifier-worker.mjs',
   'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
 ]);
 

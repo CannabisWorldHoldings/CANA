@@ -19,7 +19,7 @@ governor, ledger, router, memory, provider, or legacy loop:
 | mission contract, authorization, lifecycle, evidence, promotion, rollback | `CANA_DURABLE_AUTHORITY` | `tools/mission-2/contracts.mjs`, `authorization.mjs`, `lease.mjs`, `store.mjs`, `kernel.mjs` |
 | minimum context and deterministic policy | `RSI_SITEMIND_INTELLIGENCE` | `context.mjs` over the canonical `skills-src/sitemind-context-compiler.mjs` |
 | execution | replaceable execution port | `mock-executor.mjs`, deterministic mock only |
-| independent falsification | CANA-admitted independent verifier | `verifier.mjs`, separate identity and no mutable executor state |
+| independent falsification | CANA-admitted independent verifier | `verifier-process.mjs` launches `verifier-worker.mjs` in a separate process over immutable serialized inputs; `verifier.mjs` shares no mutable executor state |
 | technical TruthGraph projection | `RSI_SITEMIND_INTELLIGENCE` | promotion-gated evidence node in `kernel.mjs` |
 | technical Winner Memory | `RSI_SITEMIND_INTELLIGENCE` | verified technical learning with `VALUE_NOT_ESTABLISHED`; never a commercial claim |
 | Knowledge-to-Mechanism Foundry | RSI beneath CANA | `foundry.mjs` |
@@ -73,7 +73,8 @@ and its external key. Mission 2 grants no production authority and stores no
 credential in source or generated evidence.
 
 The Autonomy Kernel provides bounded queue eligibility, canonical hash-bound worker
-leases, heartbeats, lease expiry, checkpoints, process-restart restoration,
+leases signed by a store-specific Ed25519 CANA authority, heartbeats, lease
+expiry, checkpoints, process-restart restoration,
 stale-worker rejection, bounded retry/backoff enforcement, dead-letter state,
 blocker history, pause, cancellation, reachable owner-decision state, and
 capability quarantine. A paused mission cannot dispatch before authorization, and
@@ -101,11 +102,20 @@ hashes and requires:
 - independent executor/verifier identities;
 - an exact-byte rollback contract.
 
-Authorization, lease, execution, verifier, TruthGraph, Winner Memory, and rollback
+Authorization, execution, verifier, TruthGraph, Winner Memory, and rollback
 receipts use exact schemas and canonical hashes. They are deliberately
 serialization-safe: independent processes revalidate exact schemas, hashes,
 mission/source identity, expiry, executor/verifier separation, and causal receipt
 bindings instead of relying on JavaScript object identity.
+
+Lease receipts additionally carry an Ed25519 signature and the SHA-256 identity of
+the trusted CANA lease-authority public key. The private 32-byte seed is created
+exclusively with mode `0600` outside the mutable store root. Executors and the
+separate verifier process receive only the public key. A caller can recompute a
+lease hash but cannot broaden the worker, token, heartbeat, or expiry without a
+valid authority signature. The deterministic transcript fixture uses a labeled
+test-only seed so its receipts remain byte-reproducible; ordinary stores generate
+the seed cryptographically.
 
 Receipt hashes prove integrity, not issuer identity. CANA therefore does not treat
 a caller-supplied digest as admission. At authorization, the kernel reloads the
@@ -131,7 +141,16 @@ exact deterministic replacement, and proves the final Git diff contains one
 authorized file. It performs no model call, network service, credential access,
 deployment, production mutation, spend, or external effect.
 
-The verifier receives immutable receipts and independently re-reads the sandbox. It
+Before mutation, the adapter fsyncs a content-bound recovery journal under the
+isolated worktree Git directory and fsyncs exact replacement bytes in a same-filesystem
+temporary file. It then atomically renames the replacement and fsyncs the parent
+directory. Restart sees either exact pre-mission or exact planned bytes and returns
+the same deterministic execution receipt. Rollback and reapply use the same atomic,
+idempotent operation, so interruption before or after rename never leaves partial
+target bytes and can be resumed exactly.
+
+The verifier worker receives immutable serialized receipts in a fresh child
+process and independently re-reads the sandbox. It
 recomputes Git HEAD and tree, the exact changed-file set, source bytes, deterministic
 operation, authorization, lease, execution hash, scope, before/after hashes and
 byte lengths, success, rollback reconstructability, provider, budget, and
@@ -144,10 +163,14 @@ CANA converts an admitted exact `APPROVE` receipt into promotion.
 The Foundry implements versioned records for Source Record, Insight Capsule,
 Duplicate Relationship, Contradiction Record, Research Gap, Mechanism Candidate,
 Codex Handoff Packet, Implementation Result, Mechanism State Transition, and Owner
-Decision Request. Records carry stable IDs, source hashes, provenance,
-tenant/workspace identity, packet hashes, truth classification, duplicate identity,
-and contradiction preservation. Raw transcript hot-memory insertion and unsupported
-`VALUE_PROVEN` claims are denied.
+Decision Request. Each type has an exact allowlist, required typed fields, allowed
+truth states, and relationship targets. Unknown or missing fields, wrong reference
+types, cross-tenant/workspace references, unstable IDs, malformed authority,
+commercial-value claims, and unsupported transitions fail closed. Records carry
+stable whole-record IDs, source hashes, provenance, tenant/workspace identity,
+packet hashes, truth classification, duplicate identity, and contradiction
+preservation. Raw transcript hot-memory insertion and unsupported `VALUE_PROVEN`
+claims are denied.
 
 The Intelligence OS contracts expose read-only canonical identity, protected base,
 health, mission list/details, lifecycle events, authorization/execution/evidence,
