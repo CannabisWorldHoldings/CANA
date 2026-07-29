@@ -117,10 +117,49 @@ test('production build ignores a disposable flag and arbitrary existing database
 });
 
 test('artifact build children cannot inherit Node preload or module-path injection', () => {
-  const source = fs.readFileSync(buildArtifactPath, 'utf8');
-  assert.match(source, /delete environment\.NODE_OPTIONS;/u);
-  assert.match(source, /delete environment\.NODE_PATH;/u);
-  assert.doesNotMatch(source, /env: createReleaseChildEnvironment\(/u);
+  const preloadPath = path.join(tempRoot, 'hostile-preload.cjs');
+  const preloadSentinel = path.join(tempRoot, 'hostile-preload-executed');
+  fs.writeFileSync(
+    preloadPath,
+    `if (process.argv[1] === undefined) require('node:fs').writeFileSync(${JSON.stringify(preloadSentinel)}, 'executed')`,
+    { flag: 'wx', mode: 0o600 },
+  );
+  const result = spawnSync(
+    process.execPath,
+    [buildArtifactPath, '--verify-child-environment'],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        NODE_OPTIONS: `--require=${preloadPath}`,
+        NODE_PATH: tempRoot,
+      },
+      encoding: 'utf8',
+      timeout: 30_000,
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    marker: 'verified',
+    nodeOptions: null,
+    nodePath: null,
+  });
+  assert.equal(fs.existsSync(preloadSentinel), false);
+});
+
+test('artifact build fails closed on ambient Node injection', () => {
+  const environment = { ...process.env, NODE_PATH: tempRoot, REQUIRED_NODE: process.version };
+  delete environment.NODE_OPTIONS;
+  const result = spawnSync(process.execPath, [buildArtifactPath], {
+    cwd: repoRoot,
+    env: environment,
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /BUILD_ENVIRONMENT_INJECTION_REFUSED/u);
 });
 
 test('database gate rejects disposable flags and forged build ownership', async () => {
@@ -294,6 +333,39 @@ test('database gate detects swap and restoration while Prisma opens the target',
   });
 });
 
+test('initial migration cannot mutate a database swapped in during Prisma open', async () => {
+  const attackerPath = path.join(tempRoot, 'initial-open-attacker.db');
+  fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
+  migrate(pathToFileURL(attackerPath).href);
+  const attackerBefore = fs.readFileSync(attackerPath);
+  let swappedCopy;
+
+  try {
+    await assert.rejects(
+      prepareProductionBuildDatabase({
+        async connectInitialDatabase(prisma, workspace) {
+          const { databasePath } = workspace;
+          const ownedPath = `${databasePath}.owned`;
+          swappedCopy = path.join(tempRoot, 'initial-open-attacker-copy.db');
+          fs.renameSync(databasePath, ownedPath);
+          fs.copyFileSync(attackerPath, databasePath, fs.constants.COPYFILE_EXCL);
+          try {
+            await prisma.$connect();
+          } finally {
+            fs.renameSync(databasePath, swappedCopy);
+            fs.renameSync(ownedPath, databasePath);
+          }
+        },
+      }),
+      assertCode('BUILD_DATABASE_OPEN_IDENTITY_MISMATCH'),
+    );
+    assert.deepEqual(fs.readFileSync(attackerPath), attackerBefore);
+    assert.deepEqual(fs.readFileSync(swappedCopy), attackerBefore);
+  } finally {
+    if (swappedCopy) fs.rmSync(swappedCopy, { force: true });
+  }
+});
+
 test('atomic cleanup refuses a replacement root without deleting it', async () => {
   const owned = await prepareProductionBuildDatabase();
   const replacement = createBuildDatabaseWorkspace();
@@ -327,11 +399,11 @@ test('atomic cleanup refuses unowned root content without deleting it', async ()
   workspace.cleanup();
 });
 
-test('cleanup invalidates only the retained inode after quarantine validation', async () => {
+test('cleanup removes only the retained inode after quarantine validation', async () => {
   const { workspace } = await prepareProductionBuildDatabase();
   let ownedAside;
   let replacementPath;
-  const invalidatedPath = workspace.cleanup({
+  const cleanup = workspace.cleanup({
     afterQuarantineValidation({ quarantinePath }) {
       ownedAside = `${quarantinePath}.owned`;
       replacementPath = path.join(quarantinePath, 'replacement.txt');
@@ -344,9 +416,10 @@ test('cleanup invalidates only the retained inode after quarantine validation', 
     },
   });
   assert.equal(fs.readFileSync(replacementPath, 'utf8'), 'replacement must survive');
-  fs.chmodSync(ownedAside, 0o700);
-  assert.equal(fs.statSync(path.join(ownedAside, 'build.db')).size, 0);
-  assert.equal(invalidatedPath, path.dirname(replacementPath));
+  assert.equal(fs.existsSync(ownedAside), false);
+  assert.equal(cleanup.removed, true);
+  assert.equal(cleanup.removedContainer, false);
+  assert.equal(cleanup.quarantinePath, path.dirname(replacementPath));
 });
 
 test('gate accepts only its initialized process-local database capability', async () => {
@@ -361,12 +434,48 @@ test('gate accepts only its initialized process-local database capability', asyn
   });
 });
 
-test('build-owned database cleanup detaches and invalidates the exclusive target', async () => {
+test('build-owned database cleanup removes the exclusive target and quarantine', async () => {
+  const invalidatedBefore = new Set(
+    fs.readdirSync(os.tmpdir()).filter((entry) => entry.startsWith('cana-invalidated-database-')),
+  );
   const { workspace } = await prepareProductionBuildDatabase();
   assert.equal(fs.existsSync(workspace.databasePath), true);
-  const invalidatedPath = workspace.cleanup();
+  const cleanup = workspace.cleanup();
   assert.equal(fs.existsSync(workspace.rootPath), false);
-  fs.chmodSync(invalidatedPath, 0o700);
-  assert.equal(fs.statSync(path.join(invalidatedPath, 'build.db')).size, 0);
+  assert.equal(cleanup.removed, true);
+  assert.equal(cleanup.removedContainer, true);
+  assert.equal(fs.existsSync(path.dirname(cleanup.quarantinePath)), false);
+  assert.deepEqual(
+    fs.readdirSync(os.tmpdir())
+      .filter((entry) => entry.startsWith('cana-invalidated-database-'))
+      .filter((entry) => !invalidatedBefore.has(entry)),
+    [],
+  );
   workspace.cleanup();
+});
+
+test('installed build database cleanup preserves signal exit semantics', () => {
+  const moduleUrl = pathToFileURL(
+    path.join(webRoot, 'src/lib/build-database.mjs'),
+  ).href;
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import { installProductionBuildDatabase } from ${JSON.stringify(moduleUrl)};
+       await installProductionBuildDatabase();
+       setTimeout(() => process.kill(process.pid, 'SIGTERM'), 10);
+       setInterval(() => {}, 1_000);`,
+    ],
+    {
+      cwd: webRoot,
+      env: { ...process.env },
+      encoding: 'utf8',
+      timeout: 120_000,
+    },
+  );
+
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 143, result.stderr || result.stdout);
 });

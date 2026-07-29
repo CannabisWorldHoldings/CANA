@@ -49,6 +49,35 @@ function buildChildEnvironment(baseEnvironment = process.env) {
   return environment;
 }
 
+if (process.argv[2] === '--verify-child-environment') {
+  process.stdout.write(execFileSync(
+    process.execPath,
+    [
+      '-e',
+      'process.stdout.write(JSON.stringify({ '
+        + 'marker: process.env.CANA_CHILD_ENV_PROBE, '
+        + 'nodeOptions: process.env.NODE_OPTIONS ?? null, '
+        + 'nodePath: process.env.NODE_PATH ?? null }))',
+    ],
+    {
+      encoding: 'utf8',
+      env: buildChildEnvironment({
+        ...process.env,
+        CANA_CHILD_ENV_PROBE: 'verified',
+      }),
+    },
+  ));
+  process.exit(0);
+}
+
+if (process.env.NODE_OPTIONS !== undefined || process.env.NODE_PATH !== undefined) {
+  const error = new Error(
+    'Artifact builds refuse ambient NODE_OPTIONS or NODE_PATH injection',
+  );
+  error.code = 'BUILD_ENVIRONMENT_INJECTION_REFUSED';
+  throw error;
+}
+
 // Pin the build/verify Node to the production runtime (Namecheap Node 20.20.2). A shell
 // wrapper resolving a different `node` (e.g. a Hermes v22 binary) invalidates the isolation
 // proof. Invoke the exact binary, e.g.:
