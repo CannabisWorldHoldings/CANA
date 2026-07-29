@@ -114,6 +114,20 @@ export async function readDatabaseConfig(prisma) {
   return out;
 }
 
+function isImmutableReadOnlyDatabase(databaseUrl) {
+  if (typeof databaseUrl !== 'string') return false;
+  try {
+    const parsed = new URL(databaseUrl);
+    return parsed.protocol === 'file:'
+      && parsed.host === ''
+      && parsed.pathname.startsWith('/')
+      && parsed.searchParams.get('mode') === 'ro'
+      && parsed.searchParams.get('immutable') === '1';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Apply the required configuration idempotently and report what happened.
  *
@@ -121,8 +135,23 @@ export async function readDatabaseConfig(prisma) {
  * simply could not be set, because a startup path that crashes on a tuning setting
  * takes the whole application down for a performance concern.
  */
-export async function initializeDatabaseConfig(prisma) {
+export async function initializeDatabaseConfig(
+  prisma,
+  { databaseUrl = process.env.DATABASE_URL } = {},
+) {
   const before = await readDatabaseConfig(prisma);
+  if (isImmutableReadOnlyDatabase(databaseUrl)) {
+    return {
+      ok: true,
+      before,
+      after: before,
+      applied: [],
+      failures: [],
+      mismatches: [],
+      readOnly: true,
+      classification: DB_CLASSIFICATION.sqlite,
+    };
+  }
   const applied = [];
   const failures = [];
 

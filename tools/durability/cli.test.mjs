@@ -155,25 +155,42 @@ test('removing one required exact entry recreates the durability ownership failu
   );
 });
 
-test('the four owner-approved PR #2 paths have exact narrow ownership metadata', () => {
+test('the five owner-approved PR #2 paths have exact narrow ownership metadata', () => {
   const manifest = ownership();
   const assignment = pr2OwnershipAssignment(manifest);
   const patterns = ownershipPatterns(manifest);
-  assert.equal(assignment.entries.length, 4);
+  assert.equal(assignment.entries.length, 5);
   assert.deepEqual(
     assignment.entries.map((entry) => entry.path).sort(),
     [...PR2_AUTHORIZED_PATHS].sort(),
   );
   for (const entry of assignment.entries) {
     assert.ok(patterns.some((pattern) => matchOwned(entry.path, pattern)));
-    assert.equal(entry.commit_provenance.commit, '8be302b300921734019dc5d4b861611fe9c2186d');
-    assert.equal(entry.commit_provenance.tree, '45b43356f17e76f47e62764baa9e9b1ca1d56c1c');
-    assert.equal(entry.commit_provenance.relationship, 'approved-pr2-lineage');
     assert.equal(entry.authorization_effect, 'durability-path-ownership-only');
     assert.equal(entry.ownership_authorizes_execution, false);
     assert.equal(entry.ownership_authorizes_deployment, false);
     assert.equal(entry.ownership_authorizes_credentials, false);
     assert.equal(entry.ownership_authorizes_production_change, false);
+  }
+  const databaseConfig = assignment.entries.find(
+    (entry) => entry.path === 'apps/web/src/lib/db-config.mjs',
+  );
+  assert.equal(
+    databaseConfig.commit_provenance.commit,
+    '0fb0db0ae8a9f2dd4649436345a6f187f2f18bad',
+  );
+  assert.equal(
+    databaseConfig.commit_provenance.tree,
+    'c00f3208fd157ed2c8e6dd7f1aebaffdb16cc9ac',
+  );
+  assert.equal(
+    databaseConfig.commit_provenance.relationship,
+    'mandatory-gate-security-repair-parent',
+  );
+  for (const entry of assignment.entries.filter((candidate) => candidate !== databaseConfig)) {
+    assert.equal(entry.commit_provenance.commit, '8be302b300921734019dc5d4b861611fe9c2186d');
+    assert.equal(entry.commit_provenance.tree, '45b43356f17e76f47e62764baa9e9b1ca1d56c1c');
+    assert.equal(entry.commit_provenance.relationship, 'approved-pr2-lineage');
   }
 });
 
@@ -290,7 +307,7 @@ test('PR #2 assignment tampering fails the owner-approval digest', () => {
   );
 });
 
-test('the exact five-file PR #2 change set is durability-owned after reconciliation', () => {
+test('the exact security-repaired PR #2 change set is durability-owned after reconciliation', () => {
   assert.deepEqual(
     unownedPaths(
       [

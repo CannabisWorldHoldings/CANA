@@ -10,6 +10,7 @@ import {
   createBuildDatabaseWorkspace,
   prepareProductionBuildDatabase,
 } from '../src/lib/build-database.mjs';
+import { initializeDatabaseConfig } from '../src/lib/db-config.mjs';
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(webRoot, '../..');
@@ -111,7 +112,39 @@ test('production build ignores a disposable flag and arbitrary existing database
 
   assert.equal(result.signal, null, `build timed out or was killed: ${result.signal}`);
   assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.doesNotMatch(
+    `${result.stdout}\n${result.stderr}`,
+    /attempt to write a readonly database|database is locked/u,
+  );
   assert.deepEqual(fs.readFileSync(databasePath), before);
+});
+
+test('immutable read-only build consumers never issue database-setting PRAGMAs', async () => {
+  const queries = [];
+  const prisma = {
+    async $queryRawUnsafe(statement) {
+      queries.push(statement);
+      const name = statement.trim().split(/\s+/u)[1];
+      const values = {
+        journal_mode: 'delete',
+        busy_timeout: 5000,
+        synchronous: 1,
+        foreign_keys: 1,
+      };
+      return [{ [name]: values[name] }];
+    },
+  };
+  const result = await initializeDatabaseConfig(prisma, {
+    databaseUrl: 'file:///tmp/cana-build-database-proof/build.db?connection_limit=1&mode=ro&immutable=1',
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.readOnly, true);
+  assert.deepEqual(result.applied, []);
+  assert.deepEqual(result.failures, []);
+  assert.deepEqual(result.mismatches, []);
+  assert.equal(queries.length, 4);
+  assert.ok(queries.every((statement) => !statement.includes('=')));
 });
 
 test('artifact build children cannot inherit Node preload or module-path injection', () => {
