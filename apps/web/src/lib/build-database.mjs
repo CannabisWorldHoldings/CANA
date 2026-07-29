@@ -11,9 +11,11 @@ import {
 } from './db-config.mjs';
 
 const BUILD_DATABASE_ROOT_PREFIX = 'cana-build-database-';
+const INVALIDATED_DATABASE_ROOT_PREFIX = 'cana-invalidated-database-';
 const BUILD_DATABASE_NAME = 'build.db';
 const BUILD_DATABASE_SIDECARS = [`${BUILD_DATABASE_NAME}-shm`, `${BUILD_DATABASE_NAME}-wal`];
 const OWNERSHIP_TABLE = '__cana_build_database_ownership';
+const SQLITE_HEADER = Buffer.from('SQLite format 3\0');
 const workspaceState = new WeakMap();
 const cleanedWorkspaces = new WeakSet();
 let installedWorkspace;
@@ -39,6 +41,59 @@ function identityOf(stats) {
 
 function sameIdentity(left, right) {
   return left.dev === right.dev && left.ino === right.ino;
+}
+
+function openSqliteDescriptors() {
+  const descriptorDirectory = ['/proc/self/fd', '/dev/fd'].find((candidate) => {
+    try {
+      return fs.statSync(candidate).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+  if (!descriptorDirectory) {
+    refusal(
+      'BUILD_DATABASE_OPEN_IDENTITY_UNAVAILABLE',
+      'This platform cannot prove which SQLite file the build connection opened',
+    );
+  }
+
+  const descriptors = new Map();
+  for (const entry of fs.readdirSync(descriptorDirectory)) {
+    const descriptor = Number(entry);
+    if (!Number.isSafeInteger(descriptor) || descriptor < 0) continue;
+    try {
+      const stats = fs.fstatSync(descriptor, { bigint: true });
+      if (!stats.isFile() || stats.size < BigInt(SQLITE_HEADER.length)) continue;
+      const header = Buffer.alloc(SQLITE_HEADER.length);
+      if (
+        fs.readSync(descriptor, header, 0, header.length, 0) === header.length
+        && header.equals(SQLITE_HEADER)
+      ) {
+        descriptors.set(descriptor, identityOf(stats));
+      }
+    } catch {
+      // Descriptors can close between directory enumeration and fstat.
+    }
+  }
+  return descriptors;
+}
+
+function assertOpenedDatabaseIdentity(beforeOpen, state) {
+  const opened = [];
+  for (const [descriptor, identity] of openSqliteDescriptors()) {
+    const previous = beforeOpen.get(descriptor);
+    if (!previous || !sameIdentity(previous, identity)) opened.push(identity);
+  }
+  if (
+    !opened.some((identity) => sameIdentity(state.databaseIdentity, identity))
+    || opened.some((identity) => !sameIdentity(state.databaseIdentity, identity))
+  ) {
+    refusal(
+      'BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
+      'Prisma did not open only the SQLite inode exclusively created by this build',
+    );
+  }
 }
 
 function pathIsContained(root, target) {
@@ -103,10 +158,12 @@ function assertWorkspaceIdentity(workspace) {
   let rootStats;
   let databaseStats;
   let descriptorStats;
+  let rootDescriptorStats;
   try {
     rootStats = fs.lstatSync(state.rootPath, { bigint: true });
     databaseStats = fs.lstatSync(state.databasePath, { bigint: true });
     descriptorStats = fs.fstatSync(state.descriptor, { bigint: true });
+    rootDescriptorStats = fs.fstatSync(state.rootDescriptor, { bigint: true });
   } catch {
     refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
   }
@@ -131,6 +188,7 @@ function assertWorkspaceIdentity(workspace) {
     || !databaseStats.isFile()
     || databaseStats.nlink !== 1n
     || !sameIdentity(state.rootIdentity, identityOf(rootStats))
+    || !sameIdentity(state.rootIdentity, identityOf(rootDescriptorStats))
     || !sameIdentity(state.databaseIdentity, identityOf(databaseStats))
     || !sameIdentity(state.databaseIdentity, identityOf(descriptorStats))
     || (Number(databaseStats.mode) & 0o077) !== 0
@@ -144,10 +202,13 @@ function assertWorkspaceIdentity(workspace) {
   return state;
 }
 
-function cleanupWorkspace(workspace) {
+function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   if (cleanedWorkspaces.has(workspace)) return;
   const state = stateFor(workspace);
-  const quarantinePath = `${state.rootPath}.cleanup-${randomBytes(16).toString('hex')}`;
+  const quarantinePath = path.join(
+    fs.realpathSync(os.tmpdir()),
+    `${INVALIDATED_DATABASE_ROOT_PREFIX}${randomBytes(16).toString('hex')}`,
+  );
   fs.renameSync(state.rootPath, quarantinePath);
   const restoreQuarantine = () => {
     try {
@@ -200,21 +261,21 @@ function cleanupWorkspace(workspace) {
       'Atomic quarantine captured content not owned by this build',
     );
   }
+  afterQuarantineValidation?.({ quarantinePath });
+  // No pathname is trusted after quarantine validation. Invalidate the exact
+  // retained inodes; OS temporary-directory reclamation removes the tombstone.
+  fs.ftruncateSync(state.descriptor, 0);
+  fs.fsyncSync(state.descriptor);
+  fs.fchmodSync(state.descriptor, 0);
+  fs.fchmodSync(state.rootDescriptor, 0);
+  fs.closeSync(state.rootDescriptor);
+  state.rootDescriptor = undefined;
   fs.closeSync(state.descriptor);
   state.descriptor = undefined;
-  for (const sidecar of BUILD_DATABASE_SIDECARS) {
-    const sidecarPath = path.join(quarantinePath, sidecar);
-    try {
-      fs.unlinkSync(sidecarPath);
-    } catch (error) {
-      if (error?.code !== 'ENOENT') throw error;
-    }
-  }
-  fs.unlinkSync(path.join(quarantinePath, BUILD_DATABASE_NAME));
-  fs.rmdirSync(quarantinePath);
   state.cleaned = true;
   workspaceState.delete(workspace);
   cleanedWorkspaces.add(workspace);
+  return quarantinePath;
 }
 
 export function createBuildDatabaseWorkspace() {
@@ -222,6 +283,12 @@ export function createBuildDatabaseWorkspace() {
   const rootPath = fs.mkdtempSync(path.join(canonicalTemporaryRoot, BUILD_DATABASE_ROOT_PREFIX));
   fs.chmodSync(rootPath, 0o700);
   const rootStats = secureDirectoryStats(rootPath, 'BUILD_DATABASE_ROOT_UNSAFE');
+  const rootDescriptor = fs.openSync(
+    rootPath,
+    fs.constants.O_RDONLY
+      | (fs.constants.O_DIRECTORY ?? 0)
+      | (fs.constants.O_NOFOLLOW ?? 0),
+  );
   const databasePath = path.join(rootPath, BUILD_DATABASE_NAME);
   const descriptor = fs.openSync(
     databasePath,
@@ -236,8 +303,8 @@ export function createBuildDatabaseWorkspace() {
     rootPath,
     databasePath,
     databaseUrl: pathToFileURL(databasePath).href,
-    cleanup() {
-      cleanupWorkspace(workspace);
+    cleanup(options) {
+      return cleanupWorkspace(workspace, options);
     },
   });
   workspaceState.set(workspace, {
@@ -245,6 +312,7 @@ export function createBuildDatabaseWorkspace() {
     databasePath,
     rootIdentity: identityOf(rootStats),
     databaseIdentity: identityOf(databaseStats),
+    rootDescriptor,
     descriptor,
     marker: randomBytes(32).toString('hex'),
     initialized: false,
@@ -265,7 +333,9 @@ async function initializeWorkspace(workspace) {
   assertWorkspaceIdentity(workspace);
   const prisma = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
   try {
+    const beforeOpen = openSqliteDescriptors();
     await prisma.$connect();
+    assertOpenedDatabaseIdentity(beforeOpen, state);
     assertWorkspaceIdentity(workspace);
     await prisma.$executeRawUnsafe(
       `CREATE TABLE IF NOT EXISTS "${OWNERSHIP_TABLE}" (marker TEXT NOT NULL PRIMARY KEY)`,
@@ -297,7 +367,9 @@ export async function assertProductionBuildDatabaseReady({
   const prisma = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
   let result;
   try {
+    const beforeOpen = openSqliteDescriptors();
     await (connectDatabase ? connectDatabase(prisma) : prisma.$connect());
+    assertOpenedDatabaseIdentity(beforeOpen, state);
     let markers;
     try {
       markers = await prisma.$queryRawUnsafe(
@@ -341,6 +413,7 @@ export async function assertProductionBuildDatabaseReady({
       );
     }
     assertWorkspaceIdentity(workspace);
+    await prisma.$queryRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
     result = { provider: 'sqlite', checks: readiness.checks };
   } finally {
     await prisma.$disconnect();
@@ -356,7 +429,15 @@ export async function prepareProductionBuildDatabase(options = {}) {
     const result = await assertProductionBuildDatabaseReady({ workspace, ...options });
     return { workspace, result };
   } catch (error) {
-    workspace.cleanup();
+    try {
+      workspace.cleanup();
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        'Build database preparation and fail-closed cleanup both failed',
+        { cause: error },
+      );
+    }
     throw error;
   }
 }
@@ -377,6 +458,7 @@ export async function installProductionBuildDatabase() {
   for (const signal of ['SIGHUP', 'SIGINT', 'SIGTERM']) {
     process.once(signal, () => {
       cleanup();
+      process.exitCode = 128 + os.constants.signals[signal];
       process.kill(process.pid, signal);
     });
   }

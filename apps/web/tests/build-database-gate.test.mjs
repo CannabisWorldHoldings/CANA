@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { PrismaClient } from '@prisma/client';
 
 import {
   assertProductionBuildDatabaseReady,
@@ -14,6 +15,7 @@ import {
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(webRoot, '../..');
+const buildArtifactPath = path.join(repoRoot, 'deploy/namecheap/build-artifact.mjs');
 const prismaCli = path.join(repoRoot, 'node_modules', 'prisma', 'build', 'index.js');
 const npmCli = path.resolve(
   path.dirname(process.execPath),
@@ -25,13 +27,27 @@ const npmCli = path.resolve(
   'npm-cli.js',
 );
 let tempRoot;
+let initialInvalidatedRoots;
 
 before(() => {
   tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-build-database-gate-'));
+  initialInvalidatedRoots = new Set(
+    fs.readdirSync(os.tmpdir()).filter((entry) => entry.startsWith('cana-invalidated-database-')),
+  );
 });
 
 after(() => {
   fs.rmSync(tempRoot, { recursive: true, force: true });
+  for (const entry of fs.readdirSync(os.tmpdir())) {
+    if (
+      entry.startsWith('cana-invalidated-database-')
+      && !initialInvalidatedRoots.has(entry)
+    ) {
+      const invalidatedRoot = path.join(os.tmpdir(), entry);
+      fs.chmodSync(invalidatedRoot, 0o700);
+      fs.rmSync(invalidatedRoot, { recursive: true, force: true });
+    }
+  }
 });
 
 function assertCode(code) {
@@ -94,6 +110,13 @@ test('production build ignores a disposable flag and arbitrary existing database
   assert.equal(result.signal, null, `build timed out or was killed: ${result.signal}`);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.deepEqual(fs.readFileSync(databasePath), before);
+});
+
+test('artifact build children cannot inherit Node preload or module-path injection', () => {
+  const source = fs.readFileSync(buildArtifactPath, 'utf8');
+  assert.match(source, /delete environment\.NODE_OPTIONS;/u);
+  assert.match(source, /delete environment\.NODE_PATH;/u);
+  assert.doesNotMatch(source, /env: createReleaseChildEnvironment\(/u);
 });
 
 test('database gate rejects disposable flags and forged build ownership', async () => {
@@ -243,8 +266,13 @@ test('database gate detects replacement of the validated target before open', as
 test('database gate detects swap and restoration while Prisma opens the target', async () => {
   await withPreparedWorkspace(async ({ workspace }) => {
     const attackerPath = path.join(tempRoot, 'swap-restore-attacker.db');
-    fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
-    migrate(pathToFileURL(attackerPath).href);
+    const checkpoint = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
+    try {
+      await checkpoint.$queryRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
+    } finally {
+      await checkpoint.$disconnect();
+    }
+    fs.copyFileSync(workspace.databasePath, attackerPath, fs.constants.COPYFILE_EXCL);
     const ownedPath = `${workspace.databasePath}.owned`;
     await assert.rejects(
       assertProductionBuildDatabaseReady({
@@ -295,6 +323,28 @@ test('atomic cleanup refuses unowned root content without deleting it', async ()
   workspace.cleanup();
 });
 
+test('cleanup invalidates only the retained inode after quarantine validation', async () => {
+  const { workspace } = await prepareProductionBuildDatabase();
+  let ownedAside;
+  let replacementPath;
+  const invalidatedPath = workspace.cleanup({
+    afterQuarantineValidation({ quarantinePath }) {
+      ownedAside = `${quarantinePath}.owned`;
+      replacementPath = path.join(quarantinePath, 'replacement.txt');
+      fs.renameSync(quarantinePath, ownedAside);
+      fs.mkdirSync(quarantinePath, { mode: 0o700 });
+      fs.writeFileSync(replacementPath, 'replacement must survive', {
+        flag: 'wx',
+        mode: 0o600,
+      });
+    },
+  });
+  assert.equal(fs.readFileSync(replacementPath, 'utf8'), 'replacement must survive');
+  fs.chmodSync(ownedAside, 0o700);
+  assert.equal(fs.statSync(path.join(ownedAside, 'build.db')).size, 0);
+  assert.equal(invalidatedPath, path.dirname(replacementPath));
+});
+
 test('gate accepts only its initialized process-local database capability', async () => {
   await withPreparedWorkspace(async ({ workspace, result }) => {
     const before = fs.lstatSync(workspace.databasePath);
@@ -307,10 +357,12 @@ test('gate accepts only its initialized process-local database capability', asyn
   });
 });
 
-test('build-owned database cleanup removes the exclusive root and target', async () => {
+test('build-owned database cleanup detaches and invalidates the exclusive target', async () => {
   const { workspace } = await prepareProductionBuildDatabase();
   assert.equal(fs.existsSync(workspace.databasePath), true);
-  workspace.cleanup();
+  const invalidatedPath = workspace.cleanup();
   assert.equal(fs.existsSync(workspace.rootPath), false);
+  fs.chmodSync(invalidatedPath, 0o700);
+  assert.equal(fs.statSync(path.join(invalidatedPath, 'build.db')).size, 0);
   workspace.cleanup();
 });

@@ -42,6 +42,13 @@ import { selectTestPrismaEngine } from './select-test-engine.mjs';
 const repoRoot = process.cwd();
 const webRoot = path.join(repoRoot, 'apps/web');
 
+function buildChildEnvironment(baseEnvironment = process.env) {
+  const environment = createReleaseChildEnvironment({ baseEnvironment });
+  delete environment.NODE_OPTIONS;
+  delete environment.NODE_PATH;
+  return environment;
+}
+
 // Pin the build/verify Node to the production runtime (Namecheap Node 20.20.2). A shell
 // wrapper resolving a different `node` (e.g. a Hermes v22 binary) invalidates the isolation
 // proof. Invoke the exact binary, e.g.:
@@ -61,7 +68,7 @@ function run(command, options = {}) {
   execSync(command, {
     stdio: 'inherit',
     ...rest,
-    env: createReleaseChildEnvironment({ baseEnvironment: env }),
+    env: buildChildEnvironment(env),
   });
 }
 
@@ -70,14 +77,12 @@ function capture(command, options = {}) {
   return execSync(command, {
     encoding: 'utf8',
     ...rest,
-    env: createReleaseChildEnvironment({ baseEnvironment: env }),
+    env: buildChildEnvironment(env),
   }).trim();
 }
 
 function releaseChildEnvironment(overrides = {}) {
-  return createReleaseChildEnvironment({
-    baseEnvironment: { ...process.env, ...overrides },
-  });
+  return buildChildEnvironment({ ...process.env, ...overrides });
 }
 
 function execFile(command, args, options = {}) {
@@ -85,7 +90,7 @@ function execFile(command, args, options = {}) {
   return execFileSync(command, args, {
     encoding: 'utf8',
     ...rest,
-    env: createReleaseChildEnvironment({ baseEnvironment: env }),
+    env: buildChildEnvironment(env),
   }).trim();
 }
 
