@@ -379,6 +379,53 @@ test('a correction creates a new version without deleting prior evidence', () =>
   assert.equal(result.display_value, 'NOT_ELIGIBLE');
 });
 
+test('a corrected claim rejects rewritten prior-version history', () => {
+  const initial = fixture();
+  const prior = initial.claims[0];
+  const replacement = observation({
+    observationId: 'observation_official_history_correction',
+    value: 'NOT_ELIGIBLE',
+    sourceRecord: initial.sources[0],
+    observedAt: '2026-07-29T12:15:00.000Z',
+    expiresAt: '2026-07-30T12:15:00.000Z',
+  });
+  const next = claim({
+    version: 2,
+    observationIds: [replacement.observation_id],
+    supersedesClaimRecordId: prior.claim_record_id,
+  });
+  const corrected = applyCorrection(initial, {
+    observations: [replacement],
+    claim: next,
+    verificationEvent: verification({
+      verificationEventId: 'verification_license_history_v2',
+      claimRecord: next,
+      observationIds: next.observation_ids,
+      verifiedAt: '2026-07-29T12:30:00.000Z',
+    }),
+    correction: scoped({
+      correction_id: 'correction_license_history_v2',
+      prior_claim_record_id: prior.claim_record_id,
+      new_claim_record_id: next.claim_record_id,
+      prior_observation_ids: prior.observation_ids,
+      replacement_observation_ids: next.observation_ids,
+      created_at: '2026-07-29T12:20:00.000Z',
+      reason: 'Synthetic history-deletion guard fixture',
+    }),
+  });
+
+  assert.equal(validateClaimGraph(corrected).claims[0].status, 'SUPERSEDED');
+  for (const status of ['RETIRED', 'ACTIVE']) {
+    const rewritten = mutable(corrected);
+    rewritten.claims[0].status = status;
+    assert.throws(
+      () => validateClaimGraph(rewritten),
+      errorCode('M001_HISTORY_DELETION_DENIED'),
+      status,
+    );
+  }
+});
+
 test('sponsorship cannot influence truth, confidence, contradiction visibility, or relevance', () => {
   const baseline = fixture();
   const sponsored = fixture({
