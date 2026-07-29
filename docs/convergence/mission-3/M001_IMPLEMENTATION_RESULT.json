@@ -9,8 +9,8 @@
   "deployed": false,
   "value_proven": false,
   "revenue_proven": false,
-  "implementation_commit": "9c2662852a0b15cb7c25c381e3060a99cd9063a7",
-  "implementation_tree": "8c5581895fec8b6f707035ac96541a453c1b60ad",
+  "implementation_commit": "a902d24025270b5cd3821b301ea6af743e8f417a",
+  "implementation_tree": "bc21abe7f951b3f8876b2e9a17dee4ae8bfbd923",
   "base_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
   "base_tree": "e6d21f2b9303e33bd0c357c125269bf9619b63d0",
   "package_003_sha256": "173e97573e43f97a1efcfd59b8c33edfb44de4d7afc11735c688c240cbd392fc",
@@ -21,9 +21,9 @@
   "implementation": {
     "kind": "DETERMINISTIC_SYNTHETIC_IN_MEMORY_SHADOW",
     "module": "tools/growth-foundry/m001/claim-graph.mjs",
-    "module_sha256": "fa597b26e3077d825f0fefcde66be135bd5c053ce12364087dafe271cec240f0",
+    "module_sha256": "13b849d26af501667853e87a902630be423b66104ff6ea979cab98c4984900b8",
     "test": "tools/growth-foundry/m001/claim-graph.test.mjs",
-    "test_sha256": "b01fd664372b35a40688bbb82cd1b454549d62bea04af903d5c16cef87d05bc8",
+    "test_sha256": "ea6dd17d4dbd79356d8389a7e49124bc912f889f2edbc51254b099316a9cfd14",
     "claim_class_count": 7,
     "entity_class_count": 9,
     "live_records": 0,
@@ -43,6 +43,6 @@
     "truthgraph_update": "NONE",
     "winner_memory_update": "NONE"
   },
-  "rollback_before_merge": "git revert 9c2662852a0b15cb7c25c381e3060a99cd9063a7",
-  "recorded_at": "2026-07-29T20:13:55.000Z"
+  "rollback_before_merge": "git revert a902d24025270b5cd3821b301ea6af743e8f417a 8cea9ff7e12824fc88cf41681718cc62788c350c 9c2662852a0b15cb7c25c381e3060a99cd9063a7",
+  "recorded_at": "2026-07-29T20:24:44.000Z"
 }

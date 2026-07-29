@@ -1,13 +1,13 @@
 {
   "schema_version": "cana.mission-3-m001-test-and-adversarial-receipt/1.0.0",
   "mechanism_identity": "CANA-GF-M001-VERIFIED-LOCAL-ELIGIBILITY-AND-AVAILABILITY-GRAPH",
-  "implementation_commit": "9c2662852a0b15cb7c25c381e3060a99cd9063a7",
-  "implementation_tree": "8c5581895fec8b6f707035ac96541a453c1b60ad",
+  "implementation_commit": "a902d24025270b5cd3821b301ea6af743e8f417a",
+  "implementation_tree": "bc21abe7f951b3f8876b2e9a17dee4ae8bfbd923",
   "overall": "PASS",
   "focused_courts": {
     "m001": {
-      "tests": 16,
-      "passed": 16,
+      "tests": 17,
+      "passed": 17,
       "failed": 0,
       "root_working_directory": "PASS",
       "intended_working_directory": "PASS",
@@ -16,8 +16,8 @@
       "container_node_path": "/usr/local/bin/node"
     },
     "mission_2_and_policy": {
-      "tests": 88,
-      "passed": 88,
+      "tests": 89,
+      "passed": 89,
       "failed": 0,
       "includes": [
         "tools/mission-2/mission-2.test.mjs",
@@ -40,6 +40,7 @@
     "Package 003, handoff and graph replay or tampering rejected",
     "malformed timestamps, impossible expiry and TTL broadening rejected",
     "source hash mismatch rejected",
+    "forged provenance rejected even when source and observation repeat the same declared hash",
     "independent verification required",
     "retirement renders no current truth",
     "repeated output deterministic",
@@ -49,22 +50,22 @@
     {
       "gate": "focused",
       "result": "PASS",
-      "receipt_sha256": "4af264918c7388ddb70a9dfe30e758a3490b4b894a50318009af49e2d31cb3ac"
+      "receipt_sha256": "60b6533ef378911f0d407a4d420bfe93ead64017a94569258efea7a8c72ed454"
     },
     {
       "gate": "full",
       "result": "PASS",
-      "receipt_sha256": "9ab3063920e187744f7e5a2df3c2bebf32fba1c6dced478cfc539d906aed07c0"
+      "receipt_sha256": "816f0dd9dc8bac2adfecb886cf9afaff8d79f32753a2fa839e456740c69bed5b"
     },
     {
       "gate": "clean-clone",
       "result": "PASS",
-      "receipt_sha256": "451041b373718d9ab5624eb3d8ebf9a00b43b7447f156209634f48b6278e5fb7"
+      "receipt_sha256": "a66f98b3044a1b4a18a843d22329471029df180b766c0456b228f866f2e5300f"
     },
     {
       "gate": "release",
       "result": "PASS",
-      "receipt_sha256": "36809dba2680a64d6d2301dce0156df28614c755b7931afc53baeec501256b9e"
+      "receipt_sha256": "3a4877d92a5b65c2f734ee71447e9dd884261b1906b0a6ec28545f5f55890c37"
     },
     {
       "gate": "durability-build",
@@ -106,5 +107,5 @@
     "sha256": "4817c83d7fcf2dc4bc2cd546ff117baa7c1b46d810c614642f57ac6521aaedfe",
     "reuse": "HASH_BOUND_REFERENCE_ONLY"
   },
-  "recorded_at": "2026-07-29T20:13:55.000Z"
+  "recorded_at": "2026-07-29T20:24:44.000Z"
 }
