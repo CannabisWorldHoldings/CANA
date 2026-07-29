@@ -349,10 +349,8 @@ function descriptorCleanupPython() {
 }
 
 function removeOwnedQuarantine(state, quarantineDescriptor) {
-  const python = descriptorCleanupPython();
-  if (!python) return { executed: false, removedContainer: false };
   try {
-    const output = execFileSync(python, ['-I', '-c', DESCRIPTOR_CLEANUP_SCRIPT], {
+    const output = execFileSync(state.cleanupPython, ['-I', '-c', DESCRIPTOR_CLEANUP_SCRIPT], {
       encoding: 'utf8',
       env: {},
       stdio: [
@@ -448,6 +446,7 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   }
   afterQuarantineValidation?.({ quarantinePath });
   const removal = removeOwnedQuarantine(state, quarantineDescriptor);
+  let cleanupFailed = false;
   if (!removal.executed) {
     // The retained descriptors are the only authority after quarantine
     // validation. If descriptor-relative unlink is unavailable, invalidate
@@ -456,6 +455,7 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
     fs.fsyncSync(state.descriptor);
     fs.fchmodSync(state.descriptor, 0);
     fs.fchmodSync(state.rootDescriptor, 0);
+    cleanupFailed = true;
   }
   fs.closeSync(quarantineDescriptor);
   fs.closeSync(state.rootDescriptor);
@@ -467,6 +467,12 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   state.cleaned = true;
   workspaceState.delete(workspace);
   cleanedWorkspaces.add(workspace);
+  if (cleanupFailed) {
+    refusal(
+      'BUILD_DATABASE_CLEANUP_FAILED',
+      'Descriptor-relative cleanup failed after invalidating the exact build-owned inodes',
+    );
+  }
   return {
     removed: removal.executed,
     removedContainer: removal.removedContainer,
@@ -476,6 +482,13 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
 
 export function createBuildDatabaseWorkspace() {
   const canonicalTemporaryRoot = fs.realpathSync(os.tmpdir());
+  const cleanupPython = descriptorCleanupPython();
+  if (!cleanupPython) {
+    refusal(
+      'BUILD_DATABASE_CLEANUP_UNAVAILABLE',
+      'Build database creation requires a trusted descriptor-relative cleanup runtime',
+    );
+  }
   const temporaryRootDescriptor = fs.openSync(
     canonicalTemporaryRoot,
     fs.constants.O_RDONLY
@@ -514,6 +527,7 @@ export function createBuildDatabaseWorkspace() {
     databasePath,
     rootIdentity: identityOf(rootStats),
     databaseIdentity: identityOf(databaseStats),
+    cleanupPython,
     temporaryRootDescriptor,
     rootDescriptor,
     descriptor,
@@ -664,8 +678,11 @@ export async function installProductionBuildDatabase() {
   process.once('exit', cleanup);
   for (const signal of ['SIGHUP', 'SIGINT', 'SIGTERM']) {
     process.once(signal, () => {
-      cleanup();
-      process.exit(128 + os.constants.signals[signal]);
+      try {
+        cleanup();
+      } finally {
+        process.exit(128 + os.constants.signals[signal]);
+      }
     });
   }
   return installed.result;

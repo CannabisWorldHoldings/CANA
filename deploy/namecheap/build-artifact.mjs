@@ -1,3 +1,6 @@
+#!/bin/sh
+':' //; unset NODE_OPTIONS NODE_PATH; CANA_ARTIFACT_SECURE_LAUNCH=1 exec node "$0" "$@"
+
 /**
  * Builds the Namecheap/cPanel deployment artifact OFF-SERVER — and proves it
  * runs in TRUE ISOLATION before publishing.
@@ -26,10 +29,10 @@
  *      passed.
  *
  * Run from the repo root:
- *   node deploy/namecheap/build-artifact.mjs
- *   SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 node deploy/namecheap/build-artifact.mjs
+ *   ./deploy/namecheap/build-artifact.mjs
+ *   SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs
  */
-import { execFileSync, execSync, spawn } from 'node:child_process';
+import { execFileSync, execSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -48,6 +51,23 @@ function buildChildEnvironment(baseEnvironment = process.env) {
   delete environment.NODE_PATH;
   return environment;
 }
+
+if (process.env.CANA_ARTIFACT_SECURE_LAUNCH !== '1') {
+  if (process.env.NODE_OPTIONS !== undefined || process.env.NODE_PATH !== undefined) {
+    const error = new Error(
+      'Artifact builds must use the environment-scrubbing executable launcher',
+    );
+    error.code = 'BUILD_SECURE_LAUNCH_REQUIRED';
+    throw error;
+  }
+  const relaunched = spawnSync(path.resolve(process.argv[1]), process.argv.slice(2), {
+    env: process.env,
+    stdio: 'inherit',
+  });
+  if (relaunched.error) throw relaunched.error;
+  process.exit(relaunched.status ?? 1);
+}
+delete process.env.CANA_ARTIFACT_SECURE_LAUNCH;
 
 if (process.argv[2] === '--verify-child-environment') {
   process.stdout.write(execFileSync(
@@ -81,7 +101,7 @@ if (process.env.NODE_OPTIONS !== undefined || process.env.NODE_PATH !== undefine
 // Pin the build/verify Node to the production runtime (Namecheap Node 20.20.2). A shell
 // wrapper resolving a different `node` (e.g. a Hermes v22 binary) invalidates the isolation
 // proof. Invoke the exact binary, e.g.:
-//   $HOME/.nvm/versions/node/v20.20.2/bin/node deploy/namecheap/build-artifact.mjs
+//   PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH ./deploy/namecheap/build-artifact.mjs
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
 if (process.version !== REQUIRED_NODE && process.env.ALLOW_NODE_MISMATCH !== '1') {
   throw new Error(

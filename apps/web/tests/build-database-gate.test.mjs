@@ -121,12 +121,12 @@ test('artifact build children cannot inherit Node preload or module-path injecti
   const preloadSentinel = path.join(tempRoot, 'hostile-preload-executed');
   fs.writeFileSync(
     preloadPath,
-    `if (process.argv[1] === undefined) require('node:fs').writeFileSync(${JSON.stringify(preloadSentinel)}, 'executed')`,
+    `require('node:fs').writeFileSync(${JSON.stringify(preloadSentinel)}, 'executed')`,
     { flag: 'wx', mode: 0o600 },
   );
   const result = spawnSync(
-    process.execPath,
-    [buildArtifactPath, '--verify-child-environment'],
+    buildArtifactPath,
+    ['--verify-child-environment'],
     {
       cwd: repoRoot,
       env: {
@@ -148,8 +148,12 @@ test('artifact build children cannot inherit Node preload or module-path injecti
   assert.equal(fs.existsSync(preloadSentinel), false);
 });
 
-test('artifact build fails closed on ambient Node injection', () => {
-  const environment = { ...process.env, NODE_PATH: tempRoot, REQUIRED_NODE: process.version };
+test('artifact build rejects injection when its environment-scrubbing launcher is bypassed', () => {
+  const environment = {
+    ...process.env,
+    NODE_PATH: tempRoot,
+    REQUIRED_NODE: process.version,
+  };
   delete environment.NODE_OPTIONS;
   const result = spawnSync(process.execPath, [buildArtifactPath], {
     cwd: repoRoot,
@@ -159,7 +163,7 @@ test('artifact build fails closed on ambient Node injection', () => {
   });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /BUILD_ENVIRONMENT_INJECTION_REFUSED/u);
+  assert.match(result.stderr, /BUILD_SECURE_LAUNCH_REQUIRED/u);
 });
 
 test('database gate rejects disposable flags and forged build ownership', async () => {
@@ -478,4 +482,39 @@ test('installed build database cleanup preserves signal exit semantics', () => {
 
   assert.equal(result.signal, null);
   assert.equal(result.status, 143, result.stderr || result.stdout);
+});
+
+test('cleanup refusal cannot suppress signal termination', () => {
+  const moduleUrl = pathToFileURL(
+    path.join(webRoot, 'src/lib/build-database.mjs'),
+  ).href;
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import fs from 'node:fs';
+       import path from 'node:path';
+       import { fileURLToPath } from 'node:url';
+       import { installProductionBuildDatabase } from ${JSON.stringify(moduleUrl)};
+       await installProductionBuildDatabase();
+       const root = path.dirname(fileURLToPath(process.env.DATABASE_URL));
+       fs.writeFileSync(path.join(root, 'unowned.txt'), 'preserve', { flag: 'wx', mode: 0o600 });
+       process.stdout.write(root + '\\n');
+       setTimeout(() => process.kill(process.pid, 'SIGTERM'), 10);
+       setInterval(() => {}, 1_000);`,
+    ],
+    {
+      cwd: webRoot,
+      env: { ...process.env },
+      encoding: 'utf8',
+      timeout: 120_000,
+    },
+  );
+  const preservedRoot = result.stdout.trim();
+
+  assert.equal(result.signal, null);
+  assert.equal(result.status, 143, result.stderr || result.stdout);
+  assert.equal(fs.readFileSync(path.join(preservedRoot, 'unowned.txt'), 'utf8'), 'preserve');
+  fs.rmSync(preservedRoot, { recursive: true, force: true });
 });
