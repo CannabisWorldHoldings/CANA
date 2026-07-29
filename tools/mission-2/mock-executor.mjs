@@ -333,11 +333,17 @@ export function assertRollbackReceipt({
   mission,
   executionReceipt,
   rollbackReceipt,
+  sandboxRoot,
 }) {
   assertMission(
     rollbackReceipt && typeof rollbackReceipt === 'object',
     'ROLLBACK_RECEIPT_REQUIRED',
     'An exact rollback receipt is required',
+  );
+  assertMission(
+    typeof sandboxRoot === 'string' && sandboxRoot.length > 0,
+    'ROLLBACK_SANDBOX_REQUIRED',
+    'Rollback admission requires the exact isolated sandbox',
   );
   const body = {
     schema_version: rollbackReceipt.schema_version,
@@ -364,6 +370,15 @@ export function assertRollbackReceipt({
       && rollbackReceipt.exact_bytes_restored === true,
     'ROLLBACK_RECEIPT_TAMPERED',
     'Rollback receipt is not bound to the exact execution',
+  );
+  const restoredTarget = assertNoSymlink(sandboxRoot, change.path);
+  const restoredBytes = fs.readFileSync(restoredTarget);
+  assertMission(
+    Buffer.isBuffer(executionReceipt.before_bytes)
+      && restoredBytes.equals(executionReceipt.before_bytes)
+      && sha256(restoredBytes) === change.before_sha256,
+    'ROLLBACK_STATE_MISMATCH',
+    'Rollback receipt does not match the exact restored sandbox bytes',
   );
   return rollbackReceipt;
 }
@@ -406,6 +421,20 @@ export class DeterministicMockExecutor {
     });
     assertMission(mission.provider_state === 'NONE' && mission.hermes_state === 'DISABLED', 'EXECUTION_ROUTE_DENIED', 'Mock execution requires provider NONE and Hermes disabled');
     assertMission(mission.external_effect_policy === 'NONE' && mission.budget.maximum === 0, 'EXECUTION_BOUNDARY_DENIED', 'Mock execution requires no effects and zero budget');
+    const admittedOperation = {
+      kind: operation?.kind,
+      path: operation?.path,
+      find: operation?.find,
+      replace: operation?.replace,
+    };
+    assertMission(
+      operation
+        && JSON.stringify(Object.keys(operation).sort())
+          === JSON.stringify(Object.keys(admittedOperation).sort())
+        && hashCanonical(admittedOperation) === hashCanonical(mission.verification_contract.operation),
+      'VERIFICATION_CONTRACT_MISMATCH',
+      'Mock execution operation differs from the sealed mission verification contract',
+    );
     assertMission(operation.kind === 'REPLACE_EXACT_TEXT', 'UNSUPPORTED_MOCK_OPERATION', 'Mock executor supports only deterministic exact-text replacement');
     const relativePath = normalizeExactPath(operation.path);
     assertMission(mission.permitted_files.includes(relativePath), 'UNAUTHORIZED_FILE', `File is not authorized: ${relativePath}`);
@@ -415,7 +444,6 @@ export class DeterministicMockExecutor {
     const target = assertNoSymlink(sandboxRoot, relativePath);
     const before = git(sandboxRoot, ['show', `HEAD:${relativePath}`], { bytes: true });
     assertMission(Buffer.isBuffer(before), 'BEFORE_BYTES_UNAVAILABLE', 'Authorized source bytes are unavailable');
-    assertMission(sha256(before) === operation.before_sha256, 'BEFORE_HASH_MISMATCH', 'Target before hash differs');
     const find = Buffer.from(operation.find);
     const replacement = Buffer.from(operation.replace);
     const first = before.indexOf(find);

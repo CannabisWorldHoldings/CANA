@@ -114,7 +114,14 @@ function compileFixtureContext(seed, evidenceHash, claim) {
   });
 }
 
-function buildMission({ seed, context, missionType, evidenceHash }) {
+function buildMission({
+  seed,
+  context,
+  missionType,
+  evidenceHash,
+  operation,
+  expectedText,
+}) {
   return createMissionContract({
     mission_id: seed.mission_id,
     tenant_id: TENANT,
@@ -146,6 +153,10 @@ function buildMission({ seed, context, missionType, evidenceHash }) {
     expires_at: EXPIRES,
     success_criteria: ['Exact authorized target changed', 'Independent verifier approves', 'Exact rollback succeeds'],
     verifier_identity: VERIFIER_ID,
+    verification_contract: {
+      operation,
+      expected_text: expectedText,
+    },
     rollback_procedure: {
       kind: 'EXACT_BYTES',
       description: 'Restore exact pre-mission bytes by SHA-256, then reapply only the approved after bytes',
@@ -223,10 +234,7 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   const restoredVerification = structuredClone(verification);
   const verificationContext = {
     sandboxRoot: sandbox,
-    operation,
     lease: restoredLease,
-    leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
-    expectedText,
   };
   kernel.recordVerification(
     mission,
@@ -255,7 +263,7 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   });
   const beforeRollback = kernel.projection(mission.mission_id);
   const rollback = executor.rollback({ sandboxRoot: sandbox, executionReceipt: restoredExecution });
-  kernel.recordRollback(mission, restoredExecution, structuredClone(rollback));
+  kernel.recordRollback(mission, restoredExecution, structuredClone(rollback), sandbox);
   const reapply = executor.reapply({ sandboxRoot: sandbox, executionReceipt: restoredExecution });
   const finalProjection = new MissionStore(storeRoot).reconstruct();
   return {
@@ -312,7 +320,21 @@ function runLegitimateLoop() {
       evidenceHash,
       'The technical-state document presents the 2026-07-27 recovery lane as current although protected Stage A and Mission 1 receipts prove canonical integration.',
     );
-    const mission = buildMission({ seed, context, missionType: 'STALE_REGISTERED_PROJECT_FACT', evidenceHash });
+    const admittedOperation = {
+      kind: 'REPLACE_EXACT_TEXT',
+      path: TARGET,
+      find: '# CANA technical state\n\n',
+      replace: `# CANA technical state\n\n${NOTICE}`,
+    };
+    const expectedText = 'Canonical status supersession (2026-07-29)';
+    const mission = buildMission({
+      seed,
+      context,
+      missionType: 'STALE_REGISTERED_PROJECT_FACT',
+      evidenceHash,
+      operation: admittedOperation,
+      expectedText,
+    });
     const authorization = authorizeMission({ mission, contextPacket: context, now: NOW, executorIdentity: EXECUTOR_ID });
     const lifecycle = executeLifecycle({
       sandbox,
@@ -320,14 +342,8 @@ function runLegitimateLoop() {
       context,
       mission,
       authorization,
-      operation: {
-        kind: 'REPLACE_EXACT_TEXT',
-        path: TARGET,
-        before_sha256: sha256(before),
-        find: '# CANA technical state\n\n',
-        replace: `# CANA technical state\n\n${NOTICE}`,
-      },
-      expectedText: 'Canonical status supersession (2026-07-29)',
+      operation: admittedOperation,
+      expectedText,
       truthClaim: 'The stale CANA technical-state status is explicitly superseded without erasing its historical evidence.',
     });
     const after = fs.readFileSync(target);
@@ -402,23 +418,30 @@ function runShadowMechanism() {
     sourceHash,
     'Desired state 10 minus measured state 7 yields bounded error 3; the authorized intervention is exactly 1.',
   );
-  const mission = buildMission({ seed, context, missionType: 'MEASURED_ERROR_CONTROLLER_SHADOW', evidenceHash: sourceHash });
+  const admittedOperation = {
+    kind: 'REPLACE_EXACT_TEXT',
+    path: 'controller-state.json',
+    find: '"measured":7',
+    replace: '"measured":8',
+  };
+  const expectedText = '"measured":8';
+  const mission = buildMission({
+    seed,
+    context,
+    missionType: 'MEASURED_ERROR_CONTROLLER_SHADOW',
+    evidenceHash: sourceHash,
+    operation: admittedOperation,
+    expectedText,
+  });
   const authorization = authorizeMission({ mission, contextPacket: context, now: NOW, executorIdentity: EXECUTOR_ID });
-  const before = fs.readFileSync(path.join(source.root, 'controller-state.json'));
   const lifecycle = executeLifecycle({
     sandbox: source.root,
     seed,
     context,
     mission,
     authorization,
-    operation: {
-      kind: 'REPLACE_EXACT_TEXT',
-      path: 'controller-state.json',
-      before_sha256: sha256(before),
-      find: '"measured":7',
-      replace: '"measured":8',
-    },
-    expectedText: '"measured":8',
+    operation: admittedOperation,
+    expectedText,
     truthClaim: 'The deterministic measured-error controller applied one bounded shadow intervention.',
   });
   return {
@@ -569,15 +592,10 @@ function runInvalidCourts(legitimate) {
       changed_files: [{ ...legitimate.lifecycle.execution.changed_files[0], after_sha256: '0'.repeat(64) }],
     },
     sandboxRoot: ROOT,
-    operation: {
-      kind: 'REPLACE_EXACT_TEXT',
-      path: TARGET,
-      find: '# CANA technical state\n\n',
-      replace: `# CANA technical state\n\n${NOTICE}`,
-    },
+    operation: mission.verification_contract.operation,
     lease: legitimate.lifecycle.lease,
     now: NOW,
-    expectedText: 'Canonical status supersession',
+    expectedText: mission.verification_contract.expected_text,
     leaseAuthorityPublicKey: legitimate.lifecycle.leaseAuthorityPublicKey,
   }));
   record('PACKET_TAMPERING', 'CONTEXT_HASH_MISMATCH', () => authorizeMission({ mission, contextPacket: { ...context, packet_hash: '0'.repeat(64) }, now: NOW, executorIdentity: EXECUTOR_ID }));

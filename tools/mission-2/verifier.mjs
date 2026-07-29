@@ -7,6 +7,7 @@ import {
   deepFreeze,
   hashCanonical,
   normalizeExactPath,
+  requireIso,
   sha256,
 } from './canonical.mjs';
 import { assertAuthorizationReceipt } from './authorization.mjs';
@@ -124,6 +125,13 @@ export function assertVerifierReceipt({
     'EXECUTOR_SELF_VERIFICATION_DENIED',
     'Executor cannot verify itself',
   );
+  const verifiedAt = requireIso(verifierReceipt.verified_at, 'verified_at');
+  assertMission(
+    new Date(verifiedAt).getTime() >= new Date(executionReceipt.executed_at).getTime()
+      && new Date(verifiedAt).getTime() <= new Date(mission.expires_at).getTime(),
+    'VERIFIER_TIME_OUTSIDE_MISSION',
+    'Verifier receipt time must follow execution and remain inside the sealed mission window',
+  );
   assertMission(
     ['APPROVE', 'REJECT', 'INCONCLUSIVE', 'BLOCKED'].includes(verifierReceipt.verdict),
     'VERIFIER_RECEIPT_TAMPERED',
@@ -166,6 +174,21 @@ export class IndependentVerifier {
     assertMission(this.identity === mission.verifier_identity, 'VERIFIER_IDENTITY_MISMATCH', 'Mission names a different verifier');
     assertMission(this.identity !== executionReceipt.executor_identity, 'EXECUTOR_SELF_VERIFICATION_DENIED', 'Executor cannot verify itself');
     assertMission(authorization.verifier_identity === this.identity, 'VERIFIER_NOT_AUTHORIZED', 'Authorization does not name this verifier');
+    const admittedOperation = {
+      kind: operation?.kind,
+      path: operation?.path,
+      find: operation?.find,
+      replace: operation?.replace,
+    };
+    assertMission(
+      operation
+        && JSON.stringify(Object.keys(operation).sort())
+          === JSON.stringify(Object.keys(admittedOperation).sort())
+        && hashCanonical(admittedOperation) === hashCanonical(mission.verification_contract.operation)
+        && expectedText === mission.verification_contract.expected_text,
+      'VERIFICATION_CONTRACT_MISMATCH',
+      'Verifier propositions differ from the sealed mission verification contract',
+    );
     const change = executionReceipt.changed_files?.[0] ?? {};
     const relativePath = passes(() => normalizeExactPath(change.path) === change.path)
       ? change.path

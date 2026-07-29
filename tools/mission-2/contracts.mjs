@@ -74,8 +74,64 @@ function requireExactString(value, expected, field) {
   assertMission(value === expected, 'BOUNDARY_VIOLATION', `${field} must equal ${expected}`, { field, expected, actual: value });
 }
 
+function requireExactFields(value, fields, code, message) {
+  const actual = Object.keys(value).sort();
+  const expected = [...fields].sort();
+  assertMission(
+    JSON.stringify(actual) === JSON.stringify(expected),
+    code,
+    message,
+    { expected, actual },
+  );
+}
+
 export function validateMissionContract(input) {
   requireObject(input, 'mission');
+  const missionFields = [
+    'schema_version',
+    'mission_id',
+    'tenant_id',
+    'workspace_id',
+    'mission_type',
+    'objective',
+    'originating_signal',
+    'source_repository',
+    'source_commit',
+    'source_tree',
+    'source_evidence_references',
+    'context_compiler_version',
+    'context_packet_hash',
+    'authority_identity',
+    'authorization_identity',
+    'permitted_files',
+    'permitted_resources',
+    'permitted_capabilities',
+    'provider_state',
+    'hermes_state',
+    'approved_hermes_pin',
+    'budget',
+    'external_effect_policy',
+    'production_access',
+    'timeout_ms',
+    'expires_at',
+    'success_criteria',
+    'verifier_identity',
+    'verification_contract',
+    'rollback_procedure',
+    'current_lifecycle_state',
+    'latest_checkpoint',
+    'execution_attempts',
+    'evidence_references',
+    'failure_history',
+    'promotion_status',
+    'next_eligible_action',
+  ];
+  requireExactFields(
+    input,
+    Object.hasOwn(input, 'contract_hash') ? [...missionFields, 'contract_hash'] : missionFields,
+    'MISSION_SCHEMA_FIELDS_DENIED',
+    'Mission contract fields differ from the exact canonical schema',
+  );
   assertMission(input.schema_version === MISSION_SCHEMA_VERSION, 'SCHEMA_VERSION_DENIED', `schema_version must be ${MISSION_SCHEMA_VERSION}`);
   requireText(input.mission_id, 'mission_id');
   requireText(input.tenant_id, 'tenant_id');
@@ -83,6 +139,12 @@ export function validateMissionContract(input) {
   requireText(input.mission_type, 'mission_type');
   requireText(input.objective, 'objective');
   requireObject(input.originating_signal, 'originating_signal');
+  requireExactFields(
+    input.originating_signal,
+    ['signal_id', 'evidence_ref'],
+    'ORIGINATING_SIGNAL_FIELDS_DENIED',
+    'Originating signal fields differ from the exact canonical schema',
+  );
   requireText(input.originating_signal.signal_id, 'originating_signal.signal_id');
   requireText(input.originating_signal.evidence_ref, 'originating_signal.evidence_ref');
   requireText(input.source_repository, 'source_repository');
@@ -105,6 +167,12 @@ export function validateMissionContract(input) {
   requireExactString(input.hermes_state, HERMES_DISABLED, 'hermes_state');
   requireExactString(input.approved_hermes_pin, APPROVED_HERMES_PIN_NONE, 'approved_hermes_pin');
   requireObject(input.budget, 'budget');
+  requireExactFields(
+    input.budget,
+    ['currency', 'maximum', 'spent'],
+    'BUDGET_FIELDS_DENIED',
+    'Budget fields differ from the exact canonical schema',
+  );
   assertMission(input.budget.currency === 'USD' && input.budget.maximum === 0 && input.budget.spent === 0, 'NONZERO_BUDGET_DENIED', 'Mission 2 budget must remain USD 0');
   requireExactString(input.external_effect_policy, 'NONE', 'external_effect_policy');
   requireExactString(input.production_access, 'NONE', 'production_access');
@@ -114,7 +182,41 @@ export function validateMissionContract(input) {
   input.success_criteria.forEach((criterion) => requireText(criterion, 'success_criteria[]'));
   requireText(input.verifier_identity, 'verifier_identity');
   assertMission(input.verifier_identity !== input.authorization_identity, 'VERIFIER_NOT_INDEPENDENT', 'Verifier identity must be independent from authorization');
+  requireObject(input.verification_contract, 'verification_contract');
+  requireExactFields(
+    input.verification_contract,
+    ['operation', 'expected_text'],
+    'VERIFICATION_CONTRACT_FIELDS_DENIED',
+    'Verification contract fields differ from the exact canonical schema',
+  );
+  requireObject(input.verification_contract.operation, 'verification_contract.operation');
+  requireExactFields(
+    input.verification_contract.operation,
+    ['kind', 'path', 'find', 'replace'],
+    'VERIFICATION_OPERATION_FIELDS_DENIED',
+    'Verification operation fields differ from the exact canonical schema',
+  );
+  requireExactString(
+    input.verification_contract.operation.kind,
+    'REPLACE_EXACT_TEXT',
+    'verification_contract.operation.kind',
+  );
+  const verificationPath = normalizeExactPath(input.verification_contract.operation.path);
+  assertMission(
+    permittedFiles.includes(verificationPath),
+    'VERIFICATION_PATH_OUTSIDE_SCOPE',
+    'Verification operation path must be one of the exact permitted files',
+  );
+  requireText(input.verification_contract.operation.find, 'verification_contract.operation.find');
+  requireText(input.verification_contract.operation.replace, 'verification_contract.operation.replace');
+  requireText(input.verification_contract.expected_text, 'verification_contract.expected_text');
   requireObject(input.rollback_procedure, 'rollback_procedure');
+  requireExactFields(
+    input.rollback_procedure,
+    ['kind', 'description'],
+    'ROLLBACK_PROCEDURE_FIELDS_DENIED',
+    'Rollback procedure fields differ from the exact canonical schema',
+  );
   requireText(input.rollback_procedure.kind, 'rollback_procedure.kind');
   requireText(input.rollback_procedure.description, 'rollback_procedure.description');
   assertMission(LIFECYCLE.includes(input.current_lifecycle_state), 'INVALID_LIFECYCLE_STATE', 'Unknown lifecycle state');
@@ -131,6 +233,13 @@ export function validateMissionContract(input) {
     permitted_files: permittedFiles,
     permitted_resources: permittedResources,
     permitted_capabilities: permittedCapabilities,
+    verification_contract: {
+      ...structuredClone(input.verification_contract),
+      operation: {
+        ...structuredClone(input.verification_contract.operation),
+        path: verificationPath,
+      },
+    },
   };
   const { contract_hash: ignored, ...hashable } = normalized;
   const contractHash = hashCanonical(hashable);

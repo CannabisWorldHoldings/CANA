@@ -303,27 +303,34 @@ export class AutonomyKernel {
     return this.append(mission, 'EVIDENCE_CAPTURED', 'CANA_DURABLE_AUTHORITY', { evidence_ref: evidence.ref });
   }
 
-  recomputeVerification(mission, authorization, executionReceipt, verificationContext) {
+  recomputeVerification(
+    mission,
+    authorization,
+    executionReceipt,
+    verificationContext,
+    verifiedAt,
+  ) {
     assertMission(
       verificationContext && typeof verificationContext === 'object',
       'VERIFIER_ADMISSION_CONTEXT_REQUIRED',
       'CANA verifier admission requires the independent verification context',
     );
-    const {
-      sandboxRoot,
-      operation,
-      lease,
-      expectedText,
-    } = verificationContext;
+    assertMission(
+      JSON.stringify(Object.keys(verificationContext).sort())
+        === JSON.stringify(['lease', 'sandboxRoot']),
+      'VERIFIER_ADMISSION_CONTEXT_MALFORMED',
+      'Verifier admission context may contain only the runtime sandbox and authenticated lease',
+    );
+    const { sandboxRoot, lease } = verificationContext;
     return runIndependentVerification({
       mission,
       authorization,
       executionReceipt,
       sandboxRoot,
-      operation,
+      operation: mission.verification_contract.operation,
       lease,
-      now: this.clock(),
-      expectedText,
+      now: new Date(verifiedAt),
+      expectedText: mission.verification_contract.expected_text,
       leaseAuthorityPublicKey: this.leaseAuthority.publicKey,
     });
   }
@@ -348,11 +355,17 @@ export class AutonomyKernel {
       executionReceipt,
       verifierReceipt,
     });
+    assertMission(
+      new Date(verifierReceipt.verified_at).getTime() <= this.clock().getTime(),
+      'VERIFIER_RECEIPT_FROM_FUTURE',
+      'Verifier receipt time is later than the CANA admission clock',
+    );
     const recomputed = this.recomputeVerification(
       mission,
       authorization,
       executionReceipt,
       verificationContext,
+      verifierReceipt.verified_at,
     );
     assertMission(
       hashCanonical(recomputed) === hashCanonical(verifierReceipt),
@@ -402,6 +415,7 @@ export class AutonomyKernel {
       authorization,
       executionReceipt,
       verificationContext,
+      verifierReceipt.verified_at,
     );
     assertMission(
       hashCanonical(recomputed) === hashCanonical(verifierReceipt),
@@ -489,7 +503,7 @@ export class AutonomyKernel {
     return record;
   }
 
-  recordRollback(mission, executionReceipt, rollbackReceipt) {
+  recordRollback(mission, executionReceipt, rollbackReceipt, sandboxRoot) {
     const current = this.projection(mission.mission_id);
     assertMission(
       current.execution_receipt_hash === executionReceipt.execution_receipt_hash,
@@ -500,6 +514,7 @@ export class AutonomyKernel {
       mission,
       executionReceipt,
       rollbackReceipt,
+      sandboxRoot,
     });
     const evidence = this.store.writeEvidence(rollbackReceipt);
     return this.append(mission, 'ROLLED_BACK', 'CANA_DURABLE_AUTHORITY', {

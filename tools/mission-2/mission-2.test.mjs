@@ -136,6 +136,10 @@ function buildMission(repository, contextPacket, overrides = {}) {
     expires_at: EXPIRES,
     success_criteria: ['Insert the exact supersession notice once', 'Preserve all historical bytes after the insertion point'],
     verifier_identity: VERIFIER,
+    verification_contract: {
+      operation: operation(),
+      expected_text: 'Superseded:',
+    },
     rollback_procedure: {
       kind: 'EXACT_BYTES',
       description: 'Restore the exact pre-mission bytes and verify their SHA-256',
@@ -209,7 +213,6 @@ function operation() {
   return {
     kind: 'REPLACE_EXACT_TEXT',
     path: TARGET,
-    before_sha256: sha256(BEFORE_TEXT),
     find: '# Status\n\n',
     replace: '# Status\n\nSuperseded: canonical checks are verified at the protected base.\n\n',
   };
@@ -314,6 +317,19 @@ test('authorization requires exact Mission 2 boundaries and independent verifica
     expectCode(() => buildMission(repository, contextPacket, { [field]: value }), code);
   }
   expectCode(() => buildMission(repository, contextPacket, { budget: { currency: 'USD', maximum: 1, spent: 0 } }), 'NONZERO_BUDGET_DENIED');
+  expectCode(
+    () => buildMission(repository, contextPacket, { unauthorized_extension: true }),
+    'MISSION_SCHEMA_FIELDS_DENIED',
+  );
+  expectCode(
+    () => buildMission(repository, contextPacket, {
+      verification_contract: {
+        ...mission.verification_contract,
+        caller_override: true,
+      },
+    }),
+    'VERIFICATION_CONTRACT_FIELDS_DENIED',
+  );
   expectCode(() => authorizeMission({
     mission: buildMission(repository, contextPacket, { verifier_identity: EXECUTOR }),
     contextPacket,
@@ -731,7 +747,7 @@ test('mock executor rejects unauthorized, expired, widened, dirty, and symlink t
     operation: { ...operation(), path: 'docs/other.md' },
     now: NOW,
     lease,
-  }), 'UNAUTHORIZED_FILE');
+  }), 'VERIFICATION_CONTRACT_MISMATCH');
   expectCode(() => executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: new Date(EXPIRES), lease }), 'EXECUTION_AFTER_EXPIRY');
   const noWrite = buildMission(repository, contextPacket, { permitted_capabilities: ['READ_REPOSITORY'] });
   const noWriteAuth = authorizeMission({ mission: noWrite, contextPacket, now: NOW, executorIdentity: EXECUTOR });
@@ -799,13 +815,20 @@ test('independent verifier cannot be the executor and rejects forged evidence', 
     before_bytes: Buffer.alloc(0),
     after_bytes: Buffer.alloc(0),
   }).verdict, 'REJECT');
+  expectCode(
+    () => verify(receipt, {
+      operation: { ...operation(), find: 'caller-selected proposition' },
+    }),
+    'VERIFICATION_CONTRACT_MISMATCH',
+  );
 });
 
 test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promotion, truth, and Winner Memory', () => {
   const { repository, seed, contextPacket, mission, authorization } = setup();
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-kernel-'));
   const store = new MissionStore(root);
-  const kernel = new AutonomyKernel({ store, clock: () => NOW });
+  let admissionClock = new Date(NOW);
+  const kernel = new AutonomyKernel({ store, clock: () => admissionClock });
   kernel.observeSignal(seed, { signal_id: 'signal', tenant_id: TENANT, workspace_id: WORKSPACE, evidence: 'receipt' });
   kernel.recordContext(seed, contextPacket);
   kernel.sealMission(mission);
@@ -845,9 +868,7 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
   });
   const verificationContext = {
     sandboxRoot: repository.root,
-    operation: operation(),
     lease: activeLease,
-    expectedText: 'Superseded:',
   };
   const {
     verifier_receipt_hash: ignoredVerifierHash,
@@ -884,6 +905,27 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     'VERIFIER_RECEIPT_TAMPERED',
   );
   const restoredVerifierReceipt = structuredClone(verifierReceipt);
+  const futureVerifierReceipt = verifySeparately({
+    store,
+    mission,
+    authorization,
+    executionReceipt: restoredExecution,
+    sandboxRoot: repository.root,
+    operation: operation(),
+    lease: activeLease,
+    now: new Date(NOW.getTime() + 5_000),
+    expectedText: 'Superseded:',
+  });
+  expectCode(
+    () => kernel.recordVerification(
+      mission,
+      authorization,
+      restoredExecution,
+      futureVerifierReceipt,
+      verificationContext,
+    ),
+    'VERIFIER_RECEIPT_FROM_FUTURE',
+  );
   validateReceiptsInFreshProcess({
     mission,
     authorization: structuredClone(authorization),
@@ -897,23 +939,38 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
     now: NOW.toISOString(),
   });
-  kernel.recordVerification(
+  admissionClock = new Date(NOW.getTime() + 5_000);
+  const restartedKernel = new AutonomyKernel({
+    store: new MissionStore(root),
+    clock: () => admissionClock,
+  });
+  expectCode(
+    () => restartedKernel.recordVerification(
+      mission,
+      authorization,
+      restoredExecution,
+      restoredVerifierReceipt,
+      { ...verificationContext, expectedText: 'caller-selected proposition' },
+    ),
+    'VERIFIER_ADMISSION_CONTEXT_MALFORMED',
+  );
+  restartedKernel.recordVerification(
     mission,
     structuredClone(authorization),
     restoredExecution,
     restoredVerifierReceipt,
     verificationContext,
   );
-  expectCode(() => kernel.updateTruthGraph(mission, verifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'fixed' }), 'TRUTH_UPDATE_BEFORE_PROMOTION');
-  kernel.decidePromotion(
+  expectCode(() => restartedKernel.updateTruthGraph(mission, verifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'fixed' }), 'TRUTH_UPDATE_BEFORE_PROMOTION');
+  restartedKernel.decidePromotion(
     mission,
     structuredClone(authorization),
     restoredExecution,
     structuredClone(restoredVerifierReceipt),
     verificationContext,
   );
-  const truth = kernel.updateTruthGraph(mission, restoredVerifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'The stale canonical status is superseded.' });
-  const winner = kernel.updateWinnerMemory(mission, truth, {
+  const truth = restartedKernel.updateTruthGraph(mission, restoredVerifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'The stale canonical status is superseded.' });
+  const winner = restartedKernel.updateWinnerMemory(mission, truth, {
     exact_success_conditions: ['exact notice inserted', 'history preserved'],
     reusable_boundaries: ['documentation-only', 'no commercial value claim'],
     failure_conditions: ['source hash drift', 'notice duplication'],
@@ -922,20 +979,40 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
   });
   assert.equal(winner.value_state, 'VALUE_NOT_ESTABLISHED');
   assert.equal(winner.commercial_value_claimed, false);
-  assert.equal(kernel.projection(mission.mission_id).current_lifecycle_state, 'WINNER_MEMORY_UPDATED');
+  assert.equal(restartedKernel.projection(mission.mission_id).current_lifecycle_state, 'WINNER_MEMORY_UPDATED');
+  const coherentFalseRollbackBody = {
+    schema_version: 'cana.mock-rollback-receipt/2.0.0',
+    mission_id: mission.mission_id,
+    execution_receipt_hash: restoredExecution.execution_receipt_hash,
+    path: restoredExecution.changed_files[0].path,
+    restored_sha256: restoredExecution.changed_files[0].before_sha256,
+    exact_bytes_restored: true,
+  };
+  expectCode(
+    () => restartedKernel.recordRollback(
+      mission,
+      restoredExecution,
+      {
+        ...coherentFalseRollbackBody,
+        rollback_receipt_hash: hashCanonical(coherentFalseRollbackBody),
+      },
+      repository.root,
+    ),
+    'ROLLBACK_STATE_MISMATCH',
+  );
   const rollback = executor.rollback({
     sandboxRoot: repository.root,
     executionReceipt: restoredExecution,
   });
   expectCode(
-    () => kernel.recordRollback(mission, restoredExecution, {
+    () => restartedKernel.recordRollback(mission, restoredExecution, {
       ...rollback,
       rollback_receipt_hash: '0'.repeat(64),
-    }),
+    }, repository.root),
     'ROLLBACK_RECEIPT_TAMPERED',
   );
-  kernel.recordRollback(mission, restoredExecution, structuredClone(rollback));
-  assert.equal(kernel.projection(mission.mission_id).current_lifecycle_state, 'ROLLED_BACK');
+  restartedKernel.recordRollback(mission, restoredExecution, structuredClone(rollback), repository.root);
+  assert.equal(restartedKernel.projection(mission.mission_id).current_lifecycle_state, 'ROLLED_BACK');
 });
 
 test('rejected mission cannot update TruthGraph or Winner Memory', () => {
@@ -943,9 +1020,19 @@ test('rejected mission cannot update TruthGraph or Winner Memory', () => {
     repository,
     seed,
     contextPacket,
-    mission,
-    authorization,
   } = setup();
+  const mission = buildMission(repository, contextPacket, {
+    verification_contract: {
+      operation: operation(),
+      expected_text: 'text that is deliberately absent',
+    },
+  });
+  const authorization = authorizeMission({
+    mission,
+    contextPacket,
+    now: NOW,
+    executorIdentity: EXECUTOR,
+  });
   const store = new MissionStore(fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-reject-')));
   const kernel = new AutonomyKernel({ store, clock: () => NOW });
   kernel.observeSignal(seed, { signal_id: 'signal', tenant_id: TENANT, workspace_id: WORKSPACE });
@@ -977,9 +1064,7 @@ test('rejected mission cannot update TruthGraph or Winner Memory', () => {
   assert.equal(rejection.verdict, 'REJECT');
   const verificationContext = {
     sandboxRoot: repository.root,
-    operation: operation(),
     lease,
-    expectedText: 'text that is deliberately absent',
   };
   kernel.recordVerification(
     mission,

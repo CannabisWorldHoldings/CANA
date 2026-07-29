@@ -34,12 +34,17 @@ budget remains `$0`, and external/production effects remain `NONE`.
 keys, SHA-256 bound, tenant/workspace/source bound, exact-path scoped, versioned,
 and replay-resistant through a stable contract hash plus monotonic event versions.
 Undefined, non-finite, missing, stale, malformed, broadened, cross-tenant, or
-non-canonical values fail closed.
+non-canonical values fail closed. The mission itself has an exact field allowlist;
+unknown extensions are rejected rather than silently entering the contract hash.
 
 The contract carries every required identity, source, evidence, context,
 authorization, capability, provider/Hermes state, budget, timeout, expiry, success
 criterion, verifier, rollback, lifecycle, checkpoint, attempt, failure, promotion,
-and next-action field named by the Mission 2 authorization.
+and next-action field named by the Mission 2 authorization. Its exact
+`verification_contract` seals the deterministic operation path/find/replacement
+and success text before authorization or execution. Runtime callers may supply
+only the isolated sandbox and authenticated lease; they cannot substitute the
+propositions that the independent verifier evaluates.
 
 ## Lifecycle and durability
 
@@ -122,9 +127,12 @@ a caller-supplied digest as admission. At authorization, the kernel reloads the
 exact content-addressed Context Packet and sealed mission, reruns the deterministic
 CANA authorization policy at its own clock, and requires byte-equivalent output
 before recording the grant. At verification and again at promotion, CANA reruns
-the independent falsification adapter against the live isolated sandbox, exact
-operation, lease, source state, execution bytes, and success condition; the
-submitted receipt must exactly match that independently reproduced result.
+the independent falsification adapter against the live isolated sandbox, sealed
+operation and success condition, authenticated lease, source state, and execution
+bytes. Reproduction uses the receipt's mission-window timestamp, while CANA rejects
+a receipt later than its admission clock. The submitted receipt must exactly match
+that independently reproduced result across process restart and ordinary elapsed
+wall time.
 Dispatch additionally loads and revalidates the exact content-addressed
 authorization receipt referenced by the durable `CANA_AUTHORIZED` event. Receipt
 mutation, a self-hashed but policy-divergent authorization, an invented all-true
@@ -157,6 +165,10 @@ byte lengths, success, rollback reconstructability, provider, budget, and
 external-effect claims. It proves its own inspection left the implementation
 unchanged. It can return `APPROVE`, `REJECT`, `INCONCLUSIVE`, or `BLOCKED`; only
 CANA converts an admitted exact `APPROVE` receipt into promotion.
+
+Rollback admission does not trust a caller's self-hashed success claim. CANA
+reopens the exact no-symlink sandbox target and requires its bytes to equal the
+execution receipt's pre-mission bytes and hash before recording `ROLLED_BACK`.
 
 ## Knowledge Foundry and Intelligence OS
 
