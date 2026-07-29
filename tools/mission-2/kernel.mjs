@@ -4,7 +4,10 @@ import {
   deterministicId,
   hashCanonical,
 } from './canonical.mjs';
-import { assertAuthorizationReceipt } from './authorization.mjs';
+import {
+  assertAuthorizationReceipt,
+  authorizeMission,
+} from './authorization.mjs';
 import {
   admitPersistedLease,
   assertAdmittedLease,
@@ -15,7 +18,10 @@ import {
   assertExecutionReceipt,
   assertRollbackReceipt,
 } from './mock-executor.mjs';
-import { assertVerifierReceipt } from './verifier.mjs';
+import {
+  assertVerifierReceipt,
+  IndependentVerifier,
+} from './verifier.mjs';
 
 const ACTION_BY_STATE = Object.freeze({
   SIGNAL_OBSERVED: 'COMPILE_CONTEXT',
@@ -89,6 +95,7 @@ export class AutonomyKernel {
     const evidence = this.store.writeEvidence(contextPacket);
     return this.append(missionSeed, 'CONTEXT_COMPILED', 'RSI_SITEMIND_INTELLIGENCE', {
       evidence_ref: evidence.ref,
+      context_evidence_ref: evidence.ref,
       context_packet_hash: contextPacket.packet_hash,
     });
   }
@@ -97,17 +104,43 @@ export class AutonomyKernel {
     const evidence = this.store.writeEvidence(mission);
     return this.append(mission, 'MISSION_SEALED', 'CANA_DURABLE_AUTHORITY', {
       evidence_ref: evidence.ref,
+      mission_evidence_ref: evidence.ref,
       mission_contract_hash: mission.contract_hash,
     });
   }
 
   recordAuthorization(mission, authorization) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      typeof current.context_evidence_ref === 'string'
+        && typeof current.mission_evidence_ref === 'string',
+      'AUTHORIZATION_PREREQUISITES_MISSING',
+      'Authorization requires durable context and sealed mission evidence',
+    );
+    const durableContext = this.store.readEvidence(current.context_evidence_ref);
+    const durableMission = this.store.readEvidence(current.mission_evidence_ref);
+    assertMission(
+      hashCanonical(durableMission) === hashCanonical(mission),
+      'DURABLE_MISSION_MISMATCH',
+      'Authorization mission differs from the durable sealed mission',
+    );
+    const recomputed = authorizeMission({
+      mission: durableMission,
+      contextPacket: durableContext,
+      now: this.clock(),
+      executorIdentity: authorization?.executor_identity,
+    });
     assertAuthorizationReceipt({
-      mission,
+      mission: durableMission,
       authorization,
       now: this.clock(),
       executorIdentity: authorization?.executor_identity,
     });
+    assertMission(
+      hashCanonical(recomputed) === hashCanonical(authorization),
+      'FORGED_AUTHORIZATION_DENIED',
+      'Authorization receipt was not reproduced by CANA deterministic policy',
+    );
     const evidence = this.store.writeEvidence(authorization);
     return this.append(mission, 'CANA_AUTHORIZED', 'CANA_DURABLE_AUTHORITY', {
       evidence_ref: evidence.ref,
@@ -263,7 +296,37 @@ export class AutonomyKernel {
     return this.append(mission, 'EVIDENCE_CAPTURED', 'CANA_DURABLE_AUTHORITY', { evidence_ref: evidence.ref });
   }
 
-  recordVerification(mission, authorization, executionReceipt, verifierReceipt) {
+  recomputeVerification(mission, authorization, executionReceipt, verificationContext) {
+    assertMission(
+      verificationContext && typeof verificationContext === 'object',
+      'VERIFIER_ADMISSION_CONTEXT_REQUIRED',
+      'CANA verifier admission requires the independent verification context',
+    );
+    const {
+      sandboxRoot,
+      operation,
+      lease,
+      expectedText,
+    } = verificationContext;
+    return new IndependentVerifier(mission.verifier_identity).verify({
+      mission,
+      authorization,
+      executionReceipt,
+      sandboxRoot,
+      operation,
+      lease,
+      now: this.clock(),
+      expectedText,
+    });
+  }
+
+  recordVerification(
+    mission,
+    authorization,
+    executionReceipt,
+    verifierReceipt,
+    verificationContext,
+  ) {
     const current = this.projection(mission.mission_id);
     assertMission(
       current.authorization_receipt_hash === authorization.authorization_receipt_hash
@@ -277,16 +340,34 @@ export class AutonomyKernel {
       executionReceipt,
       verifierReceipt,
     });
+    const recomputed = this.recomputeVerification(
+      mission,
+      authorization,
+      executionReceipt,
+      verificationContext,
+    );
+    assertMission(
+      hashCanonical(recomputed) === hashCanonical(verifierReceipt),
+      'FORGED_VERIFIER_RECEIPT_DENIED',
+      'Verifier receipt was not reproduced by CANA independent admission',
+    );
     const evidence = this.store.writeEvidence(verifierReceipt);
     return this.append(mission, 'INDEPENDENTLY_VERIFIED', verifierReceipt.verifier_identity, {
       evidence_ref: evidence.ref,
+      verifier_evidence_ref: evidence.ref,
       verifier_verdict: verifierReceipt.verdict,
       verifier_identity: verifierReceipt.verifier_identity,
       verifier_receipt_hash: verifierReceipt.verifier_receipt_hash,
     });
   }
 
-  decidePromotion(mission, authorization, executionReceipt, verifierReceipt) {
+  decidePromotion(
+    mission,
+    authorization,
+    executionReceipt,
+    verifierReceipt,
+    verificationContext,
+  ) {
     const current = this.projection(mission.mission_id);
     assertMission(
       current.verifier_receipt_hash === verifierReceipt.verifier_receipt_hash
@@ -295,12 +376,30 @@ export class AutonomyKernel {
       'UNRECORDED_VERIFIER_RECEIPT',
       'Promotion requires the exact recorded verifier receipt',
     );
+    assertMission(
+      typeof current.verifier_evidence_ref === 'string'
+        && hashCanonical(this.store.readEvidence(current.verifier_evidence_ref))
+          === hashCanonical(verifierReceipt),
+      'UNRECORDED_VERIFIER_RECEIPT',
+      'Promotion requires the exact durable verifier evidence',
+    );
     assertVerifierReceipt({
       mission,
       authorization,
       executionReceipt,
       verifierReceipt,
     });
+    const recomputed = this.recomputeVerification(
+      mission,
+      authorization,
+      executionReceipt,
+      verificationContext,
+    );
+    assertMission(
+      hashCanonical(recomputed) === hashCanonical(verifierReceipt),
+      'FORGED_VERIFIER_RECEIPT_DENIED',
+      'Promotion requires a freshly reproduced independent verifier receipt',
+    );
     const approve = verifierReceipt.verdict === 'APPROVE' && verifierReceipt.implementation_mutated === false;
     const next = approve ? 'PROMOTED' : 'REJECTED';
     const payload = {

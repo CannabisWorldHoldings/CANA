@@ -214,8 +214,26 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
     expectedText,
   });
   const restoredVerification = structuredClone(verification);
-  kernel.recordVerification(mission, restoredAuthorization, restoredExecution, restoredVerification);
-  kernel.decidePromotion(mission, restoredAuthorization, restoredExecution, restoredVerification);
+  const verificationContext = {
+    sandboxRoot: sandbox,
+    operation,
+    lease: restoredLease,
+    expectedText,
+  };
+  kernel.recordVerification(
+    mission,
+    restoredAuthorization,
+    restoredExecution,
+    restoredVerification,
+    verificationContext,
+  );
+  kernel.decidePromotion(
+    mission,
+    restoredAuthorization,
+    restoredExecution,
+    restoredVerification,
+    verificationContext,
+  );
   const truth = kernel.updateTruthGraph(mission, restoredVerification, {
     state: 'TECHNICALLY_VERIFIED',
     claim: truthClaim,

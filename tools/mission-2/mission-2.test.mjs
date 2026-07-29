@@ -311,6 +311,21 @@ test('authorization and leases survive serialization while tampering and paused 
   kernel.observeSignal(seed, { signal_id: 'signal', tenant_id: TENANT, workspace_id: WORKSPACE });
   kernel.recordContext(seed, contextPacket);
   kernel.sealMission(mission);
+  const {
+    authorization_receipt_hash: ignoredAuthorizationHash,
+    ...forgedAuthorizationBody
+  } = {
+    ...authorization,
+    authorized_at: new Date(NOW.getTime() - 1).toISOString(),
+  };
+  void ignoredAuthorizationHash;
+  expectCode(
+    () => kernel.recordAuthorization(mission, {
+      ...forgedAuthorizationBody,
+      authorization_receipt_hash: hashCanonical(forgedAuthorizationBody),
+    }),
+    'FORGED_AUTHORIZATION_DENIED',
+  );
   expectCode(
     () => kernel.recordAuthorization(mission, {
       ...authorization,
@@ -709,12 +724,43 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     now: NOW,
     expectedText: 'Superseded:',
   });
+  const verificationContext = {
+    sandboxRoot: repository.root,
+    operation: operation(),
+    lease: activeLease,
+    expectedText: 'Superseded:',
+  };
+  const {
+    verifier_receipt_hash: ignoredVerifierHash,
+    ...forgedVerifierBody
+  } = {
+    ...verifierReceipt,
+    checks: { fabricated: true },
+    verdict: 'APPROVE',
+    implementation_mutated: false,
+  };
+  void ignoredVerifierHash;
+  const forgedVerifierReceipt = {
+    ...forgedVerifierBody,
+    verifier_receipt_hash: hashCanonical(forgedVerifierBody),
+  };
+  expectCode(
+    () => kernel.recordVerification(
+      mission,
+      authorization,
+      restoredExecution,
+      forgedVerifierReceipt,
+      verificationContext,
+    ),
+    'FORGED_VERIFIER_RECEIPT_DENIED',
+  );
   expectCode(
     () => kernel.recordVerification(
       mission,
       authorization,
       restoredExecution,
       { ...verifierReceipt, verifier_receipt_hash: '0'.repeat(64) },
+      verificationContext,
     ),
     'VERIFIER_RECEIPT_TAMPERED',
   );
@@ -736,6 +782,7 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     structuredClone(authorization),
     restoredExecution,
     restoredVerifierReceipt,
+    verificationContext,
   );
   expectCode(() => kernel.updateTruthGraph(mission, verifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'fixed' }), 'TRUTH_UPDATE_BEFORE_PROMOTION');
   kernel.decidePromotion(
@@ -743,6 +790,7 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     structuredClone(authorization),
     restoredExecution,
     structuredClone(restoredVerifierReceipt),
+    verificationContext,
   );
   const truth = kernel.updateTruthGraph(mission, restoredVerifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'The stale canonical status is superseded.' });
   const winner = kernel.updateWinnerMemory(mission, truth, {
@@ -806,8 +854,26 @@ test('rejected mission cannot update TruthGraph or Winner Memory', () => {
     expectedText: 'text that is deliberately absent',
   });
   assert.equal(rejection.verdict, 'REJECT');
-  kernel.recordVerification(mission, authorization, execution, rejection);
-  kernel.decidePromotion(mission, authorization, execution, rejection);
+  const verificationContext = {
+    sandboxRoot: repository.root,
+    operation: operation(),
+    lease,
+    expectedText: 'text that is deliberately absent',
+  };
+  kernel.recordVerification(
+    mission,
+    authorization,
+    execution,
+    rejection,
+    verificationContext,
+  );
+  kernel.decidePromotion(
+    mission,
+    authorization,
+    execution,
+    rejection,
+    verificationContext,
+  );
   expectCode(() => kernel.updateTruthGraph(mission, rejection, { state: 'TECHNICALLY_VERIFIED', claim: 'forged' }), 'TRUTH_UPDATE_BEFORE_PROMOTION');
   expectCode(() => kernel.updateWinnerMemory(mission, { state: 'TECHNICALLY_VERIFIED' }, {}), 'WINNER_MEMORY_BEFORE_TRUTH');
   assert.equal(kernel.projection(mission.mission_id).current_lifecycle_state, 'REJECTED');
