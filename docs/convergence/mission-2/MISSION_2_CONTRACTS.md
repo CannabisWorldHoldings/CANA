@@ -105,12 +105,22 @@ Authorization, lease, execution, verifier, TruthGraph, Winner Memory, and rollba
 receipts use exact schemas and canonical hashes. They are deliberately
 serialization-safe: independent processes revalidate exact schemas, hashes,
 mission/source identity, expiry, executor/verifier separation, and causal receipt
-bindings instead of relying on JavaScript object identity. Dispatch additionally
-loads and revalidates the exact content-addressed authorization receipt referenced
-by the durable `CANA_AUTHORIZED` event. Receipt mutation, a lifecycle-shaped
-authorization without durable evidence, stale leases, forged execution or
-verifier receipts, and forged rollback receipts are denied before execution,
-promotion, memory, or rollback.
+bindings instead of relying on JavaScript object identity.
+
+Receipt hashes prove integrity, not issuer identity. CANA therefore does not treat
+a caller-supplied digest as admission. At authorization, the kernel reloads the
+exact content-addressed Context Packet and sealed mission, reruns the deterministic
+CANA authorization policy at its own clock, and requires byte-equivalent output
+before recording the grant. At verification and again at promotion, CANA reruns
+the independent falsification adapter against the live isolated sandbox, exact
+operation, lease, source state, execution bytes, and success condition; the
+submitted receipt must exactly match that independently reproduced result.
+Dispatch additionally loads and revalidates the exact content-addressed
+authorization receipt referenced by the durable `CANA_AUTHORIZED` event. Receipt
+mutation, a self-hashed but policy-divergent authorization, an invented all-true
+verifier approval, a lifecycle-shaped authorization without durable evidence,
+stale leases, forged execution receipts, and forged rollback receipts are denied
+before execution, promotion, memory, or rollback.
 
 ## Replaceable execution and verification
 
