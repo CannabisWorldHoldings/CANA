@@ -45,6 +45,10 @@ after(() => {
     ) {
       const invalidatedRoot = path.join(os.tmpdir(), entry);
       fs.chmodSync(invalidatedRoot, 0o700);
+      for (const child of fs.readdirSync(invalidatedRoot)) {
+        const childPath = path.join(invalidatedRoot, child);
+        if (fs.lstatSync(childPath).isDirectory()) fs.chmodSync(childPath, 0o700);
+      }
       fs.rmSync(invalidatedRoot, { recursive: true, force: true });
     }
   }

@@ -205,16 +205,18 @@ function assertWorkspaceIdentity(workspace) {
 function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   if (cleanedWorkspaces.has(workspace)) return;
   const state = stateFor(workspace);
-  const quarantinePath = path.join(
-    fs.realpathSync(os.tmpdir()),
-    `${INVALIDATED_DATABASE_ROOT_PREFIX}${randomBytes(16).toString('hex')}`,
+  const quarantineContainer = fs.mkdtempSync(
+    path.join(fs.realpathSync(os.tmpdir()), INVALIDATED_DATABASE_ROOT_PREFIX),
   );
+  fs.chmodSync(quarantineContainer, 0o700);
+  const quarantinePath = path.join(quarantineContainer, 'root');
   fs.renameSync(state.rootPath, quarantinePath);
   const restoreQuarantine = () => {
     try {
       fs.lstatSync(state.rootPath);
     } catch {
       fs.renameSync(quarantinePath, state.rootPath);
+      fs.rmdirSync(quarantineContainer);
     }
   };
   let quarantinedRoot;
