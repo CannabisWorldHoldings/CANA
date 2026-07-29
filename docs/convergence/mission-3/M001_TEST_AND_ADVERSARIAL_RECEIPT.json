@@ -1,0 +1,110 @@
+{
+  "schema_version": "cana.mission-3-m001-test-and-adversarial-receipt/1.0.0",
+  "mechanism_identity": "CANA-GF-M001-VERIFIED-LOCAL-ELIGIBILITY-AND-AVAILABILITY-GRAPH",
+  "implementation_commit": "9c2662852a0b15cb7c25c381e3060a99cd9063a7",
+  "implementation_tree": "8c5581895fec8b6f707035ac96541a453c1b60ad",
+  "overall": "PASS",
+  "focused_courts": {
+    "m001": {
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "root_working_directory": "PASS",
+      "intended_working_directory": "PASS",
+      "canonical_node_24_container": "PASS",
+      "container_node_version": "v24.14.1",
+      "container_node_path": "/usr/local/bin/node"
+    },
+    "mission_2_and_policy": {
+      "tests": 88,
+      "passed": 88,
+      "failed": 0,
+      "includes": [
+        "tools/mission-2/mission-2.test.mjs",
+        "tools/durability/cli.test.mjs",
+        "tools/github-import/prepare.test.mjs",
+        "tools/growth-foundry/m001/claim-graph.test.mjs"
+      ]
+    }
+  },
+  "adversarial_proofs": [
+    "exact provenance retained",
+    "expired consequential truth withheld",
+    "merchant evidence cannot establish official regulatory truth",
+    "all seven source-authority rules enforced",
+    "contradictory observations preserved",
+    "correction history retained without deletion",
+    "sponsorship cannot influence truth, confidence, contradiction visibility or organic relevance",
+    "cross-tenant and cross-workspace records rejected",
+    "duplicate identities rejected",
+    "Package 003, handoff and graph replay or tampering rejected",
+    "malformed timestamps, impossible expiry and TTL broadening rejected",
+    "source hash mismatch rejected",
+    "independent verification required",
+    "retirement renders no current truth",
+    "repeated output deterministic",
+    "no live D.C. record admitted"
+  ],
+  "canonical_verification": [
+    {
+      "gate": "focused",
+      "result": "PASS",
+      "receipt_sha256": "4af264918c7388ddb70a9dfe30e758a3490b4b894a50318009af49e2d31cb3ac"
+    },
+    {
+      "gate": "full",
+      "result": "PASS",
+      "receipt_sha256": "9ab3063920e187744f7e5a2df3c2bebf32fba1c6dced478cfc539d906aed07c0"
+    },
+    {
+      "gate": "clean-clone",
+      "result": "PASS",
+      "receipt_sha256": "451041b373718d9ab5624eb3d8ebf9a00b43b7447f156209634f48b6278e5fb7"
+    },
+    {
+      "gate": "release",
+      "result": "PASS",
+      "receipt_sha256": "36809dba2680a64d6d2301dce0156df28614c755b7931afc53baeec501256b9e"
+    },
+    {
+      "gate": "durability-build",
+      "result": "PASS",
+      "receipt_sha256": "dce590e7ff17352a954114a0f6f623a71267e645720ea1be2e109a32ab60fec3"
+    },
+    {
+      "gate": "durability-verify",
+      "result": "PASS",
+      "receipt_sha256": "0bff42fbac08e14aa51c163cea6825af5614692b430443e727f2c214386585c0"
+    },
+    {
+      "gate": "durability-restore",
+      "result": "PASS",
+      "receipt_sha256": "c50b889bdc70593e158f38f274283c2d45fc96574349c4d6970a6a42dbafea3c"
+    },
+    {
+      "gate": "mariadb",
+      "result": "PASS",
+      "receipt_sha256": "9ae5ef0d502f883f9e825bb384e6681e0a877e69287ba511b11103407443eb50"
+    },
+    {
+      "gate": "cpanel",
+      "result": "PASS",
+      "receipt_sha256": "f60e45eea811c8159f83fdb32ed58875a54bdc3eb99a735f35b6b1af2bfafd7e"
+    }
+  ],
+  "production_build": "PASS_IN_PINNED_FULL_CLEAN_CLONE_AND_RELEASE_GATES",
+  "migration": "PASS_IN_PINNED_FOCUSED_FULL_CLEAN_CLONE_AND_RELEASE_GATES",
+  "dependency_audit": {
+    "result": "PASS",
+    "production_vulnerabilities": 0,
+    "report_sha256": "f6dde5ec70f97401deffb3800e0aa838c960429c5ca13f02201e87433e1fa73c"
+  },
+  "secret_scan": "PASS_IN_DURABILITY_BUILD",
+  "git_fsck": "PASS",
+  "package_003_negative_fixture": {
+    "case_count": 51,
+    "sha256": "4817c83d7fcf2dc4bc2cd546ff117baa7c1b46d810c614642f57ac6521aaedfe",
+    "reuse": "HASH_BOUND_REFERENCE_ONLY"
+  },
+  "recorded_at": "2026-07-29T20:13:55.000Z"
+}
