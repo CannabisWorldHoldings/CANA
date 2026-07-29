@@ -22,6 +22,7 @@ Traceable Mission 2 commits:
 | `ec56bcfe4a6ea3ca3b6b88122d35cfa49d35dfab` | bind the Node 24 court to exact Mission 2 ownership |
 | `34afc1e7cc92d03bbaa67ee8c6960800185adfc6` | close the fail-closed authority, verifier, lifecycle, durability, and evidence review findings |
 | `cb9860d4297d153b51a9bf803506b8e35efbb11b` | own the exact Mission 2 execution-lease surface |
+| `4eac8fd66d7f9187333ebf8e2aff76a5a7186c2d` | make authority receipts and durable storage restart-safe |
 
 The exact ownership-reconciliation and final-evidence commits are recorded by their
 full identities in the final external verification receipt after the branch is

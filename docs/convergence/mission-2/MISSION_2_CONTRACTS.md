@@ -52,15 +52,25 @@ The append-only SHA-256 event chain and atomic current-state projection implemen
 `ROLLED_BACK` when requested.
 
 Each event binds the prior hash, global sequence, monotonic mission version,
-tenant, workspace, actor, timestamp, lifecycle state, and payload. An independently
-sealed head anchor binds the durable event count and tail hash. Reconstruction
-repairs only the two valid crash windows in which the event log is ahead of the
-head or projection; it rejects mutation, coordinated tail deletion, reordering,
-stale versions, tenant/workspace drift, and history divergence. Content-addressed
-evidence is written exclusively and verified on every read. Store roots, event
-files, head files, projections, evidence directories, and evidence objects reject
-symlink redirection and opened-file replacement. The projection remains a cache;
-the event chain plus head anchor is the reconstructable authority.
+tenant, workspace, actor, timestamp, lifecycle state, and payload. A keyed
+HMAC-SHA-256 head anchor binds the durable event count and tail hash. Its private
+32-byte key is created exclusively with mode `0600` beside, rather than inside,
+the mutable store root; existing durable state cannot start without that key.
+Reconstruction repairs only the two valid crash windows in which the event log is
+ahead of the head or projection; it rejects mutation, coordinated store-root tail
+deletion, reordering, stale versions, tenant/workspace drift, and history
+divergence. Content-addressed evidence is written exclusively and verified on
+every read. Store roots, event files, head files, projections, evidence
+directories, evidence objects, and the external key reject symlink redirection
+and opened-file replacement. A structured append lock identifies its owning
+process, recovers only a proven dead-owner lock, and rejects a live or replaced
+lock. The projection remains a cache; the event chain, keyed head, and external
+key are the reconstructable authority.
+
+The head anchor is a local durable-store integrity boundary, not protection
+against an administrator or same-account attacker who can modify both the store
+and its external key. Mission 2 grants no production authority and stores no
+credential in source or generated evidence.
 
 The Autonomy Kernel provides bounded queue eligibility, canonical hash-bound worker
 leases, heartbeats, lease expiry, checkpoints, process-restart restoration,
@@ -92,9 +102,15 @@ hashes and requires:
 - an exact-byte rollback contract.
 
 Authorization, lease, execution, verifier, TruthGraph, Winner Memory, and rollback
-receipts use exact schemas and canonical hashes. The in-process authority and
-adapter boundaries admit only receipts they issued; serialization-equivalent
-caller forgeries are denied before execution, promotion, memory, or rollback.
+receipts use exact schemas and canonical hashes. They are deliberately
+serialization-safe: independent processes revalidate exact schemas, hashes,
+mission/source identity, expiry, executor/verifier separation, and causal receipt
+bindings instead of relying on JavaScript object identity. Dispatch additionally
+loads and revalidates the exact content-addressed authorization receipt referenced
+by the durable `CANA_AUTHORIZED` event. Receipt mutation, a lifecycle-shaped
+authorization without durable evidence, stale leases, forged execution or
+verifier receipts, and forged rollback receipts are denied before execution,
+promotion, memory, or rollback.
 
 ## Replaceable execution and verification
 
