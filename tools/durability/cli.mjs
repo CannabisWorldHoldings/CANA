@@ -28,7 +28,7 @@ const MISSION1_ASSIGNMENT_SHA256 =
   '3fa119b9e88c1c1cfadf76c751258e8d48325afa4899986715a6a11b8afa7f02';
 const MISSION2_ASSIGNMENT = 'mission2_minimum_alive_loop_2026_07_29';
 const MISSION2_ASSIGNMENT_SHA256 =
-  '243a32845efddec618978d9256ab9a22504db8c7cf31b8c7fb1920f7ef37df03';
+  '5ceee867675b72bc890e3da54f3274534181400a4aadbc0a98a6b056a96e4883';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
   '0ffeaf3d71a0415017d29b88b28a14c0d6b7dda0626a74083aa31f66df94118d';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
@@ -72,6 +72,7 @@ export const MISSION1_AUTHORIZED_PATHS = Object.freeze([
 ]);
 export const MISSION2_AUTHORIZED_PATHS = Object.freeze([
   '.github/workflows/cana-verify.yml',
+  'apps/web/tests/build-database-gate.test.mjs',
   'docs/CANA_TECHNICAL_STATE.md',
   'docs/convergence/mission-2/BLOCKER_REPAIR_LEDGER.md',
   'docs/convergence/mission-2/COMMIT_LEDGER.md',

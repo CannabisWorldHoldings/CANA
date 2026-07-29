@@ -276,12 +276,13 @@
     },
     "mission2_minimum_alive_loop_2026_07_29": {
       "authorization": "ACTIVATE CANA MISSION 2 — MINIMUM ALIVE LOOP AND AUTONOMY FOUNDATION",
-      "scope": "The twenty-nine exact Mission 2 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
+      "scope": "The thirty exact Mission 2 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability changed-file ownership only; no provider authority, no Hermes authority, no credential authority, no deployment authority, no production authority, no external-effect authority, no verification-bypass authority and no self-promotion authority.",
       "base_commit": "70a7200fbdbfd46bdcef7143863e33caf6f9d6fe",
       "base_tree": "b7f979a2d1d82b9dbc0b23a015eefaa1402a1dec",
       "authorized_paths": [
         ".github/workflows/cana-verify.yml",
+        "apps/web/tests/build-database-gate.test.mjs",
         "docs/CANA_TECHNICAL_STATE.md",
         "docs/convergence/mission-2/BLOCKER_REPAIR_LEDGER.md",
         "docs/convergence/mission-2/COMMIT_LEDGER.md",
@@ -311,7 +312,7 @@
         "tools/mission-2/verifier.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
-      "approval_sha256": "243a32845efddec618978d9256ab9a22504db8c7cf31b8c7fb1920f7ef37df03"
+      "approval_sha256": "5ceee867675b72bc890e3da54f3274534181400a4aadbc0a98a6b056a96e4883"
     }
   },
   "owned_create_paths": [
