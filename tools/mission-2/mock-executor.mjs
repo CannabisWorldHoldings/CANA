@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
   assertMission,
+  canonicalize,
   constantTimeEqual,
   deepFreeze,
   hashCanonical,
@@ -12,16 +13,16 @@ import {
 import { assertAuthorizationReceipt } from './authorization.mjs';
 import { assertAdmittedLease, assertLeaseReceipt } from './lease.mjs';
 
-function git(root, args) {
+function git(root, args, { bytes = false } = {}) {
   const result = spawnSync('/usr/bin/git', ['-c', 'core.hooksPath=/dev/null', ...args], {
     cwd: root,
-    encoding: 'utf8',
+    encoding: bytes ? null : 'utf8',
     env: { PATH: '/usr/bin:/bin', LANG: 'C', LC_ALL: 'C' },
   });
   assertMission(result.status === 0, 'GIT_COMMAND_FAILED', `git ${args.join(' ')} failed`, {
-    stderr: result.stderr.trim(),
+    stderr: bytes ? result.stderr.toString('utf8').trim() : result.stderr.trim(),
   });
-  return result.stdout.trim();
+  return bytes ? result.stdout : result.stdout.trim();
 }
 
 function assertNoSymlink(root, relativePath) {
@@ -38,21 +39,110 @@ function assertNoSymlink(root, relativePath) {
   return targetReal;
 }
 
-function writeSameFile(file, before, after) {
-  const flags = fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0);
-  const descriptor = fs.openSync(file, flags);
+function fsyncDirectory(directory) {
+  const descriptor = fs.openSync(directory, fs.constants.O_RDONLY);
   try {
-    const beforeStat = fs.fstatSync(descriptor);
-    const pathStat = fs.statSync(file);
-    assertMission(beforeStat.dev === pathStat.dev && beforeStat.ino === pathStat.ino, 'TARGET_REPLACED', 'Validated target was replaced before use');
-    const current = fs.readFileSync(descriptor);
-    assertMission(current.equals(before), 'TARGET_REPLACED', 'Validated target bytes changed before use');
-    fs.ftruncateSync(descriptor, 0);
-    fs.writeSync(descriptor, after, 0, after.length, 0);
+    fs.fsyncSync(descriptor);
+  } catch (error) {
+    if (error.code !== 'EINVAL') throw error;
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function readNoFollow(file) {
+  const descriptor = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
+  try {
+    const opened = fs.fstatSync(descriptor);
+    const current = fs.statSync(file);
+    assertMission(opened.isFile() && opened.dev === current.dev && opened.ino === current.ino, 'TARGET_REPLACED', 'Validated target was replaced before use');
+    return fs.readFileSync(descriptor);
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function atomicReplaceSameFile(file, before, after, { interruptBeforeRename = false } = {}) {
+  const current = readNoFollow(file);
+  assertMission(
+    current.equals(before) || current.equals(after),
+    'TARGET_REPLACED',
+    'Validated target bytes changed before atomic replacement',
+  );
+  if (current.equals(after)) return false;
+  const directory = path.dirname(file);
+  const temp = path.join(
+    directory,
+    `.cana-mission2-${sha256(Buffer.from(file)).slice(0, 12)}-${sha256(after).slice(0, 12)}.tmp`,
+  );
+  if (fs.existsSync(temp)) {
+    const stat = fs.lstatSync(temp);
+    assertMission(stat.isFile() && !stat.isSymbolicLink(), 'RECOVERY_TEMP_TAMPERED', 'Atomic replacement temp is not a regular file');
+    assertMission(readNoFollow(temp).equals(after), 'RECOVERY_TEMP_TAMPERED', 'Atomic replacement temp bytes changed');
+  } else {
+    const mode = fs.statSync(file).mode & 0o777;
+    const descriptor = fs.openSync(
+      temp,
+      fs.constants.O_WRONLY
+        | fs.constants.O_CREAT
+        | fs.constants.O_EXCL
+        | (fs.constants.O_NOFOLLOW ?? 0),
+      mode,
+    );
+    try {
+      fs.writeFileSync(descriptor, after);
+      fs.fsyncSync(descriptor);
+    } finally {
+      fs.closeSync(descriptor);
+    }
+  }
+  assertMission(!interruptBeforeRename, 'WORKER_INTERRUPTED_BEFORE_ATOMIC_RENAME', 'Worker interrupted after durable temp write');
+  assertMission(readNoFollow(file).equals(before), 'TARGET_REPLACED', 'Target changed before atomic rename');
+  fs.renameSync(temp, file);
+  fsyncDirectory(directory);
+  return true;
+}
+
+function recoveryJournalFile(sandboxRoot, recoveryId) {
+  const gitDirectory = git(sandboxRoot, ['rev-parse', '--absolute-git-dir']);
+  const recoveryDirectory = path.join(gitDirectory, 'cana-mission-2-recovery');
+  if (!fs.existsSync(recoveryDirectory)) {
+    fs.mkdirSync(recoveryDirectory, { mode: 0o700 });
+  }
+  const stat = fs.lstatSync(recoveryDirectory);
+  assertMission(
+    stat.isDirectory() && !stat.isSymbolicLink() && fs.realpathSync(recoveryDirectory) === recoveryDirectory,
+    'RECOVERY_DIRECTORY_TAMPERED',
+    'Recovery directory must be a canonical real directory',
+  );
+  return path.join(recoveryDirectory, `${recoveryId}.json`);
+}
+
+function persistRecoveryJournal(file, journal) {
+  const bytes = Buffer.from(`${canonicalize(journal)}\n`);
+  if (fs.existsSync(file)) {
+    assertMission(
+      readNoFollow(file).equals(bytes),
+      'RECOVERY_JOURNAL_TAMPERED',
+      'Existing recovery journal differs from the planned execution',
+    );
+    return;
+  }
+  const descriptor = fs.openSync(
+    file,
+    fs.constants.O_WRONLY
+      | fs.constants.O_CREAT
+      | fs.constants.O_EXCL
+      | (fs.constants.O_NOFOLLOW ?? 0),
+    0o600,
+  );
+  try {
+    fs.writeFileSync(descriptor, bytes);
     fs.fsyncSync(descriptor);
   } finally {
     fs.closeSync(descriptor);
   }
+  fsyncDirectory(path.dirname(file));
 }
 
 function executionBody(receipt) {
@@ -129,6 +219,7 @@ export function assertExecutionReceipt({
   authorization,
   lease,
   executionReceipt,
+  leaseAuthorityPublicKey,
 }) {
   assertExecutionReceiptIntegrity(executionReceipt);
   const body = executionBody(executionReceipt);
@@ -190,6 +281,7 @@ export function assertExecutionReceipt({
     authorizationReceiptHash: authorization.authorization_receipt_hash,
     workerId: executionReceipt.executor_identity,
     now: executedAt,
+    authorityPublicKey: leaseAuthorityPublicKey,
   });
   assertMission(
     Array.isArray(executionReceipt.changed_files) && executionReceipt.changed_files.length === 1,
@@ -277,11 +369,22 @@ export function assertRollbackReceipt({
 }
 
 export class DeterministicMockExecutor {
-  constructor(identity = 'DETERMINISTIC_MOCK_EXECUTOR_V1') {
+  constructor(identity = 'DETERMINISTIC_MOCK_EXECUTOR_V1', leaseAuthorityPublicKey) {
     this.identity = identity;
+    this.leaseAuthorityPublicKey = leaseAuthorityPublicKey;
   }
 
-  execute({ mission, authorization, sandboxRoot, operation, now, lease, interruptAfterCheckpoint = false }) {
+  execute({
+    mission,
+    authorization,
+    sandboxRoot,
+    operation,
+    now,
+    lease,
+    interruptAfterCheckpoint = false,
+    interruptBeforeAtomicRename = false,
+    interruptAfterMutation = false,
+  }) {
     assertMission(
       new Date(authorization?.expires_at).getTime() > now.getTime(),
       'EXECUTION_AFTER_EXPIRY',
@@ -299,6 +402,7 @@ export class DeterministicMockExecutor {
       authorizationReceiptHash: authorization.authorization_receipt_hash,
       workerId: this.identity,
       now,
+      authorityPublicKey: this.leaseAuthorityPublicKey,
     });
     assertMission(mission.provider_state === 'NONE' && mission.hermes_state === 'DISABLED', 'EXECUTION_ROUTE_DENIED', 'Mock execution requires provider NONE and Hermes disabled');
     assertMission(mission.external_effect_policy === 'NONE' && mission.budget.maximum === 0, 'EXECUTION_BOUNDARY_DENIED', 'Mock execution requires no effects and zero budget');
@@ -309,8 +413,8 @@ export class DeterministicMockExecutor {
     assertMission(git(sandboxRoot, ['rev-parse', 'HEAD']) === mission.source_commit, 'CHANGED_SOURCE_STATE', 'Sandbox commit differs from mission source');
     assertMission(git(sandboxRoot, ['rev-parse', 'HEAD^{tree}']) === mission.source_tree, 'CHANGED_SOURCE_STATE', 'Sandbox tree differs from mission source');
     const target = assertNoSymlink(sandboxRoot, relativePath);
-    assertMission(git(sandboxRoot, ['status', '--porcelain']) === '', 'DIRTY_SANDBOX_DENIED', 'Sandbox must start clean');
-    const before = fs.readFileSync(target);
+    const before = git(sandboxRoot, ['show', `HEAD:${relativePath}`], { bytes: true });
+    assertMission(Buffer.isBuffer(before), 'BEFORE_BYTES_UNAVAILABLE', 'Authorized source bytes are unavailable');
     assertMission(sha256(before) === operation.before_sha256, 'BEFORE_HASH_MISMATCH', 'Target before hash differs');
     const find = Buffer.from(operation.find);
     const replacement = Buffer.from(operation.replace);
@@ -323,6 +427,14 @@ export class DeterministicMockExecutor {
       before_sha256: sha256(before),
       planned_after_sha256: sha256(after),
       lease_token: lease.token,
+      recovery_id: sha256(Buffer.from(canonicalize({
+        mission_id: mission.mission_id,
+        authorization_receipt_hash: authorization.authorization_receipt_hash,
+        lease_receipt_hash: lease.lease_receipt_hash,
+        path: relativePath,
+        before_sha256: sha256(before),
+        after_sha256: sha256(after),
+      }))),
     });
     if (interruptAfterCheckpoint) {
       return deepFreeze({
@@ -334,9 +446,6 @@ export class DeterministicMockExecutor {
         spend_usd: 0,
       });
     }
-    writeSameFile(target, before, after);
-    const changedFiles = git(sandboxRoot, ['diff', '--name-only']).split('\n').filter(Boolean).sort();
-    assertMission(changedFiles.length === 1 && changedFiles[0] === relativePath, 'UNAUTHORIZED_CHANGE_DETECTED', 'Mock executor changed files outside its grant', { changedFiles });
     const body = {
       schema_version: 'cana.mock-execution-receipt/2.0.0',
       mission_id: mission.mission_id,
@@ -366,21 +475,58 @@ export class DeterministicMockExecutor {
       spend_usd: 0,
       production_modified: false,
     };
-    return deepFreeze({
+    const receipt = deepFreeze({
       ...body,
       execution_receipt_hash: hashCanonical(body),
       before_bytes: before,
       after_bytes: after,
     });
+    const recoveryFile = recoveryJournalFile(sandboxRoot, checkpoint.recovery_id);
+    const recoveryAlreadyPrepared = fs.existsSync(recoveryFile);
+    persistRecoveryJournal(recoveryFile, {
+      schema_version: 'cana.mock-execution-recovery/1.0.0',
+      recovery_id: checkpoint.recovery_id,
+      execution_receipt_hash: receipt.execution_receipt_hash,
+      before_bytes: before.toString('base64'),
+      after_bytes: after.toString('base64'),
+    });
+    const targetBeforeWrite = readNoFollow(target);
+    if (targetBeforeWrite.equals(before)) {
+      if (!recoveryAlreadyPrepared) {
+        assertMission(
+          git(sandboxRoot, ['status', '--porcelain']) === '',
+          'DIRTY_SANDBOX_DENIED',
+          'Sandbox must start clean before the first atomic mutation',
+        );
+      }
+    } else {
+      assertMission(
+        targetBeforeWrite.equals(after),
+        'TARGET_REPLACED',
+        'Recovery target differs from both exact pre-mission and planned bytes',
+      );
+    }
+    atomicReplaceSameFile(target, before, after, {
+      interruptBeforeRename: interruptBeforeAtomicRename,
+    });
+    assertMission(!interruptAfterMutation, 'WORKER_INTERRUPTED_AFTER_ATOMIC_RENAME', 'Worker interrupted after atomic mutation');
+    const changedFiles = git(sandboxRoot, ['diff', '--name-only']).split('\n').filter(Boolean).sort();
+    assertMission(changedFiles.length === 1 && changedFiles[0] === relativePath, 'UNAUTHORIZED_CHANGE_DETECTED', 'Mock executor changed files outside its grant', { changedFiles });
+    return receipt;
   }
 
-  rollback({ sandboxRoot, executionReceipt }) {
+  rollback({ sandboxRoot, executionReceipt, interruptAfterMutation = false }) {
     assertExecutionReceiptIntegrity(executionReceipt);
     const change = executionReceipt.changed_files[0];
     const target = assertNoSymlink(sandboxRoot, change.path);
     const current = fs.readFileSync(target);
-    assertMission(sha256(current) === change.after_sha256, 'ROLLBACK_SOURCE_MISMATCH', 'Rollback source bytes changed');
-    writeSameFile(target, current, executionReceipt.before_bytes);
+    assertMission(
+      sha256(current) === change.after_sha256 || sha256(current) === change.before_sha256,
+      'ROLLBACK_SOURCE_MISMATCH',
+      'Rollback source bytes changed',
+    );
+    atomicReplaceSameFile(target, executionReceipt.after_bytes, executionReceipt.before_bytes);
+    assertMission(!interruptAfterMutation, 'ROLLBACK_INTERRUPTED', 'Rollback interrupted after atomic restoration');
     assertMission(sha256(fs.readFileSync(target)) === change.before_sha256, 'ROLLBACK_FAILED', 'Rollback did not restore exact bytes');
     const body = {
       schema_version: 'cana.mock-rollback-receipt/2.0.0',
@@ -393,13 +539,18 @@ export class DeterministicMockExecutor {
     return deepFreeze({ ...body, rollback_receipt_hash: hashCanonical(body) });
   }
 
-  reapply({ sandboxRoot, executionReceipt }) {
+  reapply({ sandboxRoot, executionReceipt, interruptAfterMutation = false }) {
     assertExecutionReceiptIntegrity(executionReceipt);
     const change = executionReceipt.changed_files[0];
     const target = assertNoSymlink(sandboxRoot, change.path);
     const current = fs.readFileSync(target);
-    assertMission(sha256(current) === change.before_sha256, 'REAPPLY_SOURCE_MISMATCH', 'Reapply requires exact pre-mission bytes');
-    writeSameFile(target, current, executionReceipt.after_bytes);
+    assertMission(
+      sha256(current) === change.before_sha256 || sha256(current) === change.after_sha256,
+      'REAPPLY_SOURCE_MISMATCH',
+      'Reapply requires exact approved state',
+    );
+    atomicReplaceSameFile(target, executionReceipt.before_bytes, executionReceipt.after_bytes);
+    assertMission(!interruptAfterMutation, 'REAPPLY_INTERRUPTED', 'Reapply interrupted after atomic restoration');
     assertMission(sha256(fs.readFileSync(target)) === change.after_sha256, 'REAPPLY_FAILED', 'Reapply did not restore approved bytes');
     return deepFreeze({ path: change.path, reapplied_sha256: change.after_sha256, exact_bytes_reapplied: true });
   }

@@ -17,9 +17,10 @@ import {
 } from './contracts.mjs';
 import { compileMinimalContext } from './context.mjs';
 import { authorizeMission } from './authorization.mjs';
+import { assertLeaseReceipt } from './lease.mjs';
 import { MissionStore } from './store.mjs';
 import { DeterministicMockExecutor } from './mock-executor.mjs';
-import { IndependentVerifier } from './verifier.mjs';
+import { runIndependentVerification } from './verifier-process.mjs';
 import { AutonomyKernel } from './kernel.mjs';
 import {
   buildMeasuredErrorControllerFixture,
@@ -176,6 +177,34 @@ function authorizedSetup(clock = () => NOW) {
   return { ...prepared, store, kernel, lease };
 }
 
+function mockExecutor(store, identity = EXECUTOR) {
+  return new DeterministicMockExecutor(identity, store.leaseAuthority().publicKey);
+}
+
+function verifySeparately({
+  store,
+  mission,
+  authorization,
+  executionReceipt,
+  sandboxRoot,
+  operation: requestedOperation,
+  lease,
+  now = NOW,
+  expectedText,
+}) {
+  return runIndependentVerification({
+    mission,
+    authorization,
+    executionReceipt,
+    sandboxRoot,
+    operation: requestedOperation,
+    lease,
+    now,
+    expectedText,
+    leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
+  });
+}
+
 function operation() {
   return {
     kind: 'REPLACE_EXACT_TEXT',
@@ -216,6 +245,7 @@ function validateReceiptsInFreshProcess(payload) {
       authorizationReceiptHash: payload.authorization.authorization_receipt_hash,
       workerId: payload.execution.executor_identity,
       now,
+      authorityPublicKey: payload.leaseAuthorityPublicKey,
     });
     assertVerifierReceipt({
       mission: payload.mission,
@@ -336,7 +366,7 @@ test('authorization and leases survive serialization while tampering and paused 
   const restoredAuthorization = structuredClone(authorization);
   kernel.recordAuthorization(mission, restoredAuthorization);
   const lease = kernel.dispatch(mission, EXECUTOR, 60_000);
-  expectCode(() => new DeterministicMockExecutor().execute({
+  expectCode(() => mockExecutor(store).execute({
     mission,
     authorization: restoredAuthorization,
     sandboxRoot: repository.root,
@@ -344,7 +374,29 @@ test('authorization and leases survive serialization while tampering and paused 
     now: NOW,
     lease: { ...lease, lease_receipt_hash: '0'.repeat(64) },
   }), 'LEASE_TAMPERED');
-  const execution = new DeterministicMockExecutor().execute({
+  const {
+    lease_receipt_hash: ignoredLeaseHash,
+    lease_signature: preservedLeaseSignature,
+    ...forgedLeaseBody
+  } = {
+    ...lease,
+    token: 'lease_attacker_selected',
+    expires_at: '2099-01-01T00:00:00.000Z',
+  };
+  void ignoredLeaseHash;
+  expectCode(() => mockExecutor(store).execute({
+    mission,
+    authorization: restoredAuthorization,
+    sandboxRoot: repository.root,
+    operation: operation(),
+    now: NOW,
+    lease: {
+      ...forgedLeaseBody,
+      lease_receipt_hash: hashCanonical(forgedLeaseBody),
+      lease_signature: preservedLeaseSignature,
+    },
+  }), 'LEASE_AUTHENTICITY_DENIED');
+  const execution = mockExecutor(store).execute({
     mission,
     authorization: restoredAuthorization,
     sandboxRoot: repository.root,
@@ -563,8 +615,17 @@ test('dispatch rejects a lifecycle-shaped authorization without durable receipt 
 });
 
 test('mock executor changes only one authorized file with no provider, spend, or external effect', () => {
-  const { repository, mission, authorization, lease } = authorizedSetup();
-  const executor = new DeterministicMockExecutor();
+  const { repository, mission, authorization, lease, store } = authorizedSetup();
+  const executor = mockExecutor(store);
+  assertLeaseReceipt({
+    lease,
+    missionId: mission.mission_id,
+    authorizationReceiptHash: authorization.authorization_receipt_hash,
+    workerId: EXECUTOR,
+    now: NOW,
+    authorityPublicKey: store.leaseAuthority().publicKey,
+  });
+  assert.equal(executor.leaseAuthorityPublicKey, store.leaseAuthority().publicKey);
   const receipt = executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: NOW, lease });
   assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), NOTICE);
   assert.deepEqual(receipt.changed_files.map((change) => change.path), [TARGET]);
@@ -575,12 +636,51 @@ test('mock executor changes only one authorized file with no provider, spend, or
 });
 
 test('mock executor supports deterministic interruption, resume, rollback, and reapply', () => {
-  const { repository, mission, authorization, lease } = authorizedSetup();
-  const executor = new DeterministicMockExecutor();
+  const { repository, mission, authorization, lease, store } = authorizedSetup();
+  const executor = mockExecutor(store);
   const interrupted = executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: NOW, lease, interruptAfterCheckpoint: true });
   assert.equal(interrupted.interrupted, true);
   assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), BEFORE_TEXT);
+  expectCode(
+    () => executor.execute({
+      mission,
+      authorization,
+      sandboxRoot: repository.root,
+      operation: operation(),
+      now: NOW,
+      lease,
+      interruptBeforeAtomicRename: true,
+    }),
+    'WORKER_INTERRUPTED_BEFORE_ATOMIC_RENAME',
+  );
+  assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), BEFORE_TEXT);
   const receipt = executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: NOW, lease });
+  assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), NOTICE);
+  executor.rollback({ sandboxRoot: repository.root, executionReceipt: receipt });
+  expectCode(
+    () => executor.execute({
+      mission,
+      authorization,
+      sandboxRoot: repository.root,
+      operation: operation(),
+      now: NOW,
+      lease,
+      interruptAfterMutation: true,
+    }),
+    'WORKER_INTERRUPTED_AFTER_ATOMIC_RENAME',
+  );
+  assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), NOTICE);
+  assert.equal(
+    executor.execute({
+      mission,
+      authorization,
+      sandboxRoot: repository.root,
+      operation: operation(),
+      now: NOW,
+      lease,
+    }).execution_receipt_hash,
+    receipt.execution_receipt_hash,
+  );
   expectCode(
     () => executor.rollback({
       sandboxRoot: repository.root,
@@ -591,9 +691,25 @@ test('mock executor supports deterministic interruption, resume, rollback, and r
     }),
     'EXECUTION_RECEIPT_TAMPERED',
   );
+  expectCode(
+    () => executor.rollback({
+      sandboxRoot: repository.root,
+      executionReceipt: receipt,
+      interruptAfterMutation: true,
+    }),
+    'ROLLBACK_INTERRUPTED',
+  );
   const rollback = executor.rollback({ sandboxRoot: repository.root, executionReceipt: receipt });
   assert.equal(rollback.exact_bytes_restored, true);
   assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), BEFORE_TEXT);
+  expectCode(
+    () => executor.reapply({
+      sandboxRoot: repository.root,
+      executionReceipt: receipt,
+      interruptAfterMutation: true,
+    }),
+    'REAPPLY_INTERRUPTED',
+  );
   assert.equal(executor.reapply({ sandboxRoot: repository.root, executionReceipt: receipt }).exact_bytes_reapplied, true);
   assert.equal(fs.readFileSync(path.join(repository.root, TARGET), 'utf8'), NOTICE);
 });
@@ -605,8 +721,9 @@ test('mock executor rejects unauthorized, expired, widened, dirty, and symlink t
     mission,
     authorization,
     lease,
+    store,
   } = authorizedSetup();
-  const executor = new DeterministicMockExecutor();
+  const executor = mockExecutor(store);
   expectCode(() => executor.execute({
     mission,
     authorization,
@@ -626,7 +743,7 @@ test('mock executor rejects unauthorized, expired, widened, dirty, and symlink t
   noWriteKernel.sealMission(noWrite);
   noWriteKernel.recordAuthorization(noWrite, noWriteAuth);
   const noWriteLease = noWriteKernel.dispatch(noWrite, EXECUTOR, 60_000);
-  expectCode(() => executor.execute({
+  expectCode(() => mockExecutor(noWriteStore).execute({
     mission: noWrite,
     authorization: noWriteAuth,
     sandboxRoot: repository.root,
@@ -643,11 +760,11 @@ test('mock executor rejects unauthorized, expired, widened, dirty, and symlink t
 });
 
 test('independent verifier cannot be the executor and rejects forged evidence', () => {
-  const { repository, mission, authorization, lease } = authorizedSetup();
-  const executor = new DeterministicMockExecutor();
+  const { repository, mission, authorization, lease, store } = authorizedSetup();
+  const executor = mockExecutor(store);
   const receipt = executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: NOW, lease });
-  const verifier = new IndependentVerifier();
-  const verify = (executionReceipt, overrides = {}) => verifier.verify({
+  const verify = (executionReceipt, overrides = {}) => verifySeparately({
+    store,
     mission,
     authorization,
     executionReceipt,
@@ -659,7 +776,8 @@ test('independent verifier cannot be the executor and rejects forged evidence', 
     ...overrides,
   });
   assert.equal(verify(receipt).verdict, 'APPROVE');
-  expectCode(() => new IndependentVerifier(EXECUTOR).verify({
+  expectCode(() => verifySeparately({
+    store,
     mission: { ...mission, verifier_identity: EXECUTOR },
     authorization: { ...authorization, verifier_identity: EXECUTOR },
     executionReceipt: receipt,
@@ -696,7 +814,7 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
   expectCode(() => kernel.dispatch(mission, EXECUTOR, 60_000), 'DISPATCH_BEFORE_AUTHORIZATION');
   expectCode(() => kernel.heartbeat(mission, 'stale'), 'STALE_WORKER');
   const activeLease = kernel.heartbeat(mission, lease.token);
-  const executor = new DeterministicMockExecutor();
+  const executor = mockExecutor(store);
   const execution = executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: NOW, lease: activeLease });
   expectCode(() => kernel.recordExecution(mission, authorization, { ...activeLease, token: 'stale' }, execution), 'STALE_WORKER_COMPLETION');
   expectCode(
@@ -714,7 +832,8 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     restoredExecution,
   );
   kernel.captureEvidence(mission, restoredExecution);
-  const verifierReceipt = new IndependentVerifier().verify({
+  const verifierReceipt = verifySeparately({
+    store,
     mission,
     authorization,
     executionReceipt: restoredExecution,
@@ -775,6 +894,7 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
       after_bytes: restoredExecution.after_bytes.toString('base64'),
     },
     verifier: restoredVerifierReceipt,
+    leaseAuthorityPublicKey: store.leaseAuthority().publicKey,
     now: NOW.toISOString(),
   });
   kernel.recordVerification(
@@ -833,7 +953,7 @@ test('rejected mission cannot update TruthGraph or Winner Memory', () => {
   kernel.sealMission(mission);
   kernel.recordAuthorization(mission, authorization);
   const lease = kernel.dispatch(mission, EXECUTOR, 60_000);
-  const execution = new DeterministicMockExecutor().execute({
+  const execution = mockExecutor(store).execute({
     mission,
     authorization,
     sandboxRoot: repository.root,
@@ -843,7 +963,8 @@ test('rejected mission cannot update TruthGraph or Winner Memory', () => {
   });
   kernel.recordExecution(mission, authorization, lease, execution);
   kernel.captureEvidence(mission, execution);
-  const rejection = new IndependentVerifier().verify({
+  const rejection = verifySeparately({
+    store,
     mission,
     authorization,
     executionReceipt: execution,
@@ -921,22 +1042,132 @@ test('Knowledge Foundry preserves provenance, contradictions, deduplication, and
   assert.equal(fixture.records.length, 7);
   assert.ok(fixture.records.every((record) => record.provenance === TRANSCRIPT_FIXTURE_LABEL));
   assert.ok(fixture.records.every((record) => record.truth_state !== 'VALUE_PROVEN'));
-  const foundry = new KnowledgeToMechanismFoundry();
-  const mechanism = {
+  const common = {
     tenant_id: TENANT,
     workspace_id: WORKSPACE,
     source_hash: sourceHash,
     provenance: TRANSCRIPT_FIXTURE_LABEL,
-    truth_state: 'MECHANISM_CANDIDATE',
-    mechanism_key: 'same',
-    falsification_test: 'fails',
-    rollback: 'restore',
+  };
+  const validByType = {
+    SOURCE_RECORD: {
+      ...common,
+      truth_state: 'SOURCE_ONLY',
+      title: 'source',
+      source_kind: 'DETERMINISTIC_FIXTURE',
+      fixture_label: TRANSCRIPT_FIXTURE_LABEL,
+    },
+    INSIGHT_CAPSULE: {
+      ...common,
+      truth_state: 'SOURCE_ONLY',
+      source_record_id: 'source_record_x',
+      statement: 'bounded insight',
+      authority_classification: 'SOURCE_ONLY',
+    },
+    DUPLICATE_RELATIONSHIP: {
+      ...common,
+      truth_state: 'SOURCE_ONLY',
+      canonical_record_id: 'source_record_x',
+      duplicate_record_id: 'source_record_y',
+      relationship_basis: 'same source hash',
+    },
+    CONTRADICTION_RECORD: {
+      ...common,
+      truth_state: 'SOURCE_ONLY',
+      claims: ['claim one', 'claim two'],
+      resolution_state: 'OPEN',
+      deleted: false,
+    },
+    RESEARCH_GAP: {
+      ...common,
+      truth_state: 'SOURCE_ONLY',
+      source_record_id: 'source_record_x',
+      question: 'What remains unproven?',
+      answer_state: 'UNPROVEN',
+    },
+    MECHANISM_CANDIDATE: {
+      ...common,
+      truth_state: 'MECHANISM_CANDIDATE',
+      source_record_id: 'source_record_x',
+      insight_capsule_id: 'insight_capsule_x',
+      mechanism_key: 'same',
+      desired_state: 10,
+      measured_state: 7,
+      bounded_error: 3,
+      intervention: 1,
+      falsification_test: 'fails',
+      rollback: 'restore',
+      commercial_value_claimed: false,
+    },
+    CODEX_HANDOFF_PACKET: {
+      ...common,
+      truth_state: 'AUTHORIZED_FOR_SHADOW_TEST',
+      mechanism_candidate_id: 'mechanism_candidate_x',
+      authorized_adapter: 'DETERMINISTIC_MOCK',
+      provider: 'NONE',
+      hermes: 'DISABLED',
+      budget_usd: 0,
+    },
+    IMPLEMENTATION_RESULT: {
+      ...common,
+      truth_state: 'TECHNICALLY_VERIFIED',
+      mechanism_candidate_id: 'mechanism_candidate_x',
+      handoff_packet_id: 'codex_handoff_packet_x',
+      test_result: 'PASS',
+      measured_before: 7,
+      measured_after: 8,
+      bounded_intervention: 1,
+      external_effects: 0,
+      commercial_value_claimed: false,
+    },
+    MECHANISM_STATE_TRANSITION: {
+      ...common,
+      truth_state: 'TECHNICALLY_VERIFIED',
+      mechanism_candidate_id: 'mechanism_candidate_x',
+      from_state: 'AUTHORIZED_FOR_SHADOW_TEST',
+      to_state: 'TECHNICALLY_VERIFIED',
+      implementation_result_id: 'implementation_result_x',
+      value_state: 'VALUE_NOT_ESTABLISHED',
+    },
+    OWNER_DECISION_REQUEST: {
+      ...common,
+      truth_state: 'SOURCE_ONLY',
+      authority_requirement: 'OWNER',
+      question: 'Choose a business direction?',
+      options: ['option one', 'option two'],
+    },
+  };
+  for (const [type, valid] of Object.entries(validByType)) {
+    assert.equal(validateFoundryRecord(type, valid).type, type);
+    const typeSpecificField = Object.keys(valid).find((field) => !Object.hasOwn(common, field) && field !== 'truth_state');
+    const malformed = { ...valid };
+    delete malformed[typeSpecificField];
+    expectCode(() => validateFoundryRecord(type, malformed), 'FOUNDRY_SCHEMA_FIELDS_DENIED');
+  }
+  expectCode(
+    () => validateFoundryRecord('SOURCE_RECORD', { ...validByType.SOURCE_RECORD, neighboring_field: true }),
+    'FOUNDRY_SCHEMA_FIELDS_DENIED',
+  );
+
+  const foundry = new KnowledgeToMechanismFoundry();
+  const source = foundry.admit('SOURCE_RECORD', validByType.SOURCE_RECORD);
+  const insight = foundry.admit('INSIGHT_CAPSULE', {
+    ...validByType.INSIGHT_CAPSULE,
+    source_record_id: source.record_id,
+  });
+  const mechanism = {
+    ...validByType.MECHANISM_CANDIDATE,
+    source_record_id: source.record_id,
+    insight_capsule_id: insight.record_id,
   };
   foundry.admit('MECHANISM_CANDIDATE', mechanism);
   expectCode(() => foundry.admit('MECHANISM_CANDIDATE', { ...mechanism, source_hash: sha256('other') }), 'DUPLICATE_MECHANISM_ID');
-  expectCode(() => validateFoundryRecord('SOURCE_RECORD', { ...mechanism, truth_state: 'VALUE_PROVEN' }), 'UNSUPPORTED_VALUE_PROVEN');
-  expectCode(() => validateFoundryRecord('SOURCE_RECORD', { ...mechanism, raw_transcript: true }), 'RAW_TRANSCRIPT_HOT_MEMORY_DENIED');
-  expectCode(() => validateFoundryRecord('CONTRADICTION_RECORD', { ...mechanism, claims: ['a', 'b'], deleted: true }), 'CONTRADICTION_DELETION_DENIED');
+  expectCode(
+    () => foundry.admit('DUPLICATE_RELATIONSHIP', validByType.DUPLICATE_RELATIONSHIP),
+    'FOUNDRY_REFERENCE_MISSING',
+  );
+  expectCode(() => validateFoundryRecord('SOURCE_RECORD', { ...validByType.SOURCE_RECORD, truth_state: 'VALUE_PROVEN' }), 'UNSUPPORTED_VALUE_PROVEN');
+  expectCode(() => validateFoundryRecord('SOURCE_RECORD', { ...validByType.SOURCE_RECORD, raw_transcript: true }), 'RAW_TRANSCRIPT_HOT_MEMORY_DENIED');
+  expectCode(() => validateFoundryRecord('CONTRADICTION_RECORD', { ...validByType.CONTRADICTION_RECORD, deleted: true }), 'CONTRADICTION_DELETION_DENIED');
 });
 
 test('Intelligence OS contracts are read-only, fixture-labeled, and tenant-isolated', () => {

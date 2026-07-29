@@ -16,6 +16,40 @@ export class KnowledgeToMechanismFoundry {
   admit(type, input) {
     const record = validateFoundryRecord(type, input);
     assertMission(!this.records.has(record.record_id), 'DUPLICATE_RECORD_ID', `Duplicate foundry record ${record.record_id}`);
+    const requireReference = (field, expectedType = null) => {
+      const referenced = this.records.get(record[field]);
+      assertMission(referenced, 'FOUNDRY_REFERENCE_MISSING', `Foundry reference is missing: ${field}`);
+      assertMission(
+        referenced.tenant_id === record.tenant_id
+          && referenced.workspace_id === record.workspace_id,
+        'CROSS_TENANT_DENIED',
+        `Foundry reference crosses a tenant or workspace boundary: ${field}`,
+      );
+      if (expectedType) {
+        assertMission(
+          referenced.type === expectedType,
+          'FOUNDRY_REFERENCE_TYPE_MISMATCH',
+          `Foundry reference has the wrong type: ${field}`,
+        );
+      }
+    };
+    if (type === 'INSIGHT_CAPSULE' || type === 'RESEARCH_GAP') {
+      requireReference('source_record_id', 'SOURCE_RECORD');
+    } else if (type === 'MECHANISM_CANDIDATE') {
+      requireReference('source_record_id', 'SOURCE_RECORD');
+      requireReference('insight_capsule_id', 'INSIGHT_CAPSULE');
+    } else if (type === 'CODEX_HANDOFF_PACKET') {
+      requireReference('mechanism_candidate_id', 'MECHANISM_CANDIDATE');
+    } else if (type === 'IMPLEMENTATION_RESULT') {
+      requireReference('mechanism_candidate_id', 'MECHANISM_CANDIDATE');
+      requireReference('handoff_packet_id', 'CODEX_HANDOFF_PACKET');
+    } else if (type === 'MECHANISM_STATE_TRANSITION') {
+      requireReference('mechanism_candidate_id', 'MECHANISM_CANDIDATE');
+      requireReference('implementation_result_id', 'IMPLEMENTATION_RESULT');
+    } else if (type === 'DUPLICATE_RELATIONSHIP') {
+      requireReference('canonical_record_id');
+      requireReference('duplicate_record_id');
+    }
     if (type === 'MECHANISM_CANDIDATE') {
       assertMission(!this.mechanismIds.has(record.mechanism_key), 'DUPLICATE_MECHANISM_ID', `Duplicate mechanism ${record.mechanism_key}`);
       this.mechanismIds.add(record.mechanism_key);

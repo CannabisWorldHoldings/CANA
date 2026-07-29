@@ -176,6 +176,52 @@ export const FOUNDRY_TYPES = Object.freeze([
   'OWNER_DECISION_REQUEST',
 ]);
 
+const FOUNDRY_COMMON_FIELDS = Object.freeze([
+  'tenant_id',
+  'workspace_id',
+  'provenance',
+  'source_hash',
+  'truth_state',
+  'record_id',
+]);
+
+function requireBoolean(value, field) {
+  assertMission(typeof value === 'boolean', 'BOOLEAN_REQUIRED', `${field} must be a boolean`, { field });
+}
+
+function requireFiniteNumber(value, field) {
+  assertMission(Number.isFinite(value), 'FINITE_NUMBER_REQUIRED', `${field} must be a finite number`, { field });
+}
+
+function requireTextArray(value, field, minimum = 1) {
+  assertMission(
+    Array.isArray(value) && value.length >= minimum,
+    'TEXT_ARRAY_REQUIRED',
+    `${field} must contain at least ${minimum} values`,
+    { field },
+  );
+  value.forEach((entry) => requireText(entry, `${field}[]`));
+}
+
+function requireOneOf(value, choices, field) {
+  assertMission(choices.includes(value), 'ENUM_VALUE_DENIED', `${field} is not an allowed value`, {
+    field,
+    choices,
+    actual: value,
+  });
+}
+
+function requireExactFoundryFields(record, fields) {
+  const allowed = [...FOUNDRY_COMMON_FIELDS, ...fields].sort();
+  const actual = Object.keys(record).sort();
+  assertMission(
+    JSON.stringify(actual) === JSON.stringify(allowed.filter((field) => field !== 'record_id' || record.record_id !== undefined)),
+    'FOUNDRY_SCHEMA_FIELDS_DENIED',
+    'Foundry record fields differ from the exact type schema',
+    { allowed, actual },
+  );
+}
+
 export function validateFoundryRecord(type, record) {
   assertMission(FOUNDRY_TYPES.includes(type), 'UNKNOWN_FOUNDRY_TYPE', `Unknown foundry record ${type}`);
   requireObject(record, 'record');
@@ -185,31 +231,114 @@ export function validateFoundryRecord(type, record) {
   requireSha256(record.source_hash, 'source_hash');
   assertMission(record.raw_transcript !== true, 'RAW_TRANSCRIPT_HOT_MEMORY_DENIED', 'Raw transcripts may not enter hot memory');
   assertMission(record.truth_state !== 'VALUE_PROVEN', 'UNSUPPORTED_VALUE_PROVEN', 'Research and shadow fixtures cannot claim VALUE_PROVEN');
-  if (type === 'CONTRADICTION_RECORD') {
-    assertMission(Array.isArray(record.claims) && record.claims.length >= 2, 'CONTRADICTION_REQUIRED', 'Contradiction records preserve at least two claims');
-    assertMission(record.deleted !== true, 'CONTRADICTION_DELETION_DENIED', 'Contradictions may not be deleted');
-  }
-  if (type === 'DUPLICATE_RELATIONSHIP') {
+  if (record.record_id !== undefined) requireText(record.record_id, 'record_id');
+
+  if (type === 'SOURCE_RECORD') {
+    requireExactFoundryFields(record, ['title', 'source_kind', 'fixture_label']);
+    requireOneOf(record.truth_state, ['SOURCE_ONLY'], 'truth_state');
+    requireText(record.title, 'title');
+    requireText(record.source_kind, 'source_kind');
+    requireText(record.fixture_label, 'fixture_label');
+  } else if (type === 'INSIGHT_CAPSULE') {
+    requireExactFoundryFields(record, ['source_record_id', 'statement', 'authority_classification']);
+    requireOneOf(record.truth_state, ['SOURCE_ONLY'], 'truth_state');
+    requireText(record.source_record_id, 'source_record_id');
+    requireText(record.statement, 'statement');
+    requireOneOf(record.authority_classification, ['SOURCE_ONLY', 'MECHANISM_CANDIDATE'], 'authority_classification');
+  } else if (type === 'DUPLICATE_RELATIONSHIP') {
+    requireExactFoundryFields(record, ['canonical_record_id', 'duplicate_record_id', 'relationship_basis']);
+    requireOneOf(record.truth_state, ['SOURCE_ONLY'], 'truth_state');
     requireText(record.canonical_record_id, 'canonical_record_id');
     requireText(record.duplicate_record_id, 'duplicate_record_id');
+    requireText(record.relationship_basis, 'relationship_basis');
     assertMission(record.canonical_record_id !== record.duplicate_record_id, 'SELF_DUPLICATE_DENIED', 'A record cannot duplicate itself');
-  }
-  if (type === 'MECHANISM_CANDIDATE') {
+  } else if (type === 'CONTRADICTION_RECORD') {
+    assertMission(record.deleted !== true, 'CONTRADICTION_DELETION_DENIED', 'Contradictions may not be deleted');
+    requireExactFoundryFields(record, ['claims', 'resolution_state', 'deleted']);
+    requireOneOf(record.truth_state, ['SOURCE_ONLY'], 'truth_state');
+    requireTextArray(record.claims, 'claims', 2);
+    requireOneOf(record.resolution_state, ['OPEN', 'RESOLVED', 'SUPERSEDED'], 'resolution_state');
+    requireBoolean(record.deleted, 'deleted');
+  } else if (type === 'RESEARCH_GAP') {
+    requireExactFoundryFields(record, ['source_record_id', 'question', 'answer_state']);
+    requireOneOf(record.truth_state, ['SOURCE_ONLY'], 'truth_state');
+    requireText(record.source_record_id, 'source_record_id');
+    requireText(record.question, 'question');
+    requireOneOf(record.answer_state, ['UNPROVEN', 'PARTIAL', 'ANSWERED'], 'answer_state');
+  } else if (type === 'MECHANISM_CANDIDATE') {
+    requireExactFoundryFields(record, [
+      'source_record_id',
+      'insight_capsule_id',
+      'mechanism_key',
+      'desired_state',
+      'measured_state',
+      'bounded_error',
+      'intervention',
+      'falsification_test',
+      'rollback',
+      'commercial_value_claimed',
+    ]);
+    requireOneOf(record.truth_state, ['MECHANISM_CANDIDATE'], 'truth_state');
+    requireText(record.source_record_id, 'source_record_id');
+    requireText(record.insight_capsule_id, 'insight_capsule_id');
     requireText(record.mechanism_key, 'mechanism_key');
+    requireFiniteNumber(record.desired_state, 'desired_state');
+    requireFiniteNumber(record.measured_state, 'measured_state');
+    requireFiniteNumber(record.bounded_error, 'bounded_error');
+    requireFiniteNumber(record.intervention, 'intervention');
     requireText(record.falsification_test, 'falsification_test');
     requireText(record.rollback, 'rollback');
+    requireBoolean(record.commercial_value_claimed, 'commercial_value_claimed');
+    assertMission(record.commercial_value_claimed === false, 'UNSUPPORTED_COMMERCIAL_VALUE', 'Shadow mechanisms cannot claim commercial value');
+  } else if (type === 'CODEX_HANDOFF_PACKET') {
+    requireExactFoundryFields(record, ['mechanism_candidate_id', 'authorized_adapter', 'provider', 'hermes', 'budget_usd']);
+    requireOneOf(record.truth_state, ['AUTHORIZED_FOR_SHADOW_TEST'], 'truth_state');
+    requireText(record.mechanism_candidate_id, 'mechanism_candidate_id');
+    requireOneOf(record.authorized_adapter, ['DETERMINISTIC_MOCK'], 'authorized_adapter');
+    requireOneOf(record.provider, ['NONE'], 'provider');
+    requireOneOf(record.hermes, ['DISABLED'], 'hermes');
+    assertMission(record.budget_usd === 0, 'NONZERO_BUDGET_DENIED', 'Foundry handoff budget must remain zero');
+  } else if (type === 'IMPLEMENTATION_RESULT') {
+    requireExactFoundryFields(record, [
+      'mechanism_candidate_id',
+      'handoff_packet_id',
+      'test_result',
+      'measured_before',
+      'measured_after',
+      'bounded_intervention',
+      'external_effects',
+      'commercial_value_claimed',
+    ]);
+    requireOneOf(record.truth_state, ['TECHNICALLY_VERIFIED', 'REJECTED'], 'truth_state');
+    requireText(record.mechanism_candidate_id, 'mechanism_candidate_id');
+    requireText(record.handoff_packet_id, 'handoff_packet_id');
+    requireOneOf(record.test_result, ['PASS', 'FAIL'], 'test_result');
+    requireFiniteNumber(record.measured_before, 'measured_before');
+    requireFiniteNumber(record.measured_after, 'measured_after');
+    requireFiniteNumber(record.bounded_intervention, 'bounded_intervention');
+    assertMission(record.external_effects === 0, 'EXTERNAL_EFFECT_DENIED', 'Foundry result cannot record external effects');
+    requireBoolean(record.commercial_value_claimed, 'commercial_value_claimed');
+    assertMission(record.commercial_value_claimed === false, 'UNSUPPORTED_COMMERCIAL_VALUE', 'Technical result cannot claim commercial value');
+  } else if (type === 'MECHANISM_STATE_TRANSITION') {
+    requireExactFoundryFields(record, ['mechanism_candidate_id', 'from_state', 'to_state', 'implementation_result_id', 'value_state']);
+    requireText(record.mechanism_candidate_id, 'mechanism_candidate_id');
+    requireOneOf(record.from_state, TRUTH_STATES, 'from_state');
+    requireOneOf(record.to_state, TRUTH_STATES, 'to_state');
+    requireText(record.implementation_result_id, 'implementation_result_id');
+    requireOneOf(record.value_state, ['VALUE_NOT_ESTABLISHED', 'OUTCOME_PENDING'], 'value_state');
+    assertMission(record.truth_state === record.to_state, 'TRANSITION_TRUTH_STATE_MISMATCH', 'Transition truth_state must equal to_state');
+  } else if (type === 'OWNER_DECISION_REQUEST') {
+    requireExactFoundryFields(record, ['authority_requirement', 'question', 'options']);
+    requireOneOf(record.truth_state, ['SOURCE_ONLY', 'MECHANISM_CANDIDATE'], 'truth_state');
+    requireText(record.authority_requirement, 'authority_requirement');
+    requireText(record.question, 'question');
+    requireTextArray(record.options, 'options', 2);
   }
-  if (type === 'OWNER_DECISION_REQUEST') requireText(record.authority_requirement, 'authority_requirement');
-  const base = { schema_version: `cana.foundry/${type.toLowerCase()}/1.0.0`, type, ...structuredClone(record) };
-  const stableId = deterministicId(type.toLowerCase(), {
-    tenant_id: record.tenant_id,
-    workspace_id: record.workspace_id,
-    source_hash: record.source_hash,
-    mechanism_key: record.mechanism_key ?? null,
-    canonical_record_id: record.canonical_record_id ?? null,
-    duplicate_record_id: record.duplicate_record_id ?? null,
-  });
-  if (record.record_id !== undefined) assertMission(record.record_id === stableId, 'UNSTABLE_RECORD_ID', 'Foundry record ID does not recompute');
+
+  const { record_id: providedRecordId, ...identity } = structuredClone(record);
+  const base = { schema_version: `cana.foundry/${type.toLowerCase()}/1.0.0`, type, ...identity };
+  const stableId = deterministicId(type.toLowerCase(), identity);
+  if (providedRecordId !== undefined) assertMission(providedRecordId === stableId, 'UNSTABLE_RECORD_ID', 'Foundry record ID does not recompute');
   return deepFreeze({ ...base, record_id: stableId, packet_hash: hashCanonical(base) });
 }
 

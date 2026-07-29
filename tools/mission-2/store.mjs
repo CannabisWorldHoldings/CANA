@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHmac, randomBytes } from 'node:crypto';
+import {
+  createHmac,
+  createPrivateKey,
+  createPublicKey,
+  randomBytes,
+  sign,
+} from 'node:crypto';
 import {
   assertMission,
   canonicalize,
@@ -15,6 +21,7 @@ import { assertTransition } from './contracts.mjs';
 
 const GENESIS_HASH = '0'.repeat(64);
 const HEAD_SCHEMA = 'cana.mission-store-head/2.0.0';
+const ED25519_PKCS8_SEED_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
 
 function ensureInside(root, candidate) {
   const relative = path.relative(root, candidate);
@@ -128,6 +135,36 @@ function createAnchorKey(file) {
   } finally {
     fs.closeSync(descriptor);
   }
+}
+
+function createPrivateSeed(file, seed = randomBytes(32)) {
+  assertMission(
+    Buffer.isBuffer(seed) && seed.length === 32,
+    'LEASE_AUTHORITY_KEY_INVALID',
+    'Lease-authority seed must contain exactly 32 bytes',
+  );
+  const descriptor = fs.openSync(
+    file,
+    fs.constants.O_WRONLY
+      | fs.constants.O_CREAT
+      | fs.constants.O_EXCL
+      | (fs.constants.O_NOFOLLOW ?? 0),
+    0o600,
+  );
+  try {
+    fs.writeFileSync(descriptor, seed);
+    fs.fsyncSync(descriptor);
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function privateKeyFromSeed(seed) {
+  return createPrivateKey({
+    key: Buffer.concat([ED25519_PKCS8_SEED_PREFIX, seed]),
+    format: 'der',
+    type: 'pkcs8',
+  });
 }
 
 function processIsAlive(pid) {
@@ -284,7 +321,7 @@ function projectEvents(events) {
 }
 
 export class MissionStore {
-  constructor(root) {
+  constructor(root, { leaseAuthoritySeed } = {}) {
     const requestedRoot = path.resolve(root);
     if (pathExists(requestedRoot)) {
       const stat = assertNotSymlink(requestedRoot, 'STORE_ROOT_SYMLINK_DENIED');
@@ -297,6 +334,7 @@ export class MissionStore {
     this.projectionFile = path.join(this.root, 'projection.json');
     this.headFile = path.join(this.root, 'head.json');
     this.anchorKeyFile = `${this.root}.head-key`;
+    this.leaseAuthorityKeyFile = `${this.root}.lease-authority-key`;
     this.lockFile = path.join(this.root, 'append.lock');
     this.evidenceDirectory = path.join(this.root, 'evidence');
     if (pathExists(this.evidenceDirectory)) {
@@ -364,12 +402,51 @@ export class MissionStore {
       'HEAD_ANCHOR_KEY_INVALID',
       'Head-anchor key must contain exactly 32 bytes',
     );
+    if (!pathExists(this.leaseAuthorityKeyFile)) {
+      assertMission(
+        !durableStateExists,
+        'LEASE_AUTHORITY_KEY_MISSING',
+        'Existing durable state requires its lease-authority key',
+      );
+      createPrivateSeed(this.leaseAuthorityKeyFile, leaseAuthoritySeed);
+    }
+    const leaseKeyStat = assertNotSymlink(
+      this.leaseAuthorityKeyFile,
+      'LEASE_AUTHORITY_KEY_SYMLINK_DENIED',
+    );
+    assertMission(
+      leaseKeyStat.isFile() && (leaseKeyStat.mode & 0o077) === 0,
+      'LEASE_AUTHORITY_KEY_INVALID',
+      'Lease-authority key must be a private regular file',
+    );
+    const leaseAuthoritySeedBytes = readNoFollow(
+      this.leaseAuthorityKeyFile,
+      'LEASE_AUTHORITY_KEY_SYMLINK_DENIED',
+    );
+    assertMission(
+      leaseAuthoritySeedBytes.length === 32,
+      'LEASE_AUTHORITY_KEY_INVALID',
+      'Lease-authority key must contain exactly 32 bytes',
+    );
+    this.leaseAuthorityPrivateKey = privateKeyFromSeed(leaseAuthoritySeedBytes);
+    this.leaseAuthorityPublicKey = createPublicKey(this.leaseAuthorityPrivateKey)
+      .export({ format: 'der', type: 'spki' })
+      .toString('base64');
     if (!pathExists(this.headFile)) {
       atomicWrite(
         this.headFile,
         `${canonicalize(sealedHead(0, GENESIS_HASH, this.anchorKey))}\n`,
       );
     }
+  }
+
+  leaseAuthority() {
+    const publicKey = this.leaseAuthorityPublicKey;
+    return Object.freeze({
+      keyId: sha256(Buffer.from(publicKey, 'base64')),
+      publicKey,
+      sign: (bytes) => sign(null, bytes, this.leaseAuthorityPrivateKey).toString('base64'),
+    });
   }
 
   readEvents() {

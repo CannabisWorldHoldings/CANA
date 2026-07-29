@@ -20,8 +20,8 @@ import {
 } from './mock-executor.mjs';
 import {
   assertVerifierReceipt,
-  IndependentVerifier,
 } from './verifier.mjs';
+import { runIndependentVerification } from './verifier-process.mjs';
 
 const ACTION_BY_STATE = Object.freeze({
   SIGNAL_OBSERVED: 'COMPILE_CONTEXT',
@@ -54,6 +54,7 @@ export class AutonomyKernel {
   constructor({ store, clock }) {
     this.store = store;
     this.clock = clock;
+    this.leaseAuthority = store.leaseAuthority();
   }
 
   projection(missionId) {
@@ -184,6 +185,7 @@ export class AutonomyKernel {
       version: current.version,
       issuedAt: issuedAt.toISOString(),
       expiresAt: new Date(issuedAt.getTime() + leaseDurationMs).toISOString(),
+      authority: this.leaseAuthority,
     });
     this.append(mission, 'EXECUTOR_DISPATCHED', 'CANA_AUTONOMY_KERNEL', { lease });
     return lease;
@@ -202,6 +204,7 @@ export class AutonomyKernel {
       authorizationReceiptHash: current.authorization_receipt_hash,
       workerId,
       now: this.clock(),
+      authorityPublicKey: this.leaseAuthority.publicKey,
     });
   }
 
@@ -214,8 +217,9 @@ export class AutonomyKernel {
       authorizationReceiptHash: current.authorization_receipt_hash,
       workerId: current.lease.worker_id,
       now: this.clock(),
+      authorityPublicKey: this.leaseAuthority.publicKey,
     });
-    const lease = refreshExecutionLease(admitted, this.clock().toISOString());
+    const lease = refreshExecutionLease(admitted, this.clock().toISOString(), this.leaseAuthority);
     this.append(mission, current.current_lifecycle_state, 'CANA_AUTONOMY_KERNEL', { lease });
     return lease;
   }
@@ -229,6 +233,7 @@ export class AutonomyKernel {
       authorizationReceiptHash: current.authorization_receipt_hash,
       workerId: current.lease.worker_id,
       now: this.clock(),
+      authorityPublicKey: this.leaseAuthority.publicKey,
     });
     this.append(mission, current.current_lifecycle_state, 'CANA_AUTONOMY_KERNEL', { checkpoint });
   }
@@ -253,12 +258,14 @@ export class AutonomyKernel {
       authorizationReceiptHash: authorization.authorization_receipt_hash,
       workerId: executionReceipt.executor_identity,
       now: this.clock(),
+      authorityPublicKey: this.leaseAuthority.publicKey,
     });
     assertExecutionReceipt({
       mission,
       authorization,
       lease,
       executionReceipt,
+      leaseAuthorityPublicKey: this.leaseAuthority.publicKey,
     });
     const evidence = this.store.writeEvidence({
       ...executionReceipt,
@@ -308,7 +315,7 @@ export class AutonomyKernel {
       lease,
       expectedText,
     } = verificationContext;
-    return new IndependentVerifier(mission.verifier_identity).verify({
+    return runIndependentVerification({
       mission,
       authorization,
       executionReceipt,
@@ -317,6 +324,7 @@ export class AutonomyKernel {
       lease,
       now: this.clock(),
       expectedText,
+      leaseAuthorityPublicKey: this.leaseAuthority.publicKey,
     });
   }
 

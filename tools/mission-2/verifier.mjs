@@ -57,6 +57,7 @@ function verifierBody(receipt) {
     checks: receipt.checks,
     verdict: receipt.verdict,
     implementation_mutated: receipt.implementation_mutated,
+    verification_boundary: receipt.verification_boundary,
   };
 }
 
@@ -131,6 +132,7 @@ export function assertVerifierReceipt({
   if (verifierReceipt.verdict === 'APPROVE') {
     assertMission(
       verifierReceipt.implementation_mutated === false
+        && verifierReceipt.verification_boundary === 'SEPARATE_PROCESS'
         && Object.values(verifierReceipt.checks).every((value) => value === true),
       'FORGED_VERIFIER_APPROVAL_DENIED',
       'APPROVE requires every independent check to pass without mutation',
@@ -153,7 +155,14 @@ export class IndependentVerifier {
     lease,
     now,
     expectedText,
+    leaseAuthorityPublicKey,
+    verificationBoundary,
   }) {
+    assertMission(
+      verificationBoundary === 'SEPARATE_PROCESS',
+      'VERIFIER_PROCESS_BOUNDARY_REQUIRED',
+      'Independent verification must execute in the separate verifier process',
+    );
     assertMission(this.identity === mission.verifier_identity, 'VERIFIER_IDENTITY_MISMATCH', 'Mission names a different verifier');
     assertMission(this.identity !== executionReceipt.executor_identity, 'EXECUTOR_SELF_VERIFICATION_DENIED', 'Executor cannot verify itself');
     assertMission(authorization.verifier_identity === this.identity, 'VERIFIER_NOT_AUTHORIZED', 'Authorization does not name this verifier');
@@ -208,6 +217,7 @@ export class IndependentVerifier {
           authorizationReceiptHash: authorization.authorization_receipt_hash,
           workerId: executionReceipt.executor_identity,
           now: new Date(executionReceipt.executed_at),
+          authorityPublicKey: leaseAuthorityPublicKey,
         });
         return executionReceipt.lease_token === lease.token
           && executionReceipt.lease_receipt_hash === lease.lease_receipt_hash;
@@ -280,6 +290,7 @@ export class IndependentVerifier {
       checks,
       verdict,
       implementation_mutated: checks.verifier_preserved_implementation === false,
+      verification_boundary: verificationBoundary,
     };
     return deepFreeze({ ...body, verifier_receipt_hash: hashCanonical(body) });
   }
