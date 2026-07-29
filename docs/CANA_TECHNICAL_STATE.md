@@ -1,5 +1,12 @@
 # CANA technical state
 
+> **Canonical status supersession (2026-07-29):** This document preserves the
+> historical `codex/cana-bottleneck-clearance` lane. Current canonical truth is
+> bound to protected Mission 2 base `70a7200fbdbfd46bdcef7143863e33caf6f9d6fe`
+> with tree `b7f979a2d1d82b9dbc0b23a015eefaa1402a1dec`; Stage A and Mission 1
+> GitHub and fresh-clone verification passed. Historical statements below are
+> lane-scoped evidence, not the current canonical repository status.
+
 Updated: 2026-07-27
 
 Branch: `codex/cana-bottleneck-clearance`

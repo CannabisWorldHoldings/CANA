@@ -12,6 +12,8 @@ import {
   MISSION1_EVIDENCE_PATHS,
   mission1OwnershipAssignment,
   MISSION1_VALIDATOR_PATHS,
+  MISSION2_AUTHORIZED_PATHS,
+  mission2OwnershipAssignment,
   ownershipPatterns,
   PR2_AUTHORIZED_PATHS,
   pr2OwnershipAssignment,
@@ -415,6 +417,91 @@ test('the exact Mission 1 change set is durability-owned after reconciliation', 
   assert.deepEqual(
     unownedPaths(MISSION1_AUTHORIZED_PATHS, ownership()),
     [],
+  );
+});
+
+test('the exact Mission 2 surfaces have narrow durability ownership', () => {
+  const manifest = ownership();
+  const assignment = mission2OwnershipAssignment(manifest);
+  const patterns = ownershipPatterns(manifest);
+  assert.deepEqual(
+    [...assignment.authorized_paths].sort(),
+    [...MISSION2_AUTHORIZED_PATHS].sort(),
+  );
+  for (const authorizedPath of MISSION2_AUTHORIZED_PATHS) {
+    assert.ok(
+      patterns.some((pattern) => matchOwned(authorizedPath, pattern)),
+      authorizedPath,
+    );
+  }
+  assert.deepEqual(unownedPaths(MISSION2_AUTHORIZED_PATHS, manifest), []);
+  assert.equal(assignment.authorization_effect.includes('no provider'), true);
+  assert.equal(assignment.authorization_effect.includes('no production'), true);
+});
+
+test('Mission 2 ownership does not admit neighboring paths or wildcards', () => {
+  const patterns = ownershipPatterns(ownership());
+  for (const neighboringPath of [
+    'docs/convergence/mission-2/UNAPPROVED.md',
+    'tools/mission-2/unapproved.mjs',
+  ]) {
+    assert.equal(
+      patterns.some((pattern) => matchOwned(neighboringPath, pattern)),
+      false,
+      neighboringPath,
+    );
+  }
+
+  const manifest = ownership();
+  manifest.owned_create_paths.push('tools/mission-2/**');
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /owner-approved scope digest/,
+  );
+});
+
+test('Mission 2 ownership rejects tampering, duplicates and malformed paths', () => {
+  const tampered = ownership();
+  tampered.explicit_user_assignment.mission2_minimum_alive_loop_2026_07_29.scope =
+    'Neighboring files are authorized.';
+  assert.throws(
+    () => validateOwnershipManifest(tampered),
+    /Mission 2 ownership assignment is malformed/,
+  );
+
+  const duplicate = ownership();
+  duplicate.explicit_user_assignment.mission2_minimum_alive_loop_2026_07_29
+    .authorized_paths.push(MISSION2_AUTHORIZED_PATHS[0]);
+  assert.throws(
+    () => validateOwnershipManifest(duplicate),
+    /Mission 2 ownership assignment is malformed/,
+  );
+
+  const malformed = ownership();
+  malformed.explicit_user_assignment.mission2_minimum_alive_loop_2026_07_29
+    .authorized_paths[0] = '../outside';
+  assert.throws(
+    () => validateOwnershipManifest(malformed),
+    /Mission 2 ownership assignment is malformed/,
+  );
+});
+
+test('Mission 2 ownership cannot broaden authority or lose a required path', () => {
+  const authority = ownership();
+  authority.explicit_user_assignment.mission2_minimum_alive_loop_2026_07_29
+    .runtime_permissions = ['provider-connect'];
+  assert.throws(
+    () => validateOwnershipManifest(authority),
+    /Mission 2 ownership assignment is malformed/,
+  );
+
+  const removed = ownership();
+  removed.owned_create_paths = removed.owned_create_paths.filter(
+    (entry) => entry !== 'tools/mission-2/kernel.mjs',
+  );
+  assert.throws(
+    () => validateOwnershipManifest(removed),
+    /must have exactly one exact ownership entry/,
   );
 });
 

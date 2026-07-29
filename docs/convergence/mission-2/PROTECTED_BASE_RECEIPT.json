@@ -1,0 +1,50 @@
+{
+  "schema_version": "cana.mission-2.protected-base-receipt/1.0.0",
+  "observed_at": "2026-07-29T08:48:34Z",
+  "repository": "CannabisWorldHoldings/CANA",
+  "branch": "codex/cana-mission-2-minimum-alive-loop",
+  "protected_branch": "main",
+  "protected_commit": "70a7200fbdbfd46bdcef7143863e33caf6f9d6fe",
+  "protected_tree": "b7f979a2d1d82b9dbc0b23a015eefaa1402a1dec",
+  "merge_parents": [
+    "7f5df3a4a4a024a070cf027b84fe403602bd3ac0",
+    "13a7750d4076e06d3ce5c17820d05e0d435592ad"
+  ],
+  "protected_evidence": {
+    "receipt_count": 149,
+    "receipt_bytes": 449587,
+    "inventory_sha256": "30eb6c0ba6a1c8a1c7deb74dc4fe0bbd5225574d404eb388c314c61c929d69d6",
+    "protected_base_record_sha256": "4856924bb3d3533f7bccd43a388c9b827f8fa761d869f26ef3210d25d8dea1ae",
+    "sealed_archive_sha256": "33990aa450fd98dcc12d981d3c5bec88b2f0d056a1a61d74f15b41c791f234b3",
+    "package_manifest_sha256": "1ee364d4b1c8ff9cb72e2b4c735f223189c75f1d1ee370a998d2bfdca3f15f8e",
+    "directory_verification": "PASS_151_OF_151",
+    "archive_integrity": "PASS",
+    "archive_restore_verification": "PASS_151_OF_151"
+  },
+  "mission_1_contracts": {
+    "artifact_count": 13,
+    "artifact_manifest_sha256": "256fe66c6db4d7925b994dc29d1e621d34c7d395a7078faa5504538dad333fbd",
+    "artifact_set_sha256": "92291bfa00327ad46033ace3adf14cd9a38dc481b80491904036b472c54830f5",
+    "runtime_status": "DESIGN_ONLY_NO_RUNTIME_ACTIVATED",
+    "truthgraph_status_at_intake": "MISSING",
+    "hermes_status": "DISABLED",
+    "approved_hermes_pin": "NONE",
+    "provider": "NONE"
+  },
+  "verification": {
+    "remote_main_matches": true,
+    "worktree_clean_before_branch": true,
+    "strict_git_fsck": "PASS",
+    "repository_private": true,
+    "default_branch": "main"
+  },
+  "mission_2_constraints": {
+    "execution_adapter": "DETERMINISTIC_MOCK",
+    "budget_usd": 0,
+    "external_effects": "NONE",
+    "production_access": "NONE",
+    "credentials": "FORBIDDEN",
+    "deployment": "FORBIDDEN",
+    "mission_3": "NOT_AUTHORIZED"
+  }
+}

@@ -26,8 +26,11 @@ const PR2_ASSIGNMENT_SHA256 =
 const MISSION1_ASSIGNMENT = 'mission1_integration_2026_07_29';
 const MISSION1_ASSIGNMENT_SHA256 =
   '3fa119b9e88c1c1cfadf76c751258e8d48325afa4899986715a6a11b8afa7f02';
+const MISSION2_ASSIGNMENT = 'mission2_minimum_alive_loop_2026_07_29';
+const MISSION2_ASSIGNMENT_SHA256 =
+  'ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '48eb24b0953a1f9d9790ce32e71b6f943ef91359c70dbeeb3bb499d9e5b92f03';
+  '508ef52dc705b96de7dfe5ee37c6583aa8a5c18576c71126187f77a41626699e';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -66,6 +69,41 @@ export const MISSION1_VALIDATOR_PATHS = Object.freeze([
 export const MISSION1_AUTHORIZED_PATHS = Object.freeze([
   ...MISSION1_EVIDENCE_PATHS,
   ...MISSION1_VALIDATOR_PATHS,
+]);
+export const MISSION2_AUTHORIZED_PATHS = Object.freeze([
+  '.github/workflows/cana-verify.yml',
+  'apps/web/tests/build-database-gate.test.mjs',
+  'docs/CANA_TECHNICAL_STATE.md',
+  'docs/convergence/mission-2/BLOCKER_REPAIR_LEDGER.md',
+  'docs/convergence/mission-2/COMMIT_LEDGER.md',
+  'docs/convergence/mission-2/MISSION_2_CONTRACTS.md',
+  'docs/convergence/mission-2/MISSION_3_PREREQUISITES.md',
+  'docs/convergence/mission-2/PROTECTED_BASE_RECEIPT.json',
+  'docs/convergence/mission-2/evidence/ADVERSARIAL_REPORT.json',
+  'docs/convergence/mission-2/evidence/EVIDENCE_MANIFEST.json',
+  'docs/convergence/mission-2/evidence/INTELLIGENCE_OS_READ_CONTRACT_RECEIPT.json',
+  'docs/convergence/mission-2/evidence/INVALID_MISSION_RECEIPTS.json',
+  'docs/convergence/mission-2/evidence/LEGITIMATE_MINIMUM_ALIVE_LOOP_RECEIPT.json',
+  'docs/convergence/mission-2/evidence/TRANSCRIPT_SHADOW_MECHANISM_RECEIPT.json',
+  'tools/durability/cli.mjs',
+  'tools/durability/cli.test.mjs',
+  'tools/github-import/prepare.test.mjs',
+  'tools/mission-2/authorization.mjs',
+  'tools/mission-2/canonical.mjs',
+  'tools/mission-2/context.mjs',
+  'tools/mission-2/contracts.mjs',
+  'tools/mission-2/foundry.mjs',
+  'tools/mission-2/intelligence-contracts.mjs',
+  'tools/mission-2/kernel.mjs',
+  'tools/mission-2/lease.mjs',
+  'tools/mission-2/mission-2.test.mjs',
+  'tools/mission-2/mock-executor.mjs',
+  'tools/mission-2/run-fixtures.mjs',
+  'tools/mission-2/store.mjs',
+  'tools/mission-2/verifier.mjs',
+  'tools/mission-2/verifier-process.mjs',
+  'tools/mission-2/verifier-worker.mjs',
+  'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
 ]);
 
 function command(commandName, args, {
@@ -465,6 +503,68 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const mission2Assignment = ownership.explicit_user_assignment[MISSION2_ASSIGNMENT];
+  if (
+    !exactKeys(mission2Assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'base_commit',
+      'base_tree',
+      'authorized_paths',
+      'approval_sha256',
+    ]) ||
+    mission2Assignment.authorization !==
+      'ACTIVATE CANA MISSION 2 — MINIMUM ALIVE LOOP AND AUTONOMY FOUNDATION' ||
+    mission2Assignment.base_commit !==
+      '70a7200fbdbfd46bdcef7143863e33caf6f9d6fe' ||
+    mission2Assignment.base_tree !==
+      'b7f979a2d1d82b9dbc0b23a015eefaa1402a1dec' ||
+    !Array.isArray(mission2Assignment.authorized_paths) ||
+    JSON.stringify([...mission2Assignment.authorized_paths].sort()) !==
+      JSON.stringify([...MISSION2_AUTHORIZED_PATHS].sort()) ||
+    !mission2Assignment.scope.includes('no wildcard') ||
+    !mission2Assignment.authorization_effect.includes('no provider') ||
+    !mission2Assignment.authorization_effect.includes('no production')
+  ) {
+    refusal('Mission 2 ownership assignment is malformed');
+  }
+
+  const mission2Paths = mission2Assignment.authorized_paths;
+  if (
+    new Set(mission2Paths).size !== mission2Paths.length ||
+    mission2Paths.some(
+      (entry) =>
+        typeof entry !== 'string' ||
+        entry.length === 0 ||
+        entry.startsWith('/') ||
+        entry.includes('\\') ||
+        entry.includes('*') ||
+        entry.includes('..') ||
+        path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('Mission 2 ownership paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of MISSION2_AUTHORIZED_PATHS) {
+    const exactOccurrences = allOwnedPaths.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (exactOccurrences !== 1) {
+      refusal(
+        `Mission 2 path must have exactly one exact ownership entry: ${authorizedPath}`,
+      );
+    }
+    const plannedOccurrences = ownership.planned_candidate_files.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (plannedOccurrences !== 1) {
+      refusal(
+        `Mission 2 path must have exactly one planned-candidate entry: ${authorizedPath}`,
+      );
+    }
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -495,6 +595,19 @@ export function validateOwnershipManifest(ownership) {
   ) {
     refusal('Mission 1 ownership assignment failed its owner-approval digest');
   }
+  const {
+    approval_sha256: mission2RecordedDigest,
+    ...mission2ApprovalPayload
+  } = mission2Assignment;
+  const mission2ActualDigest = sha256Bytes(
+    canonicalJson(mission2ApprovalPayload),
+  );
+  if (
+    mission2RecordedDigest !== MISSION2_ASSIGNMENT_SHA256 ||
+    mission2ActualDigest !== MISSION2_ASSIGNMENT_SHA256
+  ) {
+    refusal('Mission 2 ownership assignment failed its owner-approval digest');
+  }
   return assignment;
 }
 
@@ -506,6 +619,11 @@ export function pr2OwnershipAssignment(ownership) {
 export function mission1OwnershipAssignment(ownership) {
   validateOwnershipManifest(ownership);
   return ownership.explicit_user_assignment[MISSION1_ASSIGNMENT];
+}
+
+export function mission2OwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[MISSION2_ASSIGNMENT];
 }
 
 export function ownershipPatterns(ownership) {

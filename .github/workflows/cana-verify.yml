@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: 24.14.1
           package-manager-cache: false
-      - run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs
+      - run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs tools/mission-2/mission-2.test.mjs
 
   focused-verifier:
     runs-on: ubuntu-latest
