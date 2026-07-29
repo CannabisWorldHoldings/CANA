@@ -11,6 +11,7 @@ No test, security, privacy, truth, freshness, or fail-closed rule was weakened.
 | `M2-B004` | Initial promoted documentation bytes differed from the branch by one blank line | evidence/receipt mismatch | generator and applied Markdown spacing differed | make the generator include the canonical blank line and regenerate all evidence | branch file SHA-256 equals `approved_after_sha256` |
 | `M2-B005` | Combined workflow/unit run while the workflow files were dirty: 26 tests, 25 passed, 1 failed | verification precondition, not candidate semantics | the offline GitHub preparer correctly refuses dirty source | commit the workflow change, then rerun from a clean tree | clean run passes 26/26 |
 | `M2-B006` | deletion of the final event originally reconstructed a shorter apparently valid chain | real durability defect | hash chaining alone cannot distinguish an intentional prefix from truncated history | compare reconstructed event count and tail hash with the last atomic projection checkpoint | deletion now returns `EVENT_DELETION_DETECTED` |
+| `M2-B007` | first ownership-regression run: 35 tests, 16 passed, 19 failed | deterministic ownership-policy defect | the authorization-effect value did not contain the validator's exact fail-closed `no production` phrase | make every denied authority explicit and recompute the sealed assignment digest | ownership regression run passes 35/35 |
 
 Failed results were not retried until lucky. Inputs changed before every rerun, and
 the final clean runs execute normally in fresh processes.

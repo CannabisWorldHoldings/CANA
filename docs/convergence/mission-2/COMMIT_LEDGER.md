@@ -13,7 +13,7 @@ Traceable Mission 2 commits:
 | `c34fcfdaa0962e42a6c6b17e3487ff9452ecdcb2` | add the durable CANA autonomy kernel |
 | `0d65ec83a136689810bcab5988865cc2ff667a11` | execute the Minimum Alive Loop in shadow mode |
 | `6657c04e593e916b1d6f8b4cf49d9b1bb70e3a97` | add the Mission 2 courts to the candidate workflow |
-| `1f56364965537ba6526842325e848d7b031ebf24` | record contracts, repairs, and Mission 3 boundaries |
+| `1f56364385bb707a14dce2c19461ed247b911ef3` | record contracts, repairs, and Mission 3 boundaries |
 
 The exact ownership-reconciliation and final-evidence commits are recorded by their
 full identities in the final external verification receipt after the branch is
