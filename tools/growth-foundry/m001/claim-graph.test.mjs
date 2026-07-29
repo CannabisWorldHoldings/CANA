@@ -464,6 +464,17 @@ test('source hash, independent verification, and retirement boundaries fail safe
   assert.equal(evaluateClaim(retired, 'claim_license', AS_OF).state, 'RETIRED');
 });
 
+test('forged provenance fails even when source and observation repeat the same declared hash', () => {
+  const forged = mutable(fixture());
+  forged.sources[0].provenance = 'ATTACKER_CONTROLLED_FORGED_PROVENANCE';
+  forged.sources[0].source_hash = '0'.repeat(64);
+  forged.observations[0].source_hash = '0'.repeat(64);
+  assert.throws(
+    () => validateClaimGraph(forged),
+    errorCode('M001_SOURCE_PROVENANCE_HASH_MISMATCH'),
+  );
+});
+
 test('results are deterministic across repeated runs', () => {
   const graphA = fixture();
   const graphB = fixture();

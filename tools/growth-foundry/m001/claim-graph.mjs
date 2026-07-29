@@ -6,6 +6,7 @@ import {
   hashCanonical,
   requireSha256,
   requireText,
+  sha256,
   uniqueSorted,
 } from '../../mission-2/canonical.mjs';
 
@@ -295,6 +296,11 @@ export function validateClaimGraph(input) {
     );
     requireSha256(source.source_hash, 'source.source_hash');
     requireText(source.provenance, 'source.provenance');
+    assertMission(
+      source.source_hash === sha256(source.provenance),
+      'M001_SOURCE_PROVENANCE_HASH_MISMATCH',
+      'Source hash must recompute from the exact provenance bytes',
+    );
   }
 
   const observationById = new Map(graph.observations.map((record) => [record.observation_id, record]));
