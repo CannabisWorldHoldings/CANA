@@ -114,7 +114,7 @@ test('the migration court resolves apps/web from both supported working director
       process.execPath,
       [
         '--test',
-        '--test-name-pattern=^PORTABILITY CANARY:',
+        '--test-name-pattern=^APPLICATION ROOT:',
         MIGRATION_COURT,
       ],
       {
