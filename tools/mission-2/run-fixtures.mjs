@@ -185,15 +185,16 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   store = new MissionStore(storeRoot);
   kernel = new AutonomyKernel({ store, clock: () => NOW });
   const restoredBeforeExecution = kernel.projection(mission.mission_id);
+  const restoredLease = kernel.restoreLease(mission, EXECUTOR_ID);
   const execution = executor.execute({
     mission,
     authorization,
     sandboxRoot: sandbox,
     operation,
     now: NOW,
-    lease: restoredBeforeExecution.lease,
+    lease: restoredLease,
   });
-  kernel.recordExecution(mission, lease.token, execution);
+  kernel.recordExecution(mission, authorization, restoredLease, execution);
   kernel.captureEvidence(mission, execution);
   const verifier = new IndependentVerifier(VERIFIER_ID);
   const verification = verifier.verify({
@@ -201,11 +202,13 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
     authorization,
     executionReceipt: execution,
     sandboxRoot: sandbox,
+    operation,
+    lease: restoredLease,
     now: NOW,
     expectedText,
   });
-  kernel.recordVerification(mission, verification);
-  kernel.decidePromotion(mission, verification);
+  kernel.recordVerification(mission, authorization, execution, verification);
+  kernel.decidePromotion(mission, authorization, execution, verification);
   const truth = kernel.updateTruthGraph(mission, verification, {
     state: 'TECHNICALLY_VERIFIED',
     claim: truthClaim,
@@ -219,13 +222,14 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   });
   const beforeRollback = kernel.projection(mission.mission_id);
   const rollback = executor.rollback({ sandboxRoot: sandbox, executionReceipt: execution });
-  kernel.recordRollback(mission, rollback);
+  kernel.recordRollback(mission, execution, rollback);
   const reapply = executor.reapply({ sandboxRoot: sandbox, executionReceipt: execution });
   const finalProjection = new MissionStore(storeRoot).reconstruct();
   return {
     mission,
     context,
     authorization,
+    lease: restoredLease,
     interruption: {
       interrupted: interrupted.interrupted,
       checkpoint: interrupted.checkpoint,
@@ -407,16 +411,44 @@ function runInvalidCourts(legitimate) {
   const context = legitimate.lifecycle.context;
   const authorization = legitimate.lifecycle.authorization;
   const invalidStore = new MissionStore(fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-invalid-')));
+  const guardRepository = makeShadowRepository();
   const receipts = [];
   const record = (name, expectedCode, action) => {
-    let observedCode = null;
-    try {
-      const result = action();
-      if (result?.verdict === 'REJECT') observedCode = 'VERIFIER_REJECTED_FORGERY';
-    } catch (error) {
-      observedCode = error instanceof MissionError ? error.code : error.code ?? error.name;
+    const observeDenial = () => {
+      try {
+        const result = action();
+        if (result?.verdict === 'REJECT') return 'VERIFIER_REJECTED_FORGERY';
+        return 'UNEXPECTED_ACCEPTANCE';
+      } catch (error) {
+        return error instanceof MissionError ? error.code : error.code ?? error.name;
+      }
+    };
+    const beforeProjection = invalidStore.reconstruct();
+    const guardStatusBefore = git(guardRepository.root, ['status', '--porcelain']);
+    const guardBytesBefore = fs.readFileSync(path.join(guardRepository.root, 'controller-state.json'));
+    const firstObservedCode = observeDenial();
+    const secondObservedCode = observeDenial();
+    const afterDeniedAction = invalidStore.reconstruct();
+    const guardStatusAfter = git(guardRepository.root, ['status', '--porcelain']);
+    const guardBytesAfter = fs.readFileSync(path.join(guardRepository.root, 'controller-state.json'));
+    if (firstObservedCode !== expectedCode || secondObservedCode !== expectedCode) {
+      throw new Error(`${name}: expected ${expectedCode}, observed ${firstObservedCode}/${secondObservedCode}`);
     }
-    if (observedCode !== expectedCode) throw new Error(`${name}: expected ${expectedCode}, observed ${observedCode}`);
+    const newEvents = invalidStore.readEvents().slice(beforeProjection.event_count);
+    const unauthorizedExecutionOccurred = newEvents.some((event) => event.lifecycle_state === 'ACTION_EXECUTED');
+    const truthgraphUpdated = newEvents.some((event) => event.lifecycle_state === 'TRUTHGRAPH_UPDATED');
+    const winnerMemoryUpdated = newEvents.some((event) => event.lifecycle_state === 'WINNER_MEMORY_UPDATED');
+    const guardChanged = guardStatusBefore !== guardStatusAfter
+      || !guardBytesBefore.equals(guardBytesAfter);
+    if (
+      afterDeniedAction.event_count !== beforeProjection.event_count
+      || unauthorizedExecutionOccurred
+      || truthgraphUpdated
+      || winnerMemoryUpdated
+      || guardChanged
+    ) {
+      throw new Error(`${name}: denied action changed guarded state`);
+    }
     const missionId = `invalid_${name.toLowerCase().replaceAll(/[^a-z0-9]+/g, '_')}`;
     invalidStore.append({
       missionId,
@@ -437,20 +469,28 @@ function runInvalidCourts(legitimate) {
       occurredAt: NOW.toISOString(),
       expectedVersion: 1,
       payload: {
-        failure: { code: observedCode },
+        failure: { code: firstObservedCode },
         promotion_status: 'REJECTED',
         next_eligible_action: 'NONE',
       },
     });
     receipts.push({
       name,
-      denial_code: observedCode,
-      unauthorized_execution_occurred: false,
-      truthgraph_updated: false,
-      winner_memory_updated: false,
-      external_effect_count: 0,
+      denial_code: firstObservedCode,
+      unauthorized_execution_occurred: unauthorizedExecutionOccurred,
+      truthgraph_updated: truthgraphUpdated,
+      winner_memory_updated: winnerMemoryUpdated,
+      external_effect_count: guardChanged ? 1 : 0,
       durable_state: 'REJECTED',
-      reproducible: true,
+      reproducible: firstObservedCode === secondObservedCode,
+      measurement: {
+        denied_action_event_count_before: beforeProjection.event_count,
+        denied_action_event_count_after: afterDeniedAction.event_count,
+        guarded_repository_status_before: guardStatusBefore,
+        guarded_repository_status_after: guardStatusAfter,
+        guarded_file_sha256_before: sha256(guardBytesBefore),
+        guarded_file_sha256_after: sha256(guardBytesAfter),
+      },
     });
   };
 
@@ -495,6 +535,13 @@ function runInvalidCourts(legitimate) {
       changed_files: [{ ...legitimate.lifecycle.execution.changed_files[0], after_sha256: '0'.repeat(64) }],
     },
     sandboxRoot: ROOT,
+    operation: {
+      kind: 'REPLACE_EXACT_TEXT',
+      path: TARGET,
+      find: '# CANA technical state\n\n',
+      replace: `# CANA technical state\n\n${NOTICE}`,
+    },
+    lease: legitimate.lifecycle.lease,
     now: NOW,
     expectedText: 'Canonical status supersession',
   }));
@@ -608,38 +655,29 @@ const adversarial = {
   schema_version: 'cana.mission-2-adversarial-report/2.0.0',
   invalid_mission_count: invalid.count,
   invalid_missions_all_failed_closed: invalid.all_failed_closed,
-  unit_courts: [
-    'forged packet',
-    'stale packet',
-    'replay',
-    'source drift',
-    'unauthorized target',
-    'capability broadening',
-    'expired authorization',
-    'duplicate execution',
-    'interrupted execution',
-    'stale worker completion',
-    'forged evidence',
-    'executor self-verification',
-    'verifier mutation of implementation',
-    'TruthGraph update before promotion',
-    'Winner Memory update after rejection',
-    'cross-tenant access',
-    'rollback failure',
-    'packet hash mismatch',
-    'research packet claiming PROVEN',
-    'raw transcript inserted into hot memory',
-    'duplicate mechanism IDs',
-    'contradiction deletion',
-    'provider selection while NONE',
-    'Hermes dispatch while disabled',
-    'external-effect request',
-    'budget above $0',
-    'scheduler duplicate dispatch',
-    'failed process restoration',
-    'repeated retry exhaustion',
-  ],
-  sabotage_detection_proven: true,
+  executed_invalid_courts: invalid.receipts.map((receipt) => ({
+    name: receipt.name,
+    denial_code: receipt.denial_code,
+    reproducible: receipt.reproducible,
+    measured_no_execution: receipt.unauthorized_execution_occurred === false,
+    measured_no_truthgraph_update: receipt.truthgraph_updated === false,
+    measured_no_winner_memory_update: receipt.winner_memory_updated === false,
+    measured_no_external_effect: receipt.external_effect_count === 0,
+  })),
+  observed_lifecycle_proofs: [{
+    name: 'INTERRUPTED_EXECUTION_RECOVERY',
+    passed: legitimate.lifecycle.interruption.interrupted === true
+      && legitimate.lifecycle.interruption.restart_reconstructed_state === 'EXECUTOR_DISPATCHED',
+    event_chain_hash: legitimate.lifecycle.event_chain_hash,
+  }, {
+    name: 'EXACT_ROLLBACK_AND_REAPPLY',
+    passed: legitimate.lifecycle.rollback.exact_bytes_restored === true
+      && legitimate.lifecycle.reapply.exact_bytes_reapplied === true,
+    before_sha256: legitimate.source_before_sha256,
+    after_sha256: legitimate.approved_after_sha256,
+  }],
+  sabotage_detection_proven: invalid.all_failed_closed
+    && invalid.receipts.every((receipt) => receipt.reproducible === true),
   external_effects: 0,
   provider: 'NONE',
   hermes: 'DISABLED',

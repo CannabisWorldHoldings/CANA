@@ -4,6 +4,18 @@ import {
   deterministicId,
   hashCanonical,
 } from './canonical.mjs';
+import { assertAuthorizationReceipt } from './authorization.mjs';
+import {
+  admitPersistedLease,
+  assertAdmittedLease,
+  issueExecutionLease,
+  refreshExecutionLease,
+} from './lease.mjs';
+import {
+  assertExecutionReceipt,
+  assertRollbackReceipt,
+} from './mock-executor.mjs';
+import { assertVerifierReceipt } from './verifier.mjs';
 
 const ACTION_BY_STATE = Object.freeze({
   SIGNAL_OBSERVED: 'COMPILE_CONTEXT',
@@ -21,7 +33,7 @@ const ACTION_BY_STATE = Object.freeze({
   REJECTED: 'NONE',
   CANCELLED: 'NONE',
   DEAD_LETTER: 'OWNER_DECISION',
-  OWNER_DECISION_REQUIRED: 'OWNER_DECISION',
+  OWNER_DECISION_REQUIRED: 'AWAIT_OWNER_DECISION',
   ROLLED_BACK: 'NONE',
 });
 
@@ -90,6 +102,13 @@ export class AutonomyKernel {
   }
 
   recordAuthorization(mission, authorization) {
+    assertAuthorizationReceipt({
+      mission,
+      authorization,
+      now: this.clock(),
+      executorIdentity: authorization?.executor_identity,
+      requireAdmission: true,
+    });
     const evidence = this.store.writeEvidence(authorization);
     return this.append(mission, 'CANA_AUTHORIZED', 'CANA_DURABLE_AUTHORITY', {
       evidence_ref: evidence.ref,
@@ -99,44 +118,103 @@ export class AutonomyKernel {
 
   dispatch(mission, workerId, leaseDurationMs) {
     const current = this.projection(mission.mission_id);
-    assertMission(current.current_lifecycle_state === 'CANA_AUTHORIZED' || current.current_lifecycle_state === 'PAUSED', 'DISPATCH_BEFORE_AUTHORIZATION', 'Dispatch requires authorization');
+    assertMission(current.current_lifecycle_state === 'CANA_AUTHORIZED', 'DISPATCH_BEFORE_AUTHORIZATION', 'Dispatch requires current CANA authorization');
+    assertMission(
+      /^[0-9a-f]{64}$/.test(current.authorization_receipt_hash ?? ''),
+      'AUTHORIZATION_REQUIRED',
+      'Dispatch requires a durable authorization receipt',
+    );
+    assertMission(
+      Number.isInteger(leaseDurationMs) && leaseDurationMs > 0,
+      'INVALID_LEASE_DURATION',
+      'Lease duration must be a positive integer',
+    );
     assertMission(!current.lease || new Date(current.lease.expires_at).getTime() <= this.clock().getTime(), 'DUPLICATE_DISPATCH', 'An active worker lease already exists');
     const issuedAt = this.clock();
-    const lease = deepFreeze({
-      worker_id: workerId,
-      token: deterministicId('lease', {
-        mission_id: mission.mission_id,
-        worker_id: workerId,
-        version: current.version,
-        issued_at: issuedAt.toISOString(),
-      }),
-      issued_at: issuedAt.toISOString(),
-      expires_at: new Date(issuedAt.getTime() + leaseDurationMs).toISOString(),
-      heartbeat_at: issuedAt.toISOString(),
+    const lease = issueExecutionLease({
+      missionId: mission.mission_id,
+      authorizationReceiptHash: current.authorization_receipt_hash,
+      workerId,
+      version: current.version,
+      issuedAt: issuedAt.toISOString(),
+      expiresAt: new Date(issuedAt.getTime() + leaseDurationMs).toISOString(),
     });
     this.append(mission, 'EXECUTOR_DISPATCHED', 'CANA_AUTONOMY_KERNEL', { lease });
     return lease;
   }
 
+  restoreLease(mission, workerId) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      current.current_lifecycle_state === 'EXECUTOR_DISPATCHED',
+      'LEASE_NOT_RESTORABLE',
+      'Only a dispatched mission has a restorable lease',
+    );
+    return admitPersistedLease({
+      lease: current.lease,
+      missionId: mission.mission_id,
+      authorizationReceiptHash: current.authorization_receipt_hash,
+      workerId,
+      now: this.clock(),
+    });
+  }
+
   heartbeat(mission, leaseToken) {
     const current = this.projection(mission.mission_id);
     assertMission(current.lease?.token === leaseToken, 'STALE_WORKER', 'Heartbeat lease token is stale');
-    assertMission(new Date(current.lease.expires_at).getTime() > this.clock().getTime(), 'LEASE_EXPIRED', 'Worker lease expired');
-    const lease = { ...current.lease, heartbeat_at: this.clock().toISOString() };
+    const admitted = admitPersistedLease({
+      lease: current.lease,
+      missionId: mission.mission_id,
+      authorizationReceiptHash: current.authorization_receipt_hash,
+      workerId: current.lease.worker_id,
+      now: this.clock(),
+    });
+    const lease = refreshExecutionLease(admitted, this.clock().toISOString());
     this.append(mission, current.current_lifecycle_state, 'CANA_AUTONOMY_KERNEL', { lease });
-    return deepFreeze(lease);
+    return lease;
   }
 
   checkpoint(mission, leaseToken, checkpoint) {
     const current = this.projection(mission.mission_id);
     assertMission(current.lease?.token === leaseToken, 'STALE_WORKER', 'Checkpoint lease token is stale');
+    admitPersistedLease({
+      lease: current.lease,
+      missionId: mission.mission_id,
+      authorizationReceiptHash: current.authorization_receipt_hash,
+      workerId: current.lease.worker_id,
+      now: this.clock(),
+    });
     this.append(mission, current.current_lifecycle_state, 'CANA_AUTONOMY_KERNEL', { checkpoint });
   }
 
-  recordExecution(mission, leaseToken, executionReceipt) {
+  recordExecution(mission, authorization, lease, executionReceipt) {
     const current = this.projection(mission.mission_id);
-    assertMission(current.lease?.token === leaseToken, 'STALE_WORKER_COMPLETION', 'Worker completion lease token is stale');
+    assertMission(current.lease?.token === lease?.token, 'STALE_WORKER_COMPLETION', 'Worker completion lease token is stale');
+    assertMission(
+      current.lease?.lease_receipt_hash === lease?.lease_receipt_hash,
+      'STALE_WORKER_COMPLETION',
+      'Worker completion lease receipt is stale',
+    );
+    assertMission(
+      current.authorization_receipt_hash === authorization.authorization_receipt_hash,
+      'EXECUTION_AUTHORIZATION_MISMATCH',
+      'Worker completion authorization differs from the durable grant',
+    );
     assertMission(new Date(current.lease.expires_at).getTime() > this.clock().getTime(), 'LEASE_EXPIRED', 'Worker returned after lease expiry');
+    assertAdmittedLease({
+      lease,
+      missionId: mission.mission_id,
+      authorizationReceiptHash: authorization.authorization_receipt_hash,
+      workerId: executionReceipt.executor_identity,
+      now: this.clock(),
+    });
+    assertExecutionReceipt({
+      mission,
+      authorization,
+      lease,
+      executionReceipt,
+      requireAdmission: true,
+    });
     const evidence = this.store.writeEvidence({
       ...executionReceipt,
       before_bytes: executionReceipt.before_bytes.toString('base64'),
@@ -144,9 +222,10 @@ export class AutonomyKernel {
     });
     return this.append(mission, 'ACTION_EXECUTED', executionReceipt.executor_identity, {
       evidence_ref: evidence.ref,
+      execution_receipt_hash: executionReceipt.execution_receipt_hash,
       attempt: {
         attempt: current.execution_attempts.length + 1,
-        lease_token: leaseToken,
+        lease_token: lease.token,
         result: 'EXECUTED',
       },
       lease: null,
@@ -154,6 +233,12 @@ export class AutonomyKernel {
   }
 
   captureEvidence(mission, executionReceipt) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      current.execution_receipt_hash === executionReceipt.execution_receipt_hash,
+      'EXECUTION_RECEIPT_MISMATCH',
+      'Evidence capture requires the recorded execution receipt',
+    );
     const evidence = this.store.writeEvidence({
       mission_id: mission.mission_id,
       execution_receipt_hash: executionReceipt.execution_receipt_hash,
@@ -166,15 +251,46 @@ export class AutonomyKernel {
     return this.append(mission, 'EVIDENCE_CAPTURED', 'CANA_DURABLE_AUTHORITY', { evidence_ref: evidence.ref });
   }
 
-  recordVerification(mission, verifierReceipt) {
+  recordVerification(mission, authorization, executionReceipt, verifierReceipt) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      current.authorization_receipt_hash === authorization.authorization_receipt_hash
+        && current.execution_receipt_hash === executionReceipt.execution_receipt_hash,
+      'VERIFIER_EVIDENCE_MISMATCH',
+      'Verification inputs differ from the durable mission evidence',
+    );
+    assertVerifierReceipt({
+      mission,
+      authorization,
+      executionReceipt,
+      verifierReceipt,
+      requireAdmission: true,
+    });
     const evidence = this.store.writeEvidence(verifierReceipt);
     return this.append(mission, 'INDEPENDENTLY_VERIFIED', verifierReceipt.verifier_identity, {
       evidence_ref: evidence.ref,
       verifier_verdict: verifierReceipt.verdict,
+      verifier_identity: verifierReceipt.verifier_identity,
+      verifier_receipt_hash: verifierReceipt.verifier_receipt_hash,
     });
   }
 
-  decidePromotion(mission, verifierReceipt) {
+  decidePromotion(mission, authorization, executionReceipt, verifierReceipt) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      current.verifier_receipt_hash === verifierReceipt.verifier_receipt_hash
+        && current.verifier_verdict === verifierReceipt.verdict
+        && current.verifier_identity === verifierReceipt.verifier_identity,
+      'UNRECORDED_VERIFIER_RECEIPT',
+      'Promotion requires the exact recorded verifier receipt',
+    );
+    assertVerifierReceipt({
+      mission,
+      authorization,
+      executionReceipt,
+      verifierReceipt,
+      requireAdmission: true,
+    });
     const approve = verifierReceipt.verdict === 'APPROVE' && verifierReceipt.implementation_mutated === false;
     const next = approve ? 'PROMOTED' : 'REJECTED';
     const payload = {
@@ -188,9 +304,15 @@ export class AutonomyKernel {
   updateTruthGraph(mission, verifierReceipt, truth) {
     const current = this.projection(mission.mission_id);
     assertMission(current.current_lifecycle_state === 'PROMOTED', 'TRUTH_UPDATE_BEFORE_PROMOTION', 'TruthGraph update requires CANA promotion');
-    assertMission(verifierReceipt.verdict === 'APPROVE', 'TRUTH_UPDATE_WITHOUT_APPROVAL', 'TruthGraph requires independent approval');
+    assertMission(
+      verifierReceipt.verdict === 'APPROVE'
+        && current.verifier_receipt_hash === verifierReceipt.verifier_receipt_hash
+        && current.verifier_identity === mission.verifier_identity,
+      'TRUTH_UPDATE_WITHOUT_APPROVAL',
+      'TruthGraph requires the exact promoted independent approval',
+    );
     assertMission(truth.state === 'TECHNICALLY_VERIFIED' || truth.state === 'VALUE_NOT_ESTABLISHED', 'INVALID_TRUTH_STATE', 'Shadow technical truth cannot claim value');
-    const record = deepFreeze({
+    const body = {
       schema_version: 'cana.truthgraph-node/2.0.0',
       node_id: deterministicId('truth', { mission_id: mission.mission_id, source_tree: mission.source_tree }),
       mission_id: mission.mission_id,
@@ -200,9 +322,13 @@ export class AutonomyKernel {
       claim: truth.claim,
       verifier_receipt_hash: verifierReceipt.verifier_receipt_hash,
       value_state: 'VALUE_NOT_ESTABLISHED',
-    });
+    };
+    const record = deepFreeze({ ...body, truth_record_hash: hashCanonical(body) });
     const evidence = this.store.writeEvidence(record);
-    this.append(mission, 'TRUTHGRAPH_UPDATED', 'RSI_SITEMIND_INTELLIGENCE', { evidence_ref: evidence.ref });
+    this.append(mission, 'TRUTHGRAPH_UPDATED', 'RSI_SITEMIND_INTELLIGENCE', {
+      evidence_ref: evidence.ref,
+      truth_record_hash: record.truth_record_hash,
+    });
     return record;
   }
 
@@ -210,7 +336,14 @@ export class AutonomyKernel {
     const current = this.projection(mission.mission_id);
     assertMission(current.current_lifecycle_state === 'TRUTHGRAPH_UPDATED', 'WINNER_MEMORY_BEFORE_TRUTH', 'Winner Memory requires promoted TruthGraph state');
     assertMission(truthRecord.state === 'TECHNICALLY_VERIFIED', 'UNVERIFIED_WINNER_DENIED', 'Winner Memory requires a technically verified mechanism');
-    const record = deepFreeze({
+    const { truth_record_hash: claimedTruthHash, ...truthBody } = truthRecord;
+    assertMission(
+      current.truth_record_hash === claimedTruthHash
+        && claimedTruthHash === hashCanonical(truthBody),
+      'FORGED_TRUTH_RECORD_DENIED',
+      'Winner Memory requires the exact recorded TruthGraph node',
+    );
+    const body = {
       schema_version: 'cana.winner-memory/2.0.0',
       lesson_id: deterministicId('winner', {
         mission_id: mission.mission_id,
@@ -229,22 +362,66 @@ export class AutonomyKernel {
       revalidate_after: learning.revalidate_after,
       value_state: 'VALUE_NOT_ESTABLISHED',
       commercial_value_claimed: false,
-    });
+    };
+    const record = deepFreeze({ ...body, winner_memory_hash: hashCanonical(body) });
     const evidence = this.store.writeEvidence(record);
-    this.append(mission, 'WINNER_MEMORY_UPDATED', 'RSI_SITEMIND_INTELLIGENCE', { evidence_ref: evidence.ref });
+    this.append(mission, 'WINNER_MEMORY_UPDATED', 'RSI_SITEMIND_INTELLIGENCE', {
+      evidence_ref: evidence.ref,
+      winner_memory_hash: record.winner_memory_hash,
+    });
     return record;
   }
 
-  recordRollback(mission, rollbackReceipt) {
+  recordRollback(mission, executionReceipt, rollbackReceipt) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      current.execution_receipt_hash === executionReceipt.execution_receipt_hash,
+      'ROLLBACK_EXECUTION_MISMATCH',
+      'Rollback must target the exact recorded execution',
+    );
+    assertRollbackReceipt({
+      mission,
+      executionReceipt,
+      rollbackReceipt,
+      requireAdmission: true,
+    });
     const evidence = this.store.writeEvidence(rollbackReceipt);
     return this.append(mission, 'ROLLED_BACK', 'CANA_DURABLE_AUTHORITY', {
       evidence_ref: evidence.ref,
+      rollback_receipt_hash: rollbackReceipt.rollback_receipt_hash,
       promotion_status: 'ROLLED_BACK',
     });
   }
 
   pause(mission, reason) {
-    return this.append(mission, 'PAUSED', 'CANA_AUTONOMY_KERNEL', { checkpoint: { reason } });
+    const current = this.projection(mission.mission_id);
+    return this.append(mission, 'PAUSED', 'CANA_AUTONOMY_KERNEL', {
+      checkpoint: { reason },
+      resume_state: current.current_lifecycle_state,
+      retry_not_before: null,
+    });
+  }
+
+  resume(mission) {
+    const current = this.projection(mission.mission_id);
+    assertMission(current.current_lifecycle_state === 'PAUSED', 'MISSION_NOT_PAUSED', 'Resume requires a paused mission');
+    assertMission(
+      typeof current.resume_state === 'string',
+      'RESUME_STATE_REQUIRED',
+      'Paused mission has no durable resume state',
+    );
+    if (current.retry_not_before) {
+      assertMission(
+        this.clock().getTime() >= new Date(current.retry_not_before).getTime(),
+        'RETRY_BACKOFF_ACTIVE',
+        'Retry backoff has not elapsed',
+        { retry_not_before: current.retry_not_before },
+      );
+    }
+    return this.append(mission, current.resume_state, 'CANA_AUTONOMY_KERNEL', {
+      resume_state: null,
+      retry_not_before: null,
+    });
   }
 
   cancel(mission, reason) {
@@ -253,10 +430,23 @@ export class AutonomyKernel {
 
   recordFailure(mission, errorCode, retryPolicy) {
     const current = this.projection(mission.mission_id);
+    assertMission(
+      Number.isInteger(retryPolicy.maximum_attempts) && retryPolicy.maximum_attempts > 0,
+      'INVALID_RETRY_POLICY',
+      'maximum_attempts must be a positive integer',
+    );
+    assertMission(
+      Number.isInteger(retryPolicy.backoff_ms) && retryPolicy.backoff_ms >= 0,
+      'INVALID_RETRY_POLICY',
+      'backoff_ms must be a non-negative integer',
+    );
     const attempt = current.execution_attempts.length + 1;
     const retryable = RETRYABLE_ERRORS.has(errorCode);
     const exhausted = attempt >= retryPolicy.maximum_attempts;
     const next = !retryable || exhausted ? 'DEAD_LETTER' : 'PAUSED';
+    const retryNotBefore = next === 'PAUSED'
+      ? new Date(this.clock().getTime() + retryPolicy.backoff_ms).toISOString()
+      : null;
     return this.append(mission, next, 'CANA_AUTONOMY_KERNEL', {
       failure: {
         code: errorCode,
@@ -264,14 +454,23 @@ export class AutonomyKernel {
         attempt,
         maximum_attempts: retryPolicy.maximum_attempts,
         backoff_ms: retryable && !exhausted ? retryPolicy.backoff_ms : null,
+        retry_not_before: retryNotBefore,
       },
       attempt: { attempt, result: next },
       promotion_status: next === 'DEAD_LETTER' ? 'REJECTED' : current.promotion_status,
       lease: null,
+      resume_state: next === 'PAUSED' ? 'CANA_AUTHORIZED' : null,
+      retry_not_before: retryNotBefore,
     });
   }
 
   ownerDecision(mission, reason) {
+    const current = this.projection(mission.mission_id);
+    assertMission(
+      current.current_lifecycle_state === 'DEAD_LETTER',
+      'OWNER_DECISION_NOT_REQUIRED',
+      'Owner decision is reachable only after durable retry exhaustion or non-retryable failure',
+    );
     return this.append(mission, 'OWNER_DECISION_REQUIRED', 'CANA_DURABLE_AUTHORITY', {
       failure: { code: 'OWNER_DECISION_REQUIRED', reason },
     });
