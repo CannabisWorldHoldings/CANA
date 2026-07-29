@@ -30,7 +30,7 @@ const MISSION2_ASSIGNMENT = 'mission2_minimum_alive_loop_2026_07_29';
 const MISSION2_ASSIGNMENT_SHA256 =
   'ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '508ef52dc705b96de7dfe5ee37c6583aa8a5c18576c71126187f77a41626699e';
+  'c7dceda18972256ad2825cc9c30317ec4db6222fc9e784399a2f05fdc0331c25';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',

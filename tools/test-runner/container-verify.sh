@@ -111,6 +111,15 @@ seed_database() {
   )
 }
 
+verify_migration_court_root_resolution() {
+  (
+    cd "$ROOT"
+    node --test \
+      --test-name-pattern='^PORTABILITY CANARY:' \
+      apps/web/tests/migration-court.test.mjs
+  )
+}
+
 write_release_identity() {
   node -e '
     const fs = require("node:fs");
@@ -198,6 +207,8 @@ start_server() {
   export CANA_EXPECTED_SHA="$EXPECTED_SHA"
   probe_release
 }
+
+verify_migration_court_root_resolution
 
 case "$PROFILE" in
   focused|clean-clone)

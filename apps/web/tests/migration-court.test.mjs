@@ -5,6 +5,7 @@ import { createHash, randomUUID, randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { createDemandCredits, hashBody, GENESIS_HASH } from '../src/lib/demand-credits.mjs';
 import { mintPageChallenge, verifyPageChallenge, gradeHandoff } from '../src/lib/page-challenge.mjs';
@@ -42,7 +43,7 @@ import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-
  * fresh temp directory under os.tmpdir(); prisma/dev.db is never touched.
  */
 
-const WEB = process.cwd(); // node --test runs with cwd = apps/web
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 const MIGRATIONS = path.join(WEB, 'prisma', 'migrations');
 const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';

@@ -213,6 +213,18 @@ test('the existing container verifier remains owned without a new exact assignme
   );
 });
 
+test('the migration-court path repair has exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  assert.deepEqual(
+    unownedPaths(['apps/web/tests/migration-court.test.mjs'], manifest),
+    [],
+  );
+  assert.deepEqual(
+    unownedPaths(['apps/web/tests/migration-court-neighbor.test.mjs'], manifest),
+    ['apps/web/tests/migration-court-neighbor.test.mjs'],
+  );
+});
+
 test('PR #2 ownership does not admit neighboring application, test or deployment files', () => {
   const patterns = ownershipPatterns(ownership());
   for (const neighboringPath of [

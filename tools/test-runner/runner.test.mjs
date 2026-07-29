@@ -14,6 +14,8 @@ import {
 import { sha256File } from './receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const WEB = path.join(ROOT, 'apps', 'web');
+const MIGRATION_COURT = path.join(WEB, 'tests', 'migration-court.test.mjs');
 
 function cana(...args) {
   const env = {
@@ -101,6 +103,33 @@ test('help names every required verification and durability surface', () => {
     'durability readback',
   ]) {
     assert.match(result.stdout, new RegExp(command.replaceAll('-', '\\-')));
+  }
+});
+
+test('the migration court resolves apps/web from both supported working directories', () => {
+  const env = { ...process.env };
+  delete env.NODE_TEST_CONTEXT;
+  for (const cwd of [ROOT, WEB]) {
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--test',
+        '--test-name-pattern=^PORTABILITY CANARY:',
+        MIGRATION_COURT,
+      ],
+      {
+        cwd,
+        encoding: 'utf8',
+        env,
+        timeout: 120_000,
+      },
+    );
+    assert.equal(
+      result.status,
+      0,
+      `migration court failed from ${cwd}\n${result.stderr || result.stdout}`,
+    );
+    assert.match(result.stdout, /pass 1\b/);
   }
 });
 
