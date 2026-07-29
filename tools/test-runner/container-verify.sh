@@ -199,6 +199,13 @@ start_server() {
   probe_release
 }
 
+(
+  cd "$ROOT"
+  node --test \
+    --test-name-pattern='^PORTABILITY CANARY:' \
+    apps/web/tests/migration-court.test.mjs
+)
+
 case "$PROFILE" in
   focused|clean-clone)
     prepare_build_database

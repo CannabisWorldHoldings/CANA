@@ -5,6 +5,7 @@ import { createHash, randomUUID, randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { createDemandCredits, hashBody, GENESIS_HASH } from '../src/lib/demand-credits.mjs';
 import { mintPageChallenge, verifyPageChallenge, gradeHandoff } from '../src/lib/page-challenge.mjs';
@@ -42,7 +43,7 @@ import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-
  * fresh temp directory under os.tmpdir(); prisma/dev.db is never touched.
  */
 
-const WEB = process.cwd(); // node --test runs with cwd = apps/web
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 const MIGRATIONS = path.join(WEB, 'prisma', 'migrations');
 const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
@@ -55,10 +56,9 @@ function prismaCliPath() {
     if (path.dirname(dir) === dir) throw new Error('prisma CLI not found');
   }
 }
-const PRISMA_CLI = prismaCliPath();
 
 function prisma_(args, env = {}) {
-  return execFileSync(process.execPath, [PRISMA_CLI, ...args], {
+  return execFileSync(process.execPath, [prismaCliPath(), ...args], {
     cwd: WEB, encoding: 'utf8', timeout: 240_000, stdio: 'pipe',
     env: { ...process.env, ...env },
   });
@@ -178,7 +178,16 @@ async function snapshot(p) {
   };
 }
 
-/* ────────────────────────── 0. PORTABILITY CANARY ────────────────────────── */
+/* ─────────────────────────── 0. APPLICATION ROOT ─────────────────────────── */
+
+test('APPLICATION ROOT: the migration court resolves apps/web from its module location', () => {
+  assert.equal(path.dirname(SCHEMA), path.join(WEB, 'prisma'));
+  assert.equal(path.dirname(MIGRATIONS), path.join(WEB, 'prisma'));
+  assert.ok(fs.existsSync(SCHEMA));
+  assert.ok(fs.existsSync(MIGRATIONS));
+});
+
+/* ────────────────────────── 1. PORTABILITY CANARY ────────────────────────── */
 
 test('PORTABILITY CANARY: the one schema generates valid DDL for sqlite, mysql (MariaDB) and postgresql', () => {
   // PROVES: generation only. Applying the mysql DDL to a live MariaDB 11.4.9
