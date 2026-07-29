@@ -5,8 +5,6 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { PrismaClient } from '@prisma/client';
-
 import {
   assertProductionBuildDatabaseReady,
   createBuildDatabaseWorkspace,
@@ -151,6 +149,7 @@ test('artifact build children cannot inherit Node preload or module-path injecti
 test('artifact build rejects injection when its environment-scrubbing launcher is bypassed', () => {
   const environment = {
     ...process.env,
+    CANA_ARTIFACT_SECURE_LAUNCH: '1',
     NODE_PATH: tempRoot,
     REQUIRED_NODE: process.version,
   };
@@ -163,7 +162,7 @@ test('artifact build rejects injection when its environment-scrubbing launcher i
   });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /BUILD_SECURE_LAUNCH_REQUIRED/u);
+  assert.match(result.stderr, /BUILD_ENVIRONMENT_INJECTION_REFUSED/u);
 });
 
 test('database gate rejects disposable flags and forged build ownership', async () => {
@@ -252,6 +251,7 @@ test('absolute outside-root and textual-prefix paths cannot acquire build author
 test('database gate rejects a symlink database target', async () => {
   await withPreparedWorkspace(async ({ workspace }) => {
     const originalPath = `${workspace.databasePath}.original`;
+    fs.chmodSync(workspace.rootPath, 0o700);
     fs.renameSync(workspace.databasePath, originalPath);
     fs.symlinkSync(originalPath, workspace.databasePath);
     await assert.rejects(
@@ -260,6 +260,7 @@ test('database gate rejects a symlink database target', async () => {
     );
     fs.rmSync(workspace.databasePath);
     fs.renameSync(originalPath, workspace.databasePath);
+    fs.chmodSync(workspace.rootPath, 0o500);
   });
 });
 
@@ -299,6 +300,7 @@ test('database gate detects replacement of the validated target before open', as
       assertProductionBuildDatabaseReady({
         workspace,
         beforeDatabaseOpen() {
+          fs.chmodSync(workspace.rootPath, 0o700);
           fs.renameSync(workspace.databasePath, `${workspace.databasePath}.replaced`);
           fs.writeFileSync(workspace.databasePath, '', { flag: 'wx', mode: 0o600 });
         },
@@ -307,66 +309,50 @@ test('database gate detects replacement of the validated target before open', as
     );
     fs.rmSync(workspace.databasePath);
     fs.renameSync(`${workspace.databasePath}.replaced`, workspace.databasePath);
+    fs.chmodSync(workspace.rootPath, 0o500);
   });
 });
 
-test('database gate detects swap and restoration while Prisma opens the target', async () => {
+test('locked build root prevents target replacement while Prisma opens the database', async () => {
   await withPreparedWorkspace(async ({ workspace }) => {
     const attackerPath = path.join(tempRoot, 'swap-restore-attacker.db');
-    const checkpoint = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
-    try {
-      await checkpoint.$queryRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
-    } finally {
-      await checkpoint.$disconnect();
-    }
     fs.copyFileSync(workspace.databasePath, attackerPath, fs.constants.COPYFILE_EXCL);
-    const ownedPath = `${workspace.databasePath}.owned`;
-    await assert.rejects(
-      assertProductionBuildDatabaseReady({
-        workspace,
-        async connectDatabase(prisma) {
-          fs.renameSync(workspace.databasePath, ownedPath);
-          fs.renameSync(attackerPath, workspace.databasePath);
-          await prisma.$connect();
-          fs.renameSync(workspace.databasePath, attackerPath);
-          fs.renameSync(ownedPath, workspace.databasePath);
-        },
-      }),
-      assertCode('BUILD_DATABASE_OPEN_IDENTITY_MISMATCH'),
-    );
+    const result = await assertProductionBuildDatabaseReady({
+      workspace,
+      beforeDatabaseOpen() {
+        assert.throws(
+          () => fs.renameSync(workspace.databasePath, `${workspace.databasePath}.owned`),
+          (error) => {
+            assert.ok(error?.code === 'EACCES' || error?.code === 'EPERM');
+            return true;
+          },
+        );
+      },
+    });
+    assert.equal(result.checks.every((check) => check.pass), true);
   });
 });
 
-test('initial migration cannot mutate a database swapped in during Prisma open', async () => {
+test('initial migration opens only the target protected by the locked build root', async () => {
   const attackerPath = path.join(tempRoot, 'initial-open-attacker.db');
   fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
   migrate(pathToFileURL(attackerPath).href);
   const attackerBefore = fs.readFileSync(attackerPath);
-  let swappedCopy;
-
-  try {
-    await assert.rejects(
-      prepareProductionBuildDatabase({
-        async connectInitialDatabase(prisma, workspace) {
-          const { databasePath } = workspace;
-          const ownedPath = `${databasePath}.owned`;
-          swappedCopy = path.join(tempRoot, 'initial-open-attacker-copy.db');
-          fs.renameSync(databasePath, ownedPath);
-          fs.copyFileSync(attackerPath, databasePath, fs.constants.COPYFILE_EXCL);
-          try {
-            await prisma.$connect();
-          } finally {
-            fs.renameSync(databasePath, swappedCopy);
-            fs.renameSync(ownedPath, databasePath);
-          }
+  const prepared = await prepareProductionBuildDatabase({
+    beforeInitialDatabaseOpen(workspace) {
+      assert.throws(
+        () => fs.renameSync(workspace.databasePath, `${workspace.databasePath}.owned`),
+        (error) => {
+          assert.ok(error?.code === 'EACCES' || error?.code === 'EPERM');
+          return true;
         },
-      }),
-      assertCode('BUILD_DATABASE_OPEN_IDENTITY_MISMATCH'),
-    );
+      );
+    },
+  });
+  try {
     assert.deepEqual(fs.readFileSync(attackerPath), attackerBefore);
-    assert.deepEqual(fs.readFileSync(swappedCopy), attackerBefore);
   } finally {
-    if (swappedCopy) fs.rmSync(swappedCopy, { force: true });
+    prepared.workspace.cleanup();
   }
 });
 
@@ -393,13 +379,16 @@ test('atomic cleanup refuses a replacement root without deleting it', async () =
 test('atomic cleanup refuses unowned root content without deleting it', async () => {
   const { workspace } = await prepareProductionBuildDatabase();
   const unownedPath = path.join(workspace.rootPath, 'unowned.txt');
+  fs.chmodSync(workspace.rootPath, 0o700);
   fs.writeFileSync(unownedPath, 'must survive refusal', { flag: 'wx', mode: 0o600 });
   await assert.rejects(
     async () => workspace.cleanup(),
     assertCode('BUILD_DATABASE_CLEANUP_REFUSED'),
   );
   assert.equal(fs.readFileSync(unownedPath, 'utf8'), 'must survive refusal');
+  fs.chmodSync(workspace.rootPath, 0o700);
   fs.unlinkSync(unownedPath);
+  fs.chmodSync(workspace.rootPath, 0o500);
   workspace.cleanup();
 });
 
@@ -429,6 +418,18 @@ test('cleanup removes only the retained inode after quarantine validation', asyn
 test('gate accepts only its initialized process-local database capability', async () => {
   await withPreparedWorkspace(async ({ workspace, result }) => {
     const before = fs.lstatSync(workspace.databasePath);
+    assert.equal(fs.statSync(workspace.rootPath).mode & 0o777, 0o500);
+    assert.deepEqual(
+      fs.readdirSync(workspace.rootPath).sort(),
+      ['build.db', 'build.db-shm', 'build.db-wal'],
+    );
+    for (const entry of fs.readdirSync(workspace.rootPath)) {
+      const stats = fs.lstatSync(path.join(workspace.rootPath, entry));
+      assert.equal(stats.isFile(), true);
+      assert.equal(stats.isSymbolicLink(), false);
+      assert.equal(stats.nlink, 1);
+      assert.equal(stats.mode & 0o077, 0);
+    }
     const repeated = await assertProductionBuildDatabaseReady({ workspace });
     const after = fs.lstatSync(workspace.databasePath);
     assert.equal(result.provider, 'sqlite');
@@ -499,6 +500,7 @@ test('cleanup refusal cannot suppress signal termination', () => {
        import { installProductionBuildDatabase } from ${JSON.stringify(moduleUrl)};
        await installProductionBuildDatabase();
        const root = path.dirname(fileURLToPath(process.env.DATABASE_URL));
+       fs.chmodSync(root, 0o700);
        fs.writeFileSync(path.join(root, 'unowned.txt'), 'preserve', { flag: 'wx', mode: 0o600 });
        process.stdout.write(root + '\\n');
        setTimeout(() => process.kill(process.pid, 'SIGTERM'), 10);

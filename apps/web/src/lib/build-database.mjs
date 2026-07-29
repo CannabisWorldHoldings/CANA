@@ -232,6 +232,12 @@ function pathIsContained(root, target) {
     && !path.isAbsolute(relative);
 }
 
+function singleConnectionDatabaseUrl(workspace) {
+  const databaseUrl = new URL(workspace.databaseUrl);
+  databaseUrl.searchParams.set('connection_limit', '1');
+  return databaseUrl.href;
+}
+
 function secureDirectoryStats(directory, code) {
   let stats;
   try {
@@ -281,6 +287,50 @@ function stateFor(workspace) {
   return state;
 }
 
+function setWorkspacePathLock(state, locked) {
+  fs.fchmodSync(state.rootDescriptor, locked ? 0o500 : 0o700);
+  state.pathLocked = locked;
+}
+
+function assertOwnedSidecars(state) {
+  if (state.sidecars.size === 0) return;
+  const expected = new Set([BUILD_DATABASE_NAME, ...BUILD_DATABASE_SIDECARS]);
+  const entries = fs.readdirSync(state.rootPath);
+  if (
+    entries.length !== expected.size
+    || entries.some((entry) => !expected.has(entry))
+  ) {
+    refusal(
+      'BUILD_DATABASE_IDENTITY_CHANGED',
+      'Locked build database root contains content outside its owned database lifecycle',
+    );
+  }
+  for (const [sidecarPath, sidecar] of state.sidecars) {
+    let named;
+    let retained;
+    try {
+      named = fs.lstatSync(sidecarPath, { bigint: true });
+      retained = fs.fstatSync(sidecar.descriptor, { bigint: true });
+    } catch {
+      refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
+    }
+    if (
+      !named.isFile()
+      || named.isSymbolicLink()
+      || named.nlink !== 1n
+      || !sameIdentity(sidecar.identity, identityOf(named))
+      || !sameIdentity(sidecar.identity, identityOf(retained))
+      || (Number(named.mode) & 0o077) !== 0
+      || (
+        typeof process.getuid === 'function'
+        && Number(named.uid) !== process.getuid()
+      )
+    ) {
+      refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
+    }
+  }
+}
+
 function assertWorkspaceIdentity(workspace) {
   const state = stateFor(workspace);
   let rootStats;
@@ -319,6 +369,7 @@ function assertWorkspaceIdentity(workspace) {
     || !sameIdentity(state.rootIdentity, identityOf(rootDescriptorStats))
     || !sameIdentity(state.databaseIdentity, identityOf(databaseStats))
     || !sameIdentity(state.databaseIdentity, identityOf(descriptorStats))
+    || (Number(rootStats.mode) & 0o777) !== (state.pathLocked ? 0o500 : 0o700)
     || (Number(databaseStats.mode) & 0o077) !== 0
     || (
       typeof process.getuid === 'function'
@@ -327,7 +378,59 @@ function assertWorkspaceIdentity(workspace) {
   ) {
     refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
   }
+  assertOwnedSidecars(state);
   return state;
+}
+
+function retainBuildDatabaseSidecars(state) {
+  const retained = new Map();
+  try {
+    for (const name of BUILD_DATABASE_SIDECARS) {
+      const sidecarPath = path.join(state.rootPath, name);
+      let descriptor;
+      try {
+        descriptor = fs.openSync(
+          sidecarPath,
+          fs.constants.O_CREAT
+            | fs.constants.O_EXCL
+            | fs.constants.O_RDWR
+            | (fs.constants.O_NOFOLLOW ?? 0),
+          0o600,
+        );
+      } catch (error) {
+        if (error?.code !== 'EEXIST') throw error;
+        descriptor = fs.openSync(
+          sidecarPath,
+          fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0),
+        );
+      }
+      retained.set(sidecarPath, { descriptor, identity: null });
+      const stats = fs.fstatSync(descriptor, { bigint: true });
+      const named = fs.lstatSync(sidecarPath, { bigint: true });
+      if (
+        !stats.isFile()
+        || named.isSymbolicLink()
+        || named.nlink !== 1n
+        || !sameIdentity(identityOf(stats), identityOf(named))
+        || (Number(named.mode) & 0o077) !== 0
+        || (
+          typeof process.getuid === 'function'
+          && Number(named.uid) !== process.getuid()
+        )
+      ) {
+        refusal(
+          'BUILD_DATABASE_IDENTITY_CHANGED',
+          'Build database sidecar was not exclusively owned by this build',
+        );
+      }
+      retained.get(sidecarPath).identity = identityOf(stats);
+    }
+  } catch (error) {
+    for (const sidecar of retained.values()) fs.closeSync(sidecar.descriptor);
+    throw error;
+  }
+  state.sidecars = retained;
+  setWorkspacePathLock(state, true);
 }
 
 function descriptorCleanupPython() {
@@ -375,6 +478,14 @@ function removeOwnedQuarantine(state, quarantineDescriptor) {
 function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   if (cleanedWorkspaces.has(workspace)) return;
   const state = stateFor(workspace);
+  try {
+    assertWorkspaceIdentity(workspace);
+  } catch {
+    refusal(
+      'BUILD_DATABASE_CLEANUP_REFUSED',
+      'Cleanup refused a changed build database identity before quarantine',
+    );
+  }
   const quarantineContainer = fs.mkdtempSync(
     path.join(fs.realpathSync(os.tmpdir()), INVALIDATED_DATABASE_ROOT_PREFIX),
   );
@@ -386,6 +497,7 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
       | (fs.constants.O_NOFOLLOW ?? 0),
   );
   const quarantinePath = path.join(quarantineContainer, 'root');
+  setWorkspacePathLock(state, false);
   fs.renameSync(state.rootPath, quarantinePath);
   const restoreQuarantine = () => {
     let restored = false;
@@ -395,6 +507,7 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
       fs.renameSync(quarantinePath, state.rootPath);
       restored = true;
     }
+    if (restored) setWorkspacePathLock(state, true);
     fs.closeSync(quarantineDescriptor);
     if (restored) {
       fs.rmdirSync(quarantineContainer);
@@ -454,9 +567,16 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
     fs.ftruncateSync(state.descriptor, 0);
     fs.fsyncSync(state.descriptor);
     fs.fchmodSync(state.descriptor, 0);
+    for (const sidecar of state.sidecars.values()) {
+      fs.ftruncateSync(sidecar.descriptor, 0);
+      fs.fsyncSync(sidecar.descriptor);
+      fs.fchmodSync(sidecar.descriptor, 0);
+    }
     fs.fchmodSync(state.rootDescriptor, 0);
     cleanupFailed = true;
   }
+  for (const sidecar of state.sidecars.values()) fs.closeSync(sidecar.descriptor);
+  state.sidecars.clear();
   fs.closeSync(quarantineDescriptor);
   fs.closeSync(state.rootDescriptor);
   state.rootDescriptor = undefined;
@@ -514,6 +634,7 @@ export function createBuildDatabaseWorkspace() {
     0o600,
   );
   const databaseStats = fs.fstatSync(descriptor, { bigint: true });
+  fs.fchmodSync(rootDescriptor, 0o500);
   const workspace = Object.freeze({
     rootPath,
     databasePath,
@@ -532,20 +653,27 @@ export function createBuildDatabaseWorkspace() {
     rootDescriptor,
     descriptor,
     marker: randomBytes(32).toString('hex'),
+    sidecars: new Map(),
+    pathLocked: true,
     initialized: false,
     cleaned: false,
   });
   return workspace;
 }
 
-async function initializeWorkspace(workspace, connectDatabase) {
+async function initializeWorkspace(workspace, beforeInitialDatabaseOpen) {
   const state = assertWorkspaceIdentity(workspace);
-  const prisma = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
+  await beforeInitialDatabaseOpen?.(workspace);
+  assertWorkspaceIdentity(workspace);
+  const prisma = new PrismaClient({
+    datasources: { db: { url: singleConnectionDatabaseUrl(workspace) } },
+  });
+  let result;
   try {
     const beforeOpen = openFileDescriptors();
-    await (connectDatabase ? connectDatabase(prisma, workspace) : prisma.$connect());
-    await prisma.$queryRawUnsafe('SELECT count(*) AS count FROM sqlite_master');
+    await prisma.$connect();
     assertOpenedDatabaseIdentity(beforeOpen, state);
+    setWorkspacePathLock(state, false);
     assertWorkspaceIdentity(workspace);
     try {
       await migrateOwnedBuildDatabase(prisma);
@@ -564,17 +692,41 @@ async function initializeWorkspace(workspace, connectDatabase) {
       `INSERT INTO "${OWNERSHIP_TABLE}" (marker) VALUES (?)`,
       state.marker,
     );
+    const initialized = await initializeDatabaseConfig(prisma);
+    if (!initialized.ok) {
+      refusal(
+        'DATABASE_INITIALIZATION_FAILED',
+        `Production build database initialization failed for: ${[
+          ...initialized.failures.map((failure) => failure.pragma),
+          ...initialized.mismatches.map((mismatch) => mismatch.pragma),
+        ].join(', ')}`,
+      );
+    }
+    const readiness = await databaseReadiness(prisma, { provider: 'sqlite' });
+    if (!readiness.ready) {
+      refusal(
+        'DATABASE_NOT_READY',
+        `Production build database is not ready: ${readiness.checks
+          .filter((check) => !check.pass)
+          .map((check) => check.name)
+          .join(', ')}`,
+      );
+    }
+    await prisma.$queryRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
+    result = { provider: 'sqlite', checks: readiness.checks };
+    state.result = result;
+    state.initialized = true;
   } finally {
     await prisma.$disconnect();
   }
+  retainBuildDatabaseSidecars(state);
   assertWorkspaceIdentity(workspace);
-  state.initialized = true;
+  return result;
 }
 
 export async function assertProductionBuildDatabaseReady({
   workspace,
   beforeDatabaseOpen,
-  connectDatabase,
 } = {}) {
   const state = assertWorkspaceIdentity(workspace);
   if (!state.initialized) {
@@ -583,11 +735,12 @@ export async function assertProductionBuildDatabaseReady({
   await beforeDatabaseOpen?.();
   assertWorkspaceIdentity(workspace);
 
-  const prisma = new PrismaClient({ datasources: { db: { url: workspace.databaseUrl } } });
-  let result;
+  const prisma = new PrismaClient({
+    datasources: { db: { url: singleConnectionDatabaseUrl(workspace) } },
+  });
   try {
     const beforeOpen = openFileDescriptors();
-    await (connectDatabase ? connectDatabase(prisma) : prisma.$connect());
+    await prisma.$connect();
     assertOpenedDatabaseIdentity(beforeOpen, state);
     let markers;
     try {
@@ -610,17 +763,6 @@ export async function assertProductionBuildDatabaseReady({
       );
     }
     assertWorkspaceIdentity(workspace);
-    const initialized = await initializeDatabaseConfig(prisma);
-    if (!initialized.ok) {
-      refusal(
-        'DATABASE_INITIALIZATION_FAILED',
-        `Production build database initialization failed for: ${[
-          ...initialized.failures.map((failure) => failure.pragma),
-          ...initialized.mismatches.map((mismatch) => mismatch.pragma),
-        ].join(', ')}`,
-      );
-    }
-    assertWorkspaceIdentity(workspace);
     const readiness = await databaseReadiness(prisma, { provider: 'sqlite' });
     if (!readiness.ready) {
       refusal(
@@ -632,22 +774,22 @@ export async function assertProductionBuildDatabaseReady({
       );
     }
     assertWorkspaceIdentity(workspace);
-    await prisma.$queryRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
-    result = { provider: 'sqlite', checks: readiness.checks };
+    return { provider: 'sqlite', checks: readiness.checks };
   } finally {
     await prisma.$disconnect();
   }
-  assertWorkspaceIdentity(workspace);
-  return result;
 }
 
 export async function prepareProductionBuildDatabase(options = {}) {
   const workspace = createBuildDatabaseWorkspace();
   try {
-    await initializeWorkspace(workspace, options.connectInitialDatabase);
-    const readinessOptions = { ...options };
-    delete readinessOptions.connectInitialDatabase;
-    const result = await assertProductionBuildDatabaseReady({ workspace, ...readinessOptions });
+    const result = await initializeWorkspace(workspace, options.beforeInitialDatabaseOpen);
+    if (options.beforeDatabaseOpen) {
+      await assertProductionBuildDatabaseReady({
+        workspace,
+        beforeDatabaseOpen: options.beforeDatabaseOpen,
+      });
+    }
     return { workspace, result };
   } catch (error) {
     try {
