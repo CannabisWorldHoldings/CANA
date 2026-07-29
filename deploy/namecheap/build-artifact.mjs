@@ -1,5 +1,5 @@
 #!/bin/sh
-':' //; unset NODE_OPTIONS NODE_PATH; exec node "$0" "$@"
+':' //; case "${CANA_VERIFIED_NODE-}" in /*) ;; *) echo "BUILD_NODE_IDENTITY_REFUSED: set CANA_VERIFIED_NODE to the vetted absolute Node executable" >&2; exit 126;; esac; test -x "$CANA_VERIFIED_NODE" || { echo "BUILD_NODE_IDENTITY_REFUSED: CANA_VERIFIED_NODE is not executable" >&2; exit 126; }; unset NODE_OPTIONS NODE_PATH; CANA_ARTIFACT_SECURE_LAUNCH=1; export CANA_ARTIFACT_SECURE_LAUNCH CANA_VERIFIED_NODE; exec "$CANA_VERIFIED_NODE" "$0" "$@"
 
 /**
  * Builds the Namecheap/cPanel deployment artifact OFF-SERVER — and proves it
@@ -29,8 +29,10 @@
  *      passed.
  *
  * Run from the repo root:
- *   ./deploy/namecheap/build-artifact.mjs
- *   SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs
+ *   CANA_VERIFIED_NODE=$HOME/.nvm/versions/node/v20.20.2/bin/node \
+ *     ./deploy/namecheap/build-artifact.mjs
+ *   CANA_VERIFIED_NODE=$HOME/.nvm/versions/node/v20.20.2/bin/node \
+ *     SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs
  */
 import { execFileSync, execSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -81,10 +83,37 @@ if (process.env.NODE_OPTIONS !== undefined || process.env.NODE_PATH !== undefine
   throw error;
 }
 
+if (
+  process.env.CANA_ARTIFACT_SECURE_LAUNCH !== '1'
+  || typeof process.env.CANA_VERIFIED_NODE !== 'string'
+  || !path.isAbsolute(process.env.CANA_VERIFIED_NODE)
+) {
+  const error = new Error(
+    'Artifact builds require the vetted absolute Node executable through the secure launcher',
+  );
+  error.code = 'BUILD_NODE_IDENTITY_REFUSED';
+  throw error;
+}
+let verifiedNodeExecutable;
+try {
+  verifiedNodeExecutable = fs.realpathSync(process.env.CANA_VERIFIED_NODE);
+} catch {
+  const error = new Error('The vetted Node executable cannot be resolved');
+  error.code = 'BUILD_NODE_IDENTITY_REFUSED';
+  throw error;
+}
+if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
+  const error = new Error(
+    `Artifact build started with ${process.execPath}, not the vetted Node executable`,
+  );
+  error.code = 'BUILD_NODE_IDENTITY_REFUSED';
+  throw error;
+}
+
 // Pin the build/verify Node to the production runtime (Namecheap Node 20.20.2). A shell
-// wrapper resolving a different `node` (e.g. a Hermes v22 binary) invalidates the isolation
-// proof. Invoke the exact binary, e.g.:
-//   PATH=$HOME/.nvm/versions/node/v20.20.2/bin:$PATH ./deploy/namecheap/build-artifact.mjs
+// launcher resolving an ambient `node` invalidates the isolation proof. The prelude above
+// accepts only the explicitly vetted absolute executable and this process verifies that
+// exact real path before running any build command.
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
 if (process.version !== REQUIRED_NODE && process.env.ALLOW_NODE_MISMATCH !== '1') {
   throw new Error(

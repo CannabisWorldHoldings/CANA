@@ -162,8 +162,10 @@ test('artifact build children cannot inherit Node preload or module-path injecti
       cwd: repoRoot,
       env: {
         ...process.env,
+        CANA_VERIFIED_NODE: process.execPath,
         NODE_OPTIONS: `--require=${preloadPath}`,
         NODE_PATH: tempRoot,
+        REQUIRED_NODE: process.version,
       },
       encoding: 'utf8',
       timeout: 30_000,
@@ -177,6 +179,64 @@ test('artifact build children cannot inherit Node preload or module-path injecti
     nodePath: null,
   });
   assert.equal(fs.existsSync(preloadSentinel), false);
+});
+
+test('artifact launcher cannot execute a PATH-shadowed Node binary', () => {
+  const shadowDirectory = path.join(tempRoot, 'shadow-path');
+  const shadowNode = path.join(shadowDirectory, 'node');
+  const shadowSentinel = path.join(tempRoot, 'shadow-node-executed');
+  fs.mkdirSync(shadowDirectory);
+  fs.writeFileSync(
+    shadowNode,
+    `#!/bin/sh\nprintf executed > ${JSON.stringify(shadowSentinel)}\nexit 99\n`,
+    { flag: 'wx', mode: 0o700 },
+  );
+  const result = spawnSync(
+    buildArtifactPath,
+    ['--verify-child-environment'],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        CANA_VERIFIED_NODE: process.execPath,
+        PATH: `${shadowDirectory}${path.delimiter}${process.env.PATH}`,
+        REQUIRED_NODE: process.version,
+      },
+      encoding: 'utf8',
+      timeout: 30_000,
+    },
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(fs.existsSync(shadowSentinel), false);
+  assert.equal(JSON.parse(result.stdout).marker, 'verified');
+});
+
+test('artifact launcher fails closed without a vetted absolute Node executable', () => {
+  const shadowDirectory = path.join(tempRoot, 'missing-vetted-node-shadow');
+  const shadowNode = path.join(shadowDirectory, 'node');
+  const shadowSentinel = path.join(tempRoot, 'missing-vetted-node-executed');
+  fs.mkdirSync(shadowDirectory);
+  fs.writeFileSync(
+    shadowNode,
+    `#!/bin/sh\nprintf executed > ${JSON.stringify(shadowSentinel)}\nexit 99\n`,
+    { flag: 'wx', mode: 0o700 },
+  );
+  const environment = {
+    ...process.env,
+    PATH: `${shadowDirectory}${path.delimiter}${process.env.PATH}`,
+  };
+  delete environment.CANA_VERIFIED_NODE;
+  const result = spawnSync(buildArtifactPath, ['--verify-child-environment'], {
+    cwd: repoRoot,
+    env: environment,
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+
+  assert.equal(result.status, 126);
+  assert.match(result.stderr, /BUILD_NODE_IDENTITY_REFUSED/u);
+  assert.equal(fs.existsSync(shadowSentinel), false);
 });
 
 test('artifact build rejects injection when its environment-scrubbing launcher is bypassed', () => {
