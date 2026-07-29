@@ -13,6 +13,7 @@ import {
 const BUILD_DATABASE_ROOT_PREFIX = 'cana-build-database-';
 const INVALIDATED_DATABASE_ROOT_PREFIX = 'cana-invalidated-database-';
 const BUILD_DATABASE_NAME = 'build.db';
+const BUILD_DATABASE_SIDECARS = [`${BUILD_DATABASE_NAME}-shm`, `${BUILD_DATABASE_NAME}-wal`];
 const OWNERSHIP_TABLE = '__cana_build_database_ownership';
 const SQLITE_HEADER = Buffer.from('SQLite format 3\0');
 const WEB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -34,8 +35,8 @@ import json
 import os
 import stat
 
-root_fd, container_fd, temporary_fd, database_fd = 3, 4, 5, 6
-allowed = {"build.db"}
+root_fd, container_fd, temporary_fd, database_fd, shm_fd, wal_fd = 3, 4, 5, 6, 7, 8
+allowed = {"build.db", "build.db-shm", "build.db-wal"}
 entries = set(os.listdir(root_fd))
 if "build.db" not in entries or entries - allowed:
     raise RuntimeError("owned root contains unexpected entries")
@@ -54,6 +55,23 @@ if (
 os.ftruncate(database_fd, 0)
 os.fsync(database_fd)
 os.fchmod(database_fd, 0)
+for name, descriptor in (("build.db-shm", shm_fd), ("build.db-wal", wal_fd)):
+    sidecar = os.fstat(descriptor)
+    named_sidecar = os.stat(name, dir_fd=root_fd, follow_symlinks=False)
+    if (
+        not stat.S_ISREG(named_sidecar.st_mode)
+        or named_sidecar.st_nlink != 1
+        or named_sidecar.st_uid != os.getuid()
+        or named_sidecar.st_mode & 0o077
+        or (sidecar.st_dev, sidecar.st_ino) != (named_sidecar.st_dev, named_sidecar.st_ino)
+    ):
+        raise RuntimeError("owned database sidecar identity changed before descriptor cleanup")
+    os.ftruncate(descriptor, 0)
+    os.fsync(descriptor)
+    os.fchmod(descriptor, 0)
+
+os.unlink("build.db-shm", dir_fd=root_fd)
+os.unlink("build.db-wal", dir_fd=root_fd)
 os.unlink("build.db", dir_fd=root_fd)
 
 root = os.fstat(root_fd)
@@ -350,7 +368,73 @@ function setWorkspacePathLock(state, locked) {
   state.pathLocked = locked;
 }
 
-function assertWorkspaceIdentity(workspace) {
+function captureOwnedSidecars(state) {
+  const retained = new Map();
+  try {
+    const allowed = new Set([BUILD_DATABASE_NAME, ...BUILD_DATABASE_SIDECARS]);
+    const entries = fs.readdirSync(state.rootPath);
+    if (entries.some((entry) => !allowed.has(entry))) {
+      refusal(
+        'BUILD_DATABASE_CLEANUP_REFUSED',
+        'Build database root contains content outside its owned lifecycle',
+      );
+    }
+    for (const name of BUILD_DATABASE_SIDECARS) {
+      const sidecarPath = path.join(state.rootPath, name);
+      let descriptor;
+      try {
+        descriptor = fs.openSync(
+          sidecarPath,
+          fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0),
+        );
+      } catch (error) {
+        if (error?.code !== 'ENOENT') throw error;
+        descriptor = fs.openSync(
+          sidecarPath,
+          fs.constants.O_CREAT
+            | fs.constants.O_EXCL
+            | fs.constants.O_RDWR
+            | (fs.constants.O_NOFOLLOW ?? 0),
+          0o600,
+        );
+      }
+      const descriptorStats = fs.fstatSync(descriptor, { bigint: true });
+      const namedStats = fs.lstatSync(sidecarPath, { bigint: true });
+      if (
+        !descriptorStats.isFile()
+        || namedStats.isSymbolicLink()
+        || namedStats.nlink !== 1n
+        || !sameIdentity(identityOf(descriptorStats), identityOf(namedStats))
+        || (Number(namedStats.mode) & 0o077) !== 0
+        || (
+          typeof process.getuid === 'function'
+          && Number(namedStats.uid) !== process.getuid()
+        )
+      ) {
+        refusal(
+          'BUILD_DATABASE_CLEANUP_REFUSED',
+          'Build database sidecar is not an exact build-owned regular file',
+        );
+      }
+      retained.set(name, {
+        descriptor,
+        identity: identityOf(descriptorStats),
+      });
+    }
+  } catch (error) {
+    for (const { descriptor } of retained.values()) {
+      try {
+        fs.closeSync(descriptor);
+      } catch {
+        // Preserve the original fail-closed capture error.
+      }
+    }
+    throw error;
+  }
+  state.sidecars = retained;
+}
+
+function assertWorkspaceIdentity(workspace, { allowUncapturedSidecars = false } = {}) {
   const state = stateFor(workspace);
   let rootStats;
   let databaseStats;
@@ -397,11 +481,56 @@ function assertWorkspaceIdentity(workspace) {
   ) {
     refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
   }
-  if (fs.readdirSync(state.rootPath).some((entry) => entry !== BUILD_DATABASE_NAME)) {
+  const expectedEntries = new Set([
+    BUILD_DATABASE_NAME,
+    ...(
+      allowUncapturedSidecars
+        ? BUILD_DATABASE_SIDECARS
+        : state.sidecars.keys()
+    ),
+  ]);
+  const entries = fs.readdirSync(state.rootPath);
+  if (
+    entries.length > expectedEntries.size
+    || entries.some((entry) => !expectedEntries.has(entry))
+  ) {
     refusal(
       'BUILD_DATABASE_IDENTITY_CHANGED',
-      'Build database root contains content outside its immutable build lifecycle',
+      `Build database root contains unexpected entries: ${entries.sort().join(', ')}`,
     );
+  }
+  if (allowUncapturedSidecars) {
+    for (const name of entries.filter((entry) => entry !== BUILD_DATABASE_NAME)) {
+      const stats = fs.lstatSync(path.join(state.rootPath, name), { bigint: true });
+      if (
+        stats.isSymbolicLink()
+        || !stats.isFile()
+        || stats.nlink !== 1n
+        || (Number(stats.mode) & 0o077) !== 0
+      ) {
+        refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar is unsafe');
+      }
+    }
+  }
+  for (const [name, retained] of state.sidecars) {
+    let namedStats;
+    let descriptorStats;
+    try {
+      namedStats = fs.lstatSync(path.join(state.rootPath, name), { bigint: true });
+      descriptorStats = fs.fstatSync(retained.descriptor, { bigint: true });
+    } catch {
+      refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
+    }
+    if (
+      namedStats.isSymbolicLink()
+      || !namedStats.isFile()
+      || namedStats.nlink !== 1n
+      || !sameIdentity(retained.identity, identityOf(namedStats))
+      || !sameIdentity(retained.identity, identityOf(descriptorStats))
+      || (Number(namedStats.mode) & 0o077) !== 0
+    ) {
+      refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
+    }
   }
   return state;
 }
@@ -437,6 +566,8 @@ function removeOwnedQuarantine(state, quarantineDescriptor) {
         quarantineDescriptor,
         state.temporaryRootDescriptor,
         state.descriptor,
+        state.sidecars.get(`${BUILD_DATABASE_NAME}-shm`).descriptor,
+        state.sidecars.get(`${BUILD_DATABASE_NAME}-wal`).descriptor,
       ],
     });
     return {
@@ -452,11 +583,20 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   if (cleanedWorkspaces.has(workspace)) return;
   const state = stateFor(workspace);
   try {
+    assertWorkspaceIdentity(workspace, { allowUncapturedSidecars: true });
+    setWorkspacePathLock(state, false);
+    try {
+      captureOwnedSidecars(state);
+    } finally {
+      setWorkspacePathLock(state, true);
+    }
     assertWorkspaceIdentity(workspace);
-  } catch {
+  } catch (error) {
     refusal(
       'BUILD_DATABASE_CLEANUP_REFUSED',
-      'Cleanup refused a changed build database identity before quarantine',
+      `Cleanup refused a changed build database identity before quarantine: ${
+        [error?.code, error?.message].filter(Boolean).join(': ') || error
+      }`,
     );
   }
   const quarantineContainer = fs.mkdtempSync(
@@ -489,6 +629,7 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   let quarantinedRoot;
   let quarantinedDatabase;
   let entries;
+  let sidecars;
   try {
     quarantinedRoot = fs.lstatSync(quarantinePath, { bigint: true });
     quarantinedDatabase = fs.lstatSync(
@@ -496,6 +637,10 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
       { bigint: true },
     );
     entries = fs.readdirSync(quarantinePath).sort();
+    sidecars = BUILD_DATABASE_SIDECARS.map((name) => ({
+      name,
+      stats: fs.lstatSync(path.join(quarantinePath, name), { bigint: true }),
+    }));
   } catch {
     restoreQuarantine();
     refusal(
@@ -506,7 +651,17 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
   if (
     !sameIdentity(state.rootIdentity, identityOf(quarantinedRoot))
     || !sameIdentity(state.databaseIdentity, identityOf(quarantinedDatabase))
-    || entries.some((entry) => entry !== BUILD_DATABASE_NAME)
+    || entries.length !== 1 + BUILD_DATABASE_SIDECARS.length
+    || entries.some(
+      (entry) => entry !== BUILD_DATABASE_NAME && !BUILD_DATABASE_SIDECARS.includes(entry)
+    )
+    || sidecars.some(({ name, stats }) => (
+      stats.isSymbolicLink()
+      || !stats.isFile()
+      || stats.nlink !== 1n
+      || !sameIdentity(state.sidecars.get(name).identity, identityOf(stats))
+      || (Number(stats.mode) & 0o077) !== 0
+    ))
   ) {
     restoreQuarantine();
     refusal(
@@ -526,6 +681,11 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
       fs.fsyncSync(state.descriptor);
       fs.fchmodSync(state.descriptor, 0);
       fs.fchmodSync(state.rootDescriptor, 0);
+      for (const { descriptor } of state.sidecars.values()) {
+        fs.ftruncateSync(descriptor, 0);
+        fs.fsyncSync(descriptor);
+        fs.fchmodSync(descriptor, 0);
+      }
     } catch {
       // The final named refusal below preserves the fail-closed contract.
     }
@@ -544,6 +704,14 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
     cleanupFailed = true;
   }
   state.temporaryRootDescriptor = undefined;
+  for (const retained of state.sidecars.values()) {
+    try {
+      fs.closeSync(retained.descriptor);
+    } catch {
+      cleanupFailed = true;
+    }
+  }
+  state.sidecars.clear();
   try {
     fs.closeSync(state.descriptor);
   } catch {
@@ -619,6 +787,7 @@ export function createBuildDatabaseWorkspace() {
     rootDescriptor,
     descriptor,
     marker: randomBytes(32).toString('hex'),
+    sidecars: new Map(),
     pathLocked: true,
     initialized: false,
     cleaned: false,

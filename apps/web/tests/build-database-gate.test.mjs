@@ -506,6 +506,26 @@ test('cleanup removes only the retained inode after quarantine validation', asyn
   assert.equal(cleanup.quarantinePath, path.dirname(replacementPath));
 });
 
+test('cleanup never unlinks a sidecar replacement after validation', async () => {
+  const { workspace } = await prepareProductionBuildDatabase();
+  let replacementPath;
+  assert.throws(
+    () => workspace.cleanup({
+      afterQuarantineValidation({ quarantinePath }) {
+        replacementPath = path.join(quarantinePath, 'build.db-wal');
+        fs.renameSync(replacementPath, `${replacementPath}.owned`);
+        fs.writeFileSync(replacementPath, 'replacement must survive', {
+          flag: 'wx',
+          mode: 0o600,
+        });
+      },
+    }),
+    assertCode('BUILD_DATABASE_CLEANUP_FAILED'),
+  );
+  fs.chmodSync(path.dirname(replacementPath), 0o700);
+  assert.equal(fs.readFileSync(replacementPath, 'utf8'), 'replacement must survive');
+});
+
 test('closed retained database descriptor produces a named cleanup refusal', async () => {
   const { workspace } = await prepareProductionBuildDatabase();
   const database = fs.lstatSync(workspace.databasePath);
