@@ -16,7 +16,7 @@ governor, ledger, router, memory, provider, or legacy loop:
 
 | Surface | Canonical owner | Mission 2 implementation |
 |---|---|---|
-| mission contract, authorization, lifecycle, evidence, promotion, rollback | `CANA_DURABLE_AUTHORITY` | `tools/mission-2/contracts.mjs`, `authorization.mjs`, `store.mjs`, `kernel.mjs` |
+| mission contract, authorization, lifecycle, evidence, promotion, rollback | `CANA_DURABLE_AUTHORITY` | `tools/mission-2/contracts.mjs`, `authorization.mjs`, `lease.mjs`, `store.mjs`, `kernel.mjs` |
 | minimum context and deterministic policy | `RSI_SITEMIND_INTELLIGENCE` | `context.mjs` over the canonical `skills-src/sitemind-context-compiler.mjs` |
 | execution | replaceable execution port | `mock-executor.mjs`, deterministic mock only |
 | independent falsification | CANA-admitted independent verifier | `verifier.mjs`, separate identity and no mutable executor state |
@@ -52,17 +52,22 @@ The append-only SHA-256 event chain and atomic current-state projection implemen
 `ROLLED_BACK` when requested.
 
 Each event binds the prior hash, global sequence, monotonic mission version,
-tenant, workspace, actor, timestamp, lifecycle state, and payload. Reconstruction
-detects mutation, deletion, reordering, stale versions, tenant/workspace drift, and
-history divergence. Content-addressed evidence is written exclusively and verified
-on every read. The projection is a cache; the event chain is the reconstructable
-authority for this shadow implementation.
+tenant, workspace, actor, timestamp, lifecycle state, and payload. An independently
+sealed head anchor binds the durable event count and tail hash. Reconstruction
+repairs only the two valid crash windows in which the event log is ahead of the
+head or projection; it rejects mutation, coordinated tail deletion, reordering,
+stale versions, tenant/workspace drift, and history divergence. Content-addressed
+evidence is written exclusively and verified on every read. Store roots, event
+files, head files, projections, evidence directories, and evidence objects reject
+symlink redirection and opened-file replacement. The projection remains a cache;
+the event chain plus head anchor is the reconstructable authority.
 
-The Autonomy Kernel provides bounded queue eligibility, worker leases, heartbeats,
-lease expiry, checkpoints, process-restart restoration, stale-worker rejection,
-bounded retry/backoff classification, dead-letter state, blocker history, pause,
-cancellation, owner-decision state, and capability quarantine. It never retries
-forever.
+The Autonomy Kernel provides bounded queue eligibility, canonical hash-bound worker
+leases, heartbeats, lease expiry, checkpoints, process-restart restoration,
+stale-worker rejection, bounded retry/backoff enforcement, dead-letter state,
+blocker history, pause, cancellation, reachable owner-decision state, and
+capability quarantine. A paused mission cannot dispatch before authorization, and
+it never retries forever.
 
 ## Context and authorization
 
@@ -86,6 +91,11 @@ hashes and requires:
 - independent executor/verifier identities;
 - an exact-byte rollback contract.
 
+Authorization, lease, execution, verifier, TruthGraph, Winner Memory, and rollback
+receipts use exact schemas and canonical hashes. The in-process authority and
+adapter boundaries admit only receipts they issued; serialization-equivalent
+caller forgeries are denied before execution, promotion, memory, or rollback.
+
 ## Replaceable execution and verification
 
 The deterministic mock adapter runs only in an isolated, clean Git worktree. It
@@ -96,9 +106,12 @@ authorized file. It performs no model call, network service, credential access,
 deployment, production mutation, spend, or external effect.
 
 The verifier receives immutable receipts and independently re-reads the sandbox. It
-recomputes source, authorization, scope, before/after, success, rollback, provider,
-budget, and external-effect claims. It can return `APPROVE`, `REJECT`,
-`INCONCLUSIVE`, or `BLOCKED`; only CANA converts `APPROVE` into promotion.
+recomputes Git HEAD and tree, the exact changed-file set, source bytes, deterministic
+operation, authorization, lease, execution hash, scope, before/after hashes and
+byte lengths, success, rollback reconstructability, provider, budget, and
+external-effect claims. It proves its own inspection left the implementation
+unchanged. It can return `APPROVE`, `REJECT`, `INCONCLUSIVE`, or `BLOCKED`; only
+CANA converts an admitted exact `APPROVE` receipt into promotion.
 
 ## Knowledge Foundry and Intelligence OS
 

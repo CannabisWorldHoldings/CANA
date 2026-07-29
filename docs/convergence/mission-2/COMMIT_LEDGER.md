@@ -17,6 +17,11 @@ Traceable Mission 2 commits:
 | `5b4f61f3f29d1a8f8c277caf9d09f205c2ddc79c` | add this non-self-referential commit ledger |
 | `aba819087d432d55cf2ebb464d3bebfa56dba26f` | record the exact ownership-policy repair evidence |
 | `27057809850fa6a96bfe35d73d5ce86de55679bd` | reconcile exact Mission 2 durability ownership |
+| `c0966a456de08cff111e5e310da19891a5af15e3` | seal the non-self-referential Mission 2 commit ledger |
+| `73ca0b03e86f8839c7079e401e30b11daadd4818` | restore the symlink security fixture under the canonical Node 24 court |
+| `ec56bcfe4a6ea3ca3b6b88122d35cfa49d35dfab` | bind the Node 24 court to exact Mission 2 ownership |
+| `34afc1e7cc92d03bbaa67ee8c6960800185adfc6` | close the fail-closed authority, verifier, lifecycle, durability, and evidence review findings |
+| `cb9860d4297d153b51a9bf803506b8e35efbb11b` | own the exact Mission 2 execution-lease surface |
 
 The exact ownership-reconciliation and final-evidence commits are recorded by their
 full identities in the final external verification receipt after the branch is
