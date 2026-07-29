@@ -384,6 +384,69 @@ test('initial migration opens only the target protected by the locked build root
   assert.deepEqual(fs.readFileSync(attackerPath), attackerBefore);
 });
 
+test('descriptor-bound migration cannot mutate a pathname replacement', async () => {
+  const attackerPath = path.join(tempRoot, 'descriptor-bound-attacker.db');
+  fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
+  migrate(pathToFileURL(attackerPath).href);
+  const attackerBefore = fs.readFileSync(attackerPath);
+  let workspace;
+  let ownedPath;
+  const preparation = prepareProductionBuildDatabase({
+    beforeInitialDatabaseConnect(candidate) {
+      workspace = candidate;
+      ownedPath = `${candidate.databasePath}.owned`;
+      fs.chmodSync(candidate.rootPath, 0o700);
+      fs.renameSync(candidate.databasePath, ownedPath);
+      fs.copyFileSync(attackerPath, candidate.databasePath, fs.constants.COPYFILE_EXCL);
+      fs.chmodSync(candidate.rootPath, 0o500);
+    },
+  });
+  await assert.rejects(
+    preparation,
+    (error) => {
+      assert.ok(error instanceof AggregateError);
+      assert.equal(error.errors[0]?.code, 'BUILD_DATABASE_IDENTITY_CHANGED');
+      assert.equal(error.errors[1]?.code, 'BUILD_DATABASE_CLEANUP_REFUSED');
+      return true;
+    },
+  );
+  assert.deepEqual(fs.readFileSync(workspace.databasePath), attackerBefore);
+  assert.deepEqual(fs.readdirSync(workspace.rootPath).sort(), ['build.db', 'build.db.owned']);
+  fs.chmodSync(workspace.rootPath, 0o700);
+  fs.rmSync(workspace.databasePath);
+  fs.renameSync(ownedPath, workspace.databasePath);
+  fs.chmodSync(workspace.rootPath, 0o500);
+  workspace.cleanup();
+});
+
+test('verified immutable open rejects a replacement before any database mutation', async () => {
+  await withPreparedWorkspace(async ({ workspace }) => {
+    const attackerPath = path.join(tempRoot, 'immutable-open-attacker.db');
+    fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
+    migrate(pathToFileURL(attackerPath).href);
+    const attackerBefore = fs.readFileSync(attackerPath);
+    const ownedPath = `${workspace.databasePath}.owned`;
+    await assert.rejects(
+      assertProductionBuildDatabaseReady({
+        workspace,
+        beforeVerifiedDatabaseConnect() {
+          fs.chmodSync(workspace.rootPath, 0o700);
+          fs.renameSync(workspace.databasePath, ownedPath);
+          fs.copyFileSync(attackerPath, workspace.databasePath, fs.constants.COPYFILE_EXCL);
+          fs.chmodSync(workspace.rootPath, 0o500);
+        },
+      }),
+      assertCode('BUILD_DATABASE_OPEN_IDENTITY_MISMATCH'),
+    );
+    assert.deepEqual(fs.readFileSync(workspace.databasePath), attackerBefore);
+    assert.deepEqual(fs.readdirSync(workspace.rootPath).sort(), ['build.db', 'build.db.owned']);
+    fs.chmodSync(workspace.rootPath, 0o700);
+    fs.rmSync(workspace.databasePath);
+    fs.renameSync(ownedPath, workspace.databasePath);
+    fs.chmodSync(workspace.rootPath, 0o500);
+  });
+});
+
 test('atomic cleanup refuses a replacement root without deleting it', async () => {
   const owned = await prepareProductionBuildDatabase();
   const replacement = createBuildDatabaseWorkspace();
@@ -443,13 +506,37 @@ test('cleanup removes only the retained inode after quarantine validation', asyn
   assert.equal(cleanup.quarantinePath, path.dirname(replacementPath));
 });
 
+test('closed retained database descriptor produces a named cleanup refusal', async () => {
+  const { workspace } = await prepareProductionBuildDatabase();
+  const database = fs.lstatSync(workspace.databasePath);
+  assert.throws(
+    () => workspace.cleanup({
+      afterQuarantineValidation() {
+        for (const entry of fs.readdirSync('/dev/fd')) {
+          const descriptor = Number(entry);
+          if (!Number.isSafeInteger(descriptor)) continue;
+          try {
+            const stats = fs.fstatSync(descriptor);
+            if (stats.dev === database.dev && stats.ino === database.ino) {
+              fs.closeSync(descriptor);
+            }
+          } catch {
+            // Descriptors can close while the deterministic identity scan runs.
+          }
+        }
+      },
+    }),
+    assertCode('BUILD_DATABASE_CLEANUP_FAILED'),
+  );
+});
+
 test('gate accepts only its initialized process-local database capability', async () => {
   await withPreparedWorkspace(async ({ workspace, result }) => {
     const before = fs.lstatSync(workspace.databasePath);
     assert.equal(fs.statSync(workspace.rootPath).mode & 0o777, 0o500);
     assert.deepEqual(
       fs.readdirSync(workspace.rootPath).sort(),
-      ['build.db', 'build.db-shm', 'build.db-wal'],
+      ['build.db'],
     );
     for (const entry of fs.readdirSync(workspace.rootPath)) {
       const stats = fs.lstatSync(path.join(workspace.rootPath, entry));
