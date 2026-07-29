@@ -379,10 +379,10 @@ test('database gate rejects a temporary root replaced by a symlink', async () =>
     fs.renameSync(workspace.rootPath, originalRoot);
     fs.symlinkSync(originalRoot, workspace.rootPath, 'dir');
     await assert.rejects(
-      assertProductionBuildDatabaseReady({ workspace }),
+      async () => assertProductionBuildDatabaseReady({ workspace }),
       assertCode('BUILD_DATABASE_ROOT_UNSAFE'),
     );
-    fs.rmSync(workspace.rootPath);
+    fs.unlinkSync(workspace.rootPath);
     fs.renameSync(originalRoot, workspace.rootPath);
   });
 });
