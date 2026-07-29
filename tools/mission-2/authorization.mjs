@@ -13,8 +13,6 @@ import {
   validateMissionContract,
 } from './contracts.mjs';
 
-const admittedAuthorizations = new WeakSet();
-
 function authorizationBody(mission, authorization, executorIdentity) {
   return {
     schema_version: 'cana.authorization-receipt/2.0.0',
@@ -47,7 +45,6 @@ export function assertAuthorizationReceipt({
   authorization,
   now,
   executorIdentity,
-  requireAdmission = false,
 }) {
   const mission = validateMissionContract(rawMission);
   requireText(executorIdentity, 'executorIdentity');
@@ -56,13 +53,6 @@ export function assertAuthorizationReceipt({
     'AUTHORIZATION_RECEIPT_REQUIRED',
     'A CANA authorization receipt is required',
   );
-  if (requireAdmission) {
-    assertMission(
-      admittedAuthorizations.has(authorization),
-      'FORGED_AUTHORIZATION_DENIED',
-      'Authorization was not issued by the CANA authorization evaluator',
-    );
-  }
   const body = authorizationBody(mission, authorization, executorIdentity);
   const expectedKeys = [...Object.keys(body), 'authorization_receipt_hash'].sort();
   assertMission(
@@ -116,10 +106,8 @@ export function authorizeMission({ mission: rawMission, contextPacket, now, exec
   assertMission(mission.rollback_procedure.kind === 'EXACT_BYTES', 'ROLLBACK_CONTRACT_REQUIRED', 'Mission 2 requires exact-byte rollback');
   assertMission(mission.permitted_capabilities.length > 0, 'CAPABILITY_REQUIRED', 'At least one exact capability is required');
   const body = authorizationBody(mission, { authorized_at: now.toISOString() }, executorIdentity);
-  const authorization = deepFreeze({
+  return deepFreeze({
     ...body,
     authorization_receipt_hash: hashCanonical(body),
   });
-  admittedAuthorizations.add(authorization);
-  return authorization;
 }

@@ -9,8 +9,6 @@ import {
   requireText,
 } from './canonical.mjs';
 
-const admittedLeases = new WeakSet();
-
 function leaseBody(lease) {
   return {
     schema_version: lease.schema_version,
@@ -108,15 +106,11 @@ export function issueExecutionLease({
     expires_at: requireIso(expiresAt, 'expiresAt'),
     heartbeat_at: requireIso(issuedAt, 'issuedAt'),
   };
-  const lease = deepFreeze({ ...body, lease_receipt_hash: hashCanonical(body) });
-  admittedLeases.add(lease);
-  return lease;
+  return deepFreeze({ ...body, lease_receipt_hash: hashCanonical(body) });
 }
 
 export function admitPersistedLease(options) {
-  const lease = assertLeaseReceipt(options);
-  admittedLeases.add(lease);
-  return lease;
+  return deepFreeze(assertLeaseReceipt(options));
 }
 
 export function assertAdmittedLease({
@@ -126,11 +120,6 @@ export function assertAdmittedLease({
   workerId,
   now,
 }) {
-  assertMission(
-    lease && admittedLeases.has(lease),
-    'FORGED_LEASE_DENIED',
-    'Execution lease was not issued by the CANA Autonomy Kernel',
-  );
   return assertLeaseReceipt({
     lease,
     missionId,
@@ -141,14 +130,18 @@ export function assertAdmittedLease({
 }
 
 export function refreshExecutionLease(lease, heartbeatAt) {
-  assertMission(admittedLeases.has(lease), 'FORGED_LEASE_DENIED', 'Execution lease was not admitted');
+  assertLeaseReceipt({
+    lease,
+    missionId: lease?.mission_id,
+    authorizationReceiptHash: lease?.authorization_receipt_hash,
+    workerId: lease?.worker_id,
+    now: new Date(heartbeatAt),
+  });
   const body = { ...leaseBody(lease), heartbeat_at: requireIso(heartbeatAt, 'heartbeatAt') };
   assertMission(
     new Date(body.heartbeat_at).getTime() < new Date(body.expires_at).getTime(),
     'LEASE_EXPIRED',
     'Heartbeat cannot refresh an expired lease',
   );
-  const refreshed = deepFreeze({ ...body, lease_receipt_hash: hashCanonical(body) });
-  admittedLeases.add(refreshed);
-  return refreshed;
+  return deepFreeze({ ...body, lease_receipt_hash: hashCanonical(body) });
 }

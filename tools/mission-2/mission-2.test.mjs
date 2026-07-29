@@ -190,6 +190,48 @@ function expectCode(fn, code) {
   assert.throws(fn, (error) => error instanceof MissionError && error.code === code);
 }
 
+function roundTripExecution(receipt) {
+  const copy = structuredClone(receipt);
+  copy.before_bytes = Buffer.from(receipt.before_bytes);
+  copy.after_bytes = Buffer.from(receipt.after_bytes);
+  return copy;
+}
+
+function validateReceiptsInFreshProcess(payload) {
+  const code = `
+    const payload = JSON.parse(process.argv[1]);
+    const { assertAuthorizationReceipt } = await import(${JSON.stringify(new URL('./authorization.mjs', import.meta.url).href)});
+    const { assertLeaseReceipt } = await import(${JSON.stringify(new URL('./lease.mjs', import.meta.url).href)});
+    const { assertVerifierReceipt } = await import(${JSON.stringify(new URL('./verifier.mjs', import.meta.url).href)});
+    const now = new Date(payload.now);
+    assertAuthorizationReceipt({
+      mission: payload.mission,
+      authorization: payload.authorization,
+      now,
+      executorIdentity: payload.execution.executor_identity,
+    });
+    assertLeaseReceipt({
+      lease: payload.lease,
+      missionId: payload.mission.mission_id,
+      authorizationReceiptHash: payload.authorization.authorization_receipt_hash,
+      workerId: payload.execution.executor_identity,
+      now,
+    });
+    assertVerifierReceipt({
+      mission: payload.mission,
+      authorization: payload.authorization,
+      executionReceipt: payload.execution,
+      verifierReceipt: payload.verifier,
+    });
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ['--input-type=module', '-e', code, JSON.stringify(payload)],
+    { encoding: 'utf8', timeout: 30_000 },
+  );
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+}
+
 test('canonical mission contract is deterministic, hashable, tenant-bound, and tamper-evident', () => {
   const { mission } = setup();
   assert.equal(validateMissionContract(mission).contract_hash, mission.contract_hash);
@@ -256,7 +298,7 @@ test('authorization requires exact Mission 2 boundaries and independent verifica
   }), 'AUTHORIZATION_EXPIRED');
 });
 
-test('kernel and executor reject forged authorization, paused pre-authorization dispatch, and forged leases', () => {
+test('authorization and leases survive serialization while tampering and paused dispatch fail closed', () => {
   const {
     repository,
     seed,
@@ -270,19 +312,32 @@ test('kernel and executor reject forged authorization, paused pre-authorization 
   kernel.recordContext(seed, contextPacket);
   kernel.sealMission(mission);
   expectCode(
-    () => kernel.recordAuthorization(mission, structuredClone(authorization)),
-    'FORGED_AUTHORIZATION_DENIED',
+    () => kernel.recordAuthorization(mission, {
+      ...authorization,
+      authorization_receipt_hash: '0'.repeat(64),
+    }),
+    'AUTHORIZATION_RECEIPT_TAMPERED',
   );
-  kernel.recordAuthorization(mission, authorization);
+  const restoredAuthorization = structuredClone(authorization);
+  kernel.recordAuthorization(mission, restoredAuthorization);
   const lease = kernel.dispatch(mission, EXECUTOR, 60_000);
   expectCode(() => new DeterministicMockExecutor().execute({
     mission,
-    authorization,
+    authorization: restoredAuthorization,
+    sandboxRoot: repository.root,
+    operation: operation(),
+    now: NOW,
+    lease: { ...lease, lease_receipt_hash: '0'.repeat(64) },
+  }), 'LEASE_TAMPERED');
+  const execution = new DeterministicMockExecutor().execute({
+    mission,
+    authorization: restoredAuthorization,
     sandboxRoot: repository.root,
     operation: operation(),
     now: NOW,
     lease: structuredClone(lease),
-  }), 'FORGED_LEASE_DENIED');
+  });
+  assert.equal(execution.authorization_receipt_hash, authorization.authorization_receipt_hash);
 
   const pausedStore = new MissionStore(fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-paused-auth-')));
   const pausedKernel = new AutonomyKernel({ store: pausedStore, clock: () => NOW });
@@ -300,6 +355,17 @@ test('durable event log reconstructs after restart and detects mutation, deletio
   const mission = { mission_id: 'm', tenant_id: TENANT, workspace_id: WORKSPACE };
   store.append({ missionId: 'm', tenantId: TENANT, workspaceId: WORKSPACE, lifecycleState: 'SIGNAL_OBSERVED', actor: 'RSI', occurredAt: NOW.toISOString(), expectedVersion: 0 });
   store.append({ missionId: 'm', tenantId: TENANT, workspaceId: WORKSPACE, lifecycleState: 'CONTEXT_COMPILED', actor: 'RSI', occurredAt: NOW.toISOString(), expectedVersion: 1 });
+  const forgedRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-first-auth-'));
+  expectCode(() => new MissionStore(forgedRoot).append({
+    missionId: 'forged',
+    tenantId: TENANT,
+    workspaceId: WORKSPACE,
+    lifecycleState: 'CANA_AUTHORIZED',
+    actor: 'CANA_DURABLE_AUTHORITY',
+    occurredAt: NOW.toISOString(),
+    expectedVersion: 0,
+    payload: { authorization_receipt_hash: 'a'.repeat(64) },
+  }), 'INVALID_INITIAL_STATE');
   assert.equal(new MissionStore(root).reconstruct().missions.m.current_lifecycle_state, 'CONTEXT_COMPILED');
   expectCode(() => store.append({ missionId: 'm', tenantId: TENANT, workspaceId: WORKSPACE, lifecycleState: 'MISSION_SEALED', actor: 'CANA', occurredAt: NOW.toISOString(), expectedVersion: 1 }), 'STALE_STATE');
   expectCode(() => store.append({ missionId: 'm', tenantId: 'other', workspaceId: WORKSPACE, lifecycleState: 'MISSION_SEALED', actor: 'CANA', occurredAt: NOW.toISOString(), expectedVersion: 2 }), 'CROSS_TENANT_DENIED');
@@ -349,6 +415,74 @@ test('durable store repairs valid crash windows but detects coordinated tail del
   fs.writeFileSync(store.eventsFile, `${lines[0]}\n`);
   fs.unlinkSync(store.projectionFile);
   expectCode(() => new MissionStore(root).reconstruct(), 'EVENT_DELETION_DETECTED');
+
+  const forgedHead = {
+    schema_version: 'cana.mission-store-head/2.0.0',
+    event_count: 1,
+    last_event_hash: JSON.parse(lines[0]).event_hash,
+  };
+  fs.writeFileSync(store.headFile, `${canonicalize({
+    ...forgedHead,
+    head_hash: hashCanonical(forgedHead),
+  })}\n`);
+  expectCode(() => new MissionStore(root).reconstruct(), 'HEAD_ANCHOR_CORRUPT');
+});
+
+test('durable head anchor requires its private external key after state exists', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-anchor-key-'));
+  const store = new MissionStore(root);
+  store.append({
+    missionId: 'm',
+    tenantId: TENANT,
+    workspaceId: WORKSPACE,
+    lifecycleState: 'SIGNAL_OBSERVED',
+    actor: 'RSI',
+    occurredAt: NOW.toISOString(),
+    expectedVersion: 0,
+  });
+  fs.unlinkSync(store.anchorKeyFile);
+  expectCode(() => new MissionStore(root), 'HEAD_ANCHOR_KEY_MISSING');
+
+  const symlinkRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-anchor-key-link-'));
+  const symlinkStore = new MissionStore(symlinkRoot);
+  const outsideKey = `${symlinkRoot}.outside-key`;
+  fs.renameSync(symlinkStore.anchorKeyFile, outsideKey);
+  fs.symlinkSync(outsideKey, symlinkStore.anchorKeyFile);
+  expectCode(() => new MissionStore(symlinkRoot), 'HEAD_ANCHOR_KEY_SYMLINK_DENIED');
+});
+
+test('durable store recovers a dead-process append lock and rejects a live lock', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-stale-lock-'));
+  const store = new MissionStore(root);
+  fs.writeFileSync(store.lockFile, `${canonicalize({
+    schema_version: 'cana.mission-store-lock/1.0.0',
+    pid: 2_147_483_647,
+    nonce: 'a'.repeat(32),
+  })}\n`, { mode: 0o600 });
+  store.append({
+    missionId: 'm',
+    tenantId: TENANT,
+    workspaceId: WORKSPACE,
+    lifecycleState: 'SIGNAL_OBSERVED',
+    actor: 'RSI',
+    occurredAt: NOW.toISOString(),
+    expectedVersion: 0,
+  });
+  assert.equal(store.reconstruct().event_count, 1);
+  fs.writeFileSync(store.lockFile, `${canonicalize({
+    schema_version: 'cana.mission-store-lock/1.0.0',
+    pid: process.pid,
+    nonce: 'b'.repeat(32),
+  })}\n`, { mode: 0o600 });
+  expectCode(() => store.append({
+    missionId: 'm',
+    tenantId: TENANT,
+    workspaceId: WORKSPACE,
+    lifecycleState: 'CONTEXT_COMPILED',
+    actor: 'RSI',
+    occurredAt: NOW.toISOString(),
+    expectedVersion: 1,
+  }), 'STORE_LOCKED');
 });
 
 test('durable store and evidence paths reject symlink roots, parents, and targets', () => {
@@ -383,6 +517,36 @@ test('illegal lifecycle transitions fail closed', () => {
   expectCode(() => store.append({ missionId: 'm', tenantId: TENANT, workspaceId: WORKSPACE, lifecycleState: 'PROMOTED', actor: 'CANA', occurredAt: NOW.toISOString(), expectedVersion: 1 }), 'ILLEGAL_TRANSITION');
 });
 
+test('dispatch rejects a lifecycle-shaped authorization without durable receipt evidence', () => {
+  const { repository, mission } = setup();
+  const store = new MissionStore(fs.mkdtempSync(path.join(os.tmpdir(), 'cana-m2-forged-auth-chain-')));
+  for (const [version, lifecycleState] of [
+    [0, 'SIGNAL_OBSERVED'],
+    [1, 'CONTEXT_COMPILED'],
+    [2, 'MISSION_SEALED'],
+    [3, 'CANA_AUTHORIZED'],
+  ]) {
+    store.append({
+      missionId: mission.mission_id,
+      tenantId: TENANT,
+      workspaceId: WORKSPACE,
+      lifecycleState,
+      actor: 'CANA_DURABLE_AUTHORITY',
+      occurredAt: NOW.toISOString(),
+      expectedVersion: version,
+      payload: lifecycleState === 'CANA_AUTHORIZED'
+        ? { authorization_receipt_hash: 'a'.repeat(64) }
+        : {},
+    });
+  }
+  const kernel = new AutonomyKernel({ store, clock: () => NOW });
+  expectCode(
+    () => kernel.dispatch(mission, EXECUTOR, 60_000),
+    'AUTHORIZATION_REQUIRED',
+  );
+  assert.equal(runGit(repository.root, ['status', '--short']), '');
+});
+
 test('mock executor changes only one authorized file with no provider, spend, or external effect', () => {
   const { repository, mission, authorization, lease } = authorizedSetup();
   const executor = new DeterministicMockExecutor();
@@ -405,9 +569,12 @@ test('mock executor supports deterministic interruption, resume, rollback, and r
   expectCode(
     () => executor.rollback({
       sandboxRoot: repository.root,
-      executionReceipt: structuredClone(receipt),
+      executionReceipt: {
+        ...roundTripExecution(receipt),
+        execution_receipt_hash: '0'.repeat(64),
+      },
     }),
-    'FORGED_EXECUTION_RECEIPT_DENIED',
+    'EXECUTION_RECEIPT_TAMPERED',
   );
   const rollback = executor.rollback({ sandboxRoot: repository.root, executionReceipt: receipt });
   assert.equal(rollback.exact_bytes_restored, true);
@@ -518,15 +685,24 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
   const execution = executor.execute({ mission, authorization, sandboxRoot: repository.root, operation: operation(), now: NOW, lease: activeLease });
   expectCode(() => kernel.recordExecution(mission, authorization, { ...activeLease, token: 'stale' }, execution), 'STALE_WORKER_COMPLETION');
   expectCode(
-    () => kernel.recordExecution(mission, authorization, activeLease, structuredClone(execution)),
-    'FORGED_EXECUTION_RECEIPT_DENIED',
+    () => kernel.recordExecution(mission, authorization, activeLease, {
+      ...roundTripExecution(execution),
+      execution_receipt_hash: '0'.repeat(64),
+    }),
+    'EXECUTION_RECEIPT_TAMPERED',
   );
-  kernel.recordExecution(mission, authorization, activeLease, execution);
-  kernel.captureEvidence(mission, execution);
+  const restoredExecution = roundTripExecution(execution);
+  kernel.recordExecution(
+    mission,
+    structuredClone(authorization),
+    structuredClone(activeLease),
+    restoredExecution,
+  );
+  kernel.captureEvidence(mission, restoredExecution);
   const verifierReceipt = new IndependentVerifier().verify({
     mission,
     authorization,
-    executionReceipt: execution,
+    executionReceipt: restoredExecution,
     sandboxRoot: repository.root,
     operation: operation(),
     lease: activeLease,
@@ -537,20 +713,43 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
     () => kernel.recordVerification(
       mission,
       authorization,
-      execution,
-      structuredClone(verifierReceipt),
+      restoredExecution,
+      { ...verifierReceipt, verifier_receipt_hash: '0'.repeat(64) },
     ),
-    'FORGED_VERIFIER_RECEIPT_DENIED',
+    'VERIFIER_RECEIPT_TAMPERED',
   );
-  kernel.recordVerification(mission, authorization, execution, verifierReceipt);
+  const restoredVerifierReceipt = structuredClone(verifierReceipt);
+  validateReceiptsInFreshProcess({
+    mission,
+    authorization: structuredClone(authorization),
+    lease: structuredClone(activeLease),
+    execution: {
+      ...restoredExecution,
+      before_bytes: restoredExecution.before_bytes.toString('base64'),
+      after_bytes: restoredExecution.after_bytes.toString('base64'),
+    },
+    verifier: restoredVerifierReceipt,
+    now: NOW.toISOString(),
+  });
+  kernel.recordVerification(
+    mission,
+    structuredClone(authorization),
+    restoredExecution,
+    restoredVerifierReceipt,
+  );
   expectCode(() => kernel.updateTruthGraph(mission, verifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'fixed' }), 'TRUTH_UPDATE_BEFORE_PROMOTION');
-  kernel.decidePromotion(mission, authorization, execution, verifierReceipt);
-  const truth = kernel.updateTruthGraph(mission, verifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'The stale canonical status is superseded.' });
+  kernel.decidePromotion(
+    mission,
+    structuredClone(authorization),
+    restoredExecution,
+    structuredClone(restoredVerifierReceipt),
+  );
+  const truth = kernel.updateTruthGraph(mission, restoredVerifierReceipt, { state: 'TECHNICALLY_VERIFIED', claim: 'The stale canonical status is superseded.' });
   const winner = kernel.updateWinnerMemory(mission, truth, {
     exact_success_conditions: ['exact notice inserted', 'history preserved'],
     reusable_boundaries: ['documentation-only', 'no commercial value claim'],
     failure_conditions: ['source hash drift', 'notice duplication'],
-    evidence: [verifierReceipt.verifier_receipt_hash],
+    evidence: [restoredVerifierReceipt.verifier_receipt_hash],
     revalidate_after: EXPIRES,
   });
   assert.equal(winner.value_state, 'VALUE_NOT_ESTABLISHED');
@@ -558,13 +757,16 @@ test('Autonomy Kernel controls leases, stale workers, duplicate dispatch, promot
   assert.equal(kernel.projection(mission.mission_id).current_lifecycle_state, 'WINNER_MEMORY_UPDATED');
   const rollback = executor.rollback({
     sandboxRoot: repository.root,
-    executionReceipt: execution,
+    executionReceipt: restoredExecution,
   });
   expectCode(
-    () => kernel.recordRollback(mission, execution, structuredClone(rollback)),
-    'FORGED_ROLLBACK_RECEIPT_DENIED',
+    () => kernel.recordRollback(mission, restoredExecution, {
+      ...rollback,
+      rollback_receipt_hash: '0'.repeat(64),
+    }),
+    'ROLLBACK_RECEIPT_TAMPERED',
   );
-  kernel.recordRollback(mission, execution, rollback);
+  kernel.recordRollback(mission, restoredExecution, structuredClone(rollback));
   assert.equal(kernel.projection(mission.mission_id).current_lifecycle_state, 'ROLLED_BACK');
 });
 

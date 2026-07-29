@@ -12,8 +12,6 @@ import {
 import { assertAuthorizationReceipt } from './authorization.mjs';
 import { assertLeaseReceipt } from './lease.mjs';
 
-const admittedVerifierReceipts = new WeakSet();
-
 function git(root, args, { bytes = false } = {}) {
   const result = spawnSync('/usr/bin/git', ['-c', 'core.hooksPath=/dev/null', ...args], {
     cwd: root,
@@ -75,20 +73,12 @@ export function assertVerifierReceipt({
   authorization,
   executionReceipt,
   verifierReceipt,
-  requireAdmission = false,
 }) {
   assertMission(
     verifierReceipt && typeof verifierReceipt === 'object',
     'VERIFIER_RECEIPT_REQUIRED',
     'An independent verifier receipt is required',
   );
-  if (requireAdmission) {
-    assertMission(
-      admittedVerifierReceipts.has(verifierReceipt),
-      'FORGED_VERIFIER_RECEIPT_DENIED',
-      'Verifier receipt was not produced by the independent verifier',
-    );
-  }
   const body = verifierBody(verifierReceipt);
   const expectedKeys = [...Object.keys(body), 'verifier_receipt_hash'].sort();
   assertMission(
@@ -291,8 +281,6 @@ export class IndependentVerifier {
       verdict,
       implementation_mutated: checks.verifier_preserved_implementation === false,
     };
-    const receipt = deepFreeze({ ...body, verifier_receipt_hash: hashCanonical(body) });
-    admittedVerifierReceipts.add(receipt);
-    return receipt;
+    return deepFreeze({ ...body, verifier_receipt_hash: hashCanonical(body) });
   }
 }

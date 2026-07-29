@@ -12,9 +12,6 @@ import {
 import { assertAuthorizationReceipt } from './authorization.mjs';
 import { assertAdmittedLease, assertLeaseReceipt } from './lease.mjs';
 
-const admittedExecutionReceipts = new WeakSet();
-const admittedRollbackReceipts = new WeakSet();
-
 function git(root, args) {
   const result = spawnSync('/usr/bin/git', ['-c', 'core.hooksPath=/dev/null', ...args], {
     cwd: root,
@@ -79,25 +76,61 @@ function executionBody(receipt) {
   };
 }
 
-export function assertExecutionReceipt({
-  mission,
-  authorization,
-  lease,
-  executionReceipt,
-  requireAdmission = false,
-}) {
+function assertExecutionReceiptIntegrity(executionReceipt) {
   assertMission(
     executionReceipt && typeof executionReceipt === 'object',
     'EXECUTION_RECEIPT_REQUIRED',
     'An execution receipt is required',
   );
-  if (requireAdmission) {
-    assertMission(
-      admittedExecutionReceipts.has(executionReceipt),
-      'FORGED_EXECUTION_RECEIPT_DENIED',
-      'Execution receipt was not produced by the deterministic mock adapter',
-    );
-  }
+  const body = executionBody(executionReceipt);
+  const expectedKeys = [
+    ...Object.keys(body),
+    'execution_receipt_hash',
+    'before_bytes',
+    'after_bytes',
+  ].sort();
+  assertMission(
+    JSON.stringify(Object.keys(executionReceipt).sort()) === JSON.stringify(expectedKeys),
+    'EXECUTION_RECEIPT_MALFORMED',
+    'Execution receipt fields differ from the canonical schema',
+  );
+  assertMission(
+    constantTimeEqual(executionReceipt.execution_receipt_hash, hashCanonical(body)),
+    'EXECUTION_RECEIPT_TAMPERED',
+    'Execution receipt hash does not recompute',
+  );
+  assertMission(
+    executionReceipt.schema_version === 'cana.mock-execution-receipt/2.0.0'
+      && Array.isArray(executionReceipt.changed_files)
+      && executionReceipt.changed_files.length === 1
+      && Buffer.isBuffer(executionReceipt.before_bytes)
+      && Buffer.isBuffer(executionReceipt.after_bytes),
+    'EXECUTION_RECEIPT_TAMPERED',
+    'Execution receipt schema or exact byte evidence is invalid',
+  );
+  const change = executionReceipt.changed_files[0];
+  assertMission(
+    sha256(executionReceipt.before_bytes) === change.before_sha256
+      && sha256(executionReceipt.after_bytes) === change.after_sha256
+      && executionReceipt.before_bytes.length === change.before_bytes
+      && executionReceipt.after_bytes.length === change.after_bytes
+      && executionReceipt.external_effect_count === 0
+      && executionReceipt.provider_calls === 0
+      && executionReceipt.spend_usd === 0
+      && executionReceipt.production_modified === false,
+    'EXECUTION_RECEIPT_TAMPERED',
+    'Execution receipt bytes or effect boundary do not match its canonical body',
+  );
+  return executionReceipt;
+}
+
+export function assertExecutionReceipt({
+  mission,
+  authorization,
+  lease,
+  executionReceipt,
+}) {
+  assertExecutionReceiptIntegrity(executionReceipt);
   const body = executionBody(executionReceipt);
   const expectedKeys = [
     ...Object.keys(body),
@@ -208,20 +241,12 @@ export function assertRollbackReceipt({
   mission,
   executionReceipt,
   rollbackReceipt,
-  requireAdmission = false,
 }) {
   assertMission(
     rollbackReceipt && typeof rollbackReceipt === 'object',
     'ROLLBACK_RECEIPT_REQUIRED',
     'An exact rollback receipt is required',
   );
-  if (requireAdmission) {
-    assertMission(
-      admittedRollbackReceipts.has(rollbackReceipt),
-      'FORGED_ROLLBACK_RECEIPT_DENIED',
-      'Rollback receipt was not produced by the deterministic mock adapter',
-    );
-  }
   const body = {
     schema_version: rollbackReceipt.schema_version,
     mission_id: rollbackReceipt.mission_id,
@@ -341,22 +366,16 @@ export class DeterministicMockExecutor {
       spend_usd: 0,
       production_modified: false,
     };
-    const receipt = deepFreeze({
+    return deepFreeze({
       ...body,
       execution_receipt_hash: hashCanonical(body),
       before_bytes: before,
       after_bytes: after,
     });
-    admittedExecutionReceipts.add(receipt);
-    return receipt;
   }
 
   rollback({ sandboxRoot, executionReceipt }) {
-    assertMission(
-      admittedExecutionReceipts.has(executionReceipt),
-      'FORGED_EXECUTION_RECEIPT_DENIED',
-      'Rollback requires an admitted execution receipt',
-    );
+    assertExecutionReceiptIntegrity(executionReceipt);
     const change = executionReceipt.changed_files[0];
     const target = assertNoSymlink(sandboxRoot, change.path);
     const current = fs.readFileSync(target);
@@ -371,17 +390,11 @@ export class DeterministicMockExecutor {
       restored_sha256: change.before_sha256,
       exact_bytes_restored: true,
     };
-    const receipt = deepFreeze({ ...body, rollback_receipt_hash: hashCanonical(body) });
-    admittedRollbackReceipts.add(receipt);
-    return receipt;
+    return deepFreeze({ ...body, rollback_receipt_hash: hashCanonical(body) });
   }
 
   reapply({ sandboxRoot, executionReceipt }) {
-    assertMission(
-      admittedExecutionReceipts.has(executionReceipt),
-      'FORGED_EXECUTION_RECEIPT_DENIED',
-      'Reapply requires an admitted execution receipt',
-    );
+    assertExecutionReceiptIntegrity(executionReceipt);
     const change = executionReceipt.changed_files[0];
     const target = assertNoSymlink(sandboxRoot, change.path);
     const current = fs.readFileSync(target);

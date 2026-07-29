@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHmac, randomBytes } from 'node:crypto';
 import {
   assertMission,
   canonicalize,
@@ -13,7 +14,7 @@ import {
 import { assertTransition } from './contracts.mjs';
 
 const GENESIS_HASH = '0'.repeat(64);
-const HEAD_SCHEMA = 'cana.mission-store-head/1.0.0';
+const HEAD_SCHEMA = 'cana.mission-store-head/2.0.0';
 
 function ensureInside(root, candidate) {
   const relative = path.relative(root, candidate);
@@ -102,9 +103,110 @@ function headBody(eventCount, lastEventHash) {
   };
 }
 
-function sealedHead(eventCount, lastEventHash) {
+function sealedHead(eventCount, lastEventHash, anchorKey) {
   const body = headBody(eventCount, lastEventHash);
-  return { ...body, head_hash: hashCanonical(body) };
+  return {
+    ...body,
+    head_hash: createHmac('sha256', anchorKey)
+      .update(canonicalize(body))
+      .digest('hex'),
+  };
+}
+
+function createAnchorKey(file) {
+  const descriptor = fs.openSync(
+    file,
+    fs.constants.O_WRONLY
+      | fs.constants.O_CREAT
+      | fs.constants.O_EXCL
+      | (fs.constants.O_NOFOLLOW ?? 0),
+    0o600,
+  );
+  try {
+    fs.writeFileSync(descriptor, randomBytes(32));
+    fs.fsyncSync(descriptor);
+  } finally {
+    fs.closeSync(descriptor);
+  }
+}
+
+function processIsAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if (error.code === 'ESRCH') return false;
+    if (error.code === 'EPERM') return true;
+    throw error;
+  }
+}
+
+function acquireAppendLock(file) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const descriptor = fs.openSync(
+        file,
+        fs.constants.O_WRONLY
+          | fs.constants.O_CREAT
+          | fs.constants.O_EXCL
+          | (fs.constants.O_NOFOLLOW ?? 0),
+        0o600,
+      );
+      const body = `${canonicalize({
+        schema_version: 'cana.mission-store-lock/1.0.0',
+        pid: process.pid,
+        nonce: randomBytes(16).toString('hex'),
+      })}\n`;
+      fs.writeFileSync(descriptor, body);
+      fs.fsyncSync(descriptor);
+      return descriptor;
+    } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      let lock;
+      try {
+        lock = JSON.parse(readNoFollow(file, 'STORE_LOCK_SYMLINK_DENIED').toString('utf8'));
+      } catch (readError) {
+        if (readError instanceof SyntaxError) {
+          assertMission(false, 'STORE_LOCK_CORRUPT', 'Append lock is malformed');
+        }
+        throw readError;
+      }
+      assertMission(
+        lock?.schema_version === 'cana.mission-store-lock/1.0.0'
+          && Number.isInteger(lock.pid)
+          && lock.pid > 0
+          && /^[0-9a-f]{32}$/.test(lock.nonce ?? ''),
+        'STORE_LOCK_CORRUPT',
+        'Append lock is malformed',
+      );
+      assertMission(
+        !processIsAlive(lock.pid),
+        'STORE_LOCKED',
+        'Another live process owns the mission-store append lock',
+      );
+      const before = assertNotSymlink(file, 'STORE_LOCK_SYMLINK_DENIED');
+      const current = fs.lstatSync(file);
+      assertMission(
+        before.dev === current.dev && before.ino === current.ino,
+        'STORE_LOCK_REPLACED',
+        'Append lock changed during stale-lock recovery',
+      );
+      fs.unlinkSync(file);
+    }
+  }
+  assertMission(false, 'STORE_LOCKED', 'Could not acquire mission-store append lock');
+}
+
+function releaseAppendLock(file, descriptor) {
+  const opened = fs.fstatSync(descriptor);
+  const current = fs.lstatSync(file);
+  assertMission(
+    opened.dev === current.dev && opened.ino === current.ino,
+    'STORE_LOCK_REPLACED',
+    'Append lock changed before release',
+  );
+  fs.closeSync(descriptor);
+  fs.unlinkSync(file);
 }
 
 function projectEvents(events) {
@@ -122,6 +224,7 @@ function projectEvents(events) {
       promotion_status: 'NOT_EVALUATED',
       next_eligible_action: 'OBSERVE_SIGNAL',
       lease: null,
+      authorization_evidence_ref: null,
       authorization_receipt_hash: null,
       execution_receipt_hash: null,
       verifier_receipt_hash: null,
@@ -150,6 +253,7 @@ function projectEvents(events) {
     if (event.payload.next_eligible_action) current.next_eligible_action = event.payload.next_eligible_action;
     for (const field of [
       'lease',
+      'authorization_evidence_ref',
       'authorization_receipt_hash',
       'execution_receipt_hash',
       'verifier_receipt_hash',
@@ -186,6 +290,7 @@ export class MissionStore {
     this.eventsFile = path.join(this.root, 'events.jsonl');
     this.projectionFile = path.join(this.root, 'projection.json');
     this.headFile = path.join(this.root, 'head.json');
+    this.anchorKeyFile = `${this.root}.head-key`;
     this.lockFile = path.join(this.root, 'append.lock');
     this.evidenceDirectory = path.join(this.root, 'evidence');
     if (pathExists(this.evidenceDirectory)) {
@@ -219,7 +324,6 @@ export class MissionStore {
         'HEAD_ANCHOR_MISSING',
         'A non-empty event log requires its independent head anchor',
       );
-      atomicWrite(this.headFile, `${canonicalize(sealedHead(0, GENESIS_HASH))}\n`);
     } else {
       const stat = assertNotSymlink(this.headFile);
       assertMission(stat.isFile(), 'STORE_FILE_TYPE_DENIED', 'Head anchor must be a regular file');
@@ -227,6 +331,38 @@ export class MissionStore {
     if (pathExists(this.projectionFile)) {
       const stat = assertNotSymlink(this.projectionFile);
       assertMission(stat.isFile(), 'STORE_FILE_TYPE_DENIED', 'Projection must be a regular file');
+    }
+    const durableStateExists = fs.statSync(this.eventsFile).size > 0
+      || pathExists(this.headFile)
+      || pathExists(this.projectionFile);
+    if (!pathExists(this.anchorKeyFile)) {
+      assertMission(
+        !durableStateExists,
+        'HEAD_ANCHOR_KEY_MISSING',
+        'Existing durable state requires its external head-anchor key',
+      );
+      createAnchorKey(this.anchorKeyFile);
+    }
+    const keyStat = assertNotSymlink(this.anchorKeyFile, 'HEAD_ANCHOR_KEY_SYMLINK_DENIED');
+    assertMission(
+      keyStat.isFile() && (keyStat.mode & 0o077) === 0,
+      'HEAD_ANCHOR_KEY_INVALID',
+      'Head-anchor key must be a private regular file',
+    );
+    this.anchorKey = readNoFollow(
+      this.anchorKeyFile,
+      'HEAD_ANCHOR_KEY_SYMLINK_DENIED',
+    );
+    assertMission(
+      this.anchorKey.length === 32,
+      'HEAD_ANCHOR_KEY_INVALID',
+      'Head-anchor key must contain exactly 32 bytes',
+    );
+    if (!pathExists(this.headFile)) {
+      atomicWrite(
+        this.headFile,
+        `${canonicalize(sealedHead(0, GENESIS_HASH, this.anchorKey))}\n`,
+      );
     }
   }
 
@@ -264,6 +400,9 @@ export class MissionStore {
       throw error;
     }
     const { head_hash: claimed, ...body } = head;
+    const expectedMac = createHmac('sha256', this.anchorKey)
+      .update(canonicalize(body))
+      .digest('hex');
     assertMission(
       JSON.stringify(Object.keys(head).sort())
         === JSON.stringify(['event_count', 'head_hash', 'last_event_hash', 'schema_version'])
@@ -271,7 +410,7 @@ export class MissionStore {
         && Number.isInteger(head.event_count)
         && head.event_count >= 0
         && /^[0-9a-f]{64}$/.test(head.last_event_hash ?? '')
-        && constantTimeEqual(claimed, hashCanonical(body)),
+        && constantTimeEqual(claimed, expectedMac),
       'HEAD_ANCHOR_CORRUPT',
       'Durable head anchor is malformed or tampered',
     );
@@ -298,7 +437,11 @@ export class MissionStore {
     if (head.event_count < projection.event_count && repair) {
       atomicWrite(
         this.headFile,
-        `${canonicalize(sealedHead(projection.event_count, projection.last_event_hash))}\n`,
+        `${canonicalize(sealedHead(
+          projection.event_count,
+          projection.last_event_hash,
+          this.anchorKey,
+        ))}\n`,
       );
     }
 
@@ -339,7 +482,7 @@ export class MissionStore {
     requireText(tenantId, 'tenantId');
     requireText(workspaceId, 'workspaceId');
     requireText(actor, 'actor');
-    const lock = fs.openSync(this.lockFile, 'wx', 0o600);
+    const lock = acquireAppendLock(this.lockFile);
     try {
       const projection = this.reconstruct();
       const current = projection.missions[missionId] ?? null;
@@ -348,6 +491,11 @@ export class MissionStore {
       });
       assertMission(!current || current.tenant_id === tenantId, 'CROSS_TENANT_DENIED', 'Mission tenant cannot change');
       assertMission(!current || current.workspace_id === workspaceId, 'CROSS_WORKSPACE_DENIED', 'Mission workspace cannot change');
+      assertMission(
+        current || lifecycleState === 'SIGNAL_OBSERVED',
+        'INVALID_INITIAL_STATE',
+        'A mission event chain must begin with SIGNAL_OBSERVED',
+      );
       if (current && current.current_lifecycle_state !== lifecycleState) {
         assertTransition(current.current_lifecycle_state, lifecycleState);
       }
@@ -383,13 +531,16 @@ export class MissionStore {
       const updatedProjection = this.reconstruct({ repair: false });
       atomicWrite(
         this.headFile,
-        `${canonicalize(sealedHead(updatedProjection.event_count, updatedProjection.last_event_hash))}\n`,
+        `${canonicalize(sealedHead(
+          updatedProjection.event_count,
+          updatedProjection.last_event_hash,
+          this.anchorKey,
+        ))}\n`,
       );
       atomicWrite(this.projectionFile, `${canonicalize(updatedProjection)}\n`);
       return deepFreeze(event);
     } finally {
-      fs.closeSync(lock);
-      fs.unlinkSync(this.lockFile);
+      releaseAppendLock(this.lockFile, lock);
     }
   }
 

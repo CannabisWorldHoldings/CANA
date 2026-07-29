@@ -173,7 +173,7 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   const executor = new DeterministicMockExecutor(EXECUTOR_ID);
   const interrupted = executor.execute({
     mission,
-    authorization,
+    authorization: structuredClone(authorization),
     sandboxRoot: sandbox,
     operation,
     now: NOW,
@@ -186,30 +186,37 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
   kernel = new AutonomyKernel({ store, clock: () => NOW });
   const restoredBeforeExecution = kernel.projection(mission.mission_id);
   const restoredLease = kernel.restoreLease(mission, EXECUTOR_ID);
+  const restoredAuthorization = structuredClone(authorization);
   const execution = executor.execute({
     mission,
-    authorization,
+    authorization: restoredAuthorization,
     sandboxRoot: sandbox,
     operation,
     now: NOW,
     lease: restoredLease,
   });
-  kernel.recordExecution(mission, authorization, restoredLease, execution);
-  kernel.captureEvidence(mission, execution);
+  const restoredExecution = {
+    ...structuredClone(execution),
+    before_bytes: Buffer.from(execution.before_bytes),
+    after_bytes: Buffer.from(execution.after_bytes),
+  };
+  kernel.recordExecution(mission, restoredAuthorization, structuredClone(restoredLease), restoredExecution);
+  kernel.captureEvidence(mission, restoredExecution);
   const verifier = new IndependentVerifier(VERIFIER_ID);
   const verification = verifier.verify({
     mission,
-    authorization,
-    executionReceipt: execution,
+    authorization: restoredAuthorization,
+    executionReceipt: restoredExecution,
     sandboxRoot: sandbox,
     operation,
     lease: restoredLease,
     now: NOW,
     expectedText,
   });
-  kernel.recordVerification(mission, authorization, execution, verification);
-  kernel.decidePromotion(mission, authorization, execution, verification);
-  const truth = kernel.updateTruthGraph(mission, verification, {
+  const restoredVerification = structuredClone(verification);
+  kernel.recordVerification(mission, restoredAuthorization, restoredExecution, restoredVerification);
+  kernel.decidePromotion(mission, restoredAuthorization, restoredExecution, restoredVerification);
+  const truth = kernel.updateTruthGraph(mission, restoredVerification, {
     state: 'TECHNICALLY_VERIFIED',
     claim: truthClaim,
   });
@@ -217,18 +224,18 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
     exact_success_conditions: mission.success_criteria,
     reusable_boundaries: ['deterministic mock only', 'no provider', 'no production', 'no commercial value claim'],
     failure_conditions: ['source drift', 'scope broadening', 'verification rejection', 'rollback mismatch'],
-    evidence: [execution.execution_receipt_hash, verification.verifier_receipt_hash],
+    evidence: [restoredExecution.execution_receipt_hash, restoredVerification.verifier_receipt_hash],
     revalidate_after: EXPIRES,
   });
   const beforeRollback = kernel.projection(mission.mission_id);
-  const rollback = executor.rollback({ sandboxRoot: sandbox, executionReceipt: execution });
-  kernel.recordRollback(mission, execution, rollback);
-  const reapply = executor.reapply({ sandboxRoot: sandbox, executionReceipt: execution });
+  const rollback = executor.rollback({ sandboxRoot: sandbox, executionReceipt: restoredExecution });
+  kernel.recordRollback(mission, restoredExecution, structuredClone(rollback));
+  const reapply = executor.reapply({ sandboxRoot: sandbox, executionReceipt: restoredExecution });
   const finalProjection = new MissionStore(storeRoot).reconstruct();
   return {
     mission,
     context,
-    authorization,
+    authorization: restoredAuthorization,
     lease: restoredLease,
     interruption: {
       interrupted: interrupted.interrupted,
@@ -237,11 +244,11 @@ function executeLifecycle({ sandbox, seed, context, mission, authorization, oper
       restart_reconstructed_version: restoredBeforeExecution.version,
     },
     execution: {
-      ...execution,
-      before_bytes: execution.before_bytes.toString('base64'),
-      after_bytes: execution.after_bytes.toString('base64'),
+      ...restoredExecution,
+      before_bytes: restoredExecution.before_bytes.toString('base64'),
+      after_bytes: restoredExecution.after_bytes.toString('base64'),
     },
-    verification,
+    verification: restoredVerification,
     truth,
     winner,
     before_rollback_state: beforeRollback.current_lifecycle_state,

@@ -107,11 +107,11 @@ export class AutonomyKernel {
       authorization,
       now: this.clock(),
       executorIdentity: authorization?.executor_identity,
-      requireAdmission: true,
     });
     const evidence = this.store.writeEvidence(authorization);
     return this.append(mission, 'CANA_AUTHORIZED', 'CANA_DURABLE_AUTHORITY', {
       evidence_ref: evidence.ref,
+      authorization_evidence_ref: evidence.ref,
       authorization_receipt_hash: authorization.authorization_receipt_hash,
     });
   }
@@ -120,9 +120,22 @@ export class AutonomyKernel {
     const current = this.projection(mission.mission_id);
     assertMission(current.current_lifecycle_state === 'CANA_AUTHORIZED', 'DISPATCH_BEFORE_AUTHORIZATION', 'Dispatch requires current CANA authorization');
     assertMission(
-      /^[0-9a-f]{64}$/.test(current.authorization_receipt_hash ?? ''),
+      typeof current.authorization_evidence_ref === 'string',
       'AUTHORIZATION_REQUIRED',
-      'Dispatch requires a durable authorization receipt',
+      'Dispatch requires durable authorization evidence',
+    );
+    const durableAuthorization = this.store.readEvidence(current.authorization_evidence_ref);
+    assertAuthorizationReceipt({
+      mission,
+      authorization: durableAuthorization,
+      now: this.clock(),
+      executorIdentity: workerId,
+    });
+    assertMission(
+      /^[0-9a-f]{64}$/.test(current.authorization_receipt_hash ?? '')
+        && durableAuthorization.authorization_receipt_hash === current.authorization_receipt_hash,
+      'AUTHORIZATION_REQUIRED',
+      'Dispatch requires the exact durable authorization receipt',
     );
     assertMission(
       Number.isInteger(leaseDurationMs) && leaseDurationMs > 0,
@@ -213,7 +226,6 @@ export class AutonomyKernel {
       authorization,
       lease,
       executionReceipt,
-      requireAdmission: true,
     });
     const evidence = this.store.writeEvidence({
       ...executionReceipt,
@@ -264,7 +276,6 @@ export class AutonomyKernel {
       authorization,
       executionReceipt,
       verifierReceipt,
-      requireAdmission: true,
     });
     const evidence = this.store.writeEvidence(verifierReceipt);
     return this.append(mission, 'INDEPENDENTLY_VERIFIED', verifierReceipt.verifier_identity, {
@@ -289,7 +300,6 @@ export class AutonomyKernel {
       authorization,
       executionReceipt,
       verifierReceipt,
-      requireAdmission: true,
     });
     const approve = verifierReceipt.verdict === 'APPROVE' && verifierReceipt.implementation_mutated === false;
     const next = approve ? 'PROMOTED' : 'REJECTED';
@@ -383,7 +393,6 @@ export class AutonomyKernel {
       mission,
       executionReceipt,
       rollbackReceipt,
-      requireAdmission: true,
     });
     const evidence = this.store.writeEvidence(rollbackReceipt);
     return this.append(mission, 'ROLLED_BACK', 'CANA_DURABLE_AUTHORITY', {
