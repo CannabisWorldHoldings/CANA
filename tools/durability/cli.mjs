@@ -23,8 +23,11 @@ const STAGE_A_ASSIGNMENT_SHA256 =
 const PR2_ASSIGNMENT = 'pr2_exact_ownership_2026_07_28';
 const PR2_ASSIGNMENT_SHA256 =
   'bd0659b9aae3db694661e1c8f4b6ccc6c4df473a3e518c5d55c8b032be4b3c02';
+const MISSION1_ASSIGNMENT = 'mission1_integration_2026_07_29';
+const MISSION1_ASSIGNMENT_SHA256 =
+  '3fa119b9e88c1c1cfadf76c751258e8d48325afa4899986715a6a11b8afa7f02';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '1ea0fb7bceb6cbd003ee3dce9c0e68bf99da6100f30544b60ec037ce2b3b8ff4';
+  '48eb24b0953a1f9d9790ce32e71b6f943ef91359c70dbeeb3bb499d9e5b92f03';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -39,6 +42,30 @@ export const PR2_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/db-config.mjs',
   'apps/web/tests/build-database-gate.test.mjs',
   'deploy/namecheap/build-artifact.mjs',
+]);
+export const MISSION1_EVIDENCE_PATHS = Object.freeze([
+  'docs/convergence/mission-1/ARTIFACT_MANIFEST.json',
+  'docs/convergence/mission-1/AUTHORITY_CONTRACT.md',
+  'docs/convergence/mission-1/CANONICAL_COMPONENT_MAP.md',
+  'docs/convergence/mission-1/COMPONENT_DISPOSITION.md',
+  'docs/convergence/mission-1/CONVERGENCE_ROLLBACK_PLAN.md',
+  'docs/convergence/mission-1/DUPLICATE_AUTHORITY_REPORT.md',
+  'docs/convergence/mission-1/HERMES_PIN_RESOLUTION.md',
+  'docs/convergence/mission-1/INPUT_HASHES.json',
+  'docs/convergence/mission-1/INTELLIGENCE_OS_RECOVERY_STATUS.md',
+  'docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json',
+  'docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md',
+  'docs/convergence/mission-1/RUNTIME_INCLUSION_MANIFEST.json',
+  'docs/convergence/mission-1/SOURCE_LEDGER.md',
+]);
+export const MISSION1_VALIDATOR_PATHS = Object.freeze([
+  'tools/convergence-census/generate-artifact-manifest.mjs',
+  'tools/convergence-census/generate-input-hashes.mjs',
+  'tools/convergence-census/verify.mjs',
+]);
+export const MISSION1_AUTHORIZED_PATHS = Object.freeze([
+  ...MISSION1_EVIDENCE_PATHS,
+  ...MISSION1_VALIDATOR_PATHS,
 ]);
 
 function command(commandName, args, {
@@ -370,6 +397,74 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const mission1Assignment = ownership.explicit_user_assignment[MISSION1_ASSIGNMENT];
+  if (
+    !exactKeys(mission1Assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'candidate_commit',
+      'candidate_tree',
+      'evidence_paths',
+      'validator_paths',
+      'approval_sha256',
+    ]) ||
+    mission1Assignment.authorization !==
+      'CONTINUE CANA STAGE A AUTONOMOUS COMPLETION — DO NOT RETURN FOR THIS BLOCKER' ||
+    mission1Assignment.candidate_commit !==
+      'c05219c0b50ff02478168bf5619c85e467658153' ||
+    mission1Assignment.candidate_tree !==
+      '5ae987c33772716b6678c4f9c592a6056e820630' ||
+    !Array.isArray(mission1Assignment.evidence_paths) ||
+    !Array.isArray(mission1Assignment.validator_paths) ||
+    JSON.stringify([...mission1Assignment.evidence_paths].sort()) !==
+      JSON.stringify([...MISSION1_EVIDENCE_PATHS].sort()) ||
+    JSON.stringify([...mission1Assignment.validator_paths].sort()) !==
+      JSON.stringify([...MISSION1_VALIDATOR_PATHS].sort()) ||
+    !mission1Assignment.scope.includes('no wildcard') ||
+    !mission1Assignment.authorization_effect.includes('no runtime execution')
+  ) {
+    refusal('Mission 1 ownership assignment is malformed');
+  }
+
+  const mission1Paths = [
+    ...mission1Assignment.evidence_paths,
+    ...mission1Assignment.validator_paths,
+  ];
+  if (
+    new Set(mission1Paths).size !== mission1Paths.length ||
+    mission1Paths.some(
+      (entry) =>
+        typeof entry !== 'string' ||
+        entry.length === 0 ||
+        entry.startsWith('/') ||
+        entry.includes('\\') ||
+        entry.includes('*') ||
+        entry.includes('..') ||
+        path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('Mission 1 ownership paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of MISSION1_AUTHORIZED_PATHS) {
+    const exactOccurrences = allOwnedPaths.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (exactOccurrences !== 1) {
+      refusal(
+        `Mission 1 path must have exactly one exact ownership entry: ${authorizedPath}`,
+      );
+    }
+    const plannedOccurrences = ownership.planned_candidate_files.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (plannedOccurrences !== 1) {
+      refusal(
+        `Mission 1 path must have exactly one planned-candidate entry: ${authorizedPath}`,
+      );
+    }
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -387,12 +482,30 @@ export function validateOwnershipManifest(ownership) {
   ) {
     refusal('PR #2 ownership assignment failed its owner-approval digest');
   }
+  const {
+    approval_sha256: mission1RecordedDigest,
+    ...mission1ApprovalPayload
+  } = mission1Assignment;
+  const mission1ActualDigest = sha256Bytes(
+    canonicalJson(mission1ApprovalPayload),
+  );
+  if (
+    mission1RecordedDigest !== MISSION1_ASSIGNMENT_SHA256 ||
+    mission1ActualDigest !== MISSION1_ASSIGNMENT_SHA256
+  ) {
+    refusal('Mission 1 ownership assignment failed its owner-approval digest');
+  }
   return assignment;
 }
 
 export function pr2OwnershipAssignment(ownership) {
   validateOwnershipManifest(ownership);
   return ownership.explicit_user_assignment[PR2_ASSIGNMENT];
+}
+
+export function mission1OwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[MISSION1_ASSIGNMENT];
 }
 
 export function ownershipPatterns(ownership) {
