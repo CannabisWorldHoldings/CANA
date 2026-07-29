@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-07-27T00:00:00.000Z",
+  "hash_algorithm": "SHA-256",
+  "scope": "The 11 required Mission 1 deliverables, durable local receipts, and all census tools. This manifest intentionally does not hash itself.",
+  "artifacts": [
+    {
+      "path": "docs/convergence/mission-1/SOURCE_LEDGER.md",
+      "bytes": 8463,
+      "sha256": "1eb53d54e5c061dab64ddd909b26d0254429638ff11ac6e84ef40880244c92d8"
+    },
+    {
+      "path": "docs/convergence/mission-1/INPUT_HASHES.json",
+      "bytes": 33462,
+      "sha256": "e52e04f77d2fdd707d9768a1ccc2db30c41d7c20c741864ab33989728c50da60"
+    },
+    {
+      "path": "docs/convergence/mission-1/CANONICAL_COMPONENT_MAP.md",
+      "bytes": 3886,
+      "sha256": "ec688add0866eb9ee9fbcfd2f93e28498a33add0d8d08bc0d1daf3240c1d7eca"
+    },
+    {
+      "path": "docs/convergence/mission-1/COMPONENT_DISPOSITION.md",
+      "bytes": 6032,
+      "sha256": "43884905690e74a9d4221f490ae44e64cca9fe4b2436fa81de0d2a9c85d41530"
+    },
+    {
+      "path": "docs/convergence/mission-1/DUPLICATE_AUTHORITY_REPORT.md",
+      "bytes": 4822,
+      "sha256": "363a61b9a77813b05b50918e229bcb21ef1e4a2ba1ae42a25eb092d97cd0ff76"
+    },
+    {
+      "path": "docs/convergence/mission-1/AUTHORITY_CONTRACT.md",
+      "bytes": 4569,
+      "sha256": "c2226047aa67da4ae0eea2885ebf7c54d3300155cae13c29775a214e05d8d5de"
+    },
+    {
+      "path": "docs/convergence/mission-1/HERMES_PIN_RESOLUTION.md",
+      "bytes": 5628,
+      "sha256": "988922e3c4e6999fd24830e281214cb635e84eb3b5465b61ed889555c2ce786d"
+    },
+    {
+      "path": "docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md",
+      "bytes": 6510,
+      "sha256": "ef4fd514803e0f9708fcb5ee314f35413973d137ae1e575926f669b66f7e5f57"
+    },
+    {
+      "path": "docs/convergence/mission-1/INTELLIGENCE_OS_RECOVERY_STATUS.md",
+      "bytes": 5895,
+      "sha256": "f78eadc22c960de4a2cf23fb15053378148eb8e59a2f9e811a883a48e8e816fe"
+    },
+    {
+      "path": "docs/convergence/mission-1/RUNTIME_INCLUSION_MANIFEST.json",
+      "bytes": 10035,
+      "sha256": "8a8805c5b86542496fb08ca35fb9c992770fc1a21887950777b7e9aed4acd5f3"
+    },
+    {
+      "path": "docs/convergence/mission-1/CONVERGENCE_ROLLBACK_PLAN.md",
+      "bytes": 2511,
+      "sha256": "b0fa6119e992f2d461453a29c2396f3aa269e3c3ca874ce321eb873e6baf6a35"
+    },
+    {
+      "path": "docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json",
+      "bytes": 12365,
+      "sha256": "d35b00710d1a392a10884e8e4afca96afa32851dc28bb1156fed0361eb2a72e8"
+    },
+    {
+      "path": "tools/convergence-census/generate-input-hashes.mjs",
+      "bytes": 12261,
+      "sha256": "9189fb10f5e50e9b33b0346ddd5175eceecf8880f94681e709b79a5282976058"
+    },
+    {
+      "path": "tools/convergence-census/generate-artifact-manifest.mjs",
+      "bytes": 2407,
+      "sha256": "baacbc9f9a8cf25c71ffdcda8875ee090201904a469d78b947249a1ba00181d5"
+    },
+    {
+      "path": "tools/convergence-census/verify.mjs",
+      "bytes": 19807,
+      "sha256": "f2c0e1ff85e0a05a11d3187b1605b050c00a02759211ce02a74438b782fddb2d"
+    }
+  ],
+  "artifact_set_sha256": "92291bfa00327ad46033ace3adf14cd9a38dc481b80491904036b472c54830f5"
+}
