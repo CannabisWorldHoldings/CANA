@@ -317,19 +317,28 @@ test('locked build root prevents target replacement while Prisma opens the datab
   await withPreparedWorkspace(async ({ workspace }) => {
     const attackerPath = path.join(tempRoot, 'swap-restore-attacker.db');
     fs.copyFileSync(workspace.databasePath, attackerPath, fs.constants.COPYFILE_EXCL);
-    const result = await assertProductionBuildDatabaseReady({
+    const ownedPath = `${workspace.databasePath}.owned`;
+    let swapped = false;
+    const readiness = assertProductionBuildDatabaseReady({
       workspace,
       beforeDatabaseOpen() {
-        assert.throws(
-          () => fs.renameSync(workspace.databasePath, `${workspace.databasePath}.owned`),
-          (error) => {
-            assert.ok(error?.code === 'EACCES' || error?.code === 'EPERM');
-            return true;
-          },
-        );
+        try {
+          fs.renameSync(workspace.databasePath, ownedPath);
+          fs.copyFileSync(attackerPath, workspace.databasePath, fs.constants.COPYFILE_EXCL);
+          swapped = true;
+        } catch (error) {
+          assert.ok(error?.code === 'EACCES' || error?.code === 'EPERM');
+        }
       },
     });
-    assert.equal(result.checks.every((check) => check.pass), true);
+    if (swapped) {
+      await assert.rejects(readiness, assertCode('BUILD_DATABASE_IDENTITY_CHANGED'));
+      fs.rmSync(workspace.databasePath);
+      fs.renameSync(ownedPath, workspace.databasePath);
+    } else {
+      const result = await readiness;
+      assert.equal(result.checks.every((check) => check.pass), true);
+    }
   });
 });
 
@@ -338,22 +347,41 @@ test('initial migration opens only the target protected by the locked build root
   fs.writeFileSync(attackerPath, '', { flag: 'wx', mode: 0o600 });
   migrate(pathToFileURL(attackerPath).href);
   const attackerBefore = fs.readFileSync(attackerPath);
-  const prepared = await prepareProductionBuildDatabase({
+  let capturedWorkspace;
+  let ownedPath;
+  let swapped = false;
+  const preparation = prepareProductionBuildDatabase({
     beforeInitialDatabaseOpen(workspace) {
-      assert.throws(
-        () => fs.renameSync(workspace.databasePath, `${workspace.databasePath}.owned`),
-        (error) => {
-          assert.ok(error?.code === 'EACCES' || error?.code === 'EPERM');
-          return true;
-        },
-      );
+      capturedWorkspace = workspace;
+      ownedPath = `${workspace.databasePath}.owned`;
+      try {
+        fs.renameSync(workspace.databasePath, ownedPath);
+        fs.copyFileSync(attackerPath, workspace.databasePath, fs.constants.COPYFILE_EXCL);
+        swapped = true;
+      } catch (error) {
+        assert.ok(error?.code === 'EACCES' || error?.code === 'EPERM');
+      }
     },
   });
-  try {
+  if (swapped) {
+    await assert.rejects(
+      preparation,
+      (error) => {
+        assert.ok(error instanceof AggregateError);
+        assert.equal(error.errors[0]?.code, 'BUILD_DATABASE_IDENTITY_CHANGED');
+        assert.equal(error.errors[1]?.code, 'BUILD_DATABASE_CLEANUP_REFUSED');
+        return true;
+      },
+    );
+    fs.rmSync(capturedWorkspace.databasePath);
+    fs.renameSync(ownedPath, capturedWorkspace.databasePath);
+    capturedWorkspace.cleanup();
+  } else {
+    const prepared = await preparation;
     assert.deepEqual(fs.readFileSync(attackerPath), attackerBefore);
-  } finally {
     prepared.workspace.cleanup();
   }
+  assert.deepEqual(fs.readFileSync(attackerPath), attackerBefore);
 });
 
 test('atomic cleanup refuses a replacement root without deleting it', async () => {

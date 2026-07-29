@@ -305,12 +305,10 @@ function assertOwnedSidecars(state) {
       'Locked build database root contains content outside its owned database lifecycle',
     );
   }
-  for (const [sidecarPath, sidecar] of state.sidecars) {
+  for (const sidecarPath of state.sidecars) {
     let named;
-    let retained;
     try {
       named = fs.lstatSync(sidecarPath, { bigint: true });
-      retained = fs.fstatSync(sidecar.descriptor, { bigint: true });
     } catch {
       refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
     }
@@ -318,8 +316,6 @@ function assertOwnedSidecars(state) {
       !named.isFile()
       || named.isSymbolicLink()
       || named.nlink !== 1n
-      || !sameIdentity(sidecar.identity, identityOf(named))
-      || !sameIdentity(sidecar.identity, identityOf(retained))
       || (Number(named.mode) & 0o077) !== 0
       || (
         typeof process.getuid === 'function'
@@ -383,50 +379,52 @@ function assertWorkspaceIdentity(workspace) {
 }
 
 function retainBuildDatabaseSidecars(state) {
-  const retained = new Map();
+  const retained = new Set();
   try {
     for (const name of BUILD_DATABASE_SIDECARS) {
       const sidecarPath = path.join(state.rootPath, name);
       let descriptor;
       try {
-        descriptor = fs.openSync(
-          sidecarPath,
-          fs.constants.O_CREAT
-            | fs.constants.O_EXCL
-            | fs.constants.O_RDWR
-            | (fs.constants.O_NOFOLLOW ?? 0),
-          0o600,
-        );
-      } catch (error) {
-        if (error?.code !== 'EEXIST') throw error;
-        descriptor = fs.openSync(
-          sidecarPath,
-          fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0),
-        );
+        try {
+          descriptor = fs.openSync(
+            sidecarPath,
+            fs.constants.O_CREAT
+              | fs.constants.O_EXCL
+              | fs.constants.O_RDWR
+              | (fs.constants.O_NOFOLLOW ?? 0),
+            0o600,
+          );
+        } catch (error) {
+          if (error?.code !== 'EEXIST') throw error;
+          descriptor = fs.openSync(
+            sidecarPath,
+            fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0),
+          );
+        }
+        const stats = fs.fstatSync(descriptor, { bigint: true });
+        const named = fs.lstatSync(sidecarPath, { bigint: true });
+        if (
+          !stats.isFile()
+          || named.isSymbolicLink()
+          || named.nlink !== 1n
+          || !sameIdentity(identityOf(stats), identityOf(named))
+          || (Number(named.mode) & 0o077) !== 0
+          || (
+            typeof process.getuid === 'function'
+            && Number(named.uid) !== process.getuid()
+          )
+        ) {
+          refusal(
+            'BUILD_DATABASE_IDENTITY_CHANGED',
+            'Build database sidecar was not exclusively owned by this build',
+          );
+        }
+        retained.add(sidecarPath);
+      } finally {
+        if (descriptor !== undefined) fs.closeSync(descriptor);
       }
-      retained.set(sidecarPath, { descriptor, identity: null });
-      const stats = fs.fstatSync(descriptor, { bigint: true });
-      const named = fs.lstatSync(sidecarPath, { bigint: true });
-      if (
-        !stats.isFile()
-        || named.isSymbolicLink()
-        || named.nlink !== 1n
-        || !sameIdentity(identityOf(stats), identityOf(named))
-        || (Number(named.mode) & 0o077) !== 0
-        || (
-          typeof process.getuid === 'function'
-          && Number(named.uid) !== process.getuid()
-        )
-      ) {
-        refusal(
-          'BUILD_DATABASE_IDENTITY_CHANGED',
-          'Build database sidecar was not exclusively owned by this build',
-        );
-      }
-      retained.get(sidecarPath).identity = identityOf(stats);
     }
   } catch (error) {
-    for (const sidecar of retained.values()) fs.closeSync(sidecar.descriptor);
     throw error;
   }
   state.sidecars = retained;
@@ -567,15 +565,9 @@ function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
     fs.ftruncateSync(state.descriptor, 0);
     fs.fsyncSync(state.descriptor);
     fs.fchmodSync(state.descriptor, 0);
-    for (const sidecar of state.sidecars.values()) {
-      fs.ftruncateSync(sidecar.descriptor, 0);
-      fs.fsyncSync(sidecar.descriptor);
-      fs.fchmodSync(sidecar.descriptor, 0);
-    }
     fs.fchmodSync(state.rootDescriptor, 0);
     cleanupFailed = true;
   }
-  for (const sidecar of state.sidecars.values()) fs.closeSync(sidecar.descriptor);
   state.sidecars.clear();
   fs.closeSync(quarantineDescriptor);
   fs.closeSync(state.rootDescriptor);
@@ -653,7 +645,7 @@ export function createBuildDatabaseWorkspace() {
     rootDescriptor,
     descriptor,
     marker: randomBytes(32).toString('hex'),
-    sidecars: new Map(),
+    sidecars: new Set(),
     pathLocked: true,
     initialized: false,
     cleaned: false,
@@ -738,6 +730,7 @@ export async function assertProductionBuildDatabaseReady({
   const prisma = new PrismaClient({
     datasources: { db: { url: singleConnectionDatabaseUrl(workspace) } },
   });
+  let result;
   try {
     const beforeOpen = openFileDescriptors();
     await prisma.$connect();
@@ -774,10 +767,13 @@ export async function assertProductionBuildDatabaseReady({
       );
     }
     assertWorkspaceIdentity(workspace);
-    return { provider: 'sqlite', checks: readiness.checks };
+    result = { provider: 'sqlite', checks: readiness.checks };
   } finally {
     await prisma.$disconnect();
   }
+  retainBuildDatabaseSidecars(state);
+  assertWorkspaceIdentity(workspace);
+  return result;
 }
 
 export async function prepareProductionBuildDatabase(options = {}) {
