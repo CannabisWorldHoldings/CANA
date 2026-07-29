@@ -14,6 +14,9 @@ Traceable Mission 2 commits:
 | `0d65ec83a136689810bcab5988865cc2ff667a11` | execute the Minimum Alive Loop in shadow mode |
 | `6657c04e593e916b1d6f8b4cf49d9b1bb70e3a97` | add the Mission 2 courts to the candidate workflow |
 | `1f56364385bb707a14dce2c19461ed247b911ef3` | record contracts, repairs, and Mission 3 boundaries |
+| `5b4f61f3f29d1a8f8c277caf9d09f205c2ddc79c` | add this non-self-referential commit ledger |
+| `aba819087d432d55cf2ebb464d3bebfa56dba26f` | record the exact ownership-policy repair evidence |
+| `27057809850fa6a96bfe35d73d5ce86de55679bd` | reconcile exact Mission 2 durability ownership |
 
 The exact ownership-reconciliation and final-evidence commits are recorded by their
 full identities in the final external verification receipt after the branch is
