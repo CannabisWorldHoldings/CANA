@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { assertIndependentProviders, createProvider } from '../src/provider-contract.mjs';
 import { createGeminiProvider } from '../src/providers/gemini.mjs';
 import { analyzeBrandLogo, buildBrandProfile } from '../src/brand-profile.mjs';
@@ -20,12 +20,15 @@ import sharp from 'sharp';
 import { createEditingRequest, createGenerationRequest } from '../src/asset-request.mjs';
 import { evaluateBenchmarkReplay } from '../src/benchmark-replay.mjs';
 import { readFile } from 'node:fs/promises';
-import { generateKeyPairSync, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import {
   buildPaidRequestBinding,
   canonicalPaidAuthorizationPayload,
 } from '../src/paid-authorization.mjs';
 import { providerVerificationIdentity } from '../src/independent-verification.mjs';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const PIXEL =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
@@ -135,6 +138,10 @@ const PRODUCTS = [
 ];
 const LOGO = { imageBase64: PIXEL, mimeType: 'image/png' };
 const CAMPAIGN = { channel: 'featured-placement', aspectRatio: '1:1' };
+const receiptDirectory = mkdtempSync(join(tmpdir(), 'cana-creative-receipts-'));
+process.env.CANA_CREATIVE_RECEIPT_DIR = receiptDirectory;
+process.env.GEMINI_API_KEY = 'test-key';
+after(() => rmSync(receiptDirectory, { recursive: true, force: true }));
 const { privateKey: paidGovernancePrivateKey, publicKey: paidGovernancePublicKey } =
   generateKeyPairSync('ed25519');
 const paidGovernancePublicKeyPem = paidGovernancePublicKey.export({
@@ -171,21 +178,30 @@ function signedAuthorization(request, maxCostUsd) {
 }
 
 function generationAuthorization({
+  operation = 'IMAGE_GENERATION',
   tenantId = 'orderweeddc',
   aspectRatio = '1:1',
   imageSize = '1K',
-  referenceImageCount = 0,
+  prompt = 'draft scene',
+  referenceImages = [],
   reservedMaxCostUsd = 0.1,
 } = {}) {
   const request = {
-    operation: 'IMAGE_GENERATION',
+    operation,
     tenantId,
     provider: 'gemini',
     model: 'gemini-3.1-flash-image',
     modelRole: 'FAST_IMAGE_ITERATOR',
     aspectRatio,
     imageSize,
-    referenceImageCount,
+    referenceImageCount: referenceImages.length,
+    promptSha256: createHash('sha256').update(prompt).digest('hex'),
+    referenceImages: referenceImages.map((reference) => ({
+      mimeType: reference.mimeType,
+      sha256: createHash('sha256')
+        .update(Buffer.from(reference.imageBase64, 'base64'))
+        .digest('hex'),
+    })),
     estimatedImageOutputCostUsd: imageSize === '2K' ? 0.101 : 0.067,
     reservedMaxCostUsd,
   };
@@ -194,6 +210,9 @@ function generationAuthorization({
 
 function analysisAuthorization({
   tenantId = 'orderweeddc',
+  instruction = 'Return JSON',
+  imageBase64 = PIXEL,
+  mimeType = 'image/png',
   reservedMaxCostUsd = 0.1,
 } = {}) {
   return signedAuthorization(
@@ -204,6 +223,11 @@ function analysisAuthorization({
       model: 'gemini-3.1-pro-preview',
       modelRole: 'CREATIVE_DIRECTOR_AND_UI_ARCHITECT',
       reservedMaxCostUsd,
+      instructionSha256: createHash('sha256').update(instruction).digest('hex'),
+      imageSha256: createHash('sha256')
+        .update(Buffer.from(imageBase64, 'base64'))
+        .digest('hex'),
+      mimeType,
     },
     reservedMaxCostUsd,
   );
@@ -238,7 +262,6 @@ test('gemini adapter refuses to construct without an API key', () => {
 test('gemini adapter never hardcodes a key and uses injected fetch', async () => {
   const calls = [];
   const provider = createGeminiProvider({
-    apiKey: 'test-key',
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
       return {
@@ -253,7 +276,7 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
   });
   const image = await provider.generateImage({
     tenantId: 'orderweeddc',
-    authorizationReceipt: generationAuthorization(),
+    authorizationReceipt: generationAuthorization({ prompt: 'studio scene' }),
     maxTotalCostUsd: 0.1,
     prompt: 'studio scene',
     aspectRatio: '1:1',
@@ -262,6 +285,10 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
   assert.match(calls[0].url, /generativelanguage\.googleapis\.com/);
   assert.doesNotMatch(calls[0].url, /test-key/);
   assert.equal(calls[0].options.headers['x-goog-api-key'], 'test-key');
+  assert.throws(
+    () => createGeminiProvider({ apiKey: 'caller-override' }),
+    /must come from the server-side GEMINI_API_KEY environment/,
+  );
 });
 
 test('brand profile requires logo analysis first and filters to verified products', async () => {
@@ -546,7 +573,6 @@ test('responsive derivatives preserve an exact hashed logo and emit AVIF and Web
 test('paid generation is fail-closed before transport without a governance receipt', async () => {
   let calls = 0;
   const provider = createGeminiProvider({
-    apiKey: 'test-key',
     fetchImpl: async () => {
       calls += 1;
       throw new Error('transport must not run');
@@ -578,7 +604,6 @@ test('paid generation is fail-closed before transport without a governance recei
 
 test('two Gemini adapters remain the same provider family regardless of auth labels', () => {
   const developer = createGeminiProvider({
-    apiKey: 'test-key-a',
     fetchImpl: async () => {
       throw new Error('not called');
     },
@@ -603,7 +628,6 @@ test('two Gemini adapters remain the same provider family regardless of auth lab
 test('signed paid authorization is request-bound and rejects tampering before transport', async () => {
   let calls = 0;
   const provider = createGeminiProvider({
-    apiKey: 'test-key',
     fetchImpl: async () => {
       calls += 1;
       throw new Error('transport must not run');
@@ -630,13 +654,32 @@ test('signed paid authorization is request-bound and rejects tampering before tr
       }),
     /signature is invalid/,
   );
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: receipt,
+        maxTotalCostUsd: 0.1,
+        prompt: 'substituted prompt',
+      }),
+    /does not authorize this request/,
+  );
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization(),
+        maxTotalCostUsd: Number.NaN,
+        prompt: 'draft scene',
+      }),
+    /maxTotalCostUsd/,
+  );
   assert.equal(calls, 0);
 });
 
 test('paid authorization receipts cannot be replayed', async () => {
   let calls = 0;
   const provider = createGeminiProvider({
-    apiKey: 'test-key',
     fetchImpl: async () => {
       calls += 1;
       return {
@@ -657,7 +700,58 @@ test('paid authorization receipts cannot be replayed', async () => {
     prompt: 'draft scene',
   };
   await provider.generateImage(request);
-  await assert.rejects(() => provider.generateImage(request), /receipt replay is forbidden/);
+  const restartedWorker = createGeminiProvider({
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error('replayed transport must not run');
+    },
+  });
+  await assert.rejects(
+    () => restartedWorker.generateImage(request),
+    /receipt replay is forbidden/,
+  );
+  assert.equal(calls, 1);
+});
+
+test('image editing has a separately signed operation and requires bounded references', async () => {
+  const referenceImages = [{ mimeType: 'image/png', imageBase64: PIXEL }];
+  let calls = 0;
+  const provider = createGeminiProvider({
+    fetchImpl: async () => {
+      calls += 1;
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
+          ],
+        }),
+      };
+    },
+  });
+  await assert.rejects(
+    () =>
+      provider.editImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization({
+          referenceImages,
+        }),
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+        referenceImages,
+      }),
+    /does not authorize this request/,
+  );
+  await provider.editImage({
+    tenantId: 'orderweeddc',
+    authorizationReceipt: generationAuthorization({
+      operation: 'IMAGE_EDIT',
+      referenceImages,
+    }),
+    maxTotalCostUsd: 0.1,
+    prompt: 'draft scene',
+    referenceImages,
+  });
   assert.equal(calls, 1);
 });
 
@@ -666,7 +760,6 @@ test('Gemini output enforces decoded pixel limits at the provider boundary', asy
   oversizedHeader.writeUInt32BE(200_000, 16);
   oversizedHeader.writeUInt32BE(200_000, 20);
   const provider = createGeminiProvider({
-    apiKey: 'test-key',
     fetchImpl: async () => ({
       ok: true,
       json: async () => ({
@@ -701,7 +794,6 @@ test('Gemini output enforces decoded pixel limits at the provider boundary', asy
 
 test('Gemini analysis rejects syntactically valid but contract-empty JSON', async () => {
   const provider = createGeminiProvider({
-    apiKey: 'test-key',
     fetchImpl: async () => ({
       ok: true,
       json: async () => ({
@@ -721,6 +813,61 @@ test('Gemini analysis rejects syntactically valid but contract-empty JSON', asyn
       }),
     /supported visual-analysis contract/,
   );
+});
+
+test('Gemini analysis enforces bounded instructions and responses before accepting data', async () => {
+  let calls = 0;
+  const provider = createGeminiProvider({
+    fetchImpl: async () => {
+      calls += 1;
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      containsMinorsAppeal: false,
+                      containsHealthClaims: false,
+                      matchesBrand: true,
+                      summary: 'x'.repeat(65_536),
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      };
+    },
+  });
+  await assert.rejects(
+    () =>
+      provider.analyzeImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: null,
+        maxTotalCostUsd: 0.1,
+        imageBase64: PIXEL,
+        mimeType: 'image/png',
+        instruction: 'x'.repeat(32_769),
+      }),
+    /32768-byte limit/,
+  );
+  await assert.rejects(
+    () =>
+      provider.analyzeImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: analysisAuthorization(),
+        maxTotalCostUsd: 0.1,
+        imageBase64: PIXEL,
+        mimeType: 'image/png',
+        instruction: 'Return JSON',
+      }),
+    /65536-byte limit/,
+  );
+  assert.equal(calls, 1);
 });
 
 test('candidate request identity ignores dynamic provider timestamps', () => {

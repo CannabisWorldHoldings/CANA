@@ -1,4 +1,7 @@
 import { createProvider } from '../provider-contract.mjs';
+import { createHash } from 'node:crypto';
+import { mkdir, open } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   createModelRegistry,
   estimateImageOutputCost,
@@ -27,7 +30,10 @@ const ALLOWED_IMAGE_SIZES = new Set(['0.5K', '1K', '2K', '4K']);
 const MAX_REFERENCE_BYTES = 20 * 1024 * 1024;
 const MAX_TOTAL_REFERENCE_BYTES = 80 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 50 * 1024 * 1024;
-const consumedPaidReceipts = new Map();
+const MAX_TEXT_INPUT_BYTES = 32 * 1024;
+const MAX_ANALYSIS_OUTPUT_BYTES = 64 * 1024;
+const MAX_ANALYSIS_STRING_LENGTH = 4_000;
+const MAX_ANALYSIS_ARRAY_LENGTH = 20;
 
 function nonEmpty(value, label) {
   if (typeof value !== 'string' || value.length === 0) {
@@ -36,15 +42,20 @@ function nonEmpty(value, label) {
   return value;
 }
 
+function boundedText(value, label, maxBytes = MAX_TEXT_INPUT_BYTES) {
+  const text = nonEmpty(value, label);
+  if (Buffer.byteLength(text) > maxBytes) {
+    throw new Error(`${label} exceeds the ${maxBytes}-byte limit`);
+  }
+  return text;
+}
+
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
+}
+
 function normalizeAuth(options) {
   const explicit = options.auth;
-  if (explicit?.kind === 'developer-api') {
-    return Object.freeze({
-      kind: explicit.kind,
-      apiKey: nonEmpty(explicit.apiKey, 'developer API key'),
-      boundaryId: 'google-developer-api',
-    });
-  }
   if (explicit?.kind === 'vertex-ai') {
     if (typeof explicit.getAccessToken !== 'function') {
       throw new TypeError('Vertex authentication requires getAccessToken');
@@ -57,7 +68,10 @@ function normalizeAuth(options) {
       boundaryId: `google-vertex:${explicit.projectId}:${explicit.location}`,
     });
   }
-  const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
+  if (options.apiKey !== undefined || explicit?.apiKey !== undefined) {
+    throw new Error('Developer API keys must come from the server-side GEMINI_API_KEY environment');
+  }
+  const apiKey = process.env.GEMINI_API_KEY;
   if (typeof apiKey === 'string' && apiKey.length > 0) {
     return Object.freeze({
       kind: 'developer-api',
@@ -140,19 +154,32 @@ function validateReferenceImages(referenceImages) {
   });
 }
 
-function imageRequestParts(prompt, referenceImages) {
-  return [{ text: nonEmpty(prompt, 'prompt') }, ...validateReferenceImages(referenceImages)];
-}
-
-function consumePaidReceipt(authorization) {
-  const now = Date.now();
-  for (const [receiptId, expiry] of consumedPaidReceipts) {
-    if (expiry <= now) consumedPaidReceipts.delete(receiptId);
+async function consumePaidReceipt(authorization) {
+  const receiptDirectory = process.env.CANA_CREATIVE_RECEIPT_DIR;
+  if (typeof receiptDirectory !== 'string' || receiptDirectory.length === 0) {
+    throw new Error('CANA_CREATIVE_RECEIPT_DIR is required for durable replay protection');
   }
-  if (consumedPaidReceipts.has(authorization.receiptId)) {
-    throw new Error('CANA paid-governance receipt replay is forbidden');
+  await mkdir(receiptDirectory, { recursive: true, mode: 0o700 });
+  const receiptPath = join(receiptDirectory, `${sha256(authorization.receiptId)}.json`);
+  let handle;
+  try {
+    handle = await open(receiptPath, 'wx', 0o600);
+    await handle.writeFile(
+      `${JSON.stringify({
+        receiptId: authorization.receiptId,
+        requestSha256: authorization.requestSha256,
+        expiresAt: authorization.expiresAt,
+      })}\n`,
+      { encoding: 'utf8' },
+    );
+  } catch (error) {
+    if (error?.code === 'EEXIST') {
+      throw new Error('CANA paid-governance receipt replay is forbidden');
+    }
+    throw error;
+  } finally {
+    await handle?.close();
   }
-  consumedPaidReceipts.set(authorization.receiptId, Date.parse(authorization.expiresAt));
 }
 
 export function createGeminiProvider(options = {}) {
@@ -174,8 +201,10 @@ export function createGeminiProvider(options = {}) {
     aspectRatio = '1:1',
     imageSize = '1K',
     referenceImages = [],
-  }) {
+  }, operation) {
     nonEmpty(tenantId, 'tenantId');
+    const boundedPrompt = boundedText(prompt, 'prompt');
+    const validatedReferenceParts = validateReferenceImages(referenceImages);
     if (!ALLOWED_ASPECT_RATIOS.has(aspectRatio)) {
       throw new Error(`unsupported aspect ratio: ${aspectRatio}`);
     }
@@ -188,13 +217,13 @@ export function createGeminiProvider(options = {}) {
       candidateCount: 1,
     });
     if (
-      typeof maxTotalCostUsd !== 'number' ||
+      !Number.isFinite(maxTotalCostUsd) ||
       maxTotalCostUsd < cost.estimatedImageOutputCostUsd
     ) {
       throw new Error('maxTotalCostUsd must cover image output and all input-token charges');
     }
     const requestBinding = buildPaidRequestBinding({
-      operation: 'IMAGE_GENERATION',
+      operation,
       tenantId,
       provider: 'gemini',
       model: imageDefinition.model,
@@ -202,6 +231,11 @@ export function createGeminiProvider(options = {}) {
       aspectRatio,
       imageSize,
       referenceImageCount: referenceImages.length,
+      promptSha256: sha256(Buffer.from(boundedPrompt)),
+      referenceImages: referenceImages.map((reference) => ({
+        mimeType: reference.mimeType,
+        sha256: sha256(Buffer.from(reference.imageBase64, 'base64')),
+      })),
       estimatedImageOutputCostUsd: cost.estimatedImageOutputCostUsd,
       reservedMaxCostUsd: maxTotalCostUsd,
     });
@@ -211,14 +245,23 @@ export function createGeminiProvider(options = {}) {
       publicKey: paidGovernancePublicKey,
       requiredCostUsd: maxTotalCostUsd,
     });
-    consumePaidReceipt(authorization);
+    if (operation === 'IMAGE_EDIT' && referenceImages.length === 0) {
+      throw new Error('IMAGE_EDIT requires at least one authorized reference image');
+    }
+    for (const [index, reference] of referenceImages.entries()) {
+      await assertBoundedImage(
+        Buffer.from(reference.imageBase64, 'base64'),
+        `referenceImages[${index}]`,
+      );
+    }
+    await consumePaidReceipt(authorization);
     const payload = await postJson({
       fetchImpl,
       auth,
       model: imageDefinition.model,
       timeoutMs,
       body: {
-        contents: [{ parts: imageRequestParts(prompt, referenceImages) }],
+        contents: [{ parts: [{ text: boundedPrompt }, ...validatedReferenceParts] }],
         generationConfig: {
           responseModalities: ['IMAGE'],
           imageConfig: { aspectRatio, imageSize },
@@ -263,8 +306,8 @@ export function createGeminiProvider(options = {}) {
     model: imageDefinition.model,
     providerFamily: 'google',
     boundaryId: auth.boundaryId,
-    generateImage: generateOrEdit,
-    editImage: generateOrEdit,
+    generateImage: (input) => generateOrEdit(input, 'IMAGE_GENERATION'),
+    editImage: (input) => generateOrEdit(input, 'IMAGE_EDIT'),
     async analyzeImage({
       tenantId,
       authorizationReceipt,
@@ -274,9 +317,17 @@ export function createGeminiProvider(options = {}) {
       instruction,
     }) {
       nonEmpty(tenantId, 'tenantId');
-      if (typeof maxTotalCostUsd !== 'number' || maxTotalCostUsd <= 0) {
+      if (!Number.isFinite(maxTotalCostUsd) || maxTotalCostUsd <= 0) {
         throw new Error('maxTotalCostUsd must reserve analysis input and output charges');
       }
+      const boundedInstruction = boundedText(instruction, 'instruction');
+      const analysisMimeType = nonEmpty(mimeType, 'mimeType');
+      if (!analysisMimeType.startsWith('image/')) {
+        throw new Error('analysis mimeType must be an image');
+      }
+      const analysisImageBase64 = nonEmpty(imageBase64, 'imageBase64');
+      const analysisImage = Buffer.from(analysisImageBase64, 'base64');
+      await assertBoundedImage(analysisImage, 'analysis image');
       const requestBinding = buildPaidRequestBinding({
         operation: 'IMAGE_ANALYSIS',
         tenantId,
@@ -284,6 +335,9 @@ export function createGeminiProvider(options = {}) {
         model: analysisDefinition.model,
         modelRole: analysisRole,
         reservedMaxCostUsd: maxTotalCostUsd,
+        instructionSha256: sha256(Buffer.from(boundedInstruction)),
+        imageSha256: sha256(analysisImage),
+        mimeType: analysisMimeType,
       });
       const authorization = verifyPaidAuthorizationReceipt({
         receipt: authorizationReceipt,
@@ -291,7 +345,7 @@ export function createGeminiProvider(options = {}) {
         publicKey: paidGovernancePublicKey,
         requiredCostUsd: maxTotalCostUsd,
       });
-      consumePaidReceipt(authorization);
+      await consumePaidReceipt(authorization);
       const payload = await postJson({
         fetchImpl,
         auth,
@@ -301,22 +355,28 @@ export function createGeminiProvider(options = {}) {
           contents: [
             {
               parts: [
-                { text: nonEmpty(instruction, 'instruction') },
+                { text: boundedInstruction },
                 {
                   inlineData: {
-                    mimeType: nonEmpty(mimeType, 'mimeType'),
-                    data: nonEmpty(imageBase64, 'imageBase64'),
+                    mimeType: analysisMimeType,
+                    data: analysisImageBase64,
                   },
                 },
               ],
             },
           ],
-          generationConfig: { responseMimeType: 'application/json' },
+          generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens: 2048,
+          },
         },
       });
       const text = parts(payload).find((part) => typeof part.text === 'string');
       if (!text) {
         throw new Error('Gemini returned no analysis for the image');
+      }
+      if (Buffer.byteLength(text.text) > MAX_ANALYSIS_OUTPUT_BYTES) {
+        throw new Error(`Gemini analysis exceeds the ${MAX_ANALYSIS_OUTPUT_BYTES}-byte limit`);
       }
       let analysis;
       try {
@@ -336,6 +396,26 @@ export function createGeminiProvider(options = {}) {
         typeof analysis.tone === 'string' &&
         Array.isArray(analysis.doNotAlter) &&
         typeof analysis.minorsAppealRisk === 'boolean';
+      const strings = [
+        analysis.summary,
+        analysis.typographyStyle,
+        analysis.iconography,
+        analysis.tone,
+      ].filter((value) => typeof value === 'string');
+      const arrays = [analysis.dominantColorsHex, analysis.doNotAlter].filter(Array.isArray);
+      if (
+        strings.some((value) => value.length > MAX_ANALYSIS_STRING_LENGTH) ||
+        arrays.some(
+          (value) =>
+            value.length > MAX_ANALYSIS_ARRAY_LENGTH ||
+            value.some(
+              (item) =>
+                typeof item !== 'string' || item.length > MAX_ANALYSIS_STRING_LENGTH,
+            ),
+        )
+      ) {
+        throw new Error('Gemini analysis exceeds the structured field limits');
+      }
       if (!isImageAnalysis && !isLogoAnalysis) {
         throw new Error('Gemini analysis did not match a supported visual-analysis contract');
       }

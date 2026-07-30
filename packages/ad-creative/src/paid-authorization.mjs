@@ -56,7 +56,8 @@ export function verifyPaidAuthorizationReceipt({
     !tenantId ||
     requestSha256 !== requestBinding.requestSha256 ||
     currency !== 'USD' ||
-    typeof maxCostUsd !== 'number' ||
+    !Number.isFinite(maxCostUsd) ||
+    !Number.isFinite(requiredCostUsd) ||
     maxCostUsd < requiredCostUsd ||
     typeof ownerApprovalId !== 'string' ||
     !ownerApprovalId ||
