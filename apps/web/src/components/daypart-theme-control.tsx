@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { Moon, Sun, SunMoon } from 'lucide-react';
-import {
-  isThemeMode,
-  nextThemeMode,
-  resolveDaypart,
-} from '@/lib/daypart-theme.mjs';
+import { nextThemeMode, resolveDaypart } from '@/lib/daypart-theme.mjs';
 
 type ThemeMode = 'auto' | 'day' | 'night';
 
 const STORAGE_KEY = 'owd:theme-mode';
+const THEME_CHANGE_EVENT = 'owd:theme-mode-change';
+let memoryThemeMode: ThemeMode = 'auto';
 
 const LABELS: Record<ThemeMode, string> = {
   auto: 'Automatic theme based on local time',
@@ -18,15 +16,43 @@ const LABELS: Record<ThemeMode, string> = {
   night: 'Night theme',
 };
 
-export default function DaypartThemeControl() {
-  const [mode, setMode] = useState<ThemeMode>('auto');
+function storedThemeMode(): ThemeMode {
+  if (typeof window === 'undefined') return 'auto';
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    return stored === 'day' || stored === 'night' ? stored : 'auto';
+  } catch {
+    return memoryThemeMode;
+  }
+}
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (isThemeMode(stored)) setMode(stored as ThemeMode);
-    } catch {}
-  }, []);
+function subscribeToThemeMode(onChange: () => void) {
+  window.addEventListener('storage', onChange);
+  window.addEventListener(THEME_CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener('storage', onChange);
+    window.removeEventListener(THEME_CHANGE_EVENT, onChange);
+  };
+}
+
+function persistThemeMode(mode: ThemeMode) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, mode);
+  } catch {
+    return;
+  }
+}
+
+function serverThemeMode(): ThemeMode {
+  return 'auto';
+}
+
+export default function DaypartThemeControl() {
+  const mode = useSyncExternalStore<ThemeMode>(
+    subscribeToThemeMode,
+    storedThemeMode,
+    serverThemeMode,
+  );
 
   useEffect(() => {
     const applyTheme = () => {
@@ -46,11 +72,12 @@ export default function DaypartThemeControl() {
   }, [mode]);
 
   const cycleMode = () => {
-    const next = nextThemeMode(mode) as ThemeMode;
-    setMode(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {}
+    const candidate = nextThemeMode(mode);
+    const next: ThemeMode =
+      candidate === 'day' || candidate === 'night' ? candidate : 'auto';
+    memoryThemeMode = next;
+    persistThemeMode(next);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   };
 
   const Icon = mode === 'day' ? Sun : mode === 'night' ? Moon : SunMoon;
