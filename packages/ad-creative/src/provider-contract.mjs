@@ -69,7 +69,11 @@ export function createProvider(spec) {
   });
 }
 
-export function assertIndependentProviders(generatorProvider, verifierProvider) {
+export function assertIndependentProviders(
+  generatorProvider,
+  verifierProvider,
+  verificationAuthorization = {},
+) {
   if (!generatorProvider || !verifierProvider) {
     throw new Error('generatorProvider and verifierProvider are both required');
   }
@@ -81,4 +85,13 @@ export function assertIndependentProviders(generatorProvider, verifierProvider) 
       'independent verification is required: the generator boundary cannot verify its own output',
     );
   }
+  return verifyIndependentProviderReceipt({
+    generatorProvider,
+    verifierProvider,
+    receipt: verificationAuthorization.receipt,
+    publicKey: process.env.CANA_INDEPENDENT_VERIFICATION_PUBLIC_KEY,
+    tenantId: verificationAuthorization.tenantId,
+    missionId: verificationAuthorization.missionId,
+  });
 }
+import { verifyIndependentProviderReceipt } from './independent-verification.mjs';

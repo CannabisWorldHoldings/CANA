@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "auditedAt": "2026-07-30T00:00:00Z",
+  "verificationBoundary": "Historical repositories are access-controlled. Commit identities were verified with the owner's authenticated gh CLI; anonymous HTTP may return 404 and is not evidence that a commit is absent.",
   "canonical": {
     "repository": "CannabisWorldHoldings/CANA",
     "baseCommit": "375fe9be06e48010b8ef5176b74e98fde980246a",
@@ -11,30 +12,35 @@
       "repository": "cannabisworldholdings-afk/ORDERWEEDDCRSI-",
       "branch": "main",
       "commit": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "verification": "VERIFIED_WITH_OWNER_AUTHENTICATED_GH_CLI",
       "commitApi": "https://api.github.com/repos/cannabisworldholdings-afk/ORDERWEEDDCRSI-/commits/125c81b084c7a76aae0dc28781f106cba3204e7b"
     },
     {
       "repository": "princeleuel-code/rsi-sitemind-core",
       "branch": "main",
       "commit": "9333c1d572a6be39df30e98ee07c451624190a8f",
+      "verification": "VERIFIED_WITH_OWNER_AUTHENTICATED_GH_CLI",
       "commitApi": "https://api.github.com/repos/princeleuel-code/rsi-sitemind-core/commits/9333c1d572a6be39df30e98ee07c451624190a8f"
     },
     {
       "repository": "princeleuel-code/rsi-skills",
       "branch": "main",
       "commit": "e9aa9e8d64b28f4de5ae8831e682701e324db987",
+      "verification": "VERIFIED_WITH_OWNER_AUTHENTICATED_GH_CLI",
       "commitApi": "https://api.github.com/repos/princeleuel-code/rsi-skills/commits/e9aa9e8d64b28f4de5ae8831e682701e324db987"
     },
     {
       "repository": "princeleuel-code/rsi-evaluations",
       "branch": "main",
       "commit": "5dc9ea2dc83e27b29dc3156fb0eb9743b79863a7",
+      "verification": "VERIFIED_WITH_OWNER_AUTHENTICATED_GH_CLI",
       "commitApi": "https://api.github.com/repos/princeleuel-code/rsi-evaluations/commits/5dc9ea2dc83e27b29dc3156fb0eb9743b79863a7"
     },
     {
       "repository": "princeleuel-code/rsi-hermes-runtime",
       "branch": "rsi-runtime-main",
       "commit": "d97d91c6542a071337a244262fc1f68426a03ab8",
+      "verification": "VERIFIED_WITH_OWNER_AUTHENTICATED_GH_CLI",
       "commitApi": "https://api.github.com/repos/princeleuel-code/rsi-hermes-runtime/commits/d97d91c6542a071337a244262fc1f68426a03ab8"
     }
   ],

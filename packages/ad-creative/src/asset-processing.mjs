@@ -19,6 +19,17 @@ function boundedSharp(buffer, label) {
   return sharp(buffer, { limitInputPixels: MAX_INPUT_PIXELS });
 }
 
+export async function assertBoundedImage(buffer, label = 'image') {
+  const metadata = await boundedSharp(buffer, label).metadata();
+  if (!metadata.width || !metadata.height) {
+    throw new Error(`${label} dimensions are unavailable`);
+  }
+  if (metadata.width * metadata.height > MAX_INPUT_PIXELS) {
+    throw new Error(`${label} exceeds the ${MAX_INPUT_PIXELS}-pixel limit`);
+  }
+  return Object.freeze({ width: metadata.width, height: metadata.height });
+}
+
 export async function assertExactLogo({ logoBuffer, expectedSha256 }) {
   boundedSharp(logoBuffer, 'logoBuffer');
   const actualSha256 = digest(logoBuffer);
@@ -37,7 +48,7 @@ async function compositeExactLogo({
 }) {
   await assertExactLogo({ logoBuffer, expectedSha256: expectedLogoSha256 });
   const scene = boundedSharp(sceneBuffer, 'sceneBuffer');
-  const metadata = await scene.metadata();
+  const metadata = await assertBoundedImage(sceneBuffer, 'sceneBuffer');
   if (!metadata.width || !metadata.height) {
     throw new Error('scene dimensions are unavailable');
   }
@@ -91,8 +102,7 @@ export async function createResponsiveDerivatives({
   if (!Array.isArray(widths) || widths.length === 0) {
     throw new TypeError('responsive widths are required');
   }
-  const source = boundedSharp(masterBuffer, 'masterBuffer');
-  const metadata = await source.metadata();
+  const metadata = await assertBoundedImage(masterBuffer, 'masterBuffer');
   if (!metadata.width || !metadata.height) {
     throw new Error('master dimensions are unavailable');
   }

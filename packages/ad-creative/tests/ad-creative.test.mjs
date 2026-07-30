@@ -20,6 +20,12 @@ import sharp from 'sharp';
 import { createEditingRequest, createGenerationRequest } from '../src/asset-request.mjs';
 import { evaluateBenchmarkReplay } from '../src/benchmark-replay.mjs';
 import { readFile } from 'node:fs/promises';
+import { generateKeyPairSync, sign } from 'node:crypto';
+import {
+  buildPaidRequestBinding,
+  canonicalPaidAuthorizationPayload,
+} from '../src/paid-authorization.mjs';
+import { providerVerificationIdentity } from '../src/independent-verification.mjs';
 
 const PIXEL =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
@@ -63,6 +69,60 @@ function mockProvider(overrides = {}, boundaryId = 'mock-generator') {
   });
 }
 
+const {
+  privateKey: verificationAuthorityPrivateKey,
+  publicKey: verificationAuthorityPublicKey,
+} = generateKeyPairSync('ed25519');
+const verificationAuthorityPublicKeyPem = verificationAuthorityPublicKey.export({
+  type: 'spki',
+  format: 'pem',
+});
+process.env.CANA_INDEPENDENT_VERIFICATION_PUBLIC_KEY =
+  verificationAuthorityPublicKeyPem;
+
+function signedVerificationAuthorization(
+  generatorProvider,
+  verifierProvider,
+  tenantId = 'offline-test-tenant',
+  missionId = 'offline-test-mission',
+) {
+  const payload = {
+    schemaVersion: 1,
+    authority: 'CANA_INDEPENDENT_VERIFICATION',
+    receiptId: 'independent-verification-test',
+    tenantId,
+    missionId,
+    generator: providerVerificationIdentity(generatorProvider),
+    verifier: providerVerificationIdentity(verifierProvider),
+    notBefore: '2020-01-01T00:00:00.000Z',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    nonce: 'abcdef0123456789',
+  };
+  return {
+    receipt: {
+      ...payload,
+      signatureBase64: sign(
+        null,
+        canonicalPaidAuthorizationPayload(payload),
+        verificationAuthorityPrivateKey,
+      ).toString('base64'),
+    },
+  };
+}
+
+function mockPipelineProviders(verifierOverrides = {}) {
+  const generatorProvider = mockProvider({}, 'mock-generator');
+  const verifierProvider = mockProvider(verifierOverrides, 'mock-verifier');
+  return {
+    generatorProvider,
+    verifierProvider,
+    verificationAuthorization: signedVerificationAuthorization(
+      generatorProvider,
+      verifierProvider,
+    ),
+  };
+}
+
 const BUSINESS = {
   name: 'Anacostia Organics',
   licenseNumber: 'ABCA-000042',
@@ -75,14 +135,79 @@ const PRODUCTS = [
 ];
 const LOGO = { imageBase64: PIXEL, mimeType: 'image/png' };
 const CAMPAIGN = { channel: 'featured-placement', aspectRatio: '1:1' };
-const authorizePaidRequest = async ({ estimatedImageOutputCostUsd = 0 }) => ({
-  authority: 'CANA_PAID_GOVERNANCE',
-  authorized: true,
-  receiptId: 'budget-receipt-test',
-  ownerApprovalId: 'owner-approval-test',
-  grantEligibilityReceiptId: 'grant-eligibility-test',
-  maxCostUsd: estimatedImageOutputCostUsd,
+const { privateKey: paidGovernancePrivateKey, publicKey: paidGovernancePublicKey } =
+  generateKeyPairSync('ed25519');
+const paidGovernancePublicKeyPem = paidGovernancePublicKey.export({
+  type: 'spki',
+  format: 'pem',
 });
+process.env.CANA_PAID_GOVERNANCE_PUBLIC_KEY = paidGovernancePublicKeyPem;
+
+let paidReceiptSequence = 0;
+function signedAuthorization(request, maxCostUsd) {
+  paidReceiptSequence += 1;
+  const payload = {
+    schemaVersion: 1,
+    authority: 'CANA_PAID_GOVERNANCE',
+    receiptId: `budget-receipt-test-${paidReceiptSequence}`,
+    tenantId: request.tenantId,
+    requestSha256: buildPaidRequestBinding(request).requestSha256,
+    currency: 'USD',
+    maxCostUsd,
+    notBefore: '2020-01-01T00:00:00.000Z',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    ownerApprovalId: 'owner-approval-test',
+    grantEligibilityReceiptId: 'grant-eligibility-test',
+    nonce: '0123456789abcdef',
+  };
+  return {
+    ...payload,
+    signatureBase64: sign(
+      null,
+      canonicalPaidAuthorizationPayload(payload),
+      paidGovernancePrivateKey,
+    ).toString('base64'),
+  };
+}
+
+function generationAuthorization({
+  tenantId = 'orderweeddc',
+  aspectRatio = '1:1',
+  imageSize = '1K',
+  referenceImageCount = 0,
+  reservedMaxCostUsd = 0.1,
+} = {}) {
+  const request = {
+    operation: 'IMAGE_GENERATION',
+    tenantId,
+    provider: 'gemini',
+    model: 'gemini-3.1-flash-image',
+    modelRole: 'FAST_IMAGE_ITERATOR',
+    aspectRatio,
+    imageSize,
+    referenceImageCount,
+    estimatedImageOutputCostUsd: imageSize === '2K' ? 0.101 : 0.067,
+    reservedMaxCostUsd,
+  };
+  return signedAuthorization(request, reservedMaxCostUsd);
+}
+
+function analysisAuthorization({
+  tenantId = 'orderweeddc',
+  reservedMaxCostUsd = 0.1,
+} = {}) {
+  return signedAuthorization(
+    {
+      operation: 'IMAGE_ANALYSIS',
+      tenantId,
+      provider: 'gemini',
+      model: 'gemini-3.1-pro-preview',
+      modelRole: 'CREATIVE_DIRECTOR_AND_UI_ARCHITECT',
+      reservedMaxCostUsd,
+    },
+    reservedMaxCostUsd,
+  );
+}
 
 test('provider contract rejects incomplete implementations', () => {
   assert.throws(() => createProvider({ name: 'x', model: 'y' }), TypeError);
@@ -114,7 +239,6 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
   const calls = [];
   const provider = createGeminiProvider({
     apiKey: 'test-key',
-    authorizePaidRequest,
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
       return {
@@ -127,7 +251,13 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
       };
     },
   });
-  const image = await provider.generateImage({ prompt: 'studio scene', aspectRatio: '1:1' });
+  const image = await provider.generateImage({
+    tenantId: 'orderweeddc',
+    authorizationReceipt: generationAuthorization(),
+    maxTotalCostUsd: 0.1,
+    prompt: 'studio scene',
+    aspectRatio: '1:1',
+  });
   assert.equal(image.imageBase64, PIXEL);
   assert.match(calls[0].url, /generativelanguage\.googleapis\.com/);
   assert.doesNotMatch(calls[0].url, /test-key/);
@@ -183,6 +313,10 @@ test('full pipeline produces one verified creative per eligible product', async 
   const result = await runAdCreativePipeline({
     generatorProvider,
     verifierProvider,
+    verificationAuthorization: signedVerificationAuthorization(
+      generatorProvider,
+      verifierProvider,
+    ),
     business: BUSINESS,
     logo: LOGO,
     products: PRODUCTS,
@@ -199,8 +333,7 @@ test('full pipeline produces one verified creative per eligible product', async 
 
 test('verification fails on health claims, rendered text, and minors appeal', async () => {
   const healthy = await runAdCreativePipeline({
-    generatorProvider: mockProvider({}, 'mock-generator'),
-    verifierProvider: mockProvider({}, 'mock-verifier'),
+    ...mockPipelineProviders(),
     business: BUSINESS,
     logo: LOGO,
     products: PRODUCTS,
@@ -212,11 +345,7 @@ test('verification fails on health claims, rendered text, and minors appeal', as
   assert.ok(FORBIDDEN_CLAIMS.includes('pain relief'));
 
   const renderedText = await runAdCreativePipeline({
-    generatorProvider: mockProvider({}, 'mock-generator'),
-    verifierProvider: mockProvider(
-      { imageAnalysis: { containsRenderedText: true } },
-      'mock-verifier',
-    ),
+    ...mockPipelineProviders({ imageAnalysis: { containsRenderedText: true } }),
     business: BUSINESS,
     logo: LOGO,
     products: PRODUCTS,
@@ -226,11 +355,7 @@ test('verification fails on health claims, rendered text, and minors appeal', as
   assert.ok(renderedText.creatives[0].verification.receipt.failedChecks.includes('no-rendered-text'));
 
   const minors = await runAdCreativePipeline({
-    generatorProvider: mockProvider({}, 'mock-generator'),
-    verifierProvider: mockProvider(
-      { imageAnalysis: { containsMinorsAppeal: true } },
-      'mock-verifier',
-    ),
+    ...mockPipelineProviders({ imageAnalysis: { containsMinorsAppeal: true } }),
     business: BUSINESS,
     logo: LOGO,
     products: PRODUCTS,
@@ -244,11 +369,7 @@ test('logo flagged for minors appeal halts the pipeline before generation', asyn
   await assert.rejects(
     () =>
       runAdCreativePipeline({
-        generatorProvider: mockProvider({}, 'mock-generator'),
-        verifierProvider: mockProvider(
-          { logoAnalysis: { minorsAppealRisk: true } },
-          'mock-verifier',
-        ),
+        ...mockPipelineProviders({ logoAnalysis: { minorsAppealRisk: true } }),
         business: BUSINESS,
         logo: LOGO,
         products: PRODUCTS,
@@ -260,8 +381,7 @@ test('logo flagged for minors appeal halts the pipeline before generation', asyn
 
 test('assertPostable requires machine PASS AND a named human approval', async () => {
   const result = await runAdCreativePipeline({
-    generatorProvider: mockProvider({}, 'mock-generator'),
-    verifierProvider: mockProvider({}, 'mock-verifier'),
+    ...mockPipelineProviders(),
     business: BUSINESS,
     logo: LOGO,
     products: PRODUCTS,
@@ -302,6 +422,15 @@ test('pipeline refuses self-verification at the provider boundary', async () => 
   );
 });
 
+test('different caller labels do not prove independent verification without a signed receipt', () => {
+  const generatorProvider = mockProvider({}, 'claimed-generator');
+  const verifierProvider = mockProvider({}, 'claimed-verifier');
+  assert.throws(
+    () => assertIndependentProviders(generatorProvider, verifierProvider),
+    /signed CANA independent-verification receipt is required/,
+  );
+});
+
 test('model registry rejects unsupported roles and produces explicit estimates', () => {
   const registry = createModelRegistry();
   assert.equal(
@@ -337,7 +466,6 @@ test('Vertex authentication uses a bearer header and never places credentials in
       location: 'us-central1',
       getAccessToken: async () => 'test-access-token',
     },
-    authorizePaidRequest,
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
       return {
@@ -350,7 +478,12 @@ test('Vertex authentication uses a bearer header and never places credentials in
       };
     },
   });
-  await provider.generateImage({ prompt: 'draft scene' });
+  await provider.generateImage({
+    tenantId: 'orderweeddc',
+    authorizationReceipt: generationAuthorization(),
+    maxTotalCostUsd: 0.1,
+    prompt: 'draft scene',
+  });
   assert.match(calls[0].url, /aiplatform\.googleapis\.com/);
   assert.doesNotMatch(calls[0].url, /test-access-token/);
   assert.equal(calls[0].options.headers.Authorization, 'Bearer test-access-token');
@@ -420,8 +553,13 @@ test('paid generation is fail-closed before transport without a governance recei
     },
   });
   await assert.rejects(
-    () => provider.generateImage({ prompt: 'draft scene' }),
-    /CANA paid-governance authorization is required/,
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /receipt is required/,
   );
   assert.equal(calls, 0);
   await assert.rejects(
@@ -430,8 +568,10 @@ test('paid generation is fail-closed before transport without a governance recei
         imageBase64: PIXEL,
         mimeType: 'image/png',
         instruction: 'Return JSON',
+        tenantId: 'orderweeddc',
+        maxTotalCostUsd: 0.1,
       }),
-    /paid analysis is disabled/,
+    /receipt is required/,
   );
   assert.equal(calls, 0);
 });
@@ -439,7 +579,6 @@ test('paid generation is fail-closed before transport without a governance recei
 test('two Gemini adapters remain the same provider family regardless of auth labels', () => {
   const developer = createGeminiProvider({
     apiKey: 'test-key-a',
-    authorizePaidRequest,
     fetchImpl: async () => {
       throw new Error('not called');
     },
@@ -451,7 +590,6 @@ test('two Gemini adapters remain the same provider family regardless of auth lab
       location: 'us-central1',
       getAccessToken: async () => 'test-token',
     },
-    authorizePaidRequest,
     fetchImpl: async () => {
       throw new Error('not called');
     },
@@ -459,6 +597,129 @@ test('two Gemini adapters remain the same provider family regardless of auth lab
   assert.throws(
     () => assertIndependentProviders(developer, vertex),
     /generator boundary cannot verify its own output/,
+  );
+});
+
+test('signed paid authorization is request-bound and rejects tampering before transport', async () => {
+  let calls = 0;
+  const provider = createGeminiProvider({
+    apiKey: 'test-key',
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error('transport must not run');
+    },
+  });
+  const receipt = generationAuthorization();
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'another-tenant',
+        authorizationReceipt: receipt,
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /does not authorize this request/,
+  );
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: { ...receipt, maxCostUsd: 10 },
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /signature is invalid/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('paid authorization receipts cannot be replayed', async () => {
+  let calls = 0;
+  const provider = createGeminiProvider({
+    apiKey: 'test-key',
+    fetchImpl: async () => {
+      calls += 1;
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
+          ],
+        }),
+      };
+    },
+  });
+  const authorizationReceipt = generationAuthorization();
+  const request = {
+    tenantId: 'orderweeddc',
+    authorizationReceipt,
+    maxTotalCostUsd: 0.1,
+    prompt: 'draft scene',
+  };
+  await provider.generateImage(request);
+  await assert.rejects(() => provider.generateImage(request), /receipt replay is forbidden/);
+  assert.equal(calls, 1);
+});
+
+test('Gemini output enforces decoded pixel limits at the provider boundary', async () => {
+  const oversizedHeader = Buffer.from(PIXEL, 'base64');
+  oversizedHeader.writeUInt32BE(200_000, 16);
+  oversizedHeader.writeUInt32BE(200_000, 20);
+  const provider = createGeminiProvider({
+    apiKey: 'test-key',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  inlineData: {
+                    mimeType: 'image/png',
+                    data: oversizedHeader.toString('base64'),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    }),
+  });
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization(),
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /pixel limit|Input image exceeds pixel limit|invalid|corrupt/i,
+  );
+});
+
+test('Gemini analysis rejects syntactically valid but contract-empty JSON', async () => {
+  const provider = createGeminiProvider({
+    apiKey: 'test-key',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: '{}' }] } }],
+      }),
+    }),
+  });
+  await assert.rejects(
+    () =>
+      provider.analyzeImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: analysisAuthorization(),
+        maxTotalCostUsd: 0.1,
+        imageBase64: PIXEL,
+        mimeType: 'image/png',
+        instruction: 'Return JSON',
+      }),
+    /supported visual-analysis contract/,
   );
 });
 

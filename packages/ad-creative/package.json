@@ -16,7 +16,9 @@
     "./asset-processing": "./src/asset-processing.mjs",
     "./orderweeddc-brand-assets": "./src/orderweeddc-brand-assets.mjs",
     "./asset-request": "./src/asset-request.mjs",
-    "./benchmark-replay": "./src/benchmark-replay.mjs"
+    "./benchmark-replay": "./src/benchmark-replay.mjs",
+    "./paid-authorization": "./src/paid-authorization.mjs",
+    "./independent-verification": "./src/independent-verification.mjs"
   },
   "dependencies": {
     "sharp": "0.35.3"

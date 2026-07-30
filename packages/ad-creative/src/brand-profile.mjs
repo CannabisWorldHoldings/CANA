@@ -30,11 +30,12 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
  * Run the provider's vision model over the business logo.
  * @param {{ provider: import('./provider-contract.mjs').Provider, logoBase64: string, mimeType: string }} input
  */
-export async function analyzeBrandLogo({ provider, logoBase64, mimeType }) {
+export async function analyzeBrandLogo({ provider, logoBase64, mimeType, providerInput = {} }) {
   if (typeof logoBase64 !== 'string' || logoBase64.length === 0) {
     throw new TypeError('analyzeBrandLogo requires logoBase64');
   }
   const analysis = await provider.analyzeImage({
+    ...providerInput,
     imageBase64: logoBase64,
     mimeType,
     instruction: LOGO_ANALYSIS_INSTRUCTION,

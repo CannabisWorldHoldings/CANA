@@ -4,6 +4,11 @@ import {
   estimateImageOutputCost,
   resolveModelRole,
 } from '../model-registry.mjs';
+import {
+  buildPaidRequestBinding,
+  verifyPaidAuthorizationReceipt,
+} from '../paid-authorization.mjs';
+import { assertBoundedImage } from '../asset-processing.mjs';
 
 const DEVELOPER_API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const ALLOWED_ASPECT_RATIOS = new Set([
@@ -22,6 +27,7 @@ const ALLOWED_IMAGE_SIZES = new Set(['0.5K', '1K', '2K', '4K']);
 const MAX_REFERENCE_BYTES = 20 * 1024 * 1024;
 const MAX_TOTAL_REFERENCE_BYTES = 80 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 50 * 1024 * 1024;
+const consumedPaidReceipts = new Map();
 
 function nonEmpty(value, label) {
   if (typeof value !== 'string' || value.length === 0) {
@@ -138,6 +144,17 @@ function imageRequestParts(prompt, referenceImages) {
   return [{ text: nonEmpty(prompt, 'prompt') }, ...validateReferenceImages(referenceImages)];
 }
 
+function consumePaidReceipt(authorization) {
+  const now = Date.now();
+  for (const [receiptId, expiry] of consumedPaidReceipts) {
+    if (expiry <= now) consumedPaidReceipts.delete(receiptId);
+  }
+  if (consumedPaidReceipts.has(authorization.receiptId)) {
+    throw new Error('CANA paid-governance receipt replay is forbidden');
+  }
+  consumedPaidReceipts.set(authorization.receiptId, Date.parse(authorization.expiresAt));
+}
+
 export function createGeminiProvider(options = {}) {
   const auth = normalizeAuth(options);
   const registry = options.registry ?? createModelRegistry();
@@ -147,9 +164,18 @@ export function createGeminiProvider(options = {}) {
   const analysisDefinition = resolveModelRole(registry, analysisRole, 'multimodal-reasoning');
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 120_000;
-  const authorizePaidRequest = options.authorizePaidRequest;
+  const paidGovernancePublicKey = process.env.CANA_PAID_GOVERNANCE_PUBLIC_KEY;
 
-  async function generateOrEdit({ prompt, aspectRatio = '1:1', imageSize = '1K', referenceImages = [] }) {
+  async function generateOrEdit({
+    tenantId,
+    authorizationReceipt,
+    maxTotalCostUsd,
+    prompt,
+    aspectRatio = '1:1',
+    imageSize = '1K',
+    referenceImages = [],
+  }) {
+    nonEmpty(tenantId, 'tenantId');
     if (!ALLOWED_ASPECT_RATIOS.has(aspectRatio)) {
       throw new Error(`unsupported aspect ratio: ${aspectRatio}`);
     }
@@ -161,31 +187,31 @@ export function createGeminiProvider(options = {}) {
       imageSize,
       candidateCount: 1,
     });
-    if (typeof authorizePaidRequest !== 'function') {
-      throw new Error('paid generation is disabled: CANA paid-governance authorization is required');
+    if (
+      typeof maxTotalCostUsd !== 'number' ||
+      maxTotalCostUsd < cost.estimatedImageOutputCostUsd
+    ) {
+      throw new Error('maxTotalCostUsd must cover image output and all input-token charges');
     }
-    const authorization = await authorizePaidRequest({
+    const requestBinding = buildPaidRequestBinding({
+      operation: 'IMAGE_GENERATION',
+      tenantId,
       provider: 'gemini',
       model: imageDefinition.model,
       modelRole: imageRole,
+      aspectRatio,
       imageSize,
+      referenceImageCount: referenceImages.length,
       estimatedImageOutputCostUsd: cost.estimatedImageOutputCostUsd,
-      excludesInputTokens: true,
+      reservedMaxCostUsd: maxTotalCostUsd,
     });
-    if (
-      authorization?.authority !== 'CANA_PAID_GOVERNANCE' ||
-      authorization?.authorized !== true ||
-      typeof authorization?.receiptId !== 'string' ||
-      authorization.receiptId.length === 0 ||
-      typeof authorization?.ownerApprovalId !== 'string' ||
-      authorization.ownerApprovalId.length === 0 ||
-      typeof authorization?.grantEligibilityReceiptId !== 'string' ||
-      authorization.grantEligibilityReceiptId.length === 0 ||
-      typeof authorization?.maxCostUsd !== 'number' ||
-      authorization.maxCostUsd < cost.estimatedImageOutputCostUsd
-    ) {
-      throw new Error('paid generation is disabled: authorization receipt is missing or insufficient');
-    }
+    const authorization = verifyPaidAuthorizationReceipt({
+      receipt: authorizationReceipt,
+      requestBinding,
+      publicKey: paidGovernancePublicKey,
+      requiredCostUsd: maxTotalCostUsd,
+    });
+    consumePaidReceipt(authorization);
     const payload = await postJson({
       fetchImpl,
       auth,
@@ -207,6 +233,10 @@ export function createGeminiProvider(options = {}) {
     if (outputBytes > MAX_OUTPUT_BYTES) {
       throw new Error(`Gemini image exceeds the ${MAX_OUTPUT_BYTES}-byte output limit`);
     }
+    const outputDimensions = await assertBoundedImage(
+      Buffer.from(image.inlineData.data, 'base64'),
+      'Gemini image',
+    );
     return Object.freeze({
       imageBase64: image.inlineData.data,
       mimeType: image.inlineData.mimeType ?? 'image/png',
@@ -221,6 +251,8 @@ export function createGeminiProvider(options = {}) {
         generatedAt: new Date().toISOString(),
         usageMetadata: payload.usageMetadata ?? null,
         cost,
+        reservedMaxCostUsd: maxTotalCostUsd,
+        outputDimensions,
         authorizationReceiptId: authorization.receiptId,
       }),
     });
@@ -233,31 +265,33 @@ export function createGeminiProvider(options = {}) {
     boundaryId: auth.boundaryId,
     generateImage: generateOrEdit,
     editImage: generateOrEdit,
-    async analyzeImage({ imageBase64, mimeType, instruction }) {
-      if (typeof authorizePaidRequest !== 'function') {
-        throw new Error('paid analysis is disabled: CANA paid-governance authorization is required');
+    async analyzeImage({
+      tenantId,
+      authorizationReceipt,
+      maxTotalCostUsd,
+      imageBase64,
+      mimeType,
+      instruction,
+    }) {
+      nonEmpty(tenantId, 'tenantId');
+      if (typeof maxTotalCostUsd !== 'number' || maxTotalCostUsd <= 0) {
+        throw new Error('maxTotalCostUsd must reserve analysis input and output charges');
       }
-      const authorization = await authorizePaidRequest({
+      const requestBinding = buildPaidRequestBinding({
+        operation: 'IMAGE_ANALYSIS',
+        tenantId,
         provider: 'gemini',
         model: analysisDefinition.model,
         modelRole: analysisRole,
-        operation: 'IMAGE_ANALYSIS',
-        estimatedCostUsd: null,
+        reservedMaxCostUsd: maxTotalCostUsd,
       });
-      if (
-        authorization?.authority !== 'CANA_PAID_GOVERNANCE' ||
-        authorization?.authorized !== true ||
-        typeof authorization?.receiptId !== 'string' ||
-        authorization.receiptId.length === 0 ||
-        typeof authorization?.ownerApprovalId !== 'string' ||
-        authorization.ownerApprovalId.length === 0 ||
-        typeof authorization?.grantEligibilityReceiptId !== 'string' ||
-        authorization.grantEligibilityReceiptId.length === 0 ||
-        typeof authorization?.maxCostUsd !== 'number' ||
-        authorization.maxCostUsd < 0
-      ) {
-        throw new Error('paid analysis is disabled: authorization receipt is missing or insufficient');
-      }
+      const authorization = verifyPaidAuthorizationReceipt({
+        receipt: authorizationReceipt,
+        requestBinding,
+        publicKey: paidGovernancePublicKey,
+        requiredCostUsd: maxTotalCostUsd,
+      });
+      consumePaidReceipt(authorization);
       const payload = await postJson({
         fetchImpl,
         auth,
@@ -290,6 +324,21 @@ export function createGeminiProvider(options = {}) {
       } catch {
         throw new Error('Gemini analysis was not valid JSON; refusing to guess');
       }
+      const isImageAnalysis =
+        typeof analysis.containsMinorsAppeal === 'boolean' &&
+        typeof analysis.containsHealthClaims === 'boolean' &&
+        typeof analysis.matchesBrand === 'boolean' &&
+        typeof analysis.summary === 'string';
+      const isLogoAnalysis =
+        Array.isArray(analysis.dominantColorsHex) &&
+        typeof analysis.typographyStyle === 'string' &&
+        typeof analysis.iconography === 'string' &&
+        typeof analysis.tone === 'string' &&
+        Array.isArray(analysis.doNotAlter) &&
+        typeof analysis.minorsAppealRisk === 'boolean';
+      if (!isImageAnalysis && !isLogoAnalysis) {
+        throw new Error('Gemini analysis did not match a supported visual-analysis contract');
+      }
       return Object.freeze({
         ...analysis,
         receipt: Object.freeze({
@@ -299,6 +348,7 @@ export function createGeminiProvider(options = {}) {
           modelRole: analysisRole,
           analyzedAt: new Date().toISOString(),
           usageMetadata: payload.usageMetadata ?? null,
+          reservedMaxCostUsd: maxTotalCostUsd,
           authorizationReceiptId: authorization.receiptId,
         }),
       });

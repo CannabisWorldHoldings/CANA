@@ -42,12 +42,15 @@ for (const [name, asset] of Object.entries(ORDERWEEDDC_BRAND_ASSETS)) {
 const gates = Object.freeze({
   canonicalMainVerified,
   grantEligibilityVerified: process.env.CANA_CREATIVE_GRANT_ELIGIBILITY_VERIFIED === 'true',
-  paidGovernanceAuthorized: process.env.CANA_CREATIVE_PAID_GOVERNANCE_AUTHORIZED === 'true',
+  paidGovernanceVerificationKeyConfigured: Boolean(
+    process.env.CANA_PAID_GOVERNANCE_PUBLIC_KEY,
+  ),
   serverSecretConfigured:
     Boolean(process.env.GEMINI_API_KEY) || process.env.CANA_VERTEX_ADC_CONFIGURED === 'true',
   ownerApprovedPaidCall: process.env.CANA_CREATIVE_OWNER_APPROVED_PAID_CALL === 'true',
-  independentVerifierConfigured:
-    process.env.CANA_CREATIVE_INDEPENDENT_VERIFIER_CONFIGURED === 'true',
+  independentVerifierConfigured: Boolean(
+    process.env.CANA_INDEPENDENT_VERIFICATION_PUBLIC_KEY,
+  ),
   allBrandHashesValid: logoReceipts.every((receipt) => receipt.valid),
 });
 const operatorAttestationsComplete = Object.values(gates).every(Boolean);
