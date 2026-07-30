@@ -35,7 +35,7 @@ const REQUIRED_METHODS = Object.freeze(['generateImage', 'analyzeImage']);
 
 /**
  * Validate and freeze a provider implementation.
- * @param {{ name: string, model: string, boundaryId: string, generateImage: Function, editImage?: Function, analyzeImage: Function }} spec
+ * @param {{ name: string, model: string, providerFamily: string, boundaryId: string, generateImage: Function, editImage?: Function, analyzeImage: Function }} spec
  */
 export function createProvider(spec) {
   if (!spec || typeof spec !== 'object') {
@@ -50,6 +50,9 @@ export function createProvider(spec) {
   if (typeof spec.boundaryId !== 'string' || spec.boundaryId.length === 0) {
     throw new TypeError('provider.boundaryId must be a non-empty string');
   }
+  if (typeof spec.providerFamily !== 'string' || spec.providerFamily.length === 0) {
+    throw new TypeError('provider.providerFamily must be a non-empty string');
+  }
   for (const method of REQUIRED_METHODS) {
     if (typeof spec[method] !== 'function') {
       throw new TypeError(`provider.${method} must be a function`);
@@ -58,6 +61,7 @@ export function createProvider(spec) {
   return Object.freeze({
     name: spec.name,
     model: spec.model,
+    providerFamily: spec.providerFamily,
     boundaryId: spec.boundaryId,
     generateImage: spec.generateImage,
     ...(typeof spec.editImage === 'function' ? { editImage: spec.editImage } : {}),
@@ -69,7 +73,10 @@ export function assertIndependentProviders(generatorProvider, verifierProvider) 
   if (!generatorProvider || !verifierProvider) {
     throw new Error('generatorProvider and verifierProvider are both required');
   }
-  if (generatorProvider.boundaryId === verifierProvider.boundaryId) {
+  if (
+    generatorProvider.providerFamily === verifierProvider.providerFamily ||
+    generatorProvider.boundaryId === verifierProvider.boundaryId
+  ) {
     throw new Error(
       'independent verification is required: the generator boundary cannot verify its own output',
     );

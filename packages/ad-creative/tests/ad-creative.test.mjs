@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createProvider } from '../src/provider-contract.mjs';
+import { assertIndependentProviders, createProvider } from '../src/provider-contract.mjs';
 import { createGeminiProvider } from '../src/providers/gemini.mjs';
 import { analyzeBrandLogo, buildBrandProfile } from '../src/brand-profile.mjs';
 import { buildCreativeBrief, ALLOWED_CHANNELS } from '../src/creative-brief.mjs';
@@ -12,11 +12,14 @@ import {
   resolveModelRole,
 } from '../src/model-registry.mjs';
 import { buildCandidateLineage, buildRollbackPreparation } from '../src/candidate-lineage.mjs';
-import { createResponsiveDerivatives, compositeExactLogo } from '../src/asset-processing.mjs';
-import { createHash } from 'node:crypto';
+import {
+  createResponsiveDerivatives,
+  compositeOrderweeddcLogo,
+} from '../src/asset-processing.mjs';
 import sharp from 'sharp';
 import { createEditingRequest, createGenerationRequest } from '../src/asset-request.mjs';
 import { evaluateBenchmarkReplay } from '../src/benchmark-replay.mjs';
+import { readFile } from 'node:fs/promises';
 
 const PIXEL =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
@@ -25,6 +28,7 @@ function mockProvider(overrides = {}, boundaryId = 'mock-generator') {
   return createProvider({
     name: 'mock',
     model: 'mock-image-1',
+    providerFamily: `mock-family:${boundaryId}`,
     boundaryId,
     async generateImage() {
       return {
@@ -71,6 +75,14 @@ const PRODUCTS = [
 ];
 const LOGO = { imageBase64: PIXEL, mimeType: 'image/png' };
 const CAMPAIGN = { channel: 'featured-placement', aspectRatio: '1:1' };
+const authorizePaidRequest = async ({ estimatedImageOutputCostUsd = 0 }) => ({
+  authority: 'CANA_PAID_GOVERNANCE',
+  authorized: true,
+  receiptId: 'budget-receipt-test',
+  ownerApprovalId: 'owner-approval-test',
+  grantEligibilityReceiptId: 'grant-eligibility-test',
+  maxCostUsd: estimatedImageOutputCostUsd,
+});
 
 test('provider contract rejects incomplete implementations', () => {
   assert.throws(() => createProvider({ name: 'x', model: 'y' }), TypeError);
@@ -79,6 +91,7 @@ test('provider contract rejects incomplete implementations', () => {
       createProvider({
         name: '',
         model: 'y',
+        providerFamily: 'test',
         boundaryId: 'test',
         generateImage() {},
         analyzeImage() {},
@@ -101,6 +114,7 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
   const calls = [];
   const provider = createGeminiProvider({
     apiKey: 'test-key',
+    authorizePaidRequest,
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
       return {
@@ -323,6 +337,7 @@ test('Vertex authentication uses a bearer header and never places credentials in
       location: 'us-central1',
       getAccessToken: async () => 'test-access-token',
     },
+    authorizePaidRequest,
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
       return {
@@ -365,21 +380,18 @@ test('candidate lineage blocks learning promotion and prepares byte-exact rollba
 });
 
 test('responsive derivatives preserve an exact hashed logo and emit AVIF and WebP', async () => {
-  const logoBuffer = await sharp({
-    create: { width: 120, height: 40, channels: 4, background: '#0b8f4d' },
-  })
-    .png()
-    .toBuffer();
+  const logoBuffer = await readFile(
+    new URL('../../../apps/web/public/brand/orderweeddc-on-light.png', import.meta.url),
+  );
   const sceneBuffer = await sharp({
     create: { width: 800, height: 400, channels: 4, background: '#101010' },
   })
     .png()
     .toBuffer();
-  const logoSha256 = createHash('sha256').update(logoBuffer).digest('hex');
-  const composited = await compositeExactLogo({
+  const composited = await compositeOrderweeddcLogo({
     sceneBuffer,
     logoBuffer,
-    expectedLogoSha256: logoSha256,
+    brandAssetName: 'daytime',
   });
   const derivatives = await createResponsiveDerivatives({
     masterBuffer: composited,
@@ -389,13 +401,91 @@ test('responsive derivatives preserve an exact hashed logo and emit AVIF and Web
   assert.ok(derivatives.derivatives.every((item) => item.avif.length > 0 && item.webp.length > 0));
   await assert.rejects(
     () =>
-      compositeExactLogo({
+      compositeOrderweeddcLogo({
         sceneBuffer,
-        logoBuffer,
-        expectedLogoSha256: '0'.repeat(64),
+        logoBuffer: Buffer.from(logoBuffer).fill(0, 0, 1),
+        brandAssetName: 'daytime',
       }),
     /logo hash mismatch/,
   );
+});
+
+test('paid generation is fail-closed before transport without a governance receipt', async () => {
+  let calls = 0;
+  const provider = createGeminiProvider({
+    apiKey: 'test-key',
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error('transport must not run');
+    },
+  });
+  await assert.rejects(
+    () => provider.generateImage({ prompt: 'draft scene' }),
+    /CANA paid-governance authorization is required/,
+  );
+  assert.equal(calls, 0);
+  await assert.rejects(
+    () =>
+      provider.analyzeImage({
+        imageBase64: PIXEL,
+        mimeType: 'image/png',
+        instruction: 'Return JSON',
+      }),
+    /paid analysis is disabled/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('two Gemini adapters remain the same provider family regardless of auth labels', () => {
+  const developer = createGeminiProvider({
+    apiKey: 'test-key-a',
+    authorizePaidRequest,
+    fetchImpl: async () => {
+      throw new Error('not called');
+    },
+  });
+  const vertex = createGeminiProvider({
+    auth: {
+      kind: 'vertex-ai',
+      projectId: 'redacted-project',
+      location: 'us-central1',
+      getAccessToken: async () => 'test-token',
+    },
+    authorizePaidRequest,
+    fetchImpl: async () => {
+      throw new Error('not called');
+    },
+  });
+  assert.throws(
+    () => assertIndependentProviders(developer, vertex),
+    /generator boundary cannot verify its own output/,
+  );
+});
+
+test('candidate request identity ignores dynamic provider timestamps', () => {
+  const base = {
+    missionId: 'mission',
+    candidateId: 'candidate',
+    brief: { prompt: 'stable' },
+    imageBase64: PIXEL,
+  };
+  const first = buildCandidateLineage({
+    ...base,
+    providerReceipt: {
+      provider: 'gemini',
+      model: 'gemini-3.1-flash-image',
+      generatedAt: '2026-01-01T00:00:00Z',
+    },
+  });
+  const second = buildCandidateLineage({
+    ...base,
+    providerReceipt: {
+      provider: 'gemini',
+      model: 'gemini-3.1-flash-image',
+      generatedAt: '2026-02-01T00:00:00Z',
+    },
+  });
+  assert.equal(first.requestSha256, second.requestSha256);
 });
 
 test('generation and editing schemas retain CreativeBrief lineage and require edit references', () => {

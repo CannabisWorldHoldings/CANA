@@ -50,7 +50,8 @@ const gates = Object.freeze({
     process.env.CANA_CREATIVE_INDEPENDENT_VERIFIER_CONFIGURED === 'true',
   allBrandHashesValid: logoReceipts.every((receipt) => receipt.valid),
 });
-const ready = Object.values(gates).every(Boolean);
+const operatorAttestationsComplete = Object.values(gates).every(Boolean);
+const ready = false;
 
 process.stdout.write(
   `${JSON.stringify(
@@ -58,6 +59,7 @@ process.stdout.write(
       mission: 'ORDERWEEDDC_HOMEPAGE_HERO_FOUR_CANDIDATES',
       activationMode: 'DRAFT_ONLY',
       readyForPaidGeneration: ready,
+      operatorAttestationsComplete,
       gates,
       request: {
         candidateCount,
@@ -77,7 +79,8 @@ process.stdout.write(
       },
       logoReceipts,
       actualGenerationCostUsd: 0,
-      blockReason: ready ? null : 'Paid generation remains blocked until every owner and system gate passes.',
+      blockReason:
+        'This preflight never authorizes a paid call. The provider also requires a call-time CANA paid-governance receipt.',
     },
     null,
     2,

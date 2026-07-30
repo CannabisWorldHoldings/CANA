@@ -27,7 +27,13 @@ export function buildCandidateLineage({
   if (!missionId || !candidateId || !brief || !providerReceipt || !imageBase64) {
     throw new TypeError('lineage requires missionId, candidateId, brief, providerReceipt, and image');
   }
-  const requestSha256 = sha256(stableJson({ brief, providerReceipt }));
+  const requestSha256 = sha256(
+    stableJson({
+      brief,
+      provider: providerReceipt.provider,
+      model: providerReceipt.model,
+    }),
+  );
   const imageSha256 = sha256(Buffer.from(imageBase64, 'base64'));
   return Object.freeze({
     schemaVersion: 1,

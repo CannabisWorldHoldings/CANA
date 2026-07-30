@@ -19,6 +19,9 @@ const ALLOWED_ASPECT_RATIOS = new Set([
   '21:9',
 ]);
 const ALLOWED_IMAGE_SIZES = new Set(['0.5K', '1K', '2K', '4K']);
+const MAX_REFERENCE_BYTES = 20 * 1024 * 1024;
+const MAX_TOTAL_REFERENCE_BYTES = 80 * 1024 * 1024;
+const MAX_OUTPUT_BYTES = 50 * 1024 * 1024;
 
 function nonEmpty(value, label) {
   if (typeof value !== 'string' || value.length === 0) {
@@ -33,7 +36,7 @@ function normalizeAuth(options) {
     return Object.freeze({
       kind: explicit.kind,
       apiKey: nonEmpty(explicit.apiKey, 'developer API key'),
-      boundaryId: explicit.boundaryId ?? 'google-developer-api',
+      boundaryId: 'google-developer-api',
     });
   }
   if (explicit?.kind === 'vertex-ai') {
@@ -45,7 +48,7 @@ function normalizeAuth(options) {
       projectId: nonEmpty(explicit.projectId, 'Vertex projectId'),
       location: nonEmpty(explicit.location, 'Vertex location'),
       getAccessToken: explicit.getAccessToken,
-      boundaryId: explicit.boundaryId ?? `google-vertex:${explicit.projectId}:${explicit.location}`,
+      boundaryId: `google-vertex:${explicit.projectId}:${explicit.location}`,
     });
   }
   const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
@@ -112,12 +115,23 @@ function validateReferenceImages(referenceImages) {
   if (!Array.isArray(referenceImages) || referenceImages.length > 14) {
     throw new TypeError('referenceImages must be an array with at most 14 items');
   }
-  return referenceImages.map((reference, index) => ({
-    inlineData: {
-      mimeType: nonEmpty(reference?.mimeType, `referenceImages[${index}].mimeType`),
-      data: nonEmpty(reference?.imageBase64, `referenceImages[${index}].imageBase64`),
-    },
-  }));
+  let totalBytes = 0;
+  return referenceImages.map((reference, index) => {
+    const mimeType = nonEmpty(reference?.mimeType, `referenceImages[${index}].mimeType`);
+    const data = nonEmpty(reference?.imageBase64, `referenceImages[${index}].imageBase64`);
+    if (!mimeType.startsWith('image/')) {
+      throw new Error(`referenceImages[${index}] must be an image`);
+    }
+    const decodedBytes = Buffer.byteLength(data, 'base64');
+    if (decodedBytes > MAX_REFERENCE_BYTES) {
+      throw new Error(`referenceImages[${index}] exceeds the ${MAX_REFERENCE_BYTES}-byte limit`);
+    }
+    totalBytes += decodedBytes;
+    if (totalBytes > MAX_TOTAL_REFERENCE_BYTES) {
+      throw new Error(`reference images exceed the ${MAX_TOTAL_REFERENCE_BYTES}-byte total limit`);
+    }
+    return { inlineData: { mimeType, data } };
+  });
 }
 
 function imageRequestParts(prompt, referenceImages) {
@@ -133,6 +147,7 @@ export function createGeminiProvider(options = {}) {
   const analysisDefinition = resolveModelRole(registry, analysisRole, 'multimodal-reasoning');
   const fetchImpl = options.fetchImpl ?? fetch;
   const timeoutMs = options.timeoutMs ?? 120_000;
+  const authorizePaidRequest = options.authorizePaidRequest;
 
   async function generateOrEdit({ prompt, aspectRatio = '1:1', imageSize = '1K', referenceImages = [] }) {
     if (!ALLOWED_ASPECT_RATIOS.has(aspectRatio)) {
@@ -146,6 +161,31 @@ export function createGeminiProvider(options = {}) {
       imageSize,
       candidateCount: 1,
     });
+    if (typeof authorizePaidRequest !== 'function') {
+      throw new Error('paid generation is disabled: CANA paid-governance authorization is required');
+    }
+    const authorization = await authorizePaidRequest({
+      provider: 'gemini',
+      model: imageDefinition.model,
+      modelRole: imageRole,
+      imageSize,
+      estimatedImageOutputCostUsd: cost.estimatedImageOutputCostUsd,
+      excludesInputTokens: true,
+    });
+    if (
+      authorization?.authority !== 'CANA_PAID_GOVERNANCE' ||
+      authorization?.authorized !== true ||
+      typeof authorization?.receiptId !== 'string' ||
+      authorization.receiptId.length === 0 ||
+      typeof authorization?.ownerApprovalId !== 'string' ||
+      authorization.ownerApprovalId.length === 0 ||
+      typeof authorization?.grantEligibilityReceiptId !== 'string' ||
+      authorization.grantEligibilityReceiptId.length === 0 ||
+      typeof authorization?.maxCostUsd !== 'number' ||
+      authorization.maxCostUsd < cost.estimatedImageOutputCostUsd
+    ) {
+      throw new Error('paid generation is disabled: authorization receipt is missing or insufficient');
+    }
     const payload = await postJson({
       fetchImpl,
       auth,
@@ -163,6 +203,10 @@ export function createGeminiProvider(options = {}) {
     if (!image) {
       throw new Error('Gemini returned no image data for the request');
     }
+    const outputBytes = Buffer.byteLength(image.inlineData.data, 'base64');
+    if (outputBytes > MAX_OUTPUT_BYTES) {
+      throw new Error(`Gemini image exceeds the ${MAX_OUTPUT_BYTES}-byte output limit`);
+    }
     return Object.freeze({
       imageBase64: image.inlineData.data,
       mimeType: image.inlineData.mimeType ?? 'image/png',
@@ -177,6 +221,7 @@ export function createGeminiProvider(options = {}) {
         generatedAt: new Date().toISOString(),
         usageMetadata: payload.usageMetadata ?? null,
         cost,
+        authorizationReceiptId: authorization.receiptId,
       }),
     });
   }
@@ -184,10 +229,35 @@ export function createGeminiProvider(options = {}) {
   return createProvider({
     name: `gemini-${auth.kind}`,
     model: imageDefinition.model,
+    providerFamily: 'google',
     boundaryId: auth.boundaryId,
     generateImage: generateOrEdit,
     editImage: generateOrEdit,
     async analyzeImage({ imageBase64, mimeType, instruction }) {
+      if (typeof authorizePaidRequest !== 'function') {
+        throw new Error('paid analysis is disabled: CANA paid-governance authorization is required');
+      }
+      const authorization = await authorizePaidRequest({
+        provider: 'gemini',
+        model: analysisDefinition.model,
+        modelRole: analysisRole,
+        operation: 'IMAGE_ANALYSIS',
+        estimatedCostUsd: null,
+      });
+      if (
+        authorization?.authority !== 'CANA_PAID_GOVERNANCE' ||
+        authorization?.authorized !== true ||
+        typeof authorization?.receiptId !== 'string' ||
+        authorization.receiptId.length === 0 ||
+        typeof authorization?.ownerApprovalId !== 'string' ||
+        authorization.ownerApprovalId.length === 0 ||
+        typeof authorization?.grantEligibilityReceiptId !== 'string' ||
+        authorization.grantEligibilityReceiptId.length === 0 ||
+        typeof authorization?.maxCostUsd !== 'number' ||
+        authorization.maxCostUsd < 0
+      ) {
+        throw new Error('paid analysis is disabled: authorization receipt is missing or insufficient');
+      }
       const payload = await postJson({
         fetchImpl,
         auth,
@@ -229,6 +299,7 @@ export function createGeminiProvider(options = {}) {
           modelRole: analysisRole,
           analyzedAt: new Date().toISOString(),
           usageMetadata: payload.usageMetadata ?? null,
+          authorizationReceiptId: authorization.receiptId,
         }),
       });
     },

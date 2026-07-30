@@ -38,7 +38,7 @@ Status meanings: `IMPLEMENTED_AND_TESTED`, `IMPLEMENTED_UNTESTED`, `PARTIAL`, `S
 
 ## Historical provenance, not implementation authority
 
-The current historical heads inspected were:
+The current historical heads inspected were recorded with reproducible repository and commit API identities in `docs/creative-system/PROVENANCE_RECEIPT.json`. They are external repositories by design and are not expected to exist in the CANA object database.
 
 - `cannabisworldholdings-afk/ORDERWEEDDCRSI-` at `125c81b084c7a76aae0dc28781f106cba3204e7b`: reusable router mechanics only.
 - `princeleuel-code/rsi-sitemind-core` at `9333c1d572a6be39df30e98ee07c451624190a8f`: signed grants and promotion-court lineage.
