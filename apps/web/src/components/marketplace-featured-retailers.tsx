@@ -19,8 +19,8 @@ type FeaturedRetailer = {
   hours: string | null;
   id: string;
   isDemonstration: boolean;
-  isSponsored: boolean;
   name: string;
+  sponsorshipState: string;
   type: string;
   verifiedAt: Date | null;
 };
@@ -79,7 +79,7 @@ export default function MarketplaceFeaturedRetailers({
                 <span className="absolute left-3 top-3 rounded-full border border-white/20 bg-black/70 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
                   Illustrative interior
                 </span>
-                {retailer.isSponsored && (
+                {retailer.sponsorshipState === 'ACTIVE' && (
                   <span className="absolute right-3 top-3 rounded-full bg-brand-gold px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-black">
                     Sponsored
                   </span>

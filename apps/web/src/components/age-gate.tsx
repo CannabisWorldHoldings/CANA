@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from 'react';
 import Link from 'next/link';
+import BrandWordmark from '@/components/brand-wordmark';
 
 const STORAGE_KEY = 'owd:age-attested-at';
 const CHANGE_EVENT = 'owd:age-attested-change';
@@ -76,7 +77,8 @@ export default function AgeGate() {
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
     >
       <div className="hero-aurora w-full max-w-md rounded-2xl border border-brand-border bg-brand-surface p-8 text-center shadow-2xl animate-rise-in">
-        <p className="kicker mb-6">Age verification</p>
+        <BrandWordmark className="mx-auto mb-6 w-44" priority />
+        <p className="kicker mb-4">Age verification</p>
         <h2
           id="age-gate-title"
           className="font-display text-2xl font-bold text-brand-text"
