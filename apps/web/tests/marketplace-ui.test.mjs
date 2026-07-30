@@ -1,0 +1,231 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const webRoot = path.resolve(testDirectory, '..');
+const require = createRequire(import.meta.url);
+const Module = require('node:module');
+const React = require('react');
+const { renderToStaticMarkup } = require('react-dom/server');
+const ts = require('typescript');
+const directorySearch = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/directory-search.mjs')).href
+);
+const daypartTheme = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/daypart-theme.mjs')).href
+);
+const sponsorshipEntitlement = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/sponsorship-entitlement.mjs')).href
+);
+const originalLoad = Module._load;
+const originalTsxLoader = require.extensions['.tsx'];
+
+Module._load = function loadMarketplaceDependency(request, parent, isMain) {
+  if (request === '@/lib/directory-search.mjs') return directorySearch;
+  if (request === '@/lib/daypart-theme.mjs') return daypartTheme;
+  if (request === '@/lib/sponsorship-entitlement.mjs') {
+    return sponsorshipEntitlement;
+  }
+  if (request === '@/components/sponsorship-badge') {
+    return originalLoad.call(
+      this,
+      path.join(webRoot, 'src/components/sponsorship-badge.tsx'),
+      parent,
+      isMain,
+    );
+  }
+  if (request === '@/components/brand-wordmark') {
+    return originalLoad.call(
+      this,
+      path.join(webRoot, 'src/components/brand-wordmark.tsx'),
+      parent,
+      isMain,
+    );
+  }
+  if (request === '@/components/data-status-badge') {
+    return {
+      DataStatusBadge: ({ dataStatus }) =>
+        React.createElement('span', null, dataStatus),
+    };
+  }
+  if (request === '@/components/favorite-button') {
+    return {
+      __esModule: true,
+      default: () => React.createElement('button', null, 'Favorite'),
+    };
+  }
+  return originalLoad.call(this, request, parent, isMain);
+};
+require.extensions['.tsx'] = function compileTsx(module, filename) {
+  const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+    compilerOptions: {
+      esModuleInterop: true,
+      jsx: ts.JsxEmit.ReactJSX,
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: filename,
+  });
+  module._compile(output.outputText, filename);
+};
+test.after(() => {
+  Module._load = originalLoad;
+  if (originalTsxLoader) {
+    require.extensions['.tsx'] = originalTsxLoader;
+  } else {
+    delete require.extensions['.tsx'];
+  }
+});
+
+function component(relativePath) {
+  return require(path.join(webRoot, 'src/components', relativePath)).default;
+}
+
+test('recovered marketplace components render exact ORDERWEEDDC branding', () => {
+  const BrandWordmark = component('brand-wordmark.tsx');
+  const DaypartThemeControl = component('daypart-theme-control.tsx');
+  const MarketplaceHomeHero = component('marketplace-home-hero.tsx');
+  const MarketplaceSearchPanel = component('marketplace-search-panel.tsx');
+  const MarketplaceCategoryRail = component('marketplace-category-rail.tsx');
+  const rendered = renderToStaticMarkup(
+    React.createElement(
+      React.Fragment,
+      null,
+      React.createElement(BrandWordmark),
+      React.createElement(DaypartThemeControl),
+      React.createElement(MarketplaceHomeHero, {
+        activeDealCount: 3,
+        articleCount: 4,
+        totalResults: 12,
+        verifiedCurrentCount: 7,
+      }),
+      React.createElement(MarketplaceSearchPanel, {
+        filters: { page: 1, sort: 'TRUTH_FIRST' },
+      }),
+      React.createElement(MarketplaceCategoryRail),
+    ),
+  );
+
+  for (const renderedText of [
+    'Washington, D.C. cannabis discovery',
+    'The D.C. market,',
+    'without the guesswork.',
+    'Explore listings',
+    'Browse current offers',
+    'Explore the market',
+    'Browse by product format',
+  ]) {
+    assert.ok(rendered.includes(renderedText), `${renderedText} must render`);
+  }
+  assert.match(rendered, /id="directory-query"/);
+  assert.match(rendered, /aria-label="Marketplace shortcuts"/);
+  assert.match(rendered, /brand\/orderweeddc-on-light\.png/);
+  assert.match(rendered, /brand\/orderweeddc-on-dark\.png/);
+  assert.match(rendered, /Automatic theme based on local time/);
+  assert.doesNotMatch(rendered, /D\.C\. cannabis, with receipts\./);
+});
+
+test('featured retailers render sponsorship only for active verified entitlement', () => {
+  const MarketplaceFeaturedRetailers = component(
+    'marketplace-featured-retailers.tsx',
+  );
+  const retailer = {
+    address: '100 Test Street NW',
+    city: 'Washington',
+    dataSource: 'Synthetic verification fixture',
+    dataStatus: 'VERIFIED_CURRENT',
+    freshnessExpiresAt: null,
+    hours: 'Open during test hours',
+    id: 'retailer-test',
+    isDemonstration: false,
+    name: 'Test Retailer',
+    type: 'storefront',
+    verifiedAt: null,
+  };
+  const active = renderToStaticMarkup(
+    React.createElement(MarketplaceFeaturedRetailers, {
+      retailers: [{
+        ...retailer,
+        sponsorship: {
+          affectsOrganicOrder: false,
+          evidence: {
+            entitlement_digest: 'fixture-entitlement',
+            entry_hash: 'fixture-entry-hash',
+            expires_at: '2099-01-01T00:00:00.000Z',
+            funded_by_seq: 1,
+            placement: 'FEATURED_CARD',
+            spend_seq: 2,
+          },
+          label: 'Sponsored',
+          reason: 'verified synthetic entitlement',
+          spendSeq: 2,
+          state: 'ACTIVE',
+        },
+      }],
+    }),
+  );
+  const inactive = renderToStaticMarkup(
+    React.createElement(MarketplaceFeaturedRetailers, {
+      retailers: [{
+        ...retailer,
+        sponsorship: {
+          affectsOrganicOrder: false,
+          evidence: null,
+          label: null,
+          reason: 'no verified entitlement',
+          spendSeq: null,
+          state: 'NONE',
+        },
+      }],
+    }),
+  );
+
+  assert.match(active, />Sponsored</);
+  assert.match(active, /data-sponsorship-entry-hash="fixture-entry-hash"/);
+  assert.match(active, /data-sponsorship-affects-order="false"/);
+  assert.doesNotMatch(inactive, />Sponsored</);
+});
+
+test('age-gate branding remains tenant scoped', () => {
+  const { AgeGateBrand } = require(
+    path.join(webRoot, 'src/components/age-gate.tsx'),
+  );
+  const canonical = renderToStaticMarkup(
+    React.createElement(AgeGateBrand, {
+      displayName: 'ORDERWEEDDC',
+      isCanonicalBrand: true,
+    }),
+  );
+  const tenant = renderToStaticMarkup(
+    React.createElement(AgeGateBrand, {
+      displayName: 'Synthetic Tenant',
+      isCanonicalBrand: false,
+    }),
+  );
+
+  assert.match(canonical, /brand\/orderweeddc-on-light\.png/);
+  assert.doesNotMatch(tenant, /brand\/orderweeddc-on-light\.png/);
+  assert.match(tenant, />Synthetic Tenant</);
+});
+
+test('marketplace components and artwork are present in the canonical workspace', () => {
+  for (const relativePath of [
+    'src/components/marketplace-home-hero.tsx',
+    'src/components/marketplace-search-panel.tsx',
+    'src/components/marketplace-category-rail.tsx',
+    'src/components/marketplace-featured-retailers.tsx',
+    'public/marketplace/hero-marketplace-v2.webp',
+    'public/marketplace/product-0.webp',
+    'public/marketplace/product-1.webp',
+    'public/marketplace/product-2.webp',
+    'public/marketplace/product-3.webp',
+  ]) {
+    const file = path.join(webRoot, relativePath);
+    assert.equal(fs.existsSync(file), true, `${relativePath} must exist`);
+    assert.ok(fs.statSync(file).size > 500, `${relativePath} is unexpectedly small`);
+  }
+});

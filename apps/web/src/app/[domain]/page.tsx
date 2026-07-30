@@ -27,6 +27,11 @@ import {
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import RetailerMapLoader from '@/components/retailer-map-loader';
 import FavoriteButton from '@/components/favorite-button';
+import DiscoverySupportBand from '@/components/discovery-support-band';
+import MarketplaceCategoryRail from '@/components/marketplace-category-rail';
+import MarketplaceFeaturedRetailers from '@/components/marketplace-featured-retailers';
+import MarketplaceHomeHero from '@/components/marketplace-home-hero';
+import MarketplaceSearchPanel from '@/components/marketplace-search-panel';
 import {
   BadgeCheck,
   Clock,
@@ -44,6 +49,7 @@ type Props = {
   params: Promise<{ domain: string }>;
   searchParams: Promise<{
     query?: string | string[];
+    neighborhood?: string | string[];
     type?: string | string[];
     status?: string | string[];
     sort?: string | string[];
@@ -88,6 +94,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
   }
 
   // 2. Query a bounded page of retailers matching this brand and truth state.
+  const isCanonicalBrand = brand.domain === CANONICAL_TENANT_DOMAIN;
   const asOf = new Date();
   const where = directoryRetailerWhere({
     brandId: brand.id,
@@ -189,7 +196,6 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
       requestedFilters.status ||
       requestedFilters.sort !== 'TRUTH_FIRST',
   );
-  const isCanonicalBrand = brand.domain === CANONICAL_TENANT_DOMAIN;
   const itemListJsonLd = isCanonicalBrand
     ? retailerItemListJsonLd({ retailers, origin: origin.origin })
     : null;
@@ -205,7 +211,27 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     <div className="flex-grow flex flex-col animate-fade-in">
       {itemListJsonLd && <script {...jsonLdScriptProps(itemListJsonLd)} />}
 
+      {isCanonicalBrand && (
+        <>
+          <MarketplaceHomeHero
+            activeDealCount={activeDealCount}
+            articleCount={articleCount}
+            totalResults={totalResults}
+            verifiedCurrentCount={verifiedCurrentCount}
+          />
+          <MarketplaceSearchPanel filters={requestedFilters} />
+          <MarketplaceCategoryRail />
+          <MarketplaceFeaturedRetailers
+            retailers={retailers.map((retailer) => ({
+              ...retailer,
+              sponsorship: sponsorshipFor(retailer.id),
+            }))}
+          />
+        </>
+      )}
+
       {/* Hero + Search Header */}
+      {!isCanonicalBrand && (
       <section className="hero-aurora border-b border-brand-border px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5">
@@ -439,9 +465,10 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           </nav>
         </div>
       </section>
+      )}
 
       {/* Main Contents (Directory grid + Map Sidebar) */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div id="directory" className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-8">
 
         {/* Left Side: Directory Listings */}
         <div className="lg:col-span-2 space-y-4">
@@ -780,6 +807,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
         </div>
 
       </div>
+      {isCanonicalBrand && <DiscoverySupportBand />}
     </div>
   );
 }
