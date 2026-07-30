@@ -224,8 +224,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
           <MarketplaceFeaturedRetailers
             retailers={retailers.map((retailer) => ({
               ...retailer,
-              sponsorshipState:
-                sponsorshipFor(retailer.id)?.state ?? SPONSORSHIP_STATES.NONE,
+              sponsorship: sponsorshipFor(retailer.id),
             }))}
           />
         </>

@@ -9,6 +9,10 @@ import {
 } from 'lucide-react';
 import { DataStatusBadge } from '@/components/data-status-badge';
 import FavoriteButton from '@/components/favorite-button';
+import {
+  SponsorshipBadge,
+  type SponsorshipView,
+} from '@/components/sponsorship-badge';
 
 type FeaturedRetailer = {
   address: string;
@@ -20,7 +24,7 @@ type FeaturedRetailer = {
   id: string;
   isDemonstration: boolean;
   name: string;
-  sponsorshipState: string;
+  sponsorship: SponsorshipView | null;
   type: string;
   verifiedAt: Date | null;
 };
@@ -79,11 +83,10 @@ export default function MarketplaceFeaturedRetailers({
                 <span className="absolute left-3 top-3 rounded-full border border-white/20 bg-black/70 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
                   Illustrative interior
                 </span>
-                {retailer.sponsorshipState === 'ACTIVE' && (
-                  <span className="absolute right-3 top-3 rounded-full bg-brand-gold px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-black">
-                    Sponsored
-                  </span>
-                )}
+                <SponsorshipBadge
+                  sponsorship={retailer.sponsorship}
+                  className="absolute right-3 top-3"
+                />
                 <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/75 px-2.5 py-1 text-[10px] font-bold capitalize text-white backdrop-blur-md">
                   {retailer.type === 'storefront' ? (
                     <Store size={11} aria-hidden="true" />

@@ -140,7 +140,10 @@ export default async function TenantLayout({ children, params }: { children: Rea
         </>
       )}
 
-      <AgeGate />
+      <AgeGate
+        displayName={displayName}
+        isCanonicalBrand={isCanonicalBrand}
+      />
 
       {isCanonicalBrand && (
         <aside className="operator-strip border-b border-brand-border px-4 py-2 text-center text-[11px] font-semibold">

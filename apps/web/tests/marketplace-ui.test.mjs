@@ -18,12 +18,46 @@ const directorySearch = await import(
 const daypartTheme = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/daypart-theme.mjs')).href
 );
+const sponsorshipEntitlement = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/sponsorship-entitlement.mjs')).href
+);
 const originalLoad = Module._load;
 const originalTsxLoader = require.extensions['.tsx'];
 
 Module._load = function loadMarketplaceDependency(request, parent, isMain) {
   if (request === '@/lib/directory-search.mjs') return directorySearch;
   if (request === '@/lib/daypart-theme.mjs') return daypartTheme;
+  if (request === '@/lib/sponsorship-entitlement.mjs') {
+    return sponsorshipEntitlement;
+  }
+  if (request === '@/components/sponsorship-badge') {
+    return originalLoad.call(
+      this,
+      path.join(webRoot, 'src/components/sponsorship-badge.tsx'),
+      parent,
+      isMain,
+    );
+  }
+  if (request === '@/components/brand-wordmark') {
+    return originalLoad.call(
+      this,
+      path.join(webRoot, 'src/components/brand-wordmark.tsx'),
+      parent,
+      isMain,
+    );
+  }
+  if (request === '@/components/data-status-badge') {
+    return {
+      DataStatusBadge: ({ dataStatus }) =>
+        React.createElement('span', null, dataStatus),
+    };
+  }
+  if (request === '@/components/favorite-button') {
+    return {
+      __esModule: true,
+      default: () => React.createElement('button', null, 'Favorite'),
+    };
+  }
   return originalLoad.call(this, request, parent, isMain);
 };
 require.extensions['.tsx'] = function compileTsx(module, filename) {
@@ -95,18 +129,87 @@ test('recovered marketplace components render exact ORDERWEEDDC branding', () =>
   assert.doesNotMatch(rendered, /D\.C\. cannabis, with receipts\./);
 });
 
-test('marketplace sponsorship labels use verified entitlement, not intent flags', () => {
-  const homeSource = fs.readFileSync(
-    path.join(webRoot, 'src/app/[domain]/page.tsx'),
-    'utf8',
+test('featured retailers render sponsorship only for active verified entitlement', () => {
+  const MarketplaceFeaturedRetailers = component(
+    'marketplace-featured-retailers.tsx',
   );
-  const featuredSource = fs.readFileSync(
-    path.join(webRoot, 'src/components/marketplace-featured-retailers.tsx'),
-    'utf8',
+  const retailer = {
+    address: '100 Test Street NW',
+    city: 'Washington',
+    dataSource: 'Synthetic verification fixture',
+    dataStatus: 'VERIFIED_CURRENT',
+    freshnessExpiresAt: null,
+    hours: 'Open during test hours',
+    id: 'retailer-test',
+    isDemonstration: false,
+    name: 'Test Retailer',
+    type: 'storefront',
+    verifiedAt: null,
+  };
+  const active = renderToStaticMarkup(
+    React.createElement(MarketplaceFeaturedRetailers, {
+      retailers: [{
+        ...retailer,
+        sponsorship: {
+          affectsOrganicOrder: false,
+          evidence: {
+            entitlement_digest: 'fixture-entitlement',
+            entry_hash: 'fixture-entry-hash',
+            expires_at: '2099-01-01T00:00:00.000Z',
+            funded_by_seq: 1,
+            placement: 'FEATURED_CARD',
+            spend_seq: 2,
+          },
+          label: 'Sponsored',
+          reason: 'verified synthetic entitlement',
+          spendSeq: 2,
+          state: 'ACTIVE',
+        },
+      }],
+    }),
   );
-  assert.match(homeSource, /sponsorshipFor\(retailer\.id\)\?\.state/);
-  assert.match(featuredSource, /sponsorshipState === 'ACTIVE'/);
-  assert.doesNotMatch(featuredSource, /retailer\.isSponsored/);
+  const inactive = renderToStaticMarkup(
+    React.createElement(MarketplaceFeaturedRetailers, {
+      retailers: [{
+        ...retailer,
+        sponsorship: {
+          affectsOrganicOrder: false,
+          evidence: null,
+          label: null,
+          reason: 'no verified entitlement',
+          spendSeq: null,
+          state: 'NONE',
+        },
+      }],
+    }),
+  );
+
+  assert.match(active, />Sponsored</);
+  assert.match(active, /data-sponsorship-entry-hash="fixture-entry-hash"/);
+  assert.match(active, /data-sponsorship-affects-order="false"/);
+  assert.doesNotMatch(inactive, />Sponsored</);
+});
+
+test('age-gate branding remains tenant scoped', () => {
+  const { AgeGateBrand } = require(
+    path.join(webRoot, 'src/components/age-gate.tsx'),
+  );
+  const canonical = renderToStaticMarkup(
+    React.createElement(AgeGateBrand, {
+      displayName: 'ORDERWEEDDC',
+      isCanonicalBrand: true,
+    }),
+  );
+  const tenant = renderToStaticMarkup(
+    React.createElement(AgeGateBrand, {
+      displayName: 'Synthetic Tenant',
+      isCanonicalBrand: false,
+    }),
+  );
+
+  assert.match(canonical, /brand\/orderweeddc-on-light\.png/);
+  assert.doesNotMatch(tenant, /brand\/orderweeddc-on-light\.png/);
+  assert.match(tenant, />Synthetic Tenant</);
 });
 
 test('marketplace components and artwork are present in the canonical workspace', () => {
