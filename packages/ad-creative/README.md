@@ -15,6 +15,10 @@ Provider-pluggable ad-creative engine for merchant marketing.
    request-bound CANA paid-governance receipt. The receipt binds tenant,
    model, operation, and a total cost reservation. Missing, altered, expired,
    or underfunded receipts fail before network transport.
+   The reservation is an owner-authorized ceiling, not a claim that Google
+   enforces a per-request billing cap. Image-output pricing is known before
+   transport; input-token cost and the provider invoice still require
+   post-response settlement before any grant balance is updated.
 4. **Generate** — via the pluggable provider. Default: configured Gemini
    `FAST_IMAGE_ITERATOR`; model IDs live in `model-registry.mjs`.
 5. **Inspect** — a separately authorized vision provider re-analyzes the ACTUAL generated image
@@ -33,6 +37,11 @@ server-side access-token provider. The public website never receives either.
 issue them. Secrets are never placed in URLs, source, receipts, or logs.
 Tests use generated one-run Ed25519 keys, mock providers, and injected fetch;
 no test touches the network.
+
+The Developer/Vertex adapter uses the GenerateContent contract with
+`generationConfig.responseFormat.image`; its supported size identifiers are
+`512`, `1K`, `2K`, and `4K`. Provider responses are streamed through bounded
+parsing before JSON decoding.
 
 ## Run tests
 

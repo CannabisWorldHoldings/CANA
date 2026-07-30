@@ -24,7 +24,7 @@ const DEFAULT_ROLES = Object.freeze({
 const IMAGE_OUTPUT_PRICES_USD = Object.freeze({
   'gemini-3-pro-image': Object.freeze({ '1K': 0.134, '2K': 0.134, '4K': 0.24 }),
   'gemini-3.1-flash-image': Object.freeze({
-    '0.5K': 0.045,
+    '512': 0.045,
     '1K': 0.067,
     '2K': 0.101,
     '4K': 0.151,

@@ -26,12 +26,19 @@ import {
   canonicalPaidAuthorizationPayload,
 } from '../src/paid-authorization.mjs';
 import { providerVerificationIdentity } from '../src/independent-verification.mjs';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const PIXEL =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+function jsonResponse(payload, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 function mockProvider(overrides = {}, boundaryId = 'mock-generator') {
   return createProvider({
@@ -264,14 +271,11 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
   const provider = createGeminiProvider({
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
-      return {
-        ok: true,
-        json: async () => ({
-          candidates: [
-            { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
-          ],
-        }),
-      };
+      return jsonResponse({
+        candidates: [
+          { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
+        ],
+      });
     },
   });
   const image = await provider.generateImage({
@@ -285,6 +289,11 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
   assert.match(calls[0].url, /generativelanguage\.googleapis\.com/);
   assert.doesNotMatch(calls[0].url, /test-key/);
   assert.equal(calls[0].options.headers['x-goog-api-key'], 'test-key');
+  assert.deepEqual(JSON.parse(calls[0].options.body).generationConfig, {
+    responseFormat: {
+      image: { aspectRatio: '1:1', imageSize: '1K' },
+    },
+  });
   assert.throws(
     () => createGeminiProvider({ apiKey: 'caller-override' }),
     /must come from the server-side GEMINI_API_KEY environment/,
@@ -482,6 +491,14 @@ test('model registry rejects unsupported roles and produces explicit estimates',
       actualCostUsd: null,
     },
   );
+  assert.equal(
+    estimateImageOutputCost({
+      model: 'gemini-3.1-flash-image',
+      imageSize: '512',
+      candidateCount: 1,
+    }).estimatedImageOutputCostUsd,
+    0.045,
+  );
 });
 
 test('Vertex authentication uses a bearer header and never places credentials in the URL', async () => {
@@ -495,14 +512,11 @@ test('Vertex authentication uses a bearer header and never places credentials in
     },
     fetchImpl: async (url, options) => {
       calls.push({ url, options });
-      return {
-        ok: true,
-        json: async () => ({
-          candidates: [
-            { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
-          ],
-        }),
-      };
+      return jsonResponse({
+        candidates: [
+          { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
+        ],
+      });
     },
   });
   await provider.generateImage({
@@ -678,18 +692,17 @@ test('signed paid authorization is request-bound and rejects tampering before tr
 });
 
 test('paid authorization receipts cannot be replayed', async () => {
+  const expiredReceiptDirectory = join(receiptDirectory, '2000-01-01');
+  mkdirSync(expiredReceiptDirectory, { recursive: true });
   let calls = 0;
   const provider = createGeminiProvider({
     fetchImpl: async () => {
       calls += 1;
-      return {
-        ok: true,
-        json: async () => ({
-          candidates: [
-            { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
-          ],
-        }),
-      };
+      return jsonResponse({
+        candidates: [
+          { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
+        ],
+      });
     },
   });
   const authorizationReceipt = generationAuthorization();
@@ -700,6 +713,7 @@ test('paid authorization receipts cannot be replayed', async () => {
     prompt: 'draft scene',
   };
   await provider.generateImage(request);
+  assert.equal(existsSync(expiredReceiptDirectory), false);
   const restartedWorker = createGeminiProvider({
     fetchImpl: async () => {
       calls += 1;
@@ -719,14 +733,11 @@ test('image editing has a separately signed operation and requires bounded refer
   const provider = createGeminiProvider({
     fetchImpl: async () => {
       calls += 1;
-      return {
-        ok: true,
-        json: async () => ({
-          candidates: [
-            { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
-          ],
-        }),
-      };
+      return jsonResponse({
+        candidates: [
+          { content: { parts: [{ inlineData: { mimeType: 'image/png', data: PIXEL } }] } },
+        ],
+      });
     },
   });
   await assert.rejects(
@@ -760,9 +771,8 @@ test('Gemini output enforces decoded pixel limits at the provider boundary', asy
   oversizedHeader.writeUInt32BE(200_000, 16);
   oversizedHeader.writeUInt32BE(200_000, 20);
   const provider = createGeminiProvider({
-    fetchImpl: async () => ({
-      ok: true,
-      json: async () => ({
+    fetchImpl: async () =>
+      jsonResponse({
         candidates: [
           {
             content: {
@@ -778,7 +788,6 @@ test('Gemini output enforces decoded pixel limits at the provider boundary', asy
           },
         ],
       }),
-    }),
   });
   await assert.rejects(
     () =>
@@ -792,14 +801,62 @@ test('Gemini output enforces decoded pixel limits at the provider boundary', asy
   );
 });
 
+test('Gemini response transport is size-bounded before JSON buffering', async () => {
+  const provider = createGeminiProvider({
+    fetchImpl: async () =>
+      new Response('{}', {
+        status: 200,
+        headers: { 'Content-Length': String(100 * 1024 * 1024) },
+      }),
+  });
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization(),
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /transport limit/,
+  );
+});
+
+test('Gemini rejects malformed and partial provider responses', async () => {
+  const malformed = createGeminiProvider({
+    fetchImpl: async () => new Response('not-json', { status: 200 }),
+  });
+  await assert.rejects(
+    () =>
+      malformed.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization(),
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /response was not valid JSON/,
+  );
+
+  const partial = createGeminiProvider({
+    fetchImpl: async () => jsonResponse({ candidates: [{ content: { parts: [] } }] }),
+  });
+  await assert.rejects(
+    () =>
+      partial.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization(),
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /returned no image data/,
+  );
+});
+
 test('Gemini analysis rejects syntactically valid but contract-empty JSON', async () => {
   const provider = createGeminiProvider({
-    fetchImpl: async () => ({
-      ok: true,
-      json: async () => ({
+    fetchImpl: async () =>
+      jsonResponse({
         candidates: [{ content: { parts: [{ text: '{}' }] } }],
       }),
-    }),
   });
   await assert.rejects(
     () =>
@@ -820,27 +877,24 @@ test('Gemini analysis enforces bounded instructions and responses before accepti
   const provider = createGeminiProvider({
     fetchImpl: async () => {
       calls += 1;
-      return {
-        ok: true,
-        json: async () => ({
-          candidates: [
-            {
-              content: {
-                parts: [
-                  {
-                    text: JSON.stringify({
-                      containsMinorsAppeal: false,
-                      containsHealthClaims: false,
-                      matchesBrand: true,
-                      summary: 'x'.repeat(65_536),
-                    }),
-                  },
-                ],
-              },
+      return jsonResponse({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: JSON.stringify({
+                    containsMinorsAppeal: false,
+                    containsHealthClaims: false,
+                    matchesBrand: true,
+                    summary: 'x'.repeat(65_536),
+                  }),
+                },
+              ],
             },
-          ],
-        }),
-      };
+          },
+        ],
+      });
     },
   });
   await assert.rejects(
