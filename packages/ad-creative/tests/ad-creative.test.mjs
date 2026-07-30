@@ -27,8 +27,10 @@ import {
 } from '../src/paid-authorization.mjs';
 import { providerVerificationIdentity } from '../src/independent-verification.mjs';
 import {
+  GEMINI_PRICING_CATALOG_ID,
   estimateGeminiAnalysisCost,
   estimateGeminiGenerationCost,
+  estimateImageInputTokens,
 } from '../src/gemini-cost.mjs';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -191,6 +193,8 @@ function signedAuthorization(request, maxCostUsd) {
 function generationAuthorization({
   operation = 'IMAGE_GENERATION',
   tenantId = 'orderweeddc',
+  billingRoute = 'developer-api',
+  billingBoundaryId = 'google-developer-api',
   aspectRatio = '1:1',
   imageSize = '1K',
   prompt = 'draft scene',
@@ -212,6 +216,10 @@ function generationAuthorization({
     operation,
     tenantId,
     provider: 'gemini',
+    billingRoute,
+    billingBoundaryId,
+    pricingTier: 'standard',
+    pricingCatalogId: GEMINI_PRICING_CATALOG_ID,
     model: 'gemini-3.1-flash-image',
     modelRole: 'FAST_IMAGE_ITERATOR',
     aspectRatio,
@@ -232,6 +240,8 @@ function generationAuthorization({
 
 function analysisAuthorization({
   tenantId = 'orderweeddc',
+  billingRoute = 'developer-api',
+  billingBoundaryId = 'google-developer-api',
   instruction = 'Return JSON',
   imageBase64 = PIXEL,
   mimeType = 'image/png',
@@ -247,6 +257,10 @@ function analysisAuthorization({
       operation: 'IMAGE_ANALYSIS',
       tenantId,
       provider: 'gemini',
+      billingRoute,
+      billingBoundaryId,
+      pricingTier: 'standard',
+      pricingCatalogId: GEMINI_PRICING_CATALOG_ID,
       model: 'gemini-3.1-pro-preview',
       modelRole: 'CREATIVE_DIRECTOR_AND_UI_ARCHITECT',
       reservedMaxCostUsd,
@@ -530,6 +544,14 @@ test('model registry rejects unsupported roles and produces explicit estimates',
     }).estimatedMaximumCostUsd,
     0.091581,
   );
+  assert.equal(
+    estimateImageInputTokens({
+      model: 'gemini-3.1-flash-image',
+      width: 192,
+      height: 1536,
+    }),
+    6192,
+  );
 });
 
 test('Vertex authentication uses a bearer header and never places credentials in the URL', async () => {
@@ -552,7 +574,10 @@ test('Vertex authentication uses a bearer header and never places credentials in
   });
   await provider.generateImage({
     tenantId: 'orderweeddc',
-    authorizationReceipt: generationAuthorization(),
+    authorizationReceipt: generationAuthorization({
+      billingRoute: 'vertex-ai',
+      billingBoundaryId: 'google-vertex:redacted-project:us-central1',
+    }),
     maxTotalCostUsd: 0.1,
     prompt: 'draft scene',
   });
@@ -733,6 +758,33 @@ test('signed paid authorization is request-bound and rejects tampering before tr
         prompt: 'draft scene',
       }),
     /request estimate/,
+  );
+  assert.equal(calls, 0);
+});
+
+test('signed paid authorization cannot cross Gemini billing boundaries', async () => {
+  let calls = 0;
+  const vertex = createGeminiProvider({
+    auth: {
+      kind: 'vertex-ai',
+      projectId: 'redacted-project',
+      location: 'us-central1',
+      getAccessToken: async () => 'test-token',
+    },
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error('transport must not run');
+    },
+  });
+  await assert.rejects(
+    () =>
+      vertex.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization(),
+        maxTotalCostUsd: 0.1,
+        prompt: 'draft scene',
+      }),
+    /does not authorize this request/,
   );
   assert.equal(calls, 0);
 });

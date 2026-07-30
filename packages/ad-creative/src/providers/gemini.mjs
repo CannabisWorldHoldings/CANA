@@ -13,6 +13,7 @@ import {
 } from '../paid-authorization.mjs';
 import { assertBoundedImage } from '../asset-processing.mjs';
 import {
+  GEMINI_PRICING_CATALOG_ID,
   estimateGeminiAnalysisCost,
   estimateGeminiGenerationCost,
 } from '../gemini-cost.mjs';
@@ -320,6 +321,10 @@ export function createGeminiProvider(options = {}) {
       operation,
       tenantId,
       provider: 'gemini',
+      billingRoute: auth.kind,
+      billingBoundaryId: auth.boundaryId,
+      pricingTier: 'standard',
+      pricingCatalogId: GEMINI_PRICING_CATALOG_ID,
       model: imageDefinition.model,
       modelRole: imageRole,
       aspectRatio,
@@ -431,6 +436,10 @@ export function createGeminiProvider(options = {}) {
         operation: 'IMAGE_ANALYSIS',
         tenantId,
         provider: 'gemini',
+        billingRoute: auth.kind,
+        billingBoundaryId: auth.boundaryId,
+        pricingTier: 'standard',
+        pricingCatalogId: GEMINI_PRICING_CATALOG_ID,
         model: analysisDefinition.model,
         modelRole: analysisRole,
         reservedMaxCostUsd: maxTotalCostUsd,

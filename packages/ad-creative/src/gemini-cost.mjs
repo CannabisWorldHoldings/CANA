@@ -17,6 +17,8 @@ const TOKEN_PRICES_USD_PER_MILLION = Object.freeze({
   'gemini-3.1-pro-preview': Object.freeze({ input: 2, textOutput: 12 }),
 });
 
+export const GEMINI_PRICING_CATALOG_ID = 'google-gemini-standard-paid-2026-07-30';
+
 function roundUsd(value) {
   return Number(value.toFixed(6));
 }
@@ -32,10 +34,13 @@ export function estimateImageInputTokens({ width, height, model }) {
     throw new TypeError('image dimensions must be positive integers');
   }
   const modelPrices = prices(model);
-  if (modelPrices.fixedImageInputTokens) return modelPrices.fixedImageInputTokens;
-  if (width <= 384 && height <= 384) return 258;
-  const cropUnit = Math.max(1, Math.floor(Math.min(width, height) / 1.5));
-  return Math.ceil(width / cropUnit) * Math.ceil(height / cropUnit) * 258;
+  let dimensionBasedTokens = 258;
+  if (width > 384 || height > 384) {
+    const cropUnit = Math.max(1, Math.floor(Math.min(width, height) / 1.5));
+    dimensionBasedTokens =
+      Math.ceil(width / cropUnit) * Math.ceil(height / cropUnit) * 258;
+  }
+  return Math.max(modelPrices.fixedImageInputTokens ?? 0, dimensionBasedTokens);
 }
 
 function estimateTokenCosts({
