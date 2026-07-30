@@ -26,6 +26,10 @@ import {
   canonicalPaidAuthorizationPayload,
 } from '../src/paid-authorization.mjs';
 import { providerVerificationIdentity } from '../src/independent-verification.mjs';
+import {
+  estimateGeminiAnalysisCost,
+  estimateGeminiGenerationCost,
+} from '../src/gemini-cost.mjs';
 import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -193,6 +197,17 @@ function generationAuthorization({
   referenceImages = [],
   reservedMaxCostUsd = 0.1,
 } = {}) {
+  const imageOutputCost = estimateImageOutputCost({
+    model: 'gemini-3.1-flash-image',
+    imageSize,
+    candidateCount: 1,
+  });
+  const costEstimate = estimateGeminiGenerationCost({
+    model: 'gemini-3.1-flash-image',
+    text: prompt,
+    imageDimensions: referenceImages.map(() => ({ width: 1, height: 1 })),
+    imageOutputCostUsd: imageOutputCost.estimatedImageOutputCostUsd,
+  });
   const request = {
     operation,
     tenantId,
@@ -209,7 +224,7 @@ function generationAuthorization({
         .update(Buffer.from(reference.imageBase64, 'base64'))
         .digest('hex'),
     })),
-    estimatedImageOutputCostUsd: imageSize === '2K' ? 0.101 : 0.067,
+    costEstimate,
     reservedMaxCostUsd,
   };
   return signedAuthorization(request, reservedMaxCostUsd);
@@ -222,6 +237,11 @@ function analysisAuthorization({
   mimeType = 'image/png',
   reservedMaxCostUsd = 0.1,
 } = {}) {
+  const costEstimate = estimateGeminiAnalysisCost({
+    model: 'gemini-3.1-pro-preview',
+    text: instruction,
+    imageDimensions: { width: 1, height: 1 },
+  });
   return signedAuthorization(
     {
       operation: 'IMAGE_ANALYSIS',
@@ -230,6 +250,7 @@ function analysisAuthorization({
       model: 'gemini-3.1-pro-preview',
       modelRole: 'CREATIVE_DIRECTOR_AND_UI_ARCHITECT',
       reservedMaxCostUsd,
+      costEstimate,
       instructionSha256: createHash('sha256').update(instruction).digest('hex'),
       imageSha256: createHash('sha256')
         .update(Buffer.from(imageBase64, 'base64'))
@@ -286,13 +307,14 @@ test('gemini adapter never hardcodes a key and uses injected fetch', async () =>
     aspectRatio: '1:1',
   });
   assert.equal(image.imageBase64, PIXEL);
-  assert.match(calls[0].url, /generativelanguage\.googleapis\.com/);
+  assert.match(calls[0].url, /generativelanguage\.googleapis\.com\/v1\/models\//);
   assert.doesNotMatch(calls[0].url, /test-key/);
   assert.equal(calls[0].options.headers['x-goog-api-key'], 'test-key');
   assert.deepEqual(JSON.parse(calls[0].options.body).generationConfig, {
     responseFormat: {
       image: { aspectRatio: '1:1', imageSize: '1K' },
     },
+    maxOutputTokens: 8192,
   });
   assert.throws(
     () => createGeminiProvider({ apiKey: 'caller-override' }),
@@ -499,6 +521,15 @@ test('model registry rejects unsupported roles and produces explicit estimates',
     }).estimatedImageOutputCostUsd,
     0.045,
   );
+  assert.equal(
+    estimateGeminiGenerationCost({
+      model: 'gemini-3.1-flash-image',
+      text: 'draft scene',
+      imageDimensions: [],
+      imageOutputCostUsd: 0.067,
+    }).estimatedMaximumCostUsd,
+    0.091581,
+  );
 });
 
 test('Vertex authentication uses a bearer header and never places credentials in the URL', async () => {
@@ -528,6 +559,11 @@ test('Vertex authentication uses a bearer header and never places credentials in
   assert.match(calls[0].url, /aiplatform\.googleapis\.com/);
   assert.doesNotMatch(calls[0].url, /test-access-token/);
   assert.equal(calls[0].options.headers.Authorization, 'Bearer test-access-token');
+  assert.deepEqual(JSON.parse(calls[0].options.body).generationConfig, {
+    responseModalities: ['TEXT', 'IMAGE'],
+    imageConfig: { aspectRatio: '1:1', imageSize: '1K' },
+    maxOutputTokens: 8192,
+  });
 });
 
 test('candidate lineage blocks learning promotion and prepares byte-exact rollback', () => {
@@ -687,6 +723,16 @@ test('signed paid authorization is request-bound and rejects tampering before tr
         prompt: 'draft scene',
       }),
     /maxTotalCostUsd/,
+  );
+  await assert.rejects(
+    () =>
+      provider.generateImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: generationAuthorization({ reservedMaxCostUsd: 0.08 }),
+        maxTotalCostUsd: 0.08,
+        prompt: 'draft scene',
+      }),
+    /request estimate/,
   );
   assert.equal(calls, 0);
 });
@@ -897,6 +943,18 @@ test('Gemini analysis enforces bounded instructions and responses before accepti
       });
     },
   });
+  await assert.rejects(
+    () =>
+      provider.analyzeImage({
+        tenantId: 'orderweeddc',
+        authorizationReceipt: analysisAuthorization({ reservedMaxCostUsd: 0.02 }),
+        maxTotalCostUsd: 0.02,
+        imageBase64: PIXEL,
+        mimeType: 'image/png',
+        instruction: 'Return JSON',
+      }),
+    /analysis estimate/,
+  );
   await assert.rejects(
     () =>
       provider.analyzeImage({

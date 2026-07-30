@@ -15,10 +15,11 @@ Provider-pluggable ad-creative engine for merchant marketing.
    request-bound CANA paid-governance receipt. The receipt binds tenant,
    model, operation, and a total cost reservation. Missing, altered, expired,
    or underfunded receipts fail before network transport.
-   The reservation is an owner-authorized ceiling, not a claim that Google
-   enforces a per-request billing cap. Image-output pricing is known before
-   transport; input-token cost and the provider invoice still require
-   post-response settlement before any grant balance is updated.
+   The pre-transport estimate includes documented image output, text/image
+   input, and a bounded text/reasoning output reserve. The signed reservation
+   must cover that estimate. It remains an owner-authorized ceiling rather
+   than a claim that Google enforces a billing cap; provider usage and invoice
+   settlement are still required before any grant balance is updated.
 4. **Generate** — via the pluggable provider. Default: configured Gemini
    `FAST_IMAGE_ITERATOR`; model IDs live in `model-registry.mjs`.
 5. **Inspect** — a separately authorized vision provider re-analyzes the ACTUAL generated image
@@ -38,10 +39,13 @@ issue them. Secrets are never placed in URLs, source, receipts, or logs.
 Tests use generated one-run Ed25519 keys, mock providers, and injected fetch;
 no test touches the network.
 
-The Developer/Vertex adapter uses the GenerateContent contract with
-`generationConfig.responseFormat.image`; its supported size identifiers are
-`512`, `1K`, `2K`, and `4K`. Provider responses are streamed through bounded
-parsing before JSON decoding.
+The Developer adapter uses the `/v1` GenerateContent contract with
+`generationConfig.responseFormat.image`. Vertex uses its documented
+`responseModalities: ["TEXT", "IMAGE"]` plus `imageConfig` contract. Supported
+size identifiers are `512`, `1K`, `2K`, and `4K`. Provider responses are
+streamed through bounded parsing before JSON decoding. Paid receipts are
+attempt-scoped and intentionally consumed before transport; any retry requires
+a new owner-authorized receipt.
 
 ## Run tests
 

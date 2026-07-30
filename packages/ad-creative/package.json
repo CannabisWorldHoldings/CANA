@@ -12,6 +12,7 @@
     "./providers/gemini": "./src/providers/gemini.mjs",
     "./provider-contract": "./src/provider-contract.mjs",
     "./model-registry": "./src/model-registry.mjs",
+    "./gemini-cost": "./src/gemini-cost.mjs",
     "./candidate-lineage": "./src/candidate-lineage.mjs",
     "./asset-processing": "./src/asset-processing.mjs",
     "./orderweeddc-brand-assets": "./src/orderweeddc-brand-assets.mjs",

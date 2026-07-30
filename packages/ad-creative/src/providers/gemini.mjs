@@ -12,8 +12,12 @@ import {
   verifyPaidAuthorizationReceipt,
 } from '../paid-authorization.mjs';
 import { assertBoundedImage } from '../asset-processing.mjs';
+import {
+  estimateGeminiAnalysisCost,
+  estimateGeminiGenerationCost,
+} from '../gemini-cost.mjs';
 
-const DEVELOPER_API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DEVELOPER_API_ROOT = 'https://generativelanguage.googleapis.com/v1/models';
 const ALLOWED_ASPECT_RATIOS = new Set([
   '1:1',
   '2:3',
@@ -38,6 +42,8 @@ const MAX_TEXT_INPUT_BYTES = 32 * 1024;
 const MAX_ANALYSIS_OUTPUT_BYTES = 64 * 1024;
 const MAX_ANALYSIS_STRING_LENGTH = 4_000;
 const MAX_ANALYSIS_ARRAY_LENGTH = 20;
+const MAX_GENERATION_TEXT_OUTPUT_TOKENS = 8192;
+const MAX_ANALYSIS_TEXT_OUTPUT_TOKENS = 2048;
 
 function nonEmpty(value, label) {
   if (typeof value !== 'string' || value.length === 0) {
@@ -163,6 +169,22 @@ function parts(payload) {
   return payload?.candidates?.flatMap((candidate) => candidate?.content?.parts ?? []) ?? [];
 }
 
+function imageGenerationConfig(auth, aspectRatio, imageSize) {
+  if (auth.kind === 'vertex-ai') {
+    return {
+      responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: { aspectRatio, imageSize },
+      maxOutputTokens: MAX_GENERATION_TEXT_OUTPUT_TOKENS,
+    };
+  }
+  return {
+    responseFormat: {
+      image: { aspectRatio, imageSize },
+    },
+    maxOutputTokens: MAX_GENERATION_TEXT_OUTPUT_TOKENS,
+  };
+}
+
 function validateReferenceImages(referenceImages) {
   if (!Array.isArray(referenceImages) || referenceImages.length > 14) {
     throw new TypeError('referenceImages must be an array with at most 14 items');
@@ -262,16 +284,37 @@ export function createGeminiProvider(options = {}) {
     if (!ALLOWED_IMAGE_SIZES.has(imageSize)) {
       throw new Error(`unsupported image size: ${imageSize}`);
     }
-    const cost = estimateImageOutputCost({
+    if (operation === 'IMAGE_EDIT' && referenceImages.length === 0) {
+      throw new Error('IMAGE_EDIT requires at least one authorized reference image');
+    }
+    const referenceDimensions = [];
+    for (const [index, reference] of referenceImages.entries()) {
+      referenceDimensions.push(
+        await assertBoundedImage(
+          Buffer.from(reference.imageBase64, 'base64'),
+          `referenceImages[${index}]`,
+        ),
+      );
+    }
+    const imageOutputCost = estimateImageOutputCost({
       model: imageDefinition.model,
       imageSize,
       candidateCount: 1,
     });
+    const cost = estimateGeminiGenerationCost({
+      model: imageDefinition.model,
+      text: boundedPrompt,
+      imageDimensions: referenceDimensions,
+      imageOutputCostUsd: imageOutputCost.estimatedImageOutputCostUsd,
+      maxTextOutputTokens: MAX_GENERATION_TEXT_OUTPUT_TOKENS,
+    });
     if (
       !Number.isFinite(maxTotalCostUsd) ||
-      maxTotalCostUsd < cost.estimatedImageOutputCostUsd
+      maxTotalCostUsd < cost.estimatedMaximumCostUsd
     ) {
-      throw new Error('maxTotalCostUsd must at least cover the known image-output charge');
+      throw new Error(
+        `maxTotalCostUsd must cover the ${cost.estimatedMaximumCostUsd} USD request estimate`,
+      );
     }
     const requestBinding = buildPaidRequestBinding({
       operation,
@@ -287,7 +330,7 @@ export function createGeminiProvider(options = {}) {
         mimeType: reference.mimeType,
         sha256: sha256(Buffer.from(reference.imageBase64, 'base64')),
       })),
-      estimatedImageOutputCostUsd: cost.estimatedImageOutputCostUsd,
+      costEstimate: cost,
       reservedMaxCostUsd: maxTotalCostUsd,
     });
     const authorization = verifyPaidAuthorizationReceipt({
@@ -296,15 +339,6 @@ export function createGeminiProvider(options = {}) {
       publicKey: paidGovernancePublicKey,
       requiredCostUsd: maxTotalCostUsd,
     });
-    if (operation === 'IMAGE_EDIT' && referenceImages.length === 0) {
-      throw new Error('IMAGE_EDIT requires at least one authorized reference image');
-    }
-    for (const [index, reference] of referenceImages.entries()) {
-      await assertBoundedImage(
-        Buffer.from(reference.imageBase64, 'base64'),
-        `referenceImages[${index}]`,
-      );
-    }
     await consumePaidReceipt(authorization);
     const payload = await postJson({
       fetchImpl,
@@ -314,11 +348,7 @@ export function createGeminiProvider(options = {}) {
       maxResponseBytes: MAX_GENERATION_RESPONSE_BYTES,
       body: {
         contents: [{ parts: [{ text: boundedPrompt }, ...validatedReferenceParts] }],
-        generationConfig: {
-          responseFormat: {
-            image: { aspectRatio, imageSize },
-          },
-        },
+        generationConfig: imageGenerationConfig(auth, aspectRatio, imageSize),
       },
     });
     const image = parts(payload).find((part) => part.inlineData?.data);
@@ -385,7 +415,18 @@ export function createGeminiProvider(options = {}) {
         );
       }
       const analysisImage = Buffer.from(analysisImageBase64, 'base64');
-      await assertBoundedImage(analysisImage, 'analysis image');
+      const analysisDimensions = await assertBoundedImage(analysisImage, 'analysis image');
+      const cost = estimateGeminiAnalysisCost({
+        model: analysisDefinition.model,
+        text: boundedInstruction,
+        imageDimensions: analysisDimensions,
+        maxTextOutputTokens: MAX_ANALYSIS_TEXT_OUTPUT_TOKENS,
+      });
+      if (maxTotalCostUsd < cost.estimatedMaximumCostUsd) {
+        throw new Error(
+          `maxTotalCostUsd must cover the ${cost.estimatedMaximumCostUsd} USD analysis estimate`,
+        );
+      }
       const requestBinding = buildPaidRequestBinding({
         operation: 'IMAGE_ANALYSIS',
         tenantId,
@@ -393,6 +434,7 @@ export function createGeminiProvider(options = {}) {
         model: analysisDefinition.model,
         modelRole: analysisRole,
         reservedMaxCostUsd: maxTotalCostUsd,
+        costEstimate: cost,
         instructionSha256: sha256(Buffer.from(boundedInstruction)),
         imageSha256: sha256(analysisImage),
         mimeType: analysisMimeType,
@@ -426,7 +468,7 @@ export function createGeminiProvider(options = {}) {
           ],
           generationConfig: {
             responseMimeType: 'application/json',
-            maxOutputTokens: 2048,
+            maxOutputTokens: MAX_ANALYSIS_TEXT_OUTPUT_TOKENS,
           },
         },
       });
@@ -488,6 +530,7 @@ export function createGeminiProvider(options = {}) {
           analyzedAt: new Date().toISOString(),
           usageMetadata: payload.usageMetadata ?? null,
           reservedMaxCostUsd: maxTotalCostUsd,
+          cost,
           authorizationReceiptId: authorization.receiptId,
         }),
       });

@@ -3,6 +3,10 @@
   "auditedAt": "2026-07-30T00:00:00Z",
   "verificationBoundary": "Historical repositories are access-controlled. Commit identities were verified with the owner's authenticated gh CLI; anonymous HTTP may return 404 and is not evidence that a commit is absent.",
   "verificationCommandTemplate": "gh api repos/{repository}/commits/{commit} --jq '[.sha,.commit.tree.sha,.commit.committer.date,.html_url]'",
+  "commandEvidence": {
+    "path": "docs/creative-system/PROVENANCE_COMMAND_EVIDENCE.json",
+    "sha256": "15b1e1835ea825c45ad224b9b0a85af999aca515551257fcae6ff99bbcd5b909"
+  },
   "canonical": {
     "repository": "CannabisWorldHoldings/CANA",
     "baseCommit": "375fe9be06e48010b8ef5176b74e98fde980246a",
