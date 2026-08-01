@@ -340,31 +340,46 @@ test('the exact security-repaired PR #2 change set is durability-owned after rec
   );
 });
 
-test('the production database byte-preservation boundary has exact ownership only', () => {
+test('the production database byte-preservation runtime path has exact ownership only', () => {
+  const manifest = ownership();
+  const exactPath = 'apps/web/src/lib/prisma.ts';
+  const neighboringPath = 'apps/web/src/lib/prisma-neighbor.ts';
+  assert.deepEqual(unownedPaths([exactPath], manifest), []);
+  assert.equal(manifest.global_no_edit.includes(exactPath), false);
+  assert.deepEqual(unownedPaths([neighboringPath], manifest), [neighboringPath]);
+});
+
+test('the production database test and launcher paths have exact ownership only', () => {
   const manifest = ownership();
   const exactPaths = [
-    'apps/web/src/lib/prisma.ts',
     'apps/web/tests/clean-database-court.test.mjs',
     'apps/web/tests/deployment-integrity.test.mjs',
     'deploy/namecheap/app.js',
   ];
   assert.deepEqual(unownedPaths(exactPaths, manifest), []);
-  assert.equal(manifest.global_no_edit.includes(exactPaths[0]), false);
-  assert.deepEqual(
-    unownedPaths(
-      [
-        'apps/web/src/lib/prisma-neighbor.ts',
-        'apps/web/tests/deployment-integrity-neighbor.test.mjs',
-        'deploy/namecheap/app-neighbor.js',
-      ],
-      manifest,
-    ),
-    [
-      'apps/web/src/lib/prisma-neighbor.ts',
-      'apps/web/tests/deployment-integrity-neighbor.test.mjs',
-      'deploy/namecheap/app-neighbor.js',
-    ],
-  );
+  const neighboringPaths = [
+    'apps/web/tests/clean-database-court-neighbor.test.mjs',
+    'apps/web/tests/deployment-integrity-neighbor.test.mjs',
+    'deploy/namecheap/app-neighbor.js',
+  ];
+  assert.deepEqual(unownedPaths(neighboringPaths, manifest), neighboringPaths);
+});
+
+test('database byte-preservation ownership rejects every neighboring-path tamper', () => {
+  for (const neighboringPath of [
+    'apps/web/src/lib/prisma-neighbor.ts',
+    'apps/web/tests/clean-database-court-neighbor.test.mjs',
+    'apps/web/tests/deployment-integrity-neighbor.test.mjs',
+    'deploy/namecheap/app-neighbor.js',
+  ]) {
+    const manifest = ownership();
+    manifest.owned_modify_paths.push(neighboringPath);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /owner-approved scope digest/,
+      neighboringPath,
+    );
+  }
 });
 
 test('the exact Mission 1 evidence and validator paths have narrow ownership', () => {
