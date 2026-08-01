@@ -63,7 +63,7 @@ test('artifact operations emit deploy, restart, and rollback scripts byte-for-by
     const verification = JSON.parse(execFileSync(
       path.join(repoRoot, 'deploy/namecheap/build-artifact.mjs'),
       ['--verify-operational-scripts'],
-      { encoding: 'utf8', env: environment },
+      { cwd: courtRoot, encoding: 'utf8', env: environment },
     ));
     builderCourtRoot = path.dirname(verification.tarPath);
     const operationalScripts = verification.files;
