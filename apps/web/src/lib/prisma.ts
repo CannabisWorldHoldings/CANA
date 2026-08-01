@@ -33,7 +33,9 @@ export const prisma =
  */
 export const databaseConfigured: Promise<unknown> =
   globalForPrisma.prismaConfigured ??
-  initializeDatabaseConfig(prisma).catch((error: unknown) => ({
+  initializeDatabaseConfig(prisma, {
+    preservePersistentPragmas: process.env.CANA_PRESERVE_SQLITE_FILE_BYTES === '1',
+  }).catch((error: unknown) => ({
     ok: false,
     failures: [{ pragma: 'initialization', error: String(error).slice(0, 200) }],
   }));

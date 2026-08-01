@@ -137,7 +137,10 @@ function isImmutableReadOnlyDatabase(databaseUrl) {
  */
 export async function initializeDatabaseConfig(
   prisma,
-  { databaseUrl = process.env.DATABASE_URL } = {},
+  {
+    databaseUrl = process.env.DATABASE_URL,
+    preservePersistentPragmas = false,
+  } = {},
 ) {
   const before = await readDatabaseConfig(prisma);
   if (isImmutableReadOnlyDatabase(databaseUrl)) {
@@ -153,9 +156,14 @@ export async function initializeDatabaseConfig(
     };
   }
   const applied = [];
+  const preserved = [];
   const failures = [];
 
   for (const p of REQUIRED_SQLITE_PRAGMAS) {
+    if (preservePersistentPragmas && p.persistent) {
+      preserved.push(p.name);
+      continue;
+    }
     try {
       // journal_mode returns a row; the others do not. queryRawUnsafe handles both.
       await prisma.$queryRawUnsafe(`PRAGMA ${p.name} = ${p.value}`);
@@ -172,6 +180,7 @@ export async function initializeDatabaseConfig(
   // is in a transaction, for instance.
   const mismatches = [];
   for (const p of REQUIRED_SQLITE_PRAGMAS) {
+    if (preservePersistentPragmas && p.persistent) continue;
     const got = after[p.name];
     const want = typeof p.value === 'string' ? p.value.toLowerCase() : p.value;
     const norm = typeof got === 'string' ? got.toLowerCase() : got;
@@ -183,6 +192,7 @@ export async function initializeDatabaseConfig(
     before,
     after,
     applied,
+    preserved,
     failures,
     mismatches,
     classification: DB_CLASSIFICATION.sqlite,
