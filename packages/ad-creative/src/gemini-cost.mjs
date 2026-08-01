@@ -14,7 +14,13 @@ const TOKEN_PRICES_USD_PER_MILLION = Object.freeze({
     textOutput: 12,
     fixedImageInputTokens: 560,
   }),
-  'gemini-3.1-pro-preview': Object.freeze({ input: 2, textOutput: 12 }),
+  'gemini-3.1-pro-preview': Object.freeze({
+    input: 2,
+    textOutput: 12,
+    longContextThresholdTokens: 200_000,
+    longContextInput: 4,
+    longContextTextOutput: 18,
+  }),
 });
 
 export const GEMINI_PRICING_CATALOG_ID = 'google-gemini-standard-paid-2026-07-30';
@@ -57,14 +63,26 @@ function estimateTokenCosts({
     0,
   );
   const inputTokenEstimate = textInputTokenUpperBound + imageInputTokenEstimate;
+  const longContextPricingApplied =
+    Number.isFinite(modelPrices.longContextThresholdTokens) &&
+    inputTokenEstimate > modelPrices.longContextThresholdTokens;
+  const inputPriceUsdPerMillion = longContextPricingApplied
+    ? modelPrices.longContextInput
+    : modelPrices.input;
+  const textOutputPriceUsdPerMillion = longContextPricingApplied
+    ? modelPrices.longContextTextOutput
+    : modelPrices.textOutput;
   return {
     inputTokenEstimate,
     maxTextOutputTokens,
+    inputPriceUsdPerMillion,
+    textOutputPriceUsdPerMillion,
+    longContextPricingApplied,
     estimatedInputCostUsd: roundUsd(
-      (inputTokenEstimate * modelPrices.input) / 1_000_000,
+      (inputTokenEstimate * inputPriceUsdPerMillion) / 1_000_000,
     ),
     estimatedTextOutputReserveUsd: roundUsd(
-      (maxTextOutputTokens * modelPrices.textOutput) / 1_000_000,
+      (maxTextOutputTokens * textOutputPriceUsdPerMillion) / 1_000_000,
     ),
   };
 }

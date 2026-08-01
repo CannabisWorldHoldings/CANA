@@ -552,6 +552,16 @@ test('model registry rejects unsupported roles and produces explicit estimates',
     }),
     6192,
   );
+  const longContextAnalysis = estimateGeminiAnalysisCost({
+    model: 'gemini-3.1-pro-preview',
+    text: 'x',
+    imageDimensions: { width: 192, height: 50_000 },
+  });
+  assert.equal(longContextAnalysis.inputTokenEstimate, 201757);
+  assert.equal(longContextAnalysis.longContextPricingApplied, true);
+  assert.equal(longContextAnalysis.inputPriceUsdPerMillion, 4);
+  assert.equal(longContextAnalysis.textOutputPriceUsdPerMillion, 18);
+  assert.equal(longContextAnalysis.estimatedMaximumCostUsd, 0.843892);
 });
 
 test('Vertex authentication uses a bearer header and never places credentials in the URL', async () => {
