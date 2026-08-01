@@ -1,9 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * CLEAN-DATABASE COURT — does the configuration survive a fresh database?
@@ -23,7 +25,7 @@ import { join } from 'node:path';
  * them is how this defect happened.
  */
 
-const REPO_WEB = '/agent/workspace/ui-recover/apps/web';
+const REPO_WEB = fileURLToPath(new URL('..', import.meta.url));
 
 /** Run a snippet in a FRESH node process against a given database. */
 function inFreshProcess(dbPath, snippet) {
@@ -54,6 +56,10 @@ function freshDatabase() {
   return { dir, dbPath };
 }
 
+function fileSha256(file) {
+  return createHash('sha256').update(readFileSync(file)).digest('hex');
+}
+
 test('a FRESH database from source-controlled schema does NOT default to WAL', () => {
   // The measurement that proves the gap is real rather than theoretical.
   const { dir, dbPath } = freshDatabase();
@@ -75,6 +81,27 @@ test('initialization applies the configuration and VERIFIES it by reading back',
     assert.equal(r.after.foreign_keys, 1);
     assert.deepEqual(r.failures, [], `pragmas failed: ${JSON.stringify(r.failures)}`);
     assert.deepEqual(r.mismatches, [], `pragmas did not read back: ${JSON.stringify(r.mismatches)}`);
+    assert.equal(r.ok, true);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('production preservation mode leaves persistent SQLite bytes unchanged', () => {
+  const { dir, dbPath } = freshDatabase();
+  try {
+    const beforeHash = fileSha256(dbPath);
+    const r = inFreshProcess(
+      dbPath,
+      'return await mod.initializeDatabaseConfig(prisma, { preservePersistentPragmas: true });',
+    );
+    const afterHash = fileSha256(dbPath);
+
+    assert.equal(afterHash, beforeHash, 'startup must not mutate the persistent database file');
+    assert.equal(r.before.journal_mode, 'delete');
+    assert.equal(r.after.journal_mode, 'delete');
+    assert.deepEqual(r.preserved, ['journal_mode']);
+    assert.ok(!r.applied.includes('journal_mode'));
+    assert.deepEqual(r.failures, []);
+    assert.deepEqual(r.mismatches, []);
     assert.equal(r.ok, true);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

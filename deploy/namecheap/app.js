@@ -13,6 +13,11 @@
 
 process.env.NODE_ENV = 'production';
 
+// The production SQLite file is persistent state owned outside each release.
+// Do not let application startup rewrite its file-level journal mode. Connection-
+// local safety settings are still applied by db-config.mjs.
+process.env.CANA_PRESERVE_SQLITE_FILE_BYTES = '1';
+
 // Bind to loopback: Passenger proxies external traffic to this process.
 if (!process.env.HOSTNAME) {
   process.env.HOSTNAME = '127.0.0.1';

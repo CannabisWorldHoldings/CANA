@@ -126,3 +126,16 @@ test('builder contract: webpack-only, unresolved-external scan, out-of-repo isol
     }
   }
 });
+
+test('Namecheap startup preserves the externally owned SQLite file', () => {
+  const launcher = read('deploy/namecheap/app.js');
+  const prisma = read('apps/web/src/lib/prisma.ts');
+  const guard = "process.env.CANA_PRESERVE_SQLITE_FILE_BYTES = '1'";
+
+  assert.match(launcher, /CANA_PRESERVE_SQLITE_FILE_BYTES = '1'/);
+  assert.ok(
+    launcher.indexOf(guard) < launcher.indexOf("require('./server.js')"),
+    'the byte-preservation boundary must be established before Next.js starts',
+  );
+  assert.match(prisma, /preservePersistentPragmas:\s*process\.env\.CANA_PRESERVE_SQLITE_FILE_BYTES === '1'/);
+});
