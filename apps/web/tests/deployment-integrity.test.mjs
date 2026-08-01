@@ -29,6 +29,7 @@ test('command-path consistency: runbook, deploy output, and verifier agree on wr
   const runbook = read('NAMECHEAP_CPANEL_DEPLOYMENT.md');
   const deployScript = read('deploy/namecheap/deploy.sh');
   const verifier = read('deploy/namecheap/verify-and-deploy.sh');
+  const builder = read('deploy/namecheap/build-artifact.mjs');
 
   // Canonical owner-facing paths are the stable wrappers.
   assert.match(runbook, /sh ~\/apps\/orderweeddc\/restart\.sh/);
@@ -40,6 +41,14 @@ test('command-path consistency: runbook, deploy output, and verifier agree on wr
   // ...and advertise exactly the wrapper paths.
   assert.match(deployScript, /sh \$APP_HOME\/restart\.sh/);
   assert.match(deployScript, /sh \$APP_HOME\/rollback\.sh/);
+
+  // The owner runbook deploys with the script extracted from the sealed
+  // artifact, so the builder must package that exact canonical script.
+  assert.match(
+    builder,
+    /for \(const opsScript of \[\s*'deploy\.sh',/,
+    'sealed artifacts must include the canonical deploy script',
+  );
 
   // The verifier installs the same wrappers and rolls back through them.
   assert.match(verifier, /cp "\$APP_HOME\/current\/restart\.sh" "\$APP_HOME\/restart\.sh"/);

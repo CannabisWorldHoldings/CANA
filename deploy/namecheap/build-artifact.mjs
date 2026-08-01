@@ -289,6 +289,7 @@ for (const script of [
   fs.copyFileSync(path.join(webRoot, script), path.join(artifactRoot, script));
 }
 for (const opsScript of [
+  'deploy.sh',
   'bootstrap-production-db.sh',
   'restart.sh',
   'rollback.sh',
