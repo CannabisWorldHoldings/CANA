@@ -447,6 +447,7 @@
     "apps/web/next.config.ts",
     "apps/web/src/lib/build-database.mjs",
     "apps/web/src/lib/db-config.mjs",
+    "apps/web/src/lib/prisma.ts",
     "apps/web/tests/build-database-gate.test.mjs",
     "apps/web/tests/migration-court.test.mjs",
     "deploy/namecheap/build-artifact.mjs",
@@ -499,6 +500,7 @@
     "apps/web/next.config.ts",
     "apps/web/src/lib/build-database.mjs",
     "apps/web/src/lib/db-config.mjs",
+    "apps/web/src/lib/prisma.ts",
     "apps/web/tests/build-database-gate.test.mjs",
     "apps/web/tests/migration-court.test.mjs",
     "deploy/namecheap/build-artifact.mjs",
@@ -591,7 +593,6 @@
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",
     "apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts",
-    "apps/web/src/lib/prisma.ts",
     "apps/web/src/lib/page-challenge.mjs",
     "apps/web/src/lib/demand-credits.mjs",
     "apps/web/src/lib/growth-os.mjs",

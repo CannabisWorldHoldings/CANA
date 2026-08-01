@@ -340,6 +340,17 @@ test('the exact security-repaired PR #2 change set is durability-owned after rec
   );
 });
 
+test('the production database byte-preservation boundary has exact ownership only', () => {
+  const manifest = ownership();
+  const exactPath = 'apps/web/src/lib/prisma.ts';
+  assert.deepEqual(unownedPaths([exactPath], manifest), []);
+  assert.equal(manifest.global_no_edit.includes(exactPath), false);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/lib/prisma-neighbor.ts'], manifest),
+    ['apps/web/src/lib/prisma-neighbor.ts'],
+  );
+});
+
 test('the exact Mission 1 evidence and validator paths have narrow ownership', () => {
   const manifest = ownership();
   const assignment = mission1OwnershipAssignment(manifest);
