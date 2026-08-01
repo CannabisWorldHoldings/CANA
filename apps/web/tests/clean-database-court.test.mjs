@@ -4,26 +4,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-/**
- * CLEAN-DATABASE COURT — does the configuration survive a fresh database?
- *
- * THE DEFECT THIS COURT EXISTS FOR. WAL was enabled by running a PRAGMA by hand
- * against the local dev.db. It worked, and it was not reproducible: journal_mode is
- * stored INSIDE the database file, and that file is untracked. Measured here rather
- * than assumed — a database created fresh from the source-controlled schema reports
- * `journal_mode=delete`. Every clean clone, Drive reconstruction, regenerated
- * database and deployment would have silently run without it, and the concurrency
- * behaviour proven locally would not have existed in production.
- *
- * So this court never touches the local dev.db. It builds a database from scratch in
- * a temp directory, reads the configuration BEFORE initialization, applies it,
- * reads it back, opens a NEW process against the same file, and confirms what
- * persisted and what did not — because those are different answers and conflating
- * them is how this defect happened.
- */
-
-const REPO_WEB = '/agent/workspace/ui-recover/apps/web';
+const REPO_WEB = fileURLToPath(new URL('..', import.meta.url));
 
 /** Run a snippet in a FRESH node process against a given database. */
 function inFreshProcess(dbPath, snippet) {
@@ -43,12 +26,12 @@ function inFreshProcess(dbPath, snippet) {
   return JSON.parse(line.slice('__RESULT__'.length));
 }
 
-/** Create a database from the SOURCE-CONTROLLED schema, exactly as a deploy would. */
 function freshDatabase() {
   const dir = mkdtempSync(join(tmpdir(), 'cana-cleandb-'));
   const dbPath = join(dir, 'fresh.db');
-  execFileSync('npx', ['prisma', 'db', 'push', '--skip-generate', '--accept-data-loss'], {
-    cwd: REPO_WEB, env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  execFileSync(npxCmd, ['prisma', 'db', 'push', '--skip-generate', '--accept-data-loss'], {
+    cwd: REPO_WEB, env: { ...process.env, PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin', DATABASE_URL: `file:${dbPath}` },
     encoding: 'utf8', timeout: 240_000, stdio: 'pipe',
   });
   return { dir, dbPath };

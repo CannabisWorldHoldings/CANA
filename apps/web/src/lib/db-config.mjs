@@ -157,6 +157,13 @@ export async function initializeDatabaseConfig(
 
   for (const p of REQUIRED_SQLITE_PRAGMAS) {
     try {
+      const got = before[p.name];
+      const want = typeof p.value === 'string' ? p.value.toLowerCase() : p.value;
+      const norm = typeof got === 'string' ? got.toLowerCase() : got;
+      if (norm === want) {
+        applied.push(p.name);
+        continue;
+      }
       // journal_mode returns a row; the others do not. queryRawUnsafe handles both.
       await prisma.$queryRawUnsafe(`PRAGMA ${p.name} = ${p.value}`);
       applied.push(p.name);
