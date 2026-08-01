@@ -23,7 +23,7 @@ const TOKEN_PRICES_USD_PER_MILLION = Object.freeze({
   }),
 });
 
-export const GEMINI_PRICING_CATALOG_ID = 'google-gemini-standard-paid-2026-07-30';
+export const GEMINI_PRICING_CATALOG_ID = 'google-gemini-standard-paid-2026-08-01';
 
 function roundUsd(value) {
   return Number(value.toFixed(6));
