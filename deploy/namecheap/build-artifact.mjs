@@ -115,7 +115,12 @@ if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
 // accepts only the explicitly vetted absolute executable and this process verifies that
 // exact real path before running any build command.
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
-if (process.version !== REQUIRED_NODE && process.env.ALLOW_NODE_MISMATCH !== '1') {
+const operationalScriptsVerification = process.argv[2] === '--verify-operational-scripts';
+if (
+  !operationalScriptsVerification
+  && process.version !== REQUIRED_NODE
+  && process.env.ALLOW_NODE_MISMATCH !== '1'
+) {
   throw new Error(
     `Build requires Node ${REQUIRED_NODE} but is running ${process.version} at ${process.execPath}. ` +
     `Invoke the exact binary ($HOME/.nvm/versions/node/${REQUIRED_NODE}/bin/node), ` +
