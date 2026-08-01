@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "capturedAt": "2026-07-30T04:50:29Z",
+  "authentication": "OWNER_GH_CLI_ACTIVE_REPO_SCOPE_IDENTITY_REDACTED",
+  "commandTemplate": "gh api repos/{repository}/commits/{commit} --jq '[.sha,.commit.tree.sha,.commit.committer.date,.html_url] | @tsv'",
+  "results": [
+    {
+      "repository": "cannabisworldholdings-afk/ORDERWEEDDCRSI-",
+      "commit": "125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "treeCommit": "58e1f3b1e116519d2fb28d6613c509484eb03d0a",
+      "committedAt": "2026-07-24T00:09:06Z",
+      "commitWeb": "https://github.com/cannabisworldholdings-afk/ORDERWEEDDCRSI-/commit/125c81b084c7a76aae0dc28781f106cba3204e7b",
+      "exitCode": 0
+    },
+    {
+      "repository": "princeleuel-code/rsi-sitemind-core",
+      "commit": "9333c1d572a6be39df30e98ee07c451624190a8f",
+      "treeCommit": "efa0f6bcbe40f14023b39cc1a3529ed4b6896915",
+      "committedAt": "2026-07-23T16:45:14Z",
+      "commitWeb": "https://github.com/princeleuel-code/rsi-sitemind-core/commit/9333c1d572a6be39df30e98ee07c451624190a8f",
+      "exitCode": 0
+    },
+    {
+      "repository": "princeleuel-code/rsi-skills",
+      "commit": "e9aa9e8d64b28f4de5ae8831e682701e324db987",
+      "treeCommit": "bfd5ad9f6a654a97d07b2b17fb3420acb32eff56",
+      "committedAt": "2026-07-23T16:45:18Z",
+      "commitWeb": "https://github.com/princeleuel-code/rsi-skills/commit/e9aa9e8d64b28f4de5ae8831e682701e324db987",
+      "exitCode": 0
+    },
+    {
+      "repository": "princeleuel-code/rsi-evaluations",
+      "commit": "5dc9ea2dc83e27b29dc3156fb0eb9743b79863a7",
+      "treeCommit": "4f8be076cad14b0570c7b8fc0402cd7d0f03d273",
+      "committedAt": "2026-07-23T16:45:06Z",
+      "commitWeb": "https://github.com/princeleuel-code/rsi-evaluations/commit/5dc9ea2dc83e27b29dc3156fb0eb9743b79863a7",
+      "exitCode": 0
+    },
+    {
+      "repository": "princeleuel-code/rsi-hermes-runtime",
+      "commit": "d97d91c6542a071337a244262fc1f68426a03ab8",
+      "treeCommit": "c61b8eedc9dff2e49744efb9c255079ae7ef3420",
+      "committedAt": "2026-07-23T16:46:30Z",
+      "commitWeb": "https://github.com/princeleuel-code/rsi-hermes-runtime/commit/d97d91c6542a071337a244262fc1f68426a03ab8",
+      "exitCode": 0
+    }
+  ],
+  "authority": "This is provenance evidence only. No historical code was copied or promoted to canonical implementation authority."
+}

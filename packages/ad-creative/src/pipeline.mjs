@@ -10,6 +10,7 @@
 import { analyzeBrandLogo, buildBrandProfile } from './brand-profile.mjs';
 import { buildCreativeBrief } from './creative-brief.mjs';
 import { verifyCreative, IMAGE_ANALYSIS_INSTRUCTION } from './verification.mjs';
+import { assertIndependentProviders } from './provider-contract.mjs';
 
 export const POSTING_LAW =
   'No ad creative is ever posted from generation alone: it must pass machine verification ' +
@@ -22,27 +23,52 @@ export const POSTING_LAW =
  * product), or a single product when `productName` narrows it.
  *
  * @param {{
- *   provider: ReturnType<typeof import('./provider-contract.mjs').createProvider>,
+ *   generatorProvider: ReturnType<typeof import('./provider-contract.mjs').createProvider>,
+ *   verifierProvider: ReturnType<typeof import('./provider-contract.mjs').createProvider>,
  *   business: { name: string, licenseNumber: string, licenseSource: string },
  *   logo: { imageBase64: string, mimeType: string },
  *   products: Array<object>,
  *   campaign: { channel: string, aspectRatio?: string, sceneDirection?: string, headline?: string },
  *   productName?: string,
+ *   tenantId: string,
+ *   missionId: string,
+ *   verificationAuthorization: { receipt: object },
+ *   paidAuthorization?: {
+ *     brandAnalysis?: { receipt: object, maxTotalCostUsd: number },
+ *     generation?: Function,
+ *     verification?: Function,
+ *   },
  * }} input
  */
 export async function runAdCreativePipeline({
-  provider,
+  generatorProvider,
+  verifierProvider,
   business,
   logo,
   products,
   campaign,
   productName,
+  tenantId = 'offline-test-tenant',
+  missionId = 'offline-test-mission',
+  verificationAuthorization,
+  paidAuthorization,
 }) {
+  assertIndependentProviders(generatorProvider, verifierProvider, {
+    ...verificationAuthorization,
+    tenantId,
+    missionId,
+  });
+  const brandAuthorization = paidAuthorization?.brandAnalysis ?? {};
   // 1. Comprehensive brand analysis — BEFORE any generation.
   const logoAnalysis = await analyzeBrandLogo({
-    provider,
+    provider: verifierProvider,
     logoBase64: logo.imageBase64,
     mimeType: logo.mimeType,
+    providerInput: {
+      tenantId,
+      authorizationReceipt: brandAuthorization.receipt,
+      maxTotalCostUsd: brandAuthorization.maxTotalCostUsd,
+    },
   });
   if (logoAnalysis.minorsAppealRisk) {
     throw new Error(
@@ -66,16 +92,26 @@ export async function runAdCreativePipeline({
   for (const product of targets) {
     // 2. Deterministic per-product brief.
     const brief = buildCreativeBrief({ brandProfile, product, campaign });
+    const generationAuthorization =
+      (await paidAuthorization?.generation?.({ brief, product })) ?? {};
 
     // 3. Generation via the pluggable provider.
-    const image = await provider.generateImage({
+    const image = await generatorProvider.generateImage({
+      tenantId,
+      authorizationReceipt: generationAuthorization.receipt,
+      maxTotalCostUsd: generationAuthorization.maxTotalCostUsd,
       prompt: brief.prompt,
       aspectRatio: brief.aspectRatio,
       referenceImages: [logo],
     });
 
     // 4. Post-generation inspection of the ACTUAL output.
-    const imageAnalysis = await provider.analyzeImage({
+    const verificationPayment =
+      (await paidAuthorization?.verification?.({ brief, product, image })) ?? {};
+    const imageAnalysis = await verifierProvider.analyzeImage({
+      tenantId,
+      authorizationReceipt: verificationPayment.receipt,
+      maxTotalCostUsd: verificationPayment.maxTotalCostUsd,
       imageBase64: image.imageBase64,
       mimeType: image.mimeType,
       instruction: IMAGE_ANALYSIS_INSTRUCTION,

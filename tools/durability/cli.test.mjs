@@ -7,6 +7,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  CREATIVE_GEMINI_AUTHORIZED_PATHS,
+  creativeGeminiOwnershipAssignment,
   matchOwned,
   MISSION1_AUTHORIZED_PATHS,
   MISSION1_EVIDENCE_PATHS,
@@ -606,6 +608,43 @@ test('removing one M001 exact path recreates the durability ownership failure', 
   assert.throws(
     () => validateOwnershipManifest(removed),
     /Mission 3 M001 path must have exactly one exact ownership entry/,
+  );
+});
+
+test('the Creative Gemini delta has exact durability ownership without production authority', () => {
+  const manifest = ownership();
+  const assignment = creativeGeminiOwnershipAssignment(manifest);
+  assert.deepEqual(
+    [...assignment.paths].sort(),
+    [...CREATIVE_GEMINI_AUTHORIZED_PATHS].sort(),
+  );
+  assert.deepEqual(unownedPaths(CREATIVE_GEMINI_AUTHORIZED_PATHS, manifest), []);
+  assert.equal(assignment.authorization_effect.includes('no paid-call'), true);
+  assert.equal(assignment.authorization_effect.includes('no deployment'), true);
+  assert.equal(assignment.authorization_effect.includes('no production'), true);
+  assert.equal(assignment.authorization_effect.includes('no verification-bypass'), true);
+});
+
+test('Creative Gemini ownership rejects neighboring paths and assignment tampering', () => {
+  const patterns = ownershipPatterns(ownership());
+  for (const neighboringPath of [
+    'packages/creative-foundry/package.json',
+    'apps/web/src/app/admin/creative-studio/page.tsx',
+    'tools/ad-creative/publish-production.mjs',
+  ]) {
+    assert.equal(
+      patterns.some((pattern) => matchOwned(neighboringPath, pattern)),
+      false,
+      neighboringPath,
+    );
+  }
+
+  const tampered = ownership();
+  tampered.explicit_user_assignment.creative_gemini_delta_2026_08_01
+    .authorization_effect = 'Durability changed-file ownership and production authority.';
+  assert.throws(
+    () => validateOwnershipManifest(tampered),
+    /Creative Gemini ownership assignment is malformed/,
   );
 });
 

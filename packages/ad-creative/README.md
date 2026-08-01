@@ -11,22 +11,41 @@ Provider-pluggable ad-creative engine for merchant marketing.
    every advertisement features a different verified product. Compliance
    text (21+ marker, license line, "Sponsored" label) lives in a
    deterministic overlay, never in-image.
-3. **Generate** — via the pluggable provider. Default: Gemini
-   (`gemini-3.1-flash-image`) — best product/brand consistency across
-   variants and ~$0.039/image (2026-04 research; see
-   `docs/competitive/ad-creative-research.md`). Any model that satisfies
-   `provider-contract.mjs` plugs in without a rewrite.
-4. **Inspect** — the vision model re-analyzes the ACTUAL generated image
+3. **Authorize** — the paid provider verifies an expiring Ed25519-signed,
+   request-bound CANA paid-governance receipt. The receipt binds tenant,
+   model, operation, and a total cost reservation. Missing, altered, expired,
+   or underfunded receipts fail before network transport.
+   The pre-transport estimate includes documented image output, text/image
+   input, and a bounded text/reasoning output reserve. The signed reservation
+   must cover that estimate. It remains an owner-authorized ceiling rather
+   than a claim that Google enforces a billing cap; provider usage and invoice
+   settlement are still required before any grant balance is updated.
+4. **Generate** — via the pluggable provider. Default: configured Gemini
+   `FAST_IMAGE_ITERATOR`; model IDs live in `model-registry.mjs`.
+5. **Inspect** — a separately authorized vision provider re-analyzes the ACTUAL generated image
    (minors appeal, health-claim imagery, rendered text, brand match).
-5. **Verify** — eight-check gate. Machine PASS is necessary but never
+6. **Verify** — provider separation requires its own expiring,
+   Ed25519-signed CANA independent-verification receipt. The same provider
+   family cannot verify itself. The eight-check machine PASS is necessary but never
    sufficient: `assertPostable` additionally requires a named human
    approval. The pipeline has no posting capability at all.
 
 ## Credentials
 
-`GEMINI_API_KEY` via environment (skill credential injection). Never in
-source, never in chat, never logged. Tests use a mock provider and an
-injected fetch — no test touches the network.
+Developer API credentials use server-side `GEMINI_API_KEY`; Vertex uses a
+server-side access-token provider. The public website never receives either.
+`CANA_PAID_GOVERNANCE_PUBLIC_KEY` verifies authorization receipts but cannot
+issue them. Secrets are never placed in URLs, source, receipts, or logs.
+Tests use generated one-run Ed25519 keys, mock providers, and injected fetch;
+no test touches the network.
+
+The Developer adapter uses the `/v1` GenerateContent contract with
+`generationConfig.responseFormat.image`. Vertex uses its documented
+`responseModalities: ["TEXT", "IMAGE"]` plus `imageConfig` contract. Supported
+size identifiers are `512`, `1K`, `2K`, and `4K`. Provider responses are
+streamed through bounded parsing before JSON decoding. Paid receipts are
+attempt-scoped and intentionally consumed before transport; any retry requires
+a new owner-authorized receipt.
 
 ## Run tests
 

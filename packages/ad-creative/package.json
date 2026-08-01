@@ -10,7 +10,19 @@
     "./creative-brief": "./src/creative-brief.mjs",
     "./verification": "./src/verification.mjs",
     "./providers/gemini": "./src/providers/gemini.mjs",
-    "./provider-contract": "./src/provider-contract.mjs"
+    "./provider-contract": "./src/provider-contract.mjs",
+    "./model-registry": "./src/model-registry.mjs",
+    "./gemini-cost": "./src/gemini-cost.mjs",
+    "./candidate-lineage": "./src/candidate-lineage.mjs",
+    "./asset-processing": "./src/asset-processing.mjs",
+    "./orderweeddc-brand-assets": "./src/orderweeddc-brand-assets.mjs",
+    "./asset-request": "./src/asset-request.mjs",
+    "./benchmark-replay": "./src/benchmark-replay.mjs",
+    "./paid-authorization": "./src/paid-authorization.mjs",
+    "./independent-verification": "./src/independent-verification.mjs"
+  },
+  "dependencies": {
+    "sharp": "0.35.3"
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs"

@@ -32,8 +32,11 @@ const MISSION2_ASSIGNMENT_SHA256 =
 const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
 const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
+const CREATIVE_GEMINI_ASSIGNMENT = 'creative_gemini_delta_2026_08_01';
+const CREATIVE_GEMINI_ASSIGNMENT_SHA256 =
+  'a7ac318d7d2451d3c54341be91813c989db2c942d398e995794ce8e6385f339a';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'b4bacee303d15367aa3482b876044c39c4a667ecb52b0a0cd3572ddfe6f3c052';
+  'bacf459a85fa3ff406626e34bb212304ba21f3a4667ef4288438ceed083d4506';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -122,6 +125,29 @@ export const MISSION3_M001_AUTHORIZED_PATHS = Object.freeze([
   'tools/growth-foundry/m001/claim-graph.mjs',
   'tools/growth-foundry/m001/claim-graph.test.mjs',
   'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+]);
+export const CREATIVE_GEMINI_AUTHORIZED_PATHS = Object.freeze([
+  'docs/creative-system/IMPLEMENTATION_MAP.md',
+  'docs/creative-system/PROVENANCE_COMMAND_EVIDENCE.json',
+  'docs/creative-system/PROVENANCE_RECEIPT.json',
+  'package-lock.json',
+  'packages/ad-creative/README.md',
+  'packages/ad-creative/package.json',
+  'packages/ad-creative/src/asset-processing.mjs',
+  'packages/ad-creative/src/asset-request.mjs',
+  'packages/ad-creative/src/benchmark-replay.mjs',
+  'packages/ad-creative/src/brand-profile.mjs',
+  'packages/ad-creative/src/candidate-lineage.mjs',
+  'packages/ad-creative/src/gemini-cost.mjs',
+  'packages/ad-creative/src/independent-verification.mjs',
+  'packages/ad-creative/src/model-registry.mjs',
+  'packages/ad-creative/src/orderweeddc-brand-assets.mjs',
+  'packages/ad-creative/src/paid-authorization.mjs',
+  'packages/ad-creative/src/pipeline.mjs',
+  'packages/ad-creative/src/provider-contract.mjs',
+  'packages/ad-creative/src/providers/gemini.mjs',
+  'packages/ad-creative/tests/ad-creative.test.mjs',
+  'tools/ad-creative/orderweeddc-hero-preflight.mjs',
 ]);
 
 function command(commandName, args, {
@@ -653,6 +679,65 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const creativeGeminiAssignment =
+    ownership.explicit_user_assignment[CREATIVE_GEMINI_ASSIGNMENT];
+  if (
+    !exactKeys(creativeGeminiAssignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'approval_sha256',
+      'paths',
+    ]) ||
+    creativeGeminiAssignment.authorization !==
+      'CORRECTION — REUSE THE EXISTING RSI MARKETING AND CREATIVE IMAGE SYSTEM' ||
+    !Array.isArray(creativeGeminiAssignment.paths) ||
+    JSON.stringify([...creativeGeminiAssignment.paths].sort()) !==
+      JSON.stringify([...CREATIVE_GEMINI_AUTHORIZED_PATHS].sort()) ||
+    !creativeGeminiAssignment.scope.includes('Exact CANA creative-system') ||
+    !creativeGeminiAssignment.authorization_effect.includes('no paid-call') ||
+    !creativeGeminiAssignment.authorization_effect.includes('no deployment') ||
+    !creativeGeminiAssignment.authorization_effect.includes('no production') ||
+    !creativeGeminiAssignment.authorization_effect.includes('no verification-bypass')
+  ) {
+    refusal('Creative Gemini ownership assignment is malformed');
+  }
+
+  const creativeGeminiPaths = creativeGeminiAssignment.paths;
+  if (
+    new Set(creativeGeminiPaths).size !== creativeGeminiPaths.length ||
+    creativeGeminiPaths.some(
+      (entry) =>
+        typeof entry !== 'string' ||
+        entry.length === 0 ||
+        entry.startsWith('/') ||
+        entry.includes('\\') ||
+        entry.includes('*') ||
+        entry.includes('..') ||
+        path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('Creative Gemini ownership paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of CREATIVE_GEMINI_AUTHORIZED_PATHS) {
+    const exactOccurrences = allOwnedPaths.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (exactOccurrences !== 1) {
+      refusal(
+        `Creative Gemini path must have exactly one exact ownership entry: ${authorizedPath}`,
+      );
+    }
+    const plannedOccurrences = ownership.planned_candidate_files.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (plannedOccurrences !== 1) {
+      refusal(
+        `Creative Gemini path must have exactly one planned-candidate entry: ${authorizedPath}`,
+      );
+    }
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -709,6 +794,19 @@ export function validateOwnershipManifest(ownership) {
   ) {
     refusal('Mission 3 M001 ownership assignment failed its owner-approval digest');
   }
+  const {
+    approval_sha256: creativeGeminiRecordedDigest,
+    ...creativeGeminiApprovalPayload
+  } = creativeGeminiAssignment;
+  const creativeGeminiActualDigest = sha256Bytes(
+    canonicalJson(creativeGeminiApprovalPayload),
+  );
+  if (
+    creativeGeminiRecordedDigest !== CREATIVE_GEMINI_ASSIGNMENT_SHA256 ||
+    creativeGeminiActualDigest !== CREATIVE_GEMINI_ASSIGNMENT_SHA256
+  ) {
+    refusal('Creative Gemini ownership assignment failed its owner-approval digest');
+  }
   return assignment;
 }
 
@@ -730,6 +828,11 @@ export function mission2OwnershipAssignment(ownership) {
 export function mission3M001OwnershipAssignment(ownership) {
   validateOwnershipManifest(ownership);
   return ownership.explicit_user_assignment[MISSION3_M001_ASSIGNMENT];
+}
+
+export function creativeGeminiOwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[CREATIVE_GEMINI_ASSIGNMENT];
 }
 
 export function ownershipPatterns(ownership) {
