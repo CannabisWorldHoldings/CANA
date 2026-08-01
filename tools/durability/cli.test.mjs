@@ -342,12 +342,28 @@ test('the exact security-repaired PR #2 change set is durability-owned after rec
 
 test('the production database byte-preservation boundary has exact ownership only', () => {
   const manifest = ownership();
-  const exactPath = 'apps/web/src/lib/prisma.ts';
-  assert.deepEqual(unownedPaths([exactPath], manifest), []);
-  assert.equal(manifest.global_no_edit.includes(exactPath), false);
+  const exactPaths = [
+    'apps/web/src/lib/prisma.ts',
+    'apps/web/tests/clean-database-court.test.mjs',
+    'apps/web/tests/deployment-integrity.test.mjs',
+    'deploy/namecheap/app.js',
+  ];
+  assert.deepEqual(unownedPaths(exactPaths, manifest), []);
+  assert.equal(manifest.global_no_edit.includes(exactPaths[0]), false);
   assert.deepEqual(
-    unownedPaths(['apps/web/src/lib/prisma-neighbor.ts'], manifest),
-    ['apps/web/src/lib/prisma-neighbor.ts'],
+    unownedPaths(
+      [
+        'apps/web/src/lib/prisma-neighbor.ts',
+        'apps/web/tests/deployment-integrity-neighbor.test.mjs',
+        'deploy/namecheap/app-neighbor.js',
+      ],
+      manifest,
+    ),
+    [
+      'apps/web/src/lib/prisma-neighbor.ts',
+      'apps/web/tests/deployment-integrity-neighbor.test.mjs',
+      'deploy/namecheap/app-neighbor.js',
+    ],
   );
 });
 
