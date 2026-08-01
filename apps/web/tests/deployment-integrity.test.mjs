@@ -49,6 +49,54 @@ test('command-path consistency: runbook, deploy output, and verifier agree on wr
   assert.doesNotMatch(runbook, /apps\/orderweeddc\/current\/restart\.sh/);
 });
 
+test('artifact operations emit deploy, restart, and rollback scripts byte-for-byte', () => {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-ops-artifact-'));
+  let builderCourtRoot;
+  try {
+    const artifactName = 'orderweeddc-operational-scripts';
+    const extractionRoot = path.join(courtRoot, 'extracted');
+    fs.mkdirSync(extractionRoot);
+
+    const environment = { ...process.env, CANA_VERIFIED_NODE: process.execPath };
+    delete environment.NODE_OPTIONS;
+    delete environment.NODE_PATH;
+    const verification = JSON.parse(execFileSync(
+      path.join(repoRoot, 'deploy/namecheap/build-artifact.mjs'),
+      ['--verify-operational-scripts'],
+      { cwd: courtRoot, encoding: 'utf8', env: environment },
+    ));
+    builderCourtRoot = path.dirname(verification.tarPath);
+    const operationalScripts = verification.files;
+    assert.deepEqual(operationalScripts.slice(0, 4), [
+      'deploy.sh',
+      'bootstrap-production-db.sh',
+      'restart.sh',
+      'rollback.sh',
+    ], 'the executable builder must emit the deployment and rollback entry points');
+
+    execFileSync('tar', ['-xzf', verification.tarPath, '-C', extractionRoot]);
+
+    const archiveEntries = execFileSync('tar', ['-tzf', verification.tarPath], {
+      encoding: 'utf8',
+    });
+    const archivedFiles = archiveEntries.trim().split('\n');
+    for (const script of operationalScripts) {
+      assert.ok(
+        archivedFiles.includes(`${artifactName}/${script}`),
+        `generated artifact must contain ${script}`,
+      );
+      assert.deepEqual(
+        fs.readFileSync(path.join(extractionRoot, 'orderweeddc-operational-scripts', script)),
+        fs.readFileSync(path.join(repoRoot, 'deploy/namecheap', script)),
+        `packaged ${script} must match its approved source byte-for-byte`,
+      );
+    }
+  } finally {
+    fs.rmSync(courtRoot, { recursive: true, force: true });
+    if (builderCourtRoot) fs.rmSync(builderCourtRoot, { recursive: true, force: true });
+  }
+});
+
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
   const fixtureParent = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-contam-'));
   try {

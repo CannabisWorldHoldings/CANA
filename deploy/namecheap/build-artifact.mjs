@@ -39,12 +39,13 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { auditArtifactExclusions } from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
 import { selectTestPrismaEngine } from './select-test-engine.mjs';
 
-const repoRoot = process.cwd();
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const webRoot = path.join(repoRoot, 'apps/web');
 
 function buildChildEnvironment(baseEnvironment = process.env) {
@@ -115,7 +116,12 @@ if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
 // accepts only the explicitly vetted absolute executable and this process verifies that
 // exact real path before running any build command.
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
-if (process.version !== REQUIRED_NODE && process.env.ALLOW_NODE_MISMATCH !== '1') {
+const operationalScriptsVerification = process.argv[2] === '--verify-operational-scripts';
+if (
+  !operationalScriptsVerification
+  && process.version !== REQUIRED_NODE
+  && process.env.ALLOW_NODE_MISMATCH !== '1'
+) {
   throw new Error(
     `Build requires Node ${REQUIRED_NODE} but is running ${process.version} at ${process.execPath}. ` +
     `Invoke the exact binary ($HOME/.nvm/versions/node/${REQUIRED_NODE}/bin/node), ` +
@@ -167,6 +173,40 @@ function assertExists(target, label) {
 
 function copyDir(from, to) {
   fs.cpSync(from, to, { recursive: true });
+}
+
+const operationalScripts = Object.freeze([
+  'deploy.sh',
+  'bootstrap-production-db.sh',
+  'restart.sh',
+  'rollback.sh',
+  'migrate.sh',
+  'healthcheck.sh',
+  'readycheck.sh',
+  'smoke-test.sh',
+  'worker.mjs',
+  'restore-backup.sh',
+]);
+
+function copyOperationalScripts(destinationRoot) {
+  for (const script of operationalScripts) {
+    fs.copyFileSync(
+      path.join(repoRoot, 'deploy/namecheap', script),
+      path.join(destinationRoot, script),
+    );
+  }
+}
+
+if (process.argv[2] === '--verify-operational-scripts') {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'orderweeddc-ops-court-'));
+  const artifactName = 'orderweeddc-operational-scripts';
+  const artifactRoot = path.join(courtRoot, artifactName);
+  const tarPath = path.join(courtRoot, `${artifactName}.tar.gz`);
+  fs.mkdirSync(artifactRoot);
+  copyOperationalScripts(artifactRoot);
+  execFileSync('tar', ['-czf', tarPath, '-C', courtRoot, artifactName]);
+  process.stdout.write(`${JSON.stringify({ files: operationalScripts, tarPath })}\n`);
+  process.exit(0);
 }
 
 function walkFiles(dir, out = []) {
@@ -288,22 +328,7 @@ for (const script of [
 ]) {
   fs.copyFileSync(path.join(webRoot, script), path.join(artifactRoot, script));
 }
-for (const opsScript of [
-  'bootstrap-production-db.sh',
-  'restart.sh',
-  'rollback.sh',
-  'migrate.sh',
-  'healthcheck.sh',
-  'readycheck.sh',
-  'smoke-test.sh',
-  'worker.mjs',
-  'restore-backup.sh',
-]) {
-  fs.copyFileSync(
-    path.join(repoRoot, 'deploy/namecheap', opsScript),
-    path.join(artifactRoot, opsScript),
-  );
-}
+copyOperationalScripts(artifactRoot);
 fs.mkdirSync(path.join(artifactRoot, 'prisma'), { recursive: true });
 fs.copyFileSync(
   path.join(webRoot, 'prisma/schema.prisma'),
