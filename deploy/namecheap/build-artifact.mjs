@@ -169,6 +169,40 @@ function copyDir(from, to) {
   fs.cpSync(from, to, { recursive: true });
 }
 
+const operationalScripts = Object.freeze([
+  'deploy.sh',
+  'bootstrap-production-db.sh',
+  'restart.sh',
+  'rollback.sh',
+  'migrate.sh',
+  'healthcheck.sh',
+  'readycheck.sh',
+  'smoke-test.sh',
+  'worker.mjs',
+  'restore-backup.sh',
+]);
+
+function copyOperationalScripts(destinationRoot) {
+  for (const script of operationalScripts) {
+    fs.copyFileSync(
+      path.join(repoRoot, 'deploy/namecheap', script),
+      path.join(destinationRoot, script),
+    );
+  }
+}
+
+if (process.argv[2] === '--verify-operational-scripts') {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'orderweeddc-ops-court-'));
+  const artifactName = 'orderweeddc-operational-scripts';
+  const artifactRoot = path.join(courtRoot, artifactName);
+  const tarPath = path.join(courtRoot, `${artifactName}.tar.gz`);
+  fs.mkdirSync(artifactRoot);
+  copyOperationalScripts(artifactRoot);
+  execFileSync('tar', ['-czf', tarPath, '-C', courtRoot, artifactName]);
+  process.stdout.write(`${JSON.stringify({ files: operationalScripts, tarPath })}\n`);
+  process.exit(0);
+}
+
 function walkFiles(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -288,23 +322,7 @@ for (const script of [
 ]) {
   fs.copyFileSync(path.join(webRoot, script), path.join(artifactRoot, script));
 }
-for (const opsScript of [
-  'deploy.sh',
-  'bootstrap-production-db.sh',
-  'restart.sh',
-  'rollback.sh',
-  'migrate.sh',
-  'healthcheck.sh',
-  'readycheck.sh',
-  'smoke-test.sh',
-  'worker.mjs',
-  'restore-backup.sh',
-]) {
-  fs.copyFileSync(
-    path.join(repoRoot, 'deploy/namecheap', opsScript),
-    path.join(artifactRoot, opsScript),
-  );
-}
+copyOperationalScripts(artifactRoot);
 fs.mkdirSync(path.join(artifactRoot, 'prisma'), { recursive: true });
 fs.copyFileSync(
   path.join(webRoot, 'prisma/schema.prisma'),

@@ -29,7 +29,6 @@ test('command-path consistency: runbook, deploy output, and verifier agree on wr
   const runbook = read('NAMECHEAP_CPANEL_DEPLOYMENT.md');
   const deployScript = read('deploy/namecheap/deploy.sh');
   const verifier = read('deploy/namecheap/verify-and-deploy.sh');
-  const builder = read('deploy/namecheap/build-artifact.mjs');
 
   // Canonical owner-facing paths are the stable wrappers.
   assert.match(runbook, /sh ~\/apps\/orderweeddc\/restart\.sh/);
@@ -42,20 +41,60 @@ test('command-path consistency: runbook, deploy output, and verifier agree on wr
   assert.match(deployScript, /sh \$APP_HOME\/restart\.sh/);
   assert.match(deployScript, /sh \$APP_HOME\/rollback\.sh/);
 
-  // The owner runbook deploys with the script extracted from the sealed
-  // artifact, so the builder must package that exact canonical script.
-  assert.match(
-    builder,
-    /for \(const opsScript of \[\s*'deploy\.sh',/,
-    'sealed artifacts must include the canonical deploy script',
-  );
-
   // The verifier installs the same wrappers and rolls back through them.
   assert.match(verifier, /cp "\$APP_HOME\/current\/restart\.sh" "\$APP_HOME\/restart\.sh"/);
   assert.match(verifier, /sh "\$APP_HOME\/rollback\.sh"/);
 
   // The stale, contradictory path variant must not reappear in owner docs.
   assert.doesNotMatch(runbook, /apps\/orderweeddc\/current\/restart\.sh/);
+});
+
+test('artifact operations emit deploy, restart, and rollback scripts byte-for-byte', () => {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-ops-artifact-'));
+  let builderCourtRoot;
+  try {
+    const artifactName = 'orderweeddc-operational-scripts';
+    const extractionRoot = path.join(courtRoot, 'extracted');
+    fs.mkdirSync(extractionRoot);
+
+    const environment = { ...process.env, CANA_VERIFIED_NODE: process.execPath };
+    delete environment.NODE_OPTIONS;
+    delete environment.NODE_PATH;
+    const verification = JSON.parse(execFileSync(
+      path.join(repoRoot, 'deploy/namecheap/build-artifact.mjs'),
+      ['--verify-operational-scripts'],
+      { encoding: 'utf8', env: environment },
+    ));
+    builderCourtRoot = path.dirname(verification.tarPath);
+    const operationalScripts = verification.files;
+    assert.deepEqual(operationalScripts.slice(0, 4), [
+      'deploy.sh',
+      'bootstrap-production-db.sh',
+      'restart.sh',
+      'rollback.sh',
+    ], 'the executable builder must emit the deployment and rollback entry points');
+
+    execFileSync('tar', ['-xzf', verification.tarPath, '-C', extractionRoot]);
+
+    const archiveEntries = execFileSync('tar', ['-tzf', verification.tarPath], {
+      encoding: 'utf8',
+    });
+    const archivedFiles = archiveEntries.trim().split('\n');
+    for (const script of operationalScripts) {
+      assert.ok(
+        archivedFiles.includes(`${artifactName}/${script}`),
+        `generated artifact must contain ${script}`,
+      );
+      assert.deepEqual(
+        fs.readFileSync(path.join(extractionRoot, 'orderweeddc-operational-scripts', script)),
+        fs.readFileSync(path.join(repoRoot, 'deploy/namecheap', script)),
+        `packaged ${script} must match its approved source byte-for-byte`,
+      );
+    }
+  } finally {
+    fs.rmSync(courtRoot, { recursive: true, force: true });
+    if (builderCourtRoot) fs.rmSync(builderCourtRoot, { recursive: true, force: true });
+  }
 });
 
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
