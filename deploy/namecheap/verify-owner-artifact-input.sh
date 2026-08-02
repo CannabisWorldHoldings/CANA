@@ -1,6 +1,68 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+snapshot_regular_file() {
+  local source_path=$1 destination_path=$2
+  "$PYTHON" - "$source_path" "$destination_path" <<'PY'
+import os
+import pathlib
+import shutil
+import stat
+import sys
+
+source_path, destination_path = sys.argv[1:]
+source_flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
+if hasattr(os, "O_NOFOLLOW"):
+    source_flags |= os.O_NOFOLLOW
+destination_flags = (
+    os.O_WRONLY
+    | os.O_CREAT
+    | os.O_EXCL
+    | getattr(os, "O_CLOEXEC", 0)
+)
+
+try:
+    source_descriptor = os.open(source_path, source_flags)
+    try:
+        before = os.fstat(source_descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise ValueError("source is not a regular file")
+        destination_descriptor = os.open(destination_path, destination_flags, 0o600)
+        try:
+            with os.fdopen(os.dup(source_descriptor), "rb") as source, os.fdopen(
+                os.dup(destination_descriptor), "wb"
+            ) as destination:
+                shutil.copyfileobj(source, destination, length=1024 * 1024)
+                destination.flush()
+                os.fsync(destination.fileno())
+            after = os.fstat(source_descriptor)
+            if (
+                before.st_dev,
+                before.st_ino,
+                before.st_size,
+                before.st_mtime_ns,
+            ) != (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+            ):
+                raise ValueError("source changed while it was being snapshotted")
+        finally:
+            os.close(destination_descriptor)
+    finally:
+        os.close(source_descriptor)
+except (OSError, ValueError) as error:
+    print(f"ARTIFACT_SNAPSHOT_FAILED={error}", file=sys.stderr)
+    raise SystemExit(1)
+
+snapshot = pathlib.Path(destination_path)
+if not snapshot.is_file() or snapshot.is_symlink():
+    print("ARTIFACT_SNAPSHOT_FAILED=destination is not a regular file", file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
 verify_archive_structure() {
   local archive_path=$1 artifact_root=$2 inventory_path=$3
   "$PYTHON" - "$archive_path" "$artifact_root" "$inventory_path" <<'PY'
@@ -177,11 +239,69 @@ if value.get("gitSha") != sys.argv[2] or value.get("artifact") != sys.argv[3]:
 PY
 }
 
+verify_extracted_release_identity() {
+  local release_directory=$1 artifact_root=$2
+  "$PYTHON" - "$release_directory" "$artifact_root" <<'PY'
+import json
+import os
+import pathlib
+import stat
+import sys
+
+release_directory = pathlib.Path(sys.argv[1])
+artifact = sys.argv[2]
+prefix = "orderweeddc-"
+if not artifact.startswith(prefix):
+    raise SystemExit(1)
+short_sha = artifact[len(prefix):]
+
+
+def bounded_regular_text(relative_path, maximum_bytes):
+    path = release_directory / relative_path
+    metadata = os.lstat(path)
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > maximum_bytes:
+        raise ValueError(f"{relative_path} is missing, non-regular, or oversized")
+    payload = path.read_bytes()
+    if len(payload) > maximum_bytes or b"\0" in payload:
+        raise ValueError(f"{relative_path} is not bounded text")
+    return payload.decode("utf-8")
+
+
+try:
+    receipt = json.loads(bounded_regular_text("receipt.json", 65536))
+    release = json.loads(bounded_regular_text("release.json", 65536))
+    build_id = bounded_regular_text(".next/BUILD_ID", 256).strip()
+    git_sha = release.get("gitSha")
+    if (
+        not build_id
+        or release.get("artifact") != artifact
+        or receipt.get("artifact") != artifact
+        or not isinstance(git_sha, str)
+        or len(git_sha) != 40
+        or not git_sha.startswith(short_sha)
+        or receipt.get("gitSha") != git_sha
+        or release.get("shortSha") != short_sha
+        or release.get("bundler") != "webpack"
+        or receipt.get("bundler") != "webpack"
+        or receipt.get("unresolvedExternalScan", {}).get("unresolved") != []
+        or receipt.get("isolatedRuntimeTest", {}).get("passed") is not True
+    ):
+        raise ValueError("release identity fields are inconsistent")
+except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as error:
+    print(f"RELEASE_IDENTITY_VERIFICATION_FAILED={error}", file=sys.stderr)
+    raise SystemExit(1)
+PY
+}
+
 verify_owner_artifact_inputs() {
   local artifact_actual_sha sidecar_actual_sha
-  local inventory release_file build_id_file
+  local inventory release_file build_id_file source_artifact snapshot_artifact
   [ -f "$ARTIFACT_PATH" ] && [ ! -L "$ARTIFACT_PATH" ] || return 1
   [ -f "$ARTIFACT_SIDECAR_PATH" ] && [ ! -L "$ARTIFACT_SIDECAR_PATH" ] || return 1
+  source_artifact=$ARTIFACT_PATH
+  snapshot_artifact="$STATE_ROOT/verified-artifact.tar.gz"
+  snapshot_regular_file "$source_artifact" "$snapshot_artifact" || return 1
+  ARTIFACT_PATH=$snapshot_artifact
   artifact_actual_sha=$(sha256sum "$ARTIFACT_PATH" | awk '{print $1}') || return 1
   [ "$artifact_actual_sha" = "$ARTIFACT_SHA" ] || return 1
   sidecar_actual_sha=$(sha256sum "$ARTIFACT_SIDECAR_PATH" | awk '{print $1}') || return 1
@@ -201,6 +321,40 @@ verify_owner_artifact_inputs() {
 }
 
 owner_artifact_input_main() {
+  if [ "${1-}" = --verify-extracted-identity ]; then
+    [ "$#" -eq 3 ] || {
+      printf 'usage: %s --verify-extracted-identity <release-directory> <root>\n' "$0" >&2
+      return 64
+    }
+    PYTHON=$(command -v python3 || true)
+    [ -n "$PYTHON" ] || {
+      printf 'RELEASE_IDENTITY_VERIFICATION=FAIL reason=PYTHON3_UNAVAILABLE\n' >&2
+      return 1
+    }
+    verify_extracted_release_identity "$2" "$3" || return 1
+    printf 'RELEASE_IDENTITY_VERIFICATION=PASS\n'
+    return 0
+  fi
+  if [ "${1-}" = --snapshot-structure-only ]; then
+    [ "$#" -eq 6 ] || {
+      printf 'usage: %s --snapshot-structure-only <archive> <archive-sha256> <root> <snapshot> <inventory>\n' "$0" >&2
+      return 64
+    }
+    PYTHON=$(command -v python3 || true)
+    [ -n "$PYTHON" ] || {
+      printf 'STRUCTURAL_ARCHIVE_VERIFICATION=FAIL reason=PYTHON3_UNAVAILABLE\n' >&2
+      return 1
+    }
+    snapshot_regular_file "$2" "$5" || return 1
+    [ "$(sha256sum "$5" | awk '{print $1}')" = "$3" ] || {
+      printf 'ARTIFACT_SNAPSHOT_SHA256_MISMATCH\n' >&2
+      return 1
+    }
+    verify_archive_structure "$5" "$4" "$6" || return 1
+    printf 'IMMUTABLE_ARTIFACT_SNAPSHOT=PASS\n'
+    printf 'STRUCTURAL_ARCHIVE_VERIFICATION=PASS\n'
+    return 0
+  fi
   if [ "${1-}" = --structure-only ]; then
     [ "$#" -eq 4 ] || {
       printf 'usage: %s --structure-only <archive> <root> <inventory>\n' "$0" >&2

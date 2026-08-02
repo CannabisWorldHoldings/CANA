@@ -43,6 +43,7 @@ echo "$EXPECTED_SHA  $UPLOADS/$FILE" | sha256sum -c - || fail "sha256 mismatch"
 
 phase "GATE 2: receipt acceptance"
 STAGE=$(mktemp -d "$HOME/.owd-verify-XXXXXX")
+chmod 700 "$STAGE"
 case "$FILE" in
   orderweeddc-*.tar.gz) ARTIFACT_ROOT_NAME=${FILE%.tar.gz} ;;
   *) fail "artifact filename must be orderweeddc-<sha>.tar.gz" ;;
@@ -50,10 +51,11 @@ esac
 STRUCTURAL_COURT="$SCRIPT_DIR/verify-owner-artifact-input.sh"
 [ -f "$STRUCTURAL_COURT" ] && [ ! -L "$STRUCTURAL_COURT" ] ||
   fail "structural artifact verifier unavailable"
-bash "$STRUCTURAL_COURT" --structure-only \
-  "$UPLOADS/$FILE" "$ARTIFACT_ROOT_NAME" "$STAGE/artifact-members.txt" ||
+bash "$STRUCTURAL_COURT" --snapshot-structure-only \
+  "$UPLOADS/$FILE" "$EXPECTED_SHA" "$ARTIFACT_ROOT_NAME" \
+  "$STAGE/verified-artifact.tar.gz" "$STAGE/artifact-members.txt" ||
   fail "structural artifact verification"
-tar -xzf "$UPLOADS/$FILE" -C "$STAGE"
+tar -xzf "$STAGE/verified-artifact.tar.gz" -C "$STAGE"
 RELEASE_DIR=$(find "$STAGE" -mindepth 1 -maxdepth 1 -type d | head -1)
 RECEIPT="$RELEASE_DIR/receipt.json"
 [ -f "$RECEIPT" ] || fail "receipt.json missing"
@@ -62,6 +64,8 @@ grep -q '"passed": true' "$RECEIPT" || fail "isolated runtime test not passed in
 grep -q '"unresolved": \[\]' "$RECEIPT" || fail "unresolved external references present"
 [ -f "$RELEASE_DIR/server.js" ] || fail "release missing server.js"
 [ -f "$RELEASE_DIR/app.js" ] || fail "release missing app.js"
+bash "$STRUCTURAL_COURT" --verify-extracted-identity \
+  "$RELEASE_DIR" "$ARTIFACT_ROOT_NAME" || fail "release identity mismatch"
 echo "receipt identity:"
 grep -E '"(artifact|gitSha|bundler|builtAt)"' "$RECEIPT" || true
 

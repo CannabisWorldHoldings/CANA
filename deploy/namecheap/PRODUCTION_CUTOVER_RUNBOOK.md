@@ -34,11 +34,19 @@ sha256sum ~/orderweeddc-data/prod.db | tee ~/cutover-logs/db-before.sha256
 
 ## 2. Deploy through the gated verifier (one command, auto-rollback)
 
+Upload both maintained verifier files to `~/uploads` before running the gate:
+
+- `verify-and-deploy.sh`
+- `verify-owner-artifact-input.sh`
+
 ```
 sh ~/uploads/verify-and-deploy.sh <https-artifact-url> orderweeddc-<shortsha>.tar.gz <expected-tarball-sha256>
 ```
 
-The verifier enforces: checksum, receipt acceptance, DB-hash-unchanged across
+The verifier fails closed when its adjacent structural helper is absent. It snapshots
+the downloaded archive into its private verification directory, then uses that same
+checksum-verified snapshot for structural inspection and extraction. The verifier
+enforces: checksum, receipt and release identity acceptance, DB-hash-unchanged across
 the swap, origin health with bounded retries, automatic code rollback on
 failure, and separates ORIGIN health from PUBLIC-DNS health
 (`ORIGIN_HEALTHY_PUBLIC_DNS_PENDING` is a real state — never conflate).

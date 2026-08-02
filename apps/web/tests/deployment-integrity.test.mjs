@@ -49,7 +49,12 @@ import tarfile
 archive_path, artifact_root, kind = sys.argv[1:]
 files = {
     "deploy.sh": b"#!/bin/sh\nexit 0\n",
-    "release.json": (json.dumps({"gitSha": "a" * 40, "artifact": artifact_root}) + "\n").encode(),
+    "release.json": (json.dumps({
+        "gitSha": "a" * 40,
+        "shortSha": "structural-court",
+        "artifact": artifact_root,
+        "bundler": "webpack",
+    }) + "\n").encode(),
     ".next/BUILD_ID": b"structural-build-id\n",
     "src/metadata-markers.txt": b"LIBARCHIVE.xattr\nSCHILY.xattr\ncom.apple.provenance\ncom.apple.ResourceFork\ncom.apple.FinderInfo\n",
     "public/icon.ico": b"\x00\x00\x01\x00\x00binary\x00ico",
@@ -313,13 +318,89 @@ test('owner artifact input court captures only bounded textual values in shell v
   assert.match(court, /PYTHON=\$\(command -v python3/);
 });
 
-test('canonical deployment verifier runs structural inspection before extraction', () => {
+test('artifact snapshot is immutable after the upload path is replaced', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-owner-artifact-snapshot-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const fixture = createOwnerArtifactFixture(root, 'clean');
+  const expected = sha256(fixture.artifact);
+  const snapshot = path.join(root, 'private', 'verified-artifact.tar.gz');
+  const inventory = path.join(root, 'private', 'artifact-members.txt');
+  fs.mkdirSync(path.dirname(snapshot), { mode: 0o700 });
+
+  const result = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--snapshot-structure-only',
+    fixture.artifact,
+    expected,
+    fixture.artifactRoot,
+    snapshot,
+    inventory,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /IMMUTABLE_ARTIFACT_SNAPSHOT=PASS/);
+
+  fs.writeFileSync(fixture.artifact, Buffer.from('replacement archive'));
+  assert.equal(sha256(snapshot), expected, 'private snapshot must retain the verified bytes');
+  assert.doesNotThrow(() => execFileSync('tar', ['-tzf', snapshot]));
+});
+
+test('extracted release identity is bounded and internally consistent', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-release-identity-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const artifact = 'orderweeddc-abcdef0';
+  const gitSha = `${artifact.slice('orderweeddc-'.length)}${'a'.repeat(33)}`;
+  fs.mkdirSync(path.join(root, '.next'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.next/BUILD_ID'), 'bounded-build-id\n');
+  fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify({
+    gitSha,
+    shortSha: 'abcdef0',
+    artifact,
+    bundler: 'webpack',
+  }));
+  fs.writeFileSync(path.join(root, 'receipt.json'), JSON.stringify({
+    gitSha,
+    artifact,
+    bundler: 'webpack',
+    unresolvedExternalScan: { unresolved: [] },
+    isolatedRuntimeTest: { passed: true },
+  }));
+
+  const accepted = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--verify-extracted-identity',
+    root,
+    artifact,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(accepted.status, 0, `${accepted.stdout}\n${accepted.stderr}`);
+  assert.match(accepted.stdout, /RELEASE_IDENTITY_VERIFICATION=PASS/);
+
+  const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json'), 'utf8'));
+  release.gitSha = `abcdef0${'b'.repeat(33)}`;
+  fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify(release));
+  const rejected = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--verify-extracted-identity',
+    root,
+    artifact,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /RELEASE_IDENTITY_VERIFICATION_FAILED/);
+});
+
+test('canonical deployment verifier snapshots before structural inspection and extraction', () => {
   const verifier = read('deploy/namecheap/verify-and-deploy.sh');
-  const structuralCall = verifier.indexOf('bash "$STRUCTURAL_COURT" --structure-only');
-  const extraction = verifier.indexOf('tar -xzf "$UPLOADS/$FILE"');
+  const structuralCall = verifier.indexOf('bash "$STRUCTURAL_COURT" --snapshot-structure-only');
+  const extraction = verifier.indexOf('tar -xzf "$STAGE/verified-artifact.tar.gz"');
+  const identityCall = verifier.indexOf('bash "$STRUCTURAL_COURT" --verify-extracted-identity');
+  const swap = verifier.indexOf('phase "GATE 4: code-only swap"');
   assert.ok(structuralCall >= 0, 'the canonical verifier must invoke the structural court');
   assert.ok(extraction > structuralCall, 'structural inspection must complete before extraction');
+  assert.ok(identityCall > extraction, 'release identity verification must follow safe extraction');
+  assert.ok(swap > identityCall, 'release identity must be accepted before the production swap');
+  assert.doesNotMatch(verifier, /tar -xzf "\$UPLOADS\/\$FILE"/);
   assert.match(verifier, /\[ -f "\$STRUCTURAL_COURT" \] && \[ ! -L "\$STRUCTURAL_COURT" \]/);
+  const runbook = read('deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md');
+  assert.match(runbook, /verify-owner-artifact-input\.sh/);
 });
 
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
