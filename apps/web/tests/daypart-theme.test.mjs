@@ -55,6 +55,18 @@ test('the restorable favicon payload matches the approved tracked icon bytes', (
   );
   const approvedHashes = new Map([
     [
+      'public/favicon-16x16.png',
+      '227e4070b754f097c9384d9070e2b655948a98561ef101f3e4a3b440e2e99211',
+    ],
+    [
+      'public/favicon-32x32.png',
+      '98f19e59dbc6f2cc2ecd2b33b6dc2d12d2cb14471034d3d64b512a8331734b38',
+    ],
+    [
+      'public/favicon-48x48.png',
+      '219fb1b264afffb082f8d6bec03fadc70a6115cac1b8f68bcc9bd6d43c1062a7',
+    ],
+    [
       'public/apple-touch-icon.png',
       '8c75e489bd413e7625dbb6065c4f6dd54ed8ea1cf21e38494c0ccc6eea73ca68',
     ],
@@ -79,4 +91,22 @@ test('the restorable favicon payload matches the approved tracked icon bytes', (
     assert.equal(restoredHash, expectedHash, `${payloadKey} must restore the approved hash`);
     assert.deepEqual(restoredBytes, trackedBytes, `${payloadKey} must be byte-identical`);
   }
+});
+
+test('browser-tab metadata prefers the tightly cropped favicon sizes', () => {
+  const layout = fs.readFileSync(path.join(webRoot, 'src/app/layout.tsx'), 'utf8');
+  const expectedIcons = [
+    ['/favicon-16x16.png', '16x16'],
+    ['/favicon-32x32.png', '32x32'],
+    ['/favicon-48x48.png', '48x48'],
+  ];
+
+  for (const [url, sizes] of expectedIcons) {
+    assert.match(layout, new RegExp(`url: '${url}', sizes: '${sizes}'`));
+  }
+  assert.match(layout, /shortcut: '\/favicon\.ico'/);
+  assert.ok(
+    layout.indexOf('/favicon-16x16.png') < layout.indexOf('/icon-192.png'),
+    'dedicated browser-tab sizes must precede application icons',
+  );
 });
