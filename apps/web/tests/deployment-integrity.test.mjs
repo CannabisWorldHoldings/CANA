@@ -385,6 +385,21 @@ test('extracted release identity is bounded and internally consistent', (t) => {
   ], { cwd: repoRoot, encoding: 'utf8' });
   assert.notEqual(rejected.status, 0);
   assert.match(rejected.stderr, /RELEASE_IDENTITY_VERIFICATION_FAILED/);
+
+  const nonHexSha = `abcdef0${'z'.repeat(33)}`;
+  release.gitSha = nonHexSha;
+  const receipt = JSON.parse(fs.readFileSync(path.join(root, 'receipt.json'), 'utf8'));
+  receipt.gitSha = nonHexSha;
+  fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify(release));
+  fs.writeFileSync(path.join(root, 'receipt.json'), JSON.stringify(receipt));
+  const nonHexRejected = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--verify-extracted-identity',
+    root,
+    artifact,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.notEqual(nonHexRejected.status, 0);
+  assert.match(nonHexRejected.stderr, /RELEASE_IDENTITY_VERIFICATION_FAILED/);
 });
 
 test('canonical deployment verifier snapshots before structural inspection and extraction', () => {

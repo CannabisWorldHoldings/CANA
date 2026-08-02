@@ -245,6 +245,7 @@ verify_extracted_release_identity() {
 import json
 import os
 import pathlib
+import re
 import stat
 import sys
 
@@ -277,7 +278,7 @@ try:
         or release.get("artifact") != artifact
         or receipt.get("artifact") != artifact
         or not isinstance(git_sha, str)
-        or len(git_sha) != 40
+        or re.fullmatch(r"[0-9a-f]{40}", git_sha) is None
         or not git_sha.startswith(short_sha)
         or receipt.get("gitSha") != git_sha
         or release.get("shortSha") != short_sha
