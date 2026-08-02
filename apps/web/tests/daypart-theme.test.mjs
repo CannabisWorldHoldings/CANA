@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -45,5 +46,37 @@ test('the selected brand and application artwork ship with the web workspace', (
     const file = path.join(webRoot, relativePath);
     assert.equal(fs.existsSync(file), true, `${relativePath} must exist`);
     assert.ok(fs.statSync(file).size > 5_000, `${relativePath} is too small`);
+  }
+});
+
+test('the restorable favicon payload matches the approved tracked icon bytes', () => {
+  const payload = JSON.parse(
+    fs.readFileSync(path.join(webRoot, 'scripts/brand-assets.b64.json'), 'utf8'),
+  );
+  const approvedHashes = new Map([
+    [
+      'public/apple-touch-icon.png',
+      '8c75e489bd413e7625dbb6065c4f6dd54ed8ea1cf21e38494c0ccc6eea73ca68',
+    ],
+    [
+      'public/icon-192.png',
+      'f496c53d921d77b90d17d0e3af7087c213f92e7491c7ae61d41a6a4b89e520b5',
+    ],
+    [
+      'public/icon-512.png',
+      '1fa428a6989bd51292fce06274a7929d0e1290d174e8d38b0bfe8e596bfe54e0',
+    ],
+  ]);
+
+  for (const [relativePath, expectedHash] of approvedHashes) {
+    const trackedBytes = fs.readFileSync(path.join(webRoot, relativePath));
+    const payloadKey = `apps/web/${relativePath}`;
+    const restoredBytes = Buffer.from(payload[payloadKey], 'base64');
+    const trackedHash = crypto.createHash('sha256').update(trackedBytes).digest('hex');
+    const restoredHash = crypto.createHash('sha256').update(restoredBytes).digest('hex');
+
+    assert.equal(trackedHash, expectedHash, `${relativePath} must retain the approved hash`);
+    assert.equal(restoredHash, expectedHash, `${payloadKey} must restore the approved hash`);
+    assert.deepEqual(restoredBytes, trackedBytes, `${payloadKey} must be byte-identical`);
   }
 });
