@@ -38,6 +38,7 @@ test('the selected brand and application artwork ship with the web workspace', (
   for (const relativePath of [
     'public/brand/orderweeddc-on-light.png',
     'public/brand/orderweeddc-on-dark.png',
+    'public/brand/orderweeddc-glossy-ow-source.png',
     'public/art/hero-dc.webp',
     'public/icon-192.png',
     'public/icon-512.png',
@@ -56,27 +57,27 @@ test('the restorable favicon payload matches the approved tracked icon bytes', (
   const approvedHashes = new Map([
     [
       'public/favicon-16x16.png',
-      '227e4070b754f097c9384d9070e2b655948a98561ef101f3e4a3b440e2e99211',
+      '0b5b717f78384405420cd862ce1a3ee53763ad0d588c48726270df0635f40118',
     ],
     [
       'public/favicon-32x32.png',
-      '98f19e59dbc6f2cc2ecd2b33b6dc2d12d2cb14471034d3d64b512a8331734b38',
+      '457c92951207734ec459ec71271e299eb8d0638764091934d2dab9df2ea6de8e',
     ],
     [
       'public/favicon-48x48.png',
-      '219fb1b264afffb082f8d6bec03fadc70a6115cac1b8f68bcc9bd6d43c1062a7',
+      '92f8a52fae2ae89f671b0511a5719cab74735085daccf5d2611fa1ea87bba398',
     ],
     [
       'public/apple-touch-icon.png',
-      '8c75e489bd413e7625dbb6065c4f6dd54ed8ea1cf21e38494c0ccc6eea73ca68',
+      'd8d2311ffb90545793506efb178586fba7d962d7617ef1a1c709150b4bfdf055',
     ],
     [
       'public/icon-192.png',
-      'f496c53d921d77b90d17d0e3af7087c213f92e7491c7ae61d41a6a4b89e520b5',
+      '013788fc5c5731c8ffb9cce69ff338d2938a9da651ae63918eecc15b6c2fb205',
     ],
     [
       'public/icon-512.png',
-      '1fa428a6989bd51292fce06274a7929d0e1290d174e8d38b0bfe8e596bfe54e0',
+      'e369a0149f7c3bdf19a4187e4a9da95ca9ae1691b2f0ae783b74fa337e0c98b6',
     ],
   ]);
 
@@ -93,7 +94,22 @@ test('the restorable favicon payload matches the approved tracked icon bytes', (
   }
 });
 
-test('browser-tab metadata prefers the tightly cropped favicon sizes', () => {
+test('the glossy OW favicon source remains exact and uncropped', () => {
+  const source = fs.readFileSync(
+    path.join(webRoot, 'public/brand/orderweeddc-glossy-ow-source.png'),
+  );
+  const sourceHash = crypto.createHash('sha256').update(source).digest('hex');
+
+  assert.equal(
+    sourceHash,
+    'c5656ff1f4d528ecb5e10f3bc5d9e681ac2c1be709695374ba24098154a63f71',
+  );
+  assert.equal(source.subarray(1, 4).toString('ascii'), 'PNG');
+  assert.equal(source.readUInt32BE(16), 1424);
+  assert.equal(source.readUInt32BE(20), 1202);
+});
+
+test('browser-tab metadata prefers the dedicated non-cropped favicon sizes', () => {
   const layout = fs.readFileSync(path.join(webRoot, 'src/app/layout.tsx'), 'utf8');
   const expectedIcons = [
     ['/favicon-16x16.png', '16x16'],
