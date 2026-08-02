@@ -14,7 +14,8 @@
  *    and out-of-repo isolation must remain present in the builder.
  */
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,6 +25,80 @@ import { fileURLToPath } from 'node:url';
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(webRoot, '../..');
 const read = (relative) => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+const ownerArtifactCourt = path.join(
+  repoRoot,
+  'deploy/namecheap/verify-owner-artifact-input.sh',
+);
+
+function sha256(target) {
+  return createHash('sha256').update(fs.readFileSync(target)).digest('hex');
+}
+
+function createOwnerArtifactFixture(root, kind) {
+  const artifactRoot = 'orderweeddc-structural-court';
+  const artifact = path.join(root, `${kind}.tar.gz`);
+  if (kind === 'malformed') {
+    fs.writeFileSync(artifact, Buffer.from('not-a-tar-archive'));
+  } else {
+    execFileSync('python3', ['-c', String.raw`
+import io
+import json
+import sys
+import tarfile
+
+archive_path, artifact_root, kind = sys.argv[1:]
+files = {
+    "deploy.sh": b"#!/bin/sh\nexit 0\n",
+    "release.json": (json.dumps({"gitSha": "a" * 40, "artifact": artifact_root}) + "\n").encode(),
+    ".next/BUILD_ID": b"structural-build-id\n",
+    "src/metadata-markers.txt": b"LIBARCHIVE.xattr\nSCHILY.xattr\ncom.apple.provenance\ncom.apple.ResourceFork\ncom.apple.FinderInfo\n",
+    "public/icon.ico": b"\x00\x00\x01\x00\x00binary\x00ico",
+    "public/icon.png": b"\x89PNG\r\n\x1a\n\x00binary\x00png",
+    ".next/server/app/page.js": b"compiled\x00output\n",
+}
+if kind == "appledouble":
+    files["._example"] = b"appledouble"
+    files[".DS_Store"] = b"finder"
+    files["__MACOSX/resource-fork"] = b"fork"
+
+with tarfile.open(archive_path, mode="w:gz", format=tarfile.PAX_FORMAT) as archive:
+    for relative_name, payload in files.items():
+        member = tarfile.TarInfo(f"{artifact_root}/{relative_name}")
+        member.size = len(payload)
+        member.mtime = 0
+        member.mode = 0o755 if relative_name == "deploy.sh" else 0o644
+        if kind == "pax" and relative_name == "src/metadata-markers.txt":
+            member.pax_headers = {"LIBARCHIVE.xattr.com.apple.provenance": "forbidden"}
+        archive.addfile(member, io.BytesIO(payload))
+`, artifact, artifactRoot, kind]);
+  }
+  const sidecar = `${artifact}.sha256`;
+  fs.writeFileSync(sidecar, `${sha256(artifact)}  ${path.basename(artifact)}\n`);
+  return {
+    artifact,
+    artifactRoot,
+    sidecar,
+    state: path.join(root, `${kind}-state`),
+  };
+}
+
+function runOwnerArtifactCourt(fixture) {
+  return spawnSync('bash', [
+    ownerArtifactCourt,
+    fixture.artifact,
+    sha256(fixture.artifact),
+    fixture.sidecar,
+    sha256(fixture.sidecar),
+    fixture.artifactRoot,
+    'a'.repeat(40),
+    'structural-build-id',
+    fixture.state,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...process.env, LC_ALL: 'C' },
+  });
+}
 
 test('command-path consistency: runbook, deploy output, and verifier agree on wrapper paths', () => {
   const runbook = read('NAMECHEAP_CPANEL_DEPLOYMENT.md');
@@ -142,6 +217,53 @@ test('clean artifact packaging rejects AppleDouble, Finder metadata, resource fo
   } finally {
     if (builderCourtRoot) fs.rmSync(builderCourtRoot, { recursive: true, force: true });
   }
+});
+
+test('owner artifact input court separates tar metadata from ordinary text and binary bytes', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-owner-artifact-input-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  await t.test('clean content markers and binary null bytes pass structurally', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'clean'));
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    assert.match(result.stdout, /STRUCTURAL_PAX_HEADER_AUDIT=PASS/);
+    assert.match(result.stdout, /BINARY_SAFE_ARCHIVE_INPUT_GATE=PASS/);
+    assert.doesNotMatch(result.stderr, /ignored null byte|FORBIDDEN_/i);
+  });
+
+  await t.test('a real forbidden PAX xattr header fails before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'pax'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /FORBIDDEN_PAX_HEADER/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
+  await t.test('AppleDouble, Finder, and __MACOSX members fail before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'appledouble'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /FORBIDDEN_MACOS_MEMBER/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
+  await t.test('a malformed archive fails before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'malformed'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ARCHIVE_HEADER_INSPECTION_FAILED/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+});
+
+test('owner artifact input court captures only bounded textual values in shell variables', () => {
+  const court = read('deploy/namecheap/verify-owner-artifact-input.sh');
+  assert.doesNotMatch(court, /\$\(gzip\s+-dc/);
+  assert.doesNotMatch(court, /\$\(tar\s+-xOf/);
+  assert.doesNotMatch(court, /\$\(cat\s+/);
+  assert.doesNotMatch(court, /artifact_member_matches/);
+  assert.match(court, /artifact_actual_sha=\$\(sha256sum/);
+  assert.match(court, /PYTHON=\$\(command -v python3/);
 });
 
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
