@@ -460,6 +460,8 @@
     "apps/web/public/apple-touch-icon.png",
     "apps/web/public/icon-192.png",
     "apps/web/public/icon-512.png",
+    "apps/web/scripts/brand-assets.b64.json",
+    "apps/web/src/app/favicon.ico",
     "apps/web/src/app/[domain]/layout.tsx",
     "apps/web/src/app/[domain]/page.tsx",
     "apps/web/src/app/globals.css",
