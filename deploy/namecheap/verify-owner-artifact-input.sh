@@ -10,6 +10,10 @@ import sys
 import tarfile
 
 archive_path, artifact_root, inventory_path = sys.argv[1:]
+maximum_archive_bytes = 1024 * 1024 * 1024
+maximum_members = 20000
+maximum_member_name_bytes = 4096
+maximum_uncompressed_bytes = 2 * 1024 * 1024 * 1024
 forbidden_key_prefixes = ("LIBARCHIVE.xattr.", "SCHILY.xattr.")
 forbidden_tokens = (
     "com.apple.provenance",
@@ -42,7 +46,12 @@ def inspect_headers(location, headers):
 
 
 def inspect_name(name):
-    if not name or name.startswith("/") or "\\" in name:
+    if (
+        not name
+        or len(name.encode("utf-8")) > maximum_member_name_bytes
+        or name.startswith("/")
+        or "\\" in name
+    ):
         print(f"UNSAFE_ARCHIVE_MEMBER={name}", file=sys.stderr)
         raise SystemExit(1)
     normalized = posixpath.normpath(name)
@@ -63,13 +72,29 @@ def inspect_name(name):
 
 
 try:
+    if pathlib.Path(archive_path).stat().st_size > maximum_archive_bytes:
+        raise ValueError("archive exceeds the compressed-size limit")
     members = []
     seen = set()
+    total_uncompressed_bytes = 0
     with tarfile.open(archive_path, mode="r:gz") as archive:
         inspect_headers("<global>", getattr(archive, "pax_headers", {}) or {})
         for member in archive:
+            if len(members) >= maximum_members:
+                raise ValueError("archive exceeds the member-count limit")
             inspect_name(member.name)
             inspect_headers(member.name, getattr(member, "pax_headers", {}) or {})
+            if not (member.isfile() or member.isdir()):
+                print(
+                    f"FORBIDDEN_ARCHIVE_MEMBER_TYPE={member.name} type={member.type!r}",
+                    file=sys.stderr,
+                )
+                raise SystemExit(1)
+            if member.size < 0:
+                raise ValueError("archive member has a negative size")
+            total_uncompressed_bytes += member.size
+            if total_uncompressed_bytes > maximum_uncompressed_bytes:
+                raise ValueError("archive exceeds the uncompressed-size limit")
             normalized = member.name.rstrip("/")
             if normalized != artifact_root and not normalized.startswith(f"{artifact_root}/"):
                 print(f"UNEXPECTED_ARCHIVE_ROOT={normalized}", file=sys.stderr)
@@ -89,7 +114,7 @@ try:
                 print(f"REQUIRED_ARCHIVE_MEMBER_NOT_REGULAR={required}", file=sys.stderr)
                 raise SystemExit(1)
     pathlib.Path(inventory_path).write_text("\n".join(members) + "\n", encoding="utf-8")
-except (tarfile.TarError, OSError, UnicodeError) as error:
+except (tarfile.TarError, OSError, UnicodeError, ValueError) as error:
     print(f"ARCHIVE_HEADER_INSPECTION_FAILED={error}", file=sys.stderr)
     raise SystemExit(1)
 PY
@@ -176,6 +201,20 @@ verify_owner_artifact_inputs() {
 }
 
 owner_artifact_input_main() {
+  if [ "${1-}" = --structure-only ]; then
+    [ "$#" -eq 4 ] || {
+      printf 'usage: %s --structure-only <archive> <root> <inventory>\n' "$0" >&2
+      return 64
+    }
+    PYTHON=$(command -v python3 || true)
+    [ -n "$PYTHON" ] || {
+      printf 'STRUCTURAL_ARCHIVE_VERIFICATION=FAIL reason=PYTHON3_UNAVAILABLE\n' >&2
+      return 1
+    }
+    verify_archive_structure "$2" "$3" "$4" || return 1
+    printf 'STRUCTURAL_ARCHIVE_VERIFICATION=PASS\n'
+    return 0
+  fi
   [ "$#" -eq 8 ] || {
     printf 'usage: %s <archive> <archive-sha256> <sidecar> <sidecar-sha256> <root> <commit> <build-id> <state-root>\n' "$0" >&2
     return 64

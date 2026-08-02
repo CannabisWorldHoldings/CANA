@@ -61,7 +61,17 @@ if kind == "appledouble":
     files[".DS_Store"] = b"finder"
     files["__MACOSX/resource-fork"] = b"fork"
 
-with tarfile.open(archive_path, mode="w:gz", format=tarfile.PAX_FORMAT) as archive:
+global_headers = (
+    {"SCHILY.xattr.com.apple.FinderInfo": "forbidden"}
+    if kind == "globalpax"
+    else None
+)
+with tarfile.open(
+    archive_path,
+    mode="w:gz",
+    format=tarfile.PAX_FORMAT,
+    pax_headers=global_headers,
+) as archive:
     for relative_name, payload in files.items():
         member = tarfile.TarInfo(f"{artifact_root}/{relative_name}")
         member.size = len(payload)
@@ -69,6 +79,21 @@ with tarfile.open(archive_path, mode="w:gz", format=tarfile.PAX_FORMAT) as archi
         member.mode = 0o755 if relative_name == "deploy.sh" else 0o644
         if kind == "pax" and relative_name == "src/metadata-markers.txt":
             member.pax_headers = {"LIBARCHIVE.xattr.com.apple.provenance": "forbidden"}
+        archive.addfile(member, io.BytesIO(payload))
+    if kind == "link":
+        member = tarfile.TarInfo(f"{artifact_root}/danger-link")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "../../outside"
+        archive.addfile(member)
+    if kind == "traversal":
+        payload = b"escape"
+        member = tarfile.TarInfo(f"{artifact_root}/../escape")
+        member.size = len(payload)
+        archive.addfile(member, io.BytesIO(payload))
+    if kind == "duplicate":
+        payload = b"duplicate"
+        member = tarfile.TarInfo(f"{artifact_root}/deploy.sh")
+        member.size = len(payload)
         archive.addfile(member, io.BytesIO(payload))
 `, artifact, artifactRoot, kind]);
   }
@@ -239,6 +264,14 @@ test('owner artifact input court separates tar metadata from ordinary text and b
     assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
   });
 
+  await t.test('a real forbidden global PAX xattr header fails before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'globalpax'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /FORBIDDEN_PAX_HEADER/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
   await t.test('AppleDouble, Finder, and __MACOSX members fail before deployment', () => {
     const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'appledouble'));
     assert.notEqual(result.status, 0);
@@ -254,6 +287,20 @@ test('owner artifact input court separates tar metadata from ordinary text and b
     assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
     assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
   });
+
+  await t.test('links, traversal, and duplicate members fail before deployment', () => {
+    for (const [kind, expected] of [
+      ['link', /FORBIDDEN_ARCHIVE_MEMBER_TYPE/],
+      ['traversal', /UNSAFE_ARCHIVE_MEMBER/],
+      ['duplicate', /DUPLICATE_ARCHIVE_MEMBER/],
+    ]) {
+      const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, kind));
+      assert.notEqual(result.status, 0, kind);
+      assert.match(result.stderr, expected, kind);
+      assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/, kind);
+      assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/, kind);
+    }
+  });
 });
 
 test('owner artifact input court captures only bounded textual values in shell variables', () => {
@@ -264,6 +311,15 @@ test('owner artifact input court captures only bounded textual values in shell v
   assert.doesNotMatch(court, /artifact_member_matches/);
   assert.match(court, /artifact_actual_sha=\$\(sha256sum/);
   assert.match(court, /PYTHON=\$\(command -v python3/);
+});
+
+test('canonical deployment verifier runs structural inspection before extraction', () => {
+  const verifier = read('deploy/namecheap/verify-and-deploy.sh');
+  const structuralCall = verifier.indexOf('bash "$STRUCTURAL_COURT" --structure-only');
+  const extraction = verifier.indexOf('tar -xzf "$UPLOADS/$FILE"');
+  assert.ok(structuralCall >= 0, 'the canonical verifier must invoke the structural court');
+  assert.ok(extraction > structuralCall, 'structural inspection must complete before extraction');
+  assert.match(verifier, /\[ -f "\$STRUCTURAL_COURT" \] && \[ ! -L "\$STRUCTURAL_COURT" \]/);
 });
 
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {

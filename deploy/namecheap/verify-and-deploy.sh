@@ -27,6 +27,7 @@ DATA_DB="${OWD_DATA_DIR:-$HOME/orderweeddc-data}/prod.db"
 UPLOADS="$HOME/uploads"
 DOMAIN="orderweeddc.com"
 ORIGIN_IP="${OWD_ORIGIN_IP:-127.0.0.1}"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 phase() { printf '\n=== %s ===\n' "$1"; }
 fail() { echo "GATE FAILED: $1"; exit 1; }
@@ -42,6 +43,16 @@ echo "$EXPECTED_SHA  $UPLOADS/$FILE" | sha256sum -c - || fail "sha256 mismatch"
 
 phase "GATE 2: receipt acceptance"
 STAGE=$(mktemp -d "$HOME/.owd-verify-XXXXXX")
+case "$FILE" in
+  orderweeddc-*.tar.gz) ARTIFACT_ROOT_NAME=${FILE%.tar.gz} ;;
+  *) fail "artifact filename must be orderweeddc-<sha>.tar.gz" ;;
+esac
+STRUCTURAL_COURT="$SCRIPT_DIR/verify-owner-artifact-input.sh"
+[ -f "$STRUCTURAL_COURT" ] && [ ! -L "$STRUCTURAL_COURT" ] ||
+  fail "structural artifact verifier unavailable"
+bash "$STRUCTURAL_COURT" --structure-only \
+  "$UPLOADS/$FILE" "$ARTIFACT_ROOT_NAME" "$STAGE/artifact-members.txt" ||
+  fail "structural artifact verification"
 tar -xzf "$UPLOADS/$FILE" -C "$STAGE"
 RELEASE_DIR=$(find "$STAGE" -mindepth 1 -maxdepth 1 -type d | head -1)
 RECEIPT="$RELEASE_DIR/receipt.json"
