@@ -97,6 +97,53 @@ test('artifact operations emit deploy, restart, and rollback scripts byte-for-by
   }
 });
 
+test('clean artifact packaging rejects AppleDouble, Finder metadata, resource forks, and provenance headers', () => {
+  let builderCourtRoot;
+  try {
+    const environment = { ...process.env, CANA_VERIFIED_NODE: process.execPath };
+    delete environment.NODE_OPTIONS;
+    delete environment.NODE_PATH;
+    const verification = JSON.parse(execFileSync(
+      path.join(repoRoot, 'deploy/namecheap/build-artifact.mjs'),
+      ['--verify-clean-packaging'],
+      { cwd: repoRoot, encoding: 'utf8', env: environment },
+    ));
+    builderCourtRoot = path.dirname(verification.tarPath);
+
+    assert.ok(
+      verification.members.includes('orderweeddc-clean-tar-fixture/release.json'),
+      'ordinary artifact files must remain packaged',
+    );
+    assert.ok(
+      verification.members.every((member) => {
+        const parts = member.split('/').filter(Boolean);
+        return !parts.some((part) => (
+          part.startsWith('._') || part === '.DS_Store' || part === '__MACOSX'
+        ));
+      }),
+      'no archive member may contain AppleDouble, Finder, or __MACOSX metadata',
+    );
+    assert.equal(verification.packagingAudit.rejectedMembers.length, 0);
+    assert.equal(verification.packagingAudit.macOsExtendedHeaderCount, 0);
+    assert.equal(
+      verification.provenanceHeaderRejected,
+      true,
+      'LIBARCHIVE/SCHILY macOS xattr headers and resource forks must fail closed',
+    );
+
+    const builder = read('deploy/namecheap/build-artifact.mjs');
+    assert.match(builder, /COPYFILE_DISABLE: '1'/);
+    assert.match(builder, /COPY_EXTENDED_ATTRIBUTES_DISABLE: '1'/);
+    assert.match(builder, /--no-xattrs/);
+    assert.match(builder, /--no-mac-metadata/);
+    assert.match(builder, /--exclude=\._\*/);
+    assert.match(builder, /--exclude=\.DS_Store/);
+    assert.match(builder, /--exclude=__MACOSX/);
+  } finally {
+    if (builderCourtRoot) fs.rmSync(builderCourtRoot, { recursive: true, force: true });
+  }
+});
+
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
   const fixtureParent = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-contam-'));
   try {
