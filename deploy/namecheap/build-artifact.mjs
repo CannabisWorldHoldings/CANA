@@ -40,6 +40,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import { auditArtifactExclusions } from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
@@ -116,9 +117,12 @@ if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
 // accepts only the explicitly vetted absolute executable and this process verifies that
 // exact real path before running any build command.
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
-const operationalScriptsVerification = process.argv[2] === '--verify-operational-scripts';
+const artifactToolVerification = [
+  '--verify-operational-scripts',
+  '--verify-clean-packaging',
+].includes(process.argv[2]);
 if (
-  !operationalScriptsVerification
+  !artifactToolVerification
   && process.version !== REQUIRED_NODE
   && process.env.ALLOW_NODE_MISMATCH !== '1'
 ) {
@@ -171,6 +175,98 @@ function assertExists(target, label) {
   }
 }
 
+const macOsMetadataMemberPattern = /(?:^|\/)(?:\._[^/]*|\.DS_Store|__MACOSX)(?:\/|$)/;
+const macOsExtendedHeaderPattern = /(?:LIBARCHIVE|SCHILY)\.xattr|com\.apple\.(?:provenance|ResourceFork|FinderInfo)/i;
+
+function archiveExtendedHeaders(tarPath) {
+  const archive = gunzipSync(fs.readFileSync(tarPath));
+  const records = [];
+  let offset = 0;
+  while (offset + 512 <= archive.length) {
+    const header = archive.subarray(offset, offset + 512);
+    if (header.every((byte) => byte === 0)) break;
+    const sizeText = header.subarray(124, 136).toString('ascii').replace(/\0.*$/s, '').trim();
+    const size = sizeText ? Number.parseInt(sizeText, 8) : 0;
+    if (!Number.isSafeInteger(size) || size < 0) {
+      throw new Error('Artifact archive has an invalid tar member size');
+    }
+    const type = String.fromCharCode(header[156]);
+    if (type === 'x' || type === 'g') {
+      records.push(
+        archive.subarray(offset + 512, offset + 512 + size).toString('utf8'),
+      );
+    }
+    offset += 512 + Math.ceil(size / 512) * 512;
+  }
+  return records;
+}
+
+function assertNoMacOsExtendedHeaders(records) {
+  const rejected = records.filter((record) => macOsExtendedHeaderPattern.test(record));
+  if (rejected.length > 0) {
+    const error = new Error('Artifact archive contains macOS extended-attribute metadata');
+    error.code = 'ARTIFACT_MACOS_EXTENDED_HEADER_REJECTED';
+    throw error;
+  }
+}
+
+function auditCleanTarArchive(tarPath) {
+  const environment = buildChildEnvironment({
+    ...process.env,
+    COPYFILE_DISABLE: '1',
+    COPY_EXTENDED_ATTRIBUTES_DISABLE: '1',
+  });
+  const listing = execFileSync('tar', ['-tzf', tarPath], {
+    encoding: 'utf8',
+    env: environment,
+  });
+  const members = listing.split('\n').filter(Boolean);
+  const rejectedMembers = members.filter((member) => macOsMetadataMemberPattern.test(member));
+  if (rejectedMembers.length > 0) {
+    const error = new Error(
+      `Artifact archive contains macOS metadata members: ${rejectedMembers.join(', ')}`,
+    );
+    error.code = 'ARTIFACT_MACOS_METADATA_MEMBER_REJECTED';
+    throw error;
+  }
+  const extendedHeaders = archiveExtendedHeaders(tarPath);
+  assertNoMacOsExtendedHeaders(extendedHeaders);
+  return {
+    memberCount: members.length,
+    rejectedMembers,
+    macOsExtendedHeaderCount: extendedHeaders.filter(
+      (record) => macOsExtendedHeaderPattern.test(record),
+    ).length,
+  };
+}
+
+function createCleanTar(tarPath, baseDirectory, memberName) {
+  const environment = buildChildEnvironment({
+    ...process.env,
+    COPYFILE_DISABLE: '1',
+    COPY_EXTENDED_ATTRIBUTES_DISABLE: '1',
+  });
+  const tarVersion = execFileSync('tar', ['--version'], {
+    encoding: 'utf8',
+    env: environment,
+  });
+  const args = ['--no-xattrs'];
+  if (/bsdtar/i.test(tarVersion)) args.push('--no-mac-metadata');
+  args.push(
+    '--exclude=._*',
+    '--exclude=.DS_Store',
+    '--exclude=__MACOSX',
+    '-czf',
+    tarPath,
+    '-C',
+    baseDirectory,
+    memberName,
+  );
+  fs.rmSync(tarPath, { force: true });
+  execFileSync('tar', args, { stdio: 'inherit', env: environment });
+  return auditCleanTarArchive(tarPath);
+}
+
 function copyDir(from, to) {
   fs.cpSync(from, to, { recursive: true });
 }
@@ -204,8 +300,44 @@ if (process.argv[2] === '--verify-operational-scripts') {
   const tarPath = path.join(courtRoot, `${artifactName}.tar.gz`);
   fs.mkdirSync(artifactRoot);
   copyOperationalScripts(artifactRoot);
-  execFileSync('tar', ['-czf', tarPath, '-C', courtRoot, artifactName]);
-  process.stdout.write(`${JSON.stringify({ files: operationalScripts, tarPath })}\n`);
+  const packagingAudit = createCleanTar(tarPath, courtRoot, artifactName);
+  process.stdout.write(
+    `${JSON.stringify({ files: operationalScripts, packagingAudit, tarPath })}\n`,
+  );
+  process.exit(0);
+}
+
+if (process.argv[2] === '--verify-clean-packaging') {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'orderweeddc-clean-tar-court-'));
+  const artifactName = 'orderweeddc-clean-tar-fixture';
+  const artifactRoot = path.join(courtRoot, artifactName);
+  const tarPath = path.join(courtRoot, `${artifactName}.tar.gz`);
+  fs.mkdirSync(path.join(artifactRoot, 'nested'), { recursive: true });
+  fs.mkdirSync(path.join(artifactRoot, '__MACOSX'), { recursive: true });
+  fs.writeFileSync(path.join(artifactRoot, 'release.json'), '{"clean":true}\n');
+  fs.writeFileSync(path.join(artifactRoot, '._release.json'), 'apple-double\n');
+  fs.writeFileSync(path.join(artifactRoot, 'nested', '._route.js'), 'apple-double\n');
+  fs.writeFileSync(path.join(artifactRoot, '.DS_Store'), 'finder\n');
+  fs.writeFileSync(path.join(artifactRoot, '__MACOSX', 'resource-fork'), 'fork\n');
+
+  const packagingAudit = createCleanTar(tarPath, courtRoot, artifactName);
+  const members = execFileSync('tar', ['-tzf', tarPath], { encoding: 'utf8' });
+  let provenanceHeaderRejected = false;
+  try {
+    assertNoMacOsExtendedHeaders([
+      '57 LIBARCHIVE.xattr.com.apple.provenance=synthetic-court\n',
+      '54 SCHILY.xattr.com.apple.ResourceFork=synthetic-court\n',
+    ]);
+  } catch (error) {
+    provenanceHeaderRejected =
+      error?.code === 'ARTIFACT_MACOS_EXTENDED_HEADER_REJECTED';
+  }
+  if (!provenanceHeaderRejected) {
+    throw new Error('Clean packaging court did not reject macOS extended headers');
+  }
+  process.stdout.write(
+    `${JSON.stringify({ members: members.trim().split('\n'), packagingAudit, provenanceHeaderRejected, tarPath })}\n`,
+  );
   process.exit(0);
 }
 
@@ -523,11 +655,14 @@ function writeReceipt(extra = {}) {
 }
 
 function packageTar() {
-  run(
-    `tar -czf ${JSON.stringify(`${artifactName}.tar.gz`)} -C ${JSON.stringify(distRoot)} ${JSON.stringify(artifactName)}`,
-    { cwd: distRoot },
+  const tarPath = path.join(distRoot, `${artifactName}.tar.gz`);
+  const packagingAudit = createCleanTar(tarPath, distRoot, artifactName);
+  console.log(
+    `Clean artifact member audit: ${packagingAudit.memberCount} members, `
+      + `${packagingAudit.rejectedMembers.length} rejected metadata members, `
+      + `${packagingAudit.macOsExtendedHeaderCount} macOS extended headers`,
   );
-  return path.join(distRoot, `${artifactName}.tar.gz`);
+  return tarPath;
 }
 
 writeReceipt({ isolatedRuntimeTest: 'pending' });
