@@ -305,6 +305,30 @@ test('scheduled sensor handoffs remain untrusted until one SiteMind fusion recei
   assert.match(receipt.receipt_hash, /^[0-9a-f]{64}$/);
 });
 
+test('rejects structurally incomplete crawler observations before ledger admission', async () => {
+  const { adaptScheduledTaskHandoff } = await loadBridge();
+  for (const field of ['dom_diff', 'visual_diff', 'semantic_diff', 'asset_diff', 'seo_diff', 'funnel_diff', 'ad_creative_diff', 'policy_context']) {
+    assert.throws(
+      () => adaptScheduledTaskHandoff({
+        taskName: 'Competitor Crawl Intelligence',
+        runId: `missing-${field}`,
+        producedAt: makeCrawl().captured_at,
+        payload: makeCrawl({ [field]: undefined }),
+      }),
+      (error) => error.code === 'INVALID_CRAWL_STRUCTURE',
+    );
+  }
+  assert.throws(
+    () => adaptScheduledTaskHandoff({
+      taskName: 'Competitor Crawl Intelligence',
+      runId: 'bad-evidence-locations',
+      producedAt: makeCrawl().captured_at,
+      payload: makeCrawl({ evidence_locations: ['not-a-content-address'] }),
+    }),
+    (error) => error.code === 'INVALID_EVIDENCE_LOCATIONS',
+  );
+});
+
 test('fuses sensor packets into one SiteMind competitor event ledger', async (t) => {
   const { createCompetitorEventLedger } = await loadBridge();
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-fusion-ledger-'));

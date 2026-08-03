@@ -399,6 +399,20 @@ function validateCrawlObservation(observation) {
   for (const field of ['before_content_sha256', 'after_content_sha256', 'before_screenshot_sha256', 'after_screenshot_sha256']) {
     assertMission(/^[0-9a-f]{64}$/.test(observation[field]), 'INVALID_SHA256', `${field} must be SHA-256`);
   }
+  for (const field of ['dom_diff', 'visual_diff', 'semantic_diff', 'asset_diff', 'seo_diff', 'funnel_diff', 'ad_creative_diff', 'policy_context']) {
+    const value = observation[field];
+    assertMission(value && typeof value === 'object' && !Array.isArray(value), 'INVALID_CRAWL_STRUCTURE', `crawl_observation.${field} must be an object`);
+  }
+  assertMission(
+    Array.isArray(observation.evidence_locations)
+      && observation.evidence_locations.length > 0
+      && observation.evidence_locations.every((location) => typeof location === 'string' && /^sha256:[0-9a-f]{64}$/.test(location)),
+    'INVALID_EVIDENCE_LOCATIONS',
+    'crawl_observation.evidence_locations must contain retained SHA-256 references',
+  );
+  const crawlUrl = new URL(observation.url);
+  assertMission(crawlUrl.protocol === 'https:', 'PUBLIC_HTTPS_REQUIRED', 'Crawl observations must identify a public HTTPS URL');
+  assertMission(!Number.isNaN(new Date(observation.captured_at).getTime()), 'INVALID_TIMESTAMP', 'crawl_observation.captured_at is invalid');
   numberBetweenZeroAndOne(observation.uncertainty, 'uncertainty');
   numberBetweenZeroAndOne(observation.confidence, 'confidence');
   numberBetweenZeroAndOne(observation.importance_score, 'importance_score');
