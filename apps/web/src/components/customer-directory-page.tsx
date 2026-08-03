@@ -29,10 +29,16 @@ export default function CustomerDirectoryPage({
   mode,
   query,
   listings,
+  totalResults,
+  totalPages,
+  currentPage,
 }: {
   mode: DirectoryMode;
   query: string;
   listings: CustomerListing[];
+  totalResults: number;
+  totalPages: number;
+  currentPage: number;
 }) {
   const copy = COPY[mode];
   const action = mode === 'delivery' ? '/delivery' : '/dispensaries';
@@ -89,7 +95,9 @@ export default function CustomerDirectoryPage({
               {query ? `Results for “${query}”` : 'Source-labeled records'}
             </h2>
           </div>
-          <p className="text-sm text-[#6a736d]">{listings.length} shown</p>
+          <p className="text-sm text-[#6a736d]">
+            {listings.length} shown of {totalResults}
+          </p>
         </div>
 
         {listings.length === 0 ? (
@@ -108,6 +116,26 @@ export default function CustomerDirectoryPage({
               <CustomerListingRow key={listing.id} listing={listing} index={index} />
             ))}
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <nav aria-label={`${mode === 'delivery' ? 'Delivery' : 'Dispensary'} results pages`} className="mt-12 flex items-center gap-5">
+            {currentPage > 1 ? (
+              <Link href={`${action}?${new URLSearchParams({ ...(query ? { query } : {}), page: String(currentPage - 1) })}`} className="inline-flex min-h-11 items-center font-bold text-[#0b5b35]">
+                Previous
+              </Link>
+            ) : (
+              <span className="inline-flex min-h-11 items-center text-sm text-[#8a928c]">Previous</span>
+            )}
+            <span className="text-sm text-[#59645d]">Page {currentPage} of {totalPages}</span>
+            {currentPage < totalPages ? (
+              <Link href={`${action}?${new URLSearchParams({ ...(query ? { query } : {}), page: String(currentPage + 1) })}`} className="inline-flex min-h-11 items-center font-bold text-[#0b5b35]">
+                Next
+              </Link>
+            ) : (
+              <span className="inline-flex min-h-11 items-center text-sm text-[#8a928c]">Next</span>
+            )}
+          </nav>
         )}
       </section>
 

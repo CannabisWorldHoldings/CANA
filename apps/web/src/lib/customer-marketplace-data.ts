@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/prisma';
-import { currentDealWhere } from '@/lib/directory-search.mjs';
+import {
+  DIRECTORY_PAGE_SIZE,
+  currentDealWhere,
+  directoryRetailerOrderBy,
+  directoryRetailerWhere,
+  parseDirectorySearch,
+} from '@/lib/directory-search.mjs';
 import { NEIGHBORHOOD_CONFIGS } from '@/lib/neighborhood-configs.mjs';
 import { PUBLIC_DEAL_PREVIEW_LIMIT } from '@/lib/retailer-detail-search.mjs';
 
@@ -33,32 +39,28 @@ export async function loadCustomerDirectory({
   domain,
   type,
   query,
-  limit = 24,
+  page,
 }: {
   domain: string;
   type: 'delivery' | 'storefront';
-  query?: string;
-  limit?: number;
+  query?: string | string[];
+  page?: string | string[];
 }) {
   const brand = await brandForDomain(domain);
   if (!brand) return null;
 
-  const normalizedQuery = normalizeCustomerQuery(query);
   const asOf = new Date();
+  const requestedFilters = parseDirectorySearch({ query, type, page });
+  const where = directoryRetailerWhere({
+    brandId: brand.id,
+    filters: requestedFilters,
+    asOf,
+  });
+  const totalResults = await prisma.retailer.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalResults / DIRECTORY_PAGE_SIZE));
+  const currentPage = Math.min(requestedFilters.page, totalPages);
   const retailers = await prisma.retailer.findMany({
-    where: {
-      ...brandRetailerScope(brand.id),
-      type,
-      ...(normalizedQuery
-        ? {
-            OR: [
-              { name: { contains: normalizedQuery } },
-              { city: { contains: normalizedQuery } },
-              { zip: { contains: normalizedQuery } },
-            ],
-          }
-        : {}),
-    },
+    where,
     include: {
       deals: {
         where: currentDealWhere(asOf),
@@ -71,15 +73,19 @@ export async function loadCustomerDirectory({
         take: 1,
       },
     },
-    orderBy: [
-      { isDemonstration: 'asc' },
-      { dataStatus: 'asc' },
-      { name: 'asc' },
-    ],
-    take: Math.min(Math.max(limit, 1), 50),
+    orderBy: [...directoryRetailerOrderBy(requestedFilters.sort)],
+    skip: (currentPage - 1) * DIRECTORY_PAGE_SIZE,
+    take: DIRECTORY_PAGE_SIZE,
   });
 
-  return { brand, query: normalizedQuery, retailers };
+  return {
+    brand,
+    query: requestedFilters.query,
+    retailers,
+    totalResults,
+    totalPages,
+    currentPage,
+  };
 }
 
 export async function loadCustomerHome(domain: string) {

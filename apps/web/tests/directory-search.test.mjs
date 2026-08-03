@@ -186,8 +186,8 @@ test('directory ordering is transparent and never ranks sponsorship', () => {
 });
 
 test('directory page applies server-side count, cap, offset, and freshness predicates', () => {
-  const pageSource = fs.readFileSync(
-    path.join(webRoot, 'src/app/[domain]/page.tsx'),
+  const directorySource = fs.readFileSync(
+    path.join(webRoot, 'src/lib/customer-marketplace-data.ts'),
     'utf8',
   );
   const schema = fs.readFileSync(
@@ -195,12 +195,13 @@ test('directory page applies server-side count, cap, offset, and freshness predi
     'utf8',
   );
 
-  assert.match(pageSource, /prisma\.retailer\.count\(\{ where \}\)/);
-  assert.match(pageSource, /take: DIRECTORY_PAGE_SIZE/);
-  assert.match(pageSource, /skip: \(currentPage - 1\) \* DIRECTORY_PAGE_SIZE/);
-  assert.match(pageSource, /where: currentDealWhere\(asOf\)/);
-  assert.match(pageSource, /directoryRetailerOrderBy\(requestedFilters\.sort\)/);
-  assert.doesNotMatch(pageSource, /isSponsored:\s*['"]desc['"]/);
+  assert.match(directorySource, /prisma\.retailer\.count\(\{ where \}\)/);
+  assert.match(directorySource, /take: DIRECTORY_PAGE_SIZE/);
+  assert.match(directorySource, /skip: \(currentPage - 1\) \* DIRECTORY_PAGE_SIZE/);
+  assert.match(directorySource, /where: currentDealWhere\(asOf\)/);
+  assert.match(directorySource, /directoryRetailerOrderBy\(requestedFilters\.sort\)/);
+  assert.match(directorySource, /directoryRetailerWhere\(\{/);
+  assert.doesNotMatch(directorySource, /isSponsored:\s*['"]desc['"]/);
   assert.equal(DIRECTORY_PAGE_SIZE, 20);
   assert.match(
     schema,
