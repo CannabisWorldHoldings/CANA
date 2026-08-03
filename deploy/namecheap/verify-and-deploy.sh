@@ -32,6 +32,13 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 phase() { printf '\n=== %s ===\n' "$1"; }
 fail() { echo "GATE FAILED: $1"; exit 1; }
 
+case "$FILE" in
+  orderweeddc-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].tar.gz)
+    ARTIFACT_ROOT_NAME=${FILE%.tar.gz}
+    ;;
+  *) fail "artifact filename must be orderweeddc-<7 lowercase hex>.tar.gz" ;;
+esac
+
 phase "GATE 1: download + checksum"
 mkdir -p "$UPLOADS"
 case "$URL" in
@@ -44,10 +51,6 @@ echo "$EXPECTED_SHA  $UPLOADS/$FILE" | sha256sum -c - || fail "sha256 mismatch"
 phase "GATE 2: receipt acceptance"
 STAGE=$(mktemp -d "$HOME/.owd-verify-XXXXXX")
 chmod 700 "$STAGE"
-case "$FILE" in
-  orderweeddc-*.tar.gz) ARTIFACT_ROOT_NAME=${FILE%.tar.gz} ;;
-  *) fail "artifact filename must be orderweeddc-<sha>.tar.gz" ;;
-esac
 STRUCTURAL_COURT="$SCRIPT_DIR/verify-owner-artifact-input.sh"
 [ -f "$STRUCTURAL_COURT" ] && [ ! -L "$STRUCTURAL_COURT" ] ||
   fail "structural artifact verifier unavailable"

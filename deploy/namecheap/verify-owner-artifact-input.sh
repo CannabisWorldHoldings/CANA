@@ -251,10 +251,14 @@ import sys
 
 release_directory = pathlib.Path(sys.argv[1])
 artifact = sys.argv[2]
-prefix = "orderweeddc-"
-if not artifact.startswith(prefix):
+artifact_match = re.fullmatch(r"orderweeddc-([0-9a-f]{7})", artifact)
+if artifact_match is None:
+    print(
+        "RELEASE_IDENTITY_VERIFICATION_FAILED=artifact name must contain exactly 7 lowercase hex characters",
+        file=sys.stderr,
+    )
     raise SystemExit(1)
-short_sha = artifact[len(prefix):]
+short_sha = artifact_match.group(1)
 
 
 def bounded_regular_text(relative_path, maximum_bytes):

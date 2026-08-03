@@ -400,6 +400,54 @@ test('extracted release identity is bounded and internally consistent', (t) => {
   ], { cwd: repoRoot, encoding: 'utf8' });
   assert.notEqual(nonHexRejected.status, 0);
   assert.match(nonHexRejected.stderr, /RELEASE_IDENTITY_VERIFICATION_FAILED/);
+
+  for (const invalidArtifact of [
+    'orderweeddc-',
+    'orderweeddc-abc12xz',
+    'orderweeddc-abcdef01',
+  ]) {
+    const invalidSuffixRejected = spawnSync('bash', [
+      ownerArtifactCourt,
+      '--verify-extracted-identity',
+      root,
+      invalidArtifact,
+    ], { cwd: repoRoot, encoding: 'utf8' });
+    assert.notEqual(invalidSuffixRejected.status, 0, invalidArtifact);
+    assert.match(
+      invalidSuffixRejected.stderr,
+      /RELEASE_IDENTITY_VERIFICATION_FAILED/,
+      invalidArtifact,
+    );
+  }
+});
+
+test('canonical deployment verifier rejects unsafe artifact names before download', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-name-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const verifier = path.join(repoRoot, 'deploy/namecheap/verify-and-deploy.sh');
+
+  for (const invalidName of [
+    '../escape.tar.gz',
+    'orderweeddc-.tar.gz',
+    'orderweeddc-abc12xz.tar.gz',
+    'orderweeddc-abcdef01.tar.gz',
+  ]) {
+    const result = spawnSync('sh', [
+      verifier,
+      'https://example.invalid/artifact',
+      invalidName,
+      '0'.repeat(64),
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: root },
+    });
+    assert.notEqual(result.status, 0, invalidName);
+    assert.match(result.stdout, /artifact filename must be orderweeddc-<7 lowercase hex>/);
+  }
+
+  assert.equal(fs.existsSync(path.join(root, 'uploads')), false);
+  assert.equal(fs.existsSync(path.join(root, 'escape.tar.gz')), false);
 });
 
 test('canonical deployment verifier snapshots before structural inspection and extraction', () => {
