@@ -373,6 +373,9 @@ chain-linked entitlement result whose disclosure matches the campaign.
   The current schema has no sourced service-area, fee, minimum, schedule, or ETA
   fields, so the interface shows “confirm service area” and “details unavailable”
   rather than invented values. Delivery records do not expose street addresses.
+- **Directory bounds:** delivery and dispensary queries share the repository's
+  public-record predicate, truth-first ordering, twenty-result server-side page,
+  total count and validated offset. Pagination retains only the normalized query.
 - **Dispensaries:** `Retailer.type=storefront` uses neighborhood/city, hours only
   when present, menu/deal availability, evidence state, and profile action.
 - **Deals:** current predicate requires active, unexpired records; demonstration
@@ -431,7 +434,8 @@ identity, rewrite production JSX, or bypass review gates.
 | Browser route/visual matrix | PASS | Executable test: `apps/web/tests/customer-sovereign-ui.browser.mjs`; desktop 1440px and mobile 390px; homepage, delivery, dispensaries and search; no console warning/error, no unexpected request failure, no horizontal overflow |
 | WCAG A/AA audit | PASS | Axe serious/critical violations: 0 across four routes at 1440px and 390px; age-gate focus and wrap behavior passed |
 | Slower-mobile performance | PASS | 150ms latency, 1.6 Mbps down, 4x CPU: LCP 3520ms, CLS 0.00199, third-party scripts 0 |
-| Full repository web test script | BASELINE BLOCKED | 663 tests discovered: 582 passed, 81 failed; the dominant root is the pre-existing macOS Prisma `Schema engine error`, with additional suite-global build/server contention and an environment-only pilot-package path; customer UI gates did not fail |
+| Clean deterministic Linux full court | PASS | 693 passed, 0 failed: 663 web, 9 ad-creative, 4 retired-AI-boundary and 17 deployment-court tests; immutable Node image, disposable database, container-only port, stale-build proof, exact server identity and cleanup all passed |
+| Host-only macOS full-web diagnostic | NOT AUTHORITATIVE | 663 tests discovered: 582 passed, 81 failed under the host Prisma engine and suite-global build/server contention; the clean Linux court above is the repository's release-verification boundary |
 | Dependency audit | KNOWN BASELINE | 1 high-severity transitive development dependency finding in `brace-expansion`; no forced dependency rewrite was made in this UI branch |
 
 The production build emits one pre-existing Turbopack NFT tracing warning from
@@ -492,10 +496,9 @@ demonstration database. Demonstration records are visibly labeled.
 - Existing deeper product, deal, neighborhood, education and retailer routes were
   preserved; this phase redesigns their homepage entry points rather than
   replacing their domain logic.
-- The repository-wide macOS Prisma schema-engine baseline, the package test
-  script's shared build/server contention, its environment-only pilot-package
-  expectation, and the transitive audit finding remain outside this customer UI
-  change and are reported rather than hidden.
+- The direct host-only macOS run still encounters Prisma engine drift and
+  suite-global build/server contention. The immutable Linux court passes; the
+  host diagnostic and transitive audit finding remain reported rather than hidden.
 
 ### Exact owner review checklist
 
