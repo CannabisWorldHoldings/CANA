@@ -12,6 +12,7 @@ import {
   directoryRetailerOrderBy,
   directoryRetailerWhere,
   directorySearchHref,
+  isDemonstrationChain,
   isPublicCatalogRecord,
   parseDirectorySearch,
   publicCatalogRecordWhere,
@@ -124,7 +125,7 @@ test('directory deal chips include only labeled demonstrations or current verifi
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: AS_OF },
         freshnessExpiresAt: { gt: AS_OF },
       },
     ],
@@ -154,6 +155,12 @@ test('public catalog behavior excludes never-reviewed real records without hidin
   assert.equal(isPublicCatalogRecord({
     isDemonstration: false,
     dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-18T20:00:01.000Z'),
+    freshnessExpiresAt: new Date('2026-07-20T20:00:00.000Z'),
+  }, AS_OF), false);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
     verifiedAt: new Date('2026-07-10T20:00:00.000Z'),
     freshnessExpiresAt: new Date('2026-07-20T20:00:00.000Z'),
   }, AS_OF), true);
@@ -163,6 +170,17 @@ test('public catalog behavior excludes never-reviewed real records without hidin
     verifiedAt: new Date('2026-07-10T20:00:00.000Z'),
     freshnessExpiresAt: new Date('2026-07-17T19:59:59.000Z'),
   }, AS_OF), false);
+});
+
+test('a demonstration anywhere in a marketplace chain keeps the rendered record labeled', () => {
+  assert.equal(isDemonstrationChain(
+    { isDemonstration: false },
+    { isDemonstration: true },
+  ), true);
+  assert.equal(isDemonstrationChain(
+    { isDemonstration: false },
+    { isDemonstration: false },
+  ), false);
 });
 
 test('pagination links preserve only validated filters', () => {

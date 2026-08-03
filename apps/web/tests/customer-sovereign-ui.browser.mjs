@@ -88,6 +88,7 @@ test('visual constitution has neutral sections and no top-level divider borders'
   await attest(page);
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto('/', { waitUntil: 'networkidle' });
+  await expect(page.getByRole('button', { name: /Order Staging/i })).toHaveCount(0);
   const violations = await page.locator('main section, footer').evaluateAll((elements) => elements.flatMap((element) => {
     const style = getComputedStyle(element);
     const backgrounds = [style.backgroundColor, style.backgroundImage].join(' ');

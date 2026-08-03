@@ -4,6 +4,7 @@ import {
   currentDealWhere,
   directoryRetailerOrderBy,
   directoryRetailerWhere,
+  isDemonstrationChain,
   parseDirectorySearch,
   publicCatalogRecordWhere,
 } from '@/lib/directory-search.mjs';
@@ -142,7 +143,16 @@ export async function loadCustomerHome(domain: string) {
     }),
   ]);
 
-  return { brand, delivery, dispensaries, deals, articles };
+  return {
+    brand,
+    delivery,
+    dispensaries,
+    deals: deals.map((deal) => ({
+      ...deal,
+      isDemonstration: isDemonstrationChain(deal, deal.retailer),
+    })),
+    articles,
+  };
 }
 
 export async function loadCustomerSearch(domain: string, query: string) {
@@ -180,6 +190,15 @@ export async function loadCustomerSearch(domain: string, query: string) {
           some: brandMenuEntryScope(brand.id, asOf),
         },
       },
+      include: {
+        menuEntries: {
+          where: brandMenuEntryScope(brand.id, asOf),
+          select: {
+            isDemonstration: true,
+            retailer: { select: { isDemonstration: true } },
+          },
+        },
+      },
       orderBy: [{ isDemonstration: 'asc' }, { name: 'asc' }],
       take: 8,
     }),
@@ -192,7 +211,7 @@ export async function loadCustomerSearch(domain: string, query: string) {
           { description: { contains: normalizedQuery } },
         ],
       },
-      include: { retailer: { select: { id: true, name: true } } },
+      include: { retailer: { select: { id: true, name: true, isDemonstration: true } } },
       orderBy: [{ expiryDate: 'asc' }, { id: 'asc' }],
       take: 8,
     }),
@@ -206,5 +225,22 @@ export async function loadCustomerSearch(domain: string, query: string) {
     .slice(0, 8)
     .map(([slug, config]) => ({ slug, ...config }));
 
-  return { brand, query: normalizedQuery, retailers, products, deals, neighborhoods };
+  return {
+    brand,
+    query: normalizedQuery,
+    retailers,
+    products: products.map(({ menuEntries, ...product }) => ({
+      ...product,
+      isDemonstration: isDemonstrationChain(
+        product,
+        ...menuEntries,
+        ...menuEntries.map((entry) => entry.retailer),
+      ),
+    })),
+    deals: deals.map((deal) => ({
+      ...deal,
+      isDemonstration: isDemonstrationChain(deal, deal.retailer),
+    })),
+    neighborhoods,
+  };
 }

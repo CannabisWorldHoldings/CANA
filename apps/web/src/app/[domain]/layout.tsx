@@ -17,7 +17,6 @@ import {
   organizationJsonLd,
   webSiteJsonLd,
 } from '@/lib/structured-data.mjs';
-import CartDrawer from '@/components/cart-drawer';
 import AgeGate from '@/components/age-gate';
 import MobileNav from '@/components/mobile-nav';
 import BrandWordmark from '@/components/brand-wordmark';
@@ -300,7 +299,6 @@ export default async function TenantLayout({ children, params }: { children: Rea
           </div>
         </div>
       </footer>
-      <CartDrawer />
     </div>
   );
 }

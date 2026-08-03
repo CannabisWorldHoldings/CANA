@@ -245,6 +245,7 @@ test('customer route integrity includes new routes while business and admin rema
   assert.match(source('src/app/sitemap.ts'), /\$\{canonicalBase\}\/delivery/);
   assert.match(source('src/app/sitemap.ts'), /\$\{canonicalBase\}\/dispensaries/);
   assert.doesNotMatch(source('src/app/[domain]/layout.tsx'), /Admin portal|\/admin/);
+  assert.doesNotMatch(source('src/app/[domain]/layout.tsx'), /CartDrawer|Order Staging/);
   assert.equal(exists('src/app/business/dashboard/page.tsx'), true);
   assert.equal(exists('src/app/admin/page.tsx'), true);
 });
@@ -252,6 +253,7 @@ test('customer route integrity includes new routes while business and admin rema
 test('truthful labels prevent synthetic, service-area, and analytics overclaims', () => {
   assert.match(combined, /Demonstration record · not a real business or availability claim/);
   assert.match(combined, /Demo offer · not redeemable/);
+  assert.match(source('src/lib/customer-marketplace-data.ts'), /isDemonstrationChain/);
   assert.match(combined, /confirm service area/i);
   assert.match(combined, /No paid campaign is live/);
   assert.doesNotMatch(combined, /guaranteed|best in D\.C\.|real-time delivery|customers served|conversion rate|revenue generated/i);

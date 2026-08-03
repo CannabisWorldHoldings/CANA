@@ -237,7 +237,7 @@ export function publicCatalogRecordWhere(asOf = new Date()) {
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: timestamp },
         freshnessExpiresAt: { gt: timestamp },
       },
     ],
@@ -246,10 +246,17 @@ export function publicCatalogRecordWhere(asOf = new Date()) {
 
 export function isPublicCatalogRecord(record, asOf = new Date()) {
   const timestamp = validTime(asOf);
+  const verifiedAt = new Date(record?.verifiedAt ?? Number.NaN);
   return (
     record?.isDemonstration === true ||
-    resolveDataStatus(record ?? {}, timestamp) === DATA_STATUS.VERIFIED_CURRENT
+    (Number.isFinite(verifiedAt.getTime()) &&
+      verifiedAt <= timestamp &&
+      resolveDataStatus(record ?? {}, timestamp) === DATA_STATUS.VERIFIED_CURRENT)
   );
+}
+
+export function isDemonstrationChain(...records) {
+  return records.some((record) => record?.isDemonstration === true);
 }
 
 export function directorySearchHref(filters, page) {
