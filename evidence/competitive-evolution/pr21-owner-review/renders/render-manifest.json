@@ -24,7 +24,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 44,
-          "transferred_bytes": 703005
+          "transferred_bytes": 702991
         }
       },
       "mobile": {
@@ -45,7 +45,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 28,
-          "transferred_bytes": 662374
+          "transferred_bytes": 662367
         }
       }
     },
@@ -68,7 +68,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 44,
-          "transferred_bytes": 703145
+          "transferred_bytes": 703130
         }
       },
       "mobile": {
@@ -89,7 +89,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 26,
-          "transferred_bytes": 660233
+          "transferred_bytes": 660231
         }
       }
     },
@@ -112,7 +112,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 44,
-          "transferred_bytes": 703002
+          "transferred_bytes": 702987
         }
       },
       "mobile": {
@@ -133,22 +133,22 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 26,
-          "transferred_bytes": 660189
+          "transferred_bytes": 660187
         }
       }
     }
   },
   "release_identity": {
     "status": "RELEASE_SHA_PRESENT",
-    "gitSha": "8ad153f90dc85de924739466737d755e93744c7c",
-    "shortSha": "8ad153f",
+    "gitSha": "d8d6db5bb44c4e9d3a882619c5275f256c3f64e2",
+    "shortSha": "d8d6db5",
     "builtAt": "2026-08-03T10:26:00.000Z",
     "artifact": "local-owner-review-production-build",
     "source": "env:RELEASE_RECEIPT_PATH",
-    "checkedAt": "2026-08-03T12:55:48.869Z"
+    "checkedAt": "2026-08-03T13:03:35.326Z"
   },
-  "source_commit": "8ad153f90dc85de924739466737d755e93744c7c",
-  "captured_at": "2026-08-03T12:55:57.195Z",
+  "source_commit": "d8d6db5bb44c4e9d3a882619c5275f256c3f64e2",
+  "captured_at": "2026-08-03T13:03:43.969Z",
   "screenshot_count": 12,
   "status": "PASS"
 }

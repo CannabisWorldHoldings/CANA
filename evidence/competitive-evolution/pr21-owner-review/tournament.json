@@ -99,7 +99,7 @@
           "score": 100,
           "status": "PASS",
           "evidence": [
-            "problems=0; bytes=703005/662374"
+            "problems=0; bytes=702991/662367"
           ]
         },
         {
@@ -238,7 +238,7 @@
           "score": 100,
           "status": "PASS",
           "evidence": [
-            "problems=0; bytes=703145/660233"
+            "problems=0; bytes=703130/660231"
           ]
         },
         {
@@ -377,7 +377,7 @@
           "score": 100,
           "status": "PASS",
           "evidence": [
-            "problems=0; bytes=703002/660189"
+            "problems=0; bytes=702987/660187"
           ]
         },
         {
@@ -467,5 +467,5 @@
   "production_accessed": false,
   "provider_calls": 0,
   "actual_spend_usd": 0,
-  "tournament_receipt_hash": "fb50b6edec72a7e37358ebe960f699d0c763964ff23bdbf207a9c53f1d99c066"
+  "tournament_receipt_hash": "bf8b960029f53bb7a6876822b26f299d14a974555bc2bf973bb8c8481641b5d8"
 }

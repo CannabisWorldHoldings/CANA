@@ -82,6 +82,8 @@ It preserves the rejected desktop and mobile billboard bytes at SHA-256 `e4ae17e
 
 The bridge fixture validates the offline handoff/fusion contract. It is explicitly classified `OFFLINE_ADAPTER_FIXTURE`, routes to `OFFLINE_CONTRACT_VALIDATION_ONLY`, and cannot promote a competitive claim. It is not evidence of current competitor behavior, adoption, or performance; no competitor network crawl is represented.
 
+The retained browser manifest binds the rendered implementation to commit `d8d6db5bb44c4e9d3a882619c5275f256c3f64e2`. The commit that follows it updates only generated review evidence and this documentation; review gates also replay the resulting tip SHA independently and compare its complete render hash/source matrix to the retained manifest.
+
 ## Owner review instructions
 
 1. Open `evidence/competitive-evolution/pr21-owner-review/owner-review-contact-sheet.png` for the readable static comparison.
