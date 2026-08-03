@@ -40,7 +40,7 @@ const text = (v) => typeof v === 'string' && v.trim().length > 0;
 /** Capabilities Hermes may be granted. Anything absent is refused. */
 export const CAPABILITIES = Object.freeze([
   'READ_REPOSITORY', 'RUN_TESTS', 'WRITE_LOCAL_BRANCH', 'RUN_BROWSER_COURT',
-  'QUERY_DATABASE', 'GENERATE_REPORT', 'COMPILE_CONTEXT',
+  'QUERY_DATABASE', 'GENERATE_REPORT', 'COMPILE_CONTEXT', 'GENERATE_REVIEW_CREATIVE',
 ]);
 
 /**
