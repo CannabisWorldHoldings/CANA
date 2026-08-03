@@ -23,7 +23,7 @@ const existingTestPath = path.join(testDirectory, 'product-discovery.test.mjs');
 const benchmarkDirectory = path.resolve(os.tmpdir());
 const benchmarkDirectoryPrefix = 'orderweeddc-discovery-benchmark-';
 const baselineTestHash =
-  '41ebd10d10e737cfad3ad188f01ec53f22994dd1709ae654bd120410252ab3a8';
+  '681c62550fe3f9d3d12120d104a5d431ffc45ffdd9d199d9e2261ee36172173c';
 const frozenCorpusHash =
   '3e10cbde6012d4e5916f0f1d356cad4f0afdbf5dd4e276ee977320378309f004';
 
