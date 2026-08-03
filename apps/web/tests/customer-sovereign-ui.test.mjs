@@ -202,11 +202,17 @@ test('sponsored banner eligibility requires persisted canonical entitlement', as
 
 test('banner reserves dimensions, selects mobile media, and has no rotation or sound', () => {
   const banner = source('src/components/customer-sponsored-banner.tsx');
+  const wordmark = source('src/components/brand-wordmark.tsx');
+  const rootLayout = source('src/app/layout.tsx');
   assert.match(banner, /<source media="\(max-width: 639px\)" srcSet=\{campaign\.mobileMedia\}/);
   assert.match(banner, /width=\{1680\}/);
   assert.match(banner, /height=\{720\}/);
   assert.match(banner, /fetchPriority="high"/);
   assert.match(banner, /campaign\.disclosure/);
+  assert.equal(bannerPolicy.HOUSE_BANNER_CAMPAIGN.mobileMedia, '/marketplace/hero-marketplace-v2-mobile.webp');
+  assert.ok(fs.statSync(path.join(webRoot, 'public/marketplace/hero-marketplace-v2-mobile.webp')).size < 80_000);
+  assert.equal(wordmark.match(/priority=\{priority\}/g)?.length, 1);
+  assert.doesNotMatch(rootLayout, /href="\/fonts\/geist-mono-latin\.woff2"/);
   assert.doesNotMatch(banner, /setInterval|autoPlay|<audio|<video/);
 });
 

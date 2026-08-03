@@ -51,7 +51,7 @@ export const HOUSE_BANNER_CAMPAIGN = Object.freeze({
   cta: 'Explore delivery',
   destination: '/delivery',
   desktopMedia: '/art/hero-dc.webp',
-  mobileMedia: '/marketplace/hero-marketplace-v2.webp',
+  mobileMedia: '/marketplace/hero-marketplace-v2-mobile.webp',
   altText: 'Illustrative view of Washington, D.C. used for a local delivery guide',
   startAt: '2026-08-01T00:00:00.000Z',
   endAt: '2027-08-01T00:00:00.000Z',
