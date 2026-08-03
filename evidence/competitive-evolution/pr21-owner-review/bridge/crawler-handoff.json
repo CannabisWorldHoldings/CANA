@@ -1,0 +1,70 @@
+{
+  "schema_version": "cana.competitive-sensor-handoff/1.0.0",
+  "task_name": "Competitor Crawl Intelligence",
+  "run_id": "offline-crawler-adapter-20260803",
+  "produced_at": "2026-08-03T14:00:00.000Z",
+  "payload_kind": "CRAWLER_OBSERVATION",
+  "payload_sha256": "2618d3791cd8dab71e7fa2a09a2cadb78d5f62839a90853898b699c4dab21235",
+  "payload": {
+    "schema_version": "cana.competitor-crawl-observation/1.0.0",
+    "crawl_id": "fixture_crawl_marketplace_mechanism_20260803",
+    "baseline_id": "fixture_baseline_marketplace_mechanism_20260727",
+    "entity_id": "fixture_public_marketplace",
+    "competitor_id": "fixture_public_marketplace",
+    "surface_id": "offline-adapter-contract",
+    "url": "https://example.com/public-marketplace-fixture",
+    "captured_at": "2026-08-03T14:00:00.000Z",
+    "before_content_sha256": "f492b2377667e1ab91bf703dabc54691e9b28fc3541b7d2d7990de4223c5dae8",
+    "after_content_sha256": "c82c879f5cc48c6f5854fb1dc08c92ff44f1ab8fc0026a724bb4343fb666ab45",
+    "before_screenshot_sha256": "a897d2f5ab3288411d9f63e23c05e693a52f4aa57e890f76b5a543dd9effddf1",
+    "after_screenshot_sha256": "4d1ef4d2e2b6b56e3dca8dc5dc1ac79e881a8f5cafc2d36394ea72995183c40f",
+    "dom_diff": {
+      "changed_sections": [
+        "fixture decision sequence"
+      ]
+    },
+    "visual_diff": {
+      "changed_regions": [
+        "fixture local orientation"
+      ]
+    },
+    "semantic_diff": {
+      "added": [
+        "fixture bounded shortlist before handoff"
+      ]
+    },
+    "asset_diff": {
+      "added": [],
+      "removed": []
+    },
+    "seo_diff": {
+      "changed": []
+    },
+    "funnel_diff": {
+      "changed": [
+        "fixture discovery-to-handoff sequence"
+      ]
+    },
+    "ad_creative_diff": {
+      "changed": [
+        "fixture local-value framing"
+      ]
+    },
+    "policy_context": {
+      "state": "OFFLINE_FIXTURE_ONLY"
+    },
+    "direct_observation": "The offline adapter fixture presents local orientation before a bounded marketplace handoff.",
+    "inference": "The sequence may reduce choice overload; no competitor adoption or outcome is claimed.",
+    "uncertainty": 0.25,
+    "confidence": 0.85,
+    "evidence_locations": [
+      "sha256:a83412bf261946bcdaceb9e3068b1ee80209d2c45d2fd728618f62c1d0e4d5a8"
+    ],
+    "rights_state": "REFERENCE_ONLY",
+    "prompt_injection_state": "SCANNED_NO_AUTHORITY",
+    "importance_score": 0.8,
+    "change_type": "OFFLINE_ADAPTER_VALIDATION"
+  },
+  "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
+  "handoff_id": "sensor_handoff_5e429d2b6a876d82e8662a08"
+}

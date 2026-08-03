@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 
 type BannerCampaign = {
   id: string;
@@ -15,6 +16,10 @@ type BannerCampaign = {
   mobileMedia: string;
   altText: string;
   fundingKind: 'HOUSE' | 'PAID';
+  approvalStatus?: 'APPROVED' | 'OWNER_REVIEW_PENDING';
+  surfaceColor?: string;
+  accentColor?: string;
+  inkColor?: string;
   impressionEvent: string;
   clickEvent: string;
 };
@@ -42,6 +47,13 @@ export default function CustomerSponsoredBanner({
 
   if (!campaign) return null;
 
+  const ownerReviewPending = campaign.approvalStatus === 'OWNER_REVIEW_PENDING';
+  const campaignStyle = {
+    '--campaign-surface': campaign.surfaceColor ?? '#f4f4f1',
+    '--campaign-accent': campaign.accentColor ?? '#11643d',
+    '--campaign-ink': campaign.inkColor ?? '#121713',
+  } as CSSProperties;
+
   return (
     <aside
       aria-label={`${campaign.disclosure} from ${campaign.sponsor}`}
@@ -49,26 +61,29 @@ export default function CustomerSponsoredBanner({
       data-banner-campaign={campaign.id}
       data-banner-funding={campaign.fundingKind}
       data-banner-impression-event={campaign.impressionEvent}
+      data-owner-review-campaign={ownerReviewPending ? 'true' : undefined}
+      data-owner-review-status={ownerReviewPending ? 'PENDING' : undefined}
+      style={campaignStyle}
     >
-      <div className="overflow-hidden rounded-2xl bg-[#f4f4f1] lg:grid lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="overflow-hidden rounded-2xl bg-[var(--campaign-surface)] lg:grid lg:grid-cols-[0.9fr_1.1fr]">
         <div className="order-2 flex flex-col justify-center px-5 py-6 sm:px-8 lg:order-1 lg:px-12 lg:py-9">
           <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#3f4c44]">
             {campaign.disclosure} · {campaign.sponsor}
           </p>
-          <h2 className="mt-3 max-w-xl font-display text-2xl font-semibold leading-tight tracking-[-0.035em] text-[#121713] sm:text-3xl">
+          <h2 className="mt-3 max-w-xl font-display text-2xl font-semibold leading-tight tracking-[-0.035em] text-[var(--campaign-ink)] sm:text-3xl">
             {campaign.headline}
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#58625c]">
             {campaign.supportingText}
           </p>
-          {campaign.fundingKind === 'HOUSE' && (
+          {campaign.fundingKind === 'HOUSE' && !ownerReviewPending && (
             <p className="mt-2 text-xs text-[#626a65]">No paid campaign is live in this review build.</p>
           )}
           <Link
             href={campaign.destination}
             data-banner-click-event={campaign.clickEvent}
             onClick={() => emitBannerEvent(campaign, campaign.clickEvent)}
-            className="mt-5 inline-flex min-h-11 w-fit items-center rounded-lg bg-[#11643d] px-5 py-3 text-sm font-bold text-white hover:bg-[#0c4f30]"
+            className="mt-5 inline-flex min-h-11 w-fit items-center rounded-lg bg-[var(--campaign-accent)] px-5 py-3 text-sm font-bold text-white hover:brightness-90"
           >
             {campaign.cta}
           </Link>

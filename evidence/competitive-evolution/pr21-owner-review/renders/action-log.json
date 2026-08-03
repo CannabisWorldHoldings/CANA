@@ -1,0 +1,80 @@
+[
+  {
+    "action": "goto",
+    "campaign_id": "owd-block-by-block",
+    "viewport": "desktop",
+    "url": "http://orderweeddc.localhost:3410/?ownerReviewCampaign=owd-block-by-block"
+  },
+  {
+    "action": "capture",
+    "campaign_id": "owd-block-by-block",
+    "viewport": "desktop",
+    "page_context_sha256": "bdd77fc4e16e76b31a5b8138274f1fa7ada1fa349fcaa44e9f995b3718cbb081",
+    "isolated_sha256": "7af525a2194c7a07183bb74edf599c0da4ceb7646b48d6d893292748250e886c"
+  },
+  {
+    "action": "goto",
+    "campaign_id": "owd-block-by-block",
+    "viewport": "mobile",
+    "url": "http://orderweeddc.localhost:3410/?ownerReviewCampaign=owd-block-by-block"
+  },
+  {
+    "action": "capture",
+    "campaign_id": "owd-block-by-block",
+    "viewport": "mobile",
+    "page_context_sha256": "593cf40e32aa0e855cdf3433dea628e8cfdf19e3b33280f1c0c06ccc36307611",
+    "isolated_sha256": "418cd1908b90d5ef3db6b525e5aeff0a954f2bb116484c23141af9ee5706f286"
+  },
+  {
+    "action": "goto",
+    "campaign_id": "owd-tonights-shortlist",
+    "viewport": "desktop",
+    "url": "http://orderweeddc.localhost:3410/?ownerReviewCampaign=owd-tonights-shortlist"
+  },
+  {
+    "action": "capture",
+    "campaign_id": "owd-tonights-shortlist",
+    "viewport": "desktop",
+    "page_context_sha256": "6d420d0916230a6303172cb7f10b0fce2feb275c504a5ed13ebc00f295522277",
+    "isolated_sha256": "4831d11a7b52134b316d6306a2c41105222fa74b0a119cfb7f444b3379aadd48"
+  },
+  {
+    "action": "goto",
+    "campaign_id": "owd-tonights-shortlist",
+    "viewport": "mobile",
+    "url": "http://orderweeddc.localhost:3410/?ownerReviewCampaign=owd-tonights-shortlist"
+  },
+  {
+    "action": "capture",
+    "campaign_id": "owd-tonights-shortlist",
+    "viewport": "mobile",
+    "page_context_sha256": "88a34d523287d423c0af846aebce22d2dd501b01755bca43423d53b803832303",
+    "isolated_sha256": "dadc9a22980f9d2440addabe5cb51e0de585c2cdcad1a65d34ee27381d212346"
+  },
+  {
+    "action": "goto",
+    "campaign_id": "owd-source-before-hype",
+    "viewport": "desktop",
+    "url": "http://orderweeddc.localhost:3410/?ownerReviewCampaign=owd-source-before-hype"
+  },
+  {
+    "action": "capture",
+    "campaign_id": "owd-source-before-hype",
+    "viewport": "desktop",
+    "page_context_sha256": "7f36c93f11072e68d7359a3c5912d7a99ada50c30fe70abcc415bca08a842fac",
+    "isolated_sha256": "a9a71a4ea166a4fa52c833dc21d52cfbdd20a3c2a38077240e3066e11575170b"
+  },
+  {
+    "action": "goto",
+    "campaign_id": "owd-source-before-hype",
+    "viewport": "mobile",
+    "url": "http://orderweeddc.localhost:3410/?ownerReviewCampaign=owd-source-before-hype"
+  },
+  {
+    "action": "capture",
+    "campaign_id": "owd-source-before-hype",
+    "viewport": "mobile",
+    "page_context_sha256": "c129d3389451b6be76485f54ab35b8b979da17e882e72915e325bede176d5177",
+    "isolated_sha256": "2498a4e09a1ff2a9380274219f5dac9471f7587c32e3b5b9e044f70a1fdb7e84"
+  }
+]

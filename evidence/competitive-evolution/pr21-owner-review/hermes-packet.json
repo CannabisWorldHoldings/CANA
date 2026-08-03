@@ -1,0 +1,32 @@
+{
+  "valid": true,
+  "errors": [],
+  "packet": {
+    "schema": "hermes-governed-packet/1",
+    "sealed_at": "2026-08-03T14:00:00.000Z",
+    "context_digest": "38c80be292d8f4f858b3b3af321ee05fcacad5d7e8d2cd48393d3b8f3ddb02df",
+    "context_objective": "Generate three original ORDERWEEDDC campaign systems for owner review without publish, spend or production authority.",
+    "actionable_fact_count": 2,
+    "contradiction_count": 0,
+    "grant": {
+      "id": "gr_8276ec50a57b1cd9",
+      "capability": "GENERATE_REVIEW_CREATIVE",
+      "budget_units": 3,
+      "expires_at": "2026-08-04T14:00:00.000Z",
+      "issued_by": "CANA_DURABLE_AUTHORITY"
+    },
+    "intent": {
+      "description": "Compose three local rights-clear ORDERWEEDDC campaign systems for owner review.",
+      "capability": "GENERATE_REVIEW_CREATIVE",
+      "success_test": "Three materially different campaign records and responsive repository assets pass the visual tournament.",
+      "rollback": "Delete the isolated review branch artifacts; no production state is touched."
+    },
+    "unresolved_contradictions": [],
+    "intent_subjects": [
+      "subject:orderweeddc-creative",
+      "subject:owner-taste"
+    ],
+    "contradictions_checked_against_intent": true,
+    "packet_digest": "f2b2922c539122489cc239c374f3b1fc8510e7b743dbde6c7741225ed9aa76f3"
+  }
+}

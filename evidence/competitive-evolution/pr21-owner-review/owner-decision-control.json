@@ -1,0 +1,9 @@
+{
+  "status": "PENDING",
+  "allowed_values": [
+    "APPROVE_ONE",
+    "REJECT_ALL_REQUEST_CHANGES"
+  ],
+  "selected_campaign_id": null,
+  "production_authority": "NONE"
+}

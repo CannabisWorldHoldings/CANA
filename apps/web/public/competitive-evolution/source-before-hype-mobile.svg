@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 900" role="img" aria-labelledby="title desc">
+  <title id="title">Source before hype mobile evidence ribbon</title>
+  <desc id="desc">An original stack of source records leading to an open doorway.</desc>
+  <rect width="780" height="900" fill="#203657"/>
+  <path d="M64 76h652v410H64z" fill="#f1f4f7"/>
+  <path d="M64 76h652v66H64z" fill="#f0c84b"/>
+  <g stroke="#203657" stroke-width="13" stroke-linecap="round">
+    <path d="M126 216h264M126 270h498M126 324h340M126 408h236"/>
+  </g>
+  <circle cx="590" cy="384" r="70" fill="none" stroke="#426696" stroke-width="11"/>
+  <path d="M550 384l28 28 58-70" fill="none" stroke="#426696" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M188 520h404v336H188z" fill="#111d32"/>
+  <path d="M270 590h240v266H270z" fill="#f0c84b"/>
+  <path d="M326 646h184v210H326z" fill="#fff"/>
+  <circle cx="478" cy="760" r="14" fill="#203657"/>
+  <path d="M64 688h206" stroke="#f0c84b" stroke-width="22"/>
+  <path d="M210 632l92 56-92 56z" fill="#f0c84b"/>
+</svg>

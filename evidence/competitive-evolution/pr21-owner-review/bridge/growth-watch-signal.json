@@ -1,0 +1,19 @@
+{
+  "schema_version": "cana.growth-watch-signal-packet/1.0.0",
+  "signal_id": "fixture_growth_watch_marketplace_mechanism_20260803",
+  "entity_id": "fixture_public_marketplace",
+  "competitor_id": "fixture_public_marketplace",
+  "candidate_urls": [
+    "https://example.com/public-marketplace-fixture"
+  ],
+  "claims": [
+    "A bounded local shortlist can precede a menu handoff."
+  ],
+  "source_dates": [
+    "2026-08-03T14:00:00.000Z"
+  ],
+  "novelty": 0.8,
+  "uncertainty": 0.25,
+  "observed_at": "2026-08-03T14:00:00.000Z",
+  "evidence_class": "OFFLINE_ADAPTER_FIXTURE_NOT_CURRENT_COMPETITOR_CLAIM"
+}

@@ -97,6 +97,9 @@ function buildCampaigns() {
       headline: 'Start with the D.C. you know.',
       supportingText: 'Move from neighborhood context to dispensaries, delivery records and current deals without losing sight of each record’s source.',
       cta: 'Explore neighborhoods',
+      surfaceColor: '#edf3ed',
+      accentColor: '#1b573b',
+      inkColor: '#10261b',
       destination: '/neighborhoods',
       landing_page_match: 'Neighborhood index continues the local-orientation mechanism.',
       altText: 'Original illustrated D.C. street grid connecting neighborhood discovery paths',
@@ -123,6 +126,9 @@ function buildCampaigns() {
       headline: 'Make tonight’s D.C. shortlist.',
       supportingText: 'Compare a smaller set of dispensaries, delivery records and current deals, with the important data state kept visible.',
       cta: 'See current deals',
+      surfaceColor: '#f8e7ca',
+      accentColor: '#9d3f24',
+      inkColor: '#34170f',
       destination: '/deals',
       landing_page_match: 'The deals collection continues the time-bounded shortlist idea with explicit validity states.',
       altText: 'Original editorial shortlist graphic with three numbered D.C. marketplace paths',
@@ -149,6 +155,9 @@ function buildCampaigns() {
       headline: 'See what’s sourced before you choose.',
       supportingText: 'Find D.C. records with source, freshness and demonstration states kept close to the next action.',
       cta: 'Compare dispensaries',
+      surfaceColor: '#e8edf4',
+      accentColor: '#263f68',
+      inkColor: '#111d32',
       destination: '/dispensaries',
       landing_page_match: 'The dispensary route continues with source-labeled records and supported next actions.',
       altText: 'Original evidence-ribbon illustration leading to a source-labeled marketplace doorway',
@@ -164,6 +173,10 @@ function buildCampaigns() {
       mobile: { campaign_system_id: 'campaign-system-source-before-hype', composition: 'stacked evidence stamps with the same doorway motif', focal_point: '50% 45%' },
     }),
   ]);
+}
+
+export function getCompetitiveReviewCampaigns() {
+  return buildCampaigns();
 }
 
 export function generateCampaignSystems({ registry, contextPacket, ownerDecision, asOf }) {

@@ -1,0 +1,14 @@
+{
+  "execution_status": "DEFINED_NOT_RUN",
+  "control": "Current owner-approved homepage campaign at experiment start, not the rejected PR #21 creative.",
+  "treatment": "One owner-approved tournament campaign.",
+  "primary_metric": "banner destination click-through rate",
+  "guardrails": [
+    "truth-label comprehension",
+    "page LCP",
+    "serious accessibility findings",
+    "policy or rights violations"
+  ],
+  "causal_method": "Randomized first-party placement after owner approval and separate production authorization.",
+  "spend_authority": "NONE"
+}

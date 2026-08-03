@@ -1,0 +1,114 @@
+[
+  {
+    "name": "owner_taste_alignment",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "strategy=LOCAL_ORIENTATION; approvalStatus=OWNER_REVIEW_PENDING; source rejection constraints are encoded in negative_prompt"
+    ]
+  },
+  {
+    "name": "anti_generic_quality",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "visual_concept=A bold modular street grid with three connected discovery nodes and a single directional path.; local role=Uses the District grid and quadrant rhythm as an original information device, not a generic skyline."
+    ]
+  },
+  {
+    "name": "authenticity",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "image_source_plan=Original repository-owned vector design with deterministic typography and no synthetic photography; risks=Illustration must not be presented as documentary photography | D.C. geometry is conceptual rather than a navigation map"
+    ]
+  },
+  {
+    "name": "local_dc_intelligence",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "local_dc_relevance=Uses the District grid and quadrant rhythm as an original information device, not a generic skyline."
+    ]
+  },
+  {
+    "name": "campaign_coherence",
+    "score": 96,
+    "status": "PASS",
+    "evidence": [
+      "desktop=campaign-system-block-by-block; mobile=campaign-system-block-by-block"
+    ]
+  },
+  {
+    "name": "image_copy_fit",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "headline=\"Start with the D.C. you know.\"; concept=A bold modular street grid with three connected discovery nodes and a single directional path.; alt=Original illustrated D.C. street grid connecting neighborhood discovery paths"
+    ]
+  },
+  {
+    "name": "conversion_mechanism",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "cta=Explore neighborhoods; destination=/neighborhoods; prediction=Against the rejected control, neighborhood-page click-through increases without increasing immediate back navigation."
+    ]
+  },
+  {
+    "name": "accessibility",
+    "score": 95,
+    "status": "PASS",
+    "evidence": [
+      "alt=Original illustrated D.C. street grid connecting neighborhood discovery paths; serious_or_critical_findings=0"
+    ]
+  },
+  {
+    "name": "mobile_crop_quality",
+    "score": 94,
+    "status": "PASS",
+    "evidence": [
+      "mobile page sha256=593cf40e32aa0e855cdf3433dea628e8cfdf19e3b33280f1c0c06ccc36307611; isolated sha256=418cd1908b90d5ef3db6b525e5aeff0a954f2bb116484c23141af9ee5706f286; overflow=false"
+    ]
+  },
+  {
+    "name": "performance_budget",
+    "score": 91,
+    "status": "PASS",
+    "evidence": [
+      "desktop/mobile console problems=0; desktop page sha256=bdd77fc4e16e76b31a5b8138274f1fa7ada1fa349fcaa44e9f995b3718cbb081"
+    ]
+  },
+  {
+    "name": "cannabis_ad_policy",
+    "score": 96,
+    "status": "PASS",
+    "evidence": [
+      "policy=PASS_FOR_OWNER_REVIEW; unsupported-claim risks=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+    ]
+  },
+  {
+    "name": "rights_and_provenance",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "rights=CANA_OWNED_ORIGINAL_VECTOR; provenance=CANA-owned original vector composition; no competitor assets, logos, copy, reviews, photography or proprietary data"
+    ]
+  },
+  {
+    "name": "brand_distinctiveness",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "ORDERWEEDDC mechanism=A familiar local orientation reduces the effort required to choose a first marketplace path.; visual system=campaign-system-block-by-block"
+    ]
+  },
+  {
+    "name": "landing_page_continuity",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "destination=/neighborhoods; continuity=Neighborhood index continues the local-orientation mechanism."
+    ]
+  }
+]

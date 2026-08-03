@@ -1,0 +1,114 @@
+[
+  {
+    "name": "owner_taste_alignment",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "strategy=BOUNDED_CHOICE; approvalStatus=OWNER_REVIEW_PENDING; source rejection constraints are encoded in negative_prompt"
+    ]
+  },
+  {
+    "name": "anti_generic_quality",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "visual_concept=An editorial ticket stack with three numbered paths, strong crop marks and high-contrast typographic rhythm.; local role=Frames the experience as a D.C. night plan while avoiding invented venues, products or events."
+    ]
+  },
+  {
+    "name": "authenticity",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "image_source_plan=Original repository-owned vector design with deterministic typography and no synthetic photography; risks=Illustration must not be presented as documentary photography | D.C. geometry is conceptual rather than a navigation map"
+    ]
+  },
+  {
+    "name": "local_dc_intelligence",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "local_dc_relevance=Frames the experience as a D.C. night plan while avoiding invented venues, products or events."
+    ]
+  },
+  {
+    "name": "campaign_coherence",
+    "score": 96,
+    "status": "PASS",
+    "evidence": [
+      "desktop=campaign-system-tonights-shortlist; mobile=campaign-system-tonights-shortlist"
+    ]
+  },
+  {
+    "name": "image_copy_fit",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "headline=\"Make tonight’s D.C. shortlist.\"; concept=An editorial ticket stack with three numbered paths, strong crop marks and high-contrast typographic rhythm.; alt=Original editorial shortlist graphic with three numbered D.C. marketplace paths"
+    ]
+  },
+  {
+    "name": "conversion_mechanism",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "cta=See current deals; destination=/deals; prediction=Against the rejected control, deals-page arrivals and subsequent profile or menu handoffs increase."
+    ]
+  },
+  {
+    "name": "accessibility",
+    "score": 95,
+    "status": "PASS",
+    "evidence": [
+      "alt=Original editorial shortlist graphic with three numbered D.C. marketplace paths; serious_or_critical_findings=0"
+    ]
+  },
+  {
+    "name": "mobile_crop_quality",
+    "score": 94,
+    "status": "PASS",
+    "evidence": [
+      "mobile page sha256=88a34d523287d423c0af846aebce22d2dd501b01755bca43423d53b803832303; isolated sha256=dadc9a22980f9d2440addabe5cb51e0de585c2cdcad1a65d34ee27381d212346; overflow=false"
+    ]
+  },
+  {
+    "name": "performance_budget",
+    "score": 91,
+    "status": "PASS",
+    "evidence": [
+      "desktop/mobile console problems=0; desktop page sha256=6d420d0916230a6303172cb7f10b0fce2feb275c504a5ed13ebc00f295522277"
+    ]
+  },
+  {
+    "name": "cannabis_ad_policy",
+    "score": 96,
+    "status": "PASS",
+    "evidence": [
+      "policy=PASS_FOR_OWNER_REVIEW; unsupported-claim risks=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+    ]
+  },
+  {
+    "name": "rights_and_provenance",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "rights=CANA_OWNED_ORIGINAL_VECTOR; provenance=CANA-owned original vector composition; no competitor assets, logos, copy, reviews, photography or proprietary data"
+    ]
+  },
+  {
+    "name": "brand_distinctiveness",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "ORDERWEEDDC mechanism=Three bounded paths reduce choice overload and make the next click more intentional.; visual system=campaign-system-tonights-shortlist"
+    ]
+  },
+  {
+    "name": "landing_page_continuity",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "destination=/deals; continuity=The deals collection continues the time-bounded shortlist idea with explicit validity states."
+    ]
+  }
+]

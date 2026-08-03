@@ -1,0 +1,27 @@
+{
+  "schema_version": "cana.pr21-competitive-evolution-vertical-slice/1.0.0",
+  "status": "PASSED",
+  "terminal_marker": "ORDERWEEDDC_SITEMIND_COMPETITOR_TO_CREATIVE_EVOLUTION_TOURNAMENT_READY_FOR_OWNER_REVIEW",
+  "source_rejected_commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+  "candidate_state_at_run": "WORKTREE_RENDER_AND_TOURNAMENT_EVIDENCE_PRECEDES_FINAL_REVIEW_COMMIT",
+  "owner_rejection_persisted": "OWNER_REJECTION_PERSISTED",
+  "competitor_event_ledger": {
+    "valid": true,
+    "records": 1,
+    "head_hash": "8a295a7cd1364683a8e8b8cd3c80d619e74253ef5e2a3ad7f4453db38f42ff6b"
+  },
+  "tournament_status": "READY_FOR_OWNER_REVIEW",
+  "campaign_ids": [
+    "owd-block-by-block",
+    "owd-tonights-shortlist",
+    "owd-source-before-hype"
+  ],
+  "render_screenshot_count": 12,
+  "owner_decision_status": "PENDING",
+  "first_party_experiment_status": "DEFINED_NOT_RUN",
+  "provider_calls": 0,
+  "actual_spend_usd": 0,
+  "production_accessed": false,
+  "merged": false,
+  "deployed": false
+}

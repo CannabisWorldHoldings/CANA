@@ -7,6 +7,7 @@ import CustomerHomeTrust from '@/components/customer-home-trust';
 import { loadCustomerHome } from '@/lib/customer-marketplace-data';
 import {
   HOUSE_BANNER_CAMPAIGN,
+  selectOwnerReviewBanner,
   selectPrimaryBannerForServer,
 } from '@/lib/customer-banner.mjs';
 import { prisma } from '@/lib/prisma';
@@ -15,7 +16,10 @@ import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import { requestOrigin } from '@/lib/server-request-url';
 import { jsonLdScriptProps, retailerItemListJsonLd } from '@/lib/structured-data.mjs';
 
-type Props = { params: Promise<{ domain: string }> };
+type Props = {
+  params: Promise<{ domain: string }>;
+  searchParams: Promise<{ ownerReviewCampaign?: string | string[] }>;
+};
 
 export const metadata = {
   ...buildPublicMetadata({
@@ -26,25 +30,45 @@ export const metadata = {
   alternates: { canonical: '/' },
 };
 
-export default async function TenantHomePage({ params }: Props) {
+export default async function TenantHomePage({ params, searchParams }: Props) {
   const { domain } = await params;
+  const query = await searchParams;
   const home = await loadCustomerHome(domain);
   if (!home) return notFound();
 
   const isCanonical = domain === CANONICAL_TENANT_DOMAIN;
   const asOf = new Date();
-  const banner = isCanonical
+  const origin = await requestOrigin();
+  const requestedCampaign = Array.isArray(query.ownerReviewCampaign)
+    ? null
+    : query.ownerReviewCampaign;
+  const reviewBanner = isCanonical
+    ? selectOwnerReviewBanner({
+        campaignId: requestedCampaign,
+        hostname: origin.hostname,
+        reviewMode: process.env.CANA_OWNER_REVIEW_MODE,
+      })
+    : null;
+  const banner = reviewBanner ?? (isCanonical
     ? await selectPrimaryBannerForServer({
         prisma,
         campaigns: [],
         houseCampaign: HOUSE_BANNER_CAMPAIGN,
         asOf,
       })
-    : null;
-  const demonstration = [...home.delivery, ...home.dispensaries].some(
+    : null);
+  const renderedHome = reviewBanner
+    ? {
+        ...home,
+        deals: home.deals.filter((deal) => !deal.isDemonstration && !deal.retailer.isDemonstration),
+        delivery: home.delivery.filter((record) => !record.isDemonstration),
+        dispensaries: home.dispensaries.filter((record) => !record.isDemonstration),
+        articles: home.articles.filter((article) => !article.isDemonstration),
+      }
+    : home;
+  const demonstration = [...renderedHome.delivery, ...renderedHome.dispensaries].some(
     (record) => record.isDemonstration,
   );
-  const origin = await requestOrigin();
   const itemListJsonLd = isCanonical
     ? retailerItemListJsonLd({
         retailers: [...home.delivery, ...home.dispensaries],
@@ -58,12 +82,12 @@ export default async function TenantHomePage({ params }: Props) {
       <CustomerSponsoredBanner campaign={banner} />
       <CustomerHomeHero demonstration={demonstration} />
       <CustomerHomeMarket
-        deals={home.deals}
-        delivery={home.delivery}
-        dispensaries={home.dispensaries}
+        deals={renderedHome.deals}
+        delivery={renderedHome.delivery}
+        dispensaries={renderedHome.dispensaries}
       />
       <CustomerHomeDiscovery />
-      <CustomerHomeTrust articles={home.articles} />
+      <CustomerHomeTrust articles={renderedHome.articles} />
     </div>
   );
 }

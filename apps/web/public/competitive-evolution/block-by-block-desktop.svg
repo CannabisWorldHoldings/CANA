@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 720" role="img" aria-labelledby="title desc">
+  <title id="title">Block by block D.C. discovery map</title>
+  <desc id="desc">An original geometric street grid with connected neighborhood nodes.</desc>
+  <rect width="1680" height="720" fill="#173f2d"/>
+  <path d="M0 108h1680M0 252h1680M0 414h1680M0 586h1680M186 0v720M438 0v720M704 0v720M1004 0v720M1312 0v720M1530 0v720" stroke="#b8cbb7" stroke-width="8" opacity=".38"/>
+  <path d="M-30 670L450 250 756 408 1114 112 1710 466" fill="none" stroke="#f4b860" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#f5f0df" stroke="#173f2d" stroke-width="12">
+    <circle cx="450" cy="250" r="56"/><circle cx="756" cy="408" r="56"/><circle cx="1114" cy="112" r="56"/><circle cx="1456" cy="316" r="56"/>
+  </g>
+  <g fill="#f4b860">
+    <circle cx="450" cy="250" r="18"/><circle cx="756" cy="408" r="18"/><circle cx="1114" cy="112" r="18"/><circle cx="1456" cy="316" r="18"/>
+  </g>
+  <path d="M1166 534h342v112h-342z" fill="#f5f0df"/>
+  <path d="M1200 574h196M1200 608h254" stroke="#173f2d" stroke-width="14" stroke-linecap="round"/>
+  <path d="M1516 590l82-54v108z" fill="#f4b860"/>
+</svg>

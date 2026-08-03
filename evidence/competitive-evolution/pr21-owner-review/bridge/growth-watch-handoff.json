@@ -1,0 +1,29 @@
+{
+  "schema_version": "cana.competitive-sensor-handoff/1.0.0",
+  "task_name": "CANA Sovereign Growth Watch",
+  "run_id": "offline-growth-adapter-20260803",
+  "produced_at": "2026-08-03T14:00:00.000Z",
+  "payload_kind": "GROWTH_WATCH_SIGNAL",
+  "payload_sha256": "a82cc0d539f1288b0e4d65d443e79e34bed23b6af006d9bd8bcc57fb62a71616",
+  "payload": {
+    "schema_version": "cana.growth-watch-signal-packet/1.0.0",
+    "signal_id": "fixture_growth_watch_marketplace_mechanism_20260803",
+    "entity_id": "fixture_public_marketplace",
+    "competitor_id": "fixture_public_marketplace",
+    "candidate_urls": [
+      "https://example.com/public-marketplace-fixture"
+    ],
+    "claims": [
+      "A bounded local shortlist can precede a menu handoff."
+    ],
+    "source_dates": [
+      "2026-08-03T14:00:00.000Z"
+    ],
+    "novelty": 0.8,
+    "uncertainty": 0.25,
+    "observed_at": "2026-08-03T14:00:00.000Z",
+    "evidence_class": "OFFLINE_ADAPTER_FIXTURE_NOT_CURRENT_COMPETITOR_CLAIM"
+  },
+  "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
+  "handoff_id": "sensor_handoff_34b28b1930b1c406f4919430"
+}

@@ -10,6 +10,16 @@ const CAMPAIGN_URL = new URL('../../packages/ad-creative/src/competitive-campaig
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+function pngFixture(width, height, marker) {
+  const bytes = Buffer.alloc(32, 0);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(bytes, 0);
+  bytes.write('IHDR', 12, 'ascii');
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  bytes.write(marker.slice(0, 8), 24, 'ascii');
+  return bytes;
+}
+
 async function loadBridge() {
   return import(BRIDGE_URL.href);
 }
@@ -19,8 +29,8 @@ async function loadCampaigns() {
 }
 
 function makeOwnerPacket(root) {
-  const desktop = Buffer.from('exact rejected desktop billboard fixture\n');
-  const mobile = Buffer.from('exact rejected mobile billboard fixture\n');
+  const desktop = pngFixture(1680, 720, 'desktop');
+  const mobile = pngFixture(780, 900, 'mobile');
   fs.mkdirSync(path.join(root, '__MACOSX'), { recursive: true });
   fs.writeFileSync(path.join(root, 'desktop-banner.png'), desktop);
   fs.writeFileSync(path.join(root, 'mobile-banner.png'), mobile);
@@ -174,6 +184,84 @@ test('rejects unsafe import and instruction-shaped evidence', async (t) => {
     () => ingestPr21OwnerPacket({ packetDirectory: packet, outputDirectory: path.join(root, 'symlink') }),
     (error) => error.code === 'SYMLINK_DENIED',
   );
+});
+
+test('offline import refuses unsafe archive, hard-link, oversized, and malformed-image inputs', async (t) => {
+  const { ingestPr21OwnerPacket } = await loadBridge();
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-import-courts-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const archive = path.join(root, 'packet.zip');
+  fs.writeFileSync(archive, 'not an executable import surface');
+  assert.throws(
+    () => ingestPr21OwnerPacket({ packetDirectory: archive, outputDirectory: path.join(root, 'archive-out') }),
+    (error) => error.code === 'PACKET_DIRECTORY_REQUIRED',
+  );
+
+  const hardlinkPacket = path.join(root, 'hardlink');
+  fs.mkdirSync(hardlinkPacket);
+  const hardlinkSource = path.join(hardlinkPacket, 'desktop-source.png');
+  fs.writeFileSync(hardlinkSource, pngFixture(1680, 720, 'hardlink'));
+  fs.linkSync(hardlinkSource, path.join(hardlinkPacket, 'desktop-banner.png'));
+  fs.writeFileSync(path.join(hardlinkPacket, 'mobile-banner.png'), pngFixture(780, 900, 'mobile'));
+  fs.writeFileSync(path.join(hardlinkPacket, 'SHA256SUMS.txt'),
+    `${sha256(fs.readFileSync(path.join(hardlinkPacket, 'desktop-banner.png')))}  desktop-banner.png\n`
+      + `${sha256(fs.readFileSync(path.join(hardlinkPacket, 'mobile-banner.png')))}  mobile-banner.png\n`);
+  assert.throws(
+    () => ingestPr21OwnerPacket({ packetDirectory: hardlinkPacket, outputDirectory: path.join(root, 'hardlink-out') }),
+    (error) => error.code === 'HARD_LINK_DENIED',
+  );
+
+  const oversizedPacket = path.join(root, 'oversized');
+  fs.mkdirSync(oversizedPacket);
+  const oversized = Buffer.alloc((10 * 1024 * 1024) + 1, 0);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(oversized, 0);
+  fs.writeFileSync(path.join(oversizedPacket, 'desktop-banner.png'), oversized);
+  fs.writeFileSync(path.join(oversizedPacket, 'mobile-banner.png'), pngFixture(780, 900, 'mobile'));
+  fs.writeFileSync(path.join(oversizedPacket, 'SHA256SUMS.txt'),
+    `${sha256(oversized)}  desktop-banner.png\n${sha256(fs.readFileSync(path.join(oversizedPacket, 'mobile-banner.png')))}  mobile-banner.png\n`);
+  assert.throws(
+    () => ingestPr21OwnerPacket({ packetDirectory: oversizedPacket, outputDirectory: path.join(root, 'oversized-out') }),
+    (error) => error.code === 'IMPORT_FILE_TOO_LARGE',
+  );
+
+  const malformedPacket = path.join(root, 'malformed');
+  fs.mkdirSync(malformedPacket);
+  fs.writeFileSync(path.join(malformedPacket, 'desktop-banner.png'), 'not a png');
+  fs.writeFileSync(path.join(malformedPacket, 'mobile-banner.png'), pngFixture(780, 900, 'mobile'));
+  fs.writeFileSync(path.join(malformedPacket, 'SHA256SUMS.txt'),
+    `${sha256(fs.readFileSync(path.join(malformedPacket, 'desktop-banner.png')))}  desktop-banner.png\n`
+      + `${sha256(fs.readFileSync(path.join(malformedPacket, 'mobile-banner.png')))}  mobile-banner.png\n`);
+  assert.throws(
+    () => ingestPr21OwnerPacket({ packetDirectory: malformedPacket, outputDirectory: path.join(root, 'malformed-out') }),
+    (error) => error.code === 'MALFORMED_IMAGE',
+  );
+});
+
+test('scheduled sensor handoffs remain untrusted until one SiteMind fusion receipt', async (t) => {
+  const { adaptScheduledTaskHandoff, buildCompetitorEvidenceReceipt, createCompetitorEventLedger } = await loadBridge();
+  const signal = makeSignal();
+  const crawl = makeCrawl();
+  const signalHandoff = adaptScheduledTaskHandoff({
+    taskName: 'CANA Sovereign Growth Watch', runId: 'growth-20260803', producedAt: signal.observed_at, payload: signal,
+  });
+  const crawlHandoff = adaptScheduledTaskHandoff({
+    taskName: 'Competitor Crawl Intelligence', runId: 'crawl-20260803', producedAt: crawl.captured_at, payload: crawl,
+  });
+  assert.equal(signalHandoff.instruction_authority, 'NONE_UNTRUSTED_EVIDENCE_ONLY');
+  assert.equal(crawlHandoff.payload_kind, 'CRAWLER_OBSERVATION');
+  assert.throws(
+    () => adaptScheduledTaskHandoff({ taskName: 'Unknown automation', runId: 'bad', producedAt: crawl.captured_at, payload: crawl }),
+    (error) => error.code === 'SCHEDULED_TASK_DENIED',
+  );
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-handoff-fusion-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const ledger = createCompetitorEventLedger({ rootDirectory: root, tenantId: 'orderweeddc', workspaceId: 'homepage' });
+  const event = ledger.fuse({ growthWatchPacket: signalHandoff.payload, crawlObservation: crawlHandoff.payload });
+  const receipt = buildCompetitorEvidenceReceipt(event);
+  assert.equal(receipt.event_id, event.event_id);
+  assert.equal(receipt.production_modified, false);
+  assert.match(receipt.receipt_hash, /^[0-9a-f]{64}$/);
 });
 
 test('fuses sensor packets into one SiteMind competitor event ledger', async (t) => {

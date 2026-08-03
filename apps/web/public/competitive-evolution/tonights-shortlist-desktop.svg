@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 720" role="img" aria-labelledby="title desc">
+  <title id="title">Tonight's shortlist ticket system</title>
+  <desc id="desc">Three original numbered editorial tickets arranged as a compact plan.</desc>
+  <rect width="1680" height="720" fill="#18263f"/>
+  <circle cx="1480" cy="84" r="260" fill="#ed6a4b"/>
+  <path d="M72 72h1536v576H72z" fill="none" stroke="#f7d89f" stroke-width="6"/>
+  <g transform="translate(178 142) rotate(-4 210 210)">
+    <path d="M0 0h390v428H0v-34a34 34 0 000-68v-224a34 34 0 000-68z" fill="#f7d89f"/>
+    <text x="48" y="126" font-family="Arial, sans-serif" font-size="112" font-weight="900" fill="#18263f">01</text>
+    <path d="M50 184h280M50 238h212M50 334h160" stroke="#9d3f24" stroke-width="18"/>
+  </g>
+  <g transform="translate(646 120)">
+    <path d="M0 0h390v470H0v-34a34 34 0 000-68v-266a34 34 0 000-68z" fill="#ed6a4b"/>
+    <text x="48" y="126" font-family="Arial, sans-serif" font-size="112" font-weight="900" fill="#fff4dc">02</text>
+    <path d="M50 184h280M50 238h212M50 372h160" stroke="#18263f" stroke-width="18"/>
+  </g>
+  <g transform="translate(1114 142) rotate(4 210 210)">
+    <path d="M0 0h390v428H0v-34a34 34 0 000-68v-224a34 34 0 000-68z" fill="#fff4dc"/>
+    <text x="48" y="126" font-family="Arial, sans-serif" font-size="112" font-weight="900" fill="#9d3f24">03</text>
+    <path d="M50 184h280M50 238h212M50 334h160" stroke="#18263f" stroke-width="18"/>
+  </g>
+  <path d="M112 112h54v12h-42v42h-12zm1456 0h-54v12h42v42h12zM112 608h54v-12h-42v-42h-12zm1456 0h-54v-12h42v-42h12z" fill="#fff4dc"/>
+</svg>

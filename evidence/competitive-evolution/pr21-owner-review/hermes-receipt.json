@@ -1,0 +1,28 @@
+{
+  "schema": "hermes-execution-receipt/1",
+  "recorded_at": "2026-08-03T14:00:00.000Z",
+  "packet_digest": "f2b2922c539122489cc239c374f3b1fc8510e7b743dbde6c7741225ed9aa76f3",
+  "context_digest": "38c80be292d8f4f858b3b3af321ee05fcacad5d7e8d2cd48393d3b8f3ddb02df",
+  "grant_id": "gr_8276ec50a57b1cd9",
+  "capability": "GENERATE_REVIEW_CREATIVE",
+  "succeeded": true,
+  "failure_reason": null,
+  "evidence": [
+    {
+      "observation": "owd-block-by-block has one coherent desktop/mobile campaign system",
+      "ref": "sha256:0427f45ca0039f6f36f44594c38b48b7685ce0e49d4d3048b994f8bdf0e5f60a"
+    },
+    {
+      "observation": "owd-tonights-shortlist has one coherent desktop/mobile campaign system",
+      "ref": "sha256:c3dc3ec992ada91420cc8a5f47ce930bd072099a1991f630b00c7a6c74894a6d"
+    },
+    {
+      "observation": "owd-source-before-hype has one coherent desktop/mobile campaign system",
+      "ref": "sha256:5eab74cfd508c14c5094d9a826dc5597967940b111c41c0bbda4b102b48dfe8d"
+    }
+  ],
+  "budget_used": 3,
+  "success_test": "Three materially different campaign records and responsive repository assets pass the visual tournament.",
+  "rollback_available": "Delete the isolated review branch artifacts; no production state is touched.",
+  "receipt_digest": "2430d365b743aaad45c54e681ffae4e4d49812e17ff04e4a12e79d6b9f5d75c2"
+}

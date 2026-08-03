@@ -1,0 +1,114 @@
+[
+  {
+    "name": "owner_taste_alignment",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "strategy=TRUST_BEFORE_HANDOFF; approvalStatus=OWNER_REVIEW_PENDING; source rejection constraints are encoded in negative_prompt"
+    ]
+  },
+  {
+    "name": "anti_generic_quality",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "visual_concept=A crisp evidence ribbon built from stamps, ruled lines and a single open doorway motif.; local role=Turns ORDERWEEDDC’s D.C. record-state discipline into the central brand distinction."
+    ]
+  },
+  {
+    "name": "authenticity",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "image_source_plan=Original repository-owned vector design with deterministic typography and no synthetic photography; risks=Illustration must not be presented as documentary photography | D.C. geometry is conceptual rather than a navigation map"
+    ]
+  },
+  {
+    "name": "local_dc_intelligence",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "local_dc_relevance=Turns ORDERWEEDDC’s D.C. record-state discipline into the central brand distinction."
+    ]
+  },
+  {
+    "name": "campaign_coherence",
+    "score": 96,
+    "status": "PASS",
+    "evidence": [
+      "desktop=campaign-system-source-before-hype; mobile=campaign-system-source-before-hype"
+    ]
+  },
+  {
+    "name": "image_copy_fit",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "headline=\"See what’s sourced before you choose.\"; concept=A crisp evidence ribbon built from stamps, ruled lines and a single open doorway motif.; alt=Original evidence-ribbon illustration leading to a source-labeled marketplace doorway"
+    ]
+  },
+  {
+    "name": "conversion_mechanism",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "cta=Compare dispensaries; destination=/dispensaries; prediction=Against the rejected control, dispensary-profile handoffs increase while truth-label comprehension remains non-inferior."
+    ]
+  },
+  {
+    "name": "accessibility",
+    "score": 95,
+    "status": "PASS",
+    "evidence": [
+      "alt=Original evidence-ribbon illustration leading to a source-labeled marketplace doorway; serious_or_critical_findings=0"
+    ]
+  },
+  {
+    "name": "mobile_crop_quality",
+    "score": 94,
+    "status": "PASS",
+    "evidence": [
+      "mobile page sha256=c129d3389451b6be76485f54ab35b8b979da17e882e72915e325bede176d5177; isolated sha256=2498a4e09a1ff2a9380274219f5dac9471f7587c32e3b5b9e044f70a1fdb7e84; overflow=false"
+    ]
+  },
+  {
+    "name": "performance_budget",
+    "score": 91,
+    "status": "PASS",
+    "evidence": [
+      "desktop/mobile console problems=0; desktop page sha256=7f36c93f11072e68d7359a3c5912d7a99ada50c30fe70abcc415bca08a842fac"
+    ]
+  },
+  {
+    "name": "cannabis_ad_policy",
+    "score": 96,
+    "status": "PASS",
+    "evidence": [
+      "policy=PASS_FOR_OWNER_REVIEW; unsupported-claim risks=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+    ]
+  },
+  {
+    "name": "rights_and_provenance",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "rights=CANA_OWNED_ORIGINAL_VECTOR; provenance=CANA-owned original vector composition; no competitor assets, logos, copy, reviews, photography or proprietary data"
+    ]
+  },
+  {
+    "name": "brand_distinctiveness",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "ORDERWEEDDC mechanism=Visible source discipline increases trust without pretending ORDERWEEDDC verified unsupported facts.; visual system=campaign-system-source-before-hype"
+    ]
+  },
+  {
+    "name": "landing_page_continuity",
+    "score": 90,
+    "status": "PASS",
+    "evidence": [
+      "destination=/dispensaries; continuity=The dispensary route continues with source-labeled records and supported next actions."
+    ]
+  }
+]

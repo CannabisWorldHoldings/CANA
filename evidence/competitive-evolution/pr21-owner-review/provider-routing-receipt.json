@@ -1,0 +1,23 @@
+{
+  "schema_version": "cana.creative-provider-routing-receipt/1.0.0",
+  "provider_id": "local-vector-compositor",
+  "model": "repository-svg-campaign-system-v1",
+  "campaign_ids": [
+    "owd-block-by-block",
+    "owd-tonights-shortlist",
+    "owd-source-before-hype"
+  ],
+  "requirements": [
+    "typography",
+    "logo-preservation",
+    "composition-control",
+    "aspect-ratio",
+    "provenance-support"
+  ],
+  "provider_calls": 0,
+  "actual_spend_usd": 0,
+  "generated_at": "2026-08-03T14:00:00.000Z",
+  "network_generation": false,
+  "production_modified": false,
+  "receipt_hash": "82a7f5b6845a9d5138e078a0698cd65907c57f8eb181717a8f4ab459195cab21"
+}

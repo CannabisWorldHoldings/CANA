@@ -1,0 +1,72 @@
+{
+  "valid": true,
+  "errors": [],
+  "packet": {
+    "objective": "Generate three original ORDERWEEDDC campaign systems for owner review without publish, spend or production authority.",
+    "compiled_at": "2026-08-03T12:00:00.000Z",
+    "actionable_facts": [
+      {
+        "id": "orderweeddc-review-authority-boundary",
+        "claim": "This slice may render local review artifacts but may not publish, deploy, merge, spend, contact merchants or write production data.",
+        "authority": "OWNER_EXPLICIT_DIRECTIVE",
+        "truth_status": "VERIFIED",
+        "source": "owner execution constraints",
+        "observed_at": "2026-08-03T12:00:00.000Z",
+        "freshness": "CURRENT",
+        "age_days": 0,
+        "valid_for_days": 365,
+        "actionable": true,
+        "non_actionable_reasons": [],
+        "tags": [
+          "subject:authority-boundary"
+        ]
+      },
+      {
+        "id": "owner-orderweeddc-pr21-visual-rejection-20260803",
+        "claim": "The PR #21 visual candidate is owner-rejected and its eight rejection tags must shape the next generation.",
+        "authority": "OWNER_EXPLICIT_DIRECTIVE",
+        "truth_status": "VERIFIED",
+        "source": "owner directive persisted by the competitor-to-creative bridge",
+        "observed_at": "2026-08-03T12:00:00.000Z",
+        "freshness": "CURRENT",
+        "age_days": 0,
+        "valid_for_days": 365,
+        "actionable": true,
+        "non_actionable_reasons": [],
+        "tags": [
+          "subject:owner-taste"
+        ]
+      }
+    ],
+    "reference_facts": [
+      {
+        "id": "mechanism_55f7172259b4049a",
+        "claim": "ORDERWEEDDC offers three transparent D.C. discovery paths: local orientation, a bounded shortlist, and source-first trust, each leading to an existing marketplace route.",
+        "authority": "HISTORICAL_REFERENCE",
+        "truth_status": "OBSERVED",
+        "source": "sha256:a83412bf261946bcdaceb9e3068b1ee80209d2c45d2fd728618f62c1d0e4d5a8",
+        "observed_at": "2026-08-03T12:00:00.000Z",
+        "freshness": "CURRENT",
+        "age_days": 0,
+        "valid_for_days": 30,
+        "actionable": false,
+        "non_actionable_reasons": [
+          "authority HISTORICAL_REFERENCE is reference-only"
+        ],
+        "tags": [
+          "subject:competitor-mechanism"
+        ]
+      }
+    ],
+    "contradictions": [],
+    "excluded": [],
+    "counts": {
+      "actionable": 2,
+      "reference": 1,
+      "contradictions": 0,
+      "excluded": 0
+    },
+    "actuation_rule": "Only actionable_facts may drive an action. reference_facts inform reasoning but must not be cited as justification for actuation.",
+    "packet_digest": "38c80be292d8f4f858b3b3af321ee05fcacad5d7e8d2cd48393d3b8f3ddb02df"
+  }
+}

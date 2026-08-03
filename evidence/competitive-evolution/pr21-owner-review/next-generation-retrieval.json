@@ -1,0 +1,28 @@
+{
+  "schema_version": "cana.owner-taste-retrieval/1.0.0",
+  "source_receipt_hash": "28f9578b1f879e1abce2fd6699d68faa74097c19d9991945af8dcf3cdaab8fcb",
+  "applied_to_generation": 2,
+  "avoid": [
+    "GENERIC",
+    "FAKE_LOOKING",
+    "LOW_CAMPAIGN_COHERENCE",
+    "WEAK_IMAGE_COPY_FIT",
+    "PROTOTYPE_LANGUAGE",
+    "WEAK_LOCAL_IDENTITY",
+    "LOW_MARKETPLACE_ENERGY",
+    "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+  ],
+  "prefer": [
+    "original and premium",
+    "unmistakably ORDERWEEDDC",
+    "locally intelligent",
+    "authentic without pretending illustration is photography",
+    "strong customer and merchant value",
+    "clear offer or discovery idea",
+    "richer marketplace energy",
+    "measurable conversion hypothesis"
+  ],
+  "owner_approved_winner": null,
+  "next_mutation": "Wait for owner review, then record the selected campaign or all-candidate rejection before any experiment.",
+  "production_authority": "NONE"
+}

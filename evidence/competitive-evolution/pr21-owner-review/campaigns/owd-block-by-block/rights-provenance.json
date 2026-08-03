@@ -1,0 +1,20 @@
+[
+  {
+    "asset_id": "/competitive-evolution/block-by-block-desktop.svg",
+    "asset_sha256": "ea5206eddd64c995f8882f63650e5e90170264258b766448fd38ac0c311e8891",
+    "source_kind": "REPOSITORY_ORIGINAL_VECTOR",
+    "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+    "training_eligibility": "CANA_OWNED_REVIEW_ASSET",
+    "competitor_expression_copied": false,
+    "verified_at": "2026-08-03T14:00:00.000Z"
+  },
+  {
+    "asset_id": "/competitive-evolution/block-by-block-mobile.svg",
+    "asset_sha256": "6c4053841e9824ad375f462c0340e9cb639316804b24e49b510caa47cad7d2ff",
+    "source_kind": "REPOSITORY_ORIGINAL_VECTOR",
+    "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+    "training_eligibility": "CANA_OWNED_REVIEW_ASSET",
+    "competitor_expression_copied": false,
+    "verified_at": "2026-08-03T14:00:00.000Z"
+  }
+]

@@ -140,8 +140,16 @@ function inspectManifestEntries(packetDirectory, entries) {
     assertMission(stat.size <= MAX_IMPORT_FILE_BYTES, 'IMPORT_FILE_TOO_LARGE', `Import file too large: ${entry.relativePath}`);
     totalBytes += stat.size;
     assertMission(totalBytes <= MAX_IMPORT_TOTAL_BYTES, 'IMPORT_TOTAL_TOO_LARGE', 'Owner packet exceeds the total import budget');
-    const actualSha256 = sha256(fs.readFileSync(absolutePath));
+    const bytes = fs.readFileSync(absolutePath);
+    const actualSha256 = sha256(bytes);
     assertMission(actualSha256 === entry.expectedSha256, 'CHECKSUM_MISMATCH', `Checksum mismatch: ${entry.relativePath}`);
+    if (REQUIRED_BILLBOARDS.includes(entry.relativePath)) {
+      const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      assertMission(bytes.length >= 24 && bytes.subarray(0, 8).equals(pngSignature), 'MALFORMED_IMAGE', `${entry.relativePath} is not a PNG`);
+      const width = bytes.readUInt32BE(16);
+      const height = bytes.readUInt32BE(20);
+      assertMission(width > 0 && height > 0 && width <= 10_000 && height <= 10_000, 'MALFORMED_IMAGE', `${entry.relativePath} has invalid dimensions`);
+    }
   }
 }
 
@@ -256,6 +264,14 @@ export function ingestPr21OwnerPacket({ packetDirectory, outputDirectory }) {
 }
 
 export const COMPETITIVE_EVOLUTION_SCHEMAS = deepFreeze({
+  scheduled_task_handoff: {
+    schema_version: 'cana.competitive-sensor-handoff/1.0.0',
+    required: [
+      'handoff_id', 'task_name', 'run_id', 'produced_at', 'payload_kind',
+      'payload_sha256', 'payload', 'instruction_authority',
+    ],
+    authority: 'UNTRUSTED_SIGNAL_UNTIL_DIRECT_EVIDENCE_FUSION',
+  },
   growth_watch_signal_packet: {
     schema_version: 'cana.growth-watch-signal-packet/1.0.0',
     required: [
@@ -270,6 +286,19 @@ export const COMPETITIVE_EVOLUTION_SCHEMAS = deepFreeze({
       'job_id', 'signal_id', 'competitor_id', 'url', 'requested_viewports',
       'capture_requirements', 'not_before', 'rights_policy', 'rate_limit_policy',
     ],
+  },
+  crawler_observation: {
+    schema_version: 'cana.competitor-crawl-observation/1.0.0',
+    required: [
+      'crawl_id', 'baseline_id', 'entity_id', 'competitor_id', 'surface_id',
+      'url', 'captured_at', 'before_content_sha256', 'after_content_sha256',
+      'before_screenshot_sha256', 'after_screenshot_sha256', 'dom_diff',
+      'visual_diff', 'semantic_diff', 'asset_diff', 'seo_diff', 'funnel_diff',
+      'ad_creative_diff', 'policy_context', 'direct_observation', 'inference',
+      'uncertainty', 'confidence', 'evidence_locations', 'rights_state',
+      'prompt_injection_state', 'importance_score', 'change_type',
+    ],
+    authority: 'DIRECT_CAPTURE_EVIDENCE_ONLY',
   },
   competitor_event: {
     schema_version: 'cana.competitor-event/1.0.0',
@@ -292,6 +321,51 @@ export const COMPETITIVE_EVOLUTION_SCHEMAS = deepFreeze({
       'rights_state', 'prompt_injection_state', 'production_modified',
       'external_effect_count', 'receipt_hash',
     ],
+  },
+  rights_provenance: {
+    schema_version: 'cana.creative-rights-provenance/1.0.0',
+    required: [
+      'asset_id', 'asset_sha256', 'source_kind', 'rights_state',
+      'training_eligibility', 'competitor_expression_copied', 'verified_at',
+    ],
+    authority: 'RIGHTS_VERIFICATION_REQUIRED_BEFORE_GENERATION_OR_REUSE',
+  },
+  creative_record: {
+    schema_version: 'cana.competitive-creative-record/1.0.0',
+    required: [
+      'campaign_system_id', 'strategy', 'target_audience', 'customer_problem',
+      'offer', 'message_hierarchy', 'visual_concept', 'desktop', 'mobile',
+      'rights_state', 'approvalStatus', 'expected_mechanism', 'testable_prediction',
+    ],
+    authority: 'OWNER_REVIEW_PENDING_NO_PUBLISH_AUTHORITY',
+  },
+  preference_pair: {
+    schema_version: 'cana.owner-preference-pair/1.0.0',
+    required: [
+      'pair_id', 'owner_decision_id', 'rejected', 'desired',
+      'owner_confidence', 'promotion_state',
+    ],
+    authority: 'OWNER_DECISION_ONLY',
+  },
+  performance_outcome: {
+    schema_version: 'cana.first-party-performance-outcome/1.0.0',
+    required: [
+      'experiment_id', 'campaign_id', 'execution_status', 'primary_metric',
+      'measurement_window', 'causal_method', 'measured_outcome',
+      'causal_confidence', 'owner_approval_ref',
+    ],
+    authority: 'DEFINED_NOT_RUN_UNTIL_OWNER_AND_PRODUCTION_APPROVAL',
+  },
+  learning_receipt: {
+    schema_version: 'cana.competitive-evolution-learning-receipt/1.0.0',
+    required: [
+      'recorded_at', 'source_owner_decision_id', 'source_owner_rejection_tags',
+      'tournament_status', 'candidate_owner_decision', 'what_changed',
+      'what_was_attempted', 'why', 'rights_state', 'measured_outcome',
+      'causal_confidence', 'failure_mechanism', 'memory_mutations',
+      'routing_mutations', 'next_mutation', 'unresolved_questions', 'receipt_hash',
+    ],
+    authority: 'SITEMIND_CANONICAL_LEARNING_STREAM',
   },
 });
 
@@ -316,7 +390,7 @@ function validateGrowthWatchPacket(packet) {
 }
 
 function validateCrawlObservation(observation) {
-  assertMission(observation?.schema_version === 'cana.competitor-crawl-observation/1.0.0', 'INVALID_CRAWL_SCHEMA', 'Crawler observation schema is invalid');
+  assertMission(observation?.schema_version === COMPETITIVE_EVOLUTION_SCHEMAS.crawler_observation.schema_version, 'INVALID_CRAWL_SCHEMA', 'Crawler observation schema is invalid');
   for (const field of ['crawl_id', 'baseline_id', 'entity_id', 'competitor_id', 'surface_id', 'url', 'captured_at', 'before_content_sha256', 'after_content_sha256', 'before_screenshot_sha256', 'after_screenshot_sha256', 'direct_observation', 'inference', 'rights_state', 'prompt_injection_state', 'change_type']) {
     assertMission(typeof observation[field] === 'string' && observation[field].length > 0, 'FIELD_REQUIRED', `crawl_observation.${field} is required`);
   }
@@ -328,6 +402,31 @@ function validateCrawlObservation(observation) {
   numberBetweenZeroAndOne(observation.importance_score, 'importance_score');
   assertMission(observation.prompt_injection_state !== 'UNSCANNED', 'UNSCANNED_EVIDENCE_DENIED', 'Crawled evidence must be scanned before fusion');
   return observation;
+}
+
+export function adaptScheduledTaskHandoff({ taskName, runId, producedAt, payload }) {
+  const allowedTasks = new Map([
+    ['CANA Sovereign Growth Watch', 'GROWTH_WATCH_SIGNAL'],
+    ['Competitor Crawl Intelligence', 'CRAWLER_OBSERVATION'],
+  ]);
+  const payloadKind = allowedTasks.get(taskName);
+  assertMission(payloadKind, 'SCHEDULED_TASK_DENIED', 'Scheduled task is not an approved competitive sensor');
+  assertMission(typeof runId === 'string' && /^[A-Za-z0-9._-]+$/.test(runId), 'RUN_ID_REQUIRED', 'A safe run identifier is required');
+  const timestamp = new Date(producedAt);
+  assertMission(!Number.isNaN(timestamp.getTime()), 'INVALID_TIMESTAMP', 'producedAt is invalid');
+  if (payloadKind === 'GROWTH_WATCH_SIGNAL') validateGrowthWatchPacket(payload);
+  else validateCrawlObservation(payload);
+  const body = {
+    schema_version: COMPETITIVE_EVOLUTION_SCHEMAS.scheduled_task_handoff.schema_version,
+    task_name: taskName,
+    run_id: runId,
+    produced_at: timestamp.toISOString(),
+    payload_kind: payloadKind,
+    payload_sha256: hashCanonical(payload),
+    payload,
+    instruction_authority: 'NONE_UNTRUSTED_EVIDENCE_ONLY',
+  };
+  return deepFreeze({ ...body, handoff_id: `sensor_handoff_${hashCanonical(body).slice(0, 24)}` });
 }
 
 function buildTargetedCrawlJob(signal) {
@@ -457,6 +556,22 @@ export function createCompetitorEventLedger({ rootDirectory, tenantId, workspace
     },
   };
   return Object.freeze(api);
+}
+
+export function buildCompetitorEvidenceReceipt(event) {
+  assertMission(event?.schema_version === COMPETITIVE_EVOLUTION_SCHEMAS.competitor_event.schema_version, 'COMPETITOR_EVENT_REQUIRED', 'A fused competitor event is required');
+  const body = {
+    schema_version: COMPETITIVE_EVOLUTION_SCHEMAS.evidence_receipt.schema_version,
+    event_id: event.event_id,
+    crawl_id: event.crawl_id,
+    direct_capture_present: true,
+    hashes_recomputed: true,
+    rights_state: event.rights_state,
+    prompt_injection_state: event.prompt_injection_state,
+    production_modified: false,
+    external_effect_count: 0,
+  };
+  return deepFreeze({ ...body, receipt_hash: hashCanonical(body) });
 }
 
 export function routeCrawlCadence({ changeRate, importanceScore, failureRate, evidenceQuality }) {
