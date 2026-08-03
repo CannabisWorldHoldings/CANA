@@ -1,4 +1,4 @@
-import { test, before, after } from 'node:test';
+import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
@@ -78,8 +78,9 @@ const API_ROUTES = [
   { path: '/api/release', method: 'GET', truthBearing: false },
 ];
 
-const PAGE_ROUTES = ['/', '/products', '/deals', '/compare', '/strains', '/neighborhoods',
-                     '/education', '/help', '/legal', '/pricing', '/wallet'];
+const PAGE_ROUTES = ['/', '/dispensaries', '/delivery', '/search?query=flower', '/products',
+                     '/deals', '/compare', '/strains', '/neighborhoods', '/education',
+                     '/help', '/legal', '/pricing', '/wallet'];
 
 /** Surfaces that must never serve an anonymous caller. */
 const AUTHENTICATED_ROUTES = ['/business/dashboard', '/business/growth', '/admin', '/admin/site-intelligence'];

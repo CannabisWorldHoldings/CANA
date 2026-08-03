@@ -287,49 +287,16 @@ h3 {
 
 .canonical-tenant-shell {
   --brand-primary-text: #08663c;
-  --canonical-primary: #0e9f5a;
-  --canonical-secondary: #0a7443;
-  --canonical-background: #f6faf7;
+  --canonical-primary: #11643d;
+  --canonical-secondary: #0b5b35;
+  --canonical-background: #ffffff;
   --canonical-surface: #ffffff;
-  --canonical-raised: #edf4ee;
-  --canonical-border: rgba(13, 31, 24, 0.1);
-  --canonical-text: #0d1f18;
-  --canonical-muted: #54685e;
+  --canonical-raised: #f4f4f1;
+  --canonical-border: #d8ddd9;
+  --canonical-text: #111612;
+  --canonical-muted: #59645d;
   --canonical-gold: #b9840c;
   color-scheme: light;
-  transition:
-    background-color 0.35s ease,
-    color 0.35s ease;
-}
-
-html[data-daypart="night"] .canonical-tenant-shell {
-  --brand-primary-text: #57e49a;
-  --canonical-primary: #57e49a;
-  --canonical-secondary: #2fbd77;
-  --canonical-background: #050806;
-  --canonical-surface: #0c130e;
-  --canonical-raised: #142019;
-  --canonical-border: rgba(205, 235, 214, 0.14);
-  --canonical-text: #eff8f1;
-  --canonical-muted: #9fb1a4;
-  --canonical-gold: #e8bd5a;
-  color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  html:not([data-daypart]) .canonical-tenant-shell {
-    --brand-primary-text: #57e49a;
-    --canonical-primary: #57e49a;
-    --canonical-secondary: #2fbd77;
-    --canonical-background: #050806;
-    --canonical-surface: #0c130e;
-    --canonical-raised: #142019;
-    --canonical-border: rgba(205, 235, 214, 0.14);
-    --canonical-text: #eff8f1;
-    --canonical-muted: #9fb1a4;
-    --canonical-gold: #e8bd5a;
-    color-scheme: dark;
-  }
 }
 
 .brand-wordmark {
@@ -365,6 +332,36 @@ html[data-daypart="night"] .brand-wordmark__dark {
   html:not([data-daypart]) .brand-wordmark__dark {
     display: block !important;
   }
+}
+
+.canonical-tenant-shell .brand-wordmark__light {
+  display: block !important;
+}
+
+.canonical-tenant-shell .brand-wordmark__dark {
+  display: none !important;
+}
+
+.canonical-tenant-shell .hero-aurora::before,
+.canonical-tenant-shell .hero-aurora::after {
+  display: none;
+}
+
+.canonical-tenant-shell .hero-aurora,
+.canonical-tenant-shell .record-card,
+.canonical-tenant-shell .record-card--verified {
+  background: #ffffff;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.canonical-tenant-shell section[class*="border-"],
+.canonical-tenant-shell article[class*="border-"],
+.canonical-tenant-shell footer[class*="border-"],
+.canonical-tenant-shell nav[class*="border-"] {
+  border-color: transparent;
 }
 
 .homepage-hero-image {

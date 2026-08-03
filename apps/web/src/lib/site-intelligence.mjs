@@ -23,6 +23,24 @@ export const SITE_ROUTE_INVENTORY = Object.freeze([
     indexable: true,
   }),
   Object.freeze({
+    id: 'dispensaries',
+    pathPattern: '/dispensaries',
+    source: 'src/app/[domain]/dispensaries/page.tsx',
+    indexable: true,
+  }),
+  Object.freeze({
+    id: 'delivery',
+    pathPattern: '/delivery',
+    source: 'src/app/[domain]/delivery/page.tsx',
+    indexable: true,
+  }),
+  Object.freeze({
+    id: 'search',
+    pathPattern: '/search',
+    source: 'src/app/[domain]/search/page.tsx',
+    indexable: false,
+  }),
+  Object.freeze({
     id: 'education-index',
     pathPattern: '/education',
     source: 'src/app/[domain]/education/page.tsx',

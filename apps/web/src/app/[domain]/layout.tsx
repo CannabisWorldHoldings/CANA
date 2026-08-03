@@ -21,12 +21,11 @@ import CartDrawer from '@/components/cart-drawer';
 import AgeGate from '@/components/age-gate';
 import MobileNav from '@/components/mobile-nav';
 import BrandWordmark from '@/components/brand-wordmark';
-import DaypartThemeControl from '@/components/daypart-theme-control';
-import { Leaf, LifeBuoy, MapPin, ShieldCheck } from 'lucide-react';
+import { Leaf, MapPin, Search } from 'lucide-react';
 
 const NAV_LINKS = [
-  { href: '/', label: 'Dispensaries' },
-  { href: '/?type=delivery', label: 'Delivery' },
+  { href: '/dispensaries', label: 'Dispensaries' },
+  { href: '/delivery', label: 'Delivery' },
   { href: '/products', label: 'Products' },
   { href: '/deals', label: 'Deals' },
   { href: '/neighborhoods', label: 'Neighborhoods' },
@@ -75,10 +74,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
 export default async function TenantLayout({ children, params }: { children: React.ReactNode; params: Promise<{ domain: string }> }) {
   const { domain } = await params;
   const origin = await requestOrigin();
-  const [canonicalAdmin, canonicalBusiness] = await Promise.all([
-    canonicalPlatformUrl('/admin'),
-    canonicalPlatformUrl('/business/login'),
-  ]);
+  const canonicalBusiness = await canonicalPlatformUrl('/business/login');
   const brand = await prisma.brand.findUnique({
     where: { domain },
   });
@@ -86,14 +82,6 @@ export default async function TenantLayout({ children, params }: { children: Rea
   const displayName = isCanonicalBrand
     ? PUBLIC_PRODUCT_NAME
     : brand?.name || PUBLIC_PRODUCT_NAME;
-  const demonstrationCount = brand
-    ? await prisma.retailer.count({
-        where: {
-          isDemonstration: true,
-          menus: { some: { brandMenus: { some: { brandId: brand.id } } } },
-        },
-      })
-    : 0;
 
   const theme = buildTenantTheme(brand);
   const themeStyle = {
@@ -145,21 +133,8 @@ export default async function TenantLayout({ children, params }: { children: Rea
         isCanonicalBrand={isCanonicalBrand}
       />
 
-      {isCanonicalBrand && (
-        <aside className="operator-strip border-b border-brand-border px-4 py-2 text-center text-[11px] font-semibold">
-          D.C. operators: publish evidence, claim your listing, and reach
-          ready-to-shop visitors.
-          <Link
-            href="/pricing"
-            className="ml-2 font-bold text-brand-primary-text hover:underline"
-          >
-            See published pricing →
-          </Link>
-        </aside>
-      )}
-
       {/* Brand Header Nav */}
-      <header className="sticky top-0 z-50 border-b border-brand-border bg-brand-background/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 bg-white">
         <div className="relative mx-auto flex h-20 max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
           <Link
             href="/"
@@ -182,7 +157,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
           </Link>
 
           {isCanonicalBrand && (
-            <span className="hidden shrink-0 items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-text xl:inline-flex">
+            <span className="hidden shrink-0 items-center gap-2 px-2 py-2 text-xs font-semibold text-brand-text xl:inline-flex">
               <MapPin
                 size={14}
                 className="text-brand-primary-text"
@@ -200,7 +175,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-2 text-brand-muted transition-colors hover:bg-brand-raised hover:text-brand-text"
+                className="rounded-lg px-3 py-2 text-brand-muted transition-colors hover:text-[#0b5b35]"
               >
                 {link.label}
               </Link>
@@ -208,56 +183,46 @@ export default async function TenantLayout({ children, params }: { children: Rea
           </nav>
 
           <div className="flex items-center gap-3">
-            <span className="hidden items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 text-[11px] font-semibold text-brand-muted 2xl:inline-flex">
-              <ShieldCheck size={13} className="text-brand-primary-text" aria-hidden="true" />
-              Evidence labeled
-            </span>
             <Link
-              href="/help"
-              aria-label="Open help center"
-              title="Help center"
-              className="hidden h-10 w-10 items-center justify-center rounded-lg border border-brand-border bg-brand-surface text-brand-muted transition-colors hover:border-brand-primary/40 hover:text-brand-text md:inline-flex"
+              href="/#search"
+              aria-label="Search the marketplace"
+              title="Search"
+              className="hidden h-10 w-10 items-center justify-center rounded-lg text-brand-muted transition-colors hover:text-[#0b5b35] md:inline-flex"
             >
-              <LifeBuoy size={16} aria-hidden="true" />
+              <Search size={18} aria-hidden="true" />
             </Link>
-            {isCanonicalBrand && <DaypartThemeControl />}
             <Link
               href="/customer/login"
-              className="hidden rounded-lg border border-brand-border bg-brand-surface px-4 py-2.5 text-xs font-bold text-brand-text transition-colors hover:border-brand-primary/40 sm:inline-flex"
+              className="hidden min-h-11 items-center rounded-lg bg-[#11643d] px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-[#0c4f30] sm:inline-flex"
             >
-              Log in
+              Customer Sign In
             </Link>
             <Link
               href="/business/claim"
-              className="hidden rounded-lg bg-brand-primary-fill-strong px-4 py-2.5 text-xs font-bold text-white transition-transform hover:-translate-y-0.5 xl:inline-flex"
+              className="hidden min-h-11 items-center px-2 py-2.5 text-xs font-semibold text-[#5d6860] hover:text-[#0b5b35] xl:inline-flex"
             >
-              List your business
+              For Businesses
             </Link>
             <MobileNav
               links={[
                 ...NAV_LINKS,
-                { href: '/customer/login', label: 'Customer login' },
-                { href: '/business/claim', label: 'List your business' },
-                { href: canonicalBusiness, label: 'Business portal' },
+                { href: '/search', label: 'Search' },
+                { href: '/customer/login', label: 'Customer Sign In' },
+                { href: '/business/claim', label: 'For Businesses' },
+                { href: canonicalBusiness, label: 'Business Sign In' },
               ]}
             />
           </div>
         </div>
       </header>
 
-      {demonstrationCount > 0 && (
-        <aside className="demonstration-banner border-b px-4 py-2.5 text-center text-xs font-semibold">
-          Demonstration environment: visible businesses, coordinates, license fields, menus, prices, deals, articles, and rewards are synthetic unless a record explicitly says otherwise.
-        </aside>
-      )}
-
       {/* Dynamic Route Viewport */}
-      <main className="flex-grow flex flex-col bg-brand-background text-brand-text">
+      <main className="flex flex-grow flex-col bg-white text-brand-text">
         {children}
       </main>
 
       {/* Network Ownership Disclosure Footer */}
-      <footer className="border-t border-brand-border bg-brand-surface mt-auto">
+      <footer className="mt-auto bg-white">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-10 md:grid-cols-5">
             <div className="col-span-2 md:col-span-2">
@@ -287,12 +252,12 @@ export default async function TenantLayout({ children, params }: { children: Rea
             <nav aria-label="Explore">
               <p className="kicker mb-3">Explore</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/" className="transition-colors hover:text-brand-primary-text">Retailer directory</Link></li>
+                <li><Link href="/dispensaries" className="transition-colors hover:text-brand-primary-text">Dispensaries</Link></li>
+                <li><Link href="/delivery" className="transition-colors hover:text-brand-primary-text">Delivery</Link></li>
                 <li><Link href="/products" className="transition-colors hover:text-brand-primary-text">Products</Link></li>
-                <li><Link href="/deals" className="transition-colors hover:text-brand-primary-text">Verified deals</Link></li>
+                <li><Link href="/deals" className="transition-colors hover:text-brand-primary-text">Current deals</Link></li>
                 <li><Link href="/neighborhoods" className="transition-colors hover:text-brand-primary-text">Neighborhoods</Link></li>
-                <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">Education hub</Link></li>
-                <li><Link href="/compare" className="transition-colors hover:text-brand-primary-text">Compare records</Link></li>
+                <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">Learn</Link></li>
               </ul>
             </nav>
             <nav aria-label="For business">
@@ -300,8 +265,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
               <ul className="space-y-2 text-sm text-brand-muted">
                 <li><Link href="/pricing" className="transition-colors hover:text-brand-primary-text">Published pricing</Link></li>
                 <li><Link href="/business/claim" className="transition-colors hover:text-brand-primary-text">Claim your listing</Link></li>
-                <li><Link href={canonicalBusiness} className="transition-colors hover:text-brand-primary-text">Business portal</Link></li>
-                <li><Link href={canonicalAdmin} className="transition-colors hover:text-brand-primary-text">Admin portal</Link></li>
+                <li><Link href={canonicalBusiness} className="transition-colors hover:text-brand-primary-text">Business Sign In</Link></li>
               </ul>
             </nav>
             <nav aria-label="Trust and legal">
@@ -321,11 +285,11 @@ export default async function TenantLayout({ children, params }: { children: Rea
               </ul>
             </nav>
           </div>
-          <div className="mt-10 border-t border-brand-border pt-6 text-center">
+          <div className="mt-12 pt-6 text-center">
             <p className="text-xs text-brand-muted">
               © {new Date().getFullYear()} {displayName}. All rights reserved.
             </p>
-            <p className="mx-auto mt-2 max-w-2xl text-[11px] leading-relaxed text-brand-muted/80">
+            <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-brand-muted">
               Disclosure: {displayName} is an evidence-aware directory.
               Check each record&apos;s data-status label and primary source before
               relying on it. This platform does not fulfill, deliver, or sell

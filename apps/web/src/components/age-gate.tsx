@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import BrandWordmark from '@/components/brand-wordmark';
 
@@ -70,12 +70,30 @@ export default function AgeGate({
 }) {
   const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const open = state === 'open';
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    const dialog = dialogRef.current;
+    const controls = dialog?.querySelectorAll<HTMLElement>('button, a[href]');
+    controls?.[0]?.focus();
+    const keepFocusInside = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    dialog?.addEventListener('keydown', keepFocusInside);
     return () => {
+      dialog?.removeEventListener('keydown', keepFocusInside);
       document.body.style.overflow = previousOverflow;
     };
   }, [open]);
@@ -94,11 +112,12 @@ export default function AgeGate({
   return (
     <div
       role="dialog"
+      ref={dialogRef}
       aria-modal="true"
       aria-labelledby="age-gate-title"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
     >
-      <div className="hero-aurora w-full max-w-md rounded-2xl border border-brand-border bg-brand-surface p-8 text-center shadow-2xl animate-rise-in">
+      <div className="w-full max-w-md rounded-2xl border border-[#d5d9d6] bg-white p-8 text-center animate-rise-in">
         <AgeGateBrand
           displayName={displayName}
           isCanonicalBrand={isCanonicalBrand}
@@ -135,8 +154,7 @@ export default function AgeGate({
           <Link href="/legal" className="underline hover:text-brand-primary-text">
             legal &amp; compliance notes
           </Link>
-          . D.C. law: 21+, no public consumption, keep purchases within legal
-          limits.
+          . Check the current official D.C. rules before acting.
         </p>
       </div>
     </div>
