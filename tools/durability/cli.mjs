@@ -33,7 +33,26 @@ const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
 const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '8c6986190ce55c5c094c7f6718ab30e350800cda7b5f73575fdb1fb33a1007fb';
+  '6d5baff9844996791383f83bf7f3e9a475199991c038725a92c45cd1509746b7';
+const COMPETITIVE_EVOLUTION_ASSIGNMENT = 'competitor_to_creative_evolution_2026_08_03';
+export const COMPETITIVE_EVOLUTION_AUTHORIZED_PATTERNS = Object.freeze([
+  'apps/web/public/competitive-evolution/**',
+  'apps/web/src/components/customer-review-marketplace-preview.tsx',
+  'apps/web/src/lib/sitemind-competitive-evolution.mjs',
+  'docs/competitive-evolution/**',
+  'evidence/competitive-evolution/**',
+  'packages/ad-creative/package.json',
+  'packages/ad-creative/src/competitive-campaigns.mjs',
+  'packages/ad-creative/src/creative-brief.mjs',
+  'packages/ad-creative/src/pipeline.mjs',
+  'packages/ad-creative/src/provider-contract.mjs',
+  'packages/ad-creative/src/providers/local-vector.mjs',
+  'packages/ad-creative/src/verification.mjs',
+  'skills-src/hermes-governed-packet.mjs',
+  'tools/competitive-evolution/capture-owner-review.mjs',
+  'tools/competitive-evolution/competitive-evolution.test.mjs',
+  'tools/competitive-evolution/run-pr21-vertical-slice.mjs',
+]);
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -321,6 +340,24 @@ export function validateOwnershipManifest(ownership) {
   const allOwnedPaths = [...ownership.owned_create_paths, ...ownership.owned_modify_paths];
   if (new Set(allOwnedPaths).size !== allOwnedPaths.length) {
     refusal('duplicate changed-file ownership is not allowed');
+  }
+  const competitiveEvolutionAssignment = ownership.explicit_user_assignment[COMPETITIVE_EVOLUTION_ASSIGNMENT];
+  if (
+    !exactKeys(competitiveEvolutionAssignment, ['authorization', 'reason', 'authorization_effect', 'paths']) ||
+    competitiveEvolutionAssignment.authorization !== 'EXECUTE THE ATTACHED CANA COMPETITOR-TO-CREATIVE EVOLUTION MASTER PROMPT' ||
+    !Array.isArray(competitiveEvolutionAssignment.paths) ||
+    JSON.stringify([...competitiveEvolutionAssignment.paths].sort()) !== JSON.stringify([...COMPETITIVE_EVOLUTION_AUTHORIZED_PATTERNS].sort()) ||
+    !competitiveEvolutionAssignment.authorization_effect.includes('no merge, deployment, production, cPanel, prod.db')
+  ) {
+    refusal('competitor-to-creative ownership assignment is malformed or broadened');
+  }
+  for (const authorizedPattern of COMPETITIVE_EVOLUTION_AUTHORIZED_PATTERNS) {
+    if (allOwnedPaths.filter((pattern) => pattern === authorizedPattern).length !== 1) {
+      refusal(`competitor-to-creative path must have one ownership entry: ${authorizedPattern}`);
+    }
+    if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPattern).length !== 1) {
+      refusal(`competitor-to-creative path must have one planned-candidate entry: ${authorizedPattern}`);
+    }
   }
   for (const authorizedPath of STAGE_A_AUTHORIZED_PATHS) {
     const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
@@ -655,6 +692,7 @@ export function validateOwnershipManifest(ownership) {
 
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
+    competitive_evolution_assignment: ownership.explicit_user_assignment[COMPETITIVE_EVOLUTION_ASSIGNMENT],
     owned_create_paths: ownership.owned_create_paths,
     owned_modify_paths: ownership.owned_modify_paths,
   }));
