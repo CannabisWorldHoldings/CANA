@@ -31,6 +31,9 @@ const bannerPolicy = await import(
 const marketplace = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/customer-marketplace.mjs')).href
 );
+const demandCredits = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/demand-credits.mjs')).href
+);
 
 test('customer sovereign surfaces contain no decorative divider-line utilities', () => {
   assert.doesNotMatch(combined, /<hr\b/i);
@@ -72,28 +75,127 @@ test('delivery is first-class in navigation, homepage copy, and a dedicated rout
   assert.doesNotMatch(source('src/components/customer-listing-row.tsx'), /listing\.address/);
 });
 
-test('sponsored banner eligibility fails closed and uses a truthful house fallback', () => {
+test('sponsored banner eligibility requires persisted canonical entitlement', async () => {
   const asOf = new Date('2026-08-03T12:00:00.000Z');
+  const merchantId = 'merchant_banner_fixture';
+  const issueDraft = {
+    merchantId,
+    kind: 'ISSUE',
+    seq: 0,
+    amount: 500,
+    authorizationRef: 'banner-fixture-approval',
+    expiresAt: '2026-09-03T12:00:00.000Z',
+    prevHash: demandCredits.GENESIS_HASH,
+  };
+  const issue = {
+    ...issueDraft,
+    entryHash: demandCredits.hashBody(issueDraft, issueDraft.prevHash),
+  };
+  const spendDraft = {
+    merchantId,
+    kind: 'SPEND',
+    seq: 1,
+    amount: -100,
+    placement: 'NEIGHBORHOOD_BANNER',
+    disclosureLabel: 'Sponsored placement',
+    affectsOrganicOrder: false,
+    prevHash: issue.entryHash,
+  };
+  const spend = {
+    ...spendDraft,
+    entryHash: demandCredits.hashBody(spendDraft, spendDraft.prevHash),
+  };
+  const refundDraft = {
+    merchantId,
+    kind: 'REFUND',
+    seq: 2,
+    amount: 100,
+    originalSeq: 1,
+    reason: 'campaign cancelled',
+    prevHash: spend.entryHash,
+  };
+  const refund = {
+    ...refundDraft,
+    entryHash: demandCredits.hashBody(refundDraft, refundDraft.prevHash),
+  };
   const paid = {
     ...bannerPolicy.HOUSE_BANNER_CAMPAIGN,
     id: 'paid-fixture',
+    sponsorMerchantId: merchantId,
     disclosure: 'Sponsored placement',
     fundingKind: 'PAID',
     approvalStatus: 'APPROVED',
+  };
+  const prisma = {
+    demandCreditEntry: {
+      findMany: async () => [issue, spend],
+    },
+  };
+  assert.equal(bannerPolicy.evaluateBannerCampaign({
+    ...paid,
     sponsorship: {
       state: 'ACTIVE',
       label: 'Sponsored placement',
       affectsOrganicOrder: false,
-      evidence: { entitlement_digest: 'fixture-digest' },
+      evidence: { entitlement_digest: 'forged' },
     },
-  };
-  assert.deepEqual(bannerPolicy.evaluateBannerCampaign(paid, asOf), { eligible: true, reason: 'ELIGIBLE' });
+  }, asOf).reason, 'PAID_ENTITLEMENT_REQUIRED');
+  assert.equal((await bannerPolicy.selectPrimaryBannerForServer({
+    prisma,
+    campaigns: [paid],
+    houseCampaign: null,
+    asOf,
+  })).id, paid.id);
   assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, disclosure: 'Partner' }, asOf).reason, 'DISCLOSURE_MISSING');
   assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, approvalStatus: 'APPROVED_FOR_REVIEW' }, asOf).reason, 'UNAPPROVED');
-  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, sponsorship: null }, asOf).reason, 'PAID_ENTITLEMENT_REQUIRED');
   assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, endAt: '2026-08-03T00:00:00.000Z' }, asOf).reason, 'EXPIRED');
   assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, mobileMedia: '' }, asOf).reason, 'MEDIA_INCOMPLETE');
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, mobileMedia: 'https://tracker.example/banner.png' }, asOf).reason, 'MEDIA_INCOMPLETE');
   assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, destination: 'https://example.com' }, asOf).reason, 'DESTINATION_BLOCKED');
+  assert.equal(await bannerPolicy.selectPrimaryBannerForServer({
+    prisma: { demandCreditEntry: { findMany: async () => [issue, { ...spend, entryHash: 'forged' }] } },
+    campaigns: [paid],
+    houseCampaign: null,
+    asOf,
+  }), null);
+  assert.equal(await bannerPolicy.selectPrimaryBannerForServer({
+    prisma: { demandCreditEntry: { findMany: async () => [issue, spend] } },
+    campaigns: [{ ...paid, sponsorMerchantId: 'different-merchant' }],
+    houseCampaign: null,
+    asOf,
+  }), null);
+  assert.equal(await bannerPolicy.selectPrimaryBannerForServer({
+    prisma: { demandCreditEntry: { findMany: async () => [issue, { ...spend, placement: 'FEATURED_CARD' }] } },
+    campaigns: [paid],
+    houseCampaign: null,
+    asOf,
+  }), null);
+  const expiredIssueDraft = {
+    ...issueDraft,
+    expiresAt: '2026-08-03T00:00:00.000Z',
+  };
+  const expiredIssue = {
+    ...expiredIssueDraft,
+    entryHash: demandCredits.hashBody(expiredIssueDraft, expiredIssueDraft.prevHash),
+  };
+  assert.equal(await bannerPolicy.selectPrimaryBannerForServer({
+    prisma: { demandCreditEntry: { findMany: async () => [expiredIssue, spend] } },
+    campaigns: [paid],
+    houseCampaign: null,
+    asOf,
+  }), null);
+  assert.equal(await bannerPolicy.selectPrimaryBannerForServer({
+    prisma: { demandCreditEntry: { findMany: async () => [issue, spend, refund] } },
+    campaigns: [paid],
+    houseCampaign: null,
+    asOf,
+  }), null);
+  assert.equal(await bannerPolicy.selectPrimaryBannerForServer({
+    prisma: { demandCreditEntry: { findMany: async () => { throw new Error('ledger unavailable'); } } },
+    campaigns: [paid],
+    houseCampaign: null,
+    asOf,
+  }), null);
   assert.equal(bannerPolicy.selectPrimaryBanner({ campaigns: [], houseCampaign: bannerPolicy.HOUSE_BANNER_CAMPAIGN, asOf }).fundingKind, 'HOUSE');
   assert.equal(bannerPolicy.selectPrimaryBanner({ campaigns: [], houseCampaign: null, asOf }), null);
 });

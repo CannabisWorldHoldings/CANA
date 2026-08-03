@@ -5,7 +5,11 @@ import CustomerHomeMarket from '@/components/customer-home-market';
 import CustomerHomeDiscovery from '@/components/customer-home-discovery';
 import CustomerHomeTrust from '@/components/customer-home-trust';
 import { loadCustomerHome } from '@/lib/customer-marketplace-data';
-import { HOUSE_BANNER_CAMPAIGN, selectPrimaryBanner } from '@/lib/customer-banner.mjs';
+import {
+  HOUSE_BANNER_CAMPAIGN,
+  selectPrimaryBannerForServer,
+} from '@/lib/customer-banner.mjs';
+import { prisma } from '@/lib/prisma';
 import { CANONICAL_TENANT_DOMAIN } from '@/lib/tenant-host.mjs';
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import { requestOrigin } from '@/lib/server-request-url';
@@ -30,7 +34,12 @@ export default async function TenantHomePage({ params }: Props) {
   const isCanonical = domain === CANONICAL_TENANT_DOMAIN;
   const asOf = new Date();
   const banner = isCanonical
-    ? selectPrimaryBanner({ campaigns: [], houseCampaign: HOUSE_BANNER_CAMPAIGN, asOf })
+    ? await selectPrimaryBannerForServer({
+        prisma,
+        campaigns: [],
+        houseCampaign: HOUSE_BANNER_CAMPAIGN,
+        asOf,
+      })
     : null;
   const demonstration = [...home.delivery, ...home.dispensaries].some(
     (record) => record.isDemonstration,

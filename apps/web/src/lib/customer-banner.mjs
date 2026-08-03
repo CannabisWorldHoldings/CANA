@@ -1,4 +1,9 @@
-import { SPONSORSHIP_STATES } from './sponsorship-entitlement.mjs';
+import {
+  resolveSponsorship,
+  SPONSORSHIP_STATES,
+} from './sponsorship-entitlement.mjs';
+
+const PRIMARY_BANNER_PLACEMENT = 'NEIGHBORHOOD_BANNER';
 
 const INTERNAL_DESTINATIONS = Object.freeze([
   '/',
@@ -75,8 +80,15 @@ function internalDestination(destination) {
   );
 }
 
-function hasCanonicalPaidEntitlement(campaign) {
-  const entitlement = campaign.sponsorship;
+function repositoryMedia(media) {
+  return (
+    typeof media === 'string' &&
+    /^\/(?:art|brand|marketplace)\/[A-Za-z0-9._/-]+$/.test(media) &&
+    !media.includes('..')
+  );
+}
+
+function hasCanonicalPaidEntitlement(campaign, entitlement) {
   return Boolean(
     entitlement &&
     entitlement.state === SPONSORSHIP_STATES.ACTIVE &&
@@ -86,7 +98,7 @@ function hasCanonicalPaidEntitlement(campaign) {
   );
 }
 
-export function evaluateBannerCampaign(campaign, asOf) {
+function evaluateBannerCampaignWithEntitlement(campaign, asOf, entitlement) {
   if (!campaign || typeof campaign !== 'object' || Array.isArray(campaign)) {
     return Object.freeze({ eligible: false, reason: 'INVALID_CAMPAIGN' });
   }
@@ -112,8 +124,8 @@ export function evaluateBannerCampaign(campaign, asOf) {
     return Object.freeze({ eligible: false, reason: 'POLICY_BLOCKED' });
   }
   if (
-    !campaign.desktopMedia ||
-    !campaign.mobileMedia ||
+    !repositoryMedia(campaign.desktopMedia) ||
+    !repositoryMedia(campaign.mobileMedia) ||
     !campaign.altText ||
     !campaign.rightsAndProvenance
   ) {
@@ -129,7 +141,7 @@ export function evaluateBannerCampaign(campaign, asOf) {
     if (!/^(Sponsored|Ad)\b/.test(campaign.disclosure)) {
       return Object.freeze({ eligible: false, reason: 'DISCLOSURE_MISSING' });
     }
-    if (!hasCanonicalPaidEntitlement(campaign)) {
+    if (!hasCanonicalPaidEntitlement(campaign, entitlement)) {
       return Object.freeze({ eligible: false, reason: 'PAID_ENTITLEMENT_REQUIRED' });
     }
   }
@@ -137,7 +149,15 @@ export function evaluateBannerCampaign(campaign, asOf) {
   return Object.freeze({ eligible: true, reason: 'ELIGIBLE' });
 }
 
-/** @typedef {typeof HOUSE_BANNER_CAMPAIGN & { sponsorship?: object }} BannerCampaign */
+/**
+ * Public policy inspection never accepts caller-shaped paid authority. Only the
+ * server selector below can supply a persisted-ledger resolution.
+ */
+export function evaluateBannerCampaign(campaign, asOf) {
+  return evaluateBannerCampaignWithEntitlement(campaign, asOf, null);
+}
+
+/** @typedef {typeof HOUSE_BANNER_CAMPAIGN & { sponsorMerchantId?: string }} BannerCampaign */
 /**
  * Paid candidates must already carry the canonical persisted-entitlement result.
  * This selector performs final display checks; it never creates paid authority.
@@ -149,6 +169,65 @@ export function selectPrimaryBanner({ campaigns = [], houseCampaign = null, asOf
     if (evaluateBannerCampaign(campaign, asOf).eligible) return campaign;
   }
   if (houseCampaign && evaluateBannerCampaign(houseCampaign, asOf).eligible) {
+    return houseCampaign;
+  }
+  return null;
+}
+
+/**
+ * Resolve paid candidates from persisted Demand Credit rows before selection.
+ * A campaign object cannot mint its own ACTIVE state or evidence shape.
+ *
+ * @param {{ prisma: object, campaigns?: readonly BannerCampaign[], houseCampaign?: BannerCampaign | null, asOf: Date }} input
+ * @returns {Promise<BannerCampaign | null>}
+ */
+export async function selectPrimaryBannerForServer({
+  prisma,
+  campaigns = [],
+  houseCampaign = null,
+  asOf,
+}) {
+  const paidCandidates = campaigns.filter(
+    (campaign) =>
+      campaign?.fundingKind === 'PAID' &&
+      typeof campaign.sponsorMerchantId === 'string' &&
+      campaign.sponsorMerchantId.trim().length > 0,
+  );
+  let rows = [];
+  let ledgerAvailable = true;
+  if (paidCandidates.length > 0) {
+    try {
+      rows = await prisma.demandCreditEntry.findMany({
+        where: {
+          merchantId: {
+            in: [...new Set(paidCandidates.map((campaign) => campaign.sponsorMerchantId))],
+          },
+        },
+        orderBy: { seq: 'asc' },
+      });
+    } catch {
+      ledgerAvailable = false;
+    }
+  }
+
+  for (const campaign of campaigns) {
+    const entitlement = campaign?.fundingKind === 'PAID'
+      ? resolveSponsorship({
+          merchantId: campaign.sponsorMerchantId,
+          entries: rows,
+          placement: PRIMARY_BANNER_PLACEMENT,
+          now: asOf,
+          ledgerAvailable,
+        })
+      : null;
+    if (evaluateBannerCampaignWithEntitlement(campaign, asOf, entitlement).eligible) {
+      return campaign;
+    }
+  }
+  if (
+    houseCampaign &&
+    evaluateBannerCampaignWithEntitlement(houseCampaign, asOf, null).eligible
+  ) {
     return houseCampaign;
   }
   return null;
