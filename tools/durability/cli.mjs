@@ -33,7 +33,7 @@ const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
 const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '81272b3fba9972a010e5324037f68843b0afaa556c687061ab3c0bcf642a066f';
+  '21ec3ed19e36dffd4e581a15f58f94c833bef607332bb74f1c306b2c4aef7b4b';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
