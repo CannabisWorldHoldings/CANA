@@ -409,7 +409,17 @@ Hermes remains proposal-only. Allowed proposal verbs are `INSERT_SECTION`,
 change truth labels, change organic order, authorize spend, access customer
 identity, rewrite production JSX, or bypass review gates.
 
-## 16. Verification ledger
+## 16. Implementation-time verification ledger
+
+The results below are historical implementation-time observations and are not
+the final candidate identity proof. The final owner-review task retains its
+exact-SHA evidence outside the Git worktree in the sibling folder named
+`ORDERWEEDDC_PR21_FINAL_OWNER_REVIEW_PACKET_<short-sha>/`. That packet contains
+`capture-metadata.json`, `mobile-performance-final.json`,
+`verify-focused-receipt.json`, `verify-full-receipt.json`,
+`durability-build-receipt.json`, `durability-verify-receipt.json`,
+`durability-restore-receipt.json`, and `SHA256SUMS.txt`. Each final receipt must
+name the same full commit and tree as the packet README before owner review.
 
 ### Runtime and safety
 
