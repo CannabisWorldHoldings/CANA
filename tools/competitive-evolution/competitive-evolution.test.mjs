@@ -4,9 +4,13 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 const BRIDGE_URL = new URL('../../apps/web/src/lib/sitemind-competitive-evolution.mjs', import.meta.url);
 const CAMPAIGN_URL = new URL('../../packages/ad-creative/src/competitive-campaigns.mjs', import.meta.url);
+const PROVIDER_CONTRACT_URL = new URL('../../packages/ad-creative/src/provider-contract.mjs', import.meta.url);
+const LOCAL_PROVIDER_URL = new URL('../../packages/ad-creative/src/providers/local-vector.mjs', import.meta.url);
+const PUBLIC_ROOT = new URL('../../apps/web/public/', import.meta.url);
 
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
@@ -64,6 +68,7 @@ function makeSignal(overrides = {}) {
 }
 
 function makeCrawl(overrides = {}) {
+  const evidence = crawlEvidence();
   return {
     schema_version: 'cana.competitor-crawl-observation/1.0.0',
     crawl_id: 'crawl_leafly_offer_20260803',
@@ -73,10 +78,10 @@ function makeCrawl(overrides = {}) {
     surface_id: 'deals-index',
     url: 'https://www.leafly.com/deals',
     captured_at: '2026-08-03T12:15:00.000Z',
-    before_content_sha256: '1'.repeat(64),
-    after_content_sha256: '2'.repeat(64),
-    before_screenshot_sha256: '3'.repeat(64),
-    after_screenshot_sha256: '4'.repeat(64),
+    before_content_sha256: sha256(evidence.before_content),
+    after_content_sha256: sha256(evidence.after_content),
+    before_screenshot_sha256: sha256(evidence.before_screenshot),
+    after_screenshot_sha256: sha256(evidence.after_screenshot),
     dom_diff: { changed_sections: ['offer hierarchy'] },
     visual_diff: { changed_regions: ['hero offer'] },
     semantic_diff: { added: ['neighborhood-specific offer framing'] },
@@ -94,32 +99,68 @@ function makeCrawl(overrides = {}) {
     prompt_injection_state: 'SCANNED_NO_AUTHORITY',
     importance_score: 0.78,
     change_type: 'FUNNEL_AND_OFFER',
+    evidence_class: 'DIRECT_PUBLIC_CAPTURE',
     ...overrides,
   };
 }
 
-function renderEvidence(campaigns) {
+function crawlEvidence() {
+  return {
+    before_content: Buffer.from('before content evidence'),
+    after_content: Buffer.from('after content evidence'),
+    before_screenshot: Buffer.from('before screenshot evidence'),
+    after_screenshot: Buffer.from('after screenshot evidence'),
+  };
+}
+
+async function providerRoute() {
+  const [{ createProviderRegistry, routeProvider }, { createLocalVectorProvider }] = await Promise.all([
+    import(PROVIDER_CONTRACT_URL.href),
+    import(LOCAL_PROVIDER_URL.href),
+  ]);
+  const registry = createProviderRegistry({ providers: [{
+    id: 'local-vector-compositor',
+    provider: createLocalVectorProvider({ publicRoot: fileURLToPath(PUBLIC_ROOT) }),
+    eligible: true,
+    activationState: 'AVAILABLE_LOCAL_ONLY',
+    policyEligibility: 'OWNER_REVIEW_ONLY',
+    capabilities: ['responsive-vector-composition', 'repository-provenance', 'zero-network'],
+    costUsdPerOutput: 0,
+    networkExecution: false,
+  }] });
+  return routeProvider({ registry, requirements: ['responsive-vector-composition', 'repository-provenance', 'zero-network'] });
+}
+
+function renderEvidence(campaigns, root) {
+  const campaignsManifest = {};
+  for (const [index, campaign] of campaigns.entries()) {
+    campaignsManifest[campaign.id] = {};
+    for (const [viewportName, viewport] of Object.entries({ desktop: { width: 1440, height: 1100 }, mobile: { width: 390, height: 844 } })) {
+      const pageBytes = pngFixture(viewport.width, viewport.height, `${index}${viewportName}`);
+      const isolatedBytes = pngFixture(viewportName === 'desktop' ? 1200 : 390, viewportName === 'desktop' ? 400 : 620, `iso${index}`);
+      const pageName = `${campaign.id}-${viewportName}-homepage.png`;
+      const isolatedName = `${campaign.id}-${viewportName}-billboard.png`;
+      fs.writeFileSync(path.join(root, pageName), pageBytes);
+      fs.writeFileSync(path.join(root, isolatedName), isolatedBytes);
+      campaignsManifest[campaign.id][viewportName] = {
+        page_context_path: pageName,
+        page_context_sha256: sha256(pageBytes),
+        isolated_path: isolatedName,
+        isolated_sha256: sha256(isolatedBytes),
+        image_source: viewportName === 'desktop' ? campaign.desktopMedia : campaign.mobileMedia,
+        viewport,
+        horizontal_overflow: false,
+        console_problems: [],
+        request_failures: [],
+        serious_accessibility_findings: [],
+        performance: { transferred_bytes: 120_000 },
+      };
+    }
+  }
   return {
     captured_at: '2026-08-03T13:00:00.000Z',
     production_accessed: false,
-    campaigns: Object.fromEntries(campaigns.map((campaign, index) => [campaign.id, {
-      desktop: {
-        page_context_sha256: String(index + 1).repeat(64),
-        isolated_sha256: String(index + 4).repeat(64),
-        viewport: { width: 1440, height: 1100 },
-        horizontal_overflow: false,
-        console_problems: [],
-        serious_accessibility_findings: [],
-      },
-      mobile: {
-        page_context_sha256: String(index + 7).repeat(64),
-        isolated_sha256: String(index + 1).repeat(64),
-        viewport: { width: 390, height: 844 },
-        horizontal_overflow: false,
-        console_problems: [],
-        serious_accessibility_findings: [],
-      },
-    }])),
+    campaigns: campaignsManifest,
   };
 }
 
@@ -257,7 +298,7 @@ test('scheduled sensor handoffs remain untrusted until one SiteMind fusion recei
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-handoff-fusion-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const ledger = createCompetitorEventLedger({ rootDirectory: root, tenantId: 'orderweeddc', workspaceId: 'homepage' });
-  const event = ledger.fuse({ growthWatchPacket: signalHandoff.payload, crawlObservation: crawlHandoff.payload });
+  const event = ledger.fuse({ growthWatchPacket: signalHandoff.payload, crawlObservation: crawlHandoff.payload, evidenceObjects: crawlEvidence() });
   const receipt = buildCompetitorEvidenceReceipt(event);
   assert.equal(receipt.event_id, event.event_id);
   assert.equal(receipt.production_modified, false);
@@ -273,8 +314,8 @@ test('fuses sensor packets into one SiteMind competitor event ledger', async (t)
     tenantId: 'orderweeddc',
     workspaceId: 'homepage',
   });
-  const first = ledger.fuse({ growthWatchPacket: makeSignal(), crawlObservation: makeCrawl() });
-  const duplicate = ledger.fuse({ growthWatchPacket: makeSignal(), crawlObservation: makeCrawl() });
+  const first = ledger.fuse({ growthWatchPacket: makeSignal(), crawlObservation: makeCrawl(), evidenceObjects: crawlEvidence() });
+  const duplicate = ledger.fuse({ growthWatchPacket: makeSignal(), crawlObservation: makeCrawl(), evidenceObjects: crawlEvidence() });
 
   assert.equal(first.routing_decision, 'MECHANISM_EXTRACTION');
   assert.equal(first.direct_observation.includes('public deals page'), true);
@@ -285,6 +326,23 @@ test('fuses sensor packets into one SiteMind competitor event ledger', async (t)
   assert.equal(ledger.readEvents().length, 1);
   assert.equal(ledger.verify().valid, true);
   assert.match(ledger.filePath, /sitemind[/\\]competitor-events\.jsonl$/);
+});
+
+test('refuses fusion when the existing SiteMind event ledger was tampered', async (t) => {
+  const { createCompetitorEventLedger } = await loadBridge();
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-fusion-tamper-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const ledger = createCompetitorEventLedger({ rootDirectory: root, tenantId: 'orderweeddc', workspaceId: 'homepage' });
+  ledger.fuse({ growthWatchPacket: makeSignal(), crawlObservation: makeCrawl(), evidenceObjects: crawlEvidence() });
+  fs.appendFileSync(ledger.filePath, '{"ledger_sequence":99,"ledger_hash":"bad"}\n');
+  assert.throws(
+    () => ledger.fuse({
+      growthWatchPacket: makeSignal({ signal_id: 'signal_second' }),
+      crawlObservation: makeCrawl({ crawl_id: 'crawl_second', after_content_sha256: sha256(Buffer.from('second')) }),
+      evidenceObjects: { ...crawlEvidence(), after_content: Buffer.from('second') },
+    }),
+    (error) => error.code === 'LEDGER_INTEGRITY_FAILURE',
+  );
 });
 
 test('routes cadence from verified change evidence', async () => {
@@ -311,8 +369,7 @@ test('routes cadence from verified change evidence', async () => {
 
 test('generates three campaign systems through provider-neutral Hermes', async () => {
   const { PR21_OWNER_REJECTION, compileCompetitiveContext } = await loadBridge();
-  const { createCompetitiveProviderRegistry, generateCampaignSystems } = await loadCampaigns();
-  const registry = createCompetitiveProviderRegistry();
+  const { generateCampaignSystems } = await loadCampaigns();
   const context = compileCompetitiveContext({
     mechanism: {
       original_cana_mechanism: 'Use D.C. discovery context to reduce choice overload.',
@@ -320,8 +377,8 @@ test('generates three campaign systems through provider-neutral Hermes', async (
     },
     ownerDecisionObservedAt: '2026-08-03T12:00:00.000Z',
   });
-  const result = generateCampaignSystems({
-    registry,
+  const result = await generateCampaignSystems({
+    providerRoute: await providerRoute(),
     contextPacket: context.packet,
     ownerDecision: PR21_OWNER_REJECTION,
     asOf: new Date('2026-08-03T13:00:00.000Z'),
@@ -339,7 +396,10 @@ test('generates three campaign systems through provider-neutral Hermes', async (
   }
   assert.equal(result.provider_receipt.provider_id, 'local-vector-compositor');
   assert.equal(result.provider_receipt.provider_calls, 0);
+  assert.equal(result.provider_receipt.external_provider_calls, 0);
   assert.equal(result.provider_receipt.actual_spend_usd, 0);
+  assert.equal(result.canonical_pipeline.results.length, 3);
+  assert.ok(result.canonical_pipeline.results.every((entry) => Object.values(entry.variants).every((variant) => variant.verification.status === 'PASS' && variant.postable === false)));
   assert.equal(result.hermes_packet.valid, true);
 });
 
@@ -354,20 +414,23 @@ test('blocks authority for pending owner review', async () => {
   assert.equal(assertCompetitiveAuthorityBoundary('RENDER_LOCAL_REVIEW'), 'LOCAL_REVIEW_ALLOWED');
 });
 
-test('runs full visual tournament with evidence cited judges', async () => {
+test('runs full visual tournament with evidence cited judges', async (t) => {
   const { PR21_OWNER_REJECTION, compileCompetitiveContext } = await loadBridge();
-  const { createCompetitiveProviderRegistry, generateCampaignSystems, runVisualTournament } = await loadCampaigns();
+  const { generateCampaignSystems, runVisualTournament } = await loadCampaigns();
   const context = compileCompetitiveContext({
     mechanism: { original_cana_mechanism: 'D.C. discovery, shortlist and trust mechanisms.', evidence_refs: ['sha256:' + 'b'.repeat(64)] },
     ownerDecisionObservedAt: '2026-08-03T12:00:00.000Z',
   });
-  const { campaigns } = generateCampaignSystems({
-    registry: createCompetitiveProviderRegistry(),
+  const generation = await generateCampaignSystems({
+    providerRoute: await providerRoute(),
     contextPacket: context.packet,
     ownerDecision: PR21_OWNER_REJECTION,
     asOf: new Date('2026-08-03T13:00:00.000Z'),
   });
-  const tournament = runVisualTournament({ campaigns, renderManifest: renderEvidence(campaigns) });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-render-evidence-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const renderManifest = renderEvidence(generation.campaigns, root);
+  const tournament = runVisualTournament({ campaigns: generation.campaigns, renderManifest, renderRoot: root, canonicalPipeline: generation.canonical_pipeline });
 
   assert.equal(tournament.judge_names.length, 14);
   assert.equal(tournament.campaigns.length, 3);
@@ -379,6 +442,12 @@ test('runs full visual tournament with evidence cited judges', async () => {
     assert.ok(result.failure_list.every((failure) => typeof failure === 'string'));
   }
   assert.equal(tournament.status, 'READY_FOR_OWNER_REVIEW');
+
+  renderManifest.campaigns[generation.campaigns[0].id].mobile.page_context_sha256 = 'f'.repeat(64);
+  assert.throws(
+    () => runVisualTournament({ campaigns: generation.campaigns, renderManifest, renderRoot: root, canonicalPipeline: generation.canonical_pipeline }),
+    (error) => error.code === 'RENDER_HASH_MISMATCH',
+  );
 });
 
 test('retrieves owner decision in next generation without promotion', async () => {

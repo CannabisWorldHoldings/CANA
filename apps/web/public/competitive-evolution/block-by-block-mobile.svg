@@ -1,16 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 900" role="img" aria-labelledby="title desc">
   <title id="title">Block by block mobile D.C. discovery map</title>
   <desc id="desc">A vertical original street grid with connected neighborhood nodes.</desc>
-  <rect width="780" height="900" fill="#173f2d"/>
-  <path d="M0 112h780M0 306h780M0 524h780M0 754h780M148 0v900M388 0v900M620 0v900" stroke="#b8cbb7" stroke-width="8" opacity=".38"/>
-  <path d="M-40 784L180 568 394 654 606 356 820 162" fill="none" stroke="#f4b860" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
-  <g fill="#f5f0df" stroke="#173f2d" stroke-width="12">
+  <style>:root{--campaign-canvas:#173f2d;--campaign-grid:#b8cbb7;--campaign-accent:#f4b860;--campaign-paper:#f5f0df}</style>
+  <rect width="780" height="900" fill="var(--campaign-canvas)"/>
+  <path d="M0 112h780M0 306h780M0 524h780M0 754h780M148 0v900M388 0v900M620 0v900" stroke="var(--campaign-grid)" stroke-width="8" opacity=".38"/>
+  <path d="M-40 784L180 568 394 654 606 356 820 162" fill="none" stroke="var(--campaign-accent)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="var(--campaign-paper)" stroke="var(--campaign-canvas)" stroke-width="12">
     <circle cx="180" cy="568" r="54"/><circle cx="394" cy="654" r="54"/><circle cx="606" cy="356" r="54"/><circle cx="710" cy="258" r="54"/>
   </g>
-  <g fill="#f4b860">
+  <g fill="var(--campaign-accent)">
     <circle cx="180" cy="568" r="17"/><circle cx="394" cy="654" r="17"/><circle cx="606" cy="356" r="17"/><circle cx="710" cy="258" r="17"/>
   </g>
-  <path d="M78 98h404v126H78z" fill="#f5f0df"/>
-  <path d="M116 142h220M116 182h310" stroke="#173f2d" stroke-width="15" stroke-linecap="round"/>
-  <path d="M500 160l98-62v124z" fill="#f4b860"/>
+  <path d="M78 98h404v126H78z" fill="var(--campaign-paper)"/>
+  <path d="M116 142h220M116 182h310" stroke="var(--campaign-canvas)" stroke-width="15" stroke-linecap="round"/>
+  <path d="M500 160l98-62v124z" fill="var(--campaign-accent)"/>
 </svg>

@@ -10,6 +10,7 @@
     "./creative-brief": "./src/creative-brief.mjs",
     "./verification": "./src/verification.mjs",
     "./providers/gemini": "./src/providers/gemini.mjs",
+    "./providers/local-vector": "./src/providers/local-vector.mjs",
     "./provider-contract": "./src/provider-contract.mjs"
   },
   "scripts": {

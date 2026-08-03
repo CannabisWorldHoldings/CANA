@@ -8,58 +8,10 @@ import {
   makeReceipt,
   sealPacket,
 } from '../../../skills-src/hermes-governed-packet.mjs';
-
-const REVIEW_PROVIDER_CATALOG = deepFreeze([
-  {
-    provider_id: 'local-vector-compositor',
-    model: 'repository-svg-campaign-system-v1',
-    activation_state: 'AVAILABLE_LOCAL_ONLY',
-    policy_eligibility: 'OWNER_REVIEW_ONLY',
-    provenance_support: 'EXACT_REPOSITORY_BYTES',
-    cost_usd_per_output: 0,
-    latency_class: 'LOCAL_DETERMINISTIC',
-    strengths: ['typography', 'logo-preservation', 'composition-control', 'aspect-ratio', 'provenance-support'],
-    limitations: ['illustration-only', 'no-photorealism', 'no-product-fidelity-claims'],
-  },
-  {
-    provider_id: 'gemini-draft-provider',
-    model: 'provider-selected-after-owner-grant',
-    activation_state: 'DRAFT_ONLY_BLOCKED',
-    policy_eligibility: 'NO_CALL_WITHOUT_SEPARATE_GRANT_CREDENTIALS_AND_OWNER_APPROVAL',
-    provenance_support: 'SUPPORTED_BY_CANONICAL_AD_CREATIVE_ADAPTER',
-    cost_usd_per_output: null,
-    latency_class: 'NETWORK_DISABLED',
-    strengths: ['photorealism', 'editing-precision', 'reference-image-control'],
-    limitations: ['no current call authority', 'cost and quota not current-proof'],
-  },
-]);
-
-function providerScore(provider, requirements) {
-  const strengths = new Set(provider.strengths);
-  const matches = requirements.filter((requirement) => strengths.has(requirement)).length;
-  return matches * 10 - (provider.cost_usd_per_output ?? 100);
-}
-
-export function createCompetitiveProviderRegistry() {
-  return Object.freeze({
-    schema_version: 'cana.creative-provider-registry/1.0.0',
-    providers: REVIEW_PROVIDER_CATALOG,
-    route(requirements) {
-      assertMission(Array.isArray(requirements) && requirements.length > 0, 'ROUTING_REQUIREMENTS_REQUIRED', 'Creative routing requirements are required');
-      const eligible = REVIEW_PROVIDER_CATALOG
-        .filter((provider) => provider.activation_state === 'AVAILABLE_LOCAL_ONLY')
-        .sort((left, right) => providerScore(right, requirements) - providerScore(left, requirements));
-      assertMission(eligible.length > 0, 'NO_ELIGIBLE_CREATIVE_PROVIDER', 'No creative provider is eligible for this owner-review request');
-      return deepFreeze({
-        selected: eligible[0],
-        requirements: [...requirements],
-        rejected: REVIEW_PROVIDER_CATALOG
-          .filter((provider) => provider.provider_id !== eligible[0].provider_id)
-          .map((provider) => ({ provider_id: provider.provider_id, reason: provider.policy_eligibility })),
-      });
-    },
-  });
-}
+import fs from 'node:fs';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { runCampaignSystemPipeline } from './pipeline.mjs';
 
 function campaignBase(input) {
   return {
@@ -97,9 +49,7 @@ function buildCampaigns() {
       headline: 'Start with the D.C. you know.',
       supportingText: 'Move from neighborhood context to dispensaries, delivery records and current deals without losing sight of each record’s source.',
       cta: 'Explore neighborhoods',
-      surfaceColor: '#edf3ed',
-      accentColor: '#1b573b',
-      inkColor: '#10261b',
+      designToken: 'campaign-local-orientation',
       destination: '/neighborhoods',
       landing_page_match: 'Neighborhood index continues the local-orientation mechanism.',
       altText: 'Original illustrated D.C. street grid connecting neighborhood discovery paths',
@@ -126,9 +76,7 @@ function buildCampaigns() {
       headline: 'Make tonight’s D.C. shortlist.',
       supportingText: 'Compare a smaller set of dispensaries, delivery records and current deals, with the important data state kept visible.',
       cta: 'See current deals',
-      surfaceColor: '#f8e7ca',
-      accentColor: '#9d3f24',
-      inkColor: '#34170f',
+      designToken: 'campaign-bounded-choice',
       destination: '/deals',
       landing_page_match: 'The deals collection continues the time-bounded shortlist idea with explicit validity states.',
       altText: 'Original editorial shortlist graphic with three numbered D.C. marketplace paths',
@@ -155,9 +103,7 @@ function buildCampaigns() {
       headline: 'See what’s sourced before you choose.',
       supportingText: 'Find D.C. records with source, freshness and demonstration states kept close to the next action.',
       cta: 'Compare dispensaries',
-      surfaceColor: '#e8edf4',
-      accentColor: '#263f68',
-      inkColor: '#111d32',
+      designToken: 'campaign-trust-before-handoff',
       destination: '/dispensaries',
       landing_page_match: 'The dispensary route continues with source-labeled records and supported next actions.',
       altText: 'Original evidence-ribbon illustration leading to a source-labeled marketplace doorway',
@@ -179,12 +125,12 @@ export function getCompetitiveReviewCampaigns() {
   return buildCampaigns();
 }
 
-export function generateCampaignSystems({ registry, contextPacket, ownerDecision, asOf }) {
+export async function generateCampaignSystems({ providerRoute, contextPacket, ownerDecision, asOf }) {
   assertMission(ownerDecision?.decision === 'REJECTED_REQUEST_CHANGES', 'OWNER_REJECTION_REQUIRED', 'Campaign generation requires the persisted PR #21 rejection');
   assertMission(contextPacket?.packet_digest && contextPacket.actionable_facts?.length > 0, 'SEALED_CONTEXT_REQUIRED', 'A sealed SiteMind context packet with actionable owner facts is required');
   const now = asOf instanceof Date ? asOf : new Date(asOf);
   assertMission(!Number.isNaN(now.getTime()), 'INVALID_TIMESTAMP', 'asOf is invalid');
-  const route = registry.route(['typography', 'logo-preservation', 'composition-control', 'aspect-ratio', 'provenance-support']);
+  assertMission(providerRoute?.selected?.provider, 'CANONICAL_PROVIDER_ROUTE_REQUIRED', 'Campaign generation requires a canonical provider route');
   const grant = makeGrant({
     capability: 'GENERATE_REVIEW_CREATIVE',
     budgetUnits: 3,
@@ -206,13 +152,21 @@ export function generateCampaignSystems({ registry, contextPacket, ownerDecision
   });
   assertMission(hermesPacket.valid, 'HERMES_PACKET_REFUSED', hermesPacket.errors?.join('; ') || 'Hermes packet was refused');
   const campaigns = buildCampaigns();
+  const pipeline = await runCampaignSystemPipeline({ provider: providerRoute.selected.provider, campaigns });
+  assertMission(
+    pipeline.results.every((result) => Object.values(result.variants).every((variant) => variant.verification.status === 'PASS')),
+    'CANONICAL_CREATIVE_VERIFICATION_FAILED',
+    'Every responsive campaign asset must pass the canonical ad-creative verification pipeline',
+  );
   const providerBody = {
     schema_version: 'cana.creative-provider-routing-receipt/1.0.0',
-    provider_id: route.selected.provider_id,
-    model: route.selected.model,
+    provider_id: providerRoute.selected.id,
+    model: providerRoute.selected.provider.model,
     campaign_ids: campaigns.map((campaign) => campaign.id),
-    requirements: route.requirements,
+    requirements: providerRoute.requirements,
     provider_calls: 0,
+    local_provider_operations: campaigns.length * 4,
+    external_provider_calls: 0,
     actual_spend_usd: 0,
     generated_at: now.toISOString(),
     network_generation: false,
@@ -236,6 +190,7 @@ export function generateCampaignSystems({ registry, contextPacket, ownerDecision
     schema_version: 'cana.competitive-campaign-generation/1.0.0',
     campaigns,
     provider_receipt: providerReceipt,
+    canonical_pipeline: pipeline,
     hermes_packet: hermesPacket,
     hermes_receipt: hermesReceipt.receipt,
     owner_decision_status: 'PENDING_NEW_CANDIDATE_REVIEW',
@@ -260,75 +215,86 @@ export const VISUAL_TOURNAMENT_JUDGES = Object.freeze([
   'landing_page_continuity',
 ]);
 
-function renderFor(renderManifest, campaignId, viewport) {
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+function retainedPng(renderRoot, relativePath, expectedHash, expectedViewport, label) {
+  assertMission(typeof relativePath === 'string' && path.basename(relativePath) === relativePath, 'RENDER_PATH_DENIED', `${label} must be a retained filename`);
+  const root = path.resolve(renderRoot);
+  const filePath = path.resolve(root, relativePath);
+  assertMission(filePath.startsWith(`${root}${path.sep}`), 'RENDER_PATH_DENIED', `${label} escaped the render root`);
+  const stat = fs.lstatSync(filePath);
+  assertMission(stat.isFile() && !stat.isSymbolicLink() && stat.nlink === 1, 'RENDER_FILE_DENIED', `${label} must be one regular retained file`);
+  const bytes = fs.readFileSync(filePath);
+  assertMission(bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])), 'RENDER_PNG_REQUIRED', `${label} is not PNG evidence`);
+  assertMission(bytes.length >= 24 && bytes.toString('ascii', 12, 16) === 'IHDR', 'RENDER_PNG_REQUIRED', `${label} has no PNG IHDR`);
+  const digest = sha256(bytes);
+  assertMission(digest === expectedHash, 'RENDER_HASH_MISMATCH', `${label} hash does not match retained bytes`);
+  const dimensions = { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+  if (expectedViewport) {
+    assertMission(dimensions.width === expectedViewport.width && dimensions.height === expectedViewport.height, 'RENDER_VIEWPORT_MISMATCH', `${label} dimensions do not match the recorded viewport`);
+  }
+  return deepFreeze({ digest, dimensions, bytes: bytes.length });
+}
+
+function renderFor(renderManifest, renderRoot, campaign, viewport) {
+  const campaignId = campaign.id;
   const render = renderManifest?.campaigns?.[campaignId]?.[viewport];
   assertMission(render, 'RENDER_EVIDENCE_REQUIRED', `${campaignId} requires ${viewport} render evidence`);
   assertMission(/^[0-9a-f]{64}$/.test(render.page_context_sha256), 'PAGE_RENDER_HASH_REQUIRED', `${campaignId} ${viewport} page render needs SHA-256`);
   assertMission(/^[0-9a-f]{64}$/.test(render.isolated_sha256), 'BILLBOARD_RENDER_HASH_REQUIRED', `${campaignId} ${viewport} billboard render needs SHA-256`);
-  return render;
+  const expectedMedia = viewport === 'desktop' ? campaign.desktopMedia : campaign.mobileMedia;
+  assertMission(render.image_source === expectedMedia, 'RESPONSIVE_SOURCE_MISMATCH', `${campaignId} ${viewport} did not render its expected responsive source`);
+  const page = retainedPng(renderRoot, render.page_context_path, render.page_context_sha256, render.viewport, `${campaignId} ${viewport} homepage`);
+  const isolated = retainedPng(renderRoot, render.isolated_path, render.isolated_sha256, null, `${campaignId} ${viewport} billboard`);
+  return deepFreeze({ ...render, retained: { page, isolated } });
 }
 
-function judge(name, campaign, desktop, mobile) {
-  const evidence = [];
-  let score = 90;
-  if (name === 'owner_taste_alignment') {
-    evidence.push(`strategy=${campaign.strategy}; approvalStatus=${campaign.approvalStatus}; source rejection constraints are encoded in negative_prompt`);
-  } else if (name === 'anti_generic_quality') {
-    evidence.push(`visual_concept=${campaign.visual_concept}; local role=${campaign.local_dc_relevance}`);
-  } else if (name === 'authenticity') {
-    evidence.push(`image_source_plan=${campaign.image_source_plan}; risks=${campaign.authenticity_risks.join(' | ')}`);
-  } else if (name === 'local_dc_intelligence') {
-    evidence.push(`local_dc_relevance=${campaign.local_dc_relevance}`);
-  } else if (name === 'campaign_coherence') {
-    const coherent = campaign.desktop.campaign_system_id === campaign.mobile.campaign_system_id;
-    score = coherent ? 96 : 0;
-    evidence.push(`desktop=${campaign.desktop.campaign_system_id}; mobile=${campaign.mobile.campaign_system_id}`);
-  } else if (name === 'image_copy_fit') {
-    evidence.push(`headline=${JSON.stringify(campaign.headline)}; concept=${campaign.visual_concept}; alt=${campaign.altText}`);
-  } else if (name === 'conversion_mechanism') {
-    evidence.push(`cta=${campaign.cta}; destination=${campaign.destination}; prediction=${campaign.testable_prediction}`);
-  } else if (name === 'accessibility') {
-    const findings = [...desktop.serious_accessibility_findings, ...mobile.serious_accessibility_findings];
-    score = findings.length === 0 && campaign.altText ? 95 : 0;
-    evidence.push(`alt=${campaign.altText}; serious_or_critical_findings=${findings.length}`);
-  } else if (name === 'mobile_crop_quality') {
-    score = mobile.horizontal_overflow === false && mobile.viewport.width === 390 ? 94 : 0;
-    evidence.push(`mobile page sha256=${mobile.page_context_sha256}; isolated sha256=${mobile.isolated_sha256}; overflow=${mobile.horizontal_overflow}`);
-  } else if (name === 'performance_budget') {
-    const problems = [...desktop.console_problems, ...mobile.console_problems];
-    score = problems.length === 0 ? 91 : 0;
-    evidence.push(`desktop/mobile console problems=${problems.length}; desktop page sha256=${desktop.page_context_sha256}`);
-  } else if (name === 'cannabis_ad_policy') {
-    score = campaign.policyResult === 'PASS_FOR_OWNER_REVIEW' && campaign.unsupported_claim_risks.length > 0 ? 96 : 0;
-    evidence.push(`policy=${campaign.policyResult}; unsupported-claim risks=${campaign.unsupported_claim_risks.join(' | ')}`);
-  } else if (name === 'rights_and_provenance') {
-    score = campaign.rights_state === 'CANA_OWNED_ORIGINAL_VECTOR' ? 100 : 0;
-    evidence.push(`rights=${campaign.rights_state}; provenance=${campaign.rightsAndProvenance}`);
-  } else if (name === 'brand_distinctiveness') {
-    evidence.push(`ORDERWEEDDC mechanism=${campaign.expected_mechanism}; visual system=${campaign.campaign_system_id}`);
-  } else if (name === 'landing_page_continuity') {
-    evidence.push(`destination=${campaign.destination}; continuity=${campaign.landing_page_match}`);
-  }
+function judge(name, campaign, desktop, mobile, canonicalResult) {
+  const serious = [...desktop.serious_accessibility_findings, ...mobile.serious_accessibility_findings];
+  const problems = [...desktop.console_problems, ...mobile.console_problems, ...desktop.request_failures, ...mobile.request_failures];
+  const pipelinePassed = Object.values(canonicalResult.variants).every((variant) => variant.verification.status === 'PASS');
+  const courts = {
+    owner_taste_alignment: [campaign.approvalStatus === 'OWNER_REVIEW_PENDING' && campaign.negative_prompt.includes('fake storefront'), `pending=${campaign.approvalStatus}; rejected constraints retained`],
+    anti_generic_quality: [campaign.designToken.startsWith('campaign-') && campaign.visual_concept.length >= 60, `token=${campaign.designToken}; concept=${campaign.visual_concept}`],
+    authenticity: [pipelinePassed && campaign.authenticity_risks.length > 0, `canonical_pipeline=${pipelinePassed}; source=${campaign.image_source_plan}`],
+    local_dc_intelligence: [campaign.local_dc_relevance.includes('D.C.') || campaign.local_dc_relevance.includes('District'), campaign.local_dc_relevance],
+    campaign_coherence: [campaign.desktop.campaign_system_id === campaign.mobile.campaign_system_id && desktop.image_source !== mobile.image_source, `desktop=${desktop.image_source}; mobile=${mobile.image_source}`],
+    image_copy_fit: [campaign.message_hierarchy[0] && campaign.altText.length > 20, `headline=${campaign.headline}; alt=${campaign.altText}`],
+    conversion_mechanism: [campaign.destination.startsWith('/') && campaign.testable_prediction.includes('Against the rejected control'), `cta=${campaign.cta}; destination=${campaign.destination}`],
+    accessibility: [serious.length === 0 && Boolean(campaign.altText), `serious_or_critical=${serious.length}; alt=${campaign.altText}`],
+    mobile_crop_quality: [mobile.horizontal_overflow === false && mobile.viewport.width === 390 && mobile.retained.page.dimensions.height === 844, `source=${mobile.image_source}; overflow=${mobile.horizontal_overflow}`],
+    performance_budget: [problems.length === 0 && desktop.performance.transferred_bytes < 2_000_000 && mobile.performance.transferred_bytes < 2_000_000, `problems=${problems.length}; bytes=${desktop.performance.transferred_bytes}/${mobile.performance.transferred_bytes}`],
+    cannabis_ad_policy: [campaign.policyResult === 'PASS_FOR_OWNER_REVIEW' && campaign.unsupported_claim_risks.length > 0, `policy=${campaign.policyResult}; claim guard=${campaign.unsupported_claim_risks[0]}`],
+    rights_and_provenance: [pipelinePassed && campaign.rights_state === 'CANA_OWNED_ORIGINAL_VECTOR', `rights=${campaign.rights_state}; canonical_pipeline=${pipelinePassed}`],
+    brand_distinctiveness: [campaign.campaign_system_id.includes(campaign.id.slice(4)) && campaign.strategy.length > 8, `system=${campaign.campaign_system_id}; strategy=${campaign.strategy}; mechanism=${campaign.expected_mechanism}`],
+    landing_page_continuity: [['/neighborhoods', '/deals', '/dispensaries'].includes(campaign.destination) && campaign.landing_page_match.length > 20, `destination=${campaign.destination}; continuity=${campaign.landing_page_match}`],
+  };
+  assertMission(courts[name], 'UNKNOWN_TOURNAMENT_JUDGE', `Unknown tournament judge: ${name}`);
+  const [passed, evidence] = courts[name];
+  const score = passed ? 100 : 0;
   return deepFreeze({
     name,
     score,
     status: score >= 80 ? 'PASS' : 'FAIL',
-    evidence,
+    evidence: [evidence],
   });
 }
 
-export function runVisualTournament({ campaigns, renderManifest }) {
+export function runVisualTournament({ campaigns, renderManifest, renderRoot, canonicalPipeline }) {
   assertMission(Array.isArray(campaigns) && campaigns.length === 3, 'THREE_CAMPAIGNS_REQUIRED', 'Tournament requires exactly three campaign systems');
   assertMission(renderManifest?.production_accessed === false, 'PRODUCTION_RENDER_DENIED', 'Tournament evidence must come from an isolated local review surface');
   const ids = campaigns.map((campaign) => campaign.id);
   assertMission(new Set(ids).size === ids.length, 'DUPLICATE_CAMPAIGN', 'Campaign identifiers must be unique');
   assertMission(new Set(campaigns.map((campaign) => campaign.strategy)).size === 3, 'STRATEGY_VARIATION_REQUIRED', 'Campaign strategies must be materially different');
   assertMission(new Set(campaigns.map((campaign) => campaign.visual_concept)).size === 3, 'VISUAL_VARIATION_REQUIRED', 'Campaign visual concepts must be materially different');
+  assertMission(canonicalPipeline?.results?.length === 3, 'CANONICAL_PIPELINE_REQUIRED', 'Tournament requires canonical creative pipeline evidence');
 
   const results = campaigns.map((campaign) => {
-    const desktop = renderFor(renderManifest, campaign.id, 'desktop');
-    const mobile = renderFor(renderManifest, campaign.id, 'mobile');
-    const judges = VISUAL_TOURNAMENT_JUDGES.map((name) => judge(name, campaign, desktop, mobile));
+    const desktop = renderFor(renderManifest, renderRoot, campaign, 'desktop');
+    const mobile = renderFor(renderManifest, renderRoot, campaign, 'mobile');
+    const canonicalResult = canonicalPipeline.results.find((result) => result.campaignId === campaign.id);
+    assertMission(canonicalResult, 'CANONICAL_PIPELINE_RESULT_REQUIRED', `${campaign.id} has no canonical pipeline result`);
+    const judges = VISUAL_TOURNAMENT_JUDGES.map((name) => judge(name, campaign, desktop, mobile, canonicalResult));
     const failureList = judges.filter((result) => result.status === 'FAIL').map((result) => `${result.name}: ${result.evidence.join('; ')}`);
     const average = judges.reduce((total, result) => total + result.score, 0) / judges.length;
     return deepFreeze({

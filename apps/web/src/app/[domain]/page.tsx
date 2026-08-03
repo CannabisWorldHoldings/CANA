@@ -4,6 +4,7 @@ import CustomerHomeHero from '@/components/customer-home-hero';
 import CustomerHomeMarket from '@/components/customer-home-market';
 import CustomerHomeDiscovery from '@/components/customer-home-discovery';
 import CustomerHomeTrust from '@/components/customer-home-trust';
+import CustomerReviewMarketplacePreview from '@/components/customer-review-marketplace-preview';
 import { loadCustomerHome } from '@/lib/customer-marketplace-data';
 import {
   HOUSE_BANNER_CAMPAIGN,
@@ -80,6 +81,7 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     <div className="customer-marketplace flex-grow bg-white text-[#111612]">
       {itemListJsonLd && <script {...jsonLdScriptProps(itemListJsonLd)} />}
       <CustomerSponsoredBanner campaign={banner} />
+      {reviewBanner && <CustomerReviewMarketplacePreview activeDestination={reviewBanner.destination} />}
       <CustomerHomeHero demonstration={demonstration} />
       <CustomerHomeMarket
         deals={renderedHome.deals}

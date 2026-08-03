@@ -44,7 +44,7 @@ const actionLog = [];
 const manifest = {
   schema_version: 'cana.owner-review-render-manifest/1.0.0',
   base_url: baseUrl.origin,
-  source_commit: '5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723',
+  rejected_source_commit: '5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723',
   owner_decision_status: 'PENDING',
   production_accessed: false,
   campaigns: {},
@@ -57,6 +57,7 @@ try {
   const releaseResponse = await releaseContext.request.get(new URL('/api/release', baseUrl).href);
   if (!releaseResponse.ok()) throw new Error(`/api/release returned ${releaseResponse.status()}`);
   manifest.release_identity = await releaseResponse.json();
+  manifest.source_commit = manifest.release_identity.gitSha ?? null;
   await releaseContext.close();
 
   for (const campaign of campaigns) {
@@ -124,7 +125,7 @@ try {
       const isolatedPath = path.join(outputDirectory, `${campaign.id}-${viewportName}-billboard.png`);
       await page.screenshot({ path: pagePath, fullPage: false });
       await banner.screenshot({ path: isolatedPath });
-      const imageSource = await banner.locator('img').getAttribute('src');
+      const imageSource = await banner.locator('img').evaluate((image) => new URL(image.currentSrc).pathname);
       const record = {
         route,
         viewport,

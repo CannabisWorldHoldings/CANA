@@ -296,9 +296,9 @@ export const COMPETITIVE_EVOLUTION_SCHEMAS = deepFreeze({
       'visual_diff', 'semantic_diff', 'asset_diff', 'seo_diff', 'funnel_diff',
       'ad_creative_diff', 'policy_context', 'direct_observation', 'inference',
       'uncertainty', 'confidence', 'evidence_locations', 'rights_state',
-      'prompt_injection_state', 'importance_score', 'change_type',
+      'prompt_injection_state', 'importance_score', 'change_type', 'evidence_class',
     ],
-    authority: 'DIRECT_CAPTURE_EVIDENCE_ONLY',
+    authority: 'DIRECT_CAPTURE_OR_EXPLICIT_OFFLINE_FIXTURE',
   },
   competitor_event: {
     schema_version: 'cana.competitor-event/1.0.0',
@@ -311,13 +311,15 @@ export const COMPETITIVE_EVOLUTION_SCHEMAS = deepFreeze({
       'ad_creative_diff', 'policy_context', 'direct_observation', 'inference',
       'uncertainty', 'confidence', 'evidence_locations', 'rights_state',
       'prompt_injection_state', 'deduplication_key', 'importance_score',
-      'change_type', 'routing_decision',
+      'change_type', 'routing_decision', 'evidence_class', 'capture_bytes_present',
+      'hashes_recomputed',
     ],
   },
   evidence_receipt: {
     schema_version: 'cana.competitor-evidence-receipt/1.0.0',
     required: [
-      'event_id', 'crawl_id', 'direct_capture_present', 'hashes_recomputed',
+      'event_id', 'crawl_id', 'direct_capture_present', 'evidence_class',
+      'capture_bytes_present', 'hashes_recomputed', 'promotion_allowed',
       'rights_state', 'prompt_injection_state', 'production_modified',
       'external_effect_count', 'receipt_hash',
     ],
@@ -400,6 +402,11 @@ function validateCrawlObservation(observation) {
   numberBetweenZeroAndOne(observation.uncertainty, 'uncertainty');
   numberBetweenZeroAndOne(observation.confidence, 'confidence');
   numberBetweenZeroAndOne(observation.importance_score, 'importance_score');
+  assertMission(
+    ['DIRECT_PUBLIC_CAPTURE', 'OFFLINE_ADAPTER_FIXTURE'].includes(observation.evidence_class),
+    'INVALID_EVIDENCE_CLASS',
+    'crawl_observation.evidence_class must distinguish direct capture from an offline fixture',
+  );
   assertMission(observation.prompt_injection_state !== 'UNSCANNED', 'UNSCANNED_EVIDENCE_DENIED', 'Crawled evidence must be scanned before fusion');
   return observation;
 }
@@ -469,6 +476,7 @@ function verifyEventRecords(records) {
 function routingDecision(observation) {
   if (observation.prompt_injection_state === 'DETECTED') return 'QUARANTINE_PROMPT_INJECTION';
   if (!['REFERENCE_ONLY', 'ANALYSIS_ONLY'].includes(observation.rights_state)) return 'QUARANTINE_RIGHTS';
+  if (observation.evidence_class === 'OFFLINE_ADAPTER_FIXTURE') return 'OFFLINE_CONTRACT_VALIDATION_ONLY';
   if (observation.confidence < 0.65 || observation.uncertainty > 0.4) return 'SECOND_CAPTURE_REQUIRED';
   if (observation.importance_score >= 0.6) return 'MECHANISM_EXTRACTION';
   return 'LEDGER_ONLY';
@@ -481,11 +489,20 @@ export function createCompetitorEventLedger({ rootDirectory, tenantId, workspace
 
   const api = {
     filePath,
-    fuse({ growthWatchPacket, crawlObservation }) {
+    fuse({ growthWatchPacket, crawlObservation, evidenceObjects }) {
       const signal = validateGrowthWatchPacket(growthWatchPacket);
       const crawl = validateCrawlObservation(crawlObservation);
       assertMission(signal.entity_id === crawl.entity_id && signal.competitor_id === crawl.competitor_id, 'SENSOR_IDENTITY_MISMATCH', 'Growth Watch and crawl identities must match');
       assertMission(signal.candidate_urls.includes(crawl.url), 'CRAWL_URL_NOT_REQUESTED', 'Crawler URL must originate from the signal packet');
+      const objectNames = ['before_content', 'after_content', 'before_screenshot', 'after_screenshot'];
+      assertMission(evidenceObjects && typeof evidenceObjects === 'object', 'CRAWL_EVIDENCE_BYTES_REQUIRED', 'Fusion requires the four retained evidence objects');
+      for (const name of objectNames) {
+        const bytes = evidenceObjects[name];
+        assertMission(Buffer.isBuffer(bytes) && bytes.length > 0, 'CRAWL_EVIDENCE_BYTES_REQUIRED', `${name} bytes are required`);
+        const expected = crawl[`${name}_sha256`];
+        const actual = sha256(bytes);
+        assertMission(actual === expected, 'CRAWL_EVIDENCE_HASH_MISMATCH', `${name} bytes do not match the observation hash`);
+      }
       const deduplicationKey = hashCanonical({
         competitor_id: crawl.competitor_id,
         surface_id: crawl.surface_id,
@@ -494,6 +511,7 @@ export function createCompetitorEventLedger({ rootDirectory, tenantId, workspace
         after_screenshot_sha256: crawl.after_screenshot_sha256,
       });
       const records = readEventRecords(filePath);
+      assertMission(verifyEventRecords(records).valid, 'LEDGER_INTEGRITY_FAILURE', 'Existing competitor-event ledger failed integrity verification');
       const existing = records.find((record) => record.deduplication_key === deduplicationKey);
       if (existing) return deepFreeze({ ...existing, deduplicated: true });
 
@@ -531,6 +549,9 @@ export function createCompetitorEventLedger({ rootDirectory, tenantId, workspace
         evidence_locations: crawl.evidence_locations,
         rights_state: crawl.rights_state,
         prompt_injection_state: crawl.prompt_injection_state,
+        evidence_class: crawl.evidence_class,
+        capture_bytes_present: true,
+        hashes_recomputed: true,
         deduplication_key: deduplicationKey,
         importance_score: crawl.importance_score,
         change_type: crawl.change_type,
@@ -546,6 +567,7 @@ export function createCompetitorEventLedger({ rootDirectory, tenantId, workspace
       const record = deepFreeze({ ...ledgerBody, ledger_hash: hashCanonical(ledgerBody) });
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
       fs.appendFileSync(filePath, `${canonicalize(record)}\n`, { mode: 0o600 });
+      assertMission(verifyEventRecords(readEventRecords(filePath)).valid, 'LEDGER_INTEGRITY_FAILURE', 'Appended competitor-event ledger failed integrity verification');
       return record;
     },
     readEvents() {
@@ -564,8 +586,11 @@ export function buildCompetitorEvidenceReceipt(event) {
     schema_version: COMPETITIVE_EVOLUTION_SCHEMAS.evidence_receipt.schema_version,
     event_id: event.event_id,
     crawl_id: event.crawl_id,
-    direct_capture_present: true,
-    hashes_recomputed: true,
+    direct_capture_present: event.evidence_class === 'DIRECT_PUBLIC_CAPTURE',
+    evidence_class: event.evidence_class,
+    capture_bytes_present: event.capture_bytes_present === true,
+    hashes_recomputed: event.hashes_recomputed === true,
+    promotion_allowed: event.evidence_class === 'DIRECT_PUBLIC_CAPTURE' && event.routing_decision === 'MECHANISM_EXTRACTION',
     rights_state: event.rights_state,
     prompt_injection_state: event.prompt_injection_state,
     production_modified: false,
@@ -594,12 +619,15 @@ export function extractCompetitorMechanism(event, { currentCapability, adjacentP
   validateCrawlObservation(event);
   assertMission(typeof currentCapability === 'string' && currentCapability.length > 0, 'CURRENT_CAPABILITY_REQUIRED', 'Current CANA capability is required');
   assertMission(typeof adjacentPattern === 'string' && adjacentPattern.length > 0, 'ADJACENT_PATTERN_REQUIRED', 'Adjacent pattern is required');
+  const directCapture = event.evidence_class === 'DIRECT_PUBLIC_CAPTURE';
   return deepFreeze({
     schema_version: 'cana.competitor-mechanism/1.0.0',
     visible_change: event.direct_observation,
     customer_problem: 'Adults need a smaller, locally relevant decision set before opening a menu.',
     business_mechanism: 'Sequence local relevance before the menu handoff to reduce unstructured choice.',
-    adoption_evidence: 'Observed once in the current direct capture; persistence and outcome remain unproven.',
+    adoption_evidence: directCapture
+      ? 'Observed once in the retained direct public capture; persistence and outcome remain unproven.'
+      : 'Offline adapter fixture only; no current competitor adoption, persistence, or outcome is claimed.',
     brittle_point: 'Neighborhood framing can become empty decoration if it is not tied to a useful discovery path.',
     competitor_ignored: 'The captured surface does not expose ORDERWEEDDC-style source and record-state context.',
     current_cana_capability: currentCapability,
@@ -613,7 +641,7 @@ export function extractCompetitorMechanism(event, { currentCapability, adjacentP
     protected_expression_copied: false,
     rights_state: 'MECHANISM_ONLY_NO_PROTECTED_EXPRESSION',
     evidence_refs: event.evidence_locations,
-    inference_state: 'LABELED_UNPROVEN',
+    inference_state: directCapture ? 'LABELED_UNPROVEN' : 'OFFLINE_FIXTURE_UNPROVEN',
   });
 }
 

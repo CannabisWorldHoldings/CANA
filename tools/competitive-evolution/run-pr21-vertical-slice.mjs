@@ -18,10 +18,11 @@ import {
   routeCrawlCadence,
 } from '../../apps/web/src/lib/sitemind-competitive-evolution.mjs';
 import {
-  createCompetitiveProviderRegistry,
   generateCampaignSystems,
   runVisualTournament,
 } from '../../packages/ad-creative/src/competitive-campaigns.mjs';
+import { createProviderRegistry, routeProvider } from '../../packages/ad-creative/src/provider-contract.mjs';
+import { createLocalVectorProvider } from '../../packages/ad-creative/src/providers/local-vector.mjs';
 
 const TERMINAL_MARKER = 'ORDERWEEDDC_SITEMIND_COMPETITOR_TO_CREATIVE_EVOLUTION_TOURNAMENT_READY_FOR_OWNER_REVIEW';
 const asOf = new Date('2026-08-03T14:00:00.000Z');
@@ -57,6 +58,7 @@ function fixtureSignal() {
 }
 
 function fixtureCrawl() {
+  const evidence = fixtureEvidenceObjects();
   return {
     schema_version: 'cana.competitor-crawl-observation/1.0.0',
     crawl_id: 'fixture_crawl_marketplace_mechanism_20260803',
@@ -66,10 +68,10 @@ function fixtureCrawl() {
     surface_id: 'offline-adapter-contract',
     url: 'https://example.com/public-marketplace-fixture',
     captured_at: asOf.toISOString(),
-    before_content_sha256: sha256('fixture-before-content'),
-    after_content_sha256: sha256('fixture-after-content'),
-    before_screenshot_sha256: sha256('fixture-before-screenshot'),
-    after_screenshot_sha256: sha256('fixture-after-screenshot'),
+    before_content_sha256: sha256(evidence.before_content),
+    after_content_sha256: sha256(evidence.after_content),
+    before_screenshot_sha256: sha256(evidence.before_screenshot),
+    after_screenshot_sha256: sha256(evidence.after_screenshot),
     dom_diff: { changed_sections: ['fixture decision sequence'] },
     visual_diff: { changed_regions: ['fixture local orientation'] },
     semantic_diff: { added: ['fixture bounded shortlist before handoff'] },
@@ -87,6 +89,16 @@ function fixtureCrawl() {
     prompt_injection_state: 'SCANNED_NO_AUTHORITY',
     importance_score: 0.8,
     change_type: 'OFFLINE_ADAPTER_VALIDATION',
+    evidence_class: 'OFFLINE_ADAPTER_FIXTURE',
+  };
+}
+
+function fixtureEvidenceObjects() {
+  return {
+    before_content: Buffer.from('fixture-before-content'),
+    after_content: Buffer.from('fixture-after-content'),
+    before_screenshot: Buffer.from('fixture-before-screenshot'),
+    after_screenshot: Buffer.from('fixture-after-screenshot'),
   };
 }
 
@@ -142,7 +154,7 @@ const crawlHandoff = adaptScheduledTaskHandoff({
   taskName: 'Competitor Crawl Intelligence', runId: 'offline-crawler-adapter-20260803', producedAt: crawl.captured_at, payload: crawl,
 });
 const ledger = createCompetitorEventLedger({ rootDirectory: outputRoot, tenantId: 'orderweeddc', workspaceId: 'homepage' });
-const event = ledger.fuse({ growthWatchPacket: signalHandoff.payload, crawlObservation: crawlHandoff.payload });
+const event = ledger.fuse({ growthWatchPacket: signalHandoff.payload, crawlObservation: crawlHandoff.payload, evidenceObjects: fixtureEvidenceObjects() });
 const evidenceReceipt = buildCompetitorEvidenceReceipt(event);
 const cadence = routeCrawlCadence({ changeRate: 0.7, importanceScore: 0.8, failureRate: 0.05, evidenceQuality: 0.9 });
 const mechanism = extractCompetitorMechanism(crawl, {
@@ -150,13 +162,34 @@ const mechanism = extractCompetitorMechanism(crawl, {
   adjacentPattern: 'Travel and editorial shortlists can reduce choice overload without copying their expression.',
 });
 const context = compileCompetitiveContext({ mechanism, ownerDecisionObservedAt: PR21_OWNER_REJECTION.observed_at });
-const generation = generateCampaignSystems({
-  registry: createCompetitiveProviderRegistry(),
+const providerRegistry = createProviderRegistry({ providers: [
+  {
+    id: 'local-vector-compositor',
+    provider: createLocalVectorProvider({ publicRoot: path.join(process.cwd(), 'apps/web/public') }),
+    eligible: true,
+    activationState: 'AVAILABLE_LOCAL_ONLY',
+    policyEligibility: 'OWNER_REVIEW_ONLY',
+    capabilities: ['responsive-vector-composition', 'repository-provenance', 'zero-network'],
+    costUsdPerOutput: 0,
+    networkExecution: false,
+  },
+  {
+    id: 'gemini-draft-provider',
+    eligible: false,
+    activationState: 'DRAFT_ONLY_BLOCKED',
+    policyEligibility: 'NO_CALL_WITHOUT_SEPARATE_GRANT_CREDENTIALS_AND_OWNER_APPROVAL',
+    capabilities: ['responsive-vector-composition', 'repository-provenance'],
+    networkExecution: true,
+  },
+] });
+const providerRoute = routeProvider({ registry: providerRegistry, requirements: ['responsive-vector-composition', 'repository-provenance', 'zero-network'] });
+const generation = await generateCampaignSystems({
+  providerRoute,
   contextPacket: context.packet,
   ownerDecision: PR21_OWNER_REJECTION,
   asOf,
 });
-const tournament = runVisualTournament({ campaigns: generation.campaigns, renderManifest });
+const tournament = runVisualTournament({ campaigns: generation.campaigns, renderManifest, renderRoot: path.dirname(renderManifestPath), canonicalPipeline: generation.canonical_pipeline });
 const learning = buildLearningReceipt({
   ownerDecision: { ...PR21_OWNER_REJECTION, status: PR21_OWNER_REJECTION.decision },
   tournamentStatus: tournament.status,
@@ -186,6 +219,7 @@ writeJson(path.join(outputRoot, 'rejected-creative-genome.json'), {
   mechanism_only_learning: PR21_PREFERENCE_PAIR.desired,
 });
 writeJson(path.join(outputRoot, 'provider-routing-receipt.json'), generation.provider_receipt);
+writeJson(path.join(outputRoot, 'provider-registry.json'), providerRegistry);
 writeJson(path.join(outputRoot, 'hermes-packet.json'), generation.hermes_packet);
 writeJson(path.join(outputRoot, 'hermes-receipt.json'), generation.hermes_receipt);
 writeJson(path.join(outputRoot, 'tournament.json'), tournament);

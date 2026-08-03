@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
 
 type BannerCampaign = {
   id: string;
@@ -17,9 +16,7 @@ type BannerCampaign = {
   altText: string;
   fundingKind: 'HOUSE' | 'PAID';
   approvalStatus?: 'APPROVED' | 'OWNER_REVIEW_PENDING';
-  surfaceColor?: string;
-  accentColor?: string;
-  inkColor?: string;
+  designToken?: 'campaign-local-orientation' | 'campaign-bounded-choice' | 'campaign-trust-before-handoff';
   impressionEvent: string;
   clickEvent: string;
 };
@@ -48,12 +45,6 @@ export default function CustomerSponsoredBanner({
   if (!campaign) return null;
 
   const ownerReviewPending = campaign.approvalStatus === 'OWNER_REVIEW_PENDING';
-  const campaignStyle = {
-    '--campaign-surface': campaign.surfaceColor ?? '#f4f4f1',
-    '--campaign-accent': campaign.accentColor ?? '#11643d',
-    '--campaign-ink': campaign.inkColor ?? '#121713',
-  } as CSSProperties;
-
   return (
     <aside
       aria-label={`${campaign.disclosure} from ${campaign.sponsor}`}
@@ -63,7 +54,7 @@ export default function CustomerSponsoredBanner({
       data-banner-impression-event={campaign.impressionEvent}
       data-owner-review-campaign={ownerReviewPending ? 'true' : undefined}
       data-owner-review-status={ownerReviewPending ? 'PENDING' : undefined}
-      style={campaignStyle}
+      data-campaign-system={campaign.designToken}
     >
       <div className="overflow-hidden rounded-2xl bg-[var(--campaign-surface)] lg:grid lg:grid-cols-[0.9fr_1.1fr]">
         <div className="order-2 flex flex-col justify-center px-5 py-6 sm:px-8 lg:order-1 lg:px-12 lg:py-9">

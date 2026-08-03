@@ -8,8 +8,8 @@
  * can mark an artifact postable.
  */
 import { analyzeBrandLogo, buildBrandProfile } from './brand-profile.mjs';
-import { buildCreativeBrief } from './creative-brief.mjs';
-import { verifyCreative, IMAGE_ANALYSIS_INSTRUCTION } from './verification.mjs';
+import { buildCreativeBrief, buildCampaignSystemBrief } from './creative-brief.mjs';
+import { verifyCreative, verifyCampaignSystemCreative, IMAGE_ANALYSIS_INSTRUCTION } from './verification.mjs';
 
 export const POSTING_LAW =
   'No ad creative is ever posted from generation alone: it must pass machine verification ' +
@@ -103,6 +103,42 @@ export async function runAdCreativePipeline({
   return Object.freeze({
     brandProfile,
     creatives: Object.freeze(creatives),
+    postingLaw: POSTING_LAW,
+  });
+}
+
+/**
+ * Canonical analyze -> brief -> compose -> inspect -> verify path for local
+ * responsive house-campaign systems. It returns no posting capability.
+ */
+export async function runCampaignSystemPipeline({ provider, campaigns }) {
+  if (!Array.isArray(campaigns) || campaigns.length !== 3) {
+    throw new Error('campaign-system pipeline requires exactly three candidates');
+  }
+  const results = [];
+  for (const campaign of campaigns) {
+    const variants = {};
+    for (const viewport of ['desktop', 'mobile']) {
+      const brief = buildCampaignSystemBrief({ campaign, viewport });
+      const image = await provider.generateImage({
+        prompt: brief.prompt,
+        aspectRatio: brief.aspectRatio,
+        referenceImages: [],
+        sourceMedia: brief.sourceMedia,
+      });
+      const imageAnalysis = await provider.analyzeImage({
+        imageBase64: image.imageBase64,
+        mimeType: image.mimeType,
+        instruction: IMAGE_ANALYSIS_INSTRUCTION,
+      });
+      const verification = verifyCampaignSystemCreative({ brief, image, imageAnalysis });
+      variants[viewport] = Object.freeze({ brief, image, imageAnalysis, verification, postable: false });
+    }
+    results.push(Object.freeze({ campaignId: campaign.id, variants: Object.freeze(variants) }));
+  }
+  return Object.freeze({
+    schemaVersion: 'ad-creative.campaign-system-pipeline/1.0.0',
+    results: Object.freeze(results),
     postingLaw: POSTING_LAW,
   });
 }
