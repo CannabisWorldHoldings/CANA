@@ -12,6 +12,7 @@ import {
   directoryRetailerOrderBy,
   directoryRetailerWhere,
   directorySearchHref,
+  isPublicCatalogRecord,
   parseDirectorySearch,
   publicCatalogRecordWhere,
 } from '../src/lib/directory-search.mjs';
@@ -135,6 +136,33 @@ test('directory deal chips include only labeled demonstrations or current verifi
     isActive: true,
     ...catalogRecordWhere,
   });
+});
+
+test('public catalog behavior excludes never-reviewed real records without hiding explicit demos', () => {
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'AWAITING_VERIFICATION',
+    verifiedAt: null,
+    freshnessExpiresAt: null,
+  }, AS_OF), false);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: true,
+    dataStatus: 'DEMONSTRATION_ONLY',
+    verifiedAt: null,
+    freshnessExpiresAt: null,
+  }, AS_OF), true);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-10T20:00:00.000Z'),
+    freshnessExpiresAt: new Date('2026-07-20T20:00:00.000Z'),
+  }, AS_OF), true);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-10T20:00:00.000Z'),
+    freshnessExpiresAt: new Date('2026-07-17T19:59:59.000Z'),
+  }, AS_OF), false);
 });
 
 test('pagination links preserve only validated filters', () => {

@@ -5,8 +5,10 @@ import {
   directoryRetailerOrderBy,
   directoryRetailerWhere,
   parseDirectorySearch,
+  publicCatalogRecordWhere,
 } from '@/lib/directory-search.mjs';
 import { NEIGHBORHOOD_CONFIGS } from '@/lib/neighborhood-configs.mjs';
+import { publicRetailerWhere } from '@/lib/public-retailer.mjs';
 import { PUBLIC_DEAL_PREVIEW_LIMIT } from '@/lib/retailer-detail-search.mjs';
 
 const QUERY_LIMIT = 80;
@@ -23,8 +25,9 @@ async function brandForDomain(domain: string) {
   });
 }
 
-function brandRetailerScope(brandId: string) {
+function brandRetailerScope(brandId: string, asOf: Date) {
   return {
+    ...publicRetailerWhere(asOf),
     menus: {
       some: {
         brandMenus: {
@@ -32,6 +35,16 @@ function brandRetailerScope(brandId: string) {
         },
       },
     },
+  };
+}
+
+function brandMenuEntryScope(brandId: string, asOf: Date) {
+  return {
+    ...publicCatalogRecordWhere(asOf),
+    brandMenus: {
+      some: { brandId },
+    },
+    retailer: brandRetailerScope(brandId, asOf),
   };
 }
 
@@ -68,7 +81,7 @@ export async function loadCustomerDirectory({
         take: PUBLIC_DEAL_PREVIEW_LIMIT,
       },
       menus: {
-        where: { brandMenus: { some: { brandId: brand.id } } },
+        where: brandMenuEntryScope(brand.id, asOf),
         select: { id: true },
         take: 1,
       },
@@ -93,13 +106,14 @@ export async function loadCustomerHome(domain: string) {
   if (!brand) return null;
 
   const asOf = new Date();
-  const scope = brandRetailerScope(brand.id);
+  const scope = brandRetailerScope(brand.id, asOf);
+  const menuEntryScope = brandMenuEntryScope(brand.id, asOf);
   const [delivery, dispensaries, deals, articles] = await Promise.all([
     prisma.retailer.findMany({
       where: { ...scope, type: 'delivery' },
       include: {
         deals: { where: currentDealWhere(asOf), select: { id: true }, take: PUBLIC_DEAL_PREVIEW_LIMIT },
-        menus: { where: { brandMenus: { some: { brandId: brand.id } } }, select: { id: true }, take: 1 },
+        menus: { where: menuEntryScope, select: { id: true }, take: 1 },
       },
       orderBy: [{ isDemonstration: 'asc' }, { dataStatus: 'asc' }, { name: 'asc' }],
       take: 4,
@@ -108,7 +122,7 @@ export async function loadCustomerHome(domain: string) {
       where: { ...scope, type: 'storefront' },
       include: {
         deals: { where: currentDealWhere(asOf), select: { id: true }, take: PUBLIC_DEAL_PREVIEW_LIMIT },
-        menus: { where: { brandMenus: { some: { brandId: brand.id } } }, select: { id: true }, take: 1 },
+        menus: { where: menuEntryScope, select: { id: true }, take: 1 },
       },
       orderBy: [{ isDemonstration: 'asc' }, { dataStatus: 'asc' }, { name: 'asc' }],
       take: 4,
@@ -122,6 +136,7 @@ export async function loadCustomerHome(domain: string) {
       take: 5,
     }),
     prisma.article.findMany({
+      where: publicCatalogRecordWhere(asOf),
       orderBy: [{ isDemonstration: 'asc' }, { updatedAt: 'desc' }],
       take: 3,
     }),
@@ -140,7 +155,7 @@ export async function loadCustomerSearch(domain: string, query: string) {
   }
 
   const asOf = new Date();
-  const scope = brandRetailerScope(brand.id);
+  const scope = brandRetailerScope(brand.id, asOf);
   const [retailers, products, deals] = await Promise.all([
     prisma.retailer.findMany({
       where: {
@@ -156,12 +171,13 @@ export async function loadCustomerSearch(domain: string, query: string) {
     }),
     prisma.product.findMany({
       where: {
+        ...publicCatalogRecordWhere(asOf),
         OR: [
           { name: { contains: normalizedQuery } },
           { category: { contains: normalizedQuery } },
         ],
         menuEntries: {
-          some: { brandMenus: { some: { brandId: brand.id } } },
+          some: brandMenuEntryScope(brand.id, asOf),
         },
       },
       orderBy: [{ isDemonstration: 'asc' }, { name: 'asc' }],

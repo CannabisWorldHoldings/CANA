@@ -77,10 +77,24 @@ test('every public retailer discovery route imports the shared policy', () => {
     path.join(webRoot, 'src/lib/neighborhood-search.mjs'),
     'utf8',
   );
+  const customerMarketplace = fs.readFileSync(
+    path.join(webRoot, 'src/lib/customer-marketplace-data.ts'),
+    'utf8',
+  );
 
   assert.match(directory, /publicRetailerWhere\(timestamp\)/);
   assert.match(tenant, /publicRetailerWhere\(asOf\)/);
   assert.match(neighborhood, /neighborhoodCandidateWhere/);
   assert.match(neighborhoodSearch, /publicRetailerWhere\(timestamp\)/);
   assert.match(neighborhood, /currentDealWhere\(asOf\)/);
+  assert.match(customerMarketplace, /\.\.\.publicRetailerWhere\(asOf\)/);
+  assert.match(customerMarketplace, /\.\.\.publicCatalogRecordWhere\(asOf\)/);
+  assert.match(
+    customerMarketplace,
+    /prisma\.article\.findMany\(\{\s*where: publicCatalogRecordWhere\(asOf\)/,
+  );
+  assert.match(
+    customerMarketplace,
+    /menuEntries:\s*\{\s*some: brandMenuEntryScope\(brand\.id, asOf\)/,
+  );
 });

@@ -244,6 +244,14 @@ export function publicCatalogRecordWhere(asOf = new Date()) {
   };
 }
 
+export function isPublicCatalogRecord(record, asOf = new Date()) {
+  const timestamp = validTime(asOf);
+  return (
+    record?.isDemonstration === true ||
+    resolveDataStatus(record ?? {}, timestamp) === DATA_STATUS.VERIFIED_CURRENT
+  );
+}
+
 export function directorySearchHref(filters, page) {
   const parsedFilters = parseDirectorySearch({ ...filters, page: String(page) });
   const params = new URLSearchParams();
@@ -259,3 +267,4 @@ export function directorySearchHref(filters, page) {
   return queryString ? `/?${queryString}` : '/';
 }
 import { publicRetailerWhere } from './public-retailer.mjs';
+import { DATA_STATUS, resolveDataStatus } from './data-status.mjs';
