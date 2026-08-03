@@ -14,7 +14,8 @@
  *    and out-of-repo isolation must remain present in the builder.
  */
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,6 +25,110 @@ import { fileURLToPath } from 'node:url';
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const repoRoot = path.resolve(webRoot, '../..');
 const read = (relative) => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+const ownerArtifactCourt = path.join(
+  repoRoot,
+  'deploy/namecheap/verify-owner-artifact-input.sh',
+);
+
+function sha256(target) {
+  return createHash('sha256').update(fs.readFileSync(target)).digest('hex');
+}
+
+function createOwnerArtifactFixture(root, kind) {
+  const artifactRoot = 'orderweeddc-structural-court';
+  const artifact = path.join(root, `${kind}.tar.gz`);
+  if (kind === 'malformed') {
+    fs.writeFileSync(artifact, Buffer.from('not-a-tar-archive'));
+  } else {
+    execFileSync('python3', ['-c', String.raw`
+import io
+import json
+import sys
+import tarfile
+
+archive_path, artifact_root, kind = sys.argv[1:]
+files = {
+    "deploy.sh": b"#!/bin/sh\nexit 0\n",
+    "release.json": (json.dumps({
+        "gitSha": "a" * 40,
+        "shortSha": "structural-court",
+        "artifact": artifact_root,
+        "bundler": "webpack",
+    }) + "\n").encode(),
+    ".next/BUILD_ID": b"structural-build-id\n",
+    "src/metadata-markers.txt": b"LIBARCHIVE.xattr\nSCHILY.xattr\ncom.apple.provenance\ncom.apple.ResourceFork\ncom.apple.FinderInfo\n",
+    "public/icon.ico": b"\x00\x00\x01\x00\x00binary\x00ico",
+    "public/icon.png": b"\x89PNG\r\n\x1a\n\x00binary\x00png",
+    ".next/server/app/page.js": b"compiled\x00output\n",
+}
+if kind == "appledouble":
+    files["._example"] = b"appledouble"
+    files[".DS_Store"] = b"finder"
+    files["__MACOSX/resource-fork"] = b"fork"
+
+global_headers = (
+    {"SCHILY.xattr.com.apple.FinderInfo": "forbidden"}
+    if kind == "globalpax"
+    else None
+)
+with tarfile.open(
+    archive_path,
+    mode="w:gz",
+    format=tarfile.PAX_FORMAT,
+    pax_headers=global_headers,
+) as archive:
+    for relative_name, payload in files.items():
+        member = tarfile.TarInfo(f"{artifact_root}/{relative_name}")
+        member.size = len(payload)
+        member.mtime = 0
+        member.mode = 0o755 if relative_name == "deploy.sh" else 0o644
+        if kind == "pax" and relative_name == "src/metadata-markers.txt":
+            member.pax_headers = {"LIBARCHIVE.xattr.com.apple.provenance": "forbidden"}
+        archive.addfile(member, io.BytesIO(payload))
+    if kind == "link":
+        member = tarfile.TarInfo(f"{artifact_root}/danger-link")
+        member.type = tarfile.SYMTYPE
+        member.linkname = "../../outside"
+        archive.addfile(member)
+    if kind == "traversal":
+        payload = b"escape"
+        member = tarfile.TarInfo(f"{artifact_root}/../escape")
+        member.size = len(payload)
+        archive.addfile(member, io.BytesIO(payload))
+    if kind == "duplicate":
+        payload = b"duplicate"
+        member = tarfile.TarInfo(f"{artifact_root}/deploy.sh")
+        member.size = len(payload)
+        archive.addfile(member, io.BytesIO(payload))
+`, artifact, artifactRoot, kind]);
+  }
+  const sidecar = `${artifact}.sha256`;
+  fs.writeFileSync(sidecar, `${sha256(artifact)}  ${path.basename(artifact)}\n`);
+  return {
+    artifact,
+    artifactRoot,
+    sidecar,
+    state: path.join(root, `${kind}-state`),
+  };
+}
+
+function runOwnerArtifactCourt(fixture) {
+  return spawnSync('bash', [
+    ownerArtifactCourt,
+    fixture.artifact,
+    sha256(fixture.artifact),
+    fixture.sidecar,
+    sha256(fixture.sidecar),
+    fixture.artifactRoot,
+    'a'.repeat(40),
+    'structural-build-id',
+    fixture.state,
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...process.env, LC_ALL: 'C' },
+  });
+}
 
 test('command-path consistency: runbook, deploy output, and verifier agree on wrapper paths', () => {
   const runbook = read('NAMECHEAP_CPANEL_DEPLOYMENT.md');
@@ -142,6 +247,223 @@ test('clean artifact packaging rejects AppleDouble, Finder metadata, resource fo
   } finally {
     if (builderCourtRoot) fs.rmSync(builderCourtRoot, { recursive: true, force: true });
   }
+});
+
+test('owner artifact input court separates tar metadata from ordinary text and binary bytes', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-owner-artifact-input-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  await t.test('clean content markers and binary null bytes pass structurally', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'clean'));
+    assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+    assert.match(result.stdout, /STRUCTURAL_PAX_HEADER_AUDIT=PASS/);
+    assert.match(result.stdout, /BINARY_SAFE_ARCHIVE_INPUT_GATE=PASS/);
+    assert.doesNotMatch(result.stderr, /ignored null byte|FORBIDDEN_/i);
+  });
+
+  await t.test('a real forbidden PAX xattr header fails before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'pax'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /FORBIDDEN_PAX_HEADER/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
+  await t.test('a real forbidden global PAX xattr header fails before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'globalpax'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /FORBIDDEN_PAX_HEADER/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
+  await t.test('AppleDouble, Finder, and __MACOSX members fail before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'appledouble'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /FORBIDDEN_MACOS_MEMBER/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
+  await t.test('a malformed archive fails before deployment', () => {
+    const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, 'malformed'));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /ARCHIVE_HEADER_INSPECTION_FAILED/);
+    assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/);
+    assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/);
+  });
+
+  await t.test('links, traversal, and duplicate members fail before deployment', () => {
+    for (const [kind, expected] of [
+      ['link', /FORBIDDEN_ARCHIVE_MEMBER_TYPE/],
+      ['traversal', /UNSAFE_ARCHIVE_MEMBER/],
+      ['duplicate', /DUPLICATE_ARCHIVE_MEMBER/],
+    ]) {
+      const result = runOwnerArtifactCourt(createOwnerArtifactFixture(root, kind));
+      assert.notEqual(result.status, 0, kind);
+      assert.match(result.stderr, expected, kind);
+      assert.match(result.stderr, /DEPLOYMENT_STARTED=NO/, kind);
+      assert.match(result.stderr, /AUTOMATIC_ROLLBACK_EXECUTED=NO/, kind);
+    }
+  });
+});
+
+test('owner artifact input court captures only bounded textual values in shell variables', () => {
+  const court = read('deploy/namecheap/verify-owner-artifact-input.sh');
+  assert.doesNotMatch(court, /\$\(gzip\s+-dc/);
+  assert.doesNotMatch(court, /\$\(tar\s+-xOf/);
+  assert.doesNotMatch(court, /\$\(cat\s+/);
+  assert.doesNotMatch(court, /artifact_member_matches/);
+  assert.match(court, /artifact_actual_sha=\$\(sha256sum/);
+  assert.match(court, /PYTHON=\$\(command -v python3/);
+});
+
+test('artifact snapshot is immutable after the upload path is replaced', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-owner-artifact-snapshot-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const fixture = createOwnerArtifactFixture(root, 'clean');
+  const expected = sha256(fixture.artifact);
+  const snapshot = path.join(root, 'private', 'verified-artifact.tar.gz');
+  const inventory = path.join(root, 'private', 'artifact-members.txt');
+  fs.mkdirSync(path.dirname(snapshot), { mode: 0o700 });
+
+  const result = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--snapshot-structure-only',
+    fixture.artifact,
+    expected,
+    fixture.artifactRoot,
+    snapshot,
+    inventory,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /IMMUTABLE_ARTIFACT_SNAPSHOT=PASS/);
+
+  fs.writeFileSync(fixture.artifact, Buffer.from('replacement archive'));
+  assert.equal(sha256(snapshot), expected, 'private snapshot must retain the verified bytes');
+  assert.doesNotThrow(() => execFileSync('tar', ['-tzf', snapshot]));
+});
+
+test('extracted release identity is bounded and internally consistent', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-release-identity-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const artifact = 'orderweeddc-abcdef0';
+  const gitSha = `${artifact.slice('orderweeddc-'.length)}${'a'.repeat(33)}`;
+  fs.mkdirSync(path.join(root, '.next'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.next/BUILD_ID'), 'bounded-build-id\n');
+  fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify({
+    gitSha,
+    shortSha: 'abcdef0',
+    artifact,
+    bundler: 'webpack',
+  }));
+  fs.writeFileSync(path.join(root, 'receipt.json'), JSON.stringify({
+    gitSha,
+    artifact,
+    bundler: 'webpack',
+    unresolvedExternalScan: { unresolved: [] },
+    isolatedRuntimeTest: { passed: true },
+  }));
+
+  const accepted = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--verify-extracted-identity',
+    root,
+    artifact,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.equal(accepted.status, 0, `${accepted.stdout}\n${accepted.stderr}`);
+  assert.match(accepted.stdout, /RELEASE_IDENTITY_VERIFICATION=PASS/);
+
+  const release = JSON.parse(fs.readFileSync(path.join(root, 'release.json'), 'utf8'));
+  release.gitSha = `abcdef0${'b'.repeat(33)}`;
+  fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify(release));
+  const rejected = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--verify-extracted-identity',
+    root,
+    artifact,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /RELEASE_IDENTITY_VERIFICATION_FAILED/);
+
+  const nonHexSha = `abcdef0${'z'.repeat(33)}`;
+  release.gitSha = nonHexSha;
+  const receipt = JSON.parse(fs.readFileSync(path.join(root, 'receipt.json'), 'utf8'));
+  receipt.gitSha = nonHexSha;
+  fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify(release));
+  fs.writeFileSync(path.join(root, 'receipt.json'), JSON.stringify(receipt));
+  const nonHexRejected = spawnSync('bash', [
+    ownerArtifactCourt,
+    '--verify-extracted-identity',
+    root,
+    artifact,
+  ], { cwd: repoRoot, encoding: 'utf8' });
+  assert.notEqual(nonHexRejected.status, 0);
+  assert.match(nonHexRejected.stderr, /RELEASE_IDENTITY_VERIFICATION_FAILED/);
+
+  for (const invalidArtifact of [
+    'orderweeddc-',
+    'orderweeddc-abc12xz',
+    'orderweeddc-abcdef01',
+  ]) {
+    const invalidSuffixRejected = spawnSync('bash', [
+      ownerArtifactCourt,
+      '--verify-extracted-identity',
+      root,
+      invalidArtifact,
+    ], { cwd: repoRoot, encoding: 'utf8' });
+    assert.notEqual(invalidSuffixRejected.status, 0, invalidArtifact);
+    assert.match(
+      invalidSuffixRejected.stderr,
+      /RELEASE_IDENTITY_VERIFICATION_FAILED/,
+      invalidArtifact,
+    );
+  }
+});
+
+test('canonical deployment verifier rejects unsafe artifact names before download', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-name-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const verifier = path.join(repoRoot, 'deploy/namecheap/verify-and-deploy.sh');
+
+  for (const invalidName of [
+    '../escape.tar.gz',
+    'orderweeddc-.tar.gz',
+    'orderweeddc-abc12xz.tar.gz',
+    'orderweeddc-abcdef01.tar.gz',
+  ]) {
+    const result = spawnSync('sh', [
+      verifier,
+      'https://example.invalid/artifact',
+      invalidName,
+      '0'.repeat(64),
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: { ...process.env, HOME: root },
+    });
+    assert.notEqual(result.status, 0, invalidName);
+    assert.match(result.stdout, /artifact filename must be orderweeddc-<7 lowercase hex>/);
+  }
+
+  assert.equal(fs.existsSync(path.join(root, 'uploads')), false);
+  assert.equal(fs.existsSync(path.join(root, 'escape.tar.gz')), false);
+});
+
+test('canonical deployment verifier snapshots before structural inspection and extraction', () => {
+  const verifier = read('deploy/namecheap/verify-and-deploy.sh');
+  const structuralCall = verifier.indexOf('bash "$STRUCTURAL_COURT" --snapshot-structure-only');
+  const extraction = verifier.indexOf('tar -xzf "$STAGE/verified-artifact.tar.gz"');
+  const identityCall = verifier.indexOf('bash "$STRUCTURAL_COURT" --verify-extracted-identity');
+  const swap = verifier.indexOf('phase "GATE 4: code-only swap"');
+  assert.ok(structuralCall >= 0, 'the canonical verifier must invoke the structural court');
+  assert.ok(extraction > structuralCall, 'structural inspection must complete before extraction');
+  assert.ok(identityCall > extraction, 'release identity verification must follow safe extraction');
+  assert.ok(swap > identityCall, 'release identity must be accepted before the production swap');
+  assert.doesNotMatch(verifier, /tar -xzf "\$UPLOADS\/\$FILE"/);
+  assert.match(verifier, /\[ -f "\$STRUCTURAL_COURT" \] && \[ ! -L "\$STRUCTURAL_COURT" \]/);
+  const runbook = read('deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md');
+  assert.match(runbook, /verify-owner-artifact-input\.sh/);
 });
 
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {

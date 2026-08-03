@@ -27,9 +27,17 @@ DATA_DB="${OWD_DATA_DIR:-$HOME/orderweeddc-data}/prod.db"
 UPLOADS="$HOME/uploads"
 DOMAIN="orderweeddc.com"
 ORIGIN_IP="${OWD_ORIGIN_IP:-127.0.0.1}"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 phase() { printf '\n=== %s ===\n' "$1"; }
 fail() { echo "GATE FAILED: $1"; exit 1; }
+
+case "$FILE" in
+  orderweeddc-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].tar.gz)
+    ARTIFACT_ROOT_NAME=${FILE%.tar.gz}
+    ;;
+  *) fail "artifact filename must be orderweeddc-<7 lowercase hex>.tar.gz" ;;
+esac
 
 phase "GATE 1: download + checksum"
 mkdir -p "$UPLOADS"
@@ -42,7 +50,15 @@ echo "$EXPECTED_SHA  $UPLOADS/$FILE" | sha256sum -c - || fail "sha256 mismatch"
 
 phase "GATE 2: receipt acceptance"
 STAGE=$(mktemp -d "$HOME/.owd-verify-XXXXXX")
-tar -xzf "$UPLOADS/$FILE" -C "$STAGE"
+chmod 700 "$STAGE"
+STRUCTURAL_COURT="$SCRIPT_DIR/verify-owner-artifact-input.sh"
+[ -f "$STRUCTURAL_COURT" ] && [ ! -L "$STRUCTURAL_COURT" ] ||
+  fail "structural artifact verifier unavailable"
+bash "$STRUCTURAL_COURT" --snapshot-structure-only \
+  "$UPLOADS/$FILE" "$EXPECTED_SHA" "$ARTIFACT_ROOT_NAME" \
+  "$STAGE/verified-artifact.tar.gz" "$STAGE/artifact-members.txt" ||
+  fail "structural artifact verification"
+tar -xzf "$STAGE/verified-artifact.tar.gz" -C "$STAGE"
 RELEASE_DIR=$(find "$STAGE" -mindepth 1 -maxdepth 1 -type d | head -1)
 RECEIPT="$RELEASE_DIR/receipt.json"
 [ -f "$RECEIPT" ] || fail "receipt.json missing"
@@ -51,6 +67,8 @@ grep -q '"passed": true' "$RECEIPT" || fail "isolated runtime test not passed in
 grep -q '"unresolved": \[\]' "$RECEIPT" || fail "unresolved external references present"
 [ -f "$RELEASE_DIR/server.js" ] || fail "release missing server.js"
 [ -f "$RELEASE_DIR/app.js" ] || fail "release missing app.js"
+bash "$STRUCTURAL_COURT" --verify-extracted-identity \
+  "$RELEASE_DIR" "$ARTIFACT_ROOT_NAME" || fail "release identity mismatch"
 echo "receipt identity:"
 grep -E '"(artifact|gitSha|bundler|builtAt)"' "$RECEIPT" || true
 
