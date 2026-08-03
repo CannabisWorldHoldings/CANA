@@ -52,6 +52,15 @@ test('customer routes, banner behavior, truth states, and mobile navigation work
   await expect(desktop.getByText(/confirm service area/i).first()).toBeVisible();
   await expect(desktop.getByText(/Availability, role details, fee and minimum not sourced/).first()).toBeVisible();
 
+  await desktop.goto('/', { waitUntil: 'networkidle' });
+  const comparisonChoices = desktop.getByRole('checkbox', { name: /Compare/ });
+  await expect(comparisonChoices.first()).toBeVisible();
+  await comparisonChoices.nth(0).check();
+  if (await comparisonChoices.count() > 1) await comparisonChoices.nth(1).check();
+  await desktop.getByRole('button', { name: /Compare selected records/ }).click();
+  await expect(desktop).toHaveURL(/\/compare\?retailer=/);
+  await expect(desktop.getByRole('heading', { level: 1, name: /Compare records, not hype/ })).toBeVisible();
+
   await desktop.goto('/dispensaries', { waitUntil: 'networkidle' });
   await expect(desktop.getByRole('heading', { level: 1, name: /Start with the details/ })).toBeVisible();
   await desktop.goto('/search?query=flower', { waitUntil: 'networkidle' });

@@ -430,7 +430,7 @@ identity, rewrite production JSX, or bypass review gates.
 | Production build | PASS | Next.js 16.3.0-canary.6 compiled, type-checked and emitted all customer routes |
 | Browser route/visual matrix | PASS | Executable test: `apps/web/tests/customer-sovereign-ui.browser.mjs`; desktop 1440px and mobile 390px; homepage, delivery, dispensaries and search; no console warning/error, no unexpected request failure, no horizontal overflow |
 | WCAG A/AA audit | PASS | Axe serious/critical violations: 0 across four routes at 1440px and 390px; age-gate focus and wrap behavior passed |
-| Slower-mobile performance | PASS | 150ms latency, 1.6 Mbps down, 4x CPU: LCP 3500ms, CLS 0.00199, third-party scripts 0 |
+| Slower-mobile performance | PASS | 150ms latency, 1.6 Mbps down, 4x CPU: LCP 3520ms, CLS 0.00199, third-party scripts 0 |
 | Full repository web test script | BASELINE BLOCKED | 663 tests discovered: 582 passed, 81 failed; the dominant root is the pre-existing macOS Prisma `Schema engine error`, with additional suite-global build/server contention and an environment-only pilot-package path; customer UI gates did not fail |
 | Dependency audit | KNOWN BASELINE | 1 high-severity transitive development dependency finding in `brace-expansion`; no forced dependency rewrite was made in this UI branch |
 

@@ -102,9 +102,28 @@ export default function CustomerHomeMarket({
           href="/dispensaries"
           action="View dispensaries"
         />
-        <div className="mt-8 grid gap-x-12 gap-y-8 xl:grid-cols-2">
-          {dispensaries.length ? dispensaries.map((item, index) => <CustomerListingRow key={item.id} listing={item} index={index + 2} />) : <p className="py-10 text-sm text-[#667069]">No dispensary records are available in this data state.</p>}
-        </div>
+        {dispensaries.length ? (
+          <form action="/compare" method="get" className="mt-8">
+            <div className="grid gap-x-12 gap-y-8 xl:grid-cols-2">
+              {dispensaries.map((item, index) => (
+                <CustomerListingRow
+                  key={item.id}
+                  listing={item}
+                  index={index + 2}
+                  comparisonSelectable
+                />
+              ))}
+            </div>
+            <button
+              type="submit"
+              className="mt-5 min-h-11 rounded-lg bg-[#11643d] px-5 py-3 text-sm font-bold text-white hover:bg-[#0c4f30]"
+            >
+              Compare selected records
+            </button>
+          </form>
+        ) : (
+          <p className="mt-8 py-10 text-sm text-[#667069]">No dispensary records are available in this data state.</p>
+        )}
       </section>
     </>
   );

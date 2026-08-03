@@ -30,9 +30,11 @@ const ILLUSTRATIONS = [
 export default function CustomerListingRow({
   listing,
   index,
+  comparisonSelectable = false,
 }: {
   listing: CustomerListing;
   index: number;
+  comparisonSelectable?: boolean;
 }) {
   const delivery = listing.type === 'delivery';
   const freshness = relativeFreshnessLabel({
@@ -69,6 +71,17 @@ export default function CustomerListingRow({
             </h3>
           </div>
           <div className="flex items-center gap-2">
+            {comparisonSelectable && (
+              <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-xs font-semibold text-[#4d5951]">
+                <input
+                  type="checkbox"
+                  name="retailer"
+                  value={listing.id}
+                  className="h-4 w-4 accent-[#11643d]"
+                />
+                Compare
+              </label>
+            )}
             <DataStatusBadge
               dataStatus={listing.dataStatus}
               isDemonstration={listing.isDemonstration}

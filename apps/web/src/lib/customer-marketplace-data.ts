@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { currentDealWhere } from '@/lib/directory-search.mjs';
 import { NEIGHBORHOOD_CONFIGS } from '@/lib/neighborhood-configs.mjs';
+import { PUBLIC_DEAL_PREVIEW_LIMIT } from '@/lib/retailer-detail-search.mjs';
 
 const QUERY_LIMIT = 80;
 
@@ -62,7 +63,7 @@ export async function loadCustomerDirectory({
       deals: {
         where: currentDealWhere(asOf),
         select: { id: true },
-        take: 3,
+        take: PUBLIC_DEAL_PREVIEW_LIMIT,
       },
       menus: {
         where: { brandMenus: { some: { brandId: brand.id } } },
@@ -91,7 +92,7 @@ export async function loadCustomerHome(domain: string) {
     prisma.retailer.findMany({
       where: { ...scope, type: 'delivery' },
       include: {
-        deals: { where: currentDealWhere(asOf), select: { id: true }, take: 3 },
+        deals: { where: currentDealWhere(asOf), select: { id: true }, take: PUBLIC_DEAL_PREVIEW_LIMIT },
         menus: { where: { brandMenus: { some: { brandId: brand.id } } }, select: { id: true }, take: 1 },
       },
       orderBy: [{ isDemonstration: 'asc' }, { dataStatus: 'asc' }, { name: 'asc' }],
@@ -100,7 +101,7 @@ export async function loadCustomerHome(domain: string) {
     prisma.retailer.findMany({
       where: { ...scope, type: 'storefront' },
       include: {
-        deals: { where: currentDealWhere(asOf), select: { id: true }, take: 3 },
+        deals: { where: currentDealWhere(asOf), select: { id: true }, take: PUBLIC_DEAL_PREVIEW_LIMIT },
         menus: { where: { brandMenus: { some: { brandId: brand.id } } }, select: { id: true }, take: 1 },
       },
       orderBy: [{ isDemonstration: 'asc' }, { dataStatus: 'asc' }, { name: 'asc' }],
