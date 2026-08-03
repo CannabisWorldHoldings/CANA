@@ -40,7 +40,7 @@
     ],
     "reference_facts": [
       {
-        "id": "mechanism_55f7172259b4049a",
+        "id": "mechanism_47bca12252ee1dae",
         "claim": "ORDERWEEDDC offers three transparent D.C. discovery paths: local orientation, a bounded shortlist, and source-first trust, each leading to an existing marketplace route.",
         "authority": "HISTORICAL_REFERENCE",
         "truth_status": "OBSERVED",
@@ -67,6 +67,6 @@
       "excluded": 0
     },
     "actuation_rule": "Only actionable_facts may drive an action. reference_facts inform reasoning but must not be cited as justification for actuation.",
-    "packet_digest": "38c80be292d8f4f858b3b3af321ee05fcacad5d7e8d2cd48393d3b8f3ddb02df"
+    "packet_digest": "c09dce6eda2f0c1f31ba9a656d0b53630165401562729b8ff81bcc7573028c7e"
   }
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": "cana.owner-review-render-manifest/1.0.0",
   "base_url": "http://orderweeddc.localhost:3410",
-  "source_commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+  "rejected_source_commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
   "owner_decision_status": "PENDING",
   "production_accessed": false,
   "campaigns": {
@@ -14,7 +14,7 @@
         },
         "status": 200,
         "page_context_path": "owd-block-by-block-desktop-homepage.png",
-        "page_context_sha256": "bdd77fc4e16e76b31a5b8138274f1fa7ada1fa349fcaa44e9f995b3718cbb081",
+        "page_context_sha256": "037cf6b68da45427ff4975cc40fdf2e2ff77dc0982749a8afd2bad4af445c3bd",
         "isolated_path": "owd-block-by-block-desktop-billboard.png",
         "isolated_sha256": "7af525a2194c7a07183bb74edf599c0da4ceb7646b48d6d893292748250e886c",
         "image_source": "/competitive-evolution/block-by-block-desktop.svg",
@@ -24,7 +24,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 44,
-          "transferred_bytes": 702737
+          "transferred_bytes": 703005
         }
       },
       "mobile": {
@@ -35,17 +35,17 @@
         },
         "status": 200,
         "page_context_path": "owd-block-by-block-mobile-homepage.png",
-        "page_context_sha256": "593cf40e32aa0e855cdf3433dea628e8cfdf19e3b33280f1c0c06ccc36307611",
+        "page_context_sha256": "dffbb4a5b8bf5caeb72050c2c34d27003949390621e8cedfd186e7fabb4eb5ae",
         "isolated_path": "owd-block-by-block-mobile-billboard.png",
         "isolated_sha256": "418cd1908b90d5ef3db6b525e5aeff0a954f2bb116484c23141af9ee5706f286",
-        "image_source": "/competitive-evolution/block-by-block-desktop.svg",
+        "image_source": "/competitive-evolution/block-by-block-mobile.svg",
         "horizontal_overflow": false,
         "console_problems": [],
         "request_failures": [],
         "serious_accessibility_findings": [],
         "performance": {
-          "resource_count": 24,
-          "transferred_bytes": 682863
+          "resource_count": 28,
+          "transferred_bytes": 662374
         }
       }
     },
@@ -58,9 +58,9 @@
         },
         "status": 200,
         "page_context_path": "owd-tonights-shortlist-desktop-homepage.png",
-        "page_context_sha256": "6d420d0916230a6303172cb7f10b0fce2feb275c504a5ed13ebc00f295522277",
+        "page_context_sha256": "49041c04c73fd30db00b4650b88a8382c021ee7c2ad19e32e8fa8a7af4c70c65",
         "isolated_path": "owd-tonights-shortlist-desktop-billboard.png",
-        "isolated_sha256": "4831d11a7b52134b316d6306a2c41105222fa74b0a119cfb7f444b3379aadd48",
+        "isolated_sha256": "9609e2790fa679dc8c55d2b5d7ca85d64cae0051a43cfd13f9e498f3723bb71d",
         "image_source": "/competitive-evolution/tonights-shortlist-desktop.svg",
         "horizontal_overflow": false,
         "console_problems": [],
@@ -68,7 +68,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 44,
-          "transferred_bytes": 702793
+          "transferred_bytes": 703145
         }
       },
       "mobile": {
@@ -79,17 +79,17 @@
         },
         "status": 200,
         "page_context_path": "owd-tonights-shortlist-mobile-homepage.png",
-        "page_context_sha256": "88a34d523287d423c0af846aebce22d2dd501b01755bca43423d53b803832303",
+        "page_context_sha256": "6f84952cd6de8c4d3399120fd3f853b37167ba967515613e1e748bfe72485d70",
         "isolated_path": "owd-tonights-shortlist-mobile-billboard.png",
-        "isolated_sha256": "dadc9a22980f9d2440addabe5cb51e0de585c2cdcad1a65d34ee27381d212346",
-        "image_source": "/competitive-evolution/tonights-shortlist-desktop.svg",
+        "isolated_sha256": "50e8e90873a31b6e0b6f212d072121fabf5b5aa01e3320eb92097c7eb6e3f5a6",
+        "image_source": "/competitive-evolution/tonights-shortlist-mobile.svg",
         "horizontal_overflow": false,
         "console_problems": [],
         "request_failures": [],
         "serious_accessibility_findings": [],
         "performance": {
-          "resource_count": 24,
-          "transferred_bytes": 682773
+          "resource_count": 26,
+          "transferred_bytes": 660233
         }
       }
     },
@@ -102,7 +102,7 @@
         },
         "status": 200,
         "page_context_path": "owd-source-before-hype-desktop-homepage.png",
-        "page_context_sha256": "7f36c93f11072e68d7359a3c5912d7a99ada50c30fe70abcc415bca08a842fac",
+        "page_context_sha256": "88f1abcf44ba919b069fe6b55b314247eca117cdaa65735e3b650a08c3c808b2",
         "isolated_path": "owd-source-before-hype-desktop-billboard.png",
         "isolated_sha256": "a9a71a4ea166a4fa52c833dc21d52cfbdd20a3c2a38077240e3066e11575170b",
         "image_source": "/competitive-evolution/source-before-hype-desktop.svg",
@@ -112,7 +112,7 @@
         "serious_accessibility_findings": [],
         "performance": {
           "resource_count": 44,
-          "transferred_bytes": 702714
+          "transferred_bytes": 703002
         }
       },
       "mobile": {
@@ -123,31 +123,32 @@
         },
         "status": 200,
         "page_context_path": "owd-source-before-hype-mobile-homepage.png",
-        "page_context_sha256": "c129d3389451b6be76485f54ab35b8b979da17e882e72915e325bede176d5177",
+        "page_context_sha256": "195094e6e13e71faef0fa48f3d2907880703870bcb4a6953d727d0b335391b75",
         "isolated_path": "owd-source-before-hype-mobile-billboard.png",
         "isolated_sha256": "2498a4e09a1ff2a9380274219f5dac9471f7587c32e3b5b9e044f70a1fdb7e84",
-        "image_source": "/competitive-evolution/source-before-hype-desktop.svg",
+        "image_source": "/competitive-evolution/source-before-hype-mobile.svg",
         "horizontal_overflow": false,
         "console_problems": [],
         "request_failures": [],
         "serious_accessibility_findings": [],
         "performance": {
-          "resource_count": 24,
-          "transferred_bytes": 682794
+          "resource_count": 26,
+          "transferred_bytes": 660189
         }
       }
     }
   },
   "release_identity": {
     "status": "RELEASE_SHA_PRESENT",
-    "gitSha": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
-    "shortSha": "5c7fe27",
+    "gitSha": "8ad153f90dc85de924739466737d755e93744c7c",
+    "shortSha": "8ad153f",
     "builtAt": "2026-08-03T10:26:00.000Z",
     "artifact": "local-owner-review-production-build",
     "source": "env:RELEASE_RECEIPT_PATH",
-    "checkedAt": "2026-08-03T12:19:05.260Z"
+    "checkedAt": "2026-08-03T12:55:48.869Z"
   },
-  "captured_at": "2026-08-03T12:19:15.513Z",
+  "source_commit": "8ad153f90dc85de924739466737d755e93744c7c",
+  "captured_at": "2026-08-03T12:55:57.195Z",
   "screenshot_count": 12,
   "status": "PASS"
 }

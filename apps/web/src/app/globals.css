@@ -618,5 +618,5 @@ html[data-daypart="night"] .marketplace-hero__veil {
 }
 
 .owner-review-marketplace-paths__index {
-  color: var(--campaign-accent, var(--brand-primary));
+  color: var(--brand-surface);
 }

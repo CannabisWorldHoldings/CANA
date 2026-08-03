@@ -4,7 +4,7 @@
   "run_id": "offline-crawler-adapter-20260803",
   "produced_at": "2026-08-03T14:00:00.000Z",
   "payload_kind": "CRAWLER_OBSERVATION",
-  "payload_sha256": "2618d3791cd8dab71e7fa2a09a2cadb78d5f62839a90853898b699c4dab21235",
+  "payload_sha256": "5899b486ac1d5c18570a64a6af24283aec7221243f7c3233ee4f7965ebeb3ec0",
   "payload": {
     "schema_version": "cana.competitor-crawl-observation/1.0.0",
     "crawl_id": "fixture_crawl_marketplace_mechanism_20260803",
@@ -63,8 +63,9 @@
     "rights_state": "REFERENCE_ONLY",
     "prompt_injection_state": "SCANNED_NO_AUTHORITY",
     "importance_score": 0.8,
-    "change_type": "OFFLINE_ADAPTER_VALIDATION"
+    "change_type": "OFFLINE_ADAPTER_VALIDATION",
+    "evidence_class": "OFFLINE_ADAPTER_FIXTURE"
   },
   "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
-  "handoff_id": "sensor_handoff_5e429d2b6a876d82e8662a08"
+  "handoff_id": "sensor_handoff_e4d082673003dd1eb3a434f7"
 }

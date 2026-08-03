@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "ad-creative.provider-registry/1.0.0",
+  "providers": [
+    {
+      "id": "local-vector-compositor",
+      "provider": {
+        "name": "local-vector-compositor",
+        "model": "repository-svg-campaign-system-v1"
+      },
+      "eligible": true,
+      "activationState": "AVAILABLE_LOCAL_ONLY",
+      "policyEligibility": "OWNER_REVIEW_ONLY",
+      "capabilities": [
+        "responsive-vector-composition",
+        "repository-provenance",
+        "zero-network"
+      ],
+      "costUsdPerOutput": 0,
+      "networkExecution": false
+    },
+    {
+      "id": "gemini-draft-provider",
+      "provider": null,
+      "eligible": false,
+      "activationState": "DRAFT_ONLY_BLOCKED",
+      "policyEligibility": "NO_CALL_WITHOUT_SEPARATE_GRANT_CREDENTIALS_AND_OWNER_APPROVAL",
+      "capabilities": [
+        "responsive-vector-composition",
+        "repository-provenance"
+      ],
+      "costUsdPerOutput": null,
+      "networkExecution": true
+    }
+  ]
+}

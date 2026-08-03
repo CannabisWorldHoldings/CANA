@@ -3,7 +3,7 @@
   "visible_change": "The offline adapter fixture presents local orientation before a bounded marketplace handoff.",
   "customer_problem": "Adults need a smaller, locally relevant decision set before opening a menu.",
   "business_mechanism": "Sequence local relevance before the menu handoff to reduce unstructured choice.",
-  "adoption_evidence": "Observed once in the current direct capture; persistence and outcome remain unproven.",
+  "adoption_evidence": "Offline adapter fixture only; no current competitor adoption, persistence, or outcome is claimed.",
   "brittle_point": "Neighborhood framing can become empty decoration if it is not tied to a useful discovery path.",
   "competitor_ignored": "The captured surface does not expose ORDERWEEDDC-style source and record-state context.",
   "current_cana_capability": "ORDERWEEDDC exposes source and record state before marketplace handoff.",
@@ -19,5 +19,5 @@
   "evidence_refs": [
     "sha256:a83412bf261946bcdaceb9e3068b1ee80209d2c45d2fd728618f62c1d0e4d5a8"
   ],
-  "inference_state": "LABELED_UNPROVEN"
+  "inference_state": "OFFLINE_FIXTURE_UNPROVEN"
 }

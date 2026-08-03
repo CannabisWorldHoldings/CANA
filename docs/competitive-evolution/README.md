@@ -16,8 +16,9 @@ flowchart LR
   O["PR #21 owner rejection and preference pair"] --> C["Canonical SiteMind context compiler"]
   M --> C
   C --> H["Existing Hermes governed packet"]
-  H --> R["Provider-neutral ad-creative router"]
-  R --> G["Three original responsive campaign systems"]
+  H --> R["Canonical ad-creative registry and router"]
+  R --> V["Canonical brief, provider, inspection, verification pipeline"]
+  V --> G["Three original responsive campaign systems"]
   G --> P["Actual homepage local review gate"]
   P --> T["14-judge visual tournament"]
   T --> D["Owner decision pending"]
@@ -35,7 +36,7 @@ The sensor adapters cannot write a second memory. Both converge on `sitemind/com
 | Context compilation | `skills-src/sitemind-context-compiler.mjs` |
 | Governed creative request and receipt | `skills-src/hermes-governed-packet.mjs` |
 | Canonical hashing and mission assertions | `tools/mission-2/canonical.mjs` |
-| Creative providers and verification home | `packages/ad-creative` |
+| Creative registry, briefs, providers, pipeline, and verification | `packages/ad-creative` canonical modules |
 | Customer billboard eligibility | `apps/web/src/lib/customer-banner.mjs` |
 | Actual homepage placement | `apps/web/src/app/[domain]/page.tsx` and `customer-sponsored-banner.tsx` |
 
@@ -58,11 +59,11 @@ The implementation provides:
 
 - strict scheduled-task adapters for `CANA Sovereign Growth Watch` and `Competitor Crawl Intelligence`;
 - safe offline owner-packet import with manifest validation, content-addressed objects, metadata exclusion, size budgets, PNG validation, and traversal/symlink/hard-link/duplicate refusal;
-- deterministic fusion and deduplication into one append-only, tenant- and workspace-scoped SiteMind ledger;
+- deterministic fusion and deduplication into one append-only, tenant- and workspace-scoped SiteMind ledger, after recomputing all four retained crawl-object hashes and verifying the existing ledger chain;
 - a targeted crawl-job contract, evidence receipts, and change-rate/importance/failure/evidence-quality cadence routing;
 - mechanism extraction that explicitly records `protected_expression_copied: false`;
 - the canonical SiteMind context compiler and existing Hermes packet/receipt path;
-- a provider registry that selects the zero-cost repository vector compositor and leaves Gemini blocked, with provider calls `0` and spend `$0`;
+- the canonical ad-creative provider registry, router, brief builder, generation pipeline, post-generation inspection, and verification court; it selects the zero-cost repository vector provider and retains Gemini only as a blocked descriptor, with external provider calls `0` and spend `$0`;
 - three complete campaign records, six original repository-owned SVG assets, and desktop/mobile homepage renders;
 - fourteen evidence-citing tournament judges, failure lists, critique overlays, lineage receipts, limitations, a pending owner control, and an unrun first-party experiment;
 - a learning receipt plus generation-two retrieval proof that applies the rejected qualities without inventing an approved winner.
@@ -79,7 +80,7 @@ The deterministic slice is run with:
 
 It preserves the rejected desktop and mobile billboard bytes at SHA-256 `e4ae17edd0cb2c4b6f2d68e3a719132c2bf59c238417ed8283d5688d1d795332` and `1b124691d8da52f05d3aada2ad009bb78d84439eeed9818fc7b68c2331c13f3d`, respectively. Imported text has no instruction authority.
 
-The bridge fixture validates the offline handoff/fusion contract. It is explicitly not evidence of a current competitor behavior, adoption level, or performance outcome. No competitor network crawl is represented by the fixture.
+The bridge fixture validates the offline handoff/fusion contract. It is explicitly classified `OFFLINE_ADAPTER_FIXTURE`, routes to `OFFLINE_CONTRACT_VALIDATION_ONLY`, and cannot promote a competitive claim. It is not evidence of current competitor behavior, adoption, or performance; no competitor network crawl is represented.
 
 ## Owner review instructions
 
@@ -93,7 +94,7 @@ No selection is assumed in this PR. A later bounded change must validate and app
 
 ## Courts and limitations
 
-Deterministic tests cover safe and unsafe offline import, archive refusal, traversal, duplicate members, symlinks, hard links, oversize inputs, malformed PNGs, instruction-shaped text, scheduled handoff allowlisting, fusion, deduplication, rights state, authority refusal, tournament evidence, and learning retrieval. Browser courts cover desktop/mobile page context, isolated billboards, accessibility, overflow, console/request failures, customer-facing copy, and resource transfer evidence.
+Deterministic tests cover safe and unsafe offline import, archive refusal, traversal, duplicate members, symlinks, hard links, oversize inputs, malformed PNGs, instruction-shaped text, scheduled handoff allowlisting, evidence-byte hash recomputation, ledger-tamper refusal, fusion, deduplication, rights state, authority refusal, canonical creative verification, retained PNG recomputation, responsive source provenance, tournament evidence, and learning retrieval. Browser courts cover desktop/mobile page context, isolated billboards, accessibility, overflow, console/request failures, customer-facing copy, and resource transfer evidence.
 
 The scores do not prove customer preference, CTR, conversion lift, merchant value, ranking, revenue, or causal impact. The first-party experiment is `DEFINED_NOT_RUN`; all measured outcome fields remain null. The complete limitations ledger is `evidence/competitive-evolution/pr21-owner-review/limitations.json`.
 

@@ -56,5 +56,6 @@
   "rights_state": "REFERENCE_ONLY",
   "prompt_injection_state": "SCANNED_NO_AUTHORITY",
   "importance_score": 0.8,
-  "change_type": "OFFLINE_ADAPTER_VALIDATION"
+  "change_type": "OFFLINE_ADAPTER_VALIDATION",
+  "evidence_class": "OFFLINE_ADAPTER_FIXTURE"
 }

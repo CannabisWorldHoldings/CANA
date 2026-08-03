@@ -8,16 +8,16 @@
     "owd-source-before-hype"
   ],
   "requirements": [
-    "typography",
-    "logo-preservation",
-    "composition-control",
-    "aspect-ratio",
-    "provenance-support"
+    "responsive-vector-composition",
+    "repository-provenance",
+    "zero-network"
   ],
   "provider_calls": 0,
+  "local_provider_operations": 12,
+  "external_provider_calls": 0,
   "actual_spend_usd": 0,
   "generated_at": "2026-08-03T14:00:00.000Z",
   "network_generation": false,
   "production_modified": false,
-  "receipt_hash": "82a7f5b6845a9d5138e078a0698cd65907c57f8eb181717a8f4ab459195cab21"
+  "receipt_hash": "0671894c7c2c0b9112f0d25db60e30895980741da6e90546db8ac5f259ec765d"
 }

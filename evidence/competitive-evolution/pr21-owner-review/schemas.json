@@ -72,9 +72,10 @@
       "rights_state",
       "prompt_injection_state",
       "importance_score",
-      "change_type"
+      "change_type",
+      "evidence_class"
     ],
-    "authority": "DIRECT_CAPTURE_EVIDENCE_ONLY"
+    "authority": "DIRECT_CAPTURE_OR_EXPLICIT_OFFLINE_FIXTURE"
   },
   "competitor_event": {
     "schema_version": "cana.competitor-event/1.0.0",
@@ -112,7 +113,10 @@
       "deduplication_key",
       "importance_score",
       "change_type",
-      "routing_decision"
+      "routing_decision",
+      "evidence_class",
+      "capture_bytes_present",
+      "hashes_recomputed"
     ]
   },
   "evidence_receipt": {
@@ -121,7 +125,10 @@
       "event_id",
       "crawl_id",
       "direct_capture_present",
+      "evidence_class",
+      "capture_bytes_present",
       "hashes_recomputed",
+      "promotion_allowed",
       "rights_state",
       "prompt_injection_state",
       "production_modified",

@@ -1,7 +1,7 @@
 [
   {
     "asset_id": "/competitive-evolution/source-before-hype-desktop.svg",
-    "asset_sha256": "f23dbb77997d94903a5b4e98e4a1d7e66927593925ab62857e579e696acde286",
+    "asset_sha256": "0170eae56070f2bece25af53ca420d7789374b3a54d6c981e1c709b443c9da00",
     "source_kind": "REPOSITORY_ORIGINAL_VECTOR",
     "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
     "training_eligibility": "CANA_OWNED_REVIEW_ASSET",
@@ -10,7 +10,7 @@
   },
   {
     "asset_id": "/competitive-evolution/source-before-hype-mobile.svg",
-    "asset_sha256": "da007eb274b6e4516a9dc47933b40243aca0d2e219ed0073e28b970646b1a92e",
+    "asset_sha256": "ef66d02b933728f9e00bf13fc7b81433e918c01d27031831f2921d17c6b8b4fa",
     "source_kind": "REPOSITORY_ORIGINAL_VECTOR",
     "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
     "training_eligibility": "CANA_OWNED_REVIEW_ASSET",

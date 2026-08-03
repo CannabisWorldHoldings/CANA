@@ -8,7 +8,7 @@
   "competitor_event_ledger": {
     "valid": true,
     "records": 1,
-    "head_hash": "8a295a7cd1364683a8e8b8cd3c80d619e74253ef5e2a3ad7f4453db38f42ff6b"
+    "head_hash": "cb729632d39dc2253b53e66cfab4d070677c5d0a85d5a4cf7b188d2db6052713"
   },
   "tournament_status": "READY_FOR_OWNER_REVIEW",
   "campaign_ids": [

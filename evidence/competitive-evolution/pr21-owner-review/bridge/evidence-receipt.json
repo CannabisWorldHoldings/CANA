@@ -2,11 +2,14 @@
   "schema_version": "cana.competitor-evidence-receipt/1.0.0",
   "event_id": "competitor_event_b6332e76a4e3f4e61e1b8381",
   "crawl_id": "fixture_crawl_marketplace_mechanism_20260803",
-  "direct_capture_present": true,
+  "direct_capture_present": false,
+  "evidence_class": "OFFLINE_ADAPTER_FIXTURE",
+  "capture_bytes_present": true,
   "hashes_recomputed": true,
+  "promotion_allowed": false,
   "rights_state": "REFERENCE_ONLY",
   "prompt_injection_state": "SCANNED_NO_AUTHORITY",
   "production_modified": false,
   "external_effect_count": 0,
-  "receipt_hash": "a5ed0cf56e7b7c48eab13fe90aecd61888623ac9643994d8b9fe96763cf7371e"
+  "receipt_hash": "6ac0d78873e70cb45cfd6aa41d160944f86269eaae8cdb52d1cc1391f7d63a59"
 }

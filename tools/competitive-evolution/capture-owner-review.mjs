@@ -148,7 +148,7 @@ try {
         isolated_sha256: record.isolated_sha256,
       });
       if (horizontalOverflow || consoleProblems.length || requestFailures.length || serious.length) {
-        throw new Error(`${campaign.id} ${viewportName} failed browser courts`);
+        throw new Error(`${campaign.id} ${viewportName} failed browser courts: overflow=${horizontalOverflow}; console=${consoleProblems.join(' | ') || 'none'}; requests=${requestFailures.join(' | ') || 'none'}; accessibility=${serious.map((finding) => finding.id).join(' | ') || 'none'}`);
       }
       await context.close();
     }
