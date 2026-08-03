@@ -339,6 +339,9 @@ Banner behavior:
 - Explicit intrinsic width and height reserve the slot before image load.
 - Only approved, in-window campaigns with both media variants and an allowlisted
   internal destination are eligible.
+- Paid candidates must also carry an `ACTIVE` result from the repository's
+  canonical persisted sponsorship-entitlement resolver. Editable campaign fields
+  cannot create paid placement authority.
 - Expired, unapproved, malformed, or missing-media campaigns are rejected.
 - A configured ORDERWEEDDC house campaign may be used as fallback; otherwise the
   slot collapses without leaving a frame.
@@ -346,6 +349,9 @@ Banner behavior:
   carousel controls, or motion burden.
 - The configured fallback is labeled “House campaign” and “No paid campaign is
   live in this review build.”
+- Banner impressions and clicks emit a same-origin `orderweeddc:banner-event`
+  browser event with campaign ID, declared event name and funding kind. No
+  analytics sink or commercial outcome is inferred from those events.
 
 ## 13. Banner content and policy model
 
@@ -358,7 +364,8 @@ kind, and fallback behavior.
 Policy is fail-closed. A campaign cannot render when it is expired, unapproved,
 missing rights/provenance, missing media, missing alt text, or points outside the
 allowlisted customer route set. Payment never changes verification status or
-organic listing order.
+organic listing order. Paid records additionally require a canonical active,
+chain-linked entitlement result whose disclosure matches the campaign.
 
 ## 14. Marketplace domain architecture
 
@@ -416,19 +423,27 @@ identity, rewrite production JSX, or bypass review gates.
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Customer-focused source/integration tests | PASS | 48 passed, 0 failed; includes 11 new sovereign UI laws |
+| Customer-focused source/integration tests | PASS | 48 passed, 0 failed; includes 11 sovereign UI policy laws |
+| Customer browser automation | PASS | 4 passed, 0 failed; routes, emitted banner events, truth states, mobile navigation, visual constitution, age-gate focus, Axe and throttled performance |
 | TypeScript | PASS | `tsc --noEmit -p apps/web/tsconfig.json` |
 | Changed-file ESLint | PASS | 0 errors and 0 warnings across changed code and tests |
 | Production build | PASS | Next.js 16.3.0-canary.6 compiled, type-checked and emitted all customer routes |
-| Browser route/visual matrix | PASS | Desktop 1440px and mobile 390px; homepage, delivery, dispensaries and search; no console warning/error, no unexpected request failure, no horizontal overflow |
+| Browser route/visual matrix | PASS | Executable test: `apps/web/tests/customer-sovereign-ui.browser.mjs`; desktop 1440px and mobile 390px; homepage, delivery, dispensaries and search; no console warning/error, no unexpected request failure, no horizontal overflow |
 | WCAG A/AA audit | PASS | Axe serious/critical violations: 0 across four routes at 1440px and 390px; age-gate focus and wrap behavior passed |
-| Slower-mobile performance | PASS | 150ms latency, 1.6 Mbps down, 4x CPU: LCP 3528ms, CLS 0.00199, third-party scripts 0 |
+| Slower-mobile performance | PASS | 150ms latency, 1.6 Mbps down, 4x CPU: LCP 3500ms, CLS 0.00199, third-party scripts 0 |
 | Full repository web test script | BASELINE BLOCKED | 663 tests discovered: 582 passed, 81 failed; the dominant root is the pre-existing macOS Prisma `Schema engine error`, with additional suite-global build/server contention and an environment-only pilot-package path; customer UI gates did not fail |
 | Dependency audit | KNOWN BASELINE | 1 high-severity transitive development dependency finding in `brace-expansion`; no forced dependency rewrite was made in this UI branch |
 
 The production build emits one pre-existing Turbopack NFT tracing warning from
 `evidence-spill.mjs` through the retailer handoff route. Compilation and route
 generation complete successfully.
+
+Reproduction commands:
+
+- Focused policy/integration tests: `node --test apps/web/tests/customer-sovereign-ui.test.mjs apps/web/tests/tenant-rewrite.test.mjs apps/web/tests/security-boundary.test.mjs apps/web/tests/sitemind.test.mjs apps/web/tests/marketplace-ui.test.mjs`
+- Browser automation against an isolated production server: `CUSTOMER_REVIEW_BASE_URL=http://orderweeddc.localhost:<port> CUSTOMER_REVIEW_BROWSER="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run test:customer-browser -w apps/web`
+- Production build: `npm run build -w apps/web`
+- Clean deterministic Linux gate after the final commit: `./cana verify full`
 
 ### Implemented customer routes
 
@@ -468,8 +483,9 @@ demonstration database. Demonstration records are visibly labeled.
   are not represented by the current schema; the UI intentionally asks customers
   to confirm them with the business.
 - The banner ships with a static ORDERWEEDDC house fallback. No paid campaign,
-  paid impression, paid click, rotation, personalization or frequency-cap receipt
-  is active.
+  persisted analytics sink, rotation, personalization or frequency-cap receipt
+  is active; local impression/click events are observable without being called
+  revenue or performance.
 - Unified search is server-rendered and grouped, not a live autocomplete or map.
 - Saved businesses remain local-browser state and have no dedicated `/saved`
   account surface.

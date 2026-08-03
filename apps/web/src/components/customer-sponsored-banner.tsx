@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect } from 'react';
 import Link from 'next/link';
 
 type BannerCampaign = {
@@ -16,11 +19,27 @@ type BannerCampaign = {
   clickEvent: string;
 };
 
+const BANNER_EVENT_NAME = 'orderweeddc:banner-event';
+
+function emitBannerEvent(campaign: BannerCampaign, eventName: string) {
+  window.dispatchEvent(new CustomEvent(BANNER_EVENT_NAME, {
+    detail: {
+      campaignId: campaign.id,
+      eventName,
+      fundingKind: campaign.fundingKind,
+    },
+  }));
+}
+
 export default function CustomerSponsoredBanner({
   campaign,
 }: {
   campaign: BannerCampaign | null;
 }) {
+  useEffect(() => {
+    if (campaign) emitBannerEvent(campaign, campaign.impressionEvent);
+  }, [campaign]);
+
   if (!campaign) return null;
 
   return (
@@ -48,6 +67,7 @@ export default function CustomerSponsoredBanner({
           <Link
             href={campaign.destination}
             data-banner-click-event={campaign.clickEvent}
+            onClick={() => emitBannerEvent(campaign, campaign.clickEvent)}
             className="mt-5 inline-flex min-h-11 w-fit items-center rounded-lg bg-[#11643d] px-5 py-3 text-sm font-bold text-white hover:bg-[#0c4f30]"
           >
             {campaign.cta}

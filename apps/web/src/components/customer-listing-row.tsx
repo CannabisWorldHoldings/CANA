@@ -62,7 +62,7 @@ export default function CustomerListingRow({
           <div>
             <p className="flex items-center gap-2 text-xs font-semibold text-[#526058]">
               {delivery ? <Truck size={14} aria-hidden="true" /> : <Store size={14} aria-hidden="true" />}
-              {delivery ? 'Delivery service' : 'Dispensary storefront'}
+              {delivery ? 'Delivery marketplace participant' : 'Dispensary storefront'}
             </p>
             <h3 className="mt-1 font-display text-xl font-semibold tracking-[-0.025em] text-[#111612] sm:text-2xl">
               {listing.name}
@@ -88,6 +88,7 @@ export default function CustomerListingRow({
               : `${listing.city}${listing.zip ? `, ${listing.zip}` : ''}`}
           </span>
           <span>{listing.menus?.length ? 'Menu recorded' : 'Menu availability unavailable'}</span>
+          {delivery && <span>Availability, role details, fee and minimum not sourced</span>}
           <span>
             {listing.deals?.length
               ? `${listing.deals.length} current offer${listing.deals.length === 1 ? '' : 's'}`

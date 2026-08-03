@@ -25,6 +25,9 @@ const sovereignFiles = [
 ];
 const combined = sovereignFiles.map(source).join('\n');
 
+const bannerPolicy = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/customer-banner.mjs')).href
+);
 const marketplace = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/customer-marketplace.mjs')).href
 );
@@ -72,20 +75,27 @@ test('delivery is first-class in navigation, homepage copy, and a dedicated rout
 test('sponsored banner eligibility fails closed and uses a truthful house fallback', () => {
   const asOf = new Date('2026-08-03T12:00:00.000Z');
   const paid = {
-    ...marketplace.HOUSE_BANNER_CAMPAIGN,
+    ...bannerPolicy.HOUSE_BANNER_CAMPAIGN,
     id: 'paid-fixture',
-    disclosure: 'Sponsored',
+    disclosure: 'Sponsored placement',
     fundingKind: 'PAID',
     approvalStatus: 'APPROVED',
+    sponsorship: {
+      state: 'ACTIVE',
+      label: 'Sponsored placement',
+      affectsOrganicOrder: false,
+      evidence: { entitlement_digest: 'fixture-digest' },
+    },
   };
-  assert.deepEqual(marketplace.evaluateBannerCampaign(paid, asOf), { eligible: true, reason: 'ELIGIBLE' });
-  assert.equal(marketplace.evaluateBannerCampaign({ ...paid, disclosure: 'Partner' }, asOf).reason, 'DISCLOSURE_MISSING');
-  assert.equal(marketplace.evaluateBannerCampaign({ ...paid, approvalStatus: 'DRAFT' }, asOf).reason, 'UNAPPROVED');
-  assert.equal(marketplace.evaluateBannerCampaign({ ...paid, endAt: '2026-08-03T00:00:00.000Z' }, asOf).reason, 'EXPIRED');
-  assert.equal(marketplace.evaluateBannerCampaign({ ...paid, mobileMedia: '' }, asOf).reason, 'MEDIA_INCOMPLETE');
-  assert.equal(marketplace.evaluateBannerCampaign({ ...paid, destination: 'https://example.com' }, asOf).reason, 'DESTINATION_BLOCKED');
-  assert.equal(marketplace.selectPrimaryBanner({ campaigns: [], houseCampaign: marketplace.HOUSE_BANNER_CAMPAIGN, asOf }).fundingKind, 'HOUSE');
-  assert.equal(marketplace.selectPrimaryBanner({ campaigns: [], houseCampaign: null, asOf }), null);
+  assert.deepEqual(bannerPolicy.evaluateBannerCampaign(paid, asOf), { eligible: true, reason: 'ELIGIBLE' });
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, disclosure: 'Partner' }, asOf).reason, 'DISCLOSURE_MISSING');
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, approvalStatus: 'APPROVED_FOR_REVIEW' }, asOf).reason, 'UNAPPROVED');
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, sponsorship: null }, asOf).reason, 'PAID_ENTITLEMENT_REQUIRED');
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, endAt: '2026-08-03T00:00:00.000Z' }, asOf).reason, 'EXPIRED');
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, mobileMedia: '' }, asOf).reason, 'MEDIA_INCOMPLETE');
+  assert.equal(bannerPolicy.evaluateBannerCampaign({ ...paid, destination: 'https://example.com' }, asOf).reason, 'DESTINATION_BLOCKED');
+  assert.equal(bannerPolicy.selectPrimaryBanner({ campaigns: [], houseCampaign: bannerPolicy.HOUSE_BANNER_CAMPAIGN, asOf }).fundingKind, 'HOUSE');
+  assert.equal(bannerPolicy.selectPrimaryBanner({ campaigns: [], houseCampaign: null, asOf }), null);
 });
 
 test('banner reserves dimensions, selects mobile media, and has no rotation or sound', () => {
