@@ -4,6 +4,7 @@ import {
   currentDealWhere,
   directoryRetailerOrderBy,
   directoryRetailerWhere,
+  isPublicCatalogRecord,
   labelCustomerDealRecord,
   labelCustomerProductRecord,
   parseDirectorySearch,
@@ -148,8 +149,8 @@ export async function loadCustomerHome(domain: string) {
     brand,
     delivery,
     dispensaries,
-    deals: deals.map(labelCustomerDealRecord),
-    articles,
+    deals: deals.filter((deal) => isPublicCatalogRecord(deal, asOf)).map(labelCustomerDealRecord),
+    articles: articles.filter((article) => isPublicCatalogRecord(article, asOf)),
   };
 }
 
@@ -227,8 +228,12 @@ export async function loadCustomerSearch(domain: string, query: string) {
     brand,
     query: normalizedQuery,
     retailers,
-    products: products.map(labelCustomerProductRecord),
-    deals: deals.map(labelCustomerDealRecord),
+    products: products
+      .filter((product) => isPublicCatalogRecord(product, asOf))
+      .map(labelCustomerProductRecord),
+    deals: deals
+      .filter((deal) => isPublicCatalogRecord(deal, asOf))
+      .map(labelCustomerDealRecord),
     neighborhoods,
   };
 }
