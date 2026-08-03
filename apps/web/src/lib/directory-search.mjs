@@ -259,6 +259,25 @@ export function isDemonstrationChain(...records) {
   return records.some((record) => record?.isDemonstration === true);
 }
 
+export function labelCustomerDealRecord(deal) {
+  return {
+    ...deal,
+    isDemonstration: isDemonstrationChain(deal, deal?.retailer),
+  };
+}
+
+export function labelCustomerProductRecord(product) {
+  const { menuEntries = [], ...publicProduct } = product;
+  return {
+    ...publicProduct,
+    isDemonstration: isDemonstrationChain(
+      product,
+      ...menuEntries,
+      ...menuEntries.map((entry) => entry.retailer),
+    ),
+  };
+}
+
 export function directorySearchHref(filters, page) {
   const parsedFilters = parseDirectorySearch({ ...filters, page: String(page) });
   const params = new URLSearchParams();

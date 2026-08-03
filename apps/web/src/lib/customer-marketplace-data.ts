@@ -4,7 +4,8 @@ import {
   currentDealWhere,
   directoryRetailerOrderBy,
   directoryRetailerWhere,
-  isDemonstrationChain,
+  labelCustomerDealRecord,
+  labelCustomerProductRecord,
   parseDirectorySearch,
   publicCatalogRecordWhere,
 } from '@/lib/directory-search.mjs';
@@ -147,10 +148,7 @@ export async function loadCustomerHome(domain: string) {
     brand,
     delivery,
     dispensaries,
-    deals: deals.map((deal) => ({
-      ...deal,
-      isDemonstration: isDemonstrationChain(deal, deal.retailer),
-    })),
+    deals: deals.map(labelCustomerDealRecord),
     articles,
   };
 }
@@ -229,18 +227,8 @@ export async function loadCustomerSearch(domain: string, query: string) {
     brand,
     query: normalizedQuery,
     retailers,
-    products: products.map(({ menuEntries, ...product }) => ({
-      ...product,
-      isDemonstration: isDemonstrationChain(
-        product,
-        ...menuEntries,
-        ...menuEntries.map((entry) => entry.retailer),
-      ),
-    })),
-    deals: deals.map((deal) => ({
-      ...deal,
-      isDemonstration: isDemonstrationChain(deal, deal.retailer),
-    })),
+    products: products.map(labelCustomerProductRecord),
+    deals: deals.map(labelCustomerDealRecord),
     neighborhoods,
   };
 }

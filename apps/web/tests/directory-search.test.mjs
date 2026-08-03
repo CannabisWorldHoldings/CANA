@@ -14,6 +14,8 @@ import {
   directorySearchHref,
   isDemonstrationChain,
   isPublicCatalogRecord,
+  labelCustomerDealRecord,
+  labelCustomerProductRecord,
   parseDirectorySearch,
   publicCatalogRecordWhere,
 } from '../src/lib/directory-search.mjs';
@@ -181,6 +183,40 @@ test('a demonstration anywhere in a marketplace chain keeps the rendered record 
     { isDemonstration: false },
     { isDemonstration: false },
   ), false);
+
+  assert.deepEqual(labelCustomerDealRecord({
+    id: 'deal-parent-demo',
+    isDemonstration: false,
+    retailer: { id: 'retailer-demo', isDemonstration: true },
+  }), {
+    id: 'deal-parent-demo',
+    isDemonstration: true,
+    retailer: { id: 'retailer-demo', isDemonstration: true },
+  });
+
+  assert.deepEqual(labelCustomerProductRecord({
+    id: 'product-retailer-demo',
+    isDemonstration: false,
+    menuEntries: [{
+      isDemonstration: false,
+      retailer: { isDemonstration: true },
+    }],
+  }), {
+    id: 'product-retailer-demo',
+    isDemonstration: true,
+  });
+
+  assert.deepEqual(labelCustomerProductRecord({
+    id: 'product-menu-demo',
+    isDemonstration: false,
+    menuEntries: [{
+      isDemonstration: true,
+      retailer: { isDemonstration: false },
+    }],
+  }), {
+    id: 'product-menu-demo',
+    isDemonstration: true,
+  });
 });
 
 test('pagination links preserve only validated filters', () => {
