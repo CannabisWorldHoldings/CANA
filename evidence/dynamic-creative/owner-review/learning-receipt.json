@@ -1,0 +1,43 @@
+{
+  "schema_version": "cana.dynamic-creative-learning-receipt/1.0.0",
+  "cycle_status": "STOPPED_FOR_OWNER_DECISION",
+  "observed": "PR21 billboard owner rejection and two synthetic competitor-mechanism fixtures",
+  "attempted": "Three materially different deterministic responsive campaign systems",
+  "why": "Apply the owner rejection tags to original, rights-cleared campaign hypotheses",
+  "evidence": [
+    {
+      "name": "desktop-banner.png",
+      "sha256": "e4ae17edd0cb2c4b6f2d68e3a719132c2bf59c238417ed8283d5688d1d795332"
+    },
+    {
+      "name": "mobile-banner.png",
+      "sha256": "1b124691d8da52f05d3aada2ad009bb78d84439eeed9818fc7b68c2331c13f3d"
+    }
+  ],
+  "rights_state": "SYNTHETIC_FIXTURES_AND_REJECTED_OWNER_PACKET_EVIDENCE_ONLY",
+  "owner_decision": "PENDING_FOR_THREE_NEW_SYSTEMS",
+  "experiment": "DEFINED_NOT_RUN",
+  "measured_outcome": null,
+  "causal_confidence": "NONE_NO_EXPERIMENT_RUN",
+  "winning_mechanism": null,
+  "failure_mechanism": [
+    "GENERIC",
+    "FAKE_LOOKING",
+    "LOW_CAMPAIGN_COHERENCE",
+    "WEAK_IMAGE_COPY_FIT",
+    "PROTOTYPE_LANGUAGE",
+    "WEAK_LOCAL_IDENTITY",
+    "LOW_MARKETPLACE_ENERGY",
+    "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+  ],
+  "memory_applied": {
+    "owner_rejection_retrieved": true,
+    "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+    "rejected_candidate": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723"
+  },
+  "routing_mutation": "NONE_PROVIDER_ROUTER_REMAINS_POLICY_BOUND",
+  "next_mutation": "Record the owner decision and reason before any next generation.",
+  "unresolved_questions": [
+    "Which of the three systems should be approved, revised, or rejected?"
+  ]
+}

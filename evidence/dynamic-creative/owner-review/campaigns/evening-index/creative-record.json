@@ -1,0 +1,207 @@
+{
+  "id": "evening-index-attempt-2",
+  "system_id": "evening-index",
+  "strategy": "bounded-choice",
+  "creative_genome": {
+    "id": "evening-index",
+    "strategy": "bounded-choice",
+    "targetAudience": "D.C. adults 21+ seeking a fast, legible evening discovery path",
+    "customerProblem": "Large catalogs create choice overload.",
+    "offer": "A shorter verified shortlist.",
+    "messageHierarchy": [
+      "shorter path",
+      "confidence",
+      "build shortlist"
+    ],
+    "visualConcept": "An original editorial arch and constellation index.",
+    "sceneDirection": "evening-index arch composition",
+    "localDcRelevance": "Evening discovery pacing without pretending to depict a real place.",
+    "imageSourcePlan": "Rights-cleared deterministic vector fixture; no competitor or merchant asset.",
+    "rightsState": "SYNTHETIC_FIXTURE_RIGHTS_CLEARED",
+    "desktopComposition": "Wide evening index beside a restrained choice message.",
+    "mobileComposition": "Vertical editorial index retaining the same arch and moon system.",
+    "headline": "A shorter path to a confident choice.",
+    "cta": "Build a verified shortlist",
+    "landingPageMatch": "Filterable verified directory shortlist.",
+    "negativePrompt": "No nightlife claim, product pile, generated person, fake venue, gradient, or competitor expression.",
+    "authenticityRisks": [
+      "Abstract night cues must not imply a current event."
+    ],
+    "unsupportedClaimRisks": [
+      "Do not claim the shortlist improves outcomes."
+    ],
+    "expectedMechanism": "Bounded choice reduces cognitive load.",
+    "testablePrediction": "Owner-approved variant may increase saved shortlist creation; not yet tested."
+  },
+  "headline": "A shorter path to a confident choice.",
+  "cta": "Build a verified shortlist",
+  "disclosure": "Sponsored",
+  "state": "OWNER_REVIEW_REQUIRED",
+  "assets": {
+    "desktop": "/creative/review/evening-index-desktop.svg",
+    "mobile": "/creative/review/evening-index-mobile.svg"
+  },
+  "desktop_generation_receipt": {
+    "schema_version": "cana.deterministic-image-generation/1.0.0",
+    "provider": "deterministic-svg-fixture",
+    "model": "orderweeddc-vector-fixture-v1",
+    "prompt_sha256": "56c31594b1e7ddaa5ddc61b6d4f97ee4a5ebb2e120972a8636eb99859d6b4a40",
+    "seed": "evening-index-desktop-attempt-2",
+    "configuration": {
+      "variantId": "evening-index",
+      "aspectRatio": "16:9"
+    },
+    "source_asset_sha256": [
+      "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
+    ],
+    "result_sha256": "943feb8ad75db137480d857a7dd180775a671be191131d51241762c0dac890dd",
+    "external_provider_calls": 0,
+    "actual_cost_usd": 0,
+    "network_accessed": false
+  },
+  "mobile_generation_receipt": {
+    "schema_version": "cana.deterministic-image-generation/1.0.0",
+    "provider": "deterministic-svg-fixture",
+    "model": "orderweeddc-vector-fixture-v1",
+    "prompt_sha256": "56c31594b1e7ddaa5ddc61b6d4f97ee4a5ebb2e120972a8636eb99859d6b4a40",
+    "seed": "evening-index-mobile-attempt-2",
+    "configuration": {
+      "variantId": "evening-index",
+      "aspectRatio": "4:5"
+    },
+    "source_asset_sha256": [
+      "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
+    ],
+    "result_sha256": "4ffeda9f6d132da564b61a3f7d4abc48edfe8182624449f956b1a9a20b4016ef",
+    "external_provider_calls": 0,
+    "actual_cost_usd": 0,
+    "network_accessed": false
+  },
+  "court": {
+    "schema_version": "cana.visual-verification-court/1.0.0",
+    "creative_id": "evening-index-attempt-2",
+    "status": "PASS",
+    "score": 1,
+    "threshold": 0.85,
+    "judges": [
+      {
+        "name": "genericness",
+        "status": "PASS",
+        "evidence": "Observed genericness requirement satisfied"
+      },
+      {
+        "name": "synthetic-composition",
+        "status": "PASS",
+        "evidence": "Observed synthetic-composition requirement satisfied"
+      },
+      {
+        "name": "anatomy-object-consistency",
+        "status": "PASS",
+        "evidence": "Observed anatomy-object-consistency requirement satisfied"
+      },
+      {
+        "name": "package-logo-correctness",
+        "status": "PASS",
+        "evidence": "Observed package-logo-correctness requirement satisfied"
+      },
+      {
+        "name": "unauthorized-hallucinated-text",
+        "status": "PASS",
+        "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+      },
+      {
+        "name": "image-copy-alignment",
+        "status": "PASS",
+        "evidence": "Observed image-copy-alignment requirement satisfied"
+      },
+      {
+        "name": "local-dc-relevance",
+        "status": "PASS",
+        "evidence": "Observed local-dc-relevance requirement satisfied"
+      },
+      {
+        "name": "premium-editorial-quality",
+        "status": "PASS",
+        "evidence": "Observed premium-editorial-quality requirement satisfied"
+      },
+      {
+        "name": "mobile-crop-integrity",
+        "status": "PASS",
+        "evidence": "Observed mobile-crop-integrity requirement satisfied"
+      },
+      {
+        "name": "readability",
+        "status": "PASS",
+        "evidence": "Observed readability requirement satisfied"
+      },
+      {
+        "name": "accessibility",
+        "status": "PASS",
+        "evidence": "Observed accessibility requirement satisfied"
+      },
+      {
+        "name": "ad-disclosure",
+        "status": "PASS",
+        "evidence": "Observed ad-disclosure requirement satisfied"
+      },
+      {
+        "name": "policy-compliance",
+        "status": "PASS",
+        "evidence": "Observed policy-compliance requirement satisfied"
+      },
+      {
+        "name": "truthful-claims",
+        "status": "PASS",
+        "evidence": "Observed truthful-claims requirement satisfied"
+      },
+      {
+        "name": "visual-hierarchy",
+        "status": "PASS",
+        "evidence": "Observed visual-hierarchy requirement satisfied"
+      },
+      {
+        "name": "cta-clarity",
+        "status": "PASS",
+        "evidence": "Observed cta-clarity requirement satisfied"
+      },
+      {
+        "name": "brand-consistency",
+        "status": "PASS",
+        "evidence": "Observed brand-consistency requirement satisfied"
+      },
+      {
+        "name": "file-size-performance",
+        "status": "PASS",
+        "evidence": "Observed file-size-performance requirement satisfied"
+      },
+      {
+        "name": "rights-provenance",
+        "status": "PASS",
+        "evidence": "Observed rights-provenance requirement satisfied"
+      },
+      {
+        "name": "owner-taste-alignment",
+        "status": "PASS",
+        "evidence": "Observed owner-taste-alignment requirement satisfied"
+      },
+      {
+        "name": "campaign-coherence",
+        "status": "PASS",
+        "evidence": "Observed campaign-coherence requirement satisfied"
+      },
+      {
+        "name": "conversion-mechanism",
+        "status": "PASS",
+        "evidence": "Observed conversion-mechanism requirement satisfied"
+      },
+      {
+        "name": "landing-page-continuity",
+        "status": "PASS",
+        "evidence": "Observed landing-page-continuity requirement satisfied"
+      }
+    ],
+    "failureReasons": [],
+    "publish_allowed": false
+  },
+  "postable": false
+}

@@ -9,6 +9,9 @@
     "./brand-profile": "./src/brand-profile.mjs",
     "./creative-brief": "./src/creative-brief.mjs",
     "./verification": "./src/verification.mjs",
+    "./dynamic-foundation": "./src/dynamic-foundation.mjs",
+    "./evidence-import": "./src/evidence-import.mjs",
+    "./providers/deterministic-fixture": "./src/providers/deterministic-fixture.mjs",
     "./providers/gemini": "./src/providers/gemini.mjs",
     "./provider-contract": "./src/provider-contract.mjs"
   },

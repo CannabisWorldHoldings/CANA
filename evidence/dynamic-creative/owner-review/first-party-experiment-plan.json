@@ -1,0 +1,20 @@
+{
+  "schema_version": "cana.dynamic-creative-first-party-experiment-plan/1.0.0",
+  "status": "DEFINED_NOT_RUN",
+  "control": "owd-source-before-hype",
+  "treatments": [
+    "district-signal",
+    "evening-index",
+    "receipt-rhythm"
+  ],
+  "primary_metric": "QUALIFIED_CLICK_RATE",
+  "counter_metrics": [
+    "USER_COMPLAINT_RATE",
+    "PERFORMANCE_REGRESSION",
+    "POLICY_FAILURE"
+  ],
+  "attribution_requirement": "ORDERWEEDDC_FIRST_PARTY_DIRECT_OBSERVATION",
+  "owner_approval_required": true,
+  "publication_authority": "NONE",
+  "spend_authority": "NONE"
+}

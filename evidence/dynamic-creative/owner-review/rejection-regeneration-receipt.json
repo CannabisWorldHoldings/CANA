@@ -1,0 +1,6 @@
+{
+  "rejected_attempt": "district-signal-attempt-1",
+  "accepted_attempt": "district-signal-attempt-2",
+  "stop_reason": "QUALITY_THRESHOLD_REACHED",
+  "bounded_attempt_limit": 2
+}

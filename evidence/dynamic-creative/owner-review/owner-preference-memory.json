@@ -1,0 +1,41 @@
+{
+  "schema_version": "cana.owner-creative-preference/1.0.0",
+  "decision_id": "owner-rejection-pr21-5c7fe27",
+  "candidate": {
+    "pull_request": 21,
+    "commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+    "tree": "4224e7efcc797b64152170d7b42c416eb787fe8d",
+    "canonical_base": "79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc",
+    "creative_id": "pr21-house-billboard"
+  },
+  "decision": "REJECTED_REQUEST_CHANGES",
+  "tags": [
+    "GENERIC",
+    "FAKE_LOOKING",
+    "LOW_CAMPAIGN_COHERENCE",
+    "WEAK_IMAGE_COPY_FIT",
+    "PROTOTYPE_LANGUAGE",
+    "WEAK_LOCAL_IDENTITY",
+    "LOW_MARKETPLACE_ENERGY",
+    "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+  ],
+  "reasons": [
+    "House billboard is generic, low-intelligence, and prototype-like.",
+    "Desktop and mobile art do not form one coherent campaign identity.",
+    "Desktop map composition lacks a compelling merchant, product, offer, audience, or emotional idea.",
+    "Mobile artificial product pile risks reading as fake rather than premium and trustworthy.",
+    "Headline is bland and weakly connected to the imagery.",
+    "Internal QA language is not a finished customer experience.",
+    "Prototype retailer names visibly signal an unfinished candidate.",
+    "Homepage feels sparse, generic, overly long, and low in marketplace energy.",
+    "Listing imagery and presentation are too weak to create desire, trust, discovery, or local identity.",
+    "Candidate proves layout and truth behavior, not category-defining creative intelligence."
+  ],
+  "preference_pair": {
+    "rejected": "generic map or skyline, synthetic product pile, placeholder language, and weak image-copy relationship",
+    "desired": "original premium ORDERWEEDDC campaign coherence, local intelligence, authentic abstraction, customer value, visual hierarchy, and a measurable mechanism"
+  },
+  "supersedes_technical_pass_as_visual_authorization": true,
+  "merge_authorized": false,
+  "publication_authorized": false
+}

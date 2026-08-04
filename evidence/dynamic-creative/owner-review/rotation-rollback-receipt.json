@@ -1,0 +1,24 @@
+{
+  "status": "FALLBACK_SELECTED",
+  "campaign": {
+    "id": "owd-source-before-hype",
+    "concept": "Trust before handoff: make source, freshness and evidence the premium visual idea.",
+    "decision": "APPROVED_PRIMARY",
+    "decisionReason": "Owner-approved primary house-campaign seed.",
+    "roles": [
+      "CREATIVE_GENOME_EXAMPLE",
+      "VISUAL_EVALUATION_FIXTURE",
+      "FUTURE_AUTONOMOUS_CREATIVE_SEED",
+      "FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN"
+    ],
+    "fallbackEligible": true,
+    "fallbackPriority": 1,
+    "disclosure": "ORDERWEEDDC house campaign",
+    "desktopAsset": "/creative/house/source-before-hype-desktop.svg",
+    "mobileAsset": "/creative/house/source-before-hype-mobile.svg"
+  },
+  "reason": "No fully gated active campaign; deterministic house fallback selected",
+  "affectsOrganicOrder": false,
+  "rollback_available": true,
+  "rollback_target": "owd-source-before-hype"
+}

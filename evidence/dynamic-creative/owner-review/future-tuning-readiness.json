@@ -1,0 +1,18 @@
+{
+  "schema_version": "cana.future-image-model-tuning-readiness/1.0.0",
+  "status": "BLOCKED_INSUFFICIENT_EVIDENCE",
+  "fineTunedModelExists": false,
+  "fineTuningAuthorized": false,
+  "missing": [
+    "rights-cleared owner-approved data",
+    "approved/rejected preference pairs",
+    "stable reason labels",
+    "first-party performance evidence",
+    "duplicate checks",
+    "contamination checks",
+    "training/validation/holdout splits",
+    "anti-regression benchmark",
+    "rollback plan",
+    "material lift over retrieval prompting and routing"
+  ]
+}

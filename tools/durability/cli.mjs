@@ -33,7 +33,28 @@ const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
 const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '81272b3fba9972a010e5324037f68843b0afaa556c687061ab3c0bcf642a066f';
+  'a462da894a83a5fd7e726bd0b9411e57bd9f637e11bc98503a1841b47f29a8b9';
+const DYNAMIC_CREATIVE_ASSIGNMENT = 'sitemind_dynamic_creative_foundation_2026_08_04';
+export const DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS = Object.freeze([
+  'apps/web/package.json',
+  'apps/web/public/creative/**',
+  'apps/web/src/app/[domain]/page.tsx',
+  'apps/web/src/app/lab/dynamic-creative/**',
+  'apps/web/src/components/dynamic-sponsored-placement.tsx',
+  'apps/web/src/lib/dynamic-creative-review.mjs',
+  'apps/web/src/lib/sitemind.mjs',
+  'apps/web/tests/dynamic-creative-review.test.mjs',
+  'docs/dynamic-creative/**',
+  'evidence/dynamic-creative/**',
+  'package-lock.json',
+  'packages/ad-creative/package.json',
+  'packages/ad-creative/src/dynamic-foundation.mjs',
+  'packages/ad-creative/src/evidence-import.mjs',
+  'packages/ad-creative/src/provider-contract.mjs',
+  'packages/ad-creative/src/providers/deterministic-fixture.mjs',
+  'skills-src/hermes-governed-packet.mjs',
+  'tools/dynamic-creative/**',
+]);
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -321,6 +342,25 @@ export function validateOwnershipManifest(ownership) {
   const allOwnedPaths = [...ownership.owned_create_paths, ...ownership.owned_modify_paths];
   if (new Set(allOwnedPaths).size !== allOwnedPaths.length) {
     refusal('duplicate changed-file ownership is not allowed');
+  }
+  const dynamicCreativeAssignment = ownership.explicit_user_assignment[DYNAMIC_CREATIVE_ASSIGNMENT];
+  if (
+    !exactKeys(dynamicCreativeAssignment, ['authorization', 'reason', 'authorization_effect', 'paths']) ||
+    dynamicCreativeAssignment.authorization !== 'IMPORTANT ARCHITECTURE CLARIFICATION FOR THE CLEAN INTEGRATION BUILD' ||
+    !Array.isArray(dynamicCreativeAssignment.paths) ||
+    JSON.stringify([...dynamicCreativeAssignment.paths].sort()) !== JSON.stringify([...DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS].sort()) ||
+    !dynamicCreativeAssignment.authorization_effect.includes('no merge, deployment, production, cPanel, prod.db') ||
+    !dynamicCreativeAssignment.authorization_effect.includes('no live publication, provider spend, advertiser charge, campaign spend')
+  ) {
+    refusal('SiteMind dynamic creative ownership assignment is malformed or broadened');
+  }
+  for (const authorizedPattern of DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS) {
+    if (allOwnedPaths.filter((pattern) => pattern === authorizedPattern).length !== 1) {
+      refusal(`SiteMind dynamic creative path must have one ownership entry: ${authorizedPattern}`);
+    }
+    if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPattern).length !== 1) {
+      refusal(`SiteMind dynamic creative path must have one planned-candidate entry: ${authorizedPattern}`);
+    }
   }
   for (const authorizedPath of STAGE_A_AUTHORIZED_PATHS) {
     const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
@@ -655,6 +695,7 @@ export function validateOwnershipManifest(ownership) {
 
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
+    dynamic_creative_assignment: ownership.explicit_user_assignment[DYNAMIC_CREATIVE_ASSIGNMENT],
     owned_create_paths: ownership.owned_create_paths,
     owned_modify_paths: ownership.owned_modify_paths,
   }));

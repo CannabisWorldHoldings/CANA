@@ -41,6 +41,7 @@ const text = (v) => typeof v === 'string' && v.trim().length > 0;
 export const CAPABILITIES = Object.freeze([
   'READ_REPOSITORY', 'RUN_TESTS', 'WRITE_LOCAL_BRANCH', 'RUN_BROWSER_COURT',
   'QUERY_DATABASE', 'GENERATE_REPORT', 'COMPILE_CONTEXT',
+  'GENERATE_CREATIVE_DRAFT',
 ]);
 
 /**

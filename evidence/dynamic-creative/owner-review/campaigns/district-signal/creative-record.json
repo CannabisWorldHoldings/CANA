@@ -1,0 +1,207 @@
+{
+  "id": "district-signal-attempt-2",
+  "system_id": "district-signal",
+  "strategy": "local-orientation",
+  "creative_genome": {
+    "id": "district-signal",
+    "strategy": "local-orientation",
+    "targetAudience": "D.C. adults 21+ who know their neighborhood but not the verified options nearby",
+    "customerProblem": "Local choice is fragmented and difficult to orient.",
+    "offer": "A verified comparison path organized around D.C. location.",
+    "messageHierarchy": [
+      "local signal",
+      "verified options",
+      "compare"
+    ],
+    "visualConcept": "An original civic signal grid and abstract verified marker.",
+    "sceneDirection": "district-signal civic grid composition",
+    "localDcRelevance": "Block and district orientation without copying a map or landmark.",
+    "imageSourcePlan": "Rights-cleared deterministic vector fixture; no competitor or merchant asset.",
+    "rightsState": "SYNTHETIC_FIXTURE_RIGHTS_CLEARED",
+    "desktopComposition": "Wide civic grid beside editorial copy.",
+    "mobileComposition": "Vertical signal marker followed by the same editorial hierarchy.",
+    "headline": "Find the signal on your side of D.C.",
+    "cta": "Compare verified options",
+    "landingPageMatch": "Verified directory comparison.",
+    "negativePrompt": "No skyline, map screenshot, product pile, fake storefront, generated text, or competitor expression.",
+    "authenticityRisks": [
+      "Could read as a government seal if rendered too literally."
+    ],
+    "unsupportedClaimRisks": [
+      "Do not imply official D.C. endorsement."
+    ],
+    "expectedMechanism": "Local orientation reduces discovery friction.",
+    "testablePrediction": "Owner-approved variant may increase qualified comparison starts versus the house fallback; not yet tested."
+  },
+  "headline": "Find the signal on your side of D.C.",
+  "cta": "Compare verified options",
+  "disclosure": "Sponsored",
+  "state": "OWNER_REVIEW_REQUIRED",
+  "assets": {
+    "desktop": "/creative/review/district-signal-desktop.svg",
+    "mobile": "/creative/review/district-signal-mobile.svg"
+  },
+  "desktop_generation_receipt": {
+    "schema_version": "cana.deterministic-image-generation/1.0.0",
+    "provider": "deterministic-svg-fixture",
+    "model": "orderweeddc-vector-fixture-v1",
+    "prompt_sha256": "659b215e3eb2e69f5201a6a8875f2fc4510a98e01c6eb0ecd9979e1680a875a6",
+    "seed": "district-signal-desktop-attempt-2",
+    "configuration": {
+      "variantId": "district-signal",
+      "aspectRatio": "16:9"
+    },
+    "source_asset_sha256": [
+      "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
+    ],
+    "result_sha256": "d965a44fe19822ddba3bd5a6a6548476a30bb125025248bbb4ad1aec888ad3fb",
+    "external_provider_calls": 0,
+    "actual_cost_usd": 0,
+    "network_accessed": false
+  },
+  "mobile_generation_receipt": {
+    "schema_version": "cana.deterministic-image-generation/1.0.0",
+    "provider": "deterministic-svg-fixture",
+    "model": "orderweeddc-vector-fixture-v1",
+    "prompt_sha256": "659b215e3eb2e69f5201a6a8875f2fc4510a98e01c6eb0ecd9979e1680a875a6",
+    "seed": "district-signal-mobile-attempt-2",
+    "configuration": {
+      "variantId": "district-signal",
+      "aspectRatio": "4:5"
+    },
+    "source_asset_sha256": [
+      "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
+    ],
+    "result_sha256": "96f9dc29b0810ca2d814df5089a7a3e767d7e9dc189bc37905ca0414aa3db1d4",
+    "external_provider_calls": 0,
+    "actual_cost_usd": 0,
+    "network_accessed": false
+  },
+  "court": {
+    "schema_version": "cana.visual-verification-court/1.0.0",
+    "creative_id": "district-signal-attempt-2",
+    "status": "PASS",
+    "score": 1,
+    "threshold": 0.85,
+    "judges": [
+      {
+        "name": "genericness",
+        "status": "PASS",
+        "evidence": "Observed genericness requirement satisfied"
+      },
+      {
+        "name": "synthetic-composition",
+        "status": "PASS",
+        "evidence": "Observed synthetic-composition requirement satisfied"
+      },
+      {
+        "name": "anatomy-object-consistency",
+        "status": "PASS",
+        "evidence": "Observed anatomy-object-consistency requirement satisfied"
+      },
+      {
+        "name": "package-logo-correctness",
+        "status": "PASS",
+        "evidence": "Observed package-logo-correctness requirement satisfied"
+      },
+      {
+        "name": "unauthorized-hallucinated-text",
+        "status": "PASS",
+        "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+      },
+      {
+        "name": "image-copy-alignment",
+        "status": "PASS",
+        "evidence": "Observed image-copy-alignment requirement satisfied"
+      },
+      {
+        "name": "local-dc-relevance",
+        "status": "PASS",
+        "evidence": "Observed local-dc-relevance requirement satisfied"
+      },
+      {
+        "name": "premium-editorial-quality",
+        "status": "PASS",
+        "evidence": "Observed premium-editorial-quality requirement satisfied"
+      },
+      {
+        "name": "mobile-crop-integrity",
+        "status": "PASS",
+        "evidence": "Observed mobile-crop-integrity requirement satisfied"
+      },
+      {
+        "name": "readability",
+        "status": "PASS",
+        "evidence": "Observed readability requirement satisfied"
+      },
+      {
+        "name": "accessibility",
+        "status": "PASS",
+        "evidence": "Observed accessibility requirement satisfied"
+      },
+      {
+        "name": "ad-disclosure",
+        "status": "PASS",
+        "evidence": "Observed ad-disclosure requirement satisfied"
+      },
+      {
+        "name": "policy-compliance",
+        "status": "PASS",
+        "evidence": "Observed policy-compliance requirement satisfied"
+      },
+      {
+        "name": "truthful-claims",
+        "status": "PASS",
+        "evidence": "Observed truthful-claims requirement satisfied"
+      },
+      {
+        "name": "visual-hierarchy",
+        "status": "PASS",
+        "evidence": "Observed visual-hierarchy requirement satisfied"
+      },
+      {
+        "name": "cta-clarity",
+        "status": "PASS",
+        "evidence": "Observed cta-clarity requirement satisfied"
+      },
+      {
+        "name": "brand-consistency",
+        "status": "PASS",
+        "evidence": "Observed brand-consistency requirement satisfied"
+      },
+      {
+        "name": "file-size-performance",
+        "status": "PASS",
+        "evidence": "Observed file-size-performance requirement satisfied"
+      },
+      {
+        "name": "rights-provenance",
+        "status": "PASS",
+        "evidence": "Observed rights-provenance requirement satisfied"
+      },
+      {
+        "name": "owner-taste-alignment",
+        "status": "PASS",
+        "evidence": "Observed owner-taste-alignment requirement satisfied"
+      },
+      {
+        "name": "campaign-coherence",
+        "status": "PASS",
+        "evidence": "Observed campaign-coherence requirement satisfied"
+      },
+      {
+        "name": "conversion-mechanism",
+        "status": "PASS",
+        "evidence": "Observed conversion-mechanism requirement satisfied"
+      },
+      {
+        "name": "landing-page-continuity",
+        "status": "PASS",
+        "evidence": "Observed landing-page-continuity requirement satisfied"
+      }
+    ],
+    "failureReasons": [],
+    "publish_allowed": false
+  },
+  "postable": false
+}

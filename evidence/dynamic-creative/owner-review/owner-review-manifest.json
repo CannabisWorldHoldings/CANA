@@ -1,0 +1,121 @@
+{
+  "schema_version": "cana.dynamic-creative-owner-review-manifest/1.0.0",
+  "generated_at": "2026-08-04T04:00:00.000Z",
+  "current_state": "OWNER_REVIEW_REQUIRED",
+  "synthetic_advertiser": true,
+  "campaigns": [
+    {
+      "id": "district-signal",
+      "creative_id": "district-signal-attempt-2",
+      "strategy": "local-orientation",
+      "headline": "Find the signal on your side of D.C.",
+      "cta": "Compare verified options",
+      "disclosure": "Sponsored",
+      "desktop_asset": "/creative/review/district-signal-desktop.svg",
+      "mobile_asset": "/creative/review/district-signal-mobile.svg",
+      "court_status": "PASS",
+      "owner_decision": "PENDING"
+    },
+    {
+      "id": "evening-index",
+      "creative_id": "evening-index-attempt-2",
+      "strategy": "bounded-choice",
+      "headline": "A shorter path to a confident choice.",
+      "cta": "Build a verified shortlist",
+      "disclosure": "Sponsored",
+      "desktop_asset": "/creative/review/evening-index-desktop.svg",
+      "mobile_asset": "/creative/review/evening-index-mobile.svg",
+      "court_status": "PASS",
+      "owner_decision": "PENDING"
+    },
+    {
+      "id": "receipt-rhythm",
+      "creative_id": "receipt-rhythm-attempt-2",
+      "strategy": "trust-before-handoff",
+      "headline": "See the source before the storefront.",
+      "cta": "Check the receipts",
+      "disclosure": "Sponsored",
+      "desktop_asset": "/creative/review/receipt-rhythm-desktop.svg",
+      "mobile_asset": "/creative/review/receipt-rhythm-mobile.svg",
+      "court_status": "PASS",
+      "owner_decision": "PENDING"
+    }
+  ],
+  "rollback": {
+    "status": "FALLBACK_SELECTED",
+    "campaign": {
+      "id": "owd-source-before-hype",
+      "concept": "Trust before handoff: make source, freshness and evidence the premium visual idea.",
+      "decision": "APPROVED_PRIMARY",
+      "decisionReason": "Owner-approved primary house-campaign seed.",
+      "roles": [
+        "CREATIVE_GENOME_EXAMPLE",
+        "VISUAL_EVALUATION_FIXTURE",
+        "FUTURE_AUTONOMOUS_CREATIVE_SEED",
+        "FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN"
+      ],
+      "fallbackEligible": true,
+      "fallbackPriority": 1,
+      "disclosure": "ORDERWEEDDC house campaign",
+      "desktopAsset": "/creative/house/source-before-hype-desktop.svg",
+      "mobileAsset": "/creative/house/source-before-hype-mobile.svg"
+    },
+    "reason": "No fully gated active campaign; deterministic house fallback selected",
+    "affectsOrganicOrder": false,
+    "rollback_available": true,
+    "rollback_target": "owd-source-before-hype"
+  },
+  "owner_seed_decisions": [
+    {
+      "id": "owd-source-before-hype",
+      "concept": "Trust before handoff: make source, freshness and evidence the premium visual idea.",
+      "decision": "APPROVED_PRIMARY",
+      "decisionReason": "Owner-approved primary house-campaign seed.",
+      "roles": [
+        "CREATIVE_GENOME_EXAMPLE",
+        "VISUAL_EVALUATION_FIXTURE",
+        "FUTURE_AUTONOMOUS_CREATIVE_SEED",
+        "FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN"
+      ],
+      "fallbackEligible": true,
+      "fallbackPriority": 1,
+      "disclosure": "ORDERWEEDDC house campaign",
+      "desktopAsset": "/creative/house/source-before-hype-desktop.svg",
+      "mobileAsset": "/creative/house/source-before-hype-mobile.svg"
+    },
+    {
+      "id": "owd-block-by-block",
+      "concept": "Local orientation: let D.C. block knowledge reduce discovery friction.",
+      "decision": "APPROVED_SECONDARY",
+      "decisionReason": "Owner-approved secondary house-campaign seed.",
+      "roles": [
+        "CREATIVE_GENOME_EXAMPLE",
+        "VISUAL_EVALUATION_FIXTURE",
+        "FUTURE_AUTONOMOUS_CREATIVE_SEED",
+        "FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN"
+      ],
+      "fallbackEligible": true,
+      "fallbackPriority": 2,
+      "disclosure": "ORDERWEEDDC house campaign",
+      "desktopAsset": "/creative/house/block-by-block-desktop.svg",
+      "mobileAsset": "/creative/house/block-by-block-mobile.svg"
+    },
+    {
+      "id": "owd-tonights-shortlist",
+      "concept": "Bounded-choice evening shortlist prototype.",
+      "decision": "REJECTED_PRIMARY_DIRECTION",
+      "decisionReason": "Owner explicitly rejected this as the primary homepage direction.",
+      "roles": [
+        "CREATIVE_GENOME_EXAMPLE",
+        "VISUAL_EVALUATION_FIXTURE",
+        "FUTURE_AUTONOMOUS_CREATIVE_SEED"
+      ],
+      "fallbackEligible": false,
+      "fallbackPriority": null,
+      "disclosure": "Rejected owner-review fixture — never eligible for rotation",
+      "desktopAsset": "/creative/house/tonights-shortlist-desktop.svg",
+      "mobileAsset": "/creative/house/tonights-shortlist-mobile.svg"
+    }
+  ],
+  "production_publication_authority": "NONE"
+}

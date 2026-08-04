@@ -1,0 +1,29 @@
+{
+  "schema": "hermes-governed-packet/1",
+  "sealed_at": "2026-08-04T04:00:00.000Z",
+  "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+  "context_objective": "Invite adults 21+ to compare a clearly synthetic fixture offer.",
+  "actionable_fact_count": 2,
+  "contradiction_count": 1,
+  "grant": {
+    "id": "gr_321b58b4cdddc96e",
+    "capability": "GENERATE_CREATIVE_DRAFT",
+    "budget_units": 8,
+    "expires_at": "2026-08-05T04:00:00.000Z",
+    "issued_by": "CANA"
+  },
+  "intent": {
+    "description": "Generate deterministic shadow-only owner-review creative fixtures",
+    "capability": "GENERATE_CREATIVE_DRAFT",
+    "success_test": "three materially different responsive variants pass the bounded visual court",
+    "rollback": "return Source Before Hype approved house fallback"
+  },
+  "unresolved_contradictions": [
+    "subject:competitor"
+  ],
+  "intent_subjects": [
+    "subject:creative"
+  ],
+  "contradictions_checked_against_intent": true,
+  "packet_digest": "55637270e0cd7fdb63e241a0d792a0b48978ec225534dc360e1f211942a6027a"
+}

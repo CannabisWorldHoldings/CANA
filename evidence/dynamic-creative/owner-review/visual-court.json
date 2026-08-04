@@ -1,0 +1,416 @@
+{
+  "judges": [
+    "genericness",
+    "synthetic-composition",
+    "anatomy-object-consistency",
+    "package-logo-correctness",
+    "unauthorized-hallucinated-text",
+    "image-copy-alignment",
+    "local-dc-relevance",
+    "premium-editorial-quality",
+    "mobile-crop-integrity",
+    "readability",
+    "accessibility",
+    "ad-disclosure",
+    "policy-compliance",
+    "truthful-claims",
+    "visual-hierarchy",
+    "cta-clarity",
+    "brand-consistency",
+    "file-size-performance",
+    "rights-provenance",
+    "owner-taste-alignment",
+    "campaign-coherence",
+    "conversion-mechanism",
+    "landing-page-continuity"
+  ],
+  "campaigns": [
+    {
+      "id": "district-signal-attempt-2",
+      "court": {
+        "schema_version": "cana.visual-verification-court/1.0.0",
+        "creative_id": "district-signal-attempt-2",
+        "status": "PASS",
+        "score": 1,
+        "threshold": 0.85,
+        "judges": [
+          {
+            "name": "genericness",
+            "status": "PASS",
+            "evidence": "Observed genericness requirement satisfied"
+          },
+          {
+            "name": "synthetic-composition",
+            "status": "PASS",
+            "evidence": "Observed synthetic-composition requirement satisfied"
+          },
+          {
+            "name": "anatomy-object-consistency",
+            "status": "PASS",
+            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+          },
+          {
+            "name": "package-logo-correctness",
+            "status": "PASS",
+            "evidence": "Observed package-logo-correctness requirement satisfied"
+          },
+          {
+            "name": "unauthorized-hallucinated-text",
+            "status": "PASS",
+            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+          },
+          {
+            "name": "image-copy-alignment",
+            "status": "PASS",
+            "evidence": "Observed image-copy-alignment requirement satisfied"
+          },
+          {
+            "name": "local-dc-relevance",
+            "status": "PASS",
+            "evidence": "Observed local-dc-relevance requirement satisfied"
+          },
+          {
+            "name": "premium-editorial-quality",
+            "status": "PASS",
+            "evidence": "Observed premium-editorial-quality requirement satisfied"
+          },
+          {
+            "name": "mobile-crop-integrity",
+            "status": "PASS",
+            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+          },
+          {
+            "name": "readability",
+            "status": "PASS",
+            "evidence": "Observed readability requirement satisfied"
+          },
+          {
+            "name": "accessibility",
+            "status": "PASS",
+            "evidence": "Observed accessibility requirement satisfied"
+          },
+          {
+            "name": "ad-disclosure",
+            "status": "PASS",
+            "evidence": "Observed ad-disclosure requirement satisfied"
+          },
+          {
+            "name": "policy-compliance",
+            "status": "PASS",
+            "evidence": "Observed policy-compliance requirement satisfied"
+          },
+          {
+            "name": "truthful-claims",
+            "status": "PASS",
+            "evidence": "Observed truthful-claims requirement satisfied"
+          },
+          {
+            "name": "visual-hierarchy",
+            "status": "PASS",
+            "evidence": "Observed visual-hierarchy requirement satisfied"
+          },
+          {
+            "name": "cta-clarity",
+            "status": "PASS",
+            "evidence": "Observed cta-clarity requirement satisfied"
+          },
+          {
+            "name": "brand-consistency",
+            "status": "PASS",
+            "evidence": "Observed brand-consistency requirement satisfied"
+          },
+          {
+            "name": "file-size-performance",
+            "status": "PASS",
+            "evidence": "Observed file-size-performance requirement satisfied"
+          },
+          {
+            "name": "rights-provenance",
+            "status": "PASS",
+            "evidence": "Observed rights-provenance requirement satisfied"
+          },
+          {
+            "name": "owner-taste-alignment",
+            "status": "PASS",
+            "evidence": "Observed owner-taste-alignment requirement satisfied"
+          },
+          {
+            "name": "campaign-coherence",
+            "status": "PASS",
+            "evidence": "Observed campaign-coherence requirement satisfied"
+          },
+          {
+            "name": "conversion-mechanism",
+            "status": "PASS",
+            "evidence": "Observed conversion-mechanism requirement satisfied"
+          },
+          {
+            "name": "landing-page-continuity",
+            "status": "PASS",
+            "evidence": "Observed landing-page-continuity requirement satisfied"
+          }
+        ],
+        "failureReasons": [],
+        "publish_allowed": false
+      }
+    },
+    {
+      "id": "evening-index-attempt-2",
+      "court": {
+        "schema_version": "cana.visual-verification-court/1.0.0",
+        "creative_id": "evening-index-attempt-2",
+        "status": "PASS",
+        "score": 1,
+        "threshold": 0.85,
+        "judges": [
+          {
+            "name": "genericness",
+            "status": "PASS",
+            "evidence": "Observed genericness requirement satisfied"
+          },
+          {
+            "name": "synthetic-composition",
+            "status": "PASS",
+            "evidence": "Observed synthetic-composition requirement satisfied"
+          },
+          {
+            "name": "anatomy-object-consistency",
+            "status": "PASS",
+            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+          },
+          {
+            "name": "package-logo-correctness",
+            "status": "PASS",
+            "evidence": "Observed package-logo-correctness requirement satisfied"
+          },
+          {
+            "name": "unauthorized-hallucinated-text",
+            "status": "PASS",
+            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+          },
+          {
+            "name": "image-copy-alignment",
+            "status": "PASS",
+            "evidence": "Observed image-copy-alignment requirement satisfied"
+          },
+          {
+            "name": "local-dc-relevance",
+            "status": "PASS",
+            "evidence": "Observed local-dc-relevance requirement satisfied"
+          },
+          {
+            "name": "premium-editorial-quality",
+            "status": "PASS",
+            "evidence": "Observed premium-editorial-quality requirement satisfied"
+          },
+          {
+            "name": "mobile-crop-integrity",
+            "status": "PASS",
+            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+          },
+          {
+            "name": "readability",
+            "status": "PASS",
+            "evidence": "Observed readability requirement satisfied"
+          },
+          {
+            "name": "accessibility",
+            "status": "PASS",
+            "evidence": "Observed accessibility requirement satisfied"
+          },
+          {
+            "name": "ad-disclosure",
+            "status": "PASS",
+            "evidence": "Observed ad-disclosure requirement satisfied"
+          },
+          {
+            "name": "policy-compliance",
+            "status": "PASS",
+            "evidence": "Observed policy-compliance requirement satisfied"
+          },
+          {
+            "name": "truthful-claims",
+            "status": "PASS",
+            "evidence": "Observed truthful-claims requirement satisfied"
+          },
+          {
+            "name": "visual-hierarchy",
+            "status": "PASS",
+            "evidence": "Observed visual-hierarchy requirement satisfied"
+          },
+          {
+            "name": "cta-clarity",
+            "status": "PASS",
+            "evidence": "Observed cta-clarity requirement satisfied"
+          },
+          {
+            "name": "brand-consistency",
+            "status": "PASS",
+            "evidence": "Observed brand-consistency requirement satisfied"
+          },
+          {
+            "name": "file-size-performance",
+            "status": "PASS",
+            "evidence": "Observed file-size-performance requirement satisfied"
+          },
+          {
+            "name": "rights-provenance",
+            "status": "PASS",
+            "evidence": "Observed rights-provenance requirement satisfied"
+          },
+          {
+            "name": "owner-taste-alignment",
+            "status": "PASS",
+            "evidence": "Observed owner-taste-alignment requirement satisfied"
+          },
+          {
+            "name": "campaign-coherence",
+            "status": "PASS",
+            "evidence": "Observed campaign-coherence requirement satisfied"
+          },
+          {
+            "name": "conversion-mechanism",
+            "status": "PASS",
+            "evidence": "Observed conversion-mechanism requirement satisfied"
+          },
+          {
+            "name": "landing-page-continuity",
+            "status": "PASS",
+            "evidence": "Observed landing-page-continuity requirement satisfied"
+          }
+        ],
+        "failureReasons": [],
+        "publish_allowed": false
+      }
+    },
+    {
+      "id": "receipt-rhythm-attempt-2",
+      "court": {
+        "schema_version": "cana.visual-verification-court/1.0.0",
+        "creative_id": "receipt-rhythm-attempt-2",
+        "status": "PASS",
+        "score": 1,
+        "threshold": 0.85,
+        "judges": [
+          {
+            "name": "genericness",
+            "status": "PASS",
+            "evidence": "Observed genericness requirement satisfied"
+          },
+          {
+            "name": "synthetic-composition",
+            "status": "PASS",
+            "evidence": "Observed synthetic-composition requirement satisfied"
+          },
+          {
+            "name": "anatomy-object-consistency",
+            "status": "PASS",
+            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+          },
+          {
+            "name": "package-logo-correctness",
+            "status": "PASS",
+            "evidence": "Observed package-logo-correctness requirement satisfied"
+          },
+          {
+            "name": "unauthorized-hallucinated-text",
+            "status": "PASS",
+            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+          },
+          {
+            "name": "image-copy-alignment",
+            "status": "PASS",
+            "evidence": "Observed image-copy-alignment requirement satisfied"
+          },
+          {
+            "name": "local-dc-relevance",
+            "status": "PASS",
+            "evidence": "Observed local-dc-relevance requirement satisfied"
+          },
+          {
+            "name": "premium-editorial-quality",
+            "status": "PASS",
+            "evidence": "Observed premium-editorial-quality requirement satisfied"
+          },
+          {
+            "name": "mobile-crop-integrity",
+            "status": "PASS",
+            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+          },
+          {
+            "name": "readability",
+            "status": "PASS",
+            "evidence": "Observed readability requirement satisfied"
+          },
+          {
+            "name": "accessibility",
+            "status": "PASS",
+            "evidence": "Observed accessibility requirement satisfied"
+          },
+          {
+            "name": "ad-disclosure",
+            "status": "PASS",
+            "evidence": "Observed ad-disclosure requirement satisfied"
+          },
+          {
+            "name": "policy-compliance",
+            "status": "PASS",
+            "evidence": "Observed policy-compliance requirement satisfied"
+          },
+          {
+            "name": "truthful-claims",
+            "status": "PASS",
+            "evidence": "Observed truthful-claims requirement satisfied"
+          },
+          {
+            "name": "visual-hierarchy",
+            "status": "PASS",
+            "evidence": "Observed visual-hierarchy requirement satisfied"
+          },
+          {
+            "name": "cta-clarity",
+            "status": "PASS",
+            "evidence": "Observed cta-clarity requirement satisfied"
+          },
+          {
+            "name": "brand-consistency",
+            "status": "PASS",
+            "evidence": "Observed brand-consistency requirement satisfied"
+          },
+          {
+            "name": "file-size-performance",
+            "status": "PASS",
+            "evidence": "Observed file-size-performance requirement satisfied"
+          },
+          {
+            "name": "rights-provenance",
+            "status": "PASS",
+            "evidence": "Observed rights-provenance requirement satisfied"
+          },
+          {
+            "name": "owner-taste-alignment",
+            "status": "PASS",
+            "evidence": "Observed owner-taste-alignment requirement satisfied"
+          },
+          {
+            "name": "campaign-coherence",
+            "status": "PASS",
+            "evidence": "Observed campaign-coherence requirement satisfied"
+          },
+          {
+            "name": "conversion-mechanism",
+            "status": "PASS",
+            "evidence": "Observed conversion-mechanism requirement satisfied"
+          },
+          {
+            "name": "landing-page-continuity",
+            "status": "PASS",
+            "evidence": "Observed landing-page-continuity requirement satisfied"
+          }
+        ],
+        "failureReasons": [],
+        "publish_allowed": false
+      }
+    }
+  ]
+}
