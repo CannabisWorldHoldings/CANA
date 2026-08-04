@@ -36,6 +36,8 @@ import { createHash } from 'node:crypto';
 const has = (k) => process.argv.includes(`--${k}`);
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
+const ISSUED_GRANTS = new WeakSet();
+const SEALED_PACKETS = new WeakSet();
 
 /** Capabilities Hermes may be granted. Anything absent is refused. */
 export const CAPABILITIES = Object.freeze([
@@ -75,6 +77,7 @@ export function makeGrant({ capability, budgetUnits, expiresAt, issuedBy, now = 
     valid: errors.length === 0, errors,
   };
   grant.grant_id = 'gr_' + sha(`${capability}|${budgetUnits}|${grant.expires_at}|${issuedBy}`).slice(0, 16);
+  ISSUED_GRANTS.add(grant);
   return grant;
 }
 
@@ -162,6 +165,7 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
 
   // LAW 2
   if (!grant?.valid) errors.push(`authorization invalid: ${grant?.errors?.join('; ') ?? 'no grant'}`);
+  else if (!ISSUED_GRANTS.has(grant)) errors.push('authorization invalid: grant was not issued by this CANA packet runtime');
   // Intent must be concrete enough to audit.
   if (!text(intent?.description)) errors.push('intent.description required');
   if (!text(intent?.successTest)) errors.push('intent.successTest required — an action with no success test cannot be verified');
@@ -203,7 +207,9 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
     intent_subjects: [...intentSubjects],
     contradictions_checked_against_intent: true,
   };
-  return { valid: true, errors: [], packet: { ...body, packet_digest: sha(JSON.stringify(body)) } };
+  const packet = Object.freeze({ ...body, packet_digest: sha(JSON.stringify(body)) });
+  SEALED_PACKETS.add(packet);
+  return { valid: true, errors: [], packet };
 }
 
 /**
@@ -229,6 +235,7 @@ export function validateSealedPacket({ contextPacket, packet, requiredCapability
   if (!packet || packet.schema !== 'hermes-governed-packet/1' || !text(packet.packet_digest)) {
     errors.push('a canonical sealed Hermes packet is required');
   } else {
+    if (!SEALED_PACKETS.has(packet)) errors.push('Hermes packet was not sealed by this CANA packet runtime');
     const { packet_digest: packetDigest, ...packetBody } = packet;
     if (sha(JSON.stringify(packetBody)) !== packetDigest) {
       errors.push('Hermes packet digest does not recompute');
@@ -244,7 +251,7 @@ export function validateSealedPacket({ contextPacket, packet, requiredCapability
   if (!Number.isInteger(packet?.grant?.budget_units) || packet.grant.budget_units <= 0) {
     errors.push('Hermes packet requires a positive bounded budget');
   }
-  if (!text(packet?.grant?.issued_by)) errors.push('Hermes packet grant must name its issuer');
+  if (packet?.grant?.issued_by !== 'CANA') errors.push('Hermes creative grant must be issued by CANA');
   const expiresAt = new Date(packet?.grant?.expires_at);
   if (Number.isNaN(expiresAt.getTime()) || (!Number.isNaN(checkedAt.getTime()) && expiresAt <= checkedAt)) {
     errors.push('Hermes packet grant is expired or invalid');

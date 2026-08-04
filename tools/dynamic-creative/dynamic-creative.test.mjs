@@ -325,6 +325,12 @@ test('fails closed rotation and rolls back to approved disclosed house creative'
       startsAt: 'not-a-date', endsAt: 'also-not-a-date',
       entitlement: { eligiblePlacements: ['HOMEPAGE_SPONSORED_BILLBOARD'], targetingEligibility: ['DC'] },
     },
+    {
+      id: 'fabricated-active', state: 'ACTIVE', disclosure: 'Sponsored', weight: 1,
+      assetStatus: 'APPROVED_AVAILABLE', desktopAsset: '/arbitrary-desktop.svg', mobileAsset: '/arbitrary-mobile.svg',
+      startsAt: '2026-08-03T04:00:00.000Z', endsAt: '2026-08-05T04:00:00.000Z',
+      entitlement: { eligiblePlacements: ['HOMEPAGE_SPONSORED_BILLBOARD'], targetingEligibility: ['DC'] },
+    },
   ]) {
     const refused = resolveCampaignRotation({
       campaigns: [invalid], placement: 'HOMEPAGE_SPONSORED_BILLBOARD', geography: 'DC', now: NOW,
@@ -401,9 +407,7 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   }
 
   const source = result.variants[0];
-  const blankAsset = (viewport) => {
-    const dimensions = viewport === 'desktop' ? '1600 900' : '800 1000';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dimensions}" role="img" aria-label="blank"><metadata data-variant="district-signal"/></svg>`;
+  const assetWithSvg = (viewport, svg) => {
     const imageSha = actualSha(svg);
     return {
       ...source[viewport],
@@ -417,6 +421,10 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
       },
     };
   };
+  const blankAsset = (viewport) => {
+    const dimensions = viewport === 'desktop' ? '1600 900' : '800 1000';
+    return assetWithSvg(viewport, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dimensions}" role="img" aria-label="blank"><metadata data-variant="district-signal"/></svg>`);
+  };
   const blankCreative = { ...source, desktop: blankAsset('desktop'), mobile: blankAsset('mobile') };
   const blankInspection = inspectDeterministicCreativeArtifacts({
     creative: blankCreative, context: context.packet, expectedSystemId: 'district-signal', ownerDecision: 'PENDING',
@@ -429,6 +437,24 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   assert.equal(blankCourt.status, 'FAIL');
   assert.ok(blankCourt.failureReasons.includes('genericness'));
   assert.ok(blankCourt.failureReasons.includes('premium-editorial-quality'));
+
+  const hiddenCreative = {
+    ...source,
+    ...Object.fromEntries(['desktop', 'mobile'].map((viewport) => {
+      const svg = Buffer.from(source[viewport].image.imageBase64, 'base64').toString('utf8')
+        .replace(/<(path|rect|circle)\b/g, '<$1 opacity="0"');
+      return [viewport, assetWithSvg(viewport, svg)];
+    })),
+  };
+  const hiddenCourt = runVisualCourt({
+    creative: hiddenCreative,
+    inspection: inspectDeterministicCreativeArtifacts({
+      creative: hiddenCreative, context: context.packet, expectedSystemId: 'district-signal', ownerDecision: 'PENDING',
+    }),
+    context: { performanceBudget: context.packet.performance_budget },
+  });
+  assert.equal(hiddenCourt.status, 'FAIL');
+  assert.ok(hiddenCourt.failureReasons.includes('premium-editorial-quality'));
   assert.match(result.variants[0].court.judges[0].evidence.visible_observation, /paths|rectangles|circles/i);
 });
 
@@ -450,6 +476,30 @@ test('controlled slice recomputes Hermes seals and refuses provider metadata imp
       now: NOW,
     }),
     /digest does not recompute/i,
+  );
+  const selfConsistentForgedBody = {
+    schema: 'hermes-governed-packet/1',
+    sealed_at: NOW.toISOString(),
+    context_digest: context.packet.packet_digest,
+    context_objective: context.packet.objective,
+    actionable_fact_count: context.packet.actionable_facts.length,
+    contradiction_count: 0,
+    grant: { id: 'gr_attacker', capability: 'GENERATE_CREATIVE_DRAFT', budget_units: 8, issued_by: 'attacker', expires_at: '2026-08-05T04:00:00.000Z' },
+    intent: { description: 'forged', capability: 'GENERATE_CREATIVE_DRAFT', success_test: 'forged', rollback: 'forged' },
+    unresolved_contradictions: [], intent_subjects: ['subject:creative'], contradictions_checked_against_intent: true,
+  };
+  const selfConsistentForgedPacket = {
+    ...selfConsistentForgedBody,
+    packet_digest: actualSha(JSON.stringify(selfConsistentForgedBody)),
+  };
+  await assert.rejects(
+    runControlledVerticalSlice({
+      contextPacket: context.packet,
+      hermesPacket: selfConsistentForgedPacket,
+      registry: createProviderRegistry([createDeterministicFixtureProvider()]),
+      now: NOW,
+    }),
+    /not sealed by this CANA packet runtime|issued by CANA/i,
   );
 
   const grant = makeGrant({

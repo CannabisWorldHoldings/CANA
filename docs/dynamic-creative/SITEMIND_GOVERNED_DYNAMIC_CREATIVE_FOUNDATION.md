@@ -113,11 +113,11 @@ The court runs 23 independent deterministic judges:
 22. conversion mechanism;
 23. landing-page continuity.
 
-The deterministic court derives its findings from the actual desktop/mobile SVG bytes, hashes, responsive dimensions, embedded variant metadata, generation/analysis receipts, campaign genome, disclosure, rights state, copy, and performance budget. Every judge records concrete visible observations including the recognized motif, path/rectangle/circle counts, palette, responsive ratios, copy lengths, disclosure, and rights state; a blank SVG carrying expected metadata fails. It refuses an unsealed caller-supplied inspection. Owner taste is explicitly `PENDING_OWNER_DECISION`, so each candidate ends at `TECHNICAL_PASS_OWNER_REVIEW_REQUIRED`, never a final visual approval. Any technical failure blocks the candidate. Regeneration is bounded to five attempts; the slice demonstrates an artifact-mismatched generic first attempt and a coherent second attempt.
+The deterministic court derives its findings from the actual desktop/mobile SVG bytes, hashes, responsive dimensions, embedded variant metadata, generation/analysis receipts, campaign genome, disclosure, rights state, copy, and performance budget. Every judge records concrete visible observations including the recognized motif, path/rectangle/circle counts, palette, minimum declared geometry opacity, responsive ratios, copy lengths, disclosure, and rights state; a blank, hidden, or effectively transparent SVG carrying expected metadata fails. It refuses an unsealed caller-supplied inspection. Owner taste is explicitly `PENDING_OWNER_DECISION`, so each candidate ends at `TECHNICAL_PASS_OWNER_REVIEW_REQUIRED`, never a final visual approval. Any technical failure blocks the candidate. Regeneration is bounded to five attempts; the slice demonstrates an artifact-mismatched generic first attempt and a coherent second attempt.
 
 ## Controlled rotation and rollback
 
-Rotation requires `ACTIVE`, disclosure, approved and available desktop/mobile assets, an eligible placement, geographic eligibility, a valid increasing current schedule, remaining frequency allowance, and positive deterministic weight. Invalid dates and assetless candidates fail closed. With every new campaign held at `OWNER_REVIEW_REQUIRED`, no campaign qualifies. The resolver therefore selects `owd-source-before-hype`, the owner-approved primary house seed. It never alters organic ordering.
+Rotation requires `ACTIVE`, disclosure, approved and available desktop/mobile assets, an eligible placement, geographic eligibility, a valid increasing current schedule, remaining frequency allowance, and positive deterministic weight. Invalid dates and assetless candidates fail closed. The current Level 0/1 resolver never selects a sponsored candidate even if a caller fabricates an otherwise structurally eligible `ACTIVE` record: this branch has no canonical CANA activation verifier. With every generated campaign held at `OWNER_REVIEW_REQUIRED`, the resolver selects `owd-source-before-hype`, the owner-approved primary house seed. It never alters organic ordering.
 
 `Source Before Hype` is the approved primary genome, evaluation fixture, future seed, and first fallback. `Block by Block` is the approved secondary seed. `Tonight's Shortlist` remains a rejected primary direction and is never rotation-eligible.
 
@@ -136,7 +136,7 @@ The tuning-readiness interface reports no fine-tuned model and no authorization.
 - A conversion event is accepted only with directly attributed ORDERWEEDDC first-party evidence.
 - Generated image text is prohibited; disclosure and customer copy are deterministic HTML.
 - Normal homepage requests have no review placement. Rendering requires `CANA_DYNAMIC_CREATIVE_REVIEW_MODE=LOCAL_ONLY`, a `.localhost` host, and an allowlisted query value derived from the canonical creative genomes.
-- The execution boundary recomputes both the SiteMind context seal and Hermes packet seal, checks capability, budget, issuer, binding, and expiry, and refuses forged Hermes-shaped objects before provider selection.
+- The execution boundary recomputes both the SiteMind context seal and Hermes packet seal, checks capability, budget, issuer, binding, and expiry, and refuses forged Hermes-shaped objects before provider selection. A grant and sealed packet must also have been issued and sealed by the current Hermes runtime instance; a serialized receipt is evidence, not reusable execution authority.
 
 ## Known limitations
 

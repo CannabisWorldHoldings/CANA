@@ -409,14 +409,10 @@ export function resolveCampaignRotation({ campaigns, placement, geography, now, 
     return Number.isFinite(campaign.weight) && campaign.weight > 0;
   }).sort((left, right) => right.weight - left.weight || left.id.localeCompare(right.id));
   if (eligible.length === 0) return fallbackResult(fallback, 'No fully gated active campaign; deterministic house fallback selected');
-  return Object.freeze({
-    status: 'CAMPAIGN_SELECTED',
-    campaign: eligible[0],
-    reason: 'Deterministic highest eligible weight after all gates',
-    affectsOrganicOrder: false,
-    rollback_available: Boolean(fallback?.fallbackEligible),
-    rollback_target: fallback?.id ?? null,
-  });
+  return fallbackResult(
+    fallback,
+    `${eligible.length} campaign(s) met structural rotation rules, but this Level 0/1 foundation has no canonical CANA activation verifier`,
+  );
 }
 
 export const PERFORMANCE_EVENT_TYPES = Object.freeze([
@@ -544,6 +540,10 @@ function svgFacts(image) {
   const circleCount = [...svg.matchAll(/<circle\b/gi)].length;
   const groupCount = [...svg.matchAll(/<g\b/gi)].length;
   const palette = [...new Set([...svg.matchAll(/#[0-9a-f]{3,8}/gi)].map((match) => match[0].toLowerCase()))];
+  const opacityValues = [...svg.matchAll(/(?:opacity|fill-opacity|stroke-opacity)="([0-9.]+)"/gi)]
+    .map((match) => Number(match[1]))
+    .filter(Number.isFinite);
+  const hasHiddenGeometry = opacityValues.some((value) => value < 0.1) || /(?:display="none"|visibility="hidden")/i.test(svg);
   const motif = groupCount >= 1 && rectCount >= 6 && circleCount >= 1
     ? 'receipt-with-evidence-lines-and-seal'
     : pathData.some((value) => value.includes('Q') && value.includes('T')) && circleCount >= 4
@@ -563,6 +563,8 @@ function svgFacts(image) {
     hasScript: /<script\b|\bon\w+=/i.test(svg),
     hasExternalImage: /<image\b|\bhref=["'](?:https?:|data:)/i.test(svg),
     hasAccessibleName: /role="img"/.test(svg) && /aria-label="[^"]+"/.test(svg),
+    hasHiddenGeometry,
+    minimumDeclaredOpacity: opacityValues.length > 0 ? Math.min(...opacityValues) : 1,
     pathCount: pathData.length,
     rectCount,
     circleCount,
@@ -593,7 +595,7 @@ export function inspectDeterministicCreativeArtifacts({ creative, context, expec
   }[expectedSystemId] ?? 'unrecognized-or-empty';
   const coherentVariant = desktop.variant === expectedSystemId && mobile.variant === expectedSystemId;
   const motifMatches = desktop.motif === expectedMotif && mobile.motif === expectedMotif;
-  const prohibitedMarkup = [desktop, mobile].some((asset) => asset.hasText || asset.hasGradient || asset.hasScript || asset.hasExternalImage);
+  const prohibitedMarkup = [desktop, mobile].some((asset) => asset.hasText || asset.hasGradient || asset.hasScript || asset.hasExternalImage || asset.hasHiddenGeometry);
   const distinctResponsiveAssets = desktop.sha256 !== mobile.sha256 && desktop.width > desktop.height && mobile.height > mobile.width;
   const localEvidence = motifMatches && text(genome.localDcCue) && /D\.C\.|district|ORDERWEEDDC/i.test(genome.localDcCue);
   const copyAligned = text(genome.expectedMechanism) && text(genome.visualConcept) && text(creative.headline);
@@ -613,8 +615,8 @@ export function inspectDeterministicCreativeArtifacts({ creative, context, expec
     observed_system_ids: Object.freeze([desktop.variant, mobile.variant]),
     visible_features: Object.freeze({
       expected_motif: expectedMotif,
-      desktop: Object.freeze({ motif: desktop.motif, paths: desktop.pathCount, rectangles: desktop.rectCount, circles: desktop.circleCount, palette: desktop.palette, dimensions: [desktop.width, desktop.height] }),
-      mobile: Object.freeze({ motif: mobile.motif, paths: mobile.pathCount, rectangles: mobile.rectCount, circles: mobile.circleCount, palette: mobile.palette, dimensions: [mobile.width, mobile.height] }),
+      desktop: Object.freeze({ motif: desktop.motif, paths: desktop.pathCount, rectangles: desktop.rectCount, circles: desktop.circleCount, palette: desktop.palette, dimensions: [desktop.width, desktop.height], minimum_opacity: desktop.minimumDeclaredOpacity }),
+      mobile: Object.freeze({ motif: mobile.motif, paths: mobile.pathCount, rectangles: mobile.rectCount, circles: mobile.circleCount, palette: mobile.palette, dimensions: [mobile.width, mobile.height], minimum_opacity: mobile.minimumDeclaredOpacity }),
     }),
   });
   const judgeEvidence = Object.freeze({
@@ -625,12 +627,12 @@ export function inspectDeterministicCreativeArtifacts({ creative, context, expec
     'unauthorized-hallucinated-text': `Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML`,
     'image-copy-alignment': `Observed motif ${expectedMotif} maps to genome concept "${genome.visualConcept}" and headline "${creative.headline}"`,
     'local-dc-relevance': `Visible motif cue: ${genome.localDcCue}; context: ${genome.localDcRelevance}`,
-    'premium-editorial-quality': `${motifObservation}; no gradient, raster, filter, script or embedded copy is present`,
+    'premium-editorial-quality': `${motifObservation}; minimum declared opacities are ${desktop.minimumDeclaredOpacity} and ${mobile.minimumDeclaredOpacity}; no hidden geometry, gradient, raster, filter, script or embedded copy is present`,
     'mobile-crop-integrity': `Desktop ${desktop.width}x${desktop.height} and mobile ${mobile.width}x${mobile.height} are distinct hashes with the same observed motif ${expectedMotif}`,
     'readability': `Headline has ${creative.headline.length} characters and is HTML; both artwork files contain zero text nodes`,
     'accessibility': `Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately`,
     'ad-disclosure': `Placement disclosure is "${creative.disclosure}" and remains outside generated artwork`,
-    'policy-compliance': `No gradients, scripts, external images, raster data URLs or generated image text were observed`,
+    'policy-compliance': `No hidden geometry, gradients, scripts, external images, raster data URLs or generated image text were observed`,
     'truthful-claims': `Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional`,
     'visual-hierarchy': `Recognized dominant motif ${expectedMotif}; responsive dimensions are ${desktop.width}x${desktop.height} and ${mobile.width}x${mobile.height}`,
     'cta-clarity': `CTA "${creative.cta}" is ${creative.cta.length} characters and rendered as deterministic HTML`,
