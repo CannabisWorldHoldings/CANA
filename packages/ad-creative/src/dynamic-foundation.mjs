@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import { routeImageProvider } from './provider-contract.mjs';
 import { runAdCreativePipeline } from './pipeline.mjs';
+import {
+  assertDeterministicFixtureProvider,
+  verifyDeterministicFixtureExecution,
+} from './providers/deterministic-fixture.mjs';
+import { validateSealedPacket } from '../../../skills-src/hermes-governed-packet.mjs';
 
 const digest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const text = (value) => typeof value === 'string' && value.trim().length > 0;
@@ -54,6 +59,12 @@ export const OWNER_CAMPAIGN_SEEDS = Object.freeze([
   Object.freeze({
     id: 'owd-source-before-hype',
     concept: 'Trust before handoff: make source, freshness and evidence the premium visual idea.',
+    strategy: 'approved-house-fallback',
+    eyebrow: 'Approved house fallback',
+    headline: 'Source before hype.',
+    body: 'The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.',
+    cta: 'See how evidence is labeled',
+    alt: 'Source records leading to an open doorway',
     decision: 'APPROVED_PRIMARY',
     decisionReason: 'Owner-approved primary house-campaign seed.',
     roles: Object.freeze([...SEED_ROLES, 'FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN']),
@@ -62,6 +73,7 @@ export const OWNER_CAMPAIGN_SEEDS = Object.freeze([
     disclosure: 'ORDERWEEDDC house campaign',
     desktopAsset: '/creative/house/source-before-hype-desktop.svg',
     mobileAsset: '/creative/house/source-before-hype-mobile.svg',
+    assetStatus: 'APPROVED_AVAILABLE',
   }),
   Object.freeze({
     id: 'owd-block-by-block',
@@ -74,6 +86,7 @@ export const OWNER_CAMPAIGN_SEEDS = Object.freeze([
     disclosure: 'ORDERWEEDDC house campaign',
     desktopAsset: '/creative/house/block-by-block-desktop.svg',
     mobileAsset: '/creative/house/block-by-block-mobile.svg',
+    assetStatus: 'APPROVED_AVAILABLE',
   }),
   Object.freeze({
     id: 'owd-tonights-shortlist',
@@ -86,6 +99,7 @@ export const OWNER_CAMPAIGN_SEEDS = Object.freeze([
     disclosure: 'Rejected owner-review fixture — never eligible for rotation',
     desktopAsset: '/creative/house/tonights-shortlist-desktop.svg',
     mobileAsset: '/creative/house/tonights-shortlist-mobile.svg',
+    assetStatus: 'REJECTED_NOT_AVAILABLE',
   }),
 ]);
 
@@ -196,9 +210,9 @@ export function transitionCampaign({ current, target, gates = {} }) {
   }
   if (!TRANSITIONS[current].includes(target)) throw new Error(`Illegal campaign transition ${current} -> ${target}`);
   if (target === 'ACTIVE') {
-    for (const [gate, expected] of Object.entries({ visual: 'PASS', policy: 'PASS', owner: 'APPROVED', entitlement: 'PASS', schedule: 'PASS' })) {
-      if (gates[gate] !== expected) throw new Error(`${gate} gate must be ${expected} before ACTIVE`);
-    }
+    throw new Error(
+      'ACTIVE is unavailable in the LEVEL_0/LEVEL_1 foundation: caller-supplied gate labels are not CANA authorization',
+    );
   }
   return Object.freeze({ state: target, previous_state: current, gates: Object.freeze({ ...gates }) });
 }
@@ -223,6 +237,10 @@ export function evaluateTuningReadiness(input) {
     ['anti-regression benchmark', Boolean(input.antiRegressionBenchmark)],
     ['rollback plan', Boolean(input.rollbackPlan)],
     ['material lift over retrieval prompting and routing', input.beatsRetrievalPromptingRouting === true],
+    ['selected provider supports governed tuning', input.selectedProviderSupportsGovernedTuning === true],
+    ['dataset diversity review', input.datasetDiversityReview === 'PASS'],
+    ['base model and training lineage', text(input.modelLineage)],
+    ['owner cost and risk approval', input.ownerCostRiskApproval === 'APPROVED'],
   ];
   const missing = gates.filter(([, passed]) => !passed).map(([name]) => name);
   return Object.freeze({
@@ -264,31 +282,50 @@ const JUDGE_RULES = Object.freeze({
   'brand-consistency': (i) => i.brandConsistency >= 0.75,
   'file-size-performance': (i, _c, context) => Number.isFinite(i.fileBytes) && i.fileBytes <= context.performanceBudget.maxAssetBytes,
   'rights-provenance': (i) => i.rightsProvenancePass === true,
-  'owner-taste-alignment': (i) => i.ownerTasteAlignmentPass === true,
+  'owner-taste-alignment': (i) => i.ownerTasteDecision === 'PENDING' ? null : i.ownerTasteDecision === 'APPROVED',
   'campaign-coherence': (i) => i.campaignCoherencePass === true,
   'conversion-mechanism': (i) => i.conversionMechanismPass === true,
   'landing-page-continuity': (i) => i.landingPageContinuityPass === true,
 });
 
 export function runVisualCourt({ creative, inspection, context, threshold = 0.85 }) {
+  if (inspection?.schema_version !== 'cana.deterministic-creative-inspection/1.0.0') {
+    throw new Error('visual court requires an artifact-derived inspection receipt');
+  }
+  const { receipt_digest: claimedInspectionDigest, ...inspectionBody } = inspection;
+  if (digest(inspectionBody) !== claimedInspectionDigest) {
+    throw new Error('visual inspection receipt digest does not recompute');
+  }
   const judges = VISUAL_COURT_JUDGES.map((name) => {
     const passed = JUDGE_RULES[name](inspection ?? {}, creative, context);
     return Object.freeze({
       name,
-      status: passed ? 'PASS' : 'FAIL',
-      evidence: passed ? `Observed ${name} requirement satisfied` : `Observed ${name} requirement failed or missing`,
+      status: passed === null ? 'PENDING_OWNER_DECISION' : passed ? 'PASS' : 'FAIL',
+      evidence: Object.freeze({
+        inspection_receipt: claimedInspectionDigest,
+        desktop_asset: inspection.evidence.desktop_asset,
+        mobile_asset: inspection.evidence.mobile_asset,
+        finding: passed === null ? 'Owner decision has not been recorded' : passed ? `${name} requirement satisfied` : `${name} requirement failed or missing`,
+      }),
     });
   });
-  const score = judges.filter((judge) => judge.status === 'PASS').length / judges.length;
+  const decided = judges.filter((judge) => judge.status !== 'PENDING_OWNER_DECISION');
+  const score = judges.filter((judge) => judge.status === 'PASS').length / decided.length;
   const failed = judges.filter((judge) => judge.status === 'FAIL').map((judge) => judge.name);
+  const pending = judges.filter((judge) => judge.status === 'PENDING_OWNER_DECISION').map((judge) => judge.name);
+  const qualityThresholdReached = failed.length === 0 && score >= threshold;
   return Object.freeze({
     schema_version: 'cana.visual-verification-court/1.0.0',
     creative_id: creative?.id ?? null,
-    status: failed.length === 0 && score >= threshold ? 'PASS' : 'FAIL',
+    status: qualityThresholdReached
+      ? (pending.length > 0 ? 'TECHNICAL_PASS_OWNER_REVIEW_REQUIRED' : 'PASS')
+      : 'FAIL',
     score,
     threshold,
     judges: Object.freeze(judges),
     failureReasons: Object.freeze(failed),
+    pendingReasons: Object.freeze(pending),
+    quality_threshold_reached: qualityThresholdReached,
     publish_allowed: false,
   });
 }
@@ -302,14 +339,16 @@ export async function regenerateUntilQuality({ maxAttempts, generate, judge }) {
     const creative = await generate({ attempt, prior: attempts.at(-1) ?? null });
     const court = await judge(creative, attempt);
     attempts.push(Object.freeze({ attempt, creative_id: creative.id, court }));
-    if (court.status === 'PASS') {
+    if (court.quality_threshold_reached === true || court.status === 'PASS') {
       return Object.freeze({
         status: 'QUALITY_THRESHOLD_REACHED',
         creative,
         attempts: Object.freeze(attempts),
         rejection_and_regeneration_receipt: Object.freeze({
           rejected_attempt: attempts.length > 1 ? attempts[0].creative_id : null,
+          rejected_court: attempts.length > 1 ? attempts[0].court : null,
           accepted_attempt: creative.id,
+          accepted_court: court,
           stop_reason: 'QUALITY_THRESHOLD_REACHED',
           bounded_attempt_limit: maxAttempts,
         }),
@@ -322,7 +361,9 @@ export async function regenerateUntilQuality({ maxAttempts, generate, judge }) {
     attempts: Object.freeze(attempts),
     rejection_and_regeneration_receipt: Object.freeze({
       rejected_attempt: attempts[0]?.creative_id ?? null,
+      rejected_court: attempts[0]?.court ?? null,
       accepted_attempt: null,
+      accepted_court: null,
       stop_reason: 'BOUNDED_ATTEMPT_LIMIT_REACHED',
       bounded_attempt_limit: maxAttempts,
     }),
@@ -330,7 +371,13 @@ export async function regenerateUntilQuality({ maxAttempts, generate, judge }) {
 }
 
 function fallbackResult(fallback, reason) {
-  if (!fallback?.fallbackEligible || !text(fallback.disclosure)) {
+  if (
+    !fallback?.fallbackEligible ||
+    fallback.assetStatus !== 'APPROVED_AVAILABLE' ||
+    !text(fallback.disclosure) ||
+    !text(fallback.desktopAsset) ||
+    !text(fallback.mobileAsset)
+  ) {
     return Object.freeze({ status: 'NO_ELIGIBLE_CREATIVE_FAIL_CLOSED', campaign: null, reason, affectsOrganicOrder: false, rollback_available: false });
   }
   return Object.freeze({
@@ -348,9 +395,13 @@ export function resolveCampaignRotation({ campaigns, placement, geography, now, 
   if (Number.isNaN(timestamp.getTime())) throw new Error('rotation requires a valid now');
   const eligible = (campaigns ?? []).filter((campaign) => {
     if (campaign.state !== 'ACTIVE' || !text(campaign.disclosure)) return false;
+    if (campaign.assetStatus !== 'APPROVED_AVAILABLE' || !text(campaign.desktopAsset) || !text(campaign.mobileAsset)) return false;
     if (!campaign.entitlement?.eligiblePlacements?.includes(placement)) return false;
     if (!campaign.entitlement?.targetingEligibility?.includes(geography)) return false;
-    if (timestamp < new Date(campaign.startsAt) || timestamp >= new Date(campaign.endsAt)) return false;
+    const starts = new Date(campaign.startsAt);
+    const ends = new Date(campaign.endsAt);
+    if (Number.isNaN(starts.getTime()) || Number.isNaN(ends.getTime()) || ends <= starts) return false;
+    if (timestamp < starts || timestamp >= ends) return false;
     if ((frequencyByCampaign?.get(campaign.id) ?? 0) >= (campaign.frequencyCap ?? 1)) return false;
     return Number.isFinite(campaign.weight) && campaign.weight > 0;
   }).sort((left, right) => right.weight - left.weight || left.id.localeCompare(right.id));
@@ -403,9 +454,12 @@ export function createPerformanceEvent(input) {
   return Object.freeze({ ...body, event_digest: digest(body) });
 }
 
-const VARIANT_DEFINITIONS = Object.freeze([
+export const VARIANT_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'district-signal', strategy: 'local-orientation',
+    eyebrow: 'District signal',
+    body: 'A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.',
+    alt: 'Abstract D.C. signal grid with a central verified marker',
     targetAudience: 'D.C. adults 21+ who know their neighborhood but not the verified options nearby',
     customerProblem: 'Local choice is fragmented and difficult to orient.',
     offer: 'A verified comparison path organized around D.C. location.',
@@ -427,6 +481,9 @@ const VARIANT_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'evening-index', strategy: 'bounded-choice',
+    eyebrow: 'Evening index',
+    body: 'An editorial index system that reduces choice overload without presenting competitor performance as fact.',
+    alt: 'Abstract evening arches with a compact editorial index',
     targetAudience: 'D.C. adults 21+ seeking a fast, legible evening discovery path',
     customerProblem: 'Large catalogs create choice overload.',
     offer: 'A shorter verified shortlist.',
@@ -448,6 +505,9 @@ const VARIANT_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'receipt-rhythm', strategy: 'trust-before-handoff',
+    eyebrow: 'Receipt rhythm',
+    body: 'A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.',
+    alt: 'Abstract source receipt with a circular verification seal',
     targetAudience: 'Evidence-seeking D.C. adults 21+ wary of stale listings and unsupported claims',
     customerProblem: 'A storefront handoff lacks trust when source and freshness are hidden.',
     offer: 'See the source before choosing where to go.',
@@ -469,30 +529,83 @@ const VARIANT_DEFINITIONS = Object.freeze([
   }),
 ]);
 
-const PASSING_INSPECTION = Object.freeze({
-  genericness: 0.18,
-  syntheticComposition: false,
-  anatomyObjectConsistency: true,
-  packageLogoCorrect: true,
-  hallucinatedText: false,
-  imageCopyAlignment: true,
-  localDcRelevance: 0.9,
-  premiumEditorialQuality: 0.88,
-  mobileCropIntegrity: true,
-  readability: 0.94,
-  accessibilityPass: true,
-  disclosureVisible: true,
-  policyPass: true,
-  truthfulClaims: true,
-  visualHierarchy: 0.9,
-  ctaClarity: 0.92,
-  brandConsistency: 0.9,
-  rightsProvenancePass: true,
-  ownerTasteAlignmentPass: true,
-  campaignCoherencePass: true,
-  conversionMechanismPass: true,
-  landingPageContinuityPass: true,
-});
+function svgFacts(image) {
+  const svg = Buffer.from(image.imageBase64, 'base64').toString('utf8');
+  const variant = svg.match(/data-variant="([^"]+)"/)?.[1] ?? null;
+  const viewBox = svg.match(/viewBox="0 0 ([0-9.]+) ([0-9.]+)"/);
+  return Object.freeze({
+    svg,
+    sha256: createHash('sha256').update(svg).digest('hex'),
+    bytes: Buffer.byteLength(svg),
+    variant,
+    width: Number(viewBox?.[1]),
+    height: Number(viewBox?.[2]),
+    hasText: /<text\b/i.test(svg),
+    hasGradient: /<(?:linear|radial)Gradient\b/i.test(svg),
+    hasScript: /<script\b|\bon\w+=/i.test(svg),
+    hasExternalImage: /<image\b|\bhref=["'](?:https?:|data:)/i.test(svg),
+    hasAccessibleName: /role="img"/.test(svg) && /aria-label="[^"]+"/.test(svg),
+  });
+}
+
+/** Build visual evidence from the actual responsive bytes and generation receipts. */
+export function inspectDeterministicCreativeArtifacts({ creative, context, expectedSystemId, ownerDecision = 'PENDING' }) {
+  const desktopExecution = verifyDeterministicFixtureExecution({
+    image: creative.desktop.image,
+    analysis: creative.desktop.imageAnalysis,
+  });
+  const mobileExecution = verifyDeterministicFixtureExecution({
+    image: creative.mobile.image,
+    analysis: creative.mobile.imageAnalysis,
+  });
+  const desktop = svgFacts(creative.desktop.image);
+  const mobile = svgFacts(creative.mobile.image);
+  const genome = creative.creative_genome ?? {};
+  const coherentVariant = desktop.variant === expectedSystemId && mobile.variant === expectedSystemId;
+  const prohibitedMarkup = [desktop, mobile].some((asset) => asset.hasText || asset.hasGradient || asset.hasScript || asset.hasExternalImage);
+  const distinctResponsiveAssets = desktop.sha256 !== mobile.sha256 && desktop.width > desktop.height && mobile.height > mobile.width;
+  const localEvidence = /D\.C\.|district|block/i.test(`${genome.localDcRelevance ?? ''} ${genome.targetAudience ?? ''}`);
+  const copyAligned = text(genome.expectedMechanism) && text(genome.visualConcept) && text(creative.headline);
+  const evidence = Object.freeze({
+    desktop_asset: `sha256:${desktop.sha256}`,
+    mobile_asset: `sha256:${mobile.sha256}`,
+    generation_receipts: Object.freeze([
+      creative.desktop.image.receipt.result_sha256,
+      creative.mobile.image.receipt.result_sha256,
+    ]),
+    provider_execution: Object.freeze([desktopExecution, mobileExecution]),
+    expected_system_id: expectedSystemId,
+    observed_system_ids: Object.freeze([desktop.variant, mobile.variant]),
+  });
+  const body = {
+    schema_version: 'cana.deterministic-creative-inspection/1.0.0',
+    genericness: coherentVariant ? 0.18 : 0.82,
+    syntheticComposition: prohibitedMarkup,
+    anatomyObjectConsistency: !/<(?:path|circle)[^>]+data-anatomy/i.test(desktop.svg + mobile.svg),
+    packageLogoCorrect: !desktop.hasExternalImage && !mobile.hasExternalImage,
+    hallucinatedText: desktop.hasText || mobile.hasText,
+    imageCopyAlignment: coherentVariant && copyAligned,
+    localDcRelevance: coherentVariant && localEvidence ? 0.9 : 0.2,
+    premiumEditorialQuality: coherentVariant && !prohibitedMarkup ? 0.88 : 0.3,
+    mobileCropIntegrity: distinctResponsiveAssets,
+    readability: !desktop.hasText && !mobile.hasText && text(creative.headline) ? 0.94 : 0.2,
+    accessibilityPass: desktop.hasAccessibleName && mobile.hasAccessibleName,
+    disclosureVisible: text(creative.disclosure),
+    policyPass: !prohibitedMarkup,
+    truthfulClaims: !/guarantee|best|proven|official/i.test(`${creative.headline} ${genome.testablePrediction ?? ''}`),
+    visualHierarchy: distinctResponsiveAssets && text(creative.headline) ? 0.9 : 0.3,
+    ctaClarity: text(creative.cta) && creative.cta.length <= 40 ? 0.92 : 0.3,
+    brandConsistency: !prohibitedMarkup && coherentVariant ? 0.9 : 0.3,
+    fileBytes: Math.max(desktop.bytes, mobile.bytes),
+    rightsProvenancePass: genome.rightsState === 'SYNTHETIC_FIXTURE_RIGHTS_CLEARED',
+    ownerTasteDecision: ownerDecision,
+    campaignCoherencePass: coherentVariant && distinctResponsiveAssets,
+    conversionMechanismPass: text(genome.expectedMechanism) && text(genome.testablePrediction),
+    landingPageContinuityPass: text(genome.landingPageMatch),
+    evidence,
+  };
+  return Object.freeze({ ...body, receipt_digest: digest(body) });
+}
 
 async function generateResponsiveVariant({ provider, definition, contextPacket, attempt = 2 }) {
   const business = {
@@ -507,11 +620,12 @@ async function generateResponsiveVariant({ provider, definition, contextPacket, 
   const logo = { imageBase64: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>').toString('base64'), mimeType: 'image/svg+xml' };
   const variants = {};
   for (const [viewport, aspectRatio] of Object.entries({ desktop: '16:9', mobile: '4:5' })) {
+    const renderedVariantId = attempt === 1 ? 'generic-control' : definition.id;
     const configuredProvider = {
       ...provider,
       generateImage: (input) => provider.generateImage({
         ...input,
-        configuration: { variantId: definition.id, seed: `${definition.id}-${viewport}-attempt-${attempt}` },
+        configuration: { variantId: renderedVariantId, seed: `${definition.id}-${viewport}-attempt-${attempt}` },
       }),
     };
     const pipeline = await runAdCreativePipeline({
@@ -527,10 +641,12 @@ async function generateResponsiveVariant({ provider, definition, contextPacket, 
       },
     });
     const result = pipeline.creatives[0];
+    const execution = verifyDeterministicFixtureExecution({ image: result.image, analysis: result.imageAnalysis });
     variants[viewport] = Object.freeze({
       image: result.image,
       imageAnalysis: result.imageAnalysis,
       verification: result.verification,
+      execution,
       postable: false,
     });
   }
@@ -551,14 +667,19 @@ export async function runControlledVerticalSlice({ contextPacket, hermesPacket, 
   if (contextPacket?.authority_boundary !== 'SITEMIND_CONTEXT_ONLY_NO_EXECUTION_AUTHORITY') {
     throw new Error('A SiteMind creative context packet is required');
   }
-  if (hermesPacket?.context_digest !== contextPacket.packet_digest || hermesPacket?.grant?.capability !== 'GENERATE_CREATIVE_DRAFT') {
-    throw new Error('Hermes packet must bind the creative context and draft-only capability');
-  }
+  const hermesValidation = validateSealedPacket({
+    contextPacket,
+    packet: hermesPacket,
+    requiredCapability: 'GENERATE_CREATIVE_DRAFT',
+    now,
+  });
+  if (!hermesValidation.valid) throw new Error(`Hermes packet refused: ${hermesValidation.errors.join('; ')}`);
   const route = routeImageProvider(registry, {
     requiredCapabilities: ['text-to-image', 'responsive-variants', 'zero-network'],
     maxCostUsd: 0,
     maxLatencyMs: 100,
   });
+  assertDeterministicFixtureProvider(route.provider);
   const entitlement = createCreativeEntitlement({
     id: 'ent_synthetic_vertical_slice', tier: 'NEIGHBORHOOD',
     advertiserId: contextPacket.advertiser.id,
@@ -573,14 +694,12 @@ export async function runControlledVerticalSlice({ contextPacket, hermesPacket, 
         generate: ({ attempt }) => generateResponsiveVariant({ provider: route.provider, definition, contextPacket, attempt }),
         judge: (creative, attempt) => runVisualCourt({
           creative,
-          inspection: {
-            ...PASSING_INSPECTION,
-            genericness: attempt === 1 ? 0.72 : PASSING_INSPECTION.genericness,
-            fileBytes: Math.max(
-              Buffer.from(creative.desktop.image.imageBase64, 'base64').length,
-              Buffer.from(creative.mobile.image.imageBase64, 'base64').length,
-            ),
-          },
+          inspection: inspectDeterministicCreativeArtifacts({
+            creative,
+            context: contextPacket,
+            expectedSystemId: definition.id,
+            ownerDecision: 'PENDING',
+          }),
           context: { performanceBudget: contextPacket.performance_budget },
         }),
       });
@@ -594,16 +713,15 @@ export async function runControlledVerticalSlice({ contextPacket, hermesPacket, 
       const creative = await generateResponsiveVariant({ provider: route.provider, definition, contextPacket });
       const court = runVisualCourt({
         creative,
-        inspection: {
-          ...PASSING_INSPECTION,
-          fileBytes: Math.max(
-            Buffer.from(creative.desktop.image.imageBase64, 'base64').length,
-            Buffer.from(creative.mobile.image.imageBase64, 'base64').length,
-          ),
-        },
+        inspection: inspectDeterministicCreativeArtifacts({
+          creative,
+          context: contextPacket,
+          expectedSystemId: definition.id,
+          ownerDecision: 'PENDING',
+        }),
         context: { performanceBudget: contextPacket.performance_budget },
       });
-      if (court.status !== 'PASS') throw new Error(`${definition.id} failed the visual court: ${court.failureReasons.join(', ')}`);
+      if (!court.quality_threshold_reached) throw new Error(`${definition.id} failed the visual court: ${court.failureReasons.join(', ')}`);
       variants.push(Object.freeze({ ...creative, court }));
     }
   }
@@ -613,6 +731,11 @@ export async function runControlledVerticalSlice({ contextPacket, hermesPacket, 
     placement: 'HOMEPAGE_SPONSORED_BILLBOARD', geography: 'DC', now,
     frequencyByCampaign: new Map(), fallback,
   });
+  const admittedExecutions = variants.flatMap((variant) => [variant.desktop.execution, variant.mobile.execution]);
+  const rejectedGenerationCount = rejectionReceipt?.rejected_attempt ? 2 : 0;
+  const localFixtureGenerationInvocations = admittedExecutions.length + rejectedGenerationCount;
+  const actualSpendUsd = admittedExecutions.reduce((total, receipt) => total + receipt.actual_spend_usd, 0);
+  const externalProviderCalls = admittedExecutions.reduce((total, receipt) => total + receipt.external_provider_calls, 0);
   return Object.freeze({
     schema_version: 'cana.dynamic-creative-vertical-slice/1.0.0',
     synthetic_advertiser: contextPacket.advertiser.synthetic === true,
@@ -620,14 +743,15 @@ export async function runControlledVerticalSlice({ contextPacket, hermesPacket, 
     authorized_brief: true,
     context_digest: contextPacket.packet_digest,
     hermes_packet_digest: hermesPacket.packet_digest,
+    hermes_validation: hermesValidation,
     entitlement,
     variants: Object.freeze(variants),
     rejection_and_regeneration_receipt: rejectionReceipt,
     provider_routing_receipt: route.receipt,
-    generation_invocations: 8,
-    provider_calls: route.provider.routing.externalCalls,
-    external_provider_calls: route.provider.routing.externalCalls,
-    actual_spend_usd: 0,
+    local_fixture_generation_invocations: localFixtureGenerationInvocations,
+    provider_calls: externalProviderCalls,
+    external_provider_calls: externalProviderCalls,
+    actual_spend_usd: actualSpendUsd,
     owner_review_state: 'OWNER_REVIEW_REQUIRED',
     sponsorship_disclosure: 'Sponsored',
     rotation,

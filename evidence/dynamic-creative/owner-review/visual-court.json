@@ -30,127 +30,246 @@
       "court": {
         "schema_version": "cana.visual-verification-court/1.0.0",
         "creative_id": "district-signal-attempt-2",
-        "status": "PASS",
+        "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
         "score": 1,
         "threshold": 0.85,
         "judges": [
           {
             "name": "genericness",
             "status": "PASS",
-            "evidence": "Observed genericness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "genericness requirement satisfied"
+            }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
-            "evidence": "Observed synthetic-composition requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "synthetic-composition requirement satisfied"
+            }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
-            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "anatomy-object-consistency requirement satisfied"
+            }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
-            "evidence": "Observed package-logo-correctness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "package-logo-correctness requirement satisfied"
+            }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
-            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "unauthorized-hallucinated-text requirement satisfied"
+            }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
-            "evidence": "Observed image-copy-alignment requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "image-copy-alignment requirement satisfied"
+            }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
-            "evidence": "Observed local-dc-relevance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "local-dc-relevance requirement satisfied"
+            }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
-            "evidence": "Observed premium-editorial-quality requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "premium-editorial-quality requirement satisfied"
+            }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
-            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "mobile-crop-integrity requirement satisfied"
+            }
           },
           {
             "name": "readability",
             "status": "PASS",
-            "evidence": "Observed readability requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "readability requirement satisfied"
+            }
           },
           {
             "name": "accessibility",
             "status": "PASS",
-            "evidence": "Observed accessibility requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "accessibility requirement satisfied"
+            }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
-            "evidence": "Observed ad-disclosure requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "ad-disclosure requirement satisfied"
+            }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
-            "evidence": "Observed policy-compliance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "policy-compliance requirement satisfied"
+            }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
-            "evidence": "Observed truthful-claims requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "truthful-claims requirement satisfied"
+            }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
-            "evidence": "Observed visual-hierarchy requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "visual-hierarchy requirement satisfied"
+            }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
-            "evidence": "Observed cta-clarity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "cta-clarity requirement satisfied"
+            }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
-            "evidence": "Observed brand-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "brand-consistency requirement satisfied"
+            }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
-            "evidence": "Observed file-size-performance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "file-size-performance requirement satisfied"
+            }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
-            "evidence": "Observed rights-provenance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "rights-provenance requirement satisfied"
+            }
           },
           {
             "name": "owner-taste-alignment",
-            "status": "PASS",
-            "evidence": "Observed owner-taste-alignment requirement satisfied"
+            "status": "PENDING_OWNER_DECISION",
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "Owner decision has not been recorded"
+            }
           },
           {
             "name": "campaign-coherence",
             "status": "PASS",
-            "evidence": "Observed campaign-coherence requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "campaign-coherence requirement satisfied"
+            }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
-            "evidence": "Observed conversion-mechanism requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "conversion-mechanism requirement satisfied"
+            }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
-            "evidence": "Observed landing-page-continuity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "landing-page-continuity requirement satisfied"
+            }
           }
         ],
         "failureReasons": [],
+        "pendingReasons": [
+          "owner-taste-alignment"
+        ],
+        "quality_threshold_reached": true,
         "publish_allowed": false
       }
     },
@@ -159,127 +278,246 @@
       "court": {
         "schema_version": "cana.visual-verification-court/1.0.0",
         "creative_id": "evening-index-attempt-2",
-        "status": "PASS",
+        "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
         "score": 1,
         "threshold": 0.85,
         "judges": [
           {
             "name": "genericness",
             "status": "PASS",
-            "evidence": "Observed genericness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "genericness requirement satisfied"
+            }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
-            "evidence": "Observed synthetic-composition requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "synthetic-composition requirement satisfied"
+            }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
-            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "anatomy-object-consistency requirement satisfied"
+            }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
-            "evidence": "Observed package-logo-correctness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "package-logo-correctness requirement satisfied"
+            }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
-            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "unauthorized-hallucinated-text requirement satisfied"
+            }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
-            "evidence": "Observed image-copy-alignment requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "image-copy-alignment requirement satisfied"
+            }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
-            "evidence": "Observed local-dc-relevance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "local-dc-relevance requirement satisfied"
+            }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
-            "evidence": "Observed premium-editorial-quality requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "premium-editorial-quality requirement satisfied"
+            }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
-            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "mobile-crop-integrity requirement satisfied"
+            }
           },
           {
             "name": "readability",
             "status": "PASS",
-            "evidence": "Observed readability requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "readability requirement satisfied"
+            }
           },
           {
             "name": "accessibility",
             "status": "PASS",
-            "evidence": "Observed accessibility requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "accessibility requirement satisfied"
+            }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
-            "evidence": "Observed ad-disclosure requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "ad-disclosure requirement satisfied"
+            }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
-            "evidence": "Observed policy-compliance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "policy-compliance requirement satisfied"
+            }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
-            "evidence": "Observed truthful-claims requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "truthful-claims requirement satisfied"
+            }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
-            "evidence": "Observed visual-hierarchy requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "visual-hierarchy requirement satisfied"
+            }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
-            "evidence": "Observed cta-clarity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "cta-clarity requirement satisfied"
+            }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
-            "evidence": "Observed brand-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "brand-consistency requirement satisfied"
+            }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
-            "evidence": "Observed file-size-performance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "file-size-performance requirement satisfied"
+            }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
-            "evidence": "Observed rights-provenance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "rights-provenance requirement satisfied"
+            }
           },
           {
             "name": "owner-taste-alignment",
-            "status": "PASS",
-            "evidence": "Observed owner-taste-alignment requirement satisfied"
+            "status": "PENDING_OWNER_DECISION",
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "Owner decision has not been recorded"
+            }
           },
           {
             "name": "campaign-coherence",
             "status": "PASS",
-            "evidence": "Observed campaign-coherence requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "campaign-coherence requirement satisfied"
+            }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
-            "evidence": "Observed conversion-mechanism requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "conversion-mechanism requirement satisfied"
+            }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
-            "evidence": "Observed landing-page-continuity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "landing-page-continuity requirement satisfied"
+            }
           }
         ],
         "failureReasons": [],
+        "pendingReasons": [
+          "owner-taste-alignment"
+        ],
+        "quality_threshold_reached": true,
         "publish_allowed": false
       }
     },
@@ -288,127 +526,246 @@
       "court": {
         "schema_version": "cana.visual-verification-court/1.0.0",
         "creative_id": "receipt-rhythm-attempt-2",
-        "status": "PASS",
+        "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
         "score": 1,
         "threshold": 0.85,
         "judges": [
           {
             "name": "genericness",
             "status": "PASS",
-            "evidence": "Observed genericness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "genericness requirement satisfied"
+            }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
-            "evidence": "Observed synthetic-composition requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "synthetic-composition requirement satisfied"
+            }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
-            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "anatomy-object-consistency requirement satisfied"
+            }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
-            "evidence": "Observed package-logo-correctness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "package-logo-correctness requirement satisfied"
+            }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
-            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "unauthorized-hallucinated-text requirement satisfied"
+            }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
-            "evidence": "Observed image-copy-alignment requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "image-copy-alignment requirement satisfied"
+            }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
-            "evidence": "Observed local-dc-relevance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "local-dc-relevance requirement satisfied"
+            }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
-            "evidence": "Observed premium-editorial-quality requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "premium-editorial-quality requirement satisfied"
+            }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
-            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "mobile-crop-integrity requirement satisfied"
+            }
           },
           {
             "name": "readability",
             "status": "PASS",
-            "evidence": "Observed readability requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "readability requirement satisfied"
+            }
           },
           {
             "name": "accessibility",
             "status": "PASS",
-            "evidence": "Observed accessibility requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "accessibility requirement satisfied"
+            }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
-            "evidence": "Observed ad-disclosure requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "ad-disclosure requirement satisfied"
+            }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
-            "evidence": "Observed policy-compliance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "policy-compliance requirement satisfied"
+            }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
-            "evidence": "Observed truthful-claims requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "truthful-claims requirement satisfied"
+            }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
-            "evidence": "Observed visual-hierarchy requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "visual-hierarchy requirement satisfied"
+            }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
-            "evidence": "Observed cta-clarity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "cta-clarity requirement satisfied"
+            }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
-            "evidence": "Observed brand-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "brand-consistency requirement satisfied"
+            }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
-            "evidence": "Observed file-size-performance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "file-size-performance requirement satisfied"
+            }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
-            "evidence": "Observed rights-provenance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "rights-provenance requirement satisfied"
+            }
           },
           {
             "name": "owner-taste-alignment",
-            "status": "PASS",
-            "evidence": "Observed owner-taste-alignment requirement satisfied"
+            "status": "PENDING_OWNER_DECISION",
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "Owner decision has not been recorded"
+            }
           },
           {
             "name": "campaign-coherence",
             "status": "PASS",
-            "evidence": "Observed campaign-coherence requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "campaign-coherence requirement satisfied"
+            }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
-            "evidence": "Observed conversion-mechanism requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "conversion-mechanism requirement satisfied"
+            }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
-            "evidence": "Observed landing-page-continuity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "landing-page-continuity requirement satisfied"
+            }
           }
         ],
         "failureReasons": [],
+        "pendingReasons": [
+          "owner-taste-alignment"
+        ],
+        "quality_threshold_reached": true,
         "publish_allowed": false
       }
     }

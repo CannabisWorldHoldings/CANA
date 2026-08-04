@@ -5,6 +5,9 @@
   "creative_genome": {
     "id": "receipt-rhythm",
     "strategy": "trust-before-handoff",
+    "eyebrow": "Receipt rhythm",
+    "body": "A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.",
+    "alt": "Abstract source receipt with a circular verification seal",
     "targetAudience": "Evidence-seeking D.C. adults 21+ wary of stale listings and unsupported claims",
     "customerProblem": "A storefront handoff lacks trust when source and freshness are hidden.",
     "offer": "See the source before choosing where to go.",
@@ -54,7 +57,7 @@
     "source_asset_sha256": [
       "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
     ],
-    "result_sha256": "8fa67b781dd6b8039b525a8932a52fbb06c8fff5a5d42de5fdabbf51d11e80be",
+    "result_sha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
     "external_provider_calls": 0,
     "actual_cost_usd": 0,
     "network_accessed": false
@@ -72,7 +75,7 @@
     "source_asset_sha256": [
       "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
     ],
-    "result_sha256": "23ef5dd0bf1e9265680fa6d2d7c116d18fd053d164284e9e457305ab7b839c14",
+    "result_sha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
     "external_provider_calls": 0,
     "actual_cost_usd": 0,
     "network_accessed": false
@@ -80,127 +83,246 @@
   "court": {
     "schema_version": "cana.visual-verification-court/1.0.0",
     "creative_id": "receipt-rhythm-attempt-2",
-    "status": "PASS",
+    "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
     "score": 1,
     "threshold": 0.85,
     "judges": [
       {
         "name": "genericness",
         "status": "PASS",
-        "evidence": "Observed genericness requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "genericness requirement satisfied"
+        }
       },
       {
         "name": "synthetic-composition",
         "status": "PASS",
-        "evidence": "Observed synthetic-composition requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "synthetic-composition requirement satisfied"
+        }
       },
       {
         "name": "anatomy-object-consistency",
         "status": "PASS",
-        "evidence": "Observed anatomy-object-consistency requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "anatomy-object-consistency requirement satisfied"
+        }
       },
       {
         "name": "package-logo-correctness",
         "status": "PASS",
-        "evidence": "Observed package-logo-correctness requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "package-logo-correctness requirement satisfied"
+        }
       },
       {
         "name": "unauthorized-hallucinated-text",
         "status": "PASS",
-        "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "unauthorized-hallucinated-text requirement satisfied"
+        }
       },
       {
         "name": "image-copy-alignment",
         "status": "PASS",
-        "evidence": "Observed image-copy-alignment requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "image-copy-alignment requirement satisfied"
+        }
       },
       {
         "name": "local-dc-relevance",
         "status": "PASS",
-        "evidence": "Observed local-dc-relevance requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "local-dc-relevance requirement satisfied"
+        }
       },
       {
         "name": "premium-editorial-quality",
         "status": "PASS",
-        "evidence": "Observed premium-editorial-quality requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "premium-editorial-quality requirement satisfied"
+        }
       },
       {
         "name": "mobile-crop-integrity",
         "status": "PASS",
-        "evidence": "Observed mobile-crop-integrity requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "mobile-crop-integrity requirement satisfied"
+        }
       },
       {
         "name": "readability",
         "status": "PASS",
-        "evidence": "Observed readability requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "readability requirement satisfied"
+        }
       },
       {
         "name": "accessibility",
         "status": "PASS",
-        "evidence": "Observed accessibility requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "accessibility requirement satisfied"
+        }
       },
       {
         "name": "ad-disclosure",
         "status": "PASS",
-        "evidence": "Observed ad-disclosure requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "ad-disclosure requirement satisfied"
+        }
       },
       {
         "name": "policy-compliance",
         "status": "PASS",
-        "evidence": "Observed policy-compliance requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "policy-compliance requirement satisfied"
+        }
       },
       {
         "name": "truthful-claims",
         "status": "PASS",
-        "evidence": "Observed truthful-claims requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "truthful-claims requirement satisfied"
+        }
       },
       {
         "name": "visual-hierarchy",
         "status": "PASS",
-        "evidence": "Observed visual-hierarchy requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "visual-hierarchy requirement satisfied"
+        }
       },
       {
         "name": "cta-clarity",
         "status": "PASS",
-        "evidence": "Observed cta-clarity requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "cta-clarity requirement satisfied"
+        }
       },
       {
         "name": "brand-consistency",
         "status": "PASS",
-        "evidence": "Observed brand-consistency requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "brand-consistency requirement satisfied"
+        }
       },
       {
         "name": "file-size-performance",
         "status": "PASS",
-        "evidence": "Observed file-size-performance requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "file-size-performance requirement satisfied"
+        }
       },
       {
         "name": "rights-provenance",
         "status": "PASS",
-        "evidence": "Observed rights-provenance requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "rights-provenance requirement satisfied"
+        }
       },
       {
         "name": "owner-taste-alignment",
-        "status": "PASS",
-        "evidence": "Observed owner-taste-alignment requirement satisfied"
+        "status": "PENDING_OWNER_DECISION",
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "Owner decision has not been recorded"
+        }
       },
       {
         "name": "campaign-coherence",
         "status": "PASS",
-        "evidence": "Observed campaign-coherence requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "campaign-coherence requirement satisfied"
+        }
       },
       {
         "name": "conversion-mechanism",
         "status": "PASS",
-        "evidence": "Observed conversion-mechanism requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "conversion-mechanism requirement satisfied"
+        }
       },
       {
         "name": "landing-page-continuity",
         "status": "PASS",
-        "evidence": "Observed landing-page-continuity requirement satisfied"
+        "evidence": {
+          "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+          "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "finding": "landing-page-continuity requirement satisfied"
+        }
       }
     ],
     "failureReasons": [],
+    "pendingReasons": [
+      "owner-taste-alignment"
+    ],
+    "quality_threshold_reached": true,
     "publish_allowed": false
   },
   "postable": false

@@ -15,11 +15,11 @@
         "costUsd": 0,
         "latencyMs": 5,
         "policyEligible": true,
-        "historicalPerformance": 0.7,
-        "externalCalls": 0
+        "historicalPerformance": 0.7
       }
     }
   ],
   "external_provider_calls": 0,
-  "actual_spend_usd": 0
+  "actual_spend_usd": 0,
+  "execution_evidence": "RECOMPUTED_FROM_CANONICAL_DETERMINISTIC_FIXTURE_RECEIPTS"
 }

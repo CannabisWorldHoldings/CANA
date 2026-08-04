@@ -55,9 +55,9 @@ The review JSON files are retained evidence, not a parallel database. Production
 
 ## Provider registry
 
-`createProviderRegistry()` accepts implementations of the existing `createProvider()` contract. `routeImageProvider()` filters on capabilities, maximum cost, maximum latency, and policy eligibility, then scores quality, cost, latency, and historical performance. The registry itself declares `NONE_REGISTRY_ONLY` execution authority.
+`createProviderRegistry()` accepts only implementations created by the existing `createProvider()` contract. `routeImageProvider()` filters on capabilities, maximum cost, maximum latency, and policy eligibility, then scores quality, cost, latency, and historical performance. Those values are routing estimates, never execution or billing proof. The registry itself declares `NONE_REGISTRY_ONLY` execution authority.
 
-The controlled slice registers only `deterministic-svg-fixture` / `orderweeddc-vector-fixture-v1`. It supports text-to-image, responsive variants, and zero-network generation. Its receipts bind prompt hashes, seeds, configuration, source assets, outputs, cost, and network use. The interface can admit future providers without making a vendor part of CANA, SiteMind, memory, verification, spending, or publication authority.
+The controlled slice registers only `deterministic-svg-fixture` / `orderweeddc-vector-fixture-v1`. A private module identity prevents a caller from impersonating that offline provider with self-declared metadata. Output hashes, generation and analysis receipts, cost, and network facts are recomputed from the returned bytes after every invocation. The interface can admit future providers without making a vendor part of CANA, SiteMind, memory, verification, spending, or publication authority.
 
 ## Sponsorship entitlements
 
@@ -83,7 +83,7 @@ PAUSED -> ACTIVE | EXPIRED | REJECTED | ARCHIVED
 EXPIRED | REJECTED -> ARCHIVED
 ```
 
-`ACTIVE` is refused unless visual, policy, owner, entitlement, and schedule gates all pass. This branch never executes an `ACTIVE` transition.
+The current Level 0/1 foundation refuses every `ACTIVE` transition, including a caller that supplies strings claiming every gate passed. A later integration must connect a canonical CANA activation verifier; that authority does not exist here. This branch never executes an `ACTIVE` transition.
 
 ## Visual verification court
 
@@ -113,11 +113,11 @@ The court runs 23 independent deterministic judges:
 22. conversion mechanism;
 23. landing-page continuity.
 
-Any failure blocks the candidate. Regeneration is bounded to five attempts; the slice demonstrates one failed genericness judgment and one successful regeneration at attempt two.
+The deterministic court derives its findings from the actual desktop/mobile SVG bytes, hashes, responsive dimensions, embedded variant metadata, generation/analysis receipts, campaign genome, disclosure, rights state, copy, and performance budget. It refuses an unsealed caller-supplied inspection. Owner taste is explicitly `PENDING_OWNER_DECISION`, so each candidate ends at `TECHNICAL_PASS_OWNER_REVIEW_REQUIRED`, never a final visual approval. Any technical failure blocks the candidate. Regeneration is bounded to five attempts; the slice demonstrates an artifact-mismatched generic first attempt and a coherent second attempt.
 
 ## Controlled rotation and rollback
 
-Rotation requires `ACTIVE`, disclosure, an eligible placement, geographic eligibility, current schedule, remaining frequency allowance, and positive deterministic weight. With every new campaign held at `OWNER_REVIEW_REQUIRED`, no campaign qualifies. The resolver therefore selects `owd-source-before-hype`, the owner-approved primary house seed. It never alters organic ordering.
+Rotation requires `ACTIVE`, disclosure, approved and available desktop/mobile assets, an eligible placement, geographic eligibility, a valid increasing current schedule, remaining frequency allowance, and positive deterministic weight. Invalid dates and assetless candidates fail closed. With every new campaign held at `OWNER_REVIEW_REQUIRED`, no campaign qualifies. The resolver therefore selects `owd-source-before-hype`, the owner-approved primary house seed. It never alters organic ordering.
 
 `Source Before Hype` is the approved primary genome, evaluation fixture, future seed, and first fallback. `Block by Block` is the approved secondary seed. `Tonight's Shortlist` remains a rejected primary direction and is never rotation-eligible.
 
@@ -135,7 +135,8 @@ The tuning-readiness interface reports no fine-tuned model and no authorization.
 - Competitor evidence produces mechanism hypotheses only. Conversion and revenue remain unknown unless directly supported.
 - A conversion event is accepted only with directly attributed ORDERWEEDDC first-party evidence.
 - Generated image text is prohibited; disclosure and customer copy are deterministic HTML.
-- Normal homepage requests have no review placement. Rendering requires `CANA_DYNAMIC_CREATIVE_REVIEW_MODE=LOCAL_ONLY`, a `.localhost` host, and an allowlisted query value.
+- Normal homepage requests have no review placement. Rendering requires `CANA_DYNAMIC_CREATIVE_REVIEW_MODE=LOCAL_ONLY`, a `.localhost` host, and an allowlisted query value derived from the canonical creative genomes.
+- The execution boundary recomputes both the SiteMind context seal and Hermes packet seal, checks capability, budget, issuer, binding, and expiry, and refuses forged Hermes-shaped objects before provider selection.
 
 ## Known limitations
 
@@ -143,10 +144,10 @@ The tuning-readiness interface reports no fine-tuned model and no authorization.
 - No first-party experiment was run; CTR, conversion, revenue, and causal lift are unknown.
 - The event schema and retained review evidence do not create a new persistent Competitor Event Ledger. Production persistence must reuse SiteMind's existing durability system.
 - Provider quality and historical-performance scores are fixture metadata, not live benchmarks.
-- The visual court combines deterministic fixture inspection with real-browser accessibility and responsive checks; human owner taste remains unresolved.
+- The visual court combines artifact-derived deterministic inspection with real-browser accessibility and responsive checks; human owner taste remains unresolved and is recorded as pending.
 - The review placement is deliberately local-only. No scheduling worker, billing integration, or production campaign inventory is active.
 - Fine-tuning is neither performed nor claimed.
 
 ## Clean ancestry
 
-The branch root and merge-base are fixed to `79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc`. The transfer audit refuses PR21 customer replacement paths and admits only new mechanisms, retained rejected evidence, and explicitly approved owner seeds. Exact final commit, tree, changed-file, test, build, clean-replay, reviewer, and PR receipts are added to the owner packet at handoff.
+The branch root and merge-base are fixed to `79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc`. The transfer audit refuses PR21 customer replacement paths and admits only new mechanisms, retained rejected evidence, and explicitly approved owner seeds. The final commit, tree, clean replay, reviewer verdicts, and PR state are reported at handoff without mutating the self-contained packet after its commit is sealed.

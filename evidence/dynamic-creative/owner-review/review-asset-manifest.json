@@ -3,42 +3,42 @@
     "campaign_id": "district-signal",
     "viewport": "desktop",
     "path": "apps/web/public/creative/review/district-signal-desktop.svg",
-    "sha256": "d965a44fe19822ddba3bd5a6a6548476a30bb125025248bbb4ad1aec888ad3fb",
-    "bytes": 1081
+    "sha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+    "bytes": 775
   },
   {
     "campaign_id": "district-signal",
     "viewport": "mobile",
     "path": "apps/web/public/creative/review/district-signal-mobile.svg",
-    "sha256": "96f9dc29b0810ca2d814df5089a7a3e767d7e9dc189bc37905ca0414aa3db1d4",
-    "bytes": 1040
+    "sha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+    "bytes": 735
   },
   {
     "campaign_id": "evening-index",
     "viewport": "desktop",
     "path": "apps/web/public/creative/review/evening-index-desktop.svg",
-    "sha256": "943feb8ad75db137480d857a7dd180775a671be191131d51241762c0dac890dd",
-    "bytes": 1068
+    "sha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+    "bytes": 762
   },
   {
     "campaign_id": "evening-index",
     "viewport": "mobile",
     "path": "apps/web/public/creative/review/evening-index-mobile.svg",
-    "sha256": "4ffeda9f6d132da564b61a3f7d4abc48edfe8182624449f956b1a9a20b4016ef",
-    "bytes": 1064
+    "sha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+    "bytes": 759
   },
   {
     "campaign_id": "receipt-rhythm",
     "viewport": "desktop",
     "path": "apps/web/public/creative/review/receipt-rhythm-desktop.svg",
-    "sha256": "8fa67b781dd6b8039b525a8932a52fbb06c8fff5a5d42de5fdabbf51d11e80be",
-    "bytes": 1221
+    "sha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+    "bytes": 914
   },
   {
     "campaign_id": "receipt-rhythm",
     "viewport": "mobile",
     "path": "apps/web/public/creative/review/receipt-rhythm-mobile.svg",
-    "sha256": "23ef5dd0bf1e9265680fa6d2d7c116d18fd053d164284e9e457305ab7b839c14",
-    "bytes": 1186
+    "sha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+    "bytes": 880
   }
 ]

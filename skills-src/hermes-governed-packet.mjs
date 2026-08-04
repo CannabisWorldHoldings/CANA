@@ -207,6 +207,60 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
 }
 
 /**
+ * Revalidate a sealed packet at an execution boundary. A consumer must never
+ * treat the presence of Hermes-shaped fields as authorization: both the
+ * SiteMind context seal and Hermes packet seal are recomputed here, the grant
+ * must still be live, and the requested capability must match exactly.
+ */
+export function validateSealedPacket({ contextPacket, packet, requiredCapability, now = new Date() }) {
+  const errors = [];
+  const checkedAt = now instanceof Date ? now : new Date(now);
+  if (Number.isNaN(checkedAt.getTime())) errors.push('validation requires a valid now');
+
+  if (!contextPacket || !text(contextPacket.packet_digest)) {
+    errors.push('a sealed context packet is required');
+  } else {
+    const { packet_digest: contextDigest, ...contextBody } = contextPacket;
+    if (sha(JSON.stringify(contextBody)) !== contextDigest) {
+      errors.push('context packet digest does not recompute');
+    }
+  }
+
+  if (!packet || packet.schema !== 'hermes-governed-packet/1' || !text(packet.packet_digest)) {
+    errors.push('a canonical sealed Hermes packet is required');
+  } else {
+    const { packet_digest: packetDigest, ...packetBody } = packet;
+    if (sha(JSON.stringify(packetBody)) !== packetDigest) {
+      errors.push('Hermes packet digest does not recompute');
+    }
+  }
+
+  if (packet?.context_digest !== contextPacket?.packet_digest) {
+    errors.push('Hermes packet is not bound to this context');
+  }
+  if (!text(requiredCapability) || packet?.grant?.capability !== requiredCapability || packet?.intent?.capability !== requiredCapability) {
+    errors.push(`Hermes packet must authorize ${requiredCapability}`);
+  }
+  if (!Number.isInteger(packet?.grant?.budget_units) || packet.grant.budget_units <= 0) {
+    errors.push('Hermes packet requires a positive bounded budget');
+  }
+  if (!text(packet?.grant?.issued_by)) errors.push('Hermes packet grant must name its issuer');
+  const expiresAt = new Date(packet?.grant?.expires_at);
+  if (Number.isNaN(expiresAt.getTime()) || (!Number.isNaN(checkedAt.getTime()) && expiresAt <= checkedAt)) {
+    errors.push('Hermes packet grant is expired or invalid');
+  }
+
+  return Object.freeze({
+    valid: errors.length === 0,
+    errors: Object.freeze(errors),
+    context_digest: contextPacket?.packet_digest ?? null,
+    packet_digest: packet?.packet_digest ?? null,
+    capability: requiredCapability,
+    checked_at: Number.isNaN(checkedAt.getTime()) ? null : checkedAt.toISOString(),
+  });
+}
+
+/**
  * Close a packet with an ExecutionReceipt.
  * LAW 5: a success claim requires observable outcome evidence.
  */

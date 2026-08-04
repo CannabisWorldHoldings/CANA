@@ -26,7 +26,7 @@
         "naturalWidth": 267,
         "naturalHeight": 150,
         "placementWidth": 1440,
-        "placementHeight": 497.0625,
+        "placementHeight": 513.0625,
         "pageScrollWidth": 1440,
         "viewportWidth": 1440
       },
@@ -121,10 +121,6 @@
           "error": "net::ERR_ABORTED"
         },
         {
-          "url": "http://orderweeddc.localhost:3420/customer/login?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
           "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
           "error": "net::ERR_ABORTED"
         },
@@ -133,707 +129,11 @@
           "error": "net::ERR_ABORTED"
         },
         {
-          "url": "http://orderweeddc.localhost:3420/help?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/education?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=6K260-3783fuyxZ3",
+          "url": "http://orderweeddc.localhost:3420/customer/login?_rsc=6K260-3783fuyxZ3",
           "error": "net::ERR_ABORTED"
         },
         {
           "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=storefront&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?status=VERIFIED_CURRENT&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=downtown&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=capitol-hill&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        }
-      ],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1565.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1565.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1565.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
-      ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-desktop-homepage.png"
-    },
-    {
-      "scenario": "district-signal-mobile-homepage",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=district-signal",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "expected_asset": "/creative/review/district-signal-mobile.svg",
-      "observed": {
-        "campaignId": "district-signal",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureDistrict signalFind the signal on your side of D.C.A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.Compare verified optionsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/district-signal-mobile.svg",
-        "naturalWidth": 120,
-        "naturalHeight": 150,
-        "placementWidth": 390,
-        "placementHeight": 796.53125,
-        "pageScrollWidth": 390,
-        "viewportWidth": 390
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
-      ],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        }
-      ],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
-      ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-mobile-homepage.png"
-    },
-    {
-      "scenario": "district-signal-desktop-lab",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=district-signal",
-      "viewport": {
-        "width": 1440,
-        "height": 1100
-      },
-      "expected_asset": "/creative/review/district-signal-desktop.svg",
-      "observed": {
-        "campaignId": "district-signal",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureDistrict signalFind the signal on your side of D.C.A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.Compare verified optionsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/district-signal-desktop.svg",
-        "naturalWidth": 267,
-        "naturalHeight": 150,
-        "placementWidth": 1440,
-        "placementHeight": 497.0625,
-        "pageScrollWidth": 1440,
-        "viewportWidth": 1440
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-desktop-lab.png"
-    },
-    {
-      "scenario": "district-signal-mobile-lab",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=district-signal",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "expected_asset": "/creative/review/district-signal-mobile.svg",
-      "observed": {
-        "campaignId": "district-signal",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureDistrict signalFind the signal on your side of D.C.A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.Compare verified optionsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/district-signal-mobile.svg",
-        "naturalWidth": 120,
-        "naturalHeight": 150,
-        "placementWidth": 390,
-        "placementHeight": 796.53125,
-        "pageScrollWidth": 390,
-        "viewportWidth": 390
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-mobile-lab.png"
-    },
-    {
-      "scenario": "evening-index-desktop-homepage",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=evening-index",
-      "viewport": {
-        "width": 1440,
-        "height": 1100
-      },
-      "expected_asset": "/creative/review/evening-index-desktop.svg",
-      "observed": {
-        "campaignId": "evening-index",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/evening-index-desktop.svg",
-        "naturalWidth": 267,
-        "naturalHeight": 150,
-        "placementWidth": 1440,
-        "placementHeight": 497.0625,
-        "pageScrollWidth": 1440,
-        "viewportWidth": 1440
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
-      ],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [
-        {
-          "url": "http://orderweeddc.localhost:3420/education?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/products?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=storefront&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?status=VERIFIED_CURRENT&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=downtown&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=capitol-hill&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        }
-      ],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1565.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1565.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1565.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
-      ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-desktop-homepage.png"
-    },
-    {
-      "scenario": "evening-index-mobile-homepage",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=evening-index",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "expected_asset": "/creative/review/evening-index-mobile.svg",
-      "observed": {
-        "campaignId": "evening-index",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/evening-index-mobile.svg",
-        "naturalWidth": 120,
-        "naturalHeight": 150,
-        "placementWidth": 390,
-        "placementHeight": 831.796875,
-        "pageScrollWidth": 390,
-        "viewportWidth": 390
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
-      ],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        }
-      ],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
-      ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-mobile-homepage.png"
-    },
-    {
-      "scenario": "evening-index-desktop-lab",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=evening-index",
-      "viewport": {
-        "width": 1440,
-        "height": 1100
-      },
-      "expected_asset": "/creative/review/evening-index-desktop.svg",
-      "observed": {
-        "campaignId": "evening-index",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/evening-index-desktop.svg",
-        "naturalWidth": 267,
-        "naturalHeight": 150,
-        "placementWidth": 1440,
-        "placementHeight": 497.0625,
-        "pageScrollWidth": 1440,
-        "viewportWidth": 1440
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-desktop-lab.png"
-    },
-    {
-      "scenario": "evening-index-mobile-lab",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=evening-index",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "expected_asset": "/creative/review/evening-index-mobile.svg",
-      "observed": {
-        "campaignId": "evening-index",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/evening-index-mobile.svg",
-        "naturalWidth": 120,
-        "naturalHeight": 150,
-        "placementWidth": 390,
-        "placementHeight": 831.796875,
-        "pageScrollWidth": 390,
-        "viewportWidth": 390
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-mobile-lab.png"
-    },
-    {
-      "scenario": "receipt-rhythm-desktop-homepage",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=receipt-rhythm",
-      "viewport": {
-        "width": 1440,
-        "height": 1100
-      },
-      "expected_asset": "/creative/review/receipt-rhythm-desktop.svg",
-      "observed": {
-        "campaignId": "receipt-rhythm",
-        "reviewState": "OWNER_REVIEW_REQUIRED",
-        "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/receipt-rhythm-desktop.svg",
-        "naturalWidth": 267,
-        "naturalHeight": 150,
-        "placementWidth": 1440,
-        "placementHeight": 497.0625,
-        "pageScrollWidth": 1440,
-        "viewportWidth": 1440
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
-      ],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [
-        {
-          "url": "http://orderweeddc.localhost:3420/deals?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/education?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/products?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/help?_rsc=6K260-3783fuyxZ3",
           "error": "net::ERR_ABORTED"
         },
         {
@@ -845,7 +145,7 @@
           "error": "net::ERR_ABORTED"
         },
         {
-          "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
+          "url": "http://orderweeddc.localhost:3420/help?_rsc=6K260-3783fuyxZ3",
           "error": "net::ERR_ABORTED"
         },
         {
@@ -869,27 +169,7 @@
           "error": "net::ERR_ABORTED"
         },
         {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=downtown&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=storefront&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?status=VERIFIED_CURRENT&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=navy-yard&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=dupont-circle&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=adams-morgan&_rsc=7nSDK9P7qs9KxS6X",
+          "url": "http://orderweeddc.localhost:3420/products?category=flower&_rsc=7nSDK9P7qs9KxS6X",
           "error": "net::ERR_ABORTED"
         }
       ],
@@ -915,27 +195,28 @@
         "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
         "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
       ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-desktop-homepage.png"
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-desktop-homepage.png"
     },
     {
-      "scenario": "receipt-rhythm-mobile-homepage",
+      "scenario": "district-signal-mobile-homepage",
       "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=receipt-rhythm",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=district-signal",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "expected_asset": "/creative/review/receipt-rhythm-mobile.svg",
+      "expected_asset": "/creative/review/district-signal-mobile.svg",
       "observed": {
-        "campaignId": "receipt-rhythm",
+        "campaignId": "district-signal",
         "reviewState": "OWNER_REVIEW_REQUIRED",
         "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/receipt-rhythm-mobile.svg",
+        "text": "SponsoredLocal owner-review fixtureDistrict signalFind the signal on your side of D.C.A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.Compare verified optionsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/district-signal-mobile.svg",
         "naturalWidth": 120,
         "naturalHeight": 150,
         "placementWidth": 390,
-        "placementHeight": 831.796875,
+        "placementHeight": 960.03125,
         "pageScrollWidth": 390,
         "viewportWidth": 390
       },
@@ -979,6 +260,18 @@
       "page_errors": [],
       "failed_requests": [
         {
+          "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
           "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
           "error": "net::ERR_ABORTED"
         }
@@ -1002,27 +295,28 @@
         "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
         "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
       ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-mobile-homepage.png"
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-mobile-homepage.png"
     },
     {
-      "scenario": "receipt-rhythm-desktop-lab",
+      "scenario": "district-signal-desktop-lab",
       "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=receipt-rhythm",
+      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=district-signal",
       "viewport": {
         "width": 1440,
         "height": 1100
       },
-      "expected_asset": "/creative/review/receipt-rhythm-desktop.svg",
+      "expected_asset": "/creative/review/district-signal-desktop.svg",
       "observed": {
-        "campaignId": "receipt-rhythm",
+        "campaignId": "district-signal",
         "reviewState": "OWNER_REVIEW_REQUIRED",
         "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/receipt-rhythm-desktop.svg",
+        "text": "SponsoredLocal owner-review fixtureDistrict signalFind the signal on your side of D.C.A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.Compare verified optionsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/district-signal-desktop.svg",
         "naturalWidth": 267,
         "naturalHeight": 150,
         "placementWidth": 1440,
-        "placementHeight": 497.0625,
+        "placementHeight": 513.0625,
         "pageScrollWidth": 1440,
         "viewportWidth": 1440
       },
@@ -1052,27 +346,28 @@
       "unexpected_failed_requests": [],
       "http_errors": [],
       "external_requests_blocked": [],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-desktop-lab.png"
+      "screenshot_scope": "PLACEMENT_ISOLATION",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-desktop-lab.png"
     },
     {
-      "scenario": "receipt-rhythm-mobile-lab",
+      "scenario": "district-signal-mobile-lab",
       "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=receipt-rhythm",
+      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=district-signal",
       "viewport": {
         "width": 390,
         "height": 844
       },
-      "expected_asset": "/creative/review/receipt-rhythm-mobile.svg",
+      "expected_asset": "/creative/review/district-signal-mobile.svg",
       "observed": {
-        "campaignId": "receipt-rhythm",
+        "campaignId": "district-signal",
         "reviewState": "OWNER_REVIEW_REQUIRED",
         "providerNetwork": "0",
-        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/review/receipt-rhythm-mobile.svg",
+        "text": "SponsoredLocal owner-review fixtureDistrict signalFind the signal on your side of D.C.A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.Compare verified optionsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/district-signal-mobile.svg",
         "naturalWidth": 120,
         "naturalHeight": 150,
         "placementWidth": 390,
-        "placementHeight": 831.796875,
+        "placementHeight": 960.03125,
         "pageScrollWidth": 390,
         "viewportWidth": 390
       },
@@ -1102,27 +397,28 @@
       "unexpected_failed_requests": [],
       "http_errors": [],
       "external_requests_blocked": [],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-mobile-lab.png"
+      "screenshot_scope": "PLACEMENT_ISOLATION",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/district-signal-mobile-lab.png"
     },
     {
-      "scenario": "source-before-hype-desktop-homepage",
+      "scenario": "evening-index-desktop-homepage",
       "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=source-before-hype",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=evening-index",
       "viewport": {
         "width": 1440,
         "height": 1100
       },
-      "expected_asset": "/creative/house/source-before-hype-desktop.svg",
+      "expected_asset": "/creative/review/evening-index-desktop.svg",
       "observed": {
-        "campaignId": "source-before-hype",
-        "reviewState": "APPROVED_PRIMARY",
+        "campaignId": "evening-index",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
         "providerNetwork": "0",
-        "text": "ORDERWEEDDC house campaignLocal owner-review fixtureApproved house fallbackSource before hype.The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.See how evidence is labeledSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/house/source-before-hype-desktop.svg",
-        "naturalWidth": 300,
-        "naturalHeight": 129,
+        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/evening-index-desktop.svg",
+        "naturalWidth": 267,
+        "naturalHeight": 150,
         "placementWidth": 1440,
-        "placementHeight": 486.03125,
+        "placementHeight": 513.0625,
         "pageScrollWidth": 1440,
         "viewportWidth": 1440
       },
@@ -1149,6 +445,165 @@
         "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
         "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
         "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://orderweeddc.localhost:3420/deals?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/education?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/legal?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/customer/login?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/help?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/business/claim?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/education?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?type=storefront&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?status=VERIFIED_CURRENT&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?neighborhood=downtown&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?neighborhood=navy-yard&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?neighborhood=adams-morgan&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?neighborhood=dupont-circle&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1565.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1565.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1565.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
+      ],
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-desktop-homepage.png"
+    },
+    {
+      "scenario": "evening-index-mobile-homepage",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=evening-index",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "expected_asset": "/creative/review/evening-index-mobile.svg",
+      "observed": {
+        "campaignId": "evening-index",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/evening-index-mobile.svg",
+        "naturalWidth": 120,
+        "naturalHeight": 150,
+        "placementWidth": 390,
+        "placementHeight": 995.296875,
+        "pageScrollWidth": 390,
+        "viewportWidth": 390
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [
         "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
         "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
         "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
@@ -1173,197 +628,7 @@
           "error": "net::ERR_ABORTED"
         },
         {
-          "url": "http://orderweeddc.localhost:3420/deals?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/business/claim?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/customer/login?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/help?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/education?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/customer/login?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/business/claim?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/help?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
           "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/education?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?type=storefront&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?status=VERIFIED_CURRENT&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=downtown&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=capitol-hill&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=navy-yard&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=adams-morgan&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/?neighborhood=dupont-circle&_rsc=7nSDK9P7qs9KxS6X",
-          "error": "net::ERR_ABORTED"
-        }
-      ],
-      "unexpected_failed_requests": [],
-      "http_errors": [],
-      "external_requests_blocked": [
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1565.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1565.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1565.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
-        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
-        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
-        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
-      ],
-      "screenshot": "evidence/dynamic-creative/owner-review/renders/source-before-hype-desktop-homepage.png"
-    },
-    {
-      "scenario": "source-before-hype-mobile-homepage",
-      "status": "PASS",
-      "url": "http://orderweeddc.localhost:3420/?creativeReview=source-before-hype",
-      "viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "expected_asset": "/creative/house/source-before-hype-mobile.svg",
-      "observed": {
-        "campaignId": "source-before-hype",
-        "reviewState": "APPROVED_PRIMARY",
-        "providerNetwork": "0",
-        "text": "ORDERWEEDDC house campaignLocal owner-review fixtureApproved house fallbackSource before hype.The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.See how evidence is labeledSynthetic advertiser · no live action · no pay-to-rank",
-        "currentSrc": "/creative/house/source-before-hype-mobile.svg",
-        "naturalWidth": 130,
-        "naturalHeight": 150,
-        "placementWidth": 390,
-        "placementHeight": 796.53125,
-        "pageScrollWidth": 390,
-        "viewportWidth": 390
-      },
-      "checks": {
-        "age_gate_attested": true,
-        "campaign_matches": true,
-        "responsive_source_matches": true,
-        "image_loaded": true,
-        "disclosure_visible": true,
-        "synthetic_label_visible": true,
-        "owner_review_gate_visible": true,
-        "zero_provider_network_receipt": true,
-        "no_horizontal_overflow": true,
-        "no_console_errors": true,
-        "no_page_errors": true,
-        "no_failed_local_requests": true,
-        "no_http_errors": true,
-        "no_serious_critical_axe": true,
-        "no_external_image_provider_requests": true
-      },
-      "serious_critical_axe": [],
-      "all_axe_violation_count": 0,
-      "console_errors": [
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
-        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
-      ],
-      "unexpected_console_errors": [],
-      "page_errors": [],
-      "failed_requests": [
-        {
-          "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
-          "error": "net::ERR_ABORTED"
-        },
-        {
-          "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
           "error": "net::ERR_ABORTED"
         },
         {
@@ -1394,6 +659,682 @@
         "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
         "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
       ],
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-mobile-homepage.png"
+    },
+    {
+      "scenario": "evening-index-desktop-lab",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=evening-index",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "expected_asset": "/creative/review/evening-index-desktop.svg",
+      "observed": {
+        "campaignId": "evening-index",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/evening-index-desktop.svg",
+        "naturalWidth": 267,
+        "naturalHeight": 150,
+        "placementWidth": 1440,
+        "placementHeight": 513.0625,
+        "pageScrollWidth": 1440,
+        "viewportWidth": 1440
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [],
+      "screenshot_scope": "PLACEMENT_ISOLATION",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-desktop-lab.png"
+    },
+    {
+      "scenario": "evening-index-mobile-lab",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=evening-index",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "expected_asset": "/creative/review/evening-index-mobile.svg",
+      "observed": {
+        "campaignId": "evening-index",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureEvening indexA shorter path to a confident choice.An editorial index system that reduces choice overload without presenting competitor performance as fact.Build a verified shortlistSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/evening-index-mobile.svg",
+        "naturalWidth": 120,
+        "naturalHeight": 150,
+        "placementWidth": 390,
+        "placementHeight": 995.296875,
+        "pageScrollWidth": 390,
+        "viewportWidth": 390
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [],
+      "screenshot_scope": "PLACEMENT_ISOLATION",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/evening-index-mobile-lab.png"
+    },
+    {
+      "scenario": "receipt-rhythm-desktop-homepage",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=receipt-rhythm",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "expected_asset": "/creative/review/receipt-rhythm-desktop.svg",
+      "observed": {
+        "campaignId": "receipt-rhythm",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/receipt-rhythm-desktop.svg",
+        "naturalWidth": 267,
+        "naturalHeight": 150,
+        "placementWidth": 1440,
+        "placementHeight": 513.0625,
+        "pageScrollWidth": 1440,
+        "viewportWidth": 1440
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://orderweeddc.localhost:3420/deals?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/education?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/legal?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/products?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/legal?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/education?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?neighborhood=dupont-circle&_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1565.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1565.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1565.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
+      ],
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-desktop-homepage.png"
+    },
+    {
+      "scenario": "receipt-rhythm-mobile-homepage",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=receipt-rhythm",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "expected_asset": "/creative/review/receipt-rhythm-mobile.svg",
+      "observed": {
+        "campaignId": "receipt-rhythm",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/receipt-rhythm-mobile.svg",
+        "naturalWidth": 120,
+        "naturalHeight": 150,
+        "placementWidth": 390,
+        "placementHeight": 995.296875,
+        "pageScrollWidth": 390,
+        "viewportWidth": 390
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://orderweeddc.localhost:3420/?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
+      ],
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-mobile-homepage.png"
+    },
+    {
+      "scenario": "receipt-rhythm-desktop-lab",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=receipt-rhythm",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "expected_asset": "/creative/review/receipt-rhythm-desktop.svg",
+      "observed": {
+        "campaignId": "receipt-rhythm",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/receipt-rhythm-desktop.svg",
+        "naturalWidth": 267,
+        "naturalHeight": 150,
+        "placementWidth": 1440,
+        "placementHeight": 513.0625,
+        "pageScrollWidth": 1440,
+        "viewportWidth": 1440
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [],
+      "screenshot_scope": "PLACEMENT_ISOLATION",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-desktop-lab.png"
+    },
+    {
+      "scenario": "receipt-rhythm-mobile-lab",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/lab/dynamic-creative?campaign=receipt-rhythm",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "expected_asset": "/creative/review/receipt-rhythm-mobile.svg",
+      "observed": {
+        "campaignId": "receipt-rhythm",
+        "reviewState": "OWNER_REVIEW_REQUIRED",
+        "providerNetwork": "0",
+        "text": "SponsoredLocal owner-review fixtureReceipt rhythmSee the source before the storefront.A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.Check the receiptsSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/review/receipt-rhythm-mobile.svg",
+        "naturalWidth": 120,
+        "naturalHeight": 150,
+        "placementWidth": 390,
+        "placementHeight": 995.296875,
+        "pageScrollWidth": 390,
+        "viewportWidth": 390
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [],
+      "screenshot_scope": "PLACEMENT_ISOLATION",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/receipt-rhythm-mobile-lab.png"
+    },
+    {
+      "scenario": "source-before-hype-desktop-homepage",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=source-before-hype",
+      "viewport": {
+        "width": 1440,
+        "height": 1100
+      },
+      "expected_asset": "/creative/house/source-before-hype-desktop.svg",
+      "observed": {
+        "campaignId": "source-before-hype",
+        "reviewState": "APPROVED_PRIMARY",
+        "providerNetwork": "0",
+        "text": "ORDERWEEDDC house campaignLocal owner-review fixtureApproved house fallbackSource before hype.The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.See how evidence is labeledSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/house/source-before-hype-desktop.svg",
+        "naturalWidth": 300,
+        "naturalHeight": 129,
+        "placementWidth": 1440,
+        "placementHeight": 466.03125,
+        "pageScrollWidth": 1440,
+        "viewportWidth": 1440
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [
+        {
+          "url": "http://orderweeddc.localhost:3420/deals?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/education?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/products?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/legal?_rsc=7nSDK9P7qs9KxS6X",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/customer/login?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/business/claim?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/deals?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/help?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/education?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/products?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/neighborhoods?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/?type=delivery&_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://orderweeddc.localhost:3420/pricing?_rsc=6K260-3783fuyxZ3",
+          "error": "net::ERR_ABORTED"
+        }
+      ],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1565.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1565.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1565.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
+      ],
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
+      "screenshot": "evidence/dynamic-creative/owner-review/renders/source-before-hype-desktop-homepage.png"
+    },
+    {
+      "scenario": "source-before-hype-mobile-homepage",
+      "status": "PASS",
+      "url": "http://orderweeddc.localhost:3420/?creativeReview=source-before-hype",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "expected_asset": "/creative/house/source-before-hype-mobile.svg",
+      "observed": {
+        "campaignId": "source-before-hype",
+        "reviewState": "APPROVED_PRIMARY",
+        "providerNetwork": "0",
+        "text": "ORDERWEEDDC house campaignLocal owner-review fixtureApproved house fallbackSource before hype.The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.See how evidence is labeledSynthetic advertiser · no live action · no pay-to-rank",
+        "currentSrc": "/creative/house/source-before-hype-mobile.svg",
+        "naturalWidth": 130,
+        "naturalHeight": 150,
+        "placementWidth": 390,
+        "placementHeight": 960.03125,
+        "pageScrollWidth": 390,
+        "viewportWidth": 390
+      },
+      "checks": {
+        "age_gate_attested": true,
+        "campaign_matches": true,
+        "responsive_source_matches": true,
+        "image_loaded": true,
+        "disclosure_visible": true,
+        "synthetic_label_visible": true,
+        "owner_review_gate_visible": true,
+        "zero_provider_network_receipt": true,
+        "no_horizontal_overflow": true,
+        "no_console_errors": true,
+        "no_page_errors": true,
+        "no_failed_local_requests": true,
+        "no_http_errors": true,
+        "no_serious_critical_axe": true,
+        "no_external_image_provider_requests": true
+      },
+      "serious_critical_axe": [],
+      "all_axe_violation_count": 0,
+      "console_errors": [
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector",
+        "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector"
+      ],
+      "unexpected_console_errors": [],
+      "page_errors": [],
+      "failed_requests": [],
+      "unexpected_failed_requests": [],
+      "http_errors": [],
+      "external_requests_blocked": [
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1171/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1566.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1566.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/12/1170/1567.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/12/1172/1567.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3133.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3132.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3133.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2343/3134.png",
+        "https://c.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3132.png",
+        "https://b.basemaps.cartocdn.com/rastertiles/voyager/13/2342/3134.png",
+        "https://a.basemaps.cartocdn.com/rastertiles/voyager/13/2344/3134.png"
+      ],
+      "screenshot_scope": "FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT",
       "screenshot": "evidence/dynamic-creative/owner-review/renders/source-before-hype-mobile-homepage.png"
     }
   ],

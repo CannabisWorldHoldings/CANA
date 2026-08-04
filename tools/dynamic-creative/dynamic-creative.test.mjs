@@ -4,6 +4,7 @@ import * as ProviderContract from '../../packages/ad-creative/src/provider-contr
 import * as Hermes from '../../skills-src/hermes-governed-packet.mjs';
 import * as SiteMind from '../../apps/web/src/lib/sitemind.mjs';
 import { validateCreativeEvidenceImportManifest } from '../../packages/ad-creative/src/evidence-import.mjs';
+import { createDeterministicFixtureProvider } from '../../packages/ad-creative/src/providers/deterministic-fixture.mjs';
 
 const { createProvider, createProviderRegistry, routeImageProvider } = ProviderContract;
 const { CAPABILITIES, makeGrant, sealPacket } = Hermes;
@@ -225,12 +226,15 @@ test('enforces lifecycle and refuses ACTIVE until every gate passes', async () =
       current: 'SCHEDULED', target: 'ACTIVE',
       gates: { visual: 'PASS', policy: 'PASS', owner: 'PENDING', entitlement: 'PASS', schedule: 'PASS' },
     }),
-    /owner gate/i,
+    /caller-supplied gate labels are not CANA authorization/i,
   );
-  assert.equal(transitionCampaign({
-    current: 'SCHEDULED', target: 'ACTIVE',
-    gates: { visual: 'PASS', policy: 'PASS', owner: 'APPROVED', entitlement: 'PASS', schedule: 'PASS' },
-  }).state, 'ACTIVE');
+  assert.throws(
+    () => transitionCampaign({
+      current: 'SCHEDULED', target: 'ACTIVE',
+      gates: { visual: 'PASS', policy: 'PASS', owner: 'APPROVED', entitlement: 'PASS', schedule: 'PASS' },
+    }),
+    /caller-supplied gate labels are not CANA authorization/i,
+  );
 });
 
 test('supports future tuning interfaces without claiming a tuned model exists', async () => {
@@ -275,12 +279,14 @@ test('runs visual court with every required judge and bounded regeneration', asy
   assert.ok(VISUAL_COURT_JUDGES.includes('rights-provenance'));
   assert.ok(VISUAL_COURT_JUDGES.includes('owner-taste-alignment'));
   assert.ok(VISUAL_COURT_JUDGES.includes('campaign-coherence'));
-  const failed = runVisualCourt({
-    creative: { id: 'generic', headline: 'Shop now', disclosure: 'Sponsored' },
-    inspection: { genericness: 0.9, syntheticComposition: true, fileBytes: 999999 },
-    context: validContextInput(), threshold: 0.85,
-  });
-  assert.equal(failed.status, 'FAIL');
+  assert.throws(
+    () => runVisualCourt({
+      creative: { id: 'generic', headline: 'Shop now', disclosure: 'Sponsored' },
+      inspection: { genericness: 0.9, syntheticComposition: true, fileBytes: 999999 },
+      context: validContextInput(), threshold: 0.85,
+    }),
+    /artifact-derived inspection receipt/i,
+  );
   let attempts = 0;
   const regenerated = await regenerateUntilQuality({
     maxAttempts: 2,
@@ -305,6 +311,25 @@ test('fails closed rotation and rolls back to approved disclosed house creative'
   assert.equal(result.campaign.disclosure, 'ORDERWEEDDC house campaign');
   assert.equal(result.affectsOrganicOrder, false);
   assert.equal(result.rollback_available, true);
+  for (const invalid of [
+    {
+      id: 'assetless', state: 'ACTIVE', disclosure: 'Sponsored', weight: 1,
+      startsAt: NOW.toISOString(), endsAt: '2026-08-05T04:00:00.000Z',
+      entitlement: { eligiblePlacements: ['HOMEPAGE_SPONSORED_BILLBOARD'], targetingEligibility: ['DC'] },
+    },
+    {
+      id: 'invalid-window', state: 'ACTIVE', disclosure: 'Sponsored', weight: 1,
+      assetStatus: 'APPROVED_AVAILABLE', desktopAsset: '/desktop.svg', mobileAsset: '/mobile.svg',
+      startsAt: 'not-a-date', endsAt: 'also-not-a-date',
+      entitlement: { eligiblePlacements: ['HOMEPAGE_SPONSORED_BILLBOARD'], targetingEligibility: ['DC'] },
+    },
+  ]) {
+    const refused = resolveCampaignRotation({
+      campaigns: [invalid], placement: 'HOMEPAGE_SPONSORED_BILLBOARD', geography: 'DC', now: NOW,
+      frequencyByCampaign: new Map(), fallback,
+    });
+    assert.equal(refused.status, 'FALLBACK_SELECTED');
+  }
 });
 
 test('records first party events and rejects competitor evidence as attributed performance', async () => {
@@ -335,7 +360,7 @@ test('records first party events and rejects competitor evidence as attributed p
 test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   const { runControlledVerticalSlice } = await loadFoundation();
   assert.equal(typeof runControlledVerticalSlice, 'function', 'controlled vertical slice is missing');
-  const registry = createProviderRegistry([fixtureProvider()]);
+  const registry = createProviderRegistry([createDeterministicFixtureProvider()]);
   const context = compileCreativeCampaignContext(validContextInput());
   const grant = makeGrant({
     capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 6,
@@ -364,4 +389,57 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   assert.equal(result.rotation.status, 'FALLBACK_SELECTED');
   assert.equal(result.rotation.campaign.id, 'owd-source-before-hype');
   assert.equal(result.production_publication_authority, 'NONE');
+  assert.ok(result.variants.every((variant) => variant.court.status === 'TECHNICAL_PASS_OWNER_REVIEW_REQUIRED'));
+  assert.ok(result.variants.every((variant) => variant.court.pendingReasons.includes('owner-taste-alignment')));
+  for (const variant of result.variants) {
+    for (const viewport of ['desktop', 'mobile']) {
+      const svg = Buffer.from(variant[viewport].image.imageBase64, 'base64').toString('utf8');
+      assert.doesNotMatch(svg, /gradient|feTurbulence|seed="NaN"/i);
+    }
+  }
+});
+
+test('controlled slice recomputes Hermes seals and refuses provider metadata impersonation', async () => {
+  const { runControlledVerticalSlice } = await loadFoundation();
+  const context = compileCreativeCampaignContext(validContextInput());
+  const forgedPacket = {
+    schema: 'hermes-governed-packet/1',
+    context_digest: context.packet.packet_digest,
+    packet_digest: 'FORGED',
+    grant: { capability: 'GENERATE_CREATIVE_DRAFT', budget_units: 8, issued_by: 'CANA', expires_at: '2026-08-05T04:00:00.000Z' },
+    intent: { capability: 'GENERATE_CREATIVE_DRAFT' },
+  };
+  await assert.rejects(
+    runControlledVerticalSlice({
+      contextPacket: context.packet,
+      hermesPacket: forgedPacket,
+      registry: createProviderRegistry([createDeterministicFixtureProvider()]),
+      now: NOW,
+    }),
+    /digest does not recompute/i,
+  );
+
+  const grant = makeGrant({
+    capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 8,
+    expiresAt: '2026-08-05T04:00:00.000Z', issuedBy: 'CANA', now: NOW,
+  });
+  const governed = sealPacket({
+    contextPacket: context.packet,
+    grant,
+    intent: {
+      description: 'Generate deterministic owner-review creative fixtures',
+      capability: 'GENERATE_CREATIVE_DRAFT', successTest: 'three variants pass bounded technical review',
+      rollback: 'return Source Before Hype', subjects: ['subject:creative'],
+    },
+    now: NOW,
+  });
+  await assert.rejects(
+    runControlledVerticalSlice({
+      contextPacket: context.packet,
+      hermesPacket: governed.packet,
+      registry: createProviderRegistry([fixtureProvider()]),
+      now: NOW,
+    }),
+    /canonical deterministic offline fixture provider/i,
+  );
 });

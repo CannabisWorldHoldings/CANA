@@ -17,6 +17,7 @@
     "credentials:rotate-demo": "node prisma/rotate-demo-credentials.mjs"
   },
   "dependencies": {
+    "@orderweeddc/ad-creative": "*",
     "@prisma/client": "^6.19.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",

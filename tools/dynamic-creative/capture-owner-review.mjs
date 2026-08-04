@@ -114,7 +114,15 @@ async function captureScenario({ browser, baseUrl, outputRoot, campaign, surface
     (request) => !(request.error === 'net::ERR_ABORTED' && new URL(request.url).searchParams.has('_rsc')),
   );
   const screenshotPath = join(outputRoot, `${campaign}-${viewportName}-${surface}.png`);
-  await placement.screenshot({ path: screenshotPath, animations: 'disabled' });
+  if (surface === 'homepage') {
+    await placement.evaluate((element) => {
+      const top = element.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top: Math.max(0, top - 76), behavior: 'instant' });
+    });
+    await page.screenshot({ path: screenshotPath, animations: 'disabled', fullPage: false });
+  } else {
+    await placement.screenshot({ path: screenshotPath, animations: 'disabled' });
+  }
 
   const checks = {
     age_gate_attested: await ageDialog.count() === 0,
@@ -156,6 +164,7 @@ async function captureScenario({ browser, baseUrl, outputRoot, campaign, surface
     unexpected_failed_requests: unexpectedFailedRequests,
     http_errors: httpErrors,
     external_requests_blocked: [...new Set(blockedExternal)],
+    screenshot_scope: surface === 'homepage' ? 'FULL_BROWSER_VIEWPORT_WITH_PAGE_CONTEXT' : 'PLACEMENT_ISOLATION',
     screenshot: relative(REPO_ROOT, screenshotPath),
   };
 }

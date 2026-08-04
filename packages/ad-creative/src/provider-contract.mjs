@@ -32,6 +32,7 @@
  */
 
 const REQUIRED_METHODS = Object.freeze(['generateImage', 'analyzeImage']);
+const REGISTERED_PROVIDER_CONTRACTS = new WeakSet();
 
 /**
  * Validate and freeze a provider implementation.
@@ -62,7 +63,6 @@ export function createProvider(spec) {
     latencyMs: declaredRouting.latencyMs ?? null,
     policyEligible: declaredRouting.policyEligible ?? false,
     historicalPerformance: declaredRouting.historicalPerformance ?? 0,
-    externalCalls: declaredRouting.externalCalls ?? null,
   };
   for (const field of ['quality', 'historicalPerformance']) {
     if (!Number.isFinite(routing[field]) || routing[field] < 0 || routing[field] > 1) {
@@ -75,7 +75,7 @@ export function createProvider(spec) {
   if (routing.latencyMs !== null && (!Number.isFinite(routing.latencyMs) || routing.latencyMs < 0)) {
     throw new TypeError('provider.routing.latencyMs must be null or a non-negative number');
   }
-  return Object.freeze({
+  const provider = Object.freeze({
     name: spec.name,
     model: spec.model,
     capabilities: Object.freeze(capabilities),
@@ -83,6 +83,8 @@ export function createProvider(spec) {
     generateImage: spec.generateImage,
     analyzeImage: spec.analyzeImage,
   });
+  REGISTERED_PROVIDER_CONTRACTS.add(provider);
+  return provider;
 }
 
 /**
@@ -96,7 +98,7 @@ export function createProviderRegistry(providers) {
   }
   const byName = new Map();
   for (const provider of providers) {
-    if (!provider || typeof provider.generateImage !== 'function' || typeof provider.analyzeImage !== 'function') {
+    if (!provider || !REGISTERED_PROVIDER_CONTRACTS.has(provider)) {
       throw new TypeError('provider registry accepts only provider-contract implementations');
     }
     if (byName.has(provider.name)) throw new Error(`duplicate provider name ${provider.name}`);

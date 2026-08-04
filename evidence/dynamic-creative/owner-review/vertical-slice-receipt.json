@@ -9,6 +9,14 @@
   "authorized_brief": true,
   "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
   "hermes_packet_digest": "55637270e0cd7fdb63e241a0d792a0b48978ec225534dc360e1f211942a6027a",
+  "hermes_validation": {
+    "valid": true,
+    "errors": [],
+    "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+    "packet_digest": "55637270e0cd7fdb63e241a0d792a0b48978ec225534dc360e1f211942a6027a",
+    "capability": "GENERATE_CREATIVE_DRAFT",
+    "checked_at": "2026-08-04T04:00:00.000Z"
+  },
   "entitlement": {
     "schema_version": "cana.creative-sponsorship-entitlement/1.0.0",
     "id": "ent_synthetic_vertical_slice",
@@ -44,6 +52,9 @@
       "creative_genome": {
         "id": "district-signal",
         "strategy": "local-orientation",
+        "eyebrow": "District signal",
+        "body": "A civic-grid campaign system that makes local orientation and verified comparison the lead mechanism.",
+        "alt": "Abstract D.C. signal grid with a central verified marker",
         "targetAudience": "D.C. adults 21+ who know their neighborhood but not the verified options nearby",
         "customerProblem": "Local choice is fragmented and difficult to orient.",
         "offer": "A verified comparison path organized around D.C. location.",
@@ -77,7 +88,7 @@
       "disclosure": "Sponsored",
       "desktop": {
         "image": {
-          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAwIDkwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiMwODJmNDkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZTc0OTAiLz48L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Im4iPjxmZVR1cmJ1bGVuY2UgYmFzZUZyZXF1ZW5jeT0iLjgiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9IjEzIiB0eXBlPSJmcmFjdGFsTm9pc2UiLz48ZmVDb2xvck1hdHJpeCB2YWx1ZXM9IjEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIC4wNyAwIi8+PC9maWx0ZXI+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsbD0idXJsKCNnKSIvPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIuNCIvPjxwYXRoIGQ9Ik0xMjggNjQ4SDE0NzJNMjg4IDE2MlY3MzhNODAwIDkwVjgxME0xMzEyIDE2MlY3MzgiIHN0cm9rZT0iIzY3ZThmOSIgc3Ryb2tlLXdpZHRoPSIxOS4yIiBvcGFjaXR5PSIuNTUiLz48Y2lyY2xlIGN4PSI4MDAiIGN5PSIzNzgiIHI9IjE0NCIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjk0Ii8+PHBhdGggZD0iTTgwMCAyMDdsNTYuMDAwMDAwMDAwMDAwMDEgOTloMTc2bC0xNDQgNTguNWw1Ni4wMDAwMDAwMDAwMDAwMSA5OWwtMTY4LTYwLjMwMDAwMDAwMDAwMDAwNGwtMTY4IDYwLjMwMDAwMDAwMDAwMDAwNGw1Ni4wMDAwMDAwMDAwMDAwMS05OWwtMTQ0LTU4LjVoMTc2eiIgZmlsbD0iIzBlNzQ5MCIvPjxwYXRoIGQ9Ik0wIDgzN0M0MDAgNzc0IDEyMDAgOTAwIDE2MDAgNzkyVjkwMEgwWiIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjEyIi8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0iZGlzdHJpY3Qtc2lnbmFsIiBkYXRhLXNlZWQ9ImRpc3RyaWN0LXNpZ25hbC1kZXNrdG9wLWF0dGVtcHQtMiIvPjwvc3ZnPg==",
+          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAwIDkwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsbD0iIzA4MmY0OSIvPjxwYXRoIGQ9Ik05MjcuOTk5OTk5OTk5OTk5OSAwSDE2MDBWOTAwSDY3MloiIGZpbGw9IiMwZTc0OTAiIG9wYWNpdHk9Ii43OCIvPjxwYXRoIGQ9Ik0xMjggNjQ4SDE0NzJNMjg4IDE2MlY3MzhNODAwIDkwVjgxME0xMzEyIDE2MlY3MzgiIHN0cm9rZT0iIzY3ZThmOSIgc3Ryb2tlLXdpZHRoPSIxOS4yIiBvcGFjaXR5PSIuNTUiLz48Y2lyY2xlIGN4PSI4MDAiIGN5PSIzNzgiIHI9IjE0NCIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjk0Ii8+PHBhdGggZD0iTTgwMCAyMDdsNTYuMDAwMDAwMDAwMDAwMDEgOTloMTc2bC0xNDQgNTguNWw1Ni4wMDAwMDAwMDAwMDAwMSA5OWwtMTY4LTYwLjMwMDAwMDAwMDAwMDAwNGwtMTY4IDYwLjMwMDAwMDAwMDAwMDAwNGw1Ni4wMDAwMDAwMDAwMDAwMS05OWwtMTQ0LTU4LjVoMTc2eiIgZmlsbD0iIzBlNzQ5MCIvPjxwYXRoIGQ9Ik0wIDgzN0M0MDAgNzc0IDEyMDAgOTAwIDE2MDAgNzkyVjkwMEgwWiIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjE0Ii8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0iZGlzdHJpY3Qtc2lnbmFsIiBkYXRhLXNlZWQ9ImRpc3RyaWN0LXNpZ25hbC1kZXNrdG9wLWF0dGVtcHQtMiIvPjwvc3ZnPg==",
           "mimeType": "image/svg+xml",
           "receipt": {
             "schema_version": "cana.deterministic-image-generation/1.0.0",
@@ -92,7 +103,7 @@
             "source_asset_sha256": [
               "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
             ],
-            "result_sha256": "d965a44fe19822ddba3bd5a6a6548476a30bb125025248bbb4ad1aec888ad3fb",
+            "result_sha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -107,7 +118,7 @@
           "receipt": {
             "provider": "deterministic-svg-fixture",
             "model": "orderweeddc-vector-fixture-v1",
-            "image_sha256": "d965a44fe19822ddba3bd5a6a6548476a30bb125025248bbb4ad1aec888ad3fb",
+            "image_sha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -158,16 +169,24 @@
             }
           ],
           "receipt": {
-            "imageSha256": "d965a44fe19822ddba3bd5a6a6548476a30bb125025248bbb4ad1aec888ad3fb",
-            "verifiedAt": "2026-08-04T04:21:26.107Z",
+            "imageSha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "verifiedAt": "2026-08-04T04:49:19.835Z",
             "failedChecks": []
           }
+        },
+        "execution": {
+          "provider_calls": 0,
+          "external_provider_calls": 0,
+          "actual_spend_usd": 0,
+          "network_accessed": false,
+          "image_sha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+          "bytes": 775
         },
         "postable": false
       },
       "mobile": {
         "image": {
-          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMTAwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiMwODJmNDkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwZTc0OTAiLz48L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Im4iPjxmZVR1cmJ1bGVuY2UgYmFzZUZyZXF1ZW5jeT0iLjgiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9IjEzIiB0eXBlPSJmcmFjdGFsTm9pc2UiLz48ZmVDb2xvck1hdHJpeCB2YWx1ZXM9IjEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIC4wNyAwIi8+PC9maWx0ZXI+PC9kZWZzPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsbD0idXJsKCNnKSIvPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIuNCIvPjxwYXRoIGQ9Ik02NCA3MjBINzM2TTE0NCAxODBWODIwTTQwMCAxMDBWOTAwTTY1NiAxODBWODIwIiBzdHJva2U9IiM2N2U4ZjkiIHN0cm9rZS13aWR0aD0iMTIiIG9wYWNpdHk9Ii41NSIvPjxjaXJjbGUgY3g9IjQwMCIgY3k9IjQyMCIgcj0iMTI4IiBmaWxsPSIjZjhmYWZjIiBvcGFjaXR5PSIuOTQiLz48cGF0aCBkPSJNNDAwIDIzMGwyOC4wMDAwMDAwMDAwMDAwMDQgMTEwaDg4bC03MiA2NWwyOC4wMDAwMDAwMDAwMDAwMDQgMTEwbC04NC02N2wtODQgNjdsMjguMDAwMDAwMDAwMDAwMDA0LTExMGwtNzItNjVoODh6IiBmaWxsPSIjMGU3NDkwIi8+PHBhdGggZD0iTTAgOTMwQzIwMCA4NjAgNjAwIDEwMDAgODAwIDg4MFYxMDAwSDBaIiBmaWxsPSIjZjhmYWZjIiBvcGFjaXR5PSIuMTIiLz48bWV0YWRhdGEgZGF0YS12YXJpYW50PSJkaXN0cmljdC1zaWduYWwiIGRhdGEtc2VlZD0iZGlzdHJpY3Qtc2lnbmFsLW1vYmlsZS1hdHRlbXB0LTIiLz48L3N2Zz4=",
+          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMTAwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsbD0iIzA4MmY0OSIvPjxwYXRoIGQ9Ik00NjMuOTk5OTk5OTk5OTk5OTQgMEg4MDBWMTAwMEgzMzZaIiBmaWxsPSIjMGU3NDkwIiBvcGFjaXR5PSIuNzgiLz48cGF0aCBkPSJNNjQgNzIwSDczNk0xNDQgMTgwVjgyME00MDAgMTAwVjkwME02NTYgMTgwVjgyMCIgc3Ryb2tlPSIjNjdlOGY5IiBzdHJva2Utd2lkdGg9IjEyIiBvcGFjaXR5PSIuNTUiLz48Y2lyY2xlIGN4PSI0MDAiIGN5PSI0MjAiIHI9IjEyOCIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjk0Ii8+PHBhdGggZD0iTTQwMCAyMzBsMjguMDAwMDAwMDAwMDAwMDA0IDExMGg4OGwtNzIgNjVsMjguMDAwMDAwMDAwMDAwMDA0IDExMGwtODQtNjdsLTg0IDY3bDI4LjAwMDAwMDAwMDAwMDAwNC0xMTBsLTcyLTY1aDg4eiIgZmlsbD0iIzBlNzQ5MCIvPjxwYXRoIGQ9Ik0wIDkzMEMyMDAgODYwIDYwMCAxMDAwIDgwMCA4ODBWMTAwMEgwWiIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjE0Ii8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0iZGlzdHJpY3Qtc2lnbmFsIiBkYXRhLXNlZWQ9ImRpc3RyaWN0LXNpZ25hbC1tb2JpbGUtYXR0ZW1wdC0yIi8+PC9zdmc+",
           "mimeType": "image/svg+xml",
           "receipt": {
             "schema_version": "cana.deterministic-image-generation/1.0.0",
@@ -182,7 +201,7 @@
             "source_asset_sha256": [
               "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
             ],
-            "result_sha256": "96f9dc29b0810ca2d814df5089a7a3e767d7e9dc189bc37905ca0414aa3db1d4",
+            "result_sha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -197,7 +216,7 @@
           "receipt": {
             "provider": "deterministic-svg-fixture",
             "model": "orderweeddc-vector-fixture-v1",
-            "image_sha256": "96f9dc29b0810ca2d814df5089a7a3e767d7e9dc189bc37905ca0414aa3db1d4",
+            "image_sha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -248,137 +267,264 @@
             }
           ],
           "receipt": {
-            "imageSha256": "96f9dc29b0810ca2d814df5089a7a3e767d7e9dc189bc37905ca0414aa3db1d4",
-            "verifiedAt": "2026-08-04T04:21:26.108Z",
+            "imageSha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "verifiedAt": "2026-08-04T04:49:19.835Z",
             "failedChecks": []
           }
+        },
+        "execution": {
+          "provider_calls": 0,
+          "external_provider_calls": 0,
+          "actual_spend_usd": 0,
+          "network_accessed": false,
+          "image_sha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+          "bytes": 735
         },
         "postable": false
       },
       "court": {
         "schema_version": "cana.visual-verification-court/1.0.0",
         "creative_id": "district-signal-attempt-2",
-        "status": "PASS",
+        "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
         "score": 1,
         "threshold": 0.85,
         "judges": [
           {
             "name": "genericness",
             "status": "PASS",
-            "evidence": "Observed genericness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "genericness requirement satisfied"
+            }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
-            "evidence": "Observed synthetic-composition requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "synthetic-composition requirement satisfied"
+            }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
-            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "anatomy-object-consistency requirement satisfied"
+            }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
-            "evidence": "Observed package-logo-correctness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "package-logo-correctness requirement satisfied"
+            }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
-            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "unauthorized-hallucinated-text requirement satisfied"
+            }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
-            "evidence": "Observed image-copy-alignment requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "image-copy-alignment requirement satisfied"
+            }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
-            "evidence": "Observed local-dc-relevance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "local-dc-relevance requirement satisfied"
+            }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
-            "evidence": "Observed premium-editorial-quality requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "premium-editorial-quality requirement satisfied"
+            }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
-            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "mobile-crop-integrity requirement satisfied"
+            }
           },
           {
             "name": "readability",
             "status": "PASS",
-            "evidence": "Observed readability requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "readability requirement satisfied"
+            }
           },
           {
             "name": "accessibility",
             "status": "PASS",
-            "evidence": "Observed accessibility requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "accessibility requirement satisfied"
+            }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
-            "evidence": "Observed ad-disclosure requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "ad-disclosure requirement satisfied"
+            }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
-            "evidence": "Observed policy-compliance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "policy-compliance requirement satisfied"
+            }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
-            "evidence": "Observed truthful-claims requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "truthful-claims requirement satisfied"
+            }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
-            "evidence": "Observed visual-hierarchy requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "visual-hierarchy requirement satisfied"
+            }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
-            "evidence": "Observed cta-clarity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "cta-clarity requirement satisfied"
+            }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
-            "evidence": "Observed brand-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "brand-consistency requirement satisfied"
+            }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
-            "evidence": "Observed file-size-performance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "file-size-performance requirement satisfied"
+            }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
-            "evidence": "Observed rights-provenance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "rights-provenance requirement satisfied"
+            }
           },
           {
             "name": "owner-taste-alignment",
-            "status": "PASS",
-            "evidence": "Observed owner-taste-alignment requirement satisfied"
+            "status": "PENDING_OWNER_DECISION",
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "Owner decision has not been recorded"
+            }
           },
           {
             "name": "campaign-coherence",
             "status": "PASS",
-            "evidence": "Observed campaign-coherence requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "campaign-coherence requirement satisfied"
+            }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
-            "evidence": "Observed conversion-mechanism requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "conversion-mechanism requirement satisfied"
+            }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
-            "evidence": "Observed landing-page-continuity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+              "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "finding": "landing-page-continuity requirement satisfied"
+            }
           }
         ],
         "failureReasons": [],
+        "pendingReasons": [
+          "owner-taste-alignment"
+        ],
+        "quality_threshold_reached": true,
         "publish_allowed": false
       }
     },
@@ -389,6 +535,9 @@
       "creative_genome": {
         "id": "evening-index",
         "strategy": "bounded-choice",
+        "eyebrow": "Evening index",
+        "body": "An editorial index system that reduces choice overload without presenting competitor performance as fact.",
+        "alt": "Abstract evening arches with a compact editorial index",
         "targetAudience": "D.C. adults 21+ seeking a fast, legible evening discovery path",
         "customerProblem": "Large catalogs create choice overload.",
         "offer": "A shorter verified shortlist.",
@@ -422,7 +571,7 @@
       "disclosure": "Sponsored",
       "desktop": {
         "image": {
-          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAwIDkwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiMyYTE2MzQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM3YzNhZWQiLz48L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Im4iPjxmZVR1cmJ1bGVuY2UgYmFzZUZyZXF1ZW5jeT0iLjgiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9IjE0IiB0eXBlPSJmcmFjdGFsTm9pc2UiLz48ZmVDb2xvck1hdHJpeCB2YWx1ZXM9IjEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIC4wNyAwIi8+PC9maWx0ZXI+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsbD0idXJsKCNnKSIvPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIuNCIvPjxwYXRoIGQ9Ik0tODAgNzkyUTM2OCAxNjIgODE2IDc5MlQxNzEyIDc5MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjU2LjAwMDAwMDAwMDAwMDAxIi8+PGNpcmNsZSBjeD0iMTE1MiIgY3k9IjIxNiIgcj0iOTkiIGZpbGw9IiNmZmY3ZWQiIG9wYWNpdHk9Ii45MiIvPjxnIGZpbGw9IiNmNTllMGIiIG9wYWNpdHk9Ii44Ij48Y2lyY2xlIGN4PSIyNTYiIGN5PSIxNzEiIHI9IjE5LjIiLz48Y2lyY2xlIGN4PSI0ODAiIGN5PSIxMDgiIHI9IjExLjIwMDAwMDAwMDAwMDAwMSIvPjxjaXJjbGUgY3g9Ijc1MiIgY3k9IjE4MCIgcj0iMTQuMzk5OTk5OTk5OTk5OTk5Ii8+PC9nPjxwYXRoIGQ9Ik0wIDgzN0M0MDAgNzc0IDEyMDAgOTAwIDE2MDAgNzkyVjkwMEgwWiIgZmlsbD0iI2ZmZjdlZCIgb3BhY2l0eT0iLjEyIi8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0iZXZlbmluZy1pbmRleCIgZGF0YS1zZWVkPSJldmVuaW5nLWluZGV4LWRlc2t0b3AtYXR0ZW1wdC0yIi8+PC9zdmc+",
+          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAwIDkwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsbD0iIzJhMTYzNCIvPjxwYXRoIGQ9Ik05MjcuOTk5OTk5OTk5OTk5OSAwSDE2MDBWOTAwSDY3MloiIGZpbGw9IiM3YzNhZWQiIG9wYWNpdHk9Ii43OCIvPjxwYXRoIGQ9Ik0tODAgNzkyUTM2OCAxNjIgODE2IDc5MlQxNzEyIDc5MiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjU2LjAwMDAwMDAwMDAwMDAxIi8+PGNpcmNsZSBjeD0iMTE1MiIgY3k9IjIxNiIgcj0iOTkiIGZpbGw9IiNmZmY3ZWQiIG9wYWNpdHk9Ii45MiIvPjxnIGZpbGw9IiNmNTllMGIiIG9wYWNpdHk9Ii44Ij48Y2lyY2xlIGN4PSIyNTYiIGN5PSIxNzEiIHI9IjE5LjIiLz48Y2lyY2xlIGN4PSI0ODAiIGN5PSIxMDgiIHI9IjExLjIwMDAwMDAwMDAwMDAwMSIvPjxjaXJjbGUgY3g9Ijc1MiIgY3k9IjE4MCIgcj0iMTQuMzk5OTk5OTk5OTk5OTk5Ii8+PC9nPjxwYXRoIGQ9Ik0wIDgzN0M0MDAgNzc0IDEyMDAgOTAwIDE2MDAgNzkyVjkwMEgwWiIgZmlsbD0iI2ZmZjdlZCIgb3BhY2l0eT0iLjE0Ii8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0iZXZlbmluZy1pbmRleCIgZGF0YS1zZWVkPSJldmVuaW5nLWluZGV4LWRlc2t0b3AtYXR0ZW1wdC0yIi8+PC9zdmc+",
           "mimeType": "image/svg+xml",
           "receipt": {
             "schema_version": "cana.deterministic-image-generation/1.0.0",
@@ -437,7 +586,7 @@
             "source_asset_sha256": [
               "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
             ],
-            "result_sha256": "943feb8ad75db137480d857a7dd180775a671be191131d51241762c0dac890dd",
+            "result_sha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -452,7 +601,7 @@
           "receipt": {
             "provider": "deterministic-svg-fixture",
             "model": "orderweeddc-vector-fixture-v1",
-            "image_sha256": "943feb8ad75db137480d857a7dd180775a671be191131d51241762c0dac890dd",
+            "image_sha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -503,16 +652,24 @@
             }
           ],
           "receipt": {
-            "imageSha256": "943feb8ad75db137480d857a7dd180775a671be191131d51241762c0dac890dd",
-            "verifiedAt": "2026-08-04T04:21:26.108Z",
+            "imageSha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+            "verifiedAt": "2026-08-04T04:49:19.836Z",
             "failedChecks": []
           }
+        },
+        "execution": {
+          "provider_calls": 0,
+          "external_provider_calls": 0,
+          "actual_spend_usd": 0,
+          "network_accessed": false,
+          "image_sha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+          "bytes": 762
         },
         "postable": false
       },
       "mobile": {
         "image": {
-          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMTAwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiMyYTE2MzQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM3YzNhZWQiLz48L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Im4iPjxmZVR1cmJ1bGVuY2UgYmFzZUZyZXF1ZW5jeT0iLjgiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9IjE0IiB0eXBlPSJmcmFjdGFsTm9pc2UiLz48ZmVDb2xvck1hdHJpeCB2YWx1ZXM9IjEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIDEgMCAwIDAgMCAwIC4wNyAwIi8+PC9maWx0ZXI+PC9kZWZzPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsbD0idXJsKCNnKSIvPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsdGVyPSJ1cmwoI24pIiBvcGFjaXR5PSIuNCIvPjxwYXRoIGQ9Ik0tNDAgODgwUTE4NCAxODAgNDA4IDg4MFQ4NTYgODgwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmNTllMGIiIHN0cm9rZS13aWR0aD0iMjguMDAwMDAwMDAwMDAwMDA0Ii8+PGNpcmNsZSBjeD0iNTc2IiBjeT0iMjQwIiByPSI4OCIgZmlsbD0iI2ZmZjdlZCIgb3BhY2l0eT0iLjkyIi8+PGcgZmlsbD0iI2Y1OWUwYiIgb3BhY2l0eT0iLjgiPjxjaXJjbGUgY3g9IjEyOCIgY3k9IjE5MCIgcj0iOS42Ii8+PGNpcmNsZSBjeD0iMjQwIiBjeT0iMTIwIiByPSI1LjYwMDAwMDAwMDAwMDAwMDUiLz48Y2lyY2xlIGN4PSIzNzYiIGN5PSIyMDAiIHI9IjcuMTk5OTk5OTk5OTk5OTk5Ii8+PC9nPjxwYXRoIGQ9Ik0wIDkzMEMyMDAgODYwIDYwMCAxMDAwIDgwMCA4ODBWMTAwMEgwWiIgZmlsbD0iI2ZmZjdlZCIgb3BhY2l0eT0iLjEyIi8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0iZXZlbmluZy1pbmRleCIgZGF0YS1zZWVkPSJldmVuaW5nLWluZGV4LW1vYmlsZS1hdHRlbXB0LTIiLz48L3N2Zz4=",
+          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMTAwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsbD0iIzJhMTYzNCIvPjxwYXRoIGQ9Ik00NjMuOTk5OTk5OTk5OTk5OTQgMEg4MDBWMTAwMEgzMzZaIiBmaWxsPSIjN2MzYWVkIiBvcGFjaXR5PSIuNzgiLz48cGF0aCBkPSJNLTQwIDg4MFExODQgMTgwIDQwOCA4ODBUODU2IDg4MCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjU5ZTBiIiBzdHJva2Utd2lkdGg9IjI4LjAwMDAwMDAwMDAwMDAwNCIvPjxjaXJjbGUgY3g9IjU3NiIgY3k9IjI0MCIgcj0iODgiIGZpbGw9IiNmZmY3ZWQiIG9wYWNpdHk9Ii45MiIvPjxnIGZpbGw9IiNmNTllMGIiIG9wYWNpdHk9Ii44Ij48Y2lyY2xlIGN4PSIxMjgiIGN5PSIxOTAiIHI9IjkuNiIvPjxjaXJjbGUgY3g9IjI0MCIgY3k9IjEyMCIgcj0iNS42MDAwMDAwMDAwMDAwMDA1Ii8+PGNpcmNsZSBjeD0iMzc2IiBjeT0iMjAwIiByPSI3LjE5OTk5OTk5OTk5OTk5OSIvPjwvZz48cGF0aCBkPSJNMCA5MzBDMjAwIDg2MCA2MDAgMTAwMCA4MDAgODgwVjEwMDBIMFoiIGZpbGw9IiNmZmY3ZWQiIG9wYWNpdHk9Ii4xNCIvPjxtZXRhZGF0YSBkYXRhLXZhcmlhbnQ9ImV2ZW5pbmctaW5kZXgiIGRhdGEtc2VlZD0iZXZlbmluZy1pbmRleC1tb2JpbGUtYXR0ZW1wdC0yIi8+PC9zdmc+",
           "mimeType": "image/svg+xml",
           "receipt": {
             "schema_version": "cana.deterministic-image-generation/1.0.0",
@@ -527,7 +684,7 @@
             "source_asset_sha256": [
               "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
             ],
-            "result_sha256": "4ffeda9f6d132da564b61a3f7d4abc48edfe8182624449f956b1a9a20b4016ef",
+            "result_sha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -542,7 +699,7 @@
           "receipt": {
             "provider": "deterministic-svg-fixture",
             "model": "orderweeddc-vector-fixture-v1",
-            "image_sha256": "4ffeda9f6d132da564b61a3f7d4abc48edfe8182624449f956b1a9a20b4016ef",
+            "image_sha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -593,137 +750,264 @@
             }
           ],
           "receipt": {
-            "imageSha256": "4ffeda9f6d132da564b61a3f7d4abc48edfe8182624449f956b1a9a20b4016ef",
-            "verifiedAt": "2026-08-04T04:21:26.108Z",
+            "imageSha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+            "verifiedAt": "2026-08-04T04:49:19.836Z",
             "failedChecks": []
           }
+        },
+        "execution": {
+          "provider_calls": 0,
+          "external_provider_calls": 0,
+          "actual_spend_usd": 0,
+          "network_accessed": false,
+          "image_sha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+          "bytes": 759
         },
         "postable": false
       },
       "court": {
         "schema_version": "cana.visual-verification-court/1.0.0",
         "creative_id": "evening-index-attempt-2",
-        "status": "PASS",
+        "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
         "score": 1,
         "threshold": 0.85,
         "judges": [
           {
             "name": "genericness",
             "status": "PASS",
-            "evidence": "Observed genericness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "genericness requirement satisfied"
+            }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
-            "evidence": "Observed synthetic-composition requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "synthetic-composition requirement satisfied"
+            }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
-            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "anatomy-object-consistency requirement satisfied"
+            }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
-            "evidence": "Observed package-logo-correctness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "package-logo-correctness requirement satisfied"
+            }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
-            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "unauthorized-hallucinated-text requirement satisfied"
+            }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
-            "evidence": "Observed image-copy-alignment requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "image-copy-alignment requirement satisfied"
+            }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
-            "evidence": "Observed local-dc-relevance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "local-dc-relevance requirement satisfied"
+            }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
-            "evidence": "Observed premium-editorial-quality requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "premium-editorial-quality requirement satisfied"
+            }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
-            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "mobile-crop-integrity requirement satisfied"
+            }
           },
           {
             "name": "readability",
             "status": "PASS",
-            "evidence": "Observed readability requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "readability requirement satisfied"
+            }
           },
           {
             "name": "accessibility",
             "status": "PASS",
-            "evidence": "Observed accessibility requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "accessibility requirement satisfied"
+            }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
-            "evidence": "Observed ad-disclosure requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "ad-disclosure requirement satisfied"
+            }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
-            "evidence": "Observed policy-compliance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "policy-compliance requirement satisfied"
+            }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
-            "evidence": "Observed truthful-claims requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "truthful-claims requirement satisfied"
+            }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
-            "evidence": "Observed visual-hierarchy requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "visual-hierarchy requirement satisfied"
+            }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
-            "evidence": "Observed cta-clarity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "cta-clarity requirement satisfied"
+            }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
-            "evidence": "Observed brand-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "brand-consistency requirement satisfied"
+            }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
-            "evidence": "Observed file-size-performance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "file-size-performance requirement satisfied"
+            }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
-            "evidence": "Observed rights-provenance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "rights-provenance requirement satisfied"
+            }
           },
           {
             "name": "owner-taste-alignment",
-            "status": "PASS",
-            "evidence": "Observed owner-taste-alignment requirement satisfied"
+            "status": "PENDING_OWNER_DECISION",
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "Owner decision has not been recorded"
+            }
           },
           {
             "name": "campaign-coherence",
             "status": "PASS",
-            "evidence": "Observed campaign-coherence requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "campaign-coherence requirement satisfied"
+            }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
-            "evidence": "Observed conversion-mechanism requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "conversion-mechanism requirement satisfied"
+            }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
-            "evidence": "Observed landing-page-continuity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+              "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "finding": "landing-page-continuity requirement satisfied"
+            }
           }
         ],
         "failureReasons": [],
+        "pendingReasons": [
+          "owner-taste-alignment"
+        ],
+        "quality_threshold_reached": true,
         "publish_allowed": false
       }
     },
@@ -734,6 +1018,9 @@
       "creative_genome": {
         "id": "receipt-rhythm",
         "strategy": "trust-before-handoff",
+        "eyebrow": "Receipt rhythm",
+        "body": "A receipt-led system that turns source evidence, freshness, and transparent handoff into the premium idea.",
+        "alt": "Abstract source receipt with a circular verification seal",
         "targetAudience": "Evidence-seeking D.C. adults 21+ wary of stale listings and unsupported claims",
         "customerProblem": "A storefront handoff lacks trust when source and freshness are hidden.",
         "offer": "See the source before choosing where to go.",
@@ -767,7 +1054,7 @@
       "disclosure": "Sponsored",
       "desktop": {
         "image": {
-          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAwIDkwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiMxNzJiMjQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxNzZiNGQiLz48L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Im4iPjxmZVR1cmJ1bGVuY2UgYmFzZUZyZXF1ZW5jeT0iLjgiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9Ik5hTiIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdmFsdWVzPSIxIDAgMCAwIDAgMCAxIDAgMCAwIDAgMCAxIDAgMCAwIDAgMCAuMDcgMCIvPjwvZmlsdGVyPjwvZGVmcz48cmVjdCB3aWR0aD0iMTYwMCIgaGVpZ2h0PSI5MDAiIGZpbGw9InVybCgjZykiLz48cmVjdCB3aWR0aD0iMTYwMCIgaGVpZ2h0PSI5MDAiIGZpbHRlcj0idXJsKCNuKSIgb3BhY2l0eT0iLjQiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxOTIgMTA4KSByb3RhdGUoLTcpIj48cmVjdCB3aWR0aD0iMTE1MiIgaGVpZ2h0PSI2ODQiIHJ4PSI2NCIgZmlsbD0iI2Y4ZmFmYyIvPjxyZWN0IHg9IjEyOCIgeT0iMTA4IiB3aWR0aD0iNjQwIiBoZWlnaHQ9IjMxLjUwMDAwMDAwMDAwMDAwNCIgcng9IjEzLjUiIGZpbGw9IiMxNzZiNGQiLz48cmVjdCB4PSIxMjgiIHk9IjIwNyIgd2lkdGg9Ijg4MC4wMDAwMDAwMDAwMDAxIiBoZWlnaHQ9IjIyLjUiIHJ4PSIxMC44IiBmaWxsPSIjYTdmM2QwIi8+PHJlY3QgeD0iMTI4IiB5PSIyNzkiIHdpZHRoPSI3MzYiIGhlaWdodD0iMjIuNSIgcng9IjEwLjgiIGZpbGw9IiNhN2YzZDAiLz48cmVjdCB4PSIxMjgiIHk9IjM1MSIgd2lkdGg9IjgwMCIgaGVpZ2h0PSIyMi41IiByeD0iMTAuOCIgZmlsbD0iI2E3ZjNkMCIvPjxjaXJjbGUgY3g9Ijg5Ni4wMDAwMDAwMDAwMDAxIiBjeT0iNTEzIiByPSI5MCIgZmlsbD0iIzE3NmI0ZCIvPjwvZz48cGF0aCBkPSJNMCA4MzdDNDAwIDc3NCAxMjAwIDkwMCAxNjAwIDc5MlY5MDBIMFoiIGZpbGw9IiNmOGZhZmMiIG9wYWNpdHk9Ii4xMiIvPjxtZXRhZGF0YSBkYXRhLXZhcmlhbnQ9InJlY2VpcHQtcmh5dGhtIiBkYXRhLXNlZWQ9InJlY2VpcHQtcmh5dGhtLWRlc2t0b3AtYXR0ZW1wdC0yIi8+PC9zdmc+",
+          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAwIDkwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsbD0iIzE3MmIyNCIvPjxwYXRoIGQ9Ik05MjcuOTk5OTk5OTk5OTk5OSAwSDE2MDBWOTAwSDY3MloiIGZpbGw9IiMxNzZiNGQiIG9wYWNpdHk9Ii43OCIvPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDE5MiAxMDgpIHJvdGF0ZSgtNykiPjxyZWN0IHdpZHRoPSIxMTUyIiBoZWlnaHQ9IjY4NCIgcng9IjY0IiBmaWxsPSIjZjhmYWZjIi8+PHJlY3QgeD0iMTI4IiB5PSIxMDgiIHdpZHRoPSI2NDAiIGhlaWdodD0iMzEuNTAwMDAwMDAwMDAwMDA0IiByeD0iMTMuNSIgZmlsbD0iIzE3NmI0ZCIvPjxyZWN0IHg9IjEyOCIgeT0iMjA3IiB3aWR0aD0iODgwLjAwMDAwMDAwMDAwMDEiIGhlaWdodD0iMjIuNSIgcng9IjEwLjgiIGZpbGw9IiNhN2YzZDAiLz48cmVjdCB4PSIxMjgiIHk9IjI3OSIgd2lkdGg9IjczNiIgaGVpZ2h0PSIyMi41IiByeD0iMTAuOCIgZmlsbD0iI2E3ZjNkMCIvPjxyZWN0IHg9IjEyOCIgeT0iMzUxIiB3aWR0aD0iODAwIiBoZWlnaHQ9IjIyLjUiIHJ4PSIxMC44IiBmaWxsPSIjYTdmM2QwIi8+PGNpcmNsZSBjeD0iODk2LjAwMDAwMDAwMDAwMDEiIGN5PSI1MTMiIHI9IjkwIiBmaWxsPSIjMTc2YjRkIi8+PC9nPjxwYXRoIGQ9Ik0wIDgzN0M0MDAgNzc0IDEyMDAgOTAwIDE2MDAgNzkyVjkwMEgwWiIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjE0Ii8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0icmVjZWlwdC1yaHl0aG0iIGRhdGEtc2VlZD0icmVjZWlwdC1yaHl0aG0tZGVza3RvcC1hdHRlbXB0LTIiLz48L3N2Zz4=",
           "mimeType": "image/svg+xml",
           "receipt": {
             "schema_version": "cana.deterministic-image-generation/1.0.0",
@@ -782,7 +1069,7 @@
             "source_asset_sha256": [
               "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
             ],
-            "result_sha256": "8fa67b781dd6b8039b525a8932a52fbb06c8fff5a5d42de5fdabbf51d11e80be",
+            "result_sha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -797,7 +1084,7 @@
           "receipt": {
             "provider": "deterministic-svg-fixture",
             "model": "orderweeddc-vector-fixture-v1",
-            "image_sha256": "8fa67b781dd6b8039b525a8932a52fbb06c8fff5a5d42de5fdabbf51d11e80be",
+            "image_sha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -848,16 +1135,24 @@
             }
           ],
           "receipt": {
-            "imageSha256": "8fa67b781dd6b8039b525a8932a52fbb06c8fff5a5d42de5fdabbf51d11e80be",
-            "verifiedAt": "2026-08-04T04:21:26.108Z",
+            "imageSha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+            "verifiedAt": "2026-08-04T04:49:19.836Z",
             "failedChecks": []
           }
+        },
+        "execution": {
+          "provider_calls": 0,
+          "external_provider_calls": 0,
+          "actual_spend_usd": 0,
+          "network_accessed": false,
+          "image_sha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+          "bytes": 914
         },
         "postable": false
       },
       "mobile": {
         "image": {
-          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMTAwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIHN0b3AtY29sb3I9IiMxNzJiMjQiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxNzZiNGQiLz48L2xpbmVhckdyYWRpZW50PjxmaWx0ZXIgaWQ9Im4iPjxmZVR1cmJ1bGVuY2UgYmFzZUZyZXF1ZW5jeT0iLjgiIG51bU9jdGF2ZXM9IjIiIHNlZWQ9Ik5hTiIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdmFsdWVzPSIxIDAgMCAwIDAgMCAxIDAgMCAwIDAgMCAxIDAgMCAwIDAgMCAuMDcgMCIvPjwvZmlsdGVyPjwvZGVmcz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjEwMDAiIGZpbGw9InVybCgjZykiLz48cmVjdCB3aWR0aD0iODAwIiBoZWlnaHQ9IjEwMDAiIGZpbHRlcj0idXJsKCNuKSIgb3BhY2l0eT0iLjQiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg5NiAxMjApIHJvdGF0ZSgtNCkiPjxyZWN0IHdpZHRoPSI1NzYiIGhlaWdodD0iNzYwIiByeD0iMzIiIGZpbGw9IiNmOGZhZmMiLz48cmVjdCB4PSI2NCIgeT0iMTIwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjM1IiByeD0iMTUiIGZpbGw9IiMxNzZiNGQiLz48cmVjdCB4PSI2NCIgeT0iMjMwIiB3aWR0aD0iNDQwLjAwMDAwMDAwMDAwMDA2IiBoZWlnaHQ9IjI1IiByeD0iMTIiIGZpbGw9IiNhN2YzZDAiLz48cmVjdCB4PSI2NCIgeT0iMzEwIiB3aWR0aD0iMzY4IiBoZWlnaHQ9IjI1IiByeD0iMTIiIGZpbGw9IiNhN2YzZDAiLz48cmVjdCB4PSI2NCIgeT0iMzkwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1IiByeD0iMTIiIGZpbGw9IiNhN2YzZDAiLz48Y2lyY2xlIGN4PSI0NDguMDAwMDAwMDAwMDAwMDYiIGN5PSI1NzAiIHI9IjgwIiBmaWxsPSIjMTc2YjRkIi8+PC9nPjxwYXRoIGQ9Ik0wIDkzMEMyMDAgODYwIDYwMCAxMDAwIDgwMCA4ODBWMTAwMEgwWiIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjEyIi8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0icmVjZWlwdC1yaHl0aG0iIGRhdGEtc2VlZD0icmVjZWlwdC1yaHl0aG0tbW9iaWxlLWF0dGVtcHQtMiIvPjwvc3ZnPg==",
+          "imageBase64": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMTAwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJEZXRlcm1pbmlzdGljIGFic3RyYWN0IGNhbXBhaWduIGZpeHR1cmUiPjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iMTAwMCIgZmlsbD0iIzE3MmIyNCIvPjxwYXRoIGQ9Ik00NjMuOTk5OTk5OTk5OTk5OTQgMEg4MDBWMTAwMEgzMzZaIiBmaWxsPSIjMTc2YjRkIiBvcGFjaXR5PSIuNzgiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg5NiAxMjApIHJvdGF0ZSgtNCkiPjxyZWN0IHdpZHRoPSI1NzYiIGhlaWdodD0iNzYwIiByeD0iMzIiIGZpbGw9IiNmOGZhZmMiLz48cmVjdCB4PSI2NCIgeT0iMTIwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjM1IiByeD0iMTUiIGZpbGw9IiMxNzZiNGQiLz48cmVjdCB4PSI2NCIgeT0iMjMwIiB3aWR0aD0iNDQwLjAwMDAwMDAwMDAwMDA2IiBoZWlnaHQ9IjI1IiByeD0iMTIiIGZpbGw9IiNhN2YzZDAiLz48cmVjdCB4PSI2NCIgeT0iMzEwIiB3aWR0aD0iMzY4IiBoZWlnaHQ9IjI1IiByeD0iMTIiIGZpbGw9IiNhN2YzZDAiLz48cmVjdCB4PSI2NCIgeT0iMzkwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1IiByeD0iMTIiIGZpbGw9IiNhN2YzZDAiLz48Y2lyY2xlIGN4PSI0NDguMDAwMDAwMDAwMDAwMDYiIGN5PSI1NzAiIHI9IjgwIiBmaWxsPSIjMTc2YjRkIi8+PC9nPjxwYXRoIGQ9Ik0wIDkzMEMyMDAgODYwIDYwMCAxMDAwIDgwMCA4ODBWMTAwMEgwWiIgZmlsbD0iI2Y4ZmFmYyIgb3BhY2l0eT0iLjE0Ii8+PG1ldGFkYXRhIGRhdGEtdmFyaWFudD0icmVjZWlwdC1yaHl0aG0iIGRhdGEtc2VlZD0icmVjZWlwdC1yaHl0aG0tbW9iaWxlLWF0dGVtcHQtMiIvPjwvc3ZnPg==",
           "mimeType": "image/svg+xml",
           "receipt": {
             "schema_version": "cana.deterministic-image-generation/1.0.0",
@@ -872,7 +1167,7 @@
             "source_asset_sha256": [
               "3d2287e68a3bf287e82c212b652b1793bee8d9cb76c3fd5fb1d655fe62912894"
             ],
-            "result_sha256": "23ef5dd0bf1e9265680fa6d2d7c116d18fd053d164284e9e457305ab7b839c14",
+            "result_sha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -887,7 +1182,7 @@
           "receipt": {
             "provider": "deterministic-svg-fixture",
             "model": "orderweeddc-vector-fixture-v1",
-            "image_sha256": "23ef5dd0bf1e9265680fa6d2d7c116d18fd053d164284e9e457305ab7b839c14",
+            "image_sha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
             "external_provider_calls": 0,
             "actual_cost_usd": 0,
             "network_accessed": false
@@ -938,144 +1233,768 @@
             }
           ],
           "receipt": {
-            "imageSha256": "23ef5dd0bf1e9265680fa6d2d7c116d18fd053d164284e9e457305ab7b839c14",
-            "verifiedAt": "2026-08-04T04:21:26.108Z",
+            "imageSha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+            "verifiedAt": "2026-08-04T04:49:19.836Z",
             "failedChecks": []
           }
+        },
+        "execution": {
+          "provider_calls": 0,
+          "external_provider_calls": 0,
+          "actual_spend_usd": 0,
+          "network_accessed": false,
+          "image_sha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+          "bytes": 880
         },
         "postable": false
       },
       "court": {
         "schema_version": "cana.visual-verification-court/1.0.0",
         "creative_id": "receipt-rhythm-attempt-2",
-        "status": "PASS",
+        "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
         "score": 1,
         "threshold": 0.85,
         "judges": [
           {
             "name": "genericness",
             "status": "PASS",
-            "evidence": "Observed genericness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "genericness requirement satisfied"
+            }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
-            "evidence": "Observed synthetic-composition requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "synthetic-composition requirement satisfied"
+            }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
-            "evidence": "Observed anatomy-object-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "anatomy-object-consistency requirement satisfied"
+            }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
-            "evidence": "Observed package-logo-correctness requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "package-logo-correctness requirement satisfied"
+            }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
-            "evidence": "Observed unauthorized-hallucinated-text requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "unauthorized-hallucinated-text requirement satisfied"
+            }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
-            "evidence": "Observed image-copy-alignment requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "image-copy-alignment requirement satisfied"
+            }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
-            "evidence": "Observed local-dc-relevance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "local-dc-relevance requirement satisfied"
+            }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
-            "evidence": "Observed premium-editorial-quality requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "premium-editorial-quality requirement satisfied"
+            }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
-            "evidence": "Observed mobile-crop-integrity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "mobile-crop-integrity requirement satisfied"
+            }
           },
           {
             "name": "readability",
             "status": "PASS",
-            "evidence": "Observed readability requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "readability requirement satisfied"
+            }
           },
           {
             "name": "accessibility",
             "status": "PASS",
-            "evidence": "Observed accessibility requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "accessibility requirement satisfied"
+            }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
-            "evidence": "Observed ad-disclosure requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "ad-disclosure requirement satisfied"
+            }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
-            "evidence": "Observed policy-compliance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "policy-compliance requirement satisfied"
+            }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
-            "evidence": "Observed truthful-claims requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "truthful-claims requirement satisfied"
+            }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
-            "evidence": "Observed visual-hierarchy requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "visual-hierarchy requirement satisfied"
+            }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
-            "evidence": "Observed cta-clarity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "cta-clarity requirement satisfied"
+            }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
-            "evidence": "Observed brand-consistency requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "brand-consistency requirement satisfied"
+            }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
-            "evidence": "Observed file-size-performance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "file-size-performance requirement satisfied"
+            }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
-            "evidence": "Observed rights-provenance requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "rights-provenance requirement satisfied"
+            }
           },
           {
             "name": "owner-taste-alignment",
-            "status": "PASS",
-            "evidence": "Observed owner-taste-alignment requirement satisfied"
+            "status": "PENDING_OWNER_DECISION",
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "Owner decision has not been recorded"
+            }
           },
           {
             "name": "campaign-coherence",
             "status": "PASS",
-            "evidence": "Observed campaign-coherence requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "campaign-coherence requirement satisfied"
+            }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
-            "evidence": "Observed conversion-mechanism requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "conversion-mechanism requirement satisfied"
+            }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
-            "evidence": "Observed landing-page-continuity requirement satisfied"
+            "evidence": {
+              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+              "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "finding": "landing-page-continuity requirement satisfied"
+            }
           }
         ],
         "failureReasons": [],
+        "pendingReasons": [
+          "owner-taste-alignment"
+        ],
+        "quality_threshold_reached": true,
         "publish_allowed": false
       }
     }
   ],
   "rejection_and_regeneration_receipt": {
     "rejected_attempt": "district-signal-attempt-1",
+    "rejected_court": {
+      "schema_version": "cana.visual-verification-court/1.0.0",
+      "creative_id": "district-signal-attempt-1",
+      "status": "FAIL",
+      "score": 0.7272727272727273,
+      "threshold": 0.85,
+      "judges": [
+        {
+          "name": "genericness",
+          "status": "FAIL",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "genericness requirement failed or missing"
+          }
+        },
+        {
+          "name": "synthetic-composition",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "synthetic-composition requirement satisfied"
+          }
+        },
+        {
+          "name": "anatomy-object-consistency",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "anatomy-object-consistency requirement satisfied"
+          }
+        },
+        {
+          "name": "package-logo-correctness",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "package-logo-correctness requirement satisfied"
+          }
+        },
+        {
+          "name": "unauthorized-hallucinated-text",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "unauthorized-hallucinated-text requirement satisfied"
+          }
+        },
+        {
+          "name": "image-copy-alignment",
+          "status": "FAIL",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "image-copy-alignment requirement failed or missing"
+          }
+        },
+        {
+          "name": "local-dc-relevance",
+          "status": "FAIL",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "local-dc-relevance requirement failed or missing"
+          }
+        },
+        {
+          "name": "premium-editorial-quality",
+          "status": "FAIL",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "premium-editorial-quality requirement failed or missing"
+          }
+        },
+        {
+          "name": "mobile-crop-integrity",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "mobile-crop-integrity requirement satisfied"
+          }
+        },
+        {
+          "name": "readability",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "readability requirement satisfied"
+          }
+        },
+        {
+          "name": "accessibility",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "accessibility requirement satisfied"
+          }
+        },
+        {
+          "name": "ad-disclosure",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "ad-disclosure requirement satisfied"
+          }
+        },
+        {
+          "name": "policy-compliance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "policy-compliance requirement satisfied"
+          }
+        },
+        {
+          "name": "truthful-claims",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "truthful-claims requirement satisfied"
+          }
+        },
+        {
+          "name": "visual-hierarchy",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "visual-hierarchy requirement satisfied"
+          }
+        },
+        {
+          "name": "cta-clarity",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "cta-clarity requirement satisfied"
+          }
+        },
+        {
+          "name": "brand-consistency",
+          "status": "FAIL",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "brand-consistency requirement failed or missing"
+          }
+        },
+        {
+          "name": "file-size-performance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "file-size-performance requirement satisfied"
+          }
+        },
+        {
+          "name": "rights-provenance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "rights-provenance requirement satisfied"
+          }
+        },
+        {
+          "name": "owner-taste-alignment",
+          "status": "PENDING_OWNER_DECISION",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "Owner decision has not been recorded"
+          }
+        },
+        {
+          "name": "campaign-coherence",
+          "status": "FAIL",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "campaign-coherence requirement failed or missing"
+          }
+        },
+        {
+          "name": "conversion-mechanism",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "conversion-mechanism requirement satisfied"
+          }
+        },
+        {
+          "name": "landing-page-continuity",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
+            "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "finding": "landing-page-continuity requirement satisfied"
+          }
+        }
+      ],
+      "failureReasons": [
+        "genericness",
+        "image-copy-alignment",
+        "local-dc-relevance",
+        "premium-editorial-quality",
+        "brand-consistency",
+        "campaign-coherence"
+      ],
+      "pendingReasons": [
+        "owner-taste-alignment"
+      ],
+      "quality_threshold_reached": false,
+      "publish_allowed": false
+    },
     "accepted_attempt": "district-signal-attempt-2",
+    "accepted_court": {
+      "schema_version": "cana.visual-verification-court/1.0.0",
+      "creative_id": "district-signal-attempt-2",
+      "status": "TECHNICAL_PASS_OWNER_REVIEW_REQUIRED",
+      "score": 1,
+      "threshold": 0.85,
+      "judges": [
+        {
+          "name": "genericness",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "genericness requirement satisfied"
+          }
+        },
+        {
+          "name": "synthetic-composition",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "synthetic-composition requirement satisfied"
+          }
+        },
+        {
+          "name": "anatomy-object-consistency",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "anatomy-object-consistency requirement satisfied"
+          }
+        },
+        {
+          "name": "package-logo-correctness",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "package-logo-correctness requirement satisfied"
+          }
+        },
+        {
+          "name": "unauthorized-hallucinated-text",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "unauthorized-hallucinated-text requirement satisfied"
+          }
+        },
+        {
+          "name": "image-copy-alignment",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "image-copy-alignment requirement satisfied"
+          }
+        },
+        {
+          "name": "local-dc-relevance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "local-dc-relevance requirement satisfied"
+          }
+        },
+        {
+          "name": "premium-editorial-quality",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "premium-editorial-quality requirement satisfied"
+          }
+        },
+        {
+          "name": "mobile-crop-integrity",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "mobile-crop-integrity requirement satisfied"
+          }
+        },
+        {
+          "name": "readability",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "readability requirement satisfied"
+          }
+        },
+        {
+          "name": "accessibility",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "accessibility requirement satisfied"
+          }
+        },
+        {
+          "name": "ad-disclosure",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "ad-disclosure requirement satisfied"
+          }
+        },
+        {
+          "name": "policy-compliance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "policy-compliance requirement satisfied"
+          }
+        },
+        {
+          "name": "truthful-claims",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "truthful-claims requirement satisfied"
+          }
+        },
+        {
+          "name": "visual-hierarchy",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "visual-hierarchy requirement satisfied"
+          }
+        },
+        {
+          "name": "cta-clarity",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "cta-clarity requirement satisfied"
+          }
+        },
+        {
+          "name": "brand-consistency",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "brand-consistency requirement satisfied"
+          }
+        },
+        {
+          "name": "file-size-performance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "file-size-performance requirement satisfied"
+          }
+        },
+        {
+          "name": "rights-provenance",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "rights-provenance requirement satisfied"
+          }
+        },
+        {
+          "name": "owner-taste-alignment",
+          "status": "PENDING_OWNER_DECISION",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "Owner decision has not been recorded"
+          }
+        },
+        {
+          "name": "campaign-coherence",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "campaign-coherence requirement satisfied"
+          }
+        },
+        {
+          "name": "conversion-mechanism",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "conversion-mechanism requirement satisfied"
+          }
+        },
+        {
+          "name": "landing-page-continuity",
+          "status": "PASS",
+          "evidence": {
+            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+            "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "finding": "landing-page-continuity requirement satisfied"
+          }
+        }
+      ],
+      "failureReasons": [],
+      "pendingReasons": [
+        "owner-taste-alignment"
+      ],
+      "quality_threshold_reached": true,
+      "publish_allowed": false
+    },
     "stop_reason": "QUALITY_THRESHOLD_REACHED",
     "bounded_attempt_limit": 2
   },
@@ -1114,7 +2033,7 @@
     "provider_called": false,
     "spending_authority": "NONE"
   },
-  "generation_invocations": 8,
+  "local_fixture_generation_invocations": 8,
   "provider_calls": 0,
   "external_provider_calls": 0,
   "actual_spend_usd": 0,
@@ -1125,6 +2044,12 @@
     "campaign": {
       "id": "owd-source-before-hype",
       "concept": "Trust before handoff: make source, freshness and evidence the premium visual idea.",
+      "strategy": "approved-house-fallback",
+      "eyebrow": "Approved house fallback",
+      "headline": "Source before hype.",
+      "body": "The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.",
+      "cta": "See how evidence is labeled",
+      "alt": "Source records leading to an open doorway",
       "decision": "APPROVED_PRIMARY",
       "decisionReason": "Owner-approved primary house-campaign seed.",
       "roles": [
@@ -1137,7 +2062,8 @@
       "fallbackPriority": 1,
       "disclosure": "ORDERWEEDDC house campaign",
       "desktopAsset": "/creative/house/source-before-hype-desktop.svg",
-      "mobileAsset": "/creative/house/source-before-hype-mobile.svg"
+      "mobileAsset": "/creative/house/source-before-hype-mobile.svg",
+      "assetStatus": "APPROVED_AVAILABLE"
     },
     "reason": "No fully gated active campaign; deterministic house fallback selected",
     "affectsOrganicOrder": false,

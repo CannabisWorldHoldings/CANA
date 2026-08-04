@@ -44,11 +44,15 @@ function git(...args) {
   return execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
 }
 
-function sourceChangedPaths() {
-  return git('status', '--porcelain=v1', '--untracked-files=all')
+function sourceChangedPaths(canonicalBase) {
+  const committed = git('diff', '--name-only', canonicalBase)
     .split('\n')
-    .filter(Boolean)
-    .map((line) => line.slice(3))
+    .filter(Boolean);
+  const untracked = git('status', '--porcelain=v1', '--untracked-files=all')
+    .split('\n')
+    .filter((line) => line.startsWith('?? '))
+    .map((line) => line.slice(3));
+  return [...new Set([...committed, ...untracked])]
     .filter((candidate) => !candidate.startsWith('evidence/dynamic-creative/'))
     .sort();
 }
@@ -205,7 +209,7 @@ async function main() {
     : join(outputRoot, 'rejected-pr21');
   const rejectedPr21Evidence = await ingestRejectedPr21Evidence({ packetRoot, outputRoot });
 
-  const changedPaths = sourceChangedPaths();
+  const changedPaths = sourceChangedPaths(CANONICAL_BASE_COMMIT);
   const mergeBase = git('merge-base', 'HEAD', CANONICAL_BASE_COMMIT);
   const ancestry = auditPr21Survival({ canonicalBase: CANONICAL_BASE_COMMIT, mergeBase, changedPaths });
   const evidence = competitorEvidence();
@@ -261,6 +265,10 @@ async function main() {
     firstPartyPerformanceCount: 0, duplicateCheck: 'NOT_RUN', contaminationCheck: 'NOT_RUN',
     splits: null, antiRegressionBenchmark: null, rollbackPlan: null,
     beatsRetrievalPromptingRouting: false,
+    selectedProviderSupportsGovernedTuning: false,
+    datasetDiversityReview: 'NOT_RUN',
+    modelLineage: null,
+    ownerCostRiskApproval: 'PENDING',
   });
   const providerRegistryReceipt = {
     schema_version: 'cana.image-provider-registry/1.0.0',
@@ -268,8 +276,9 @@ async function main() {
     providers: registry.providers.map((entry) => ({
       name: entry.name, model: entry.model, capabilities: entry.capabilities, routing: entry.routing,
     })),
-    external_provider_calls: 0,
-    actual_spend_usd: 0,
+    external_provider_calls: slice.external_provider_calls,
+    actual_spend_usd: slice.actual_spend_usd,
+    execution_evidence: 'RECOMPUTED_FROM_CANONICAL_DETERMINISTIC_FIXTURE_RECEIPTS',
   };
 
   const reviewAssets = [];

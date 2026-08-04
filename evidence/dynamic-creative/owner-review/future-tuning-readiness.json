@@ -13,6 +13,10 @@
     "training/validation/holdout splits",
     "anti-regression benchmark",
     "rollback plan",
-    "material lift over retrieval prompting and routing"
+    "material lift over retrieval prompting and routing",
+    "selected provider supports governed tuning",
+    "dataset diversity review",
+    "base model and training lineage",
+    "owner cost and risk approval"
   ]
 }

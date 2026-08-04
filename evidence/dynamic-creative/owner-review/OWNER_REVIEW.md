@@ -4,6 +4,8 @@ State: `OWNER_REVIEW_REQUIRED`
 
 No candidate is approved by passing checks. Nothing in this packet authorizes merge, deployment, publication, provider spend, advertiser charge, campaign spend, cPanel access, or `prod.db` access.
 
+The homepage links below are full 1440×1100 or 390×844 browser viewports with surrounding marketplace context. The isolated links are placement crops used by the contact sheet.
+
 ## Contact sheet
 
 ![Three campaign systems in desktop and mobile variants](./renders/campaign-contact-sheet.png)

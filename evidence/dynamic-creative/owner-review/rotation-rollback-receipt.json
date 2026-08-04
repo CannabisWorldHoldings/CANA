@@ -3,6 +3,12 @@
   "campaign": {
     "id": "owd-source-before-hype",
     "concept": "Trust before handoff: make source, freshness and evidence the premium visual idea.",
+    "strategy": "approved-house-fallback",
+    "eyebrow": "Approved house fallback",
+    "headline": "Source before hype.",
+    "body": "The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.",
+    "cta": "See how evidence is labeled",
+    "alt": "Source records leading to an open doorway",
     "decision": "APPROVED_PRIMARY",
     "decisionReason": "Owner-approved primary house-campaign seed.",
     "roles": [
@@ -15,7 +21,8 @@
     "fallbackPriority": 1,
     "disclosure": "ORDERWEEDDC house campaign",
     "desktopAsset": "/creative/house/source-before-hype-desktop.svg",
-    "mobileAsset": "/creative/house/source-before-hype-mobile.svg"
+    "mobileAsset": "/creative/house/source-before-hype-mobile.svg",
+    "assetStatus": "APPROVED_AVAILABLE"
   },
   "reason": "No fully gated active campaign; deterministic house fallback selected",
   "affectsOrganicOrder": false,
