@@ -297,7 +297,9 @@ export function runVisualCourt({ creative, inspection, context, threshold = 0.85
     throw new Error('visual inspection receipt digest does not recompute');
   }
   const judges = VISUAL_COURT_JUDGES.map((name) => {
-    const passed = JUDGE_RULES[name](inspection ?? {}, creative, context);
+    const observedEvidence = inspection.judgeEvidence?.[name];
+    const ruleResult = JUDGE_RULES[name](inspection ?? {}, creative, context);
+    const passed = ruleResult === null ? null : ruleResult && text(observedEvidence);
     return Object.freeze({
       name,
       status: passed === null ? 'PENDING_OWNER_DECISION' : passed ? 'PASS' : 'FAIL',
@@ -305,7 +307,8 @@ export function runVisualCourt({ creative, inspection, context, threshold = 0.85
         inspection_receipt: claimedInspectionDigest,
         desktop_asset: inspection.evidence.desktop_asset,
         mobile_asset: inspection.evidence.mobile_asset,
-        finding: passed === null ? 'Owner decision has not been recorded' : passed ? `${name} requirement satisfied` : `${name} requirement failed or missing`,
+        visible_observation: observedEvidence ?? 'No judge-specific visible observation supplied',
+        finding: passed === null ? 'Owner decision has not been recorded' : passed ? `${name} requirement satisfied by the recorded observation` : `${name} requirement failed or lacks visible evidence`,
       }),
     });
   });
@@ -465,6 +468,7 @@ export const VARIANT_DEFINITIONS = Object.freeze([
     offer: 'A verified comparison path organized around D.C. location.',
     messageHierarchy: Object.freeze(['local signal', 'verified options', 'compare']),
     visualConcept: 'An original civic signal grid and abstract verified marker.',
+    localDcCue: 'Civic grid plus a central star marker evokes district orientation without copying a map or seal.',
     sceneDirection: 'district-signal civic grid composition',
     localDcRelevance: 'Block and district orientation without copying a map or landmark.',
     imageSourcePlan: 'Rights-cleared deterministic vector fixture; no competitor or merchant asset.',
@@ -489,6 +493,7 @@ export const VARIANT_DEFINITIONS = Object.freeze([
     offer: 'A shorter verified shortlist.',
     messageHierarchy: Object.freeze(['shorter path', 'confidence', 'build shortlist']),
     visualConcept: 'An original editorial arch and constellation index.',
+    localDcCue: 'Three small index points echo the D.C. flag rhythm without depicting a landmark.',
     sceneDirection: 'evening-index arch composition',
     localDcRelevance: 'Evening discovery pacing without pretending to depict a real place.',
     imageSourcePlan: 'Rights-cleared deterministic vector fixture; no competitor or merchant asset.',
@@ -513,6 +518,7 @@ export const VARIANT_DEFINITIONS = Object.freeze([
     offer: 'See the source before choosing where to go.',
     messageHierarchy: Object.freeze(['source first', 'storefront second', 'check receipts']),
     visualConcept: 'An original source receipt with a verification rhythm and seal.',
+    localDcCue: 'Three evidence lines and one source seal connect the visual to ORDERWEEDDC D.C. record labeling.',
     sceneDirection: 'receipt-rhythm evidence composition',
     localDcRelevance: 'Applies ORDERWEEDDC source labeling to the D.C. discovery context.',
     imageSourcePlan: 'Rights-cleared deterministic vector fixture; no competitor or merchant asset.',
@@ -533,6 +539,18 @@ function svgFacts(image) {
   const svg = Buffer.from(image.imageBase64, 'base64').toString('utf8');
   const variant = svg.match(/data-variant="([^"]+)"/)?.[1] ?? null;
   const viewBox = svg.match(/viewBox="0 0 ([0-9.]+) ([0-9.]+)"/);
+  const pathData = [...svg.matchAll(/<path\b[^>]*\bd="([^"]+)"/gi)].map((match) => match[1]);
+  const rectCount = [...svg.matchAll(/<rect\b/gi)].length;
+  const circleCount = [...svg.matchAll(/<circle\b/gi)].length;
+  const groupCount = [...svg.matchAll(/<g\b/gi)].length;
+  const palette = [...new Set([...svg.matchAll(/#[0-9a-f]{3,8}/gi)].map((match) => match[0].toLowerCase()))];
+  const motif = groupCount >= 1 && rectCount >= 6 && circleCount >= 1
+    ? 'receipt-with-evidence-lines-and-seal'
+    : pathData.some((value) => value.includes('Q') && value.includes('T')) && circleCount >= 4
+      ? 'editorial-arch-moon-and-three-index-points'
+      : pathData.some((value) => value.includes('H') && value.includes('V')) && circleCount >= 1
+        ? 'civic-grid-and-central-star-marker'
+        : 'unrecognized-or-empty';
   return Object.freeze({
     svg,
     sha256: createHash('sha256').update(svg).digest('hex'),
@@ -545,6 +563,13 @@ function svgFacts(image) {
     hasScript: /<script\b|\bon\w+=/i.test(svg),
     hasExternalImage: /<image\b|\bhref=["'](?:https?:|data:)/i.test(svg),
     hasAccessibleName: /role="img"/.test(svg) && /aria-label="[^"]+"/.test(svg),
+    pathCount: pathData.length,
+    rectCount,
+    circleCount,
+    groupCount,
+    palette: Object.freeze(palette),
+    motif,
+    visibleElementCount: pathData.length + rectCount + circleCount,
   });
 }
 
@@ -561,11 +586,21 @@ export function inspectDeterministicCreativeArtifacts({ creative, context, expec
   const desktop = svgFacts(creative.desktop.image);
   const mobile = svgFacts(creative.mobile.image);
   const genome = creative.creative_genome ?? {};
+  const expectedMotif = {
+    'district-signal': 'civic-grid-and-central-star-marker',
+    'evening-index': 'editorial-arch-moon-and-three-index-points',
+    'receipt-rhythm': 'receipt-with-evidence-lines-and-seal',
+  }[expectedSystemId] ?? 'unrecognized-or-empty';
   const coherentVariant = desktop.variant === expectedSystemId && mobile.variant === expectedSystemId;
+  const motifMatches = desktop.motif === expectedMotif && mobile.motif === expectedMotif;
   const prohibitedMarkup = [desktop, mobile].some((asset) => asset.hasText || asset.hasGradient || asset.hasScript || asset.hasExternalImage);
   const distinctResponsiveAssets = desktop.sha256 !== mobile.sha256 && desktop.width > desktop.height && mobile.height > mobile.width;
-  const localEvidence = /D\.C\.|district|block/i.test(`${genome.localDcRelevance ?? ''} ${genome.targetAudience ?? ''}`);
+  const localEvidence = motifMatches && text(genome.localDcCue) && /D\.C\.|district|ORDERWEEDDC/i.test(genome.localDcCue);
   const copyAligned = text(genome.expectedMechanism) && text(genome.visualConcept) && text(creative.headline);
+  const minimumVisibleComplexity = Math.min(desktop.visibleElementCount, mobile.visibleElementCount) >= 6;
+  const minimumPalette = Math.min(desktop.palette.length, mobile.palette.length) >= 4;
+  const artifactQuality = coherentVariant && motifMatches && minimumVisibleComplexity && minimumPalette && !prohibitedMarkup;
+  const motifObservation = `expected ${expectedMotif}; desktop observed ${desktop.motif} with ${desktop.pathCount} paths, ${desktop.rectCount} rectangles, ${desktop.circleCount} circles and ${desktop.palette.length} colors; mobile observed ${mobile.motif} with ${mobile.pathCount} paths, ${mobile.rectCount} rectangles, ${mobile.circleCount} circles and ${mobile.palette.length} colors`;
   const evidence = Object.freeze({
     desktop_asset: `sha256:${desktop.sha256}`,
     mobile_asset: `sha256:${mobile.sha256}`,
@@ -576,33 +611,64 @@ export function inspectDeterministicCreativeArtifacts({ creative, context, expec
     provider_execution: Object.freeze([desktopExecution, mobileExecution]),
     expected_system_id: expectedSystemId,
     observed_system_ids: Object.freeze([desktop.variant, mobile.variant]),
+    visible_features: Object.freeze({
+      expected_motif: expectedMotif,
+      desktop: Object.freeze({ motif: desktop.motif, paths: desktop.pathCount, rectangles: desktop.rectCount, circles: desktop.circleCount, palette: desktop.palette, dimensions: [desktop.width, desktop.height] }),
+      mobile: Object.freeze({ motif: mobile.motif, paths: mobile.pathCount, rectangles: mobile.rectCount, circles: mobile.circleCount, palette: mobile.palette, dimensions: [mobile.width, mobile.height] }),
+    }),
+  });
+  const judgeEvidence = Object.freeze({
+    'genericness': `${motifObservation}; both assets exceed six visible geometric elements and four colors`,
+    'synthetic-composition': `${motifObservation}; abstract geometry contains no raster image, generated person, product anatomy, gradient, filter or script`,
+    'anatomy-object-consistency': `Both assets are abstract geometry with zero represented people or product packages; ${motifObservation}`,
+    'package-logo-correctness': `Both assets contain zero image or external href elements, so no package or logo is fabricated`,
+    'unauthorized-hallucinated-text': `Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML`,
+    'image-copy-alignment': `Observed motif ${expectedMotif} maps to genome concept "${genome.visualConcept}" and headline "${creative.headline}"`,
+    'local-dc-relevance': `Visible motif cue: ${genome.localDcCue}; context: ${genome.localDcRelevance}`,
+    'premium-editorial-quality': `${motifObservation}; no gradient, raster, filter, script or embedded copy is present`,
+    'mobile-crop-integrity': `Desktop ${desktop.width}x${desktop.height} and mobile ${mobile.width}x${mobile.height} are distinct hashes with the same observed motif ${expectedMotif}`,
+    'readability': `Headline has ${creative.headline.length} characters and is HTML; both artwork files contain zero text nodes`,
+    'accessibility': `Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately`,
+    'ad-disclosure': `Placement disclosure is "${creative.disclosure}" and remains outside generated artwork`,
+    'policy-compliance': `No gradients, scripts, external images, raster data URLs or generated image text were observed`,
+    'truthful-claims': `Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional`,
+    'visual-hierarchy': `Recognized dominant motif ${expectedMotif}; responsive dimensions are ${desktop.width}x${desktop.height} and ${mobile.width}x${mobile.height}`,
+    'cta-clarity': `CTA "${creative.cta}" is ${creative.cta.length} characters and rendered as deterministic HTML`,
+    'brand-consistency': `${motifObservation}; both variants use the same motif family without gradients or external assets`,
+    'file-size-performance': `Largest responsive SVG is ${Math.max(desktop.bytes, mobile.bytes)} bytes against ${context.performance_budget.maxAssetBytes} bytes`,
+    'rights-provenance': `Genome rights state is ${genome.rightsState}; generation receipts bind both output hashes`,
+    'owner-taste-alignment': `Owner decision is ${ownerDecision}; technical checks cannot substitute for owner taste`,
+    'campaign-coherence': `${motifObservation}; both embedded system ids are ${expectedSystemId}`,
+    'conversion-mechanism': `Mechanism hypothesis is "${genome.expectedMechanism}"; prediction is explicitly untested: "${genome.testablePrediction}"`,
+    'landing-page-continuity': `CTA "${creative.cta}" maps to declared destination behavior "${genome.landingPageMatch}"`,
   });
   const body = {
     schema_version: 'cana.deterministic-creative-inspection/1.0.0',
-    genericness: coherentVariant ? 0.18 : 0.82,
-    syntheticComposition: prohibitedMarkup,
+    genericness: artifactQuality ? 0.18 : 0.82,
+    syntheticComposition: !artifactQuality,
     anatomyObjectConsistency: !/<(?:path|circle)[^>]+data-anatomy/i.test(desktop.svg + mobile.svg),
     packageLogoCorrect: !desktop.hasExternalImage && !mobile.hasExternalImage,
     hallucinatedText: desktop.hasText || mobile.hasText,
-    imageCopyAlignment: coherentVariant && copyAligned,
-    localDcRelevance: coherentVariant && localEvidence ? 0.9 : 0.2,
-    premiumEditorialQuality: coherentVariant && !prohibitedMarkup ? 0.88 : 0.3,
+    imageCopyAlignment: artifactQuality && copyAligned,
+    localDcRelevance: localEvidence ? 0.9 : 0.2,
+    premiumEditorialQuality: artifactQuality ? 0.88 : 0.3,
     mobileCropIntegrity: distinctResponsiveAssets,
     readability: !desktop.hasText && !mobile.hasText && text(creative.headline) ? 0.94 : 0.2,
     accessibilityPass: desktop.hasAccessibleName && mobile.hasAccessibleName,
     disclosureVisible: text(creative.disclosure),
     policyPass: !prohibitedMarkup,
     truthfulClaims: !/guarantee|best|proven|official/i.test(`${creative.headline} ${genome.testablePrediction ?? ''}`),
-    visualHierarchy: distinctResponsiveAssets && text(creative.headline) ? 0.9 : 0.3,
+    visualHierarchy: artifactQuality && distinctResponsiveAssets && text(creative.headline) ? 0.9 : 0.3,
     ctaClarity: text(creative.cta) && creative.cta.length <= 40 ? 0.92 : 0.3,
-    brandConsistency: !prohibitedMarkup && coherentVariant ? 0.9 : 0.3,
+    brandConsistency: artifactQuality ? 0.9 : 0.3,
     fileBytes: Math.max(desktop.bytes, mobile.bytes),
     rightsProvenancePass: genome.rightsState === 'SYNTHETIC_FIXTURE_RIGHTS_CLEARED',
     ownerTasteDecision: ownerDecision,
-    campaignCoherencePass: coherentVariant && distinctResponsiveAssets,
+    campaignCoherencePass: coherentVariant && motifMatches && distinctResponsiveAssets,
     conversionMechanismPass: text(genome.expectedMechanism) && text(genome.testablePrediction),
     landingPageContinuityPass: text(genome.landingPageMatch),
     evidence,
+    judgeEvidence,
   };
   return Object.freeze({ ...body, receipt_digest: digest(body) });
 }

@@ -64,6 +64,7 @@
           "compare"
         ],
         "visualConcept": "An original civic signal grid and abstract verified marker.",
+        "localDcCue": "Civic grid plus a central star marker evokes district orientation without copying a map or seal.",
         "sceneDirection": "district-signal civic grid composition",
         "localDcRelevance": "Block and district orientation without copying a map or landmark.",
         "imageSourcePlan": "Rights-cleared deterministic vector fixture; no competitor or merchant asset.",
@@ -170,7 +171,7 @@
           ],
           "receipt": {
             "imageSha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
-            "verifiedAt": "2026-08-04T04:49:19.835Z",
+            "verifiedAt": "2026-08-04T04:56:43.918Z",
             "failedChecks": []
           }
         },
@@ -268,7 +269,7 @@
           ],
           "receipt": {
             "imageSha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "verifiedAt": "2026-08-04T04:49:19.835Z",
+            "verifiedAt": "2026-08-04T04:56:43.918Z",
             "failedChecks": []
           }
         },
@@ -293,199 +294,219 @@
             "name": "genericness",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "genericness requirement satisfied"
+              "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; both assets exceed six visible geometric elements and four colors",
+              "finding": "genericness requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "synthetic-composition requirement satisfied"
+              "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; abstract geometry contains no raster image, generated person, product anatomy, gradient, filter or script",
+              "finding": "synthetic-composition requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "anatomy-object-consistency requirement satisfied"
+              "visible_observation": "Both assets are abstract geometry with zero represented people or product packages; expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors",
+              "finding": "anatomy-object-consistency requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "package-logo-correctness requirement satisfied"
+              "visible_observation": "Both assets contain zero image or external href elements, so no package or logo is fabricated",
+              "finding": "package-logo-correctness requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "unauthorized-hallucinated-text requirement satisfied"
+              "visible_observation": "Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML",
+              "finding": "unauthorized-hallucinated-text requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "image-copy-alignment requirement satisfied"
+              "visible_observation": "Observed motif civic-grid-and-central-star-marker maps to genome concept \"An original civic signal grid and abstract verified marker.\" and headline \"Find the signal on your side of D.C.\"",
+              "finding": "image-copy-alignment requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "local-dc-relevance requirement satisfied"
+              "visible_observation": "Visible motif cue: Civic grid plus a central star marker evokes district orientation without copying a map or seal.; context: Block and district orientation without copying a map or landmark.",
+              "finding": "local-dc-relevance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "premium-editorial-quality requirement satisfied"
+              "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; no gradient, raster, filter, script or embedded copy is present",
+              "finding": "premium-editorial-quality requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "mobile-crop-integrity requirement satisfied"
+              "visible_observation": "Desktop 1600x900 and mobile 800x1000 are distinct hashes with the same observed motif civic-grid-and-central-star-marker",
+              "finding": "mobile-crop-integrity requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "readability",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "readability requirement satisfied"
+              "visible_observation": "Headline has 36 characters and is HTML; both artwork files contain zero text nodes",
+              "finding": "readability requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "accessibility",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "accessibility requirement satisfied"
+              "visible_observation": "Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately",
+              "finding": "accessibility requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "ad-disclosure requirement satisfied"
+              "visible_observation": "Placement disclosure is \"Sponsored\" and remains outside generated artwork",
+              "finding": "ad-disclosure requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "policy-compliance requirement satisfied"
+              "visible_observation": "No gradients, scripts, external images, raster data URLs or generated image text were observed",
+              "finding": "policy-compliance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "truthful-claims requirement satisfied"
+              "visible_observation": "Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional",
+              "finding": "truthful-claims requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "visual-hierarchy requirement satisfied"
+              "visible_observation": "Recognized dominant motif civic-grid-and-central-star-marker; responsive dimensions are 1600x900 and 800x1000",
+              "finding": "visual-hierarchy requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "cta-clarity requirement satisfied"
+              "visible_observation": "CTA \"Compare verified options\" is 24 characters and rendered as deterministic HTML",
+              "finding": "cta-clarity requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "brand-consistency requirement satisfied"
+              "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; both variants use the same motif family without gradients or external assets",
+              "finding": "brand-consistency requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "file-size-performance requirement satisfied"
+              "visible_observation": "Largest responsive SVG is 775 bytes against 180000 bytes",
+              "finding": "file-size-performance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "rights-provenance requirement satisfied"
+              "visible_observation": "Genome rights state is SYNTHETIC_FIXTURE_RIGHTS_CLEARED; generation receipts bind both output hashes",
+              "finding": "rights-provenance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "owner-taste-alignment",
             "status": "PENDING_OWNER_DECISION",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+              "visible_observation": "Owner decision is PENDING; technical checks cannot substitute for owner taste",
               "finding": "Owner decision has not been recorded"
             }
           },
@@ -493,30 +514,33 @@
             "name": "campaign-coherence",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "campaign-coherence requirement satisfied"
+              "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; both embedded system ids are district-signal",
+              "finding": "campaign-coherence requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "conversion-mechanism requirement satisfied"
+              "visible_observation": "Mechanism hypothesis is \"Local orientation reduces discovery friction.\"; prediction is explicitly untested: \"Owner-approved variant may increase qualified comparison starts versus the house fallback; not yet tested.\"",
+              "finding": "conversion-mechanism requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+              "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
               "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
               "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-              "finding": "landing-page-continuity requirement satisfied"
+              "visible_observation": "CTA \"Compare verified options\" maps to declared destination behavior \"Verified directory comparison.\"",
+              "finding": "landing-page-continuity requirement satisfied by the recorded observation"
             }
           }
         ],
@@ -547,6 +571,7 @@
           "build shortlist"
         ],
         "visualConcept": "An original editorial arch and constellation index.",
+        "localDcCue": "Three small index points echo the D.C. flag rhythm without depicting a landmark.",
         "sceneDirection": "evening-index arch composition",
         "localDcRelevance": "Evening discovery pacing without pretending to depict a real place.",
         "imageSourcePlan": "Rights-cleared deterministic vector fixture; no competitor or merchant asset.",
@@ -653,7 +678,7 @@
           ],
           "receipt": {
             "imageSha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
-            "verifiedAt": "2026-08-04T04:49:19.836Z",
+            "verifiedAt": "2026-08-04T04:56:43.919Z",
             "failedChecks": []
           }
         },
@@ -751,7 +776,7 @@
           ],
           "receipt": {
             "imageSha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-            "verifiedAt": "2026-08-04T04:49:19.836Z",
+            "verifiedAt": "2026-08-04T04:56:43.919Z",
             "failedChecks": []
           }
         },
@@ -776,199 +801,219 @@
             "name": "genericness",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "genericness requirement satisfied"
+              "visible_observation": "expected editorial-arch-moon-and-three-index-points; desktop observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; mobile observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; both assets exceed six visible geometric elements and four colors",
+              "finding": "genericness requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "synthetic-composition requirement satisfied"
+              "visible_observation": "expected editorial-arch-moon-and-three-index-points; desktop observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; mobile observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; abstract geometry contains no raster image, generated person, product anatomy, gradient, filter or script",
+              "finding": "synthetic-composition requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "anatomy-object-consistency requirement satisfied"
+              "visible_observation": "Both assets are abstract geometry with zero represented people or product packages; expected editorial-arch-moon-and-three-index-points; desktop observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; mobile observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors",
+              "finding": "anatomy-object-consistency requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "package-logo-correctness requirement satisfied"
+              "visible_observation": "Both assets contain zero image or external href elements, so no package or logo is fabricated",
+              "finding": "package-logo-correctness requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "unauthorized-hallucinated-text requirement satisfied"
+              "visible_observation": "Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML",
+              "finding": "unauthorized-hallucinated-text requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "image-copy-alignment requirement satisfied"
+              "visible_observation": "Observed motif editorial-arch-moon-and-three-index-points maps to genome concept \"An original editorial arch and constellation index.\" and headline \"A shorter path to a confident choice.\"",
+              "finding": "image-copy-alignment requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "local-dc-relevance requirement satisfied"
+              "visible_observation": "Visible motif cue: Three small index points echo the D.C. flag rhythm without depicting a landmark.; context: Evening discovery pacing without pretending to depict a real place.",
+              "finding": "local-dc-relevance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "premium-editorial-quality requirement satisfied"
+              "visible_observation": "expected editorial-arch-moon-and-three-index-points; desktop observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; mobile observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; no gradient, raster, filter, script or embedded copy is present",
+              "finding": "premium-editorial-quality requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "mobile-crop-integrity requirement satisfied"
+              "visible_observation": "Desktop 1600x900 and mobile 800x1000 are distinct hashes with the same observed motif editorial-arch-moon-and-three-index-points",
+              "finding": "mobile-crop-integrity requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "readability",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "readability requirement satisfied"
+              "visible_observation": "Headline has 37 characters and is HTML; both artwork files contain zero text nodes",
+              "finding": "readability requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "accessibility",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "accessibility requirement satisfied"
+              "visible_observation": "Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately",
+              "finding": "accessibility requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "ad-disclosure requirement satisfied"
+              "visible_observation": "Placement disclosure is \"Sponsored\" and remains outside generated artwork",
+              "finding": "ad-disclosure requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "policy-compliance requirement satisfied"
+              "visible_observation": "No gradients, scripts, external images, raster data URLs or generated image text were observed",
+              "finding": "policy-compliance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "truthful-claims requirement satisfied"
+              "visible_observation": "Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional",
+              "finding": "truthful-claims requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "visual-hierarchy requirement satisfied"
+              "visible_observation": "Recognized dominant motif editorial-arch-moon-and-three-index-points; responsive dimensions are 1600x900 and 800x1000",
+              "finding": "visual-hierarchy requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "cta-clarity requirement satisfied"
+              "visible_observation": "CTA \"Build a verified shortlist\" is 26 characters and rendered as deterministic HTML",
+              "finding": "cta-clarity requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "brand-consistency requirement satisfied"
+              "visible_observation": "expected editorial-arch-moon-and-three-index-points; desktop observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; mobile observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; both variants use the same motif family without gradients or external assets",
+              "finding": "brand-consistency requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "file-size-performance requirement satisfied"
+              "visible_observation": "Largest responsive SVG is 762 bytes against 180000 bytes",
+              "finding": "file-size-performance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "rights-provenance requirement satisfied"
+              "visible_observation": "Genome rights state is SYNTHETIC_FIXTURE_RIGHTS_CLEARED; generation receipts bind both output hashes",
+              "finding": "rights-provenance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "owner-taste-alignment",
             "status": "PENDING_OWNER_DECISION",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+              "visible_observation": "Owner decision is PENDING; technical checks cannot substitute for owner taste",
               "finding": "Owner decision has not been recorded"
             }
           },
@@ -976,30 +1021,33 @@
             "name": "campaign-coherence",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "campaign-coherence requirement satisfied"
+              "visible_observation": "expected editorial-arch-moon-and-three-index-points; desktop observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; mobile observed editorial-arch-moon-and-three-index-points with 3 paths, 1 rectangles, 4 circles and 4 colors; both embedded system ids are evening-index",
+              "finding": "campaign-coherence requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "conversion-mechanism requirement satisfied"
+              "visible_observation": "Mechanism hypothesis is \"Bounded choice reduces cognitive load.\"; prediction is explicitly untested: \"Owner-approved variant may increase saved shortlist creation; not yet tested.\"",
+              "finding": "conversion-mechanism requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "5321d3800a84c38308ea4fc43d5c76bb32af0a493d44af0039690dbe0c3bbbe1",
+              "inspection_receipt": "c7f94e4bfc4e7aeef63596f0bdf3e930fca646afe0865ecc0e21825ad0ecf329",
               "desktop_asset": "sha256:c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
               "mobile_asset": "sha256:4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
-              "finding": "landing-page-continuity requirement satisfied"
+              "visible_observation": "CTA \"Build a verified shortlist\" maps to declared destination behavior \"Filterable verified directory shortlist.\"",
+              "finding": "landing-page-continuity requirement satisfied by the recorded observation"
             }
           }
         ],
@@ -1030,6 +1078,7 @@
           "check receipts"
         ],
         "visualConcept": "An original source receipt with a verification rhythm and seal.",
+        "localDcCue": "Three evidence lines and one source seal connect the visual to ORDERWEEDDC D.C. record labeling.",
         "sceneDirection": "receipt-rhythm evidence composition",
         "localDcRelevance": "Applies ORDERWEEDDC source labeling to the D.C. discovery context.",
         "imageSourcePlan": "Rights-cleared deterministic vector fixture; no competitor or merchant asset.",
@@ -1136,7 +1185,7 @@
           ],
           "receipt": {
             "imageSha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
-            "verifiedAt": "2026-08-04T04:49:19.836Z",
+            "verifiedAt": "2026-08-04T04:56:43.920Z",
             "failedChecks": []
           }
         },
@@ -1234,7 +1283,7 @@
           ],
           "receipt": {
             "imageSha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-            "verifiedAt": "2026-08-04T04:49:19.836Z",
+            "verifiedAt": "2026-08-04T04:56:43.920Z",
             "failedChecks": []
           }
         },
@@ -1259,199 +1308,219 @@
             "name": "genericness",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "genericness requirement satisfied"
+              "visible_observation": "expected receipt-with-evidence-lines-and-seal; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; both assets exceed six visible geometric elements and four colors",
+              "finding": "genericness requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "synthetic-composition",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "synthetic-composition requirement satisfied"
+              "visible_observation": "expected receipt-with-evidence-lines-and-seal; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; abstract geometry contains no raster image, generated person, product anatomy, gradient, filter or script",
+              "finding": "synthetic-composition requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "anatomy-object-consistency",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "anatomy-object-consistency requirement satisfied"
+              "visible_observation": "Both assets are abstract geometry with zero represented people or product packages; expected receipt-with-evidence-lines-and-seal; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors",
+              "finding": "anatomy-object-consistency requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "package-logo-correctness",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "package-logo-correctness requirement satisfied"
+              "visible_observation": "Both assets contain zero image or external href elements, so no package or logo is fabricated",
+              "finding": "package-logo-correctness requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "unauthorized-hallucinated-text",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "unauthorized-hallucinated-text requirement satisfied"
+              "visible_observation": "Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML",
+              "finding": "unauthorized-hallucinated-text requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "image-copy-alignment",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "image-copy-alignment requirement satisfied"
+              "visible_observation": "Observed motif receipt-with-evidence-lines-and-seal maps to genome concept \"An original source receipt with a verification rhythm and seal.\" and headline \"See the source before the storefront.\"",
+              "finding": "image-copy-alignment requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "local-dc-relevance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "local-dc-relevance requirement satisfied"
+              "visible_observation": "Visible motif cue: Three evidence lines and one source seal connect the visual to ORDERWEEDDC D.C. record labeling.; context: Applies ORDERWEEDDC source labeling to the D.C. discovery context.",
+              "finding": "local-dc-relevance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "premium-editorial-quality",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "premium-editorial-quality requirement satisfied"
+              "visible_observation": "expected receipt-with-evidence-lines-and-seal; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; no gradient, raster, filter, script or embedded copy is present",
+              "finding": "premium-editorial-quality requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "mobile-crop-integrity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "mobile-crop-integrity requirement satisfied"
+              "visible_observation": "Desktop 1600x900 and mobile 800x1000 are distinct hashes with the same observed motif receipt-with-evidence-lines-and-seal",
+              "finding": "mobile-crop-integrity requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "readability",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "readability requirement satisfied"
+              "visible_observation": "Headline has 37 characters and is HTML; both artwork files contain zero text nodes",
+              "finding": "readability requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "accessibility",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "accessibility requirement satisfied"
+              "visible_observation": "Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately",
+              "finding": "accessibility requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "ad-disclosure",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "ad-disclosure requirement satisfied"
+              "visible_observation": "Placement disclosure is \"Sponsored\" and remains outside generated artwork",
+              "finding": "ad-disclosure requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "policy-compliance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "policy-compliance requirement satisfied"
+              "visible_observation": "No gradients, scripts, external images, raster data URLs or generated image text were observed",
+              "finding": "policy-compliance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "truthful-claims",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "truthful-claims requirement satisfied"
+              "visible_observation": "Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional",
+              "finding": "truthful-claims requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "visual-hierarchy",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "visual-hierarchy requirement satisfied"
+              "visible_observation": "Recognized dominant motif receipt-with-evidence-lines-and-seal; responsive dimensions are 1600x900 and 800x1000",
+              "finding": "visual-hierarchy requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "cta-clarity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "cta-clarity requirement satisfied"
+              "visible_observation": "CTA \"Check the receipts\" is 18 characters and rendered as deterministic HTML",
+              "finding": "cta-clarity requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "brand-consistency",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "brand-consistency requirement satisfied"
+              "visible_observation": "expected receipt-with-evidence-lines-and-seal; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; both variants use the same motif family without gradients or external assets",
+              "finding": "brand-consistency requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "file-size-performance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "file-size-performance requirement satisfied"
+              "visible_observation": "Largest responsive SVG is 914 bytes against 180000 bytes",
+              "finding": "file-size-performance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "rights-provenance",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "rights-provenance requirement satisfied"
+              "visible_observation": "Genome rights state is SYNTHETIC_FIXTURE_RIGHTS_CLEARED; generation receipts bind both output hashes",
+              "finding": "rights-provenance requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "owner-taste-alignment",
             "status": "PENDING_OWNER_DECISION",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+              "visible_observation": "Owner decision is PENDING; technical checks cannot substitute for owner taste",
               "finding": "Owner decision has not been recorded"
             }
           },
@@ -1459,30 +1528,33 @@
             "name": "campaign-coherence",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "campaign-coherence requirement satisfied"
+              "visible_observation": "expected receipt-with-evidence-lines-and-seal; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; both embedded system ids are receipt-rhythm",
+              "finding": "campaign-coherence requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "conversion-mechanism",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "conversion-mechanism requirement satisfied"
+              "visible_observation": "Mechanism hypothesis is \"Evidence proximity builds trust before handoff.\"; prediction is explicitly untested: \"Owner-approved variant may increase qualified source-detail views; not yet tested.\"",
+              "finding": "conversion-mechanism requirement satisfied by the recorded observation"
             }
           },
           {
             "name": "landing-page-continuity",
             "status": "PASS",
             "evidence": {
-              "inspection_receipt": "c7f1c716fbd13170b91082a2bb3f8487c6b310d3b8563cb0ad193146563c3f95",
+              "inspection_receipt": "007484bd1b9f173a76347adff87801d34cb354c578c85f7f586fc4661fc2d997",
               "desktop_asset": "sha256:c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
               "mobile_asset": "sha256:dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
-              "finding": "landing-page-continuity requirement satisfied"
+              "visible_observation": "CTA \"Check the receipts\" maps to declared destination behavior \"Source and freshness labels on directory records.\"",
+              "finding": "landing-page-continuity requirement satisfied by the recorded observation"
             }
           }
         ],
@@ -1501,206 +1573,226 @@
       "schema_version": "cana.visual-verification-court/1.0.0",
       "creative_id": "district-signal-attempt-1",
       "status": "FAIL",
-      "score": 0.7272727272727273,
+      "score": 0.6363636363636364,
       "threshold": 0.85,
       "judges": [
         {
           "name": "genericness",
           "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "genericness requirement failed or missing"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; both assets exceed six visible geometric elements and four colors",
+            "finding": "genericness requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "synthetic-composition",
-          "status": "PASS",
+          "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "synthetic-composition requirement satisfied"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; abstract geometry contains no raster image, generated person, product anatomy, gradient, filter or script",
+            "finding": "synthetic-composition requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "anatomy-object-consistency",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "anatomy-object-consistency requirement satisfied"
+            "visible_observation": "Both assets are abstract geometry with zero represented people or product packages; expected civic-grid-and-central-star-marker; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors",
+            "finding": "anatomy-object-consistency requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "package-logo-correctness",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "package-logo-correctness requirement satisfied"
+            "visible_observation": "Both assets contain zero image or external href elements, so no package or logo is fabricated",
+            "finding": "package-logo-correctness requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "unauthorized-hallucinated-text",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "unauthorized-hallucinated-text requirement satisfied"
+            "visible_observation": "Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML",
+            "finding": "unauthorized-hallucinated-text requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "image-copy-alignment",
           "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "image-copy-alignment requirement failed or missing"
+            "visible_observation": "Observed motif civic-grid-and-central-star-marker maps to genome concept \"An original civic signal grid and abstract verified marker.\" and headline \"Find the signal on your side of D.C.\"",
+            "finding": "image-copy-alignment requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "local-dc-relevance",
           "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "local-dc-relevance requirement failed or missing"
+            "visible_observation": "Visible motif cue: Civic grid plus a central star marker evokes district orientation without copying a map or seal.; context: Block and district orientation without copying a map or landmark.",
+            "finding": "local-dc-relevance requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "premium-editorial-quality",
           "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "premium-editorial-quality requirement failed or missing"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; no gradient, raster, filter, script or embedded copy is present",
+            "finding": "premium-editorial-quality requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "mobile-crop-integrity",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "mobile-crop-integrity requirement satisfied"
+            "visible_observation": "Desktop 1600x900 and mobile 800x1000 are distinct hashes with the same observed motif civic-grid-and-central-star-marker",
+            "finding": "mobile-crop-integrity requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "readability",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "readability requirement satisfied"
+            "visible_observation": "Headline has 36 characters and is HTML; both artwork files contain zero text nodes",
+            "finding": "readability requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "accessibility",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "accessibility requirement satisfied"
+            "visible_observation": "Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately",
+            "finding": "accessibility requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "ad-disclosure",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "ad-disclosure requirement satisfied"
+            "visible_observation": "Placement disclosure is \"Sponsored\" and remains outside generated artwork",
+            "finding": "ad-disclosure requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "policy-compliance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "policy-compliance requirement satisfied"
+            "visible_observation": "No gradients, scripts, external images, raster data URLs or generated image text were observed",
+            "finding": "policy-compliance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "truthful-claims",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "truthful-claims requirement satisfied"
+            "visible_observation": "Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional",
+            "finding": "truthful-claims requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "visual-hierarchy",
-          "status": "PASS",
+          "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "visual-hierarchy requirement satisfied"
+            "visible_observation": "Recognized dominant motif civic-grid-and-central-star-marker; responsive dimensions are 1600x900 and 800x1000",
+            "finding": "visual-hierarchy requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "cta-clarity",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "cta-clarity requirement satisfied"
+            "visible_observation": "CTA \"Compare verified options\" is 24 characters and rendered as deterministic HTML",
+            "finding": "cta-clarity requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "brand-consistency",
           "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "brand-consistency requirement failed or missing"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; both variants use the same motif family without gradients or external assets",
+            "finding": "brand-consistency requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "file-size-performance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "file-size-performance requirement satisfied"
+            "visible_observation": "Largest responsive SVG is 916 bytes against 180000 bytes",
+            "finding": "file-size-performance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "rights-provenance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "rights-provenance requirement satisfied"
+            "visible_observation": "Genome rights state is SYNTHETIC_FIXTURE_RIGHTS_CLEARED; generation receipts bind both output hashes",
+            "finding": "rights-provenance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "owner-taste-alignment",
           "status": "PENDING_OWNER_DECISION",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
+            "visible_observation": "Owner decision is PENDING; technical checks cannot substitute for owner taste",
             "finding": "Owner decision has not been recorded"
           }
         },
@@ -1708,38 +1800,43 @@
           "name": "campaign-coherence",
           "status": "FAIL",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "campaign-coherence requirement failed or missing"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; mobile observed receipt-with-evidence-lines-and-seal with 2 paths, 6 rectangles, 1 circles and 4 colors; both embedded system ids are district-signal",
+            "finding": "campaign-coherence requirement failed or lacks visible evidence"
           }
         },
         {
           "name": "conversion-mechanism",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "conversion-mechanism requirement satisfied"
+            "visible_observation": "Mechanism hypothesis is \"Local orientation reduces discovery friction.\"; prediction is explicitly untested: \"Owner-approved variant may increase qualified comparison starts versus the house fallback; not yet tested.\"",
+            "finding": "conversion-mechanism requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "landing-page-continuity",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "50d8376ab3adfe17e1f0ea9806903aaf504206bd53be28663c1493da87568a45",
+            "inspection_receipt": "597ec06769acab31b3e54e4e1f40a7affd288c76ce721752926d61ca273d0603",
             "desktop_asset": "sha256:1eb989be465a7dc418d04f9d47686bc9c702709aef56dadcf0b3434b5d2ed224",
             "mobile_asset": "sha256:c3ec961f76ea7e0a05134d6ba17b278dc2d39392c21690f2c663fc14a6c4feaa",
-            "finding": "landing-page-continuity requirement satisfied"
+            "visible_observation": "CTA \"Compare verified options\" maps to declared destination behavior \"Verified directory comparison.\"",
+            "finding": "landing-page-continuity requirement satisfied by the recorded observation"
           }
         }
       ],
       "failureReasons": [
         "genericness",
+        "synthetic-composition",
         "image-copy-alignment",
         "local-dc-relevance",
         "premium-editorial-quality",
+        "visual-hierarchy",
         "brand-consistency",
         "campaign-coherence"
       ],
@@ -1761,199 +1858,219 @@
           "name": "genericness",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "genericness requirement satisfied"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; both assets exceed six visible geometric elements and four colors",
+            "finding": "genericness requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "synthetic-composition",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "synthetic-composition requirement satisfied"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; abstract geometry contains no raster image, generated person, product anatomy, gradient, filter or script",
+            "finding": "synthetic-composition requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "anatomy-object-consistency",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "anatomy-object-consistency requirement satisfied"
+            "visible_observation": "Both assets are abstract geometry with zero represented people or product packages; expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors",
+            "finding": "anatomy-object-consistency requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "package-logo-correctness",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "package-logo-correctness requirement satisfied"
+            "visible_observation": "Both assets contain zero image or external href elements, so no package or logo is fabricated",
+            "finding": "package-logo-correctness requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "unauthorized-hallucinated-text",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "unauthorized-hallucinated-text requirement satisfied"
+            "visible_observation": "Desktop and mobile SVG text-node counts are both zero; all customer copy remains deterministic HTML",
+            "finding": "unauthorized-hallucinated-text requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "image-copy-alignment",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "image-copy-alignment requirement satisfied"
+            "visible_observation": "Observed motif civic-grid-and-central-star-marker maps to genome concept \"An original civic signal grid and abstract verified marker.\" and headline \"Find the signal on your side of D.C.\"",
+            "finding": "image-copy-alignment requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "local-dc-relevance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "local-dc-relevance requirement satisfied"
+            "visible_observation": "Visible motif cue: Civic grid plus a central star marker evokes district orientation without copying a map or seal.; context: Block and district orientation without copying a map or landmark.",
+            "finding": "local-dc-relevance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "premium-editorial-quality",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "premium-editorial-quality requirement satisfied"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; no gradient, raster, filter, script or embedded copy is present",
+            "finding": "premium-editorial-quality requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "mobile-crop-integrity",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "mobile-crop-integrity requirement satisfied"
+            "visible_observation": "Desktop 1600x900 and mobile 800x1000 are distinct hashes with the same observed motif civic-grid-and-central-star-marker",
+            "finding": "mobile-crop-integrity requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "readability",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "readability requirement satisfied"
+            "visible_observation": "Headline has 36 characters and is HTML; both artwork files contain zero text nodes",
+            "finding": "readability requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "accessibility",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "accessibility requirement satisfied"
+            "visible_observation": "Both SVG roots declare role=img and a non-empty aria-label; browser Axe is recorded separately",
+            "finding": "accessibility requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "ad-disclosure",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "ad-disclosure requirement satisfied"
+            "visible_observation": "Placement disclosure is \"Sponsored\" and remains outside generated artwork",
+            "finding": "ad-disclosure requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "policy-compliance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "policy-compliance requirement satisfied"
+            "visible_observation": "No gradients, scripts, external images, raster data URLs or generated image text were observed",
+            "finding": "policy-compliance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "truthful-claims",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "truthful-claims requirement satisfied"
+            "visible_observation": "Headline and testable prediction contain no guarantee, best, proven or official claim; prediction remains conditional",
+            "finding": "truthful-claims requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "visual-hierarchy",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "visual-hierarchy requirement satisfied"
+            "visible_observation": "Recognized dominant motif civic-grid-and-central-star-marker; responsive dimensions are 1600x900 and 800x1000",
+            "finding": "visual-hierarchy requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "cta-clarity",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "cta-clarity requirement satisfied"
+            "visible_observation": "CTA \"Compare verified options\" is 24 characters and rendered as deterministic HTML",
+            "finding": "cta-clarity requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "brand-consistency",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "brand-consistency requirement satisfied"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; both variants use the same motif family without gradients or external assets",
+            "finding": "brand-consistency requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "file-size-performance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "file-size-performance requirement satisfied"
+            "visible_observation": "Largest responsive SVG is 775 bytes against 180000 bytes",
+            "finding": "file-size-performance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "rights-provenance",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "rights-provenance requirement satisfied"
+            "visible_observation": "Genome rights state is SYNTHETIC_FIXTURE_RIGHTS_CLEARED; generation receipts bind both output hashes",
+            "finding": "rights-provenance requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "owner-taste-alignment",
           "status": "PENDING_OWNER_DECISION",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+            "visible_observation": "Owner decision is PENDING; technical checks cannot substitute for owner taste",
             "finding": "Owner decision has not been recorded"
           }
         },
@@ -1961,30 +2078,33 @@
           "name": "campaign-coherence",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "campaign-coherence requirement satisfied"
+            "visible_observation": "expected civic-grid-and-central-star-marker; desktop observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; mobile observed civic-grid-and-central-star-marker with 4 paths, 1 rectangles, 1 circles and 4 colors; both embedded system ids are district-signal",
+            "finding": "campaign-coherence requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "conversion-mechanism",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "conversion-mechanism requirement satisfied"
+            "visible_observation": "Mechanism hypothesis is \"Local orientation reduces discovery friction.\"; prediction is explicitly untested: \"Owner-approved variant may increase qualified comparison starts versus the house fallback; not yet tested.\"",
+            "finding": "conversion-mechanism requirement satisfied by the recorded observation"
           }
         },
         {
           "name": "landing-page-continuity",
           "status": "PASS",
           "evidence": {
-            "inspection_receipt": "7b6d0f2de7102e0ef14dc80a13a74fa9cb6871ac73d8ca23955c20a0d0d64ffa",
+            "inspection_receipt": "96912be69876d098694b1c709574852067db310c15f1811a776d74294f626cb0",
             "desktop_asset": "sha256:147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
             "mobile_asset": "sha256:4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
-            "finding": "landing-page-continuity requirement satisfied"
+            "visible_observation": "CTA \"Compare verified options\" maps to declared destination behavior \"Verified directory comparison.\"",
+            "finding": "landing-page-continuity requirement satisfied by the recorded observation"
           }
         }
       ],

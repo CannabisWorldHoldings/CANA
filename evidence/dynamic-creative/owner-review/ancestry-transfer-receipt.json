@@ -4,6 +4,9 @@
   "canonical_base": "79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc",
   "merge_base": "79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc",
   "changed_paths": [
+    ".omo/evidence/0bb4c531-adversarial-probe.log",
+    ".omo/evidence/0bb4c531-code-review.md",
+    ".omo/evidence/0bb4c531-manual-qa.md",
     "apps/web/package.json",
     "apps/web/public/creative/house/block-by-block-desktop.svg",
     "apps/web/public/creative/house/block-by-block-mobile.svg",
@@ -40,5 +43,5 @@
   ],
   "rejected_pr21_paths_survived": false,
   "pr21_transfer_policy": "MECHANISMS_AND_EXPLICITLY_APPROVED_SEEDS_ONLY",
-  "audit_digest": "dd8faa2e9ce5e9b82d11abed6756d67f0bae732f49f6210e76d04257571abb88"
+  "audit_digest": "c9c86f30dbafed9ac57edbf70afad56d23a2b9caa76f95e00af44b2e81af9703"
 }

@@ -113,7 +113,7 @@ The court runs 23 independent deterministic judges:
 22. conversion mechanism;
 23. landing-page continuity.
 
-The deterministic court derives its findings from the actual desktop/mobile SVG bytes, hashes, responsive dimensions, embedded variant metadata, generation/analysis receipts, campaign genome, disclosure, rights state, copy, and performance budget. It refuses an unsealed caller-supplied inspection. Owner taste is explicitly `PENDING_OWNER_DECISION`, so each candidate ends at `TECHNICAL_PASS_OWNER_REVIEW_REQUIRED`, never a final visual approval. Any technical failure blocks the candidate. Regeneration is bounded to five attempts; the slice demonstrates an artifact-mismatched generic first attempt and a coherent second attempt.
+The deterministic court derives its findings from the actual desktop/mobile SVG bytes, hashes, responsive dimensions, embedded variant metadata, generation/analysis receipts, campaign genome, disclosure, rights state, copy, and performance budget. Every judge records concrete visible observations including the recognized motif, path/rectangle/circle counts, palette, responsive ratios, copy lengths, disclosure, and rights state; a blank SVG carrying expected metadata fails. It refuses an unsealed caller-supplied inspection. Owner taste is explicitly `PENDING_OWNER_DECISION`, so each candidate ends at `TECHNICAL_PASS_OWNER_REVIEW_REQUIRED`, never a final visual approval. Any technical failure blocks the candidate. Regeneration is bounded to five attempts; the slice demonstrates an artifact-mismatched generic first attempt and a coherent second attempt.
 
 ## Controlled rotation and rollback
 

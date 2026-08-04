@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import * as ProviderContract from '../../packages/ad-creative/src/provider-contract.mjs';
 import * as Hermes from '../../skills-src/hermes-governed-packet.mjs';
@@ -20,6 +21,7 @@ async function loadFoundation() {
 }
 
 const sha = (letter) => letter.repeat(64);
+const actualSha = (value) => createHash('sha256').update(value).digest('hex');
 const NOW = new Date('2026-08-04T04:00:00.000Z');
 
 function fixtureProvider({
@@ -358,7 +360,7 @@ test('records first party events and rejects competitor evidence as attributed p
 });
 
 test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
-  const { runControlledVerticalSlice } = await loadFoundation();
+  const { inspectDeterministicCreativeArtifacts, runControlledVerticalSlice, runVisualCourt } = await loadFoundation();
   assert.equal(typeof runControlledVerticalSlice, 'function', 'controlled vertical slice is missing');
   const registry = createProviderRegistry([createDeterministicFixtureProvider()]);
   const context = compileCreativeCampaignContext(validContextInput());
@@ -397,6 +399,37 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
       assert.doesNotMatch(svg, /gradient|feTurbulence|seed="NaN"/i);
     }
   }
+
+  const source = result.variants[0];
+  const blankAsset = (viewport) => {
+    const dimensions = viewport === 'desktop' ? '1600 900' : '800 1000';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${dimensions}" role="img" aria-label="blank"><metadata data-variant="district-signal"/></svg>`;
+    const imageSha = actualSha(svg);
+    return {
+      ...source[viewport],
+      image: {
+        imageBase64: Buffer.from(svg).toString('base64'), mimeType: 'image/svg+xml',
+        receipt: { ...source[viewport].image.receipt, result_sha256: imageSha },
+      },
+      imageAnalysis: {
+        ...source[viewport].imageAnalysis,
+        receipt: { ...source[viewport].imageAnalysis.receipt, image_sha256: imageSha },
+      },
+    };
+  };
+  const blankCreative = { ...source, desktop: blankAsset('desktop'), mobile: blankAsset('mobile') };
+  const blankInspection = inspectDeterministicCreativeArtifacts({
+    creative: blankCreative, context: context.packet, expectedSystemId: 'district-signal', ownerDecision: 'PENDING',
+  });
+  const blankCourt = runVisualCourt({
+    creative: blankCreative,
+    inspection: blankInspection,
+    context: { performanceBudget: context.packet.performance_budget },
+  });
+  assert.equal(blankCourt.status, 'FAIL');
+  assert.ok(blankCourt.failureReasons.includes('genericness'));
+  assert.ok(blankCourt.failureReasons.includes('premium-editorial-quality'));
+  assert.match(result.variants[0].court.judges[0].evidence.visible_observation, /paths|rectangles|circles/i);
 });
 
 test('controlled slice recomputes Hermes seals and refuses provider metadata impersonation', async () => {
