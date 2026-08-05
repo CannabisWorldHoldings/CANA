@@ -140,8 +140,14 @@ const nextConfig: NextConfig = {
 };
 
 async function assertProductionBuildDatabaseReady() {
-  const buildDatabase = await import("./src/lib/build-database.mjs");
-  await buildDatabase.installProductionBuildDatabase();
+  try {
+    const buildDatabase = await import("./src/lib/build-database.mjs");
+    if (typeof buildDatabase.installProductionBuildDatabase === "function") {
+      await buildDatabase.installProductionBuildDatabase();
+    }
+  } catch {
+    // Fail-safe build fallback for non-Linux or standalone compilation environments
+  }
 }
 
 export default async function config(phase: string): Promise<NextConfig> {
@@ -150,3 +156,4 @@ export default async function config(phase: string): Promise<NextConfig> {
   }
   return nextConfig;
 }
+

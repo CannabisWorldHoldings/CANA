@@ -12,10 +12,13 @@ export function Lab({ theme: initial = 'day', children, label }: {
   const [theme, setTheme] = useState<Theme>(initial);
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get('theme');
-    if (q === 'day' || q === 'night') { setTheme(q); return; }
     const saved = window.localStorage.getItem('owd-lab-theme');
-    if (saved === 'day' || saved === 'night') setTheme(saved as Theme);
-  }, []);
+    const targetTheme = (q === 'day' || q === 'night') ? q : ((saved === 'day' || saved === 'night') ? saved : null);
+    if (targetTheme && targetTheme !== theme) {
+      queueMicrotask(() => setTheme(targetTheme as Theme));
+    }
+  }, [theme]);
+
   useEffect(() => {
     window.localStorage.setItem('owd-lab-theme', theme);
     // Canvas law: html AND body must be exactly white or exactly black.
