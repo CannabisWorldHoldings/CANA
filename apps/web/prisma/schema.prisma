@@ -36,9 +36,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
-  // native: local dev/test/build machines. rhel-openssl-*: CloudLinux
-  // (RHEL-family) shared hosting used by the Namecheap production target.
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
   binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
 }
 
@@ -543,3 +542,205 @@ model DemandCreditEntry {
   /// migration, so forward migration is exercised rather than asserted.
   @@index([merchantId, recordedAt])
 }
+
+// SiteMind Creative Learning Bridge Models
+model SourceAsset {
+  assetId               String   @id @default(uuid())
+  tenantId              String   @default("orderweeddc")
+  sourceId              String
+  sourceType            String   // CHATGPT_EXPORT, IMAGE_FILE, PROMPT_EXPORT, SCREENSHOT, BRAND_ASSET, COMPETITOR_REF, EXPERIMENT_OUTCOME
+  sourceLocator         String
+  conversationId        String?
+  originalFilename      String?
+  originalPrompt        String?
+  negativePrompt        String?
+  model                 String?
+  modelVersion          String?
+  provider              String?
+  seed                  Int?
+  generationSettings    String?  // JSON string
+  generationDate        DateTime?
+  ownerResponse         String?
+  approvalState         String?  @default("PENDING") // PENDING, APPROVED, REJECTED, UNREVIEWED
+  rejectionState        String?
+  rejectionReason       String?
+  campaign              String?
+  merchant              String?
+  audience              String?
+  objective             String?
+  placement             String?
+  dimensions            String?
+  contentSha256         String
+  perceptualHash        String?
+  duplicateCluster      String?
+  rightsState           String   @default("UNKNOWN_RIGHTS")
+  trainingEligibility   String   @default("REFERENCE_ONLY") // TRAINABLE_ELIGIBLE, REFERENCE_ONLY, PROHIBITED
+  evidenceConfidence    Float?   @default(0.5)
+  isTestFixture         Boolean  @default(false)
+  eligibleForRealMemory Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([tenantId, sourceType, rightsState])
+  @@index([tenantId, contentSha256])
+}
+
+model CreativeRecord {
+  creativeId            String   @id @default(uuid())
+  tenantId              String   @default("orderweeddc")
+  sourceAssetIds        String   // Comma-separated or JSON list of SourceAsset IDs
+  campaignId            String?
+  businessId            String?
+  audience              String?
+  customerProblem       String?
+  customerDesire        String?
+  objective             String?
+  channel               String?
+  placement             String?
+  dimensions            String?
+  concept               String
+  hook                  String
+  offer                 String
+  copy                  String
+  cta                   String
+  prompt                String
+  negativePrompt        String?
+  model                 String   @default("cana-hermes")
+  provider              String   @default("cana-hermes")
+  generationParameters  String?  // JSON string
+  referenceAssets       String?  // JSON string
+  rightsState           String   @default("ORDERWEEDDC_OWNED")
+  complianceState       String   @default("PASSED")
+  ownerDecision         String   @default("OWNER_APPROVAL_PENDING")
+  decisionAuthority     String   @default("AUTOMATED_PRESELECTION")
+  ownerFeedback         String?
+  merchantDecision      String?
+  merchantFeedback      String?
+  experimentState       String?  @default("DESIGNED_NOT_EXECUTED")
+  treatmentOrControl    String?  @default("TREATMENT")
+  confidence            Float?   @default(0.0)
+  winningMechanisms     String?  // JSON list
+  rejectedMechanisms    String?  // JSON list
+  failureReason         String?
+  nextMutation          String?
+  isTestFixture         Boolean  @default(false)
+  eligibleForRealMemory Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  genome                CreativeGenome?
+  events                CreativeEvent[]
+
+  @@index([tenantId, ownerDecision, experimentState])
+  @@index([tenantId, rightsState])
+}
+
+model CreativeGenome {
+  genomeId             String         @id @default(uuid())
+  tenantId             String         @default("orderweeddc")
+  creativeId           String         @unique
+  creative             CreativeRecord @relation(fields: [creativeId], references: [creativeId], onDelete: Cascade)
+  assetCategory        String         @default("HERO_BANNER")
+  composition          String         @default("ASYMMETRICAL_HERO")
+  focalPoint           String         @default("PRODUCT_AND_WORDMARK")
+  subject              String         @default("TOP_SHELF_FLOWER")
+  background           String         @default("BRIGHT_WHITE_DAYLIGHT")
+  lighting             String         @default("SOFT_DAYLIGHT_STUDIO")
+  palette              String         @default("FOREST_GREEN_AND_WHITE")
+  materialTreatment    String         @default("GLOSSY_GLASS_AND_MATTE_CARD")
+  typography           String         @default("CURSIVE_WORDMARK_SERIF_HEADLINE")
+  textDensity          String         @default("BALANCED")
+  hierarchy            String         @default("BRAND_WORDMARK_FIRST")
+  logoTreatment        String         @default("EXTENDED_D_LEAF_ICON")
+  offerTreatment       String         @default("PROMINENT_PERCENT_OFF_BADGE")
+  ctaTreatment         String         @default("SOLID_FOREST_GREEN_BUTTON")
+  productProminence    String         @default("HIGH")
+  peoplePresence       String         @default("NONE")
+  emotionalTone        String         @default("TRUSTWORTHY_PREMIUM_LOCAL")
+  trustCues            String         @default("DC_LICENSED_BADGE_DUTCHIE_VERIFIED")
+  localDcCues          String         @default("DC_MAP_SILHOUETTE_DISTRICT_CULTURE")
+  marketplaceCues      String         @default("DUTCHIE_REALTIME_MENU")
+  premiumCues          String         @default("CLEAN_WHITE_SPACE_HIGH_CONTRAST")
+  mobileReadability    String         @default("EXCELLENT")
+  accessibility        String         @default("WCAG_AAA_7_TO_1")
+  originalityRisk      String         @default("LOW")
+  competitorSimilarity String         @default("NONE")
+  likelyPlacement      String         @default("HERO_BANNER")
+  likelyAudience       String         @default("DC_LOCAL_CONSUMERS")
+  qualityWeaknesses    String         @default("[]") // JSON string list
+  reusableMechanisms   String         @default("[]") // JSON string list
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  @@index([tenantId, creativeId])
+}
+
+model OwnerTasteRule {
+  ruleId           String   @id @default(uuid())
+  tenantId         String   @default("orderweeddc")
+  ruleCategory     String   // VISUAL_PREFERENCE, TYPOGRAPHY_PREFERENCE, VALUE_PREFERENCE, ACCESSIBILITY_PREFERENCE, REJECTED_PATTERN
+  ruleType         String   @default("VISUAL_PREFERENCE")
+  ruleText         String
+  supersedesRuleId String?
+  status           String   @default("ACTIVE") // ACTIVE, SUPERSEDE, RETIRED, TEST_FIXTURE_ISOLATED
+  weight           Float    @default(0.9)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId, status, ruleCategory])
+}
+
+model CreativeContextReceipt {
+  receiptHash        String   @id
+  tenantId           String   @default("orderweeddc")
+  property           String   @default("ORDERWEEDDC")
+  route              String   @default("/")
+  component          String   @default("HERO_BANNER")
+  campaignId         String?
+  businessId         String?
+  compiledContext    String   // JSON blob of compiled context
+  recommendedModel   String   @default("cana-hermes")
+  recommendedPrompt  String
+  isTestFixture      Boolean  @default(false)
+  compiledAt         DateTime @default(now())
+
+  @@index([tenantId, property, route])
+}
+
+model LearningReceipt {
+  receiptHash        String   @id
+  tenantId           String   @default("orderweeddc")
+  attempted          String
+  whyAttempted       String
+  evidenceUsed       String   // JSON array
+  ownerDecision      String   @default("OWNER_APPROVAL_PENDING")
+  decisionAuthority  String   @default("AUTOMATED_PRESELECTION")
+  experimentDesign   String   // JSON blob
+  measuredOutcome    String   @default("PERFORMANCE_UNMEASURED")
+  causalConfidence   Float    @default(0.0)
+  memoryChanges      String   // JSON array
+  routingChanges     String   // JSON array
+  nextMutation       String
+  unresolvedQuestions String  // JSON array
+  isTestFixture      Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([tenantId, ownerDecision])
+}
+
+model CreativeEvent {
+  eventId            String         @id @default(uuid())
+  tenantId           String         @default("orderweeddc")
+  creativeId         String
+  creative           CreativeRecord @relation(fields: [creativeId], references: [creativeId], onDelete: Cascade)
+  eventType          String         // IMPRESSION, CLICK, SAVE, SIGNUP, ALERT_SUBSCRIPTION, MERCHANT_INQUIRY, QUALIFIED_MERCHANT, LISTING_CLAIM, MENU_CLICK, ORDERING_HANDOFF, REPEAT_VISIT, CONVERSION
+  businessId         String?
+  campaignId         String?
+  placement          String?
+  timestamp          DateTime       @default(now())
+  metadata           String?        // JSON blob
+
+  @@index([tenantId, creativeId, eventType])
+  @@index([tenantId, timestamp])
+}
+

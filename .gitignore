@@ -10,8 +10,10 @@ build/
 *.db-journal
 .agents/skills/cannabis_governor/governor_state.db
 dist/
+**/src/generated/
 .turbo/
 # CANA Governor runtime and secrets
+.forensics/
 .governor/
 .cana-loop/
 .cana-loop-mock/

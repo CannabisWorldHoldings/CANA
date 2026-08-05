@@ -19,6 +19,12 @@ export function isCanonicalPlatformHostname(hostname) {
   );
 }
 
+export function isValidPlatformHost(host) {
+  if (!host || typeof host !== 'string') return false;
+  const hostname = host.split(':')[0].toLowerCase();
+  return isLocalPlatformHostname(hostname) || isCanonicalPlatformHostname(hostname);
+}
+
 export function tenantDomainForRequestHostname(hostname) {
   return TENANT_ALIASES[hostname] || hostname;
 }
