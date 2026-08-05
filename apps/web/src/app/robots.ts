@@ -6,6 +6,7 @@ export default function robots(): MetadataRoute.Robots {
     '/business/dashboard',
     '/compare',
     '/customer',
+    '/search',
     '/wallet',
   ];
   return {

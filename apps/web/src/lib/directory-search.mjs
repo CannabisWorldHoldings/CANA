@@ -237,10 +237,44 @@ export function publicCatalogRecordWhere(asOf = new Date()) {
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: timestamp },
         freshnessExpiresAt: { gt: timestamp },
       },
     ],
+  };
+}
+
+export function isPublicCatalogRecord(record, asOf = new Date()) {
+  const timestamp = validTime(asOf);
+  const verifiedAt = new Date(record?.verifiedAt ?? Number.NaN);
+  return (
+    record?.isDemonstration === true ||
+    (Number.isFinite(verifiedAt.getTime()) &&
+      verifiedAt <= timestamp &&
+      resolveDataStatus(record ?? {}, timestamp) === DATA_STATUS.VERIFIED_CURRENT)
+  );
+}
+
+export function isDemonstrationChain(...records) {
+  return records.some((record) => record?.isDemonstration === true);
+}
+
+export function labelCustomerDealRecord(deal) {
+  return {
+    ...deal,
+    isDemonstration: isDemonstrationChain(deal, deal?.retailer),
+  };
+}
+
+export function labelCustomerProductRecord(product) {
+  const { menuEntries = [], ...publicProduct } = product;
+  return {
+    ...publicProduct,
+    isDemonstration: isDemonstrationChain(
+      product,
+      ...menuEntries,
+      ...menuEntries.map((entry) => entry.retailer),
+    ),
   };
 }
 
@@ -259,3 +293,4 @@ export function directorySearchHref(filters, page) {
   return queryString ? `/?${queryString}` : '/';
 }
 import { publicRetailerWhere } from './public-retailer.mjs';
+import { DATA_STATUS, resolveDataStatus } from './data-status.mjs';

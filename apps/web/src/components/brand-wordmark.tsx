@@ -24,7 +24,6 @@ export default function BrandWordmark({
         alt=""
         width={900}
         height={176}
-        priority={priority}
         unoptimized
         className="brand-wordmark__dark"
         sizes="(max-width: 640px) 144px, 176px"

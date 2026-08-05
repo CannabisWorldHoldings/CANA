@@ -269,7 +269,7 @@ test('Next.js configuration owns host-based relative tenant routing', () => {
   assert.doesNotMatch(helperSource, /process\.env/);
   assert.doesNotMatch(helperSource, /requestUrl|passenger|marker/i);
   assert.doesNotMatch(helperSource, /(?:https?:)?\/\//);
-  assert.equal(tenantRedirectPath('dmvweeddelivery.com'), '/?type=delivery');
+  assert.equal(tenantRedirectPath('dmvweeddelivery.com'), '/delivery');
   assert.equal(tenantRedirectPath('weedneardc.com'), '/');
 });
 

@@ -310,6 +310,9 @@ test('SITEMIND_ROUTE_REGISTRY is frozen and contains required route entries', ()
   assert.ok(routes.includes('/'), 'registry must include "/"');
   assert.ok(routes.includes('/retailer/[id]'), 'registry must include "/retailer/[id]"');
   assert.ok(routes.includes('/deals'), 'registry must include "/deals"');
+  assert.ok(routes.includes('/dispensaries'), 'registry must include "/dispensaries"');
+  assert.ok(routes.includes('/delivery'), 'registry must include "/delivery"');
+  assert.ok(routes.includes('/search'), 'registry must include "/search"');
   assert.ok(routes.includes('/education/[slug]'), 'registry must include "/education/[slug]"');
   assert.ok(routes.includes('/compare'), 'registry must include "/compare"');
 

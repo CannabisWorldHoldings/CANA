@@ -15,8 +15,8 @@ export const TENANT_HOST_ROUTES = Object.freeze([
 ]);
 
 export const TENANT_HOST_REDIRECTS = Object.freeze({
-  'dmvweeddelivery.com': '/?type=delivery',
-  'dmvweeddelivery.localhost': '/?type=delivery',
+  'dmvweeddelivery.com': '/delivery',
+  'dmvweeddelivery.localhost': '/delivery',
   'weedneardc.com': '/',
   'weedneardc.localhost': '/',
   'georgetowndispensarydc.com': '/neighborhoods/georgetown',

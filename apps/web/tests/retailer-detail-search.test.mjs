@@ -66,7 +66,7 @@ test('public retailer collections and card previews use fixed database limits', 
     'utf8',
   );
   const directorySource = fs.readFileSync(
-    path.join(webRoot, 'src/app/[domain]/page.tsx'),
+    path.join(webRoot, 'src/lib/customer-marketplace-data.ts'),
     'utf8',
   );
   const neighborhoodSource = fs.readFileSync(

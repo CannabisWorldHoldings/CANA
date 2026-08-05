@@ -41,11 +41,11 @@ test('canonical public and local hosts route to the same tenant root without a t
 test('public and local aliases retain their canonical redirect destinations', () => {
   assert.equal(
     tenantRedirectPath('dmvweeddelivery.com'),
-    '/?type=delivery',
+    '/delivery',
   );
   assert.equal(
     tenantRedirectPath('dmvweeddelivery.localhost'),
-    '/?type=delivery',
+    '/delivery',
   );
   assert.equal(
     tenantRedirectPath('weedneardc.com'),

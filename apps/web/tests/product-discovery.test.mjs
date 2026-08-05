@@ -93,7 +93,7 @@ test('product discovery composes tenant, retailer, menu, product, and freshness 
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: AS_OF },
         freshnessExpiresAt: { gt: AS_OF },
       },
     ],

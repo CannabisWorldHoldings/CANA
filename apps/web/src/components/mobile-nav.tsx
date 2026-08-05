@@ -15,14 +15,14 @@ export default function MobileNav({ links }: { links: NavLink[] }) {
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-label={open ? 'Close navigation menu' : 'Open navigation menu'}
-        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-brand-border text-brand-text transition-colors hover:border-brand-primary/40"
+        className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-lg border border-[#cbd1cc] text-brand-text transition-colors hover:border-[#11643d]"
       >
         {open ? <X size={18} /> : <Menu size={18} />}
       </button>
       {open && (
         <nav
           aria-label="Mobile navigation"
-          className="absolute inset-x-0 top-full z-50 border-b border-brand-border bg-brand-background/97 shadow-2xl backdrop-blur-xl animate-fade-in"
+          className="absolute inset-x-0 top-full z-50 bg-white animate-fade-in"
         >
           <ul className="mx-auto max-w-7xl space-y-1 px-4 py-4">
             {links.map((link) => (

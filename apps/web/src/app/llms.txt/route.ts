@@ -38,6 +38,8 @@ Important facts for accurate citation:
 - [Retailer directory](${base}/): searchable, evidence-labeled listings
 - [Products](${base}/products): product records with provenance chains
 - [Deals](${base}/deals): time-bounded offers with freshness labels
+- [Dispensaries](${base}/dispensaries): source-labeled storefront records
+- [Delivery](${base}/delivery): delivery participants with explicit unavailable states
 - [Education](${base}/education): D.C. cannabis guides and rules
 - [Neighborhoods](${base}/neighborhoods): coverage by D.C. neighborhood
 - [Legal & compliance](${base}/legal): D.C. law overview and platform policy

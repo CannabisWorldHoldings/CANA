@@ -12,6 +12,10 @@ import {
   directoryRetailerOrderBy,
   directoryRetailerWhere,
   directorySearchHref,
+  isDemonstrationChain,
+  isPublicCatalogRecord,
+  labelCustomerDealRecord,
+  labelCustomerProductRecord,
   parseDirectorySearch,
   publicCatalogRecordWhere,
 } from '../src/lib/directory-search.mjs';
@@ -123,7 +127,7 @@ test('directory deal chips include only labeled demonstrations or current verifi
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: AS_OF },
         freshnessExpiresAt: { gt: AS_OF },
       },
     ],
@@ -134,6 +138,84 @@ test('directory deal chips include only labeled demonstrations or current verifi
     expiryDate: { gt: AS_OF },
     isActive: true,
     ...catalogRecordWhere,
+  });
+});
+
+test('public catalog behavior excludes never-reviewed real records without hiding explicit demos', () => {
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'AWAITING_VERIFICATION',
+    verifiedAt: null,
+    freshnessExpiresAt: null,
+  }, AS_OF), false);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: true,
+    dataStatus: 'DEMONSTRATION_ONLY',
+    verifiedAt: null,
+    freshnessExpiresAt: null,
+  }, AS_OF), true);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-18T20:00:01.000Z'),
+    freshnessExpiresAt: new Date('2026-07-20T20:00:00.000Z'),
+  }, AS_OF), false);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-10T20:00:00.000Z'),
+    freshnessExpiresAt: new Date('2026-07-20T20:00:00.000Z'),
+  }, AS_OF), true);
+  assert.equal(isPublicCatalogRecord({
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-10T20:00:00.000Z'),
+    freshnessExpiresAt: new Date('2026-07-17T19:59:59.000Z'),
+  }, AS_OF), false);
+});
+
+test('a demonstration anywhere in a marketplace chain keeps the rendered record labeled', () => {
+  assert.equal(isDemonstrationChain(
+    { isDemonstration: false },
+    { isDemonstration: true },
+  ), true);
+  assert.equal(isDemonstrationChain(
+    { isDemonstration: false },
+    { isDemonstration: false },
+  ), false);
+
+  assert.deepEqual(labelCustomerDealRecord({
+    id: 'deal-parent-demo',
+    isDemonstration: false,
+    retailer: { id: 'retailer-demo', isDemonstration: true },
+  }), {
+    id: 'deal-parent-demo',
+    isDemonstration: true,
+    retailer: { id: 'retailer-demo', isDemonstration: true },
+  });
+
+  assert.deepEqual(labelCustomerProductRecord({
+    id: 'product-retailer-demo',
+    isDemonstration: false,
+    menuEntries: [{
+      isDemonstration: false,
+      retailer: { isDemonstration: true },
+    }],
+  }), {
+    id: 'product-retailer-demo',
+    isDemonstration: true,
+  });
+
+  assert.deepEqual(labelCustomerProductRecord({
+    id: 'product-menu-demo',
+    isDemonstration: false,
+    menuEntries: [{
+      isDemonstration: true,
+      retailer: { isDemonstration: false },
+    }],
+  }), {
+    id: 'product-menu-demo',
+    isDemonstration: true,
   });
 });
 
@@ -186,8 +268,8 @@ test('directory ordering is transparent and never ranks sponsorship', () => {
 });
 
 test('directory page applies server-side count, cap, offset, and freshness predicates', () => {
-  const pageSource = fs.readFileSync(
-    path.join(webRoot, 'src/app/[domain]/page.tsx'),
+  const directorySource = fs.readFileSync(
+    path.join(webRoot, 'src/lib/customer-marketplace-data.ts'),
     'utf8',
   );
   const schema = fs.readFileSync(
@@ -195,12 +277,13 @@ test('directory page applies server-side count, cap, offset, and freshness predi
     'utf8',
   );
 
-  assert.match(pageSource, /prisma\.retailer\.count\(\{ where \}\)/);
-  assert.match(pageSource, /take: DIRECTORY_PAGE_SIZE/);
-  assert.match(pageSource, /skip: \(currentPage - 1\) \* DIRECTORY_PAGE_SIZE/);
-  assert.match(pageSource, /where: currentDealWhere\(asOf\)/);
-  assert.match(pageSource, /directoryRetailerOrderBy\(requestedFilters\.sort\)/);
-  assert.doesNotMatch(pageSource, /isSponsored:\s*['"]desc['"]/);
+  assert.match(directorySource, /prisma\.retailer\.count\(\{ where \}\)/);
+  assert.match(directorySource, /take: DIRECTORY_PAGE_SIZE/);
+  assert.match(directorySource, /skip: \(currentPage - 1\) \* DIRECTORY_PAGE_SIZE/);
+  assert.match(directorySource, /where: currentDealWhere\(asOf\)/);
+  assert.match(directorySource, /directoryRetailerOrderBy\(requestedFilters\.sort\)/);
+  assert.match(directorySource, /directoryRetailerWhere\(\{/);
+  assert.doesNotMatch(directorySource, /isSponsored:\s*['"]desc['"]/);
   assert.equal(DIRECTORY_PAGE_SIZE, 20);
   assert.match(
     schema,

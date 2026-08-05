@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node scripts/run-tests.mjs",
+    "test:customer-browser": "playwright test --config tests/customer-playwright.config.mjs",
     "benchmark:discovery": "node scripts/benchmark-product-discovery.mjs",
     "test:db": "node scripts/test-dispute-flow.mjs && node scripts/test-claim-lifecycle.mjs && node scripts/test-public-submission.mjs && node scripts/test-site-intelligence.mjs",
     "test:http": "node scripts/http-truth-check.mjs && node scripts/http-style-check.mjs && node scripts/http-education-check.mjs && node scripts/http-auth-check.mjs && node scripts/http-admin-check.mjs && node scripts/http-business-check.mjs && node scripts/http-public-write-check.mjs",
@@ -27,6 +28,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",
+    "@axe-core/playwright": "4.12.1",
+    "@playwright/test": "1.62.1",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",

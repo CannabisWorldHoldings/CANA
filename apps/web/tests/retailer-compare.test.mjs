@@ -97,8 +97,8 @@ test('comparison UI is noindex, bounded, evidence-aware, and tracking-free', () 
     path.join(webRoot, 'src/app/[domain]/compare/page.tsx'),
     'utf8',
   );
-  const homeSource = fs.readFileSync(
-    path.join(webRoot, 'src/app/[domain]/page.tsx'),
+  const homeMarketSource = fs.readFileSync(
+    path.join(webRoot, 'src/components/customer-home-market.tsx'),
     'utf8',
   );
   const robotsSource = fs.readFileSync(
@@ -120,8 +120,13 @@ test('comparison UI is noindex, bounded, evidence-aware, and tracking-free', () 
   assert.match(compareSource, /\.\.\.currentDealWhere\(asOf\)/);
   assert.match(compareSource, /safePublicReferenceUrl\(retailer\.sourceUrl\)/);
   assert.doesNotMatch(compareSource, /localStorage|sessionStorage|cookies\(/);
-  assert.match(homeSource, /action="\/compare"/);
-  assert.match(homeSource, /name="retailer"/);
+  const listingSource = fs.readFileSync(
+    path.join(webRoot, 'src/components/customer-listing-row.tsx'),
+    'utf8',
+  );
+  assert.match(homeMarketSource, /action="\/compare"/);
+  assert.match(homeMarketSource, /Compare selected records/);
+  assert.match(listingSource, /name="retailer"/);
   assert.match(robotsSource, /'\/compare'/);
   assert.match(siteBrainSource, /id: 'compare'/);
 });
