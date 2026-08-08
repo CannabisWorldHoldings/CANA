@@ -540,17 +540,26 @@ function svgFacts(image) {
   const circleCount = [...svg.matchAll(/<circle\b/gi)].length;
   const groupCount = [...svg.matchAll(/<g\b/gi)].length;
   const palette = [...new Set([...svg.matchAll(/#[0-9a-f]{3,8}/gi)].map((match) => match[0].toLowerCase()))];
-  const opacityValues = [...svg.matchAll(/(?:opacity|fill-opacity|stroke-opacity)\s*=\s*["']([0-9]*\.?[0-9]+)["']/gi)]
-    .map((match) => Number(match[1]))
-    .filter(Number.isFinite);
+  const declaredOpacity = [...svg.matchAll(/(?:opacity|fill-opacity|stroke-opacity)\s*=\s*["']([^"']+)["']/gi)]
+    .map((match) => match[1].trim());
+  const opacityValues = declaredOpacity.map((value) => {
+    const percentage = value.endsWith('%');
+    const numericValue = Number(percentage ? value.slice(0, -1) : value);
+    return percentage ? numericValue / 100 : numericValue;
+  });
+  const hasInvalidOpacity = opacityValues.some((value) => !Number.isFinite(value) || value < 0 || value > 1);
   const hasCssStyling = /<style\b|\bstyle\s*=/i.test(svg);
   const hasSelectorHook = /\b(?:class|id)\s*=/i.test(svg);
   const hasClipOrMask = /<(?:clipPath|mask)\b|\b(?:clip-path|mask)\s*=/i.test(svg);
-  const hasVisibilityTransform = /\btransform\s*=\s*["'][^"']*scale\(\s*(?:0|\.0)(?:[\s,)]|$)/i.test(svg);
-  const hasTransparentColor = /(?:fill|stroke)\s*=\s*["'](?:transparent|rgba\([^)]*,\s*0(?:\.0+)?\s*\)|hsla\([^)]*,\s*0(?:\.0+)?\s*\)|#[0-9a-f]{3}[01]|#[0-9a-f]{6}(?:0[0-9a-f]|1[0-8]))["']/i.test(svg);
+  // The fixture provider emits only translate/rotate transforms and opaque hex
+  // colors. Reject broader visibility-capable SVG/CSS grammar fail closed rather
+  // than trying to prove that every matrix, scale, rgba, or hsla form is visible.
+  const hasVisibilityTransform = /\btransform\s*=\s*["'][^"']*(?:matrix|scale)\s*\(/i.test(svg);
+  const hasTransparentColor = /(?:fill|stroke)\s*=\s*["'](?:transparent|rgba\(|hsla\(|#[0-9a-f]{3}[01](?:["']|\s)|#[0-9a-f]{6}(?:0[0-9a-f]|1[0-8])(?:["']|\s))/i.test(svg);
+  const hasVisibilityAttribute = /\b(?:display|visibility)\s*=/i.test(svg);
   const hasHiddenGeometry = hasCssStyling || hasSelectorHook || hasClipOrMask || hasVisibilityTransform
-    || hasTransparentColor || opacityValues.some((value) => value < 0.1)
-    || /(?:display\s*=\s*["']none|visibility\s*=\s*["']hidden)/i.test(svg);
+    || hasTransparentColor || hasVisibilityAttribute || hasInvalidOpacity
+    || opacityValues.some((value) => value < 0.1);
   const motif = groupCount >= 1 && rectCount >= 6 && circleCount >= 1
     ? 'receipt-with-evidence-lines-and-seal'
     : pathData.some((value) => value.includes('Q') && value.includes('T')) && circleCount >= 4
@@ -576,7 +585,7 @@ function svgFacts(image) {
     hasVisibilityTransform,
     hasTransparentColor,
     hasHiddenGeometry,
-    minimumDeclaredOpacity: opacityValues.length > 0 ? Math.min(...opacityValues) : 1,
+    minimumDeclaredOpacity: opacityValues.length > 0 && !hasInvalidOpacity ? Math.min(...opacityValues) : null,
     pathCount: pathData.length,
     rectCount,
     circleCount,

@@ -503,6 +503,12 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
     'fill="transparent"',
     'fill="rgba(0,0,0,0)"',
     'fill="#00000000"',
+    'transform="matrix(0 0 0 0 0 0)"',
+    'transform="scale(0)"',
+    "opacity='0e0'",
+    "opacity='0%'",
+    "visibility='collapse'",
+    "fill='rgba(0,0,0,0%)'",
   ]) {
     const cssHiddenCreative = {
       ...source,
