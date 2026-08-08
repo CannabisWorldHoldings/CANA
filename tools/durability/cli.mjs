@@ -33,7 +33,7 @@ const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
 const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'a462da894a83a5fd7e726bd0b9411e57bd9f637e11bc98503a1841b47f29a8b9';
+  'cef6a63d477f6e8a78053b543458d3289e7518de79669614246a15fad3797912';
 const DYNAMIC_CREATIVE_ASSIGNMENT = 'sitemind_dynamic_creative_foundation_2026_08_04';
 export const DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS = Object.freeze([
   'apps/web/package.json',
@@ -48,6 +48,7 @@ export const DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS = Object.freeze([
   'evidence/dynamic-creative/**',
   'package-lock.json',
   'packages/ad-creative/package.json',
+  'packages/ad-creative/fixtures/offline-creative-draft-authorization.json',
   'packages/ad-creative/src/dynamic-foundation.mjs',
   'packages/ad-creative/src/evidence-import.mjs',
   'packages/ad-creative/src/provider-contract.mjs',
