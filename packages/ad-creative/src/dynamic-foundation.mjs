@@ -539,7 +539,9 @@ function svgFacts(image) {
   const rectCount = [...svg.matchAll(/<rect\b/gi)].length;
   const circleCount = [...svg.matchAll(/<circle\b/gi)].length;
   const groupCount = [...svg.matchAll(/<g\b/gi)].length;
-  const palette = [...new Set([...svg.matchAll(/#[0-9a-f]{3,8}/gi)].map((match) => match[0].toLowerCase()))];
+  const paintTags = [...svg.matchAll(/<(?:path|rect|circle|g)\b[^>]*>/gi)].map((match) => match[0]).join('');
+  const palette = [...new Set([...paintTags.matchAll(/(?:fill|stroke)\s*=\s*["'](#[0-9a-f]{3,8})["']/gi)]
+    .map((match) => match[1].toLowerCase()))];
   const declaredOpacity = [...svg.matchAll(/(?:opacity|fill-opacity|stroke-opacity)\s*=\s*["']([^"']+)["']/gi)]
     .map((match) => match[1].trim());
   const opacityValues = declaredOpacity.map((value) => {
@@ -596,13 +598,24 @@ function svgFacts(image) {
   });
 }
 
+function inspectedFixtureExecution({ image, analysis }) {
+  try {
+    return verifyDeterministicFixtureExecution({ image, analysis });
+  } catch (error) {
+    return Object.freeze({
+      canonical_fixture: false,
+      refusal: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 /** Build visual evidence from the actual responsive bytes and generation receipts. */
 export function inspectDeterministicCreativeArtifacts({ creative, context, expectedSystemId, ownerDecision = 'PENDING' }) {
-  const desktopExecution = verifyDeterministicFixtureExecution({
+  const desktopExecution = inspectedFixtureExecution({
     image: creative.desktop.image,
     analysis: creative.desktop.imageAnalysis,
   });
-  const mobileExecution = verifyDeterministicFixtureExecution({
+  const mobileExecution = inspectedFixtureExecution({
     image: creative.mobile.image,
     analysis: creative.mobile.imageAnalysis,
   });
@@ -616,13 +629,14 @@ export function inspectDeterministicCreativeArtifacts({ creative, context, expec
   }[expectedSystemId] ?? 'unrecognized-or-empty';
   const coherentVariant = desktop.variant === expectedSystemId && mobile.variant === expectedSystemId;
   const motifMatches = desktop.motif === expectedMotif && mobile.motif === expectedMotif;
-  const prohibitedMarkup = [desktop, mobile].some((asset) => asset.hasText || asset.hasGradient || asset.hasScript || asset.hasExternalImage || asset.hasHiddenGeometry);
+  const canonicalFixturePair = desktopExecution.canonical_fixture === true && mobileExecution.canonical_fixture === true;
+  const prohibitedMarkup = !canonicalFixturePair || [desktop, mobile].some((asset) => asset.hasText || asset.hasGradient || asset.hasScript || asset.hasExternalImage || asset.hasHiddenGeometry);
   const distinctResponsiveAssets = desktop.sha256 !== mobile.sha256 && desktop.width > desktop.height && mobile.height > mobile.width;
   const localEvidence = motifMatches && text(genome.localDcCue) && /D\.C\.|district|ORDERWEEDDC/i.test(genome.localDcCue);
   const copyAligned = text(genome.expectedMechanism) && text(genome.visualConcept) && text(creative.headline);
   const minimumVisibleComplexity = Math.min(desktop.visibleElementCount, mobile.visibleElementCount) >= 6;
   const minimumPalette = Math.min(desktop.palette.length, mobile.palette.length) >= 4;
-  const artifactQuality = coherentVariant && motifMatches && minimumVisibleComplexity && minimumPalette && !prohibitedMarkup;
+  const artifactQuality = canonicalFixturePair && coherentVariant && motifMatches && minimumVisibleComplexity && minimumPalette && !prohibitedMarkup;
   const motifObservation = `expected ${expectedMotif}; desktop observed ${desktop.motif} with ${desktop.pathCount} paths, ${desktop.rectCount} rectangles, ${desktop.circleCount} circles and ${desktop.palette.length} colors; mobile observed ${mobile.motif} with ${mobile.pathCount} paths, ${mobile.rectCount} rectangles, ${mobile.circleCount} circles and ${mobile.palette.length} colors`;
   const evidence = Object.freeze({
     desktop_asset: `sha256:${desktop.sha256}`,

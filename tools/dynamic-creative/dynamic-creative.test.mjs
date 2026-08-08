@@ -509,6 +509,7 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
     "opacity='0%'",
     "visibility='collapse'",
     "fill='rgba(0,0,0,0%)'",
+    "fill='rgb(0 0 0 / 0%)'",
   ]) {
     const cssHiddenCreative = {
       ...source,
@@ -527,6 +528,28 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
     });
     assert.equal(court.status, 'FAIL', `${hiddenExpression} must fail the visual court`);
   }
+
+  const paletteLaunderedCreative = {
+    ...source,
+    ...Object.fromEntries(['desktop', 'mobile'].map((viewport) => {
+      const svg = Buffer.from(source[viewport].image.imageBase64, 'base64').toString('utf8')
+        .replace(/(?:fill|stroke)="#[0-9a-f]{3,8}"/gi, 'fill="none"')
+        .replace('<metadata ', '<metadata data-palette="#082f49 #0e7490 #67e8f9 #f8fafc" ');
+      return [viewport, assetWithSvg(viewport, svg)];
+    })),
+  };
+  const paletteLaunderedInspection = inspectDeterministicCreativeArtifacts({
+    creative: paletteLaunderedCreative, context: context.packet, expectedSystemId: 'district-signal', ownerDecision: 'PENDING',
+  });
+  const paletteLaunderedCourt = runVisualCourt({
+    creative: paletteLaunderedCreative,
+    inspection: paletteLaunderedInspection,
+    context: { performanceBudget: context.packet.performance_budget },
+  });
+  assert.equal(paletteLaunderedCourt.status, 'FAIL');
+  assert.equal(paletteLaunderedInspection.policyPass, false);
+  assert.deepEqual(paletteLaunderedInspection.evidence.visible_features.desktop.palette, []);
+  assert.ok(paletteLaunderedInspection.evidence.provider_execution.every((execution) => execution.canonical_fixture === false));
   assert.match(result.variants[0].court.judges[0].evidence.visible_observation, /paths|rectangles|circles/i);
 });
 

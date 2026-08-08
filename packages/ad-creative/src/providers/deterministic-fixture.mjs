@@ -111,12 +111,24 @@ export function verifyDeterministicFixtureExecution({ image, analysis }) {
   if (inspection.provider !== generation.provider || inspection.model !== generation.model) errors.push('inspection provider identity mismatch');
   if (inspection.image_sha256 !== digest(svg)) errors.push('inspection image hash mismatch');
   if (inspection.external_provider_calls !== 0 || inspection.actual_cost_usd !== 0 || inspection.network_accessed !== false) errors.push('inspection receipt is not zero-network and zero-cost');
+  const variantId = generation.configuration?.variantId;
+  const aspectRatio = generation.configuration?.aspectRatio;
+  if (
+    typeof variantId !== 'string'
+    || typeof generation.seed !== 'string'
+    || !Object.hasOwn(DIMENSIONS, aspectRatio)
+  ) {
+    errors.push('generation receipt cannot reconstruct the canonical deterministic composition');
+  } else if (svg !== compositionSvg({ variantId, aspectRatio, seed: generation.seed })) {
+    errors.push('fixture output does not match the canonical deterministic composition');
+  }
   if (errors.length > 0) throw new Error(`deterministic fixture execution refused: ${errors.join('; ')}`);
   return Object.freeze({
     provider_calls: 0,
     external_provider_calls: 0,
     actual_spend_usd: 0,
     network_accessed: false,
+    canonical_fixture: true,
     image_sha256: generation.result_sha256,
     bytes: bytes.length,
   });
