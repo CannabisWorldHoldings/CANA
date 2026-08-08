@@ -22,7 +22,7 @@ import {
 import { validateCreativeEvidenceImportManifest } from '../../packages/ad-creative/src/evidence-import.mjs';
 import { createProviderRegistry } from '../../packages/ad-creative/src/provider-contract.mjs';
 import { createDeterministicFixtureProvider } from '../../packages/ad-creative/src/providers/deterministic-fixture.mjs';
-import { makeGrant, sealPacket } from '../../skills-src/hermes-governed-packet.mjs';
+import { acceptFixedOfflineCreativeAuthorization, sealPacket } from '../../skills-src/hermes-governed-packet.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const NOW = new Date('2026-08-04T04:00:00.000Z');
@@ -215,9 +215,11 @@ async function main() {
   const evidence = competitorEvidence();
   const compiled = compileCreativeCampaignContext(contextInput(evidence));
   if (!compiled.valid) throw new Error(compiled.errors.join('; '));
-  const grant = makeGrant({
-    capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 8,
-    expiresAt: '2026-08-05T04:00:00.000Z', issuedBy: 'CANA', now: NOW,
+  const creativeAuthorization = JSON.parse(await readFile(join(REPO_ROOT, 'packages/ad-creative/fixtures/offline-creative-draft-authorization.json'), 'utf8'));
+  const grant = acceptFixedOfflineCreativeAuthorization({
+    authorization: creativeAuthorization,
+    contextPacket: compiled.packet,
+    now: NOW,
   });
   const governed = sealPacket({
     contextPacket: compiled.packet,
@@ -374,6 +376,19 @@ async function main() {
     writeJson(outputRoot, 'ancestry-transfer-receipt.json', ancestry),
     writeJson(outputRoot, 'competitor-evidence.json', evidence),
     writeJson(outputRoot, 'sitemind-context-receipt.json', compiled.packet),
+    writeJson(outputRoot, 'offline-creative-draft-authorization.json', {
+      authorization: creativeAuthorization,
+      admission: {
+        valid: grant.valid,
+        errors: grant.errors,
+        grant_id: grant.grant_id,
+        context_digest: grant.context_digest,
+        provider_id: grant.provider_id,
+        autonomy_level: grant.autonomy_level,
+        production_authority: 'NONE',
+        spend_authority: 'NONE',
+      },
+    }),
     writeJson(outputRoot, 'hermes-governed-packet.json', governed.packet),
     writeJson(outputRoot, 'owner-seed-genomes.json', OWNER_CAMPAIGN_SEEDS),
     writeJson(outputRoot, 'owner-preference-memory.json', OWNER_REJECTION_MEMORY),

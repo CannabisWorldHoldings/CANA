@@ -25,6 +25,7 @@
     "apps/web/tests/dynamic-creative-review.test.mjs",
     "docs/dynamic-creative/SITEMIND_GOVERNED_DYNAMIC_CREATIVE_FOUNDATION.md",
     "package-lock.json",
+    "packages/ad-creative/fixtures/offline-creative-draft-authorization.json",
     "packages/ad-creative/package.json",
     "packages/ad-creative/src/dynamic-foundation.mjs",
     "packages/ad-creative/src/evidence-import.mjs",
@@ -40,5 +41,5 @@
   ],
   "rejected_pr21_paths_survived": false,
   "pr21_transfer_policy": "MECHANISMS_AND_EXPLICITLY_APPROVED_SEEDS_ONLY",
-  "audit_digest": "dd8faa2e9ce5e9b82d11abed6756d67f0bae732f49f6210e76d04257571abb88"
+  "audit_digest": "503fcea7a2747c80ba853b857fd8d658eb88404916e78731216ea5a965f69a7f"
 }

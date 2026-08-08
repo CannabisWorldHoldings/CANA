@@ -24,7 +24,7 @@ ORDERWEEDDC first-party events
       -> future SiteMind learning after truthful attribution
 ```
 
-No new brain, governor, TruthGraph, memory store, mission state, publisher, payment authority, or scheduler was added. SiteMind compiles context and preserves review evidence. Hermes receives a bounded draft-generation grant. Image providers implement one replaceable contract. CANA remains the only authority boundary.
+No new brain, governor, TruthGraph, memory store, mission state, publisher, payment authority, or scheduler was added. SiteMind compiles context and preserves review evidence. Hermes admits one repository-fixed, synthetic, deterministic, zero-spend Level 1 draft authorization; the generic public grant constructor cannot mint creative authority. Image providers implement one replaceable contract. CANA remains the only authority boundary.
 
 ## Reused components
 
@@ -45,6 +45,7 @@ No new brain, governor, TruthGraph, memory store, mission state, publisher, paym
 | `cana.owner-creative-preference/1.0.0` | Exact PR21 rejection, eight stable reason tags, preference pair, and no-merge/no-publication decision | Owner decision evidence |
 | `cana.sitemind-creative-context/1.0.0` | Advertiser, entitlement, rights-cleared assets, objective, offer, audience, placement, brand rules, owner memory, first-party outcomes, competitor evidence, constraints, budgets, and prohibited elements | Context only |
 | `cana.image-provider-routing/1.0.0` | Quality, cost, latency, policy eligibility, and historical-performance routing receipt | Selects but does not call or spend |
+| `cana.fixed-offline-creative-authorization/1.0.0` | Exact-digest synthetic-advertiser, deterministic-provider, Level 1, zero-production and zero-spend fixture scope | Cannot be widened or minted through the generic grant API |
 | `cana.deterministic-image-generation/1.0.0` | Prompt hash, provider, model, seed, configuration, source asset hashes, result hash, zero-call and zero-cost receipt | Fixture generation only |
 | `cana.creative-sponsorship-entitlement/1.0.0` | Placement, share ceiling, targeting, refresh, active variants, reporting, and experimentation limits | Cannot change verification, licensing, availability, source confidence, or organic order |
 | `cana.visual-verification-court/1.0.0` | Required visual, truth, policy, rights, owner-taste, coherence, performance, and landing-page judges | Cannot publish |
@@ -136,7 +137,7 @@ The tuning-readiness interface reports no fine-tuned model and no authorization.
 - A conversion event is accepted only with directly attributed ORDERWEEDDC first-party evidence.
 - Generated image text is prohibited; disclosure and customer copy are deterministic HTML.
 - Normal homepage requests have no review placement. Rendering requires `CANA_DYNAMIC_CREATIVE_REVIEW_MODE=LOCAL_ONLY`, a `.localhost` host, and an allowlisted query value derived from the canonical creative genomes.
-- The execution boundary recomputes both the SiteMind context seal and Hermes packet seal, checks capability, budget, issuer, binding, and expiry, and refuses forged Hermes-shaped objects before provider selection. A grant and sealed packet must also have been issued and sealed by the current Hermes runtime instance; a serialized receipt is evidence, not reusable execution authority.
+- The execution boundary recomputes both the SiteMind context seal and Hermes packet seal, checks capability, budget, issuer, binding, and expiry, and refuses forged Hermes-shaped objects before provider selection. A grant and sealed packet must also have been admitted and sealed by the current Hermes runtime instance. Creative draft admission requires the exact runtime-held digest of the committed offline fixture authorization and validates synthetic identity, rights-cleared fixture assets, Level 1 scope, deterministic provider, no production authority, and no spend authority. A serialized receipt is evidence, not reusable execution authority.
 
 ## Known limitations
 

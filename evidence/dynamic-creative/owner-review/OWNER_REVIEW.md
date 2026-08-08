@@ -35,6 +35,7 @@ The owner may approve different desktop/mobile refinements only if they remain o
 - [PR21 rejected evidence admission](./pr21-rejected-evidence-ingestion.json)
 - [Owner preference memory](./owner-preference-memory.json)
 - [SiteMind context](./sitemind-context-receipt.json)
+- [Fixed offline creative authorization](./offline-creative-draft-authorization.json)
 - [Hermes governed packet](./hermes-governed-packet.json)
 - [Provider registry](./provider-registry.json) and [routing](./provider-routing-receipt.json)
 - [Campaign state machine](./campaign-lifecycle.json)

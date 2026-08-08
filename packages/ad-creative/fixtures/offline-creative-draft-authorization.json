@@ -1,0 +1,17 @@
+{
+  "schema": "cana.fixed-offline-creative-authorization/1.0.0",
+  "authorization_id": "auth_synthetic_anacostia_owner_review_20260803",
+  "issued_by": "CANA",
+  "capability": "GENERATE_CREATIVE_DRAFT",
+  "context_profile": "synthetic-anacostia-owner-review",
+  "advertiser_id": "synthetic-anacostia-apothecary",
+  "synthetic_advertiser": true,
+  "autonomy_level": "LEVEL_1_SHADOW_GENERATION_AND_SCORING",
+  "provider_id": "deterministic-fixture",
+  "budget_units": 8,
+  "expires_at": "2027-08-05T04:00:00.000Z",
+  "scope": "OWNER_REVIEW_OFFLINE_FIXTURE_ONLY",
+  "production_authority": "NONE",
+  "spend_authority": "NONE",
+  "authorization_digest": "7a79525de63d62c88c6e175e2237cce0398257d65895d8894e46dde76e635026"
+}

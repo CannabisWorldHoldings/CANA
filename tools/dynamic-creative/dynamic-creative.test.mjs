@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import * as ProviderContract from '../../packages/ad-creative/src/provider-contract.mjs';
 import * as Hermes from '../../skills-src/hermes-governed-packet.mjs';
@@ -8,7 +9,7 @@ import { validateCreativeEvidenceImportManifest } from '../../packages/ad-creati
 import { createDeterministicFixtureProvider } from '../../packages/ad-creative/src/providers/deterministic-fixture.mjs';
 
 const { createProvider, createProviderRegistry, routeImageProvider } = ProviderContract;
-const { CAPABILITIES, makeGrant, sealPacket } = Hermes;
+const { CAPABILITIES, acceptFixedOfflineCreativeAuthorization, makeGrant, sealPacket } = Hermes;
 const { compileCreativeCampaignContext, ingestCreativeCompetitorEvidence } = SiteMind;
 
 async function loadFoundation() {
@@ -23,6 +24,10 @@ async function loadFoundation() {
 const sha = (letter) => letter.repeat(64);
 const actualSha = (value) => createHash('sha256').update(value).digest('hex');
 const NOW = new Date('2026-08-04T04:00:00.000Z');
+const fixedCreativeAuthorization = JSON.parse(readFileSync(
+  new URL('../../packages/ad-creative/fixtures/offline-creative-draft-authorization.json', import.meta.url),
+  'utf8',
+));
 
 function fixtureProvider({
   name = 'deterministic-fixture',
@@ -370,11 +375,28 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   assert.equal(typeof runControlledVerticalSlice, 'function', 'controlled vertical slice is missing');
   const registry = createProviderRegistry([createDeterministicFixtureProvider()]);
   const context = compileCreativeCampaignContext(validContextInput());
-  const grant = makeGrant({
-    capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 6,
+  const selfMintedGrant = makeGrant({
+    capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 8,
     expiresAt: '2026-08-05T04:00:00.000Z', issuedBy: 'CANA', now: NOW,
   });
+  assert.equal(selfMintedGrant.valid, false);
   assert.ok(CAPABILITIES.includes('GENERATE_CREATIVE_DRAFT'));
+  const tamperedBody = { ...fixedCreativeAuthorization, budget_units: 80 };
+  delete tamperedBody.authorization_digest;
+  const tamperedAuthorization = {
+    ...tamperedBody,
+    authorization_digest: actualSha(JSON.stringify(tamperedBody)),
+  };
+  assert.equal(acceptFixedOfflineCreativeAuthorization({
+    authorization: tamperedAuthorization,
+    contextPacket: context.packet,
+    now: NOW,
+  }).valid, false);
+  const grant = acceptFixedOfflineCreativeAuthorization({
+    authorization: fixedCreativeAuthorization,
+    contextPacket: context.packet,
+    now: NOW,
+  });
   const packet = sealPacket({
     contextPacket: context.packet, grant,
     intent: {
@@ -455,6 +477,33 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   });
   assert.equal(hiddenCourt.status, 'FAIL');
   assert.ok(hiddenCourt.failureReasons.includes('premium-editorial-quality'));
+
+  for (const hiddenExpression of [
+    'style="opacity:0"',
+    'style="display:none"',
+    "opacity='0'",
+    'class="hidden-by-page-css"',
+    'fill="transparent"',
+    'fill="rgba(0,0,0,0)"',
+    'fill="#00000000"',
+  ]) {
+    const cssHiddenCreative = {
+      ...source,
+      ...Object.fromEntries(['desktop', 'mobile'].map((viewport) => {
+        const svg = Buffer.from(source[viewport].image.imageBase64, 'base64').toString('utf8')
+          .replace(/<(path|rect|circle)\b/g, `<$1 ${hiddenExpression}`);
+        return [viewport, assetWithSvg(viewport, svg)];
+      })),
+    };
+    const court = runVisualCourt({
+      creative: cssHiddenCreative,
+      inspection: inspectDeterministicCreativeArtifacts({
+        creative: cssHiddenCreative, context: context.packet, expectedSystemId: 'district-signal', ownerDecision: 'PENDING',
+      }),
+      context: { performanceBudget: context.packet.performance_budget },
+    });
+    assert.equal(court.status, 'FAIL', `${hiddenExpression} must fail the visual court`);
+  }
   assert.match(result.variants[0].court.judges[0].evidence.visible_observation, /paths|rectangles|circles/i);
 });
 
@@ -502,9 +551,10 @@ test('controlled slice recomputes Hermes seals and refuses provider metadata imp
     /not sealed by this CANA packet runtime|issued by CANA/i,
   );
 
-  const grant = makeGrant({
-    capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 8,
-    expiresAt: '2026-08-05T04:00:00.000Z', issuedBy: 'CANA', now: NOW,
+  const grant = acceptFixedOfflineCreativeAuthorization({
+    authorization: fixedCreativeAuthorization,
+    contextPacket: context.packet,
+    now: NOW,
   });
   const governed = sealPacket({
     contextPacket: context.packet,
