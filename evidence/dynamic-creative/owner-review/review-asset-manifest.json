@@ -1,0 +1,44 @@
+[
+  {
+    "campaign_id": "district-signal",
+    "viewport": "desktop",
+    "path": "apps/web/public/creative/review/district-signal-desktop.svg",
+    "sha256": "147707479910734362d161393cc2c892a8c9094e872c9803deecde22d6e43a69",
+    "bytes": 775
+  },
+  {
+    "campaign_id": "district-signal",
+    "viewport": "mobile",
+    "path": "apps/web/public/creative/review/district-signal-mobile.svg",
+    "sha256": "4a982d8eb7cf8c0003f668affb616c48b3451865696a4c79afe5d75c767c506f",
+    "bytes": 735
+  },
+  {
+    "campaign_id": "evening-index",
+    "viewport": "desktop",
+    "path": "apps/web/public/creative/review/evening-index-desktop.svg",
+    "sha256": "c747425defa8531dec705b52ecbdeeafa722e15ea40f51e3efae3363f9d3e299",
+    "bytes": 762
+  },
+  {
+    "campaign_id": "evening-index",
+    "viewport": "mobile",
+    "path": "apps/web/public/creative/review/evening-index-mobile.svg",
+    "sha256": "4481616ed8312b462e9a9fa7ec19ecba182fcfd0ef0e7d94d99c7a2a2fce610d",
+    "bytes": 759
+  },
+  {
+    "campaign_id": "receipt-rhythm",
+    "viewport": "desktop",
+    "path": "apps/web/public/creative/review/receipt-rhythm-desktop.svg",
+    "sha256": "c6c4251fd5e913a0af4c28604e845866c8f0e07840c3f3aa72fdec5c3698c6e2",
+    "bytes": 914
+  },
+  {
+    "campaign_id": "receipt-rhythm",
+    "viewport": "mobile",
+    "path": "apps/web/public/creative/review/receipt-rhythm-mobile.svg",
+    "sha256": "dad3fce07babb2e2ea42d991f723f48df67bb519e56378ebbe43a21fb018dbab",
+    "bytes": 880
+  }
+]

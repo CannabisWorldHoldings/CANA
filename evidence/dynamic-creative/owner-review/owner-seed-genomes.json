@@ -1,0 +1,61 @@
+[
+  {
+    "id": "owd-source-before-hype",
+    "concept": "Trust before handoff: make source, freshness and evidence the premium visual idea.",
+    "strategy": "approved-house-fallback",
+    "eyebrow": "Approved house fallback",
+    "headline": "Source before hype.",
+    "body": "The owner-approved primary house seed and deterministic rollback target whenever a dynamic placement is not fully eligible.",
+    "cta": "See how evidence is labeled",
+    "alt": "Source records leading to an open doorway",
+    "decision": "APPROVED_PRIMARY",
+    "decisionReason": "Owner-approved primary house-campaign seed.",
+    "roles": [
+      "CREATIVE_GENOME_EXAMPLE",
+      "VISUAL_EVALUATION_FIXTURE",
+      "FUTURE_AUTONOMOUS_CREATIVE_SEED",
+      "FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN"
+    ],
+    "fallbackEligible": true,
+    "fallbackPriority": 1,
+    "disclosure": "ORDERWEEDDC house campaign",
+    "desktopAsset": "/creative/house/source-before-hype-desktop.svg",
+    "mobileAsset": "/creative/house/source-before-hype-mobile.svg",
+    "assetStatus": "APPROVED_AVAILABLE"
+  },
+  {
+    "id": "owd-block-by-block",
+    "concept": "Local orientation: let D.C. block knowledge reduce discovery friction.",
+    "decision": "APPROVED_SECONDARY",
+    "decisionReason": "Owner-approved secondary house-campaign seed.",
+    "roles": [
+      "CREATIVE_GENOME_EXAMPLE",
+      "VISUAL_EVALUATION_FIXTURE",
+      "FUTURE_AUTONOMOUS_CREATIVE_SEED",
+      "FALLBACK_ORDERWEEDDC_HOUSE_CAMPAIGN"
+    ],
+    "fallbackEligible": true,
+    "fallbackPriority": 2,
+    "disclosure": "ORDERWEEDDC house campaign",
+    "desktopAsset": "/creative/house/block-by-block-desktop.svg",
+    "mobileAsset": "/creative/house/block-by-block-mobile.svg",
+    "assetStatus": "APPROVED_AVAILABLE"
+  },
+  {
+    "id": "owd-tonights-shortlist",
+    "concept": "Bounded-choice evening shortlist prototype.",
+    "decision": "REJECTED_PRIMARY_DIRECTION",
+    "decisionReason": "Owner explicitly rejected this as the primary homepage direction.",
+    "roles": [
+      "CREATIVE_GENOME_EXAMPLE",
+      "VISUAL_EVALUATION_FIXTURE",
+      "FUTURE_AUTONOMOUS_CREATIVE_SEED"
+    ],
+    "fallbackEligible": false,
+    "fallbackPriority": null,
+    "disclosure": "Rejected owner-review fixture — never eligible for rotation",
+    "desktopAsset": "/creative/house/tonights-shortlist-desktop.svg",
+    "mobileAsset": "/creative/house/tonights-shortlist-mobile.svg",
+    "assetStatus": "REJECTED_NOT_AVAILABLE"
+  }
+]

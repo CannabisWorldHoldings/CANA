@@ -32,6 +32,8 @@ import MarketplaceCategoryRail from '@/components/marketplace-category-rail';
 import MarketplaceFeaturedRetailers from '@/components/marketplace-featured-retailers';
 import MarketplaceHomeHero from '@/components/marketplace-home-hero';
 import MarketplaceSearchPanel from '@/components/marketplace-search-panel';
+import DynamicSponsoredPlacement from '@/components/dynamic-sponsored-placement';
+import { resolveDynamicCreativeReview } from '@/lib/dynamic-creative-review.mjs';
 import {
   BadgeCheck,
   Clock,
@@ -54,6 +56,7 @@ type Props = {
     status?: string | string[];
     sort?: string | string[];
     page?: string | string[];
+    creativeReview?: string | string[];
   }>;
 };
 
@@ -95,6 +98,16 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
 
   // 2. Query a bounded page of retailers matching this brand and truth state.
   const isCanonicalBrand = brand.domain === CANONICAL_TENANT_DOMAIN;
+  const requestedCreativeReview = Array.isArray(resolvedSearchParams.creativeReview)
+    ? resolvedSearchParams.creativeReview[0]
+    : resolvedSearchParams.creativeReview;
+  const creativeReviewCampaign = isCanonicalBrand
+    ? resolveDynamicCreativeReview({
+        id: requestedCreativeReview,
+        hostname: origin.hostname,
+        mode: process.env.CANA_DYNAMIC_CREATIVE_REVIEW_MODE,
+      })
+    : null;
   const asOf = new Date();
   const where = directoryRetailerWhere({
     brandId: brand.id,
@@ -219,6 +232,9 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
             totalResults={totalResults}
             verifiedCurrentCount={verifiedCurrentCount}
           />
+          {creativeReviewCampaign && (
+            <DynamicSponsoredPlacement campaign={creativeReviewCampaign} />
+          )}
           <MarketplaceSearchPanel filters={requestedFilters} />
           <MarketplaceCategoryRail />
           <MarketplaceFeaturedRetailers

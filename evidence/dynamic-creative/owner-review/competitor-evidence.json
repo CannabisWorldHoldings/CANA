@@ -1,0 +1,126 @@
+[
+  {
+    "schema_version": "cana.sitemind-creative-competitor-evidence/1.0.0",
+    "event_id": "evt_scheduled_watch_synthetic_fixture",
+    "evidence_id": "scheduled-watch-synthetic-fixture",
+    "entity_id": "entity_synthetic_competitor",
+    "competitor_id": "competitor_synthetic_fixture",
+    "surface_id": "homepage_comparison_rail",
+    "url": "https://example.test/scheduled-watch-fixture",
+    "source": "https://example.test/scheduled-watch-fixture",
+    "first_seen_at": "2026-08-04T04:00:00.000Z",
+    "last_verified_at": "2026-08-04T04:00:00.000Z",
+    "event_date": "2026-08-04T04:00:00.000Z",
+    "signal_source": "SCHEDULED_WATCH",
+    "scheduled_watch_signal_id": "growth_watch_synthetic_001",
+    "crawl_id": "crawl_targeted_synthetic_001",
+    "baseline_id": "baseline_synthetic_001",
+    "captured_at": "2026-08-04T04:00:00.000Z",
+    "confidence": "DIRECTLY_OBSERVED",
+    "collection_method": "SCHEDULED_WATCH",
+    "observation": "A synthetic watch fixture added a visibly disclosed comparison rail.",
+    "inference": "A disclosed comparison mechanism may reduce choice overload; performance is unknown.",
+    "before": {
+      "content_sha256": "5dfc7eb07a117ed225d433a3534609b7a2d4a227d9b58caf37030a92220a1403",
+      "screenshot_sha256": "3d33b1569740327c4b81fda3b93fc3531c8917dc170dd157dfe8b9fc9862d7e1",
+      "screenshot_ref": "sha256:3d33b1569740327c4b81fda3b93fc3531c8917dc170dd157dfe8b9fc9862d7e1"
+    },
+    "after": {
+      "content_sha256": "7c56e597a8f57c196a1b3445e6c835569166debb8646cd308bc925fd01e40257",
+      "screenshot_sha256": "cf3f787e043f597a9254817f192d90096f1513201ae298b88966644f26d568b8",
+      "screenshot_ref": "sha256:cf3f787e043f597a9254817f192d90096f1513201ae298b88966644f26d568b8"
+    },
+    "rights_state": "SYNTHETIC_REFERENCE_ONLY",
+    "diffs": {
+      "dom": "NOT_SUPPLIED",
+      "visual": "BEFORE_AFTER_SCREENSHOT_HASHES_ONLY",
+      "semantic": "A synthetic watch fixture added a visibly disclosed comparison rail.",
+      "asset": "NOT_SUPPLIED",
+      "seo": "NOT_SUPPLIED",
+      "funnel": "NOT_SUPPLIED",
+      "ad_creative": "A synthetic watch fixture added a visibly disclosed comparison rail."
+    },
+    "policy_context": "SYNTHETIC_TEST_FIXTURE_NO_LIVE_MARKET_CLAIM",
+    "uncertainty": "PERFORMANCE_UNKNOWN",
+    "evidence_locations": [
+      "sha256:3d33b1569740327c4b81fda3b93fc3531c8917dc170dd157dfe8b9fc9862d7e1",
+      "sha256:cf3f787e043f597a9254817f192d90096f1513201ae298b88966644f26d568b8"
+    ],
+    "prompt_injection_state": "QUARANTINED_UNTRUSTED_EVIDENCE",
+    "mechanism": {
+      "extracted_hypothesis": "A disclosed comparison mechanism may reduce choice overload; performance is unknown.",
+      "protected_expression_copied": false,
+      "allowed_use": "MECHANISM_HYPOTHESIS_ONLY"
+    },
+    "performance_claim": "UNKNOWN_NOT_OBSERVED",
+    "optimization_authority": "NONE_COMPETITOR_REFERENCE_ONLY",
+    "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
+    "deduplication_key": "35a44d6b82397751e869d2cfad61880b73ebe65a4d2bbeb8945c0305d50d9ee7",
+    "importance_score": 0.4,
+    "change_type": "DISCLOSURE_MECHANISM_ADDED",
+    "routing_decision": "MECHANISM_REVIEW_ONLY",
+    "evidence_digest": "3c89b81e1256e0ab93cc2be0fa2c338db2058178ea019796950be29cd62dec37"
+  },
+  {
+    "schema_version": "cana.sitemind-creative-competitor-evidence/1.0.0",
+    "event_id": "evt_deep_crawler_synthetic_fixture",
+    "evidence_id": "deep-crawler-synthetic-fixture",
+    "entity_id": "entity_synthetic_competitor",
+    "competitor_id": "competitor_synthetic_fixture",
+    "surface_id": "source_freshness_handoff",
+    "url": "https://example.test/deep-crawler-fixture",
+    "source": "https://example.test/deep-crawler-fixture",
+    "first_seen_at": "2026-08-04T04:00:00.000Z",
+    "last_verified_at": "2026-08-04T04:00:00.000Z",
+    "event_date": "2026-08-04T04:00:00.000Z",
+    "signal_source": "DEEP_CRAWLER",
+    "scheduled_watch_signal_id": null,
+    "crawl_id": "crawl_deep_synthetic_002",
+    "baseline_id": "baseline_synthetic_002",
+    "captured_at": "2026-08-04T04:00:00.000Z",
+    "confidence": "STRONGLY_INFERRED",
+    "collection_method": "DEEP_CRAWLER",
+    "observation": "A synthetic deep-crawl fixture exposed source freshness beside its action control.",
+    "inference": "Source proximity is a trust mechanism hypothesis, not conversion evidence.",
+    "before": {
+      "content_sha256": "d1cc5c09e5b21fb5bf40a9964e00b40835dbe97b460167cc82760710060658e5",
+      "screenshot_sha256": "0170c5b7c60d77982b8b89a0bc144a490978fdf06f837e2925ff0f569d4eabfb",
+      "screenshot_ref": "sha256:0170c5b7c60d77982b8b89a0bc144a490978fdf06f837e2925ff0f569d4eabfb"
+    },
+    "after": {
+      "content_sha256": "1cbaada29163ff829cd1bc70275663d7e165f4d2b8a2df9a3182c06877c764c1",
+      "screenshot_sha256": "c5369e3c7bc55d0fb0f0756388255a918a2ea1b40a924f18a9a48186040f850b",
+      "screenshot_ref": "sha256:c5369e3c7bc55d0fb0f0756388255a918a2ea1b40a924f18a9a48186040f850b"
+    },
+    "rights_state": "SYNTHETIC_REFERENCE_ONLY",
+    "diffs": {
+      "dom": "NOT_SUPPLIED",
+      "visual": "BEFORE_AFTER_SCREENSHOT_HASHES_ONLY",
+      "semantic": "A synthetic deep-crawl fixture exposed source freshness beside its action control.",
+      "asset": "NOT_SUPPLIED",
+      "seo": "NOT_SUPPLIED",
+      "funnel": "NOT_SUPPLIED",
+      "ad_creative": "A synthetic deep-crawl fixture exposed source freshness beside its action control."
+    },
+    "policy_context": "SYNTHETIC_TEST_FIXTURE_NO_LIVE_MARKET_CLAIM",
+    "uncertainty": "STRONGLY_INFERRED_MECHANISM_PERFORMANCE_UNKNOWN",
+    "evidence_locations": [
+      "sha256:0170c5b7c60d77982b8b89a0bc144a490978fdf06f837e2925ff0f569d4eabfb",
+      "sha256:c5369e3c7bc55d0fb0f0756388255a918a2ea1b40a924f18a9a48186040f850b"
+    ],
+    "prompt_injection_state": "QUARANTINED_UNTRUSTED_EVIDENCE",
+    "mechanism": {
+      "extracted_hypothesis": "Source proximity is a trust mechanism hypothesis, not conversion evidence.",
+      "protected_expression_copied": false,
+      "allowed_use": "MECHANISM_HYPOTHESIS_ONLY"
+    },
+    "performance_claim": "UNKNOWN_NOT_OBSERVED",
+    "optimization_authority": "NONE_COMPETITOR_REFERENCE_ONLY",
+    "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
+    "deduplication_key": "9a52edeb6b4c33d938b3ca73974b521b169351ca3d7afb5ae030a366e0c1966f",
+    "importance_score": 0.5,
+    "change_type": "SOURCE_PROXIMITY_MECHANISM_OBSERVED",
+    "routing_decision": "MECHANISM_REVIEW_ONLY",
+    "evidence_digest": "2ab2fcd7fcf928d63615877ef48ebddc2ec01cf0ef84372b379f15875bf85975"
+  }
+]

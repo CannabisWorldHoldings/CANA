@@ -1,0 +1,30 @@
+{
+  "authorization": {
+    "schema": "cana.fixed-offline-creative-authorization/1.0.0",
+    "authorization_id": "auth_synthetic_anacostia_owner_review_20260803",
+    "issued_by": "CANA",
+    "capability": "GENERATE_CREATIVE_DRAFT",
+    "context_profile": "synthetic-anacostia-owner-review",
+    "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+    "advertiser_id": "synthetic-anacostia-apothecary",
+    "synthetic_advertiser": true,
+    "autonomy_level": "LEVEL_1_SHADOW_GENERATION_AND_SCORING",
+    "provider_id": "deterministic-fixture",
+    "budget_units": 8,
+    "expires_at": "2027-08-05T04:00:00.000Z",
+    "scope": "OWNER_REVIEW_OFFLINE_FIXTURE_ONLY",
+    "production_authority": "NONE",
+    "spend_authority": "NONE",
+    "authorization_digest": "be6706f43437ce4ab1e048c3166e00e75ddd4543820024fac9515e718eeae5d7"
+  },
+  "admission": {
+    "valid": true,
+    "errors": [],
+    "grant_id": "auth_synthetic_anacostia_owner_review_20260803",
+    "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+    "provider_id": "deterministic-fixture",
+    "autonomy_level": "LEVEL_1_SHADOW_GENERATION_AND_SCORING",
+    "production_authority": "NONE",
+    "spend_authority": "NONE"
+  }
+}

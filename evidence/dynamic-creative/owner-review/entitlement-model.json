@@ -1,0 +1,75 @@
+{
+  "tiers": {
+    "HOUSE": {
+      "eligiblePlacements": [
+        "HOMEPAGE_SPONSORED_BILLBOARD"
+      ],
+      "impressionShareCeiling": 1,
+      "targetingEligibility": [
+        "DC"
+      ],
+      "creativeRefreshCadenceHours": 720,
+      "activeVariantLimit": 2,
+      "reportingDepth": "FIRST_PARTY_AGGREGATE",
+      "experimentationCapacity": 0
+    },
+    "NEIGHBORHOOD": {
+      "eligiblePlacements": [
+        "HOMEPAGE_SPONSORED_BILLBOARD",
+        "NEIGHBORHOOD_FEATURE"
+      ],
+      "impressionShareCeiling": 0.2,
+      "targetingEligibility": [
+        "DC",
+        "DC_NEIGHBORHOOD"
+      ],
+      "creativeRefreshCadenceHours": 168,
+      "activeVariantLimit": 3,
+      "reportingDepth": "CAMPAIGN_AND_PLACEMENT",
+      "experimentationCapacity": 1
+    },
+    "DISTRICT": {
+      "eligiblePlacements": [
+        "HOMEPAGE_SPONSORED_BILLBOARD",
+        "NEIGHBORHOOD_FEATURE",
+        "DEAL_SPOTLIGHT"
+      ],
+      "impressionShareCeiling": 0.35,
+      "targetingEligibility": [
+        "DC",
+        "DC_NEIGHBORHOOD"
+      ],
+      "creativeRefreshCadenceHours": 96,
+      "activeVariantLimit": 5,
+      "reportingDepth": "CAMPAIGN_PLACEMENT_AUDIENCE",
+      "experimentationCapacity": 2
+    }
+  },
+  "example": {
+    "schema_version": "cana.creative-sponsorship-entitlement/1.0.0",
+    "id": "ent_synthetic_vertical_slice",
+    "tier": "NEIGHBORHOOD",
+    "advertiserId": "synthetic-anacostia-apothecary",
+    "startsAt": "2026-08-04T04:00:00.000Z",
+    "endsAt": "2026-08-11T04:00:00.000Z",
+    "eligiblePlacements": [
+      "HOMEPAGE_SPONSORED_BILLBOARD",
+      "NEIGHBORHOOD_FEATURE"
+    ],
+    "impressionShareCeiling": 0.2,
+    "targetingEligibility": [
+      "DC",
+      "DC_NEIGHBORHOOD"
+    ],
+    "creativeRefreshCadenceHours": 168,
+    "activeVariantLimit": 3,
+    "reportingDepth": "CAMPAIGN_AND_PLACEMENT",
+    "experimentationCapacity": 1,
+    "affectsVerification": false,
+    "affectsLicensing": false,
+    "affectsAvailability": false,
+    "affectsSourceConfidence": false,
+    "affectsOrganicOrder": false,
+    "entitlementDigest": "6afe8f606abb900702f3ef1cde2adcfd89b667447983071f31b3c6ef871bfe86"
+  }
+}

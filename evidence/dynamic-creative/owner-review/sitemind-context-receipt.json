@@ -1,0 +1,325 @@
+{
+  "schema_version": "cana.sitemind-creative-context/1.0.0",
+  "authority_boundary": "SITEMIND_CONTEXT_ONLY_NO_EXECUTION_AUTHORITY",
+  "advertiser": {
+    "id": "synthetic-anacostia-apothecary",
+    "name": "Anacostia Apothecary - Synthetic Fixture",
+    "synthetic": true
+  },
+  "entitlement": {
+    "tier": "NEIGHBORHOOD",
+    "status": "SYNTHETIC_FIXTURE_AUTHORIZED"
+  },
+  "authorized_assets": [
+    {
+      "id": "fixture-logo",
+      "sha256": "2e9024f7bf4da2f37a2124139c06ff4ba8be45e30d06adf5dc92a03c82a79229",
+      "rights": "SYNTHETIC_FIXTURE_ONLY"
+    }
+  ],
+  "objective": "Invite adults 21+ to compare a clearly synthetic fixture offer.",
+  "offer": {
+    "text": "Build a verified shortlist",
+    "permittedClaims": [
+      "synthetic fixture only"
+    ]
+  },
+  "audience": {
+    "age": "21+",
+    "location": "Washington, D.C."
+  },
+  "placement": {
+    "id": "HOMEPAGE_SPONSORED_BILLBOARD",
+    "desktop": [
+      1440,
+      360
+    ],
+    "mobile": [
+      390,
+      440
+    ]
+  },
+  "brand_rules": [
+    "Sponsored disclosure is always visible",
+    "No pay-to-rank",
+    "No gradients or generated text"
+  ],
+  "owner_memory": {
+    "approved": [
+      "owd-source-before-hype",
+      "owd-block-by-block"
+    ],
+    "rejected": [
+      "pr21-house-billboard-5c7fe27",
+      "owd-tonights-shortlist"
+    ],
+    "reasons": [
+      "GENERIC",
+      "FAKE_LOOKING",
+      "LOW_CAMPAIGN_COHERENCE",
+      "WEAK_IMAGE_COPY_FIT",
+      "PROTOTYPE_LANGUAGE",
+      "WEAK_LOCAL_IDENTITY",
+      "LOW_MARKETPLACE_ENERGY",
+      "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+    ],
+    "preferencePair": {
+      "rejected": "generic map or skyline, synthetic product pile, placeholder language, and weak image-copy relationship",
+      "desired": "original premium ORDERWEEDDC campaign coherence, local intelligence, authentic abstraction, customer value, visual hierarchy, and a measurable mechanism"
+    }
+  },
+  "first_party_results": [],
+  "competitor_evidence": [
+    {
+      "schema_version": "cana.sitemind-creative-competitor-evidence/1.0.0",
+      "event_id": "evt_scheduled_watch_synthetic_fixture",
+      "evidence_id": "scheduled-watch-synthetic-fixture",
+      "entity_id": "entity_synthetic_competitor",
+      "competitor_id": "competitor_synthetic_fixture",
+      "surface_id": "homepage_comparison_rail",
+      "url": "https://example.test/scheduled-watch-fixture",
+      "source": "https://example.test/scheduled-watch-fixture",
+      "first_seen_at": "2026-08-04T04:00:00.000Z",
+      "last_verified_at": "2026-08-04T04:00:00.000Z",
+      "event_date": "2026-08-04T04:00:00.000Z",
+      "signal_source": "SCHEDULED_WATCH",
+      "scheduled_watch_signal_id": "growth_watch_synthetic_001",
+      "crawl_id": "crawl_targeted_synthetic_001",
+      "baseline_id": "baseline_synthetic_001",
+      "captured_at": "2026-08-04T04:00:00.000Z",
+      "confidence": "DIRECTLY_OBSERVED",
+      "collection_method": "SCHEDULED_WATCH",
+      "observation": "A synthetic watch fixture added a visibly disclosed comparison rail.",
+      "inference": "A disclosed comparison mechanism may reduce choice overload; performance is unknown.",
+      "before": {
+        "content_sha256": "5dfc7eb07a117ed225d433a3534609b7a2d4a227d9b58caf37030a92220a1403",
+        "screenshot_sha256": "3d33b1569740327c4b81fda3b93fc3531c8917dc170dd157dfe8b9fc9862d7e1",
+        "screenshot_ref": "sha256:3d33b1569740327c4b81fda3b93fc3531c8917dc170dd157dfe8b9fc9862d7e1"
+      },
+      "after": {
+        "content_sha256": "7c56e597a8f57c196a1b3445e6c835569166debb8646cd308bc925fd01e40257",
+        "screenshot_sha256": "cf3f787e043f597a9254817f192d90096f1513201ae298b88966644f26d568b8",
+        "screenshot_ref": "sha256:cf3f787e043f597a9254817f192d90096f1513201ae298b88966644f26d568b8"
+      },
+      "rights_state": "SYNTHETIC_REFERENCE_ONLY",
+      "diffs": {
+        "dom": "NOT_SUPPLIED",
+        "visual": "BEFORE_AFTER_SCREENSHOT_HASHES_ONLY",
+        "semantic": "A synthetic watch fixture added a visibly disclosed comparison rail.",
+        "asset": "NOT_SUPPLIED",
+        "seo": "NOT_SUPPLIED",
+        "funnel": "NOT_SUPPLIED",
+        "ad_creative": "A synthetic watch fixture added a visibly disclosed comparison rail."
+      },
+      "policy_context": "SYNTHETIC_TEST_FIXTURE_NO_LIVE_MARKET_CLAIM",
+      "uncertainty": "PERFORMANCE_UNKNOWN",
+      "evidence_locations": [
+        "sha256:3d33b1569740327c4b81fda3b93fc3531c8917dc170dd157dfe8b9fc9862d7e1",
+        "sha256:cf3f787e043f597a9254817f192d90096f1513201ae298b88966644f26d568b8"
+      ],
+      "prompt_injection_state": "QUARANTINED_UNTRUSTED_EVIDENCE",
+      "mechanism": {
+        "extracted_hypothesis": "A disclosed comparison mechanism may reduce choice overload; performance is unknown.",
+        "protected_expression_copied": false,
+        "allowed_use": "MECHANISM_HYPOTHESIS_ONLY"
+      },
+      "performance_claim": "UNKNOWN_NOT_OBSERVED",
+      "optimization_authority": "NONE_COMPETITOR_REFERENCE_ONLY",
+      "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
+      "deduplication_key": "35a44d6b82397751e869d2cfad61880b73ebe65a4d2bbeb8945c0305d50d9ee7",
+      "importance_score": 0.4,
+      "change_type": "DISCLOSURE_MECHANISM_ADDED",
+      "routing_decision": "MECHANISM_REVIEW_ONLY",
+      "evidence_digest": "3c89b81e1256e0ab93cc2be0fa2c338db2058178ea019796950be29cd62dec37"
+    },
+    {
+      "schema_version": "cana.sitemind-creative-competitor-evidence/1.0.0",
+      "event_id": "evt_deep_crawler_synthetic_fixture",
+      "evidence_id": "deep-crawler-synthetic-fixture",
+      "entity_id": "entity_synthetic_competitor",
+      "competitor_id": "competitor_synthetic_fixture",
+      "surface_id": "source_freshness_handoff",
+      "url": "https://example.test/deep-crawler-fixture",
+      "source": "https://example.test/deep-crawler-fixture",
+      "first_seen_at": "2026-08-04T04:00:00.000Z",
+      "last_verified_at": "2026-08-04T04:00:00.000Z",
+      "event_date": "2026-08-04T04:00:00.000Z",
+      "signal_source": "DEEP_CRAWLER",
+      "scheduled_watch_signal_id": null,
+      "crawl_id": "crawl_deep_synthetic_002",
+      "baseline_id": "baseline_synthetic_002",
+      "captured_at": "2026-08-04T04:00:00.000Z",
+      "confidence": "STRONGLY_INFERRED",
+      "collection_method": "DEEP_CRAWLER",
+      "observation": "A synthetic deep-crawl fixture exposed source freshness beside its action control.",
+      "inference": "Source proximity is a trust mechanism hypothesis, not conversion evidence.",
+      "before": {
+        "content_sha256": "d1cc5c09e5b21fb5bf40a9964e00b40835dbe97b460167cc82760710060658e5",
+        "screenshot_sha256": "0170c5b7c60d77982b8b89a0bc144a490978fdf06f837e2925ff0f569d4eabfb",
+        "screenshot_ref": "sha256:0170c5b7c60d77982b8b89a0bc144a490978fdf06f837e2925ff0f569d4eabfb"
+      },
+      "after": {
+        "content_sha256": "1cbaada29163ff829cd1bc70275663d7e165f4d2b8a2df9a3182c06877c764c1",
+        "screenshot_sha256": "c5369e3c7bc55d0fb0f0756388255a918a2ea1b40a924f18a9a48186040f850b",
+        "screenshot_ref": "sha256:c5369e3c7bc55d0fb0f0756388255a918a2ea1b40a924f18a9a48186040f850b"
+      },
+      "rights_state": "SYNTHETIC_REFERENCE_ONLY",
+      "diffs": {
+        "dom": "NOT_SUPPLIED",
+        "visual": "BEFORE_AFTER_SCREENSHOT_HASHES_ONLY",
+        "semantic": "A synthetic deep-crawl fixture exposed source freshness beside its action control.",
+        "asset": "NOT_SUPPLIED",
+        "seo": "NOT_SUPPLIED",
+        "funnel": "NOT_SUPPLIED",
+        "ad_creative": "A synthetic deep-crawl fixture exposed source freshness beside its action control."
+      },
+      "policy_context": "SYNTHETIC_TEST_FIXTURE_NO_LIVE_MARKET_CLAIM",
+      "uncertainty": "STRONGLY_INFERRED_MECHANISM_PERFORMANCE_UNKNOWN",
+      "evidence_locations": [
+        "sha256:0170c5b7c60d77982b8b89a0bc144a490978fdf06f837e2925ff0f569d4eabfb",
+        "sha256:c5369e3c7bc55d0fb0f0756388255a918a2ea1b40a924f18a9a48186040f850b"
+      ],
+      "prompt_injection_state": "QUARANTINED_UNTRUSTED_EVIDENCE",
+      "mechanism": {
+        "extracted_hypothesis": "Source proximity is a trust mechanism hypothesis, not conversion evidence.",
+        "protected_expression_copied": false,
+        "allowed_use": "MECHANISM_HYPOTHESIS_ONLY"
+      },
+      "performance_claim": "UNKNOWN_NOT_OBSERVED",
+      "optimization_authority": "NONE_COMPETITOR_REFERENCE_ONLY",
+      "instruction_authority": "NONE_UNTRUSTED_EVIDENCE_ONLY",
+      "deduplication_key": "9a52edeb6b4c33d938b3ca73974b521b169351ca3d7afb5ae030a366e0c1966f",
+      "importance_score": 0.5,
+      "change_type": "SOURCE_PROXIMITY_MECHANISM_OBSERVED",
+      "routing_decision": "MECHANISM_REVIEW_ONLY",
+      "evidence_digest": "2ab2fcd7fcf928d63615877ef48ebddc2ec01cf0ef84372b379f15875bf85975"
+    }
+  ],
+  "constraints": {
+    "legal": [
+      "21+ only",
+      "no health claims"
+    ],
+    "platformPolicy": [
+      "no generated text in image"
+    ],
+    "trust": [
+      "synthetic advertiser must remain labeled",
+      "competitor performance remains unknown"
+    ]
+  },
+  "performance_budget": {
+    "maxAssetBytes": 180000,
+    "maxTotalBytes": 360000
+  },
+  "prohibited_elements": [
+    "minors",
+    "medical claims",
+    "undisclosed sponsorship",
+    "organic rank influence"
+  ],
+  "compiled_at": "2026-08-04T04:00:00.000Z",
+  "canonical_sitemind_context_digest": "7b10e2db8e8d5f4889349837537f3dc123f195abd432d78f880f13b1e989860a",
+  "actionable_facts": [
+    {
+      "id": "authorized-assets-synthetic-anacostia-apothecary",
+      "claim": "1 authorized asset(s) admitted for synthetic-anacostia-apothecary",
+      "authority": "OWNER_APPROVED_ARTIFACT",
+      "truth_status": "VERIFIED",
+      "source": "creative context authorized-assets list",
+      "observed_at": "2026-08-04T04:00:00.000Z",
+      "freshness": "CURRENT",
+      "age_days": 0,
+      "valid_for_days": 30,
+      "actionable": true,
+      "non_actionable_reasons": [],
+      "tags": [
+        "subject:authorized-assets"
+      ]
+    },
+    {
+      "id": "owner-memory-synthetic-anacostia-apothecary",
+      "claim": "Owner decisions applied: approved=owd-source-before-hype,owd-block-by-block rejected=pr21-house-billboard-5c7fe27,owd-tonights-shortlist",
+      "authority": "OWNER_EXPLICIT_DIRECTIVE",
+      "truth_status": "VERIFIED",
+      "source": "owner creative decision 2026-08-03",
+      "observed_at": "2026-08-04T04:00:00.000Z",
+      "freshness": "CURRENT",
+      "age_days": 0,
+      "valid_for_days": 3650,
+      "actionable": true,
+      "non_actionable_reasons": [],
+      "tags": [
+        "subject:owner-memory"
+      ]
+    }
+  ],
+  "reference_facts": [
+    {
+      "id": "deep-crawler-synthetic-fixture",
+      "claim": "Source proximity is a trust mechanism hypothesis, not conversion evidence.",
+      "authority": "HISTORICAL_REFERENCE",
+      "truth_status": "OBSERVED",
+      "source": "https://example.test/deep-crawler-fixture",
+      "observed_at": "2026-08-04T04:00:00.000Z",
+      "freshness": "CURRENT",
+      "age_days": 0,
+      "valid_for_days": 14,
+      "actionable": false,
+      "non_actionable_reasons": [
+        "authority HISTORICAL_REFERENCE is reference-only"
+      ],
+      "tags": [
+        "subject:competitor"
+      ]
+    },
+    {
+      "id": "scheduled-watch-synthetic-fixture",
+      "claim": "A disclosed comparison mechanism may reduce choice overload; performance is unknown.",
+      "authority": "HISTORICAL_REFERENCE",
+      "truth_status": "OBSERVED",
+      "source": "https://example.test/scheduled-watch-fixture",
+      "observed_at": "2026-08-04T04:00:00.000Z",
+      "freshness": "CURRENT",
+      "age_days": 0,
+      "valid_for_days": 14,
+      "actionable": false,
+      "non_actionable_reasons": [
+        "authority HISTORICAL_REFERENCE is reference-only"
+      ],
+      "tags": [
+        "subject:competitor"
+      ]
+    }
+  ],
+  "contradictions": [
+    {
+      "subject": "subject:competitor",
+      "subject_key": "subject:competitor",
+      "claims": [
+        {
+          "id": "scheduled-watch-synthetic-fixture",
+          "claim": "A disclosed comparison mechanism may reduce choice overload; performance is unknown.",
+          "authority": "HISTORICAL_REFERENCE",
+          "source": "https://example.test/scheduled-watch-fixture",
+          "freshness": "CURRENT"
+        },
+        {
+          "id": "deep-crawler-synthetic-fixture",
+          "claim": "Source proximity is a trust mechanism hypothesis, not conversion evidence.",
+          "authority": "HISTORICAL_REFERENCE",
+          "source": "https://example.test/deep-crawler-fixture",
+          "freshness": "CURRENT"
+        }
+      ],
+      "strongest_authority": "HISTORICAL_REFERENCE",
+      "strongest_id": "scheduled-watch-synthetic-fixture",
+      "strongest_is_actionable": true,
+      "strongest_freshness": "CURRENT",
+      "strongest_actionable_id": "scheduled-watch-synthetic-fixture",
+      "resolution": "PRESERVED_UNRESOLVED",
+      "note": "Both claims retained. Authority ranking indicates which to prefer, but the disagreement is itself evidence and must reach the operator."
+    }
+  ],
+  "packet_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee"
+}

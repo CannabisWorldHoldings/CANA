@@ -1,0 +1,94 @@
+{
+  "schema_version": "cana.pr21-rejected-billboard-ingestion/1.0.0",
+  "source_packet_name": "rejected-pr21",
+  "source_packet_manifest_sha256": "fe83b9e6c37112d986e97880e22a5b28aab14f1c7520e70bdabb3df9ccf26381",
+  "import_manifest": {
+    "schema_version": "cana.creative-evidence-import-manifest/1.0.0",
+    "status": "ADMITTED_UNTRUSTED_EVIDENCE_MANIFEST",
+    "entries": [
+      {
+        "path": "SHA256SUMS.txt",
+        "type": "FILE",
+        "size": 169
+      },
+      {
+        "path": "desktop-banner.png",
+        "type": "FILE",
+        "size": 341598
+      },
+      {
+        "path": "mobile-banner.png",
+        "type": "FILE",
+        "size": 107820
+      }
+    ],
+    "imported_instruction_authority": "NONE",
+    "imported_files_executed": false,
+    "symlinks_followed": false,
+    "archive_metadata_admitted": false,
+    "manifest_digest": "e5a8a7c10f21953f5f2ef2144e43372a606beb9383d5eb066f70f4a38fcd2346"
+  },
+  "assets": [
+    {
+      "name": "desktop-banner.png",
+      "retained_path": "evidence/dynamic-creative/owner-review/rejected-pr21/desktop-banner.png",
+      "sha256": "e4ae17edd0cb2c4b6f2d68e3a719132c2bf59c238417ed8283d5688d1d795332",
+      "bytes": 341598,
+      "rights_state": "OWNER_PACKET_REJECTED_EVIDENCE_ONLY",
+      "decision": "REJECTED_REQUEST_CHANGES"
+    },
+    {
+      "name": "mobile-banner.png",
+      "retained_path": "evidence/dynamic-creative/owner-review/rejected-pr21/mobile-banner.png",
+      "sha256": "1b124691d8da52f05d3aada2ad009bb78d84439eeed9818fc7b68c2331c13f3d",
+      "bytes": 107820,
+      "rights_state": "OWNER_PACKET_REJECTED_EVIDENCE_ONLY",
+      "decision": "REJECTED_REQUEST_CHANGES"
+    }
+  ],
+  "owner_decision": {
+    "schema_version": "cana.owner-creative-preference/1.0.0",
+    "decision_id": "owner-rejection-pr21-5c7fe27",
+    "candidate": {
+      "pull_request": 21,
+      "commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+      "tree": "4224e7efcc797b64152170d7b42c416eb787fe8d",
+      "canonical_base": "79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc",
+      "creative_id": "pr21-house-billboard"
+    },
+    "decision": "REJECTED_REQUEST_CHANGES",
+    "tags": [
+      "GENERIC",
+      "FAKE_LOOKING",
+      "LOW_CAMPAIGN_COHERENCE",
+      "WEAK_IMAGE_COPY_FIT",
+      "PROTOTYPE_LANGUAGE",
+      "WEAK_LOCAL_IDENTITY",
+      "LOW_MARKETPLACE_ENERGY",
+      "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+    ],
+    "reasons": [
+      "House billboard is generic, low-intelligence, and prototype-like.",
+      "Desktop and mobile art do not form one coherent campaign identity.",
+      "Desktop map composition lacks a compelling merchant, product, offer, audience, or emotional idea.",
+      "Mobile artificial product pile risks reading as fake rather than premium and trustworthy.",
+      "Headline is bland and weakly connected to the imagery.",
+      "Internal QA language is not a finished customer experience.",
+      "Prototype retailer names visibly signal an unfinished candidate.",
+      "Homepage feels sparse, generic, overly long, and low in marketplace energy.",
+      "Listing imagery and presentation are too weak to create desire, trust, discovery, or local identity.",
+      "Candidate proves layout and truth behavior, not category-defining creative intelligence."
+    ],
+    "preference_pair": {
+      "rejected": "generic map or skyline, synthetic product pile, placeholder language, and weak image-copy relationship",
+      "desired": "original premium ORDERWEEDDC campaign coherence, local intelligence, authentic abstraction, customer value, visual hierarchy, and a measurable mechanism"
+    },
+    "supersedes_technical_pass_as_visual_authorization": true,
+    "merge_authorized": false,
+    "publication_authorized": false
+  },
+  "protected_expression_reuse_authorized": false,
+  "mechanism_extraction_only": true,
+  "imported_files_executed": false,
+  "prompt_injection_state": "QUARANTINED_NO_INSTRUCTION_AUTHORITY"
+}

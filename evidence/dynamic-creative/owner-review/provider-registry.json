@@ -1,0 +1,25 @@
+{
+  "schema_version": "cana.image-provider-registry/1.0.0",
+  "execution_authority": "NONE_REGISTRY_ONLY",
+  "providers": [
+    {
+      "name": "deterministic-svg-fixture",
+      "model": "orderweeddc-vector-fixture-v1",
+      "capabilities": [
+        "text-to-image",
+        "responsive-variants",
+        "zero-network"
+      ],
+      "routing": {
+        "quality": 0.82,
+        "costUsd": 0,
+        "latencyMs": 5,
+        "policyEligible": true,
+        "historicalPerformance": 0.7
+      }
+    }
+  ],
+  "external_provider_calls": 0,
+  "actual_spend_usd": 0,
+  "execution_evidence": "RECOMPUTED_FROM_CANONICAL_DETERMINISTIC_FIXTURE_RECEIPTS"
+}

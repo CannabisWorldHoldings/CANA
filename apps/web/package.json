@@ -17,6 +17,7 @@
     "credentials:rotate-demo": "node prisma/rotate-demo-credentials.mjs"
   },
   "dependencies": {
+    "@orderweeddc/ad-creative": "*",
     "@prisma/client": "^6.19.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",
@@ -26,6 +27,7 @@
     "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0-canary.6",
+    "playwright": "^1.62.1",
     "postcss": "8.5.19",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.2",

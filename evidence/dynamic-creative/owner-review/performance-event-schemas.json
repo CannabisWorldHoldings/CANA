@@ -1,0 +1,32 @@
+{
+  "event_types": [
+    "IMPRESSION",
+    "QUALIFIED_CLICK",
+    "SAVE",
+    "SEARCH",
+    "DOWNSTREAM_ACTION",
+    "MERCHANT_INQUIRY",
+    "CONVERSION",
+    "OWNER_DECISION",
+    "USER_COMPLAINT",
+    "POLICY_FAILURE",
+    "PERFORMANCE_REGRESSION"
+  ],
+  "example_event": {
+    "schema_version": "cana.creative-performance-event/1.0.0",
+    "event_id": "evt_synthetic_owner_review_impression",
+    "event_type": "IMPRESSION",
+    "campaign_id": "district-signal-attempt-2",
+    "placement_id": "HOMEPAGE_SPONSORED_BILLBOARD",
+    "audience": "DC_21_PLUS_SYNTHETIC_FIXTURE",
+    "provider": "deterministic-svg-fixture",
+    "model": "orderweeddc-vector-fixture-v1",
+    "prompt_strategy": "local-orientation",
+    "creative_mechanism": "synthetic-owner-review",
+    "occurred_at": "2026-08-04T04:00:00.000Z",
+    "source": "ORDERWEEDDC_FIRST_PARTY",
+    "attribution": "OBSERVED_NOT_CAUSAL",
+    "optimization_authority": "FIRST_PARTY_ORDERWEEDDC",
+    "event_digest": "8fffd811764136bcda3e6f20df7cda67eeb136e490210a0d1e109e444179f7e6"
+  }
+}

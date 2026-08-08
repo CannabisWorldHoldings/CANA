@@ -8,6 +8,8 @@
  * - Authority field separates LOCAL_DATABASE from STATIC_CONTRACT checks.
  */
 
+import { createHash } from 'node:crypto';
+import { compile as compileSiteMindContext } from '../../../../skills-src/sitemind-context-compiler.mjs';
 import { currentPublicRecordWhere } from './seo-truth.mjs';
 import { currentDealWhere } from './directory-search.mjs';
 import { NEIGHBORHOOD_SLUGS } from './neighborhood-configs.mjs';
@@ -15,6 +17,203 @@ import { STRAIN_SLUGS } from './strain-content.mjs';
 import { LEGAL_FAQ_COUNT } from './legal-faq.mjs';
 
 export const SITEMIND_SCHEMA_VERSION = '1.0.0';
+
+export const CREATIVE_EVIDENCE_CONFIDENCE = Object.freeze([
+  'DIRECTLY_OBSERVED',
+  'STRONGLY_INFERRED',
+  'WEAKLY_INFERRED',
+  'UNKNOWN',
+]);
+
+export const CREATIVE_EVIDENCE_COLLECTION_METHODS = Object.freeze([
+  'SCHEDULED_WATCH',
+  'DEEP_CRAWLER',
+  'OWNER_SUPPLIED',
+]);
+
+const creativeHash = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+const creativeText = (value) => typeof value === 'string' && value.trim().length > 0;
+const creativeSha256 = (value) => typeof value === 'string' && /^[0-9a-f]{64}$/.test(value);
+
+/**
+ * Admit competitor evidence as a SiteMind reference. The mechanism may inform
+ * a hypothesis, but protected expression, conversion, and revenue claims never
+ * cross this boundary without direct evidence.
+ */
+export function ingestCreativeCompetitorEvidence(input) {
+  if (!CREATIVE_EVIDENCE_CONFIDENCE.includes(input?.confidence)) {
+    throw new Error(`confidence must be one of ${CREATIVE_EVIDENCE_CONFIDENCE.join(', ')}`);
+  }
+  if (!creativeText(input?.id) || !creativeText(input?.source)) {
+    throw new TypeError('competitor evidence requires id and source');
+  }
+  if (input.collectionMethod != null && !CREATIVE_EVIDENCE_COLLECTION_METHODS.includes(input.collectionMethod)) {
+    throw new Error(`collectionMethod must be one of ${CREATIVE_EVIDENCE_COLLECTION_METHODS.join(', ')}`);
+  }
+  const sourceUrl = new URL(input.source);
+  if (sourceUrl.protocol !== 'https:') throw new Error('competitor evidence source must use public HTTPS');
+  if (Number.isNaN(new Date(input?.capturedAt).getTime())) throw new Error('capturedAt must be an ISO timestamp');
+  for (const [field, value] of Object.entries({
+    beforeContentSha256: input.beforeContentSha256,
+    afterContentSha256: input.afterContentSha256,
+    beforeScreenshotSha256: input.beforeScreenshot?.sha256,
+    afterScreenshotSha256: input.afterScreenshot?.sha256,
+  })) {
+    if (!creativeSha256(value)) throw new Error(`${field} must be a SHA-256`);
+  }
+  if (!creativeText(input.observation)) throw new Error('direct observation is required');
+  const record = {
+    schema_version: 'cana.sitemind-creative-competitor-evidence/1.0.0',
+    event_id: input.eventId ?? input.id,
+    evidence_id: input.id,
+    entity_id: input.entityId ?? 'UNKNOWN',
+    competitor_id: input.competitorId ?? 'UNKNOWN',
+    surface_id: input.surfaceId ?? 'UNKNOWN',
+    url: input.source,
+    source: input.source,
+    first_seen_at: new Date(input.firstSeenAt ?? input.capturedAt).toISOString(),
+    last_verified_at: new Date(input.lastVerifiedAt ?? input.capturedAt).toISOString(),
+    event_date: new Date(input.eventDate ?? input.capturedAt).toISOString(),
+    signal_source: input.collectionMethod ?? 'OWNER_SUPPLIED',
+    scheduled_watch_signal_id: input.scheduledWatchSignalId ?? null,
+    crawl_id: input.crawlId ?? null,
+    baseline_id: input.baselineId ?? null,
+    captured_at: new Date(input.capturedAt).toISOString(),
+    confidence: input.confidence,
+    collection_method: input.collectionMethod ?? 'OWNER_SUPPLIED',
+    observation: input.observation,
+    inference: creativeText(input.inference) ? input.inference : 'UNKNOWN',
+    before: {
+      content_sha256: input.beforeContentSha256,
+      screenshot_sha256: input.beforeScreenshot.sha256,
+      screenshot_ref: input.beforeScreenshot.ref,
+    },
+    after: {
+      content_sha256: input.afterContentSha256,
+      screenshot_sha256: input.afterScreenshot.sha256,
+      screenshot_ref: input.afterScreenshot.ref,
+    },
+    rights_state: input.rights ?? 'REFERENCE_ONLY',
+    diffs: Object.freeze({
+      dom: input.diffs?.dom ?? 'NOT_SUPPLIED',
+      visual: input.diffs?.visual ?? 'BEFORE_AFTER_SCREENSHOT_HASHES_ONLY',
+      semantic: input.diffs?.semantic ?? input.observation,
+      asset: input.diffs?.asset ?? 'NOT_SUPPLIED',
+      seo: input.diffs?.seo ?? 'NOT_SUPPLIED',
+      funnel: input.diffs?.funnel ?? 'NOT_SUPPLIED',
+      ad_creative: input.diffs?.adCreative ?? input.observation,
+    }),
+    policy_context: input.policyContext ?? 'UNKNOWN',
+    uncertainty: input.uncertainty ?? 'UNKNOWN',
+    evidence_locations: Object.freeze(input.evidenceLocations ?? [input.beforeScreenshot.ref, input.afterScreenshot.ref]),
+    prompt_injection_state: input.promptInjectionState ?? 'QUARANTINED_UNTRUSTED_EVIDENCE',
+    mechanism: {
+      extracted_hypothesis: creativeText(input.inference) ? input.inference : 'UNKNOWN',
+      protected_expression_copied: false,
+      allowed_use: 'MECHANISM_HYPOTHESIS_ONLY',
+    },
+    performance_claim: 'UNKNOWN_NOT_OBSERVED',
+    optimization_authority: 'NONE_COMPETITOR_REFERENCE_ONLY',
+    instruction_authority: 'NONE_UNTRUSTED_EVIDENCE_ONLY',
+    deduplication_key: creativeHash({
+      competitor: input.competitorId ?? 'UNKNOWN',
+      surface: input.surfaceId ?? 'UNKNOWN',
+      url: input.source,
+      before: input.beforeContentSha256,
+      after: input.afterContentSha256,
+    }),
+    importance_score: Number.isFinite(input.importanceScore) ? input.importanceScore : null,
+    change_type: input.changeType ?? 'UNKNOWN',
+    routing_decision: input.routingDecision ?? 'MECHANISM_REVIEW_ONLY',
+  };
+  return Object.freeze({ ...record, evidence_digest: creativeHash(record) });
+}
+
+/**
+ * Compile the complete creative brief context inside SiteMind. The existing
+ * SiteMind Context Compiler labels the evidence and seals the reference packet;
+ * this adapter adds the campaign-specific fields without gaining execution,
+ * provider, spending, publishing, or deployment authority.
+ */
+export function compileCreativeCampaignContext(input) {
+  const required = [
+    ['advertiser', input?.advertiser],
+    ['entitlement', input?.entitlement],
+    ['authorizedAssets', input?.authorizedAssets],
+    ['objective', input?.objective],
+    ['offer', input?.offer],
+    ['audience', input?.audience],
+    ['placement', input?.placement],
+    ['brandRules', input?.brandRules],
+    ['ownerMemory', input?.ownerMemory],
+    ['firstPartyResults', input?.firstPartyResults],
+    ['competitorEvidence', input?.competitorEvidence],
+    ['constraints', input?.constraints],
+    ['performanceBudget', input?.performanceBudget],
+    ['prohibitedElements', input?.prohibitedElements],
+  ];
+  const missing = required.filter(([, value]) => value == null).map(([name]) => name);
+  if (missing.length > 0) return { valid: false, errors: [`missing creative context: ${missing.join(', ')}`], packet: null };
+  if (!creativeText(input.objective)) return { valid: false, errors: ['objective required'], packet: null };
+  const asOf = new Date(input.asOf);
+  if (Number.isNaN(asOf.getTime())) return { valid: false, errors: ['asOf must be an ISO timestamp'], packet: null };
+
+  const facts = [
+    {
+      id: `owner-memory-${input.advertiser.id}`,
+      claim: `Owner decisions applied: approved=${input.ownerMemory.approved.join(',')} rejected=${input.ownerMemory.rejected.join(',')}`,
+      authority: 'OWNER_EXPLICIT_DIRECTIVE', truth_status: 'VERIFIED',
+      source: 'owner creative decision 2026-08-03', observed_at: input.asOf,
+      valid_for_days: 3650, tags: ['subject:owner-memory'],
+    },
+    {
+      id: `authorized-assets-${input.advertiser.id}`,
+      claim: `${input.authorizedAssets.length} authorized asset(s) admitted for ${input.advertiser.id}`,
+      authority: 'OWNER_APPROVED_ARTIFACT', truth_status: 'VERIFIED',
+      source: 'creative context authorized-assets list', observed_at: input.asOf,
+      valid_for_days: 30, tags: ['subject:authorized-assets'],
+    },
+    ...input.competitorEvidence.map((evidence, index) => ({
+      id: evidence.evidence_id ?? `competitor-reference-${index}`,
+      claim: evidence.mechanism?.extracted_hypothesis ?? evidence.inference ?? 'Unknown competitor hypothesis',
+      authority: 'HISTORICAL_REFERENCE', truth_status: 'OBSERVED',
+      source: evidence.source ?? 'competitor evidence', observed_at: evidence.captured_at ?? input.asOf,
+      valid_for_days: 14, tags: ['subject:competitor'],
+    })),
+  ];
+  const compiled = compileSiteMindContext({
+    objective: input.objective,
+    facts,
+    now: asOf,
+    maxFacts: 40,
+    requireActionable: true,
+  });
+  if (!compiled.valid) return compiled;
+  const body = {
+    schema_version: 'cana.sitemind-creative-context/1.0.0',
+    authority_boundary: 'SITEMIND_CONTEXT_ONLY_NO_EXECUTION_AUTHORITY',
+    advertiser: input.advertiser,
+    entitlement: input.entitlement,
+    authorized_assets: input.authorizedAssets,
+    objective: input.objective,
+    offer: input.offer,
+    audience: input.audience,
+    placement: input.placement,
+    brand_rules: input.brandRules,
+    owner_memory: input.ownerMemory,
+    first_party_results: input.firstPartyResults,
+    competitor_evidence: input.competitorEvidence,
+    constraints: input.constraints,
+    performance_budget: input.performanceBudget,
+    prohibited_elements: input.prohibitedElements,
+    compiled_at: asOf.toISOString(),
+    canonical_sitemind_context_digest: compiled.packet.packet_digest,
+    actionable_facts: compiled.packet.actionable_facts,
+    reference_facts: compiled.packet.reference_facts,
+    contradictions: compiled.packet.contradictions,
+  };
+  return Object.freeze({ valid: true, errors: [], packet: Object.freeze({ ...body, packet_digest: creativeHash(body) }) });
+}
 
 // ---------------------------------------------------------------------------
 // Competitor parity contract — static, frozen reference facts. Facts marked

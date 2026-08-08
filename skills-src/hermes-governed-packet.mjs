@@ -36,11 +36,15 @@ import { createHash } from 'node:crypto';
 const has = (k) => process.argv.includes(`--${k}`);
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
+const ISSUED_GRANTS = new WeakSet();
+const SEALED_PACKETS = new WeakSet();
+const FIXED_OFFLINE_CREATIVE_AUTHORIZATION_DIGEST = 'be6706f43437ce4ab1e048c3166e00e75ddd4543820024fac9515e718eeae5d7';
 
 /** Capabilities Hermes may be granted. Anything absent is refused. */
 export const CAPABILITIES = Object.freeze([
   'READ_REPOSITORY', 'RUN_TESTS', 'WRITE_LOCAL_BRANCH', 'RUN_BROWSER_COURT',
   'QUERY_DATABASE', 'GENERATE_REPORT', 'COMPILE_CONTEXT',
+  'GENERATE_CREATIVE_DRAFT',
 ]);
 
 /**
@@ -57,7 +61,9 @@ export const OWNER_ONLY = Object.freeze([
 /** An authorization grant issued by CANA. */
 export function makeGrant({ capability, budgetUnits, expiresAt, issuedBy, now = new Date() }) {
   const errors = [];
-  if (OWNER_ONLY.includes(capability)) {
+  if (capability === 'GENERATE_CREATIVE_DRAFT') {
+    errors.push('GENERATE_CREATIVE_DRAFT requires the fixed offline owner-review authorization; generic callers cannot mint CANA creative authority');
+  } else if (OWNER_ONLY.includes(capability)) {
     errors.push(`${capability} is owner-only and cannot be granted to an agent`);
   } else if (!CAPABILITIES.includes(capability)) {
     errors.push(`unknown capability ${capability}`);
@@ -74,6 +80,68 @@ export function makeGrant({ capability, budgetUnits, expiresAt, issuedBy, now = 
     valid: errors.length === 0, errors,
   };
   grant.grant_id = 'gr_' + sha(`${capability}|${budgetUnits}|${grant.expires_at}|${issuedBy}`).slice(0, 16);
+  if (grant.valid) ISSUED_GRANTS.add(grant);
+  return Object.freeze(grant);
+}
+
+/**
+ * Admit the one repository-fixed, zero-provider-spend Level 1 owner-review
+ * authorization. The expected digest is held by this runtime, not supplied by
+ * the caller, so a caller can replay only this exact synthetic fixture scope;
+ * it cannot mint a new CANA grant or widen context, provider, spend or autonomy.
+ */
+export function acceptFixedOfflineCreativeAuthorization({ authorization, contextPacket, now = new Date() }) {
+  const errors = [];
+  const checkedAt = now instanceof Date ? now : new Date(now);
+  const { authorization_digest: claimedDigest, ...body } = authorization ?? {};
+  const computedDigest = sha(JSON.stringify(body));
+  if (claimedDigest !== computedDigest || computedDigest !== FIXED_OFFLINE_CREATIVE_AUTHORIZATION_DIGEST) {
+    errors.push('creative authorization is not the repository-fixed offline owner-review fixture');
+  }
+  if (body.schema !== 'cana.fixed-offline-creative-authorization/1.0.0') errors.push('creative authorization schema invalid');
+  if (body.issued_by !== 'CANA') errors.push('creative authorization issuer must be CANA');
+  if (body.capability !== 'GENERATE_CREATIVE_DRAFT') errors.push('creative authorization capability invalid');
+  if (body.context_profile !== 'synthetic-anacostia-owner-review') errors.push('creative authorization context profile invalid');
+  if (body.context_digest !== contextPacket?.packet_digest) errors.push('creative authorization is not bound to the exact approved SiteMind context');
+  if (contextPacket?.authority_boundary !== 'SITEMIND_CONTEXT_ONLY_NO_EXECUTION_AUTHORITY') {
+    errors.push('creative authorization requires a canonical SiteMind context-only packet');
+  }
+  if (body.advertiser_id !== contextPacket?.advertiser?.id || body.synthetic_advertiser !== true || contextPacket?.advertiser?.synthetic !== true) {
+    errors.push('creative authorization is restricted to the synthetic advertiser fixture');
+  }
+  if (body.autonomy_level !== 'LEVEL_1_SHADOW_GENERATION_AND_SCORING') {
+    errors.push('creative authorization is restricted to Level 1 shadow generation');
+  }
+  if (contextPacket?.placement?.id !== 'HOMEPAGE_SPONSORED_BILLBOARD'
+    || !contextPacket?.offer?.permittedClaims?.includes('synthetic fixture only')
+    || !Array.isArray(contextPacket?.authorized_assets)
+    || contextPacket.authorized_assets.length === 0
+    || !contextPacket.authorized_assets.every((asset) => /^SYNTHETIC_FIXTURE/.test(asset?.rights ?? ''))) {
+    errors.push('creative authorization requires the fixed synthetic owner-review brief and rights-cleared fixture assets');
+  }
+  if (body.provider_id !== 'deterministic-fixture' || body.production_authority !== 'NONE' || body.spend_authority !== 'NONE') {
+    errors.push('creative authorization must remain deterministic, offline, unspent and unpublished');
+  }
+  if (!Number.isInteger(body.budget_units) || body.budget_units <= 0) errors.push('creative authorization requires a positive bounded budget');
+  const expiresAt = new Date(body.expires_at);
+  if (Number.isNaN(checkedAt.getTime()) || Number.isNaN(expiresAt.getTime()) || expiresAt <= checkedAt) {
+    errors.push('creative authorization is expired or validation time is invalid');
+  }
+  const grant = Object.freeze({
+    capability: body.capability,
+    budget_units: body.budget_units,
+    issued_by: body.issued_by,
+    expires_at: body.expires_at,
+    valid: errors.length === 0,
+    errors: Object.freeze(errors),
+    grant_id: body.authorization_id,
+    authorization_digest: claimedDigest ?? null,
+    context_digest: body.context_digest ?? null,
+    provider_id: body.provider_id ?? null,
+    autonomy_level: body.autonomy_level ?? null,
+    scope: body.scope ?? null,
+  });
+  if (grant.valid) ISSUED_GRANTS.add(grant);
   return grant;
 }
 
@@ -161,6 +229,14 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
 
   // LAW 2
   if (!grant?.valid) errors.push(`authorization invalid: ${grant?.errors?.join('; ') ?? 'no grant'}`);
+  else if (!ISSUED_GRANTS.has(grant)) errors.push('authorization invalid: grant was not issued by this CANA packet runtime');
+  if (grant?.capability === 'GENERATE_CREATIVE_DRAFT') {
+    if (grant.authorization_digest !== FIXED_OFFLINE_CREATIVE_AUTHORIZATION_DIGEST) errors.push('creative authorization digest is not fixed by CANA');
+    if (grant.context_digest !== contextPacket?.packet_digest) errors.push('creative authorization context binding mismatch');
+    if (grant.provider_id !== 'deterministic-fixture' || grant.autonomy_level !== 'LEVEL_1_SHADOW_GENERATION_AND_SCORING') {
+      errors.push('creative authorization escaped its deterministic Level 1 fixture scope');
+    }
+  }
   // Intent must be concrete enough to audit.
   if (!text(intent?.description)) errors.push('intent.description required');
   if (!text(intent?.successTest)) errors.push('intent.successTest required — an action with no success test cannot be verified');
@@ -189,7 +265,15 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
     context_objective: contextPacket.objective,
     actionable_fact_count: contextPacket.actionable_facts.length,
     contradiction_count: contextPacket.contradictions?.length ?? 0,
-    grant: { id: grant.grant_id, capability: grant.capability, budget_units: grant.budget_units, expires_at: grant.expires_at, issued_by: grant.issued_by },
+    grant: {
+      id: grant.grant_id, capability: grant.capability, budget_units: grant.budget_units,
+      expires_at: grant.expires_at, issued_by: grant.issued_by,
+      authorization_digest: grant.authorization_digest ?? null,
+      context_digest: grant.context_digest ?? null,
+      provider_id: grant.provider_id ?? null,
+      autonomy_level: grant.autonomy_level ?? null,
+      scope: grant.scope ?? null,
+    },
     intent: {
       description: intent.description, capability: intent.capability,
       success_test: intent.successTest, rollback: intent.rollback,
@@ -202,7 +286,71 @@ export function sealPacket({ contextPacket, grant, intent, now = new Date() }) {
     intent_subjects: [...intentSubjects],
     contradictions_checked_against_intent: true,
   };
-  return { valid: true, errors: [], packet: { ...body, packet_digest: sha(JSON.stringify(body)) } };
+  const packet = Object.freeze({ ...body, packet_digest: sha(JSON.stringify(body)) });
+  SEALED_PACKETS.add(packet);
+  return { valid: true, errors: [], packet };
+}
+
+/**
+ * Revalidate a sealed packet at an execution boundary. A consumer must never
+ * treat the presence of Hermes-shaped fields as authorization: both the
+ * SiteMind context seal and Hermes packet seal are recomputed here, the grant
+ * must still be live, and the requested capability must match exactly.
+ */
+export function validateSealedPacket({ contextPacket, packet, requiredCapability, now = new Date() }) {
+  const errors = [];
+  const checkedAt = now instanceof Date ? now : new Date(now);
+  if (Number.isNaN(checkedAt.getTime())) errors.push('validation requires a valid now');
+
+  if (!contextPacket || !text(contextPacket.packet_digest)) {
+    errors.push('a sealed context packet is required');
+  } else {
+    const { packet_digest: contextDigest, ...contextBody } = contextPacket;
+    if (sha(JSON.stringify(contextBody)) !== contextDigest) {
+      errors.push('context packet digest does not recompute');
+    }
+  }
+
+  if (!packet || packet.schema !== 'hermes-governed-packet/1' || !text(packet.packet_digest)) {
+    errors.push('a canonical sealed Hermes packet is required');
+  } else {
+    if (!SEALED_PACKETS.has(packet)) errors.push('Hermes packet was not sealed by this CANA packet runtime');
+    const { packet_digest: packetDigest, ...packetBody } = packet;
+    if (sha(JSON.stringify(packetBody)) !== packetDigest) {
+      errors.push('Hermes packet digest does not recompute');
+    }
+  }
+
+  if (packet?.context_digest !== contextPacket?.packet_digest) {
+    errors.push('Hermes packet is not bound to this context');
+  }
+  if (!text(requiredCapability) || packet?.grant?.capability !== requiredCapability || packet?.intent?.capability !== requiredCapability) {
+    errors.push(`Hermes packet must authorize ${requiredCapability}`);
+  }
+  if (!Number.isInteger(packet?.grant?.budget_units) || packet.grant.budget_units <= 0) {
+    errors.push('Hermes packet requires a positive bounded budget');
+  }
+  if (packet?.grant?.issued_by !== 'CANA') errors.push('Hermes creative grant must be issued by CANA');
+  if (requiredCapability === 'GENERATE_CREATIVE_DRAFT') {
+    if (packet?.grant?.authorization_digest !== FIXED_OFFLINE_CREATIVE_AUTHORIZATION_DIGEST) errors.push('Hermes creative grant lacks the fixed offline authorization');
+    if (packet?.grant?.context_digest !== contextPacket?.packet_digest) errors.push('Hermes creative grant context binding mismatch');
+    if (packet?.grant?.provider_id !== 'deterministic-fixture' || packet?.grant?.autonomy_level !== 'LEVEL_1_SHADOW_GENERATION_AND_SCORING') {
+      errors.push('Hermes creative grant is outside deterministic Level 1 scope');
+    }
+  }
+  const expiresAt = new Date(packet?.grant?.expires_at);
+  if (Number.isNaN(expiresAt.getTime()) || (!Number.isNaN(checkedAt.getTime()) && expiresAt <= checkedAt)) {
+    errors.push('Hermes packet grant is expired or invalid');
+  }
+
+  return Object.freeze({
+    valid: errors.length === 0,
+    errors: Object.freeze(errors),
+    context_digest: contextPacket?.packet_digest ?? null,
+    packet_digest: packet?.packet_digest ?? null,
+    capability: requiredCapability,
+    checked_at: Number.isNaN(checkedAt.getTime()) ? null : checkedAt.toISOString(),
+  });
 }
 
 /**

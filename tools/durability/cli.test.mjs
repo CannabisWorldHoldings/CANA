@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS,
   matchOwned,
   MISSION1_AUTHORIZED_PATHS,
   MISSION1_EVIDENCE_PATHS,
@@ -113,6 +114,26 @@ test('duplicate changed-file ownership is rejected', () => {
     () => validateOwnershipManifest(manifest),
     /duplicate changed-file ownership/,
   );
+});
+
+test('the SiteMind dynamic creative assignment is exact and authority-free', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const assignment = manifest.explicit_user_assignment.sitemind_dynamic_creative_foundation_2026_08_04;
+  assert.deepEqual([...assignment.paths].sort(), [...DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS].sort());
+  assert.match(assignment.authorization_effect, /no merge, deployment, production, cPanel, prod\.db/);
+  assert.match(assignment.authorization_effect, /no live publication, provider spend, advertiser charge, campaign spend/);
+  assert.deepEqual(unownedPaths(DYNAMIC_CREATIVE_AUTHORIZED_PATTERNS, manifest), []);
+});
+
+test('the SiteMind dynamic creative assignment rejects scope or authority broadening', () => {
+  const extraPath = ownership();
+  extraPath.explicit_user_assignment.sitemind_dynamic_creative_foundation_2026_08_04.paths.push('apps/web/src/lib/growth-os.mjs');
+  assert.throws(() => validateOwnershipManifest(extraPath), /dynamic creative ownership assignment is malformed/i);
+
+  const authority = ownership();
+  authority.explicit_user_assignment.sitemind_dynamic_creative_foundation_2026_08_04.runtime_permissions = ['publish'];
+  assert.throws(() => validateOwnershipManifest(authority), /dynamic creative ownership assignment is malformed/i);
 });
 
 test('malformed Stage A ownership entries are rejected', () => {

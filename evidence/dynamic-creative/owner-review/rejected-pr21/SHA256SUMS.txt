@@ -1,0 +1,2 @@
+e4ae17edd0cb2c4b6f2d68e3a719132c2bf59c238417ed8283d5688d1d795332  desktop-banner.png
+1b124691d8da52f05d3aada2ad009bb78d84439eeed9818fc7b68c2331c13f3d  mobile-banner.png

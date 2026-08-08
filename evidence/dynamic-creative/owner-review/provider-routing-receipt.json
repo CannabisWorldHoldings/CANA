@@ -1,0 +1,35 @@
+{
+  "schema_version": "cana.image-provider-routing/1.0.0",
+  "selected_provider": "deterministic-svg-fixture",
+  "selected_model": "orderweeddc-vector-fixture-v1",
+  "routing_dimensions": [
+    "quality",
+    "cost",
+    "latency",
+    "policy_eligibility",
+    "historical_performance"
+  ],
+  "required_capabilities": [
+    "text-to-image",
+    "responsive-variants",
+    "zero-network"
+  ],
+  "max_cost_usd": 0,
+  "max_latency_ms": 100,
+  "candidates": [
+    {
+      "name": "deterministic-svg-fixture",
+      "model": "orderweeddc-vector-fixture-v1",
+      "eligible": true,
+      "score": 0.827,
+      "quality": 0.82,
+      "costUsd": 0,
+      "latencyMs": 5,
+      "policyEligible": true,
+      "historicalPerformance": 0.7,
+      "missingCapabilities": []
+    }
+  ],
+  "provider_called": false,
+  "spending_authority": "NONE"
+}

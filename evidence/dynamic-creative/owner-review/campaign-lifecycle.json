@@ -1,0 +1,41 @@
+{
+  "schema_version": "cana.dynamic-campaign-lifecycle-example/1.0.0",
+  "states": [
+    "DRAFT",
+    "GENERATED",
+    "VISUAL_REVIEW_FAILED",
+    "POLICY_REVIEW_FAILED",
+    "OWNER_REVIEW_REQUIRED",
+    "APPROVED",
+    "SCHEDULED",
+    "ACTIVE",
+    "PAUSED",
+    "EXPIRED",
+    "REJECTED",
+    "ARCHIVED"
+  ],
+  "observed_transitions": [
+    {
+      "state": "GENERATED",
+      "previous_state": "DRAFT",
+      "gates": {}
+    },
+    {
+      "state": "VISUAL_REVIEW_FAILED",
+      "previous_state": "GENERATED",
+      "gates": {}
+    },
+    {
+      "state": "GENERATED",
+      "previous_state": "VISUAL_REVIEW_FAILED",
+      "gates": {}
+    },
+    {
+      "state": "OWNER_REVIEW_REQUIRED",
+      "previous_state": "GENERATED",
+      "gates": {}
+    }
+  ],
+  "current_state": "OWNER_REVIEW_REQUIRED",
+  "active_transition_executed": false
+}

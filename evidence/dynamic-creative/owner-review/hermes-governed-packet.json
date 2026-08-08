@@ -1,0 +1,34 @@
+{
+  "schema": "hermes-governed-packet/1",
+  "sealed_at": "2026-08-04T04:00:00.000Z",
+  "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+  "context_objective": "Invite adults 21+ to compare a clearly synthetic fixture offer.",
+  "actionable_fact_count": 2,
+  "contradiction_count": 1,
+  "grant": {
+    "id": "auth_synthetic_anacostia_owner_review_20260803",
+    "capability": "GENERATE_CREATIVE_DRAFT",
+    "budget_units": 8,
+    "expires_at": "2027-08-05T04:00:00.000Z",
+    "issued_by": "CANA",
+    "authorization_digest": "be6706f43437ce4ab1e048c3166e00e75ddd4543820024fac9515e718eeae5d7",
+    "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
+    "provider_id": "deterministic-fixture",
+    "autonomy_level": "LEVEL_1_SHADOW_GENERATION_AND_SCORING",
+    "scope": "OWNER_REVIEW_OFFLINE_FIXTURE_ONLY"
+  },
+  "intent": {
+    "description": "Generate deterministic shadow-only owner-review creative fixtures",
+    "capability": "GENERATE_CREATIVE_DRAFT",
+    "success_test": "three materially different responsive variants pass the bounded visual court",
+    "rollback": "return Source Before Hype approved house fallback"
+  },
+  "unresolved_contradictions": [
+    "subject:competitor"
+  ],
+  "intent_subjects": [
+    "subject:creative"
+  ],
+  "contradictions_checked_against_intent": true,
+  "packet_digest": "70ef22cfd1121755bc1583343eb6c824dafac33ec617868c59f561e32def96e9"
+}
