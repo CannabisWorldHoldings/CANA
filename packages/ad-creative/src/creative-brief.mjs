@@ -80,3 +80,46 @@ export function buildCreativeBrief({ brandProfile, product, campaign }) {
     }),
   });
 }
+
+/**
+ * Deterministic brief for an ORDERWEEDDC house campaign system. This extends
+ * the canonical brief seam without fabricating a merchant, license, or product.
+ */
+export function buildCampaignSystemBrief({ campaign, viewport }) {
+  if (!campaign || campaign.sponsor !== 'ORDERWEEDDC' || campaign.fundingKind !== 'HOUSE') {
+    throw new Error('campaign-system brief requires an ORDERWEEDDC house campaign');
+  }
+  if (!['desktop', 'mobile'].includes(viewport)) throw new Error('campaign-system viewport is invalid');
+  if (campaign.approvalStatus !== 'OWNER_REVIEW_PENDING') {
+    throw new Error('campaign-system pipeline accepts only pending owner-review candidates');
+  }
+  const sourceMedia = viewport === 'desktop' ? campaign.desktopMedia : campaign.mobileMedia;
+  const dimensions = viewport === 'desktop' ? campaign.desktop : campaign.mobile;
+  return Object.freeze({
+    schemaVersion: 'ad-creative.campaign-system-brief/1.0.0',
+    campaignSystemId: campaign.campaign_system_id,
+    campaignId: campaign.id,
+    viewport,
+    channel: 'featured-placement',
+    aspectRatio: viewport === 'desktop' ? '16:9' : '4:5',
+    sourceMedia,
+    strategy: campaign.strategy,
+    visualConcept: campaign.visual_concept,
+    messageHierarchy: Object.freeze([...campaign.message_hierarchy]),
+    headline: campaign.headline,
+    supportingText: campaign.supportingText,
+    altText: campaign.altText,
+    destination: campaign.destination,
+    rightsState: campaign.rights_state,
+    policyResult: campaign.policyResult,
+    responsiveIdentity: dimensions.campaign_system_id,
+    negativePrompt: campaign.negative_prompt,
+    prompt: [
+      `Compose the repository-owned ${viewport} asset for ${campaign.campaign_system_id}.`,
+      `Strategy: ${campaign.strategy}. Concept: ${campaign.visual_concept}.`,
+      `Message hierarchy: ${campaign.message_hierarchy.join(' > ')}.`,
+      campaign.negative_prompt,
+      'No merchant, product, price, availability, health, endorsement, or performance claim.',
+    ].join(' '),
+  });
+}

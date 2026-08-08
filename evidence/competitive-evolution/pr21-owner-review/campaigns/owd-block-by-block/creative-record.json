@@ -1,0 +1,60 @@
+{
+  "sponsor": "ORDERWEEDDC",
+  "disclosure": "ORDERWEEDDC original",
+  "approvalStatus": "OWNER_REVIEW_PENDING",
+  "policyResult": "PASS_FOR_OWNER_REVIEW",
+  "rightsAndProvenance": "CANA-owned original vector composition; no competitor assets, logos, copy, reviews, photography or proprietary data",
+  "fundingKind": "HOUSE",
+  "startAt": "2026-08-03T00:00:00.000Z",
+  "endAt": "2027-08-03T00:00:00.000Z",
+  "frequencyCap": null,
+  "fallbackBehavior": "NEVER_ENTER_LIVE_SELECTOR_WHILE_PENDING",
+  "target_audience": "Adults 21+ exploring the Washington, D.C. cannabis marketplace",
+  "image_source_plan": "Original repository-owned vector design with deterministic typography and no synthetic photography",
+  "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+  "negative_prompt": "No skyline-as-decoration, product pile, fake storefront, fake package, floating product, plastic material, hallucinated text, youth appeal, medical claim, logo leakage, empty green gradient or copied competitor expression.",
+  "authenticity_risks": [
+    "Illustration must not be presented as documentary photography",
+    "D.C. geometry is conceptual rather than a navigation map"
+  ],
+  "unsupported_claim_risks": [
+    "No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+  ],
+  "id": "owd-block-by-block",
+  "campaign_system_id": "campaign-system-block-by-block",
+  "strategy": "LOCAL_ORIENTATION",
+  "customer_problem": "D.C. discovery feels abstract when a visitor cannot begin from a familiar part of the city.",
+  "offer": "A neighborhood-first path into source-labeled marketplace records.",
+  "message_hierarchy": [
+    "Begin with your part of D.C.",
+    "Choose a supported discovery path",
+    "Confirm details with the business"
+  ],
+  "visual_concept": "A bold modular street grid with three connected discovery nodes and a single directional path.",
+  "local_dc_relevance": "Uses the District grid and quadrant rhythm as an original information device, not a generic skyline.",
+  "headline": "Start with the D.C. you know.",
+  "supportingText": "Move from neighborhood context to dispensaries, delivery records and current deals without losing sight of each record’s source.",
+  "cta": "Explore neighborhoods",
+  "designToken": "campaign-local-orientation",
+  "destination": "/neighborhoods",
+  "landing_page_match": "Neighborhood index continues the local-orientation mechanism.",
+  "altText": "Original illustrated D.C. street grid connecting neighborhood discovery paths",
+  "desktopMedia": "/competitive-evolution/block-by-block-desktop.svg",
+  "mobileMedia": "/competitive-evolution/block-by-block-mobile.svg",
+  "audience": "Adults exploring D.C. by neighborhood",
+  "locationRelevance": "District grid and quadrant discovery",
+  "impressionEvent": "OWNER_REVIEW_BLOCK_BY_BLOCK_VIEW",
+  "clickEvent": "OWNER_REVIEW_BLOCK_BY_BLOCK_CLICK",
+  "expected_mechanism": "A familiar local orientation reduces the effort required to choose a first marketplace path.",
+  "testable_prediction": "Against the rejected control, neighborhood-page click-through increases without increasing immediate back navigation.",
+  "desktop": {
+    "campaign_system_id": "campaign-system-block-by-block",
+    "composition": "wide grid, directional node at right",
+    "focal_point": "62% 48%"
+  },
+  "mobile": {
+    "campaign_system_id": "campaign-system-block-by-block",
+    "composition": "cropped vertical grid with the same nodes and line language",
+    "focal_point": "50% 48%"
+  }
+}

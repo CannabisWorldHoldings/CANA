@@ -1,0 +1,11 @@
+{
+  "schema_version": "cana.competitive-evolution-limitations/1.0.0",
+  "limitations": [
+    "Judge scores verify stated courts and captured render evidence; they do not prove customer preference or conversion lift.",
+    "No campaign is owner-approved, performance-supported, published or production-tested.",
+    "Local vector illustration avoids synthetic-photo deception but does not test authorized merchant photography."
+  ],
+  "adapter_fixture": "The bridge proof uses an offline contract fixture and makes no current competitor adoption or performance claim.",
+  "owner_decision": "PENDING",
+  "production_authority": "NONE"
+}

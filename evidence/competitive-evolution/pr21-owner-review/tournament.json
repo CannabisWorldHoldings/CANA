@@ -1,0 +1,471 @@
+{
+  "schema_version": "cana.visual-tournament/1.0.0",
+  "status": "READY_FOR_OWNER_REVIEW",
+  "judge_names": [
+    "owner_taste_alignment",
+    "anti_generic_quality",
+    "authenticity",
+    "local_dc_intelligence",
+    "campaign_coherence",
+    "image_copy_fit",
+    "conversion_mechanism",
+    "accessibility",
+    "mobile_crop_quality",
+    "performance_budget",
+    "cannabis_ad_policy",
+    "rights_and_provenance",
+    "brand_distinctiveness",
+    "landing_page_continuity"
+  ],
+  "campaigns": [
+    {
+      "campaign_id": "owd-block-by-block",
+      "score": 100,
+      "judges": [
+        {
+          "name": "owner_taste_alignment",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "pending=OWNER_REVIEW_PENDING; rejected constraints retained"
+          ]
+        },
+        {
+          "name": "anti_generic_quality",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "token=campaign-local-orientation; concept=A bold modular street grid with three connected discovery nodes and a single directional path."
+          ]
+        },
+        {
+          "name": "authenticity",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "canonical_pipeline=true; source=Original repository-owned vector design with deterministic typography and no synthetic photography"
+          ]
+        },
+        {
+          "name": "local_dc_intelligence",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "Uses the District grid and quadrant rhythm as an original information device, not a generic skyline."
+          ]
+        },
+        {
+          "name": "campaign_coherence",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "desktop=/competitive-evolution/block-by-block-desktop.svg; mobile=/competitive-evolution/block-by-block-mobile.svg"
+          ]
+        },
+        {
+          "name": "image_copy_fit",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "headline=Start with the D.C. you know.; alt=Original illustrated D.C. street grid connecting neighborhood discovery paths"
+          ]
+        },
+        {
+          "name": "conversion_mechanism",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "cta=Explore neighborhoods; destination=/neighborhoods"
+          ]
+        },
+        {
+          "name": "accessibility",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "serious_or_critical=0; alt=Original illustrated D.C. street grid connecting neighborhood discovery paths"
+          ]
+        },
+        {
+          "name": "mobile_crop_quality",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "source=/competitive-evolution/block-by-block-mobile.svg; overflow=false"
+          ]
+        },
+        {
+          "name": "performance_budget",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "problems=0; bytes=702991/662367"
+          ]
+        },
+        {
+          "name": "cannabis_ad_policy",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "policy=PASS_FOR_OWNER_REVIEW; claim guard=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+          ]
+        },
+        {
+          "name": "rights_and_provenance",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "rights=CANA_OWNED_ORIGINAL_VECTOR; canonical_pipeline=true"
+          ]
+        },
+        {
+          "name": "brand_distinctiveness",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "system=campaign-system-block-by-block; strategy=LOCAL_ORIENTATION; mechanism=A familiar local orientation reduces the effort required to choose a first marketplace path."
+          ]
+        },
+        {
+          "name": "landing_page_continuity",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "destination=/neighborhoods; continuity=Neighborhood index continues the local-orientation mechanism."
+          ]
+        }
+      ],
+      "failure_list": [],
+      "critique_overlay": {
+        "headline_anchor": "Start with the D.C. you know.",
+        "focal_point_desktop": "62% 48%",
+        "focal_point_mobile": "50% 48%",
+        "visible_evidence": [
+          "7af525a2194c7a07183bb74edf599c0da4ceb7646b48d6d893292748250e886c",
+          "418cd1908b90d5ef3db6b525e5aeff0a954f2bb116484c23141af9ee5706f286"
+        ],
+        "cautions": [
+          "Illustration must not be presented as documentary photography",
+          "D.C. geometry is conceptual rather than a navigation map",
+          "No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+        ]
+      },
+      "lineage_receipt": {
+        "campaign_sha256": "398e9617228c673fbdc54e5018c8064ff7957b66960b45850efe61875c3f325e",
+        "desktop_page_context_sha256": "037cf6b68da45427ff4975cc40fdf2e2ff77dc0982749a8afd2bad4af445c3bd",
+        "mobile_page_context_sha256": "dffbb4a5b8bf5caeb72050c2c34d27003949390621e8cedfd186e7fabb4eb5ae",
+        "source_owner_decision": "owner-orderweeddc-pr21-visual-rejection-20260803"
+      }
+    },
+    {
+      "campaign_id": "owd-tonights-shortlist",
+      "score": 100,
+      "judges": [
+        {
+          "name": "owner_taste_alignment",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "pending=OWNER_REVIEW_PENDING; rejected constraints retained"
+          ]
+        },
+        {
+          "name": "anti_generic_quality",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "token=campaign-bounded-choice; concept=An editorial ticket stack with three numbered paths, strong crop marks and high-contrast typographic rhythm."
+          ]
+        },
+        {
+          "name": "authenticity",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "canonical_pipeline=true; source=Original repository-owned vector design with deterministic typography and no synthetic photography"
+          ]
+        },
+        {
+          "name": "local_dc_intelligence",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "Frames the experience as a D.C. night plan while avoiding invented venues, products or events."
+          ]
+        },
+        {
+          "name": "campaign_coherence",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "desktop=/competitive-evolution/tonights-shortlist-desktop.svg; mobile=/competitive-evolution/tonights-shortlist-mobile.svg"
+          ]
+        },
+        {
+          "name": "image_copy_fit",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "headline=Make tonight’s D.C. shortlist.; alt=Original editorial shortlist graphic with three numbered D.C. marketplace paths"
+          ]
+        },
+        {
+          "name": "conversion_mechanism",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "cta=See current deals; destination=/deals"
+          ]
+        },
+        {
+          "name": "accessibility",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "serious_or_critical=0; alt=Original editorial shortlist graphic with three numbered D.C. marketplace paths"
+          ]
+        },
+        {
+          "name": "mobile_crop_quality",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "source=/competitive-evolution/tonights-shortlist-mobile.svg; overflow=false"
+          ]
+        },
+        {
+          "name": "performance_budget",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "problems=0; bytes=703130/660231"
+          ]
+        },
+        {
+          "name": "cannabis_ad_policy",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "policy=PASS_FOR_OWNER_REVIEW; claim guard=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+          ]
+        },
+        {
+          "name": "rights_and_provenance",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "rights=CANA_OWNED_ORIGINAL_VECTOR; canonical_pipeline=true"
+          ]
+        },
+        {
+          "name": "brand_distinctiveness",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "system=campaign-system-tonights-shortlist; strategy=BOUNDED_CHOICE; mechanism=Three bounded paths reduce choice overload and make the next click more intentional."
+          ]
+        },
+        {
+          "name": "landing_page_continuity",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "destination=/deals; continuity=The deals collection continues the time-bounded shortlist idea with explicit validity states."
+          ]
+        }
+      ],
+      "failure_list": [],
+      "critique_overlay": {
+        "headline_anchor": "Make tonight’s D.C. shortlist.",
+        "focal_point_desktop": "55% 50%",
+        "focal_point_mobile": "50% 50%",
+        "visible_evidence": [
+          "9609e2790fa679dc8c55d2b5d7ca85d64cae0051a43cfd13f9e498f3723bb71d",
+          "50e8e90873a31b6e0b6f212d072121fabf5b5aa01e3320eb92097c7eb6e3f5a6"
+        ],
+        "cautions": [
+          "Illustration must not be presented as documentary photography",
+          "D.C. geometry is conceptual rather than a navigation map",
+          "No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+        ]
+      },
+      "lineage_receipt": {
+        "campaign_sha256": "83f0b5dedcd9fa8ffea0ccab56ab99243cdbe88ffa7b4977ac353359510ba74d",
+        "desktop_page_context_sha256": "49041c04c73fd30db00b4650b88a8382c021ee7c2ad19e32e8fa8a7af4c70c65",
+        "mobile_page_context_sha256": "6f84952cd6de8c4d3399120fd3f853b37167ba967515613e1e748bfe72485d70",
+        "source_owner_decision": "owner-orderweeddc-pr21-visual-rejection-20260803"
+      }
+    },
+    {
+      "campaign_id": "owd-source-before-hype",
+      "score": 100,
+      "judges": [
+        {
+          "name": "owner_taste_alignment",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "pending=OWNER_REVIEW_PENDING; rejected constraints retained"
+          ]
+        },
+        {
+          "name": "anti_generic_quality",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "token=campaign-trust-before-handoff; concept=A crisp evidence ribbon built from stamps, ruled lines and a single open doorway motif."
+          ]
+        },
+        {
+          "name": "authenticity",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "canonical_pipeline=true; source=Original repository-owned vector design with deterministic typography and no synthetic photography"
+          ]
+        },
+        {
+          "name": "local_dc_intelligence",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "Turns ORDERWEEDDC’s D.C. record-state discipline into the central brand distinction."
+          ]
+        },
+        {
+          "name": "campaign_coherence",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "desktop=/competitive-evolution/source-before-hype-desktop.svg; mobile=/competitive-evolution/source-before-hype-mobile.svg"
+          ]
+        },
+        {
+          "name": "image_copy_fit",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "headline=See what’s sourced before you choose.; alt=Original evidence-ribbon illustration leading to a source-labeled marketplace doorway"
+          ]
+        },
+        {
+          "name": "conversion_mechanism",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "cta=Compare dispensaries; destination=/dispensaries"
+          ]
+        },
+        {
+          "name": "accessibility",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "serious_or_critical=0; alt=Original evidence-ribbon illustration leading to a source-labeled marketplace doorway"
+          ]
+        },
+        {
+          "name": "mobile_crop_quality",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "source=/competitive-evolution/source-before-hype-mobile.svg; overflow=false"
+          ]
+        },
+        {
+          "name": "performance_budget",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "problems=0; bytes=702987/660187"
+          ]
+        },
+        {
+          "name": "cannabis_ad_policy",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "policy=PASS_FOR_OWNER_REVIEW; claim guard=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+          ]
+        },
+        {
+          "name": "rights_and_provenance",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "rights=CANA_OWNED_ORIGINAL_VECTOR; canonical_pipeline=true"
+          ]
+        },
+        {
+          "name": "brand_distinctiveness",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "system=campaign-system-source-before-hype; strategy=TRUST_BEFORE_HANDOFF; mechanism=Visible source discipline increases trust without pretending ORDERWEEDDC verified unsupported facts."
+          ]
+        },
+        {
+          "name": "landing_page_continuity",
+          "score": 100,
+          "status": "PASS",
+          "evidence": [
+            "destination=/dispensaries; continuity=The dispensary route continues with source-labeled records and supported next actions."
+          ]
+        }
+      ],
+      "failure_list": [],
+      "critique_overlay": {
+        "headline_anchor": "See what’s sourced before you choose.",
+        "focal_point_desktop": "72% 48%",
+        "focal_point_mobile": "50% 45%",
+        "visible_evidence": [
+          "a9a71a4ea166a4fa52c833dc21d52cfbdd20a3c2a38077240e3066e11575170b",
+          "2498a4e09a1ff2a9380274219f5dac9471f7587c32e3b5b9e044f70a1fdb7e84"
+        ],
+        "cautions": [
+          "Illustration must not be presented as documentary photography",
+          "D.C. geometry is conceptual rather than a navigation map",
+          "No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+        ]
+      },
+      "lineage_receipt": {
+        "campaign_sha256": "f7cccfbe6a2d641edc9a4b33af5995189be4dd9c4bef28f4b171b94e03709314",
+        "desktop_page_context_sha256": "88f1abcf44ba919b069fe6b55b314247eca117cdaa65735e3b650a08c3c808b2",
+        "mobile_page_context_sha256": "195094e6e13e71faef0fa48f3d2907880703870bcb4a6953d727d0b335391b75",
+        "source_owner_decision": "owner-orderweeddc-pr21-visual-rejection-20260803"
+      }
+    }
+  ],
+  "owner_decision": {
+    "status": "PENDING",
+    "allowed_values": [
+      "APPROVE_ONE",
+      "REJECT_ALL_REQUEST_CHANGES"
+    ],
+    "selected_campaign_id": null,
+    "production_authority": "NONE"
+  },
+  "first_party_experiment": {
+    "execution_status": "DEFINED_NOT_RUN",
+    "control": "Current owner-approved homepage campaign at experiment start, not the rejected PR #21 creative.",
+    "treatment": "One owner-approved tournament campaign.",
+    "primary_metric": "banner destination click-through rate",
+    "guardrails": [
+      "truth-label comprehension",
+      "page LCP",
+      "serious accessibility findings",
+      "policy or rights violations"
+    ],
+    "causal_method": "Randomized first-party placement after owner approval and separate production authorization.",
+    "spend_authority": "NONE"
+  },
+  "limitations": [
+    "Judge scores verify stated courts and captured render evidence; they do not prove customer preference or conversion lift.",
+    "No campaign is owner-approved, performance-supported, published or production-tested.",
+    "Local vector illustration avoids synthetic-photo deception but does not test authorized merchant photography."
+  ],
+  "production_accessed": false,
+  "provider_calls": 0,
+  "actual_spend_usd": 0,
+  "tournament_receipt_hash": "bf8b960029f53bb7a6876822b26f299d14a974555bc2bf973bb8c8481641b5d8"
+}

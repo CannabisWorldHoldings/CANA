@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  COMPETITIVE_EVOLUTION_AUTHORIZED_PATTERNS,
   matchOwned,
   MISSION1_AUTHORIZED_PATHS,
   MISSION1_EVIDENCE_PATHS,
@@ -47,6 +48,27 @@ function cana(args, env = {}) {
 function ownership() {
   return JSON.parse(fs.readFileSync(OWNERSHIP_FILE, 'utf8'));
 }
+
+test('the competitor-to-creative bridge has bounded durability ownership', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const assignment = manifest.explicit_user_assignment.competitor_to_creative_evolution_2026_08_03;
+  assert.deepEqual([...assignment.paths].sort(), [...COMPETITIVE_EVOLUTION_AUTHORIZED_PATTERNS].sort());
+  assert.match(assignment.authorization_effect, /no merge, deployment, production, cPanel, prod\.db/);
+  for (const pattern of COMPETITIVE_EVOLUTION_AUTHORIZED_PATTERNS) {
+    assert.equal(manifest.owned_create_paths.filter((entry) => entry === pattern).length, 1);
+    assert.equal(manifest.planned_candidate_files.filter((entry) => entry === pattern).length, 1);
+  }
+});
+
+test('competitor-to-creative durability ownership rejects authorization tampering', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.competitor_to_creative_evolution_2026_08_03.authorization_effect = 'deployment allowed';
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /competitor-to-creative ownership assignment is malformed or broadened/,
+  );
+});
 
 test('the six owner-approved Stage A paths have exact changed-file ownership', () => {
   const manifest = ownership();

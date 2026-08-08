@@ -1,0 +1,99 @@
+{
+  "schema_version": "cana.competitor-event/1.0.0",
+  "event_id": "competitor_event_b6332e76a4e3f4e61e1b8381",
+  "tenant_id": "orderweeddc",
+  "workspace_id": "homepage",
+  "entity_id": "fixture_public_marketplace",
+  "competitor_id": "fixture_public_marketplace",
+  "surface_id": "offline-adapter-contract",
+  "url": "https://example.com/public-marketplace-fixture",
+  "first_seen_at": "2026-08-03T14:00:00.000Z",
+  "last_verified_at": "2026-08-03T14:00:00.000Z",
+  "event_date": "2026-08-03",
+  "signal_source": "GROWTH_WATCH_TARGETED_CRAWL_FUSION",
+  "crawl_id": "fixture_crawl_marketplace_mechanism_20260803",
+  "baseline_id": "fixture_baseline_marketplace_mechanism_20260727",
+  "before_content_sha256": "f492b2377667e1ab91bf703dabc54691e9b28fc3541b7d2d7990de4223c5dae8",
+  "after_content_sha256": "c82c879f5cc48c6f5854fb1dc08c92ff44f1ab8fc0026a724bb4343fb666ab45",
+  "before_screenshot_sha256": "a897d2f5ab3288411d9f63e23c05e693a52f4aa57e890f76b5a543dd9effddf1",
+  "after_screenshot_sha256": "4d1ef4d2e2b6b56e3dca8dc5dc1ac79e881a8f5cafc2d36394ea72995183c40f",
+  "dom_diff": {
+    "changed_sections": [
+      "fixture decision sequence"
+    ]
+  },
+  "visual_diff": {
+    "changed_regions": [
+      "fixture local orientation"
+    ]
+  },
+  "semantic_diff": {
+    "added": [
+      "fixture bounded shortlist before handoff"
+    ]
+  },
+  "asset_diff": {
+    "added": [],
+    "removed": []
+  },
+  "seo_diff": {
+    "changed": []
+  },
+  "funnel_diff": {
+    "changed": [
+      "fixture discovery-to-handoff sequence"
+    ]
+  },
+  "ad_creative_diff": {
+    "changed": [
+      "fixture local-value framing"
+    ]
+  },
+  "policy_context": {
+    "state": "OFFLINE_FIXTURE_ONLY"
+  },
+  "direct_observation": "The offline adapter fixture presents local orientation before a bounded marketplace handoff.",
+  "inference": "The sequence may reduce choice overload; no competitor adoption or outcome is claimed.",
+  "uncertainty": 0.25,
+  "confidence": 0.85,
+  "evidence_locations": [
+    "sha256:a83412bf261946bcdaceb9e3068b1ee80209d2c45d2fd728618f62c1d0e4d5a8"
+  ],
+  "rights_state": "REFERENCE_ONLY",
+  "prompt_injection_state": "SCANNED_NO_AUTHORITY",
+  "evidence_class": "OFFLINE_ADAPTER_FIXTURE",
+  "capture_bytes_present": true,
+  "hashes_recomputed": true,
+  "deduplication_key": "b6332e76a4e3f4e61e1b8381aa325c824399ef0bd08da2f687c6fdee473105e7",
+  "importance_score": 0.8,
+  "change_type": "OFFLINE_ADAPTER_VALIDATION",
+  "routing_decision": "OFFLINE_CONTRACT_VALIDATION_ONLY",
+  "crawl_job": {
+    "schema_version": "cana.competitor-crawl-job/1.0.0",
+    "signal_id": "fixture_growth_watch_marketplace_mechanism_20260803",
+    "competitor_id": "fixture_public_marketplace",
+    "url": "https://example.com/public-marketplace-fixture",
+    "requested_viewports": [
+      "1440x1100",
+      "390x844"
+    ],
+    "capture_requirements": [
+      "DOM",
+      "ACCESSIBILITY_TREE",
+      "PAGE_TEXT",
+      "SEO_METADATA",
+      "SCREENSHOT",
+      "PUBLIC_REQUEST_INVENTORY",
+      "ASSET_HASHES"
+    ],
+    "not_before": "2026-08-03T14:00:00.000Z",
+    "rights_policy": "PUBLIC_AUTHORIZED_SURFACES_ONLY",
+    "rate_limit_policy": "RESPECT_ROBOTS_TERMS_AND_ORIGIN_LIMITS",
+    "execution_authority": "JOB_DEFINITION_ONLY",
+    "job_id": "crawl_job_1bc6dc044f62f9eacff6a9aa"
+  },
+  "production_authority": "NONE",
+  "ledger_sequence": 0,
+  "previous_ledger_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "ledger_hash": "cb729632d39dc2253b53e66cfab4d070677c5d0a85d5a4cf7b188d2db6052713"
+}

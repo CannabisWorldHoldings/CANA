@@ -1,0 +1,114 @@
+[
+  {
+    "name": "owner_taste_alignment",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "pending=OWNER_REVIEW_PENDING; rejected constraints retained"
+    ]
+  },
+  {
+    "name": "anti_generic_quality",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "token=campaign-local-orientation; concept=A bold modular street grid with three connected discovery nodes and a single directional path."
+    ]
+  },
+  {
+    "name": "authenticity",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "canonical_pipeline=true; source=Original repository-owned vector design with deterministic typography and no synthetic photography"
+    ]
+  },
+  {
+    "name": "local_dc_intelligence",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "Uses the District grid and quadrant rhythm as an original information device, not a generic skyline."
+    ]
+  },
+  {
+    "name": "campaign_coherence",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "desktop=/competitive-evolution/block-by-block-desktop.svg; mobile=/competitive-evolution/block-by-block-mobile.svg"
+    ]
+  },
+  {
+    "name": "image_copy_fit",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "headline=Start with the D.C. you know.; alt=Original illustrated D.C. street grid connecting neighborhood discovery paths"
+    ]
+  },
+  {
+    "name": "conversion_mechanism",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "cta=Explore neighborhoods; destination=/neighborhoods"
+    ]
+  },
+  {
+    "name": "accessibility",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "serious_or_critical=0; alt=Original illustrated D.C. street grid connecting neighborhood discovery paths"
+    ]
+  },
+  {
+    "name": "mobile_crop_quality",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "source=/competitive-evolution/block-by-block-mobile.svg; overflow=false"
+    ]
+  },
+  {
+    "name": "performance_budget",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "problems=0; bytes=702991/662367"
+    ]
+  },
+  {
+    "name": "cannabis_ad_policy",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "policy=PASS_FOR_OWNER_REVIEW; claim guard=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+    ]
+  },
+  {
+    "name": "rights_and_provenance",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "rights=CANA_OWNED_ORIGINAL_VECTOR; canonical_pipeline=true"
+    ]
+  },
+  {
+    "name": "brand_distinctiveness",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "system=campaign-system-block-by-block; strategy=LOCAL_ORIENTATION; mechanism=A familiar local orientation reduces the effort required to choose a first marketplace path."
+    ]
+  },
+  {
+    "name": "landing_page_continuity",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "destination=/neighborhoods; continuity=Neighborhood index continues the local-orientation mechanism."
+    ]
+  }
+]

@@ -1,0 +1,114 @@
+[
+  {
+    "name": "owner_taste_alignment",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "pending=OWNER_REVIEW_PENDING; rejected constraints retained"
+    ]
+  },
+  {
+    "name": "anti_generic_quality",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "token=campaign-trust-before-handoff; concept=A crisp evidence ribbon built from stamps, ruled lines and a single open doorway motif."
+    ]
+  },
+  {
+    "name": "authenticity",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "canonical_pipeline=true; source=Original repository-owned vector design with deterministic typography and no synthetic photography"
+    ]
+  },
+  {
+    "name": "local_dc_intelligence",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "Turns ORDERWEEDDC’s D.C. record-state discipline into the central brand distinction."
+    ]
+  },
+  {
+    "name": "campaign_coherence",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "desktop=/competitive-evolution/source-before-hype-desktop.svg; mobile=/competitive-evolution/source-before-hype-mobile.svg"
+    ]
+  },
+  {
+    "name": "image_copy_fit",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "headline=See what’s sourced before you choose.; alt=Original evidence-ribbon illustration leading to a source-labeled marketplace doorway"
+    ]
+  },
+  {
+    "name": "conversion_mechanism",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "cta=Compare dispensaries; destination=/dispensaries"
+    ]
+  },
+  {
+    "name": "accessibility",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "serious_or_critical=0; alt=Original evidence-ribbon illustration leading to a source-labeled marketplace doorway"
+    ]
+  },
+  {
+    "name": "mobile_crop_quality",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "source=/competitive-evolution/source-before-hype-mobile.svg; overflow=false"
+    ]
+  },
+  {
+    "name": "performance_budget",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "problems=0; bytes=702987/660187"
+    ]
+  },
+  {
+    "name": "cannabis_ad_policy",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "policy=PASS_FOR_OWNER_REVIEW; claim guard=No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+    ]
+  },
+  {
+    "name": "rights_and_provenance",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "rights=CANA_OWNED_ORIGINAL_VECTOR; canonical_pipeline=true"
+    ]
+  },
+  {
+    "name": "brand_distinctiveness",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "system=campaign-system-source-before-hype; strategy=TRUST_BEFORE_HANDOFF; mechanism=Visible source discipline increases trust without pretending ORDERWEEDDC verified unsupported facts."
+    ]
+  },
+  {
+    "name": "landing_page_continuity",
+    "score": 100,
+    "status": "PASS",
+    "evidence": [
+      "destination=/dispensaries; continuity=The dispensary route continues with source-labeled records and supported next actions."
+    ]
+  }
+]

@@ -2,6 +2,7 @@ import {
   resolveSponsorship,
   SPONSORSHIP_STATES,
 } from './sponsorship-entitlement.mjs';
+import { getCompetitiveReviewCampaigns } from '../../../../packages/ad-creative/src/competitive-campaigns.mjs';
 
 const PRIMARY_BANNER_PLACEMENT = 'NEIGHBORHOOD_BANNER';
 
@@ -231,4 +232,32 @@ export async function selectPrimaryBannerForServer({
     return houseCampaign;
   }
   return null;
+}
+
+/**
+ * Owner-review candidates are deliberately excluded from the live campaign
+ * selector. They can render only on a local host with the server-only review
+ * gate enabled and remain unapproved throughout the review.
+ *
+ * @param {{ campaignId?: string | null, hostname: string, reviewMode?: string }} input
+ * @returns {BannerCampaign | null}
+ */
+export function selectOwnerReviewBanner({ campaignId, hostname, reviewMode }) {
+  if (reviewMode !== 'LOCAL_ONLY') return null;
+  if (!['orderweeddc.localhost', 'localhost', '127.0.0.1'].includes(hostname)) return null;
+  if (typeof campaignId !== 'string' || !/^[a-z0-9-]+$/.test(campaignId)) return null;
+
+  const campaign = getCompetitiveReviewCampaigns().find((candidate) => candidate.id === campaignId);
+  if (!campaign) return null;
+  if (campaign.approvalStatus !== 'OWNER_REVIEW_PENDING') return null;
+  if (campaign.policyResult !== 'PASS_FOR_OWNER_REVIEW') return null;
+  if (!internalDestination(campaign.destination)) return null;
+  if (
+    !campaign.desktopMedia.startsWith('/competitive-evolution/') ||
+    !campaign.mobileMedia.startsWith('/competitive-evolution/') ||
+    campaign.desktopMedia.includes('..') ||
+    campaign.mobileMedia.includes('..')
+  ) return null;
+
+  return campaign;
 }

@@ -1,0 +1,60 @@
+{
+  "sponsor": "ORDERWEEDDC",
+  "disclosure": "ORDERWEEDDC original",
+  "approvalStatus": "OWNER_REVIEW_PENDING",
+  "policyResult": "PASS_FOR_OWNER_REVIEW",
+  "rightsAndProvenance": "CANA-owned original vector composition; no competitor assets, logos, copy, reviews, photography or proprietary data",
+  "fundingKind": "HOUSE",
+  "startAt": "2026-08-03T00:00:00.000Z",
+  "endAt": "2027-08-03T00:00:00.000Z",
+  "frequencyCap": null,
+  "fallbackBehavior": "NEVER_ENTER_LIVE_SELECTOR_WHILE_PENDING",
+  "target_audience": "Adults 21+ exploring the Washington, D.C. cannabis marketplace",
+  "image_source_plan": "Original repository-owned vector design with deterministic typography and no synthetic photography",
+  "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+  "negative_prompt": "No skyline-as-decoration, product pile, fake storefront, fake package, floating product, plastic material, hallucinated text, youth appeal, medical claim, logo leakage, empty green gradient or copied competitor expression.",
+  "authenticity_risks": [
+    "Illustration must not be presented as documentary photography",
+    "D.C. geometry is conceptual rather than a navigation map"
+  ],
+  "unsupported_claim_risks": [
+    "No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+  ],
+  "id": "owd-tonights-shortlist",
+  "campaign_system_id": "campaign-system-tonights-shortlist",
+  "strategy": "BOUNDED_CHOICE",
+  "customer_problem": "A long marketplace can create choice overload before a visitor reaches a useful profile or menu handoff.",
+  "offer": "Three clear ways to build a D.C. shortlist: dispensaries, delivery records and current deals.",
+  "message_hierarchy": [
+    "Tonight’s shortlist",
+    "Three transparent paths",
+    "Open the path that matches the moment"
+  ],
+  "visual_concept": "An editorial ticket stack with three numbered paths, strong crop marks and high-contrast typographic rhythm.",
+  "local_dc_relevance": "Frames the experience as a D.C. night plan while avoiding invented venues, products or events.",
+  "headline": "Make tonight’s D.C. shortlist.",
+  "supportingText": "Compare a smaller set of dispensaries, delivery records and current deals, with the important data state kept visible.",
+  "cta": "See current deals",
+  "designToken": "campaign-bounded-choice",
+  "destination": "/deals",
+  "landing_page_match": "The deals collection continues the time-bounded shortlist idea with explicit validity states.",
+  "altText": "Original editorial shortlist graphic with three numbered D.C. marketplace paths",
+  "desktopMedia": "/competitive-evolution/tonights-shortlist-desktop.svg",
+  "mobileMedia": "/competitive-evolution/tonights-shortlist-mobile.svg",
+  "audience": "Adults choosing a D.C. marketplace path for the current evening",
+  "locationRelevance": "D.C. night-plan editorial framing",
+  "impressionEvent": "OWNER_REVIEW_TONIGHTS_SHORTLIST_VIEW",
+  "clickEvent": "OWNER_REVIEW_TONIGHTS_SHORTLIST_CLICK",
+  "expected_mechanism": "Three bounded paths reduce choice overload and make the next click more intentional.",
+  "testable_prediction": "Against the rejected control, deals-page arrivals and subsequent profile or menu handoffs increase.",
+  "desktop": {
+    "campaign_system_id": "campaign-system-tonights-shortlist",
+    "composition": "horizontal ticket stack with three numbered cuts",
+    "focal_point": "55% 50%"
+  },
+  "mobile": {
+    "campaign_system_id": "campaign-system-tonights-shortlist",
+    "composition": "vertical ticket stack preserving numbering and crop marks",
+    "focal_point": "50% 50%"
+  }
+}

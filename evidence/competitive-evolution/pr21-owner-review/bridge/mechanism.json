@@ -1,0 +1,23 @@
+{
+  "schema_version": "cana.competitor-mechanism/1.0.0",
+  "visible_change": "The offline adapter fixture presents local orientation before a bounded marketplace handoff.",
+  "customer_problem": "Adults need a smaller, locally relevant decision set before opening a menu.",
+  "business_mechanism": "Sequence local relevance before the menu handoff to reduce unstructured choice.",
+  "adoption_evidence": "Offline adapter fixture only; no current competitor adoption, persistence, or outcome is claimed.",
+  "brittle_point": "Neighborhood framing can become empty decoration if it is not tied to a useful discovery path.",
+  "competitor_ignored": "The captured surface does not expose ORDERWEEDDC-style source and record-state context.",
+  "current_cana_capability": "ORDERWEEDDC exposes source and record state before marketplace handoff.",
+  "adjacent_industry_pattern": "Travel and editorial shortlists can reduce choice overload without copying their expression.",
+  "original_cana_mechanism": "ORDERWEEDDC offers three transparent D.C. discovery paths: local orientation, a bounded shortlist, and source-first trust, each leading to an existing marketplace route.",
+  "measurable_superiority": [
+    "banner-to-destination click-through rate",
+    "menu or profile handoff rate after destination arrival",
+    "owner approval and generic/fake rejection rate by generation"
+  ],
+  "protected_expression_copied": false,
+  "rights_state": "MECHANISM_ONLY_NO_PROTECTED_EXPRESSION",
+  "evidence_refs": [
+    "sha256:a83412bf261946bcdaceb9e3068b1ee80209d2c45d2fd728618f62c1d0e4d5a8"
+  ],
+  "inference_state": "OFFLINE_FIXTURE_UNPROVEN"
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": "cana.competitive-evolution-learning-receipt/1.0.0",
+  "recorded_at": "2026-08-03T14:00:00.000Z",
+  "source_owner_decision_id": "owner-orderweeddc-pr21-visual-rejection-20260803",
+  "source_owner_rejection_tags": [
+    "GENERIC",
+    "FAKE_LOOKING",
+    "LOW_CAMPAIGN_COHERENCE",
+    "WEAK_IMAGE_COPY_FIT",
+    "PROTOTYPE_LANGUAGE",
+    "WEAK_LOCAL_IDENTITY",
+    "LOW_MARKETPLACE_ENERGY",
+    "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+  ],
+  "tournament_status": "READY_FOR_OWNER_REVIEW",
+  "candidate_owner_decision": "PENDING",
+  "what_changed": "Three original ORDERWEEDDC campaign systems replaced the generic disconnected billboard hypothesis for review.",
+  "what_was_attempted": "Local rights-clear vector campaigns with coherent desktop/mobile compositions.",
+  "why": "Apply the exact owner rejection without copying competitor expression or expanding authority.",
+  "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+  "measured_outcome": null,
+  "causal_confidence": "NOT_MEASURED",
+  "winning_mechanism": null,
+  "failure_mechanism": "Generic imagery, fake-looking product piles, weak image-copy fit and low local intelligence.",
+  "memory_mutations": [
+    "Persist PR #21 rejection tags in the canonical owner taste stream.",
+    "Retrieve those tags as negative constraints for generation 2."
+  ],
+  "routing_mutations": [
+    "Prefer rights-clear local vector composition while provider/spend authority remains absent."
+  ],
+  "next_mutation": "Wait for owner review, then record the selected campaign or all-candidate rejection before any experiment.",
+  "unresolved_questions": [
+    "Which campaign, if any, earns owner approval?",
+    "Which single first-party metric should be primary after approval?"
+  ],
+  "production_authority": "NONE",
+  "external_effect_count": 0,
+  "receipt_hash": "28f9578b1f879e1abce2fd6699d68faa74097c19d9991945af8dcf3cdaab8fcb"
+}

@@ -1,0 +1,60 @@
+{
+  "sponsor": "ORDERWEEDDC",
+  "disclosure": "ORDERWEEDDC original",
+  "approvalStatus": "OWNER_REVIEW_PENDING",
+  "policyResult": "PASS_FOR_OWNER_REVIEW",
+  "rightsAndProvenance": "CANA-owned original vector composition; no competitor assets, logos, copy, reviews, photography or proprietary data",
+  "fundingKind": "HOUSE",
+  "startAt": "2026-08-03T00:00:00.000Z",
+  "endAt": "2027-08-03T00:00:00.000Z",
+  "frequencyCap": null,
+  "fallbackBehavior": "NEVER_ENTER_LIVE_SELECTOR_WHILE_PENDING",
+  "target_audience": "Adults 21+ exploring the Washington, D.C. cannabis marketplace",
+  "image_source_plan": "Original repository-owned vector design with deterministic typography and no synthetic photography",
+  "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+  "negative_prompt": "No skyline-as-decoration, product pile, fake storefront, fake package, floating product, plastic material, hallucinated text, youth appeal, medical claim, logo leakage, empty green gradient or copied competitor expression.",
+  "authenticity_risks": [
+    "Illustration must not be presented as documentary photography",
+    "D.C. geometry is conceptual rather than a navigation map"
+  ],
+  "unsupported_claim_risks": [
+    "No availability, price, delivery eligibility, ranking, endorsement or conversion claim"
+  ],
+  "id": "owd-source-before-hype",
+  "campaign_system_id": "campaign-system-source-before-hype",
+  "strategy": "TRUST_BEFORE_HANDOFF",
+  "customer_problem": "Visitors cannot judge a marketplace record when promotion overwhelms source, freshness and limitation signals.",
+  "offer": "Source-first comparison before a visitor opens a business profile or menu.",
+  "message_hierarchy": [
+    "Source before hype",
+    "See what the record supports",
+    "Choose the next handoff with context"
+  ],
+  "visual_concept": "A crisp evidence ribbon built from stamps, ruled lines and a single open doorway motif.",
+  "local_dc_relevance": "Turns ORDERWEEDDC’s D.C. record-state discipline into the central brand distinction.",
+  "headline": "See what’s sourced before you choose.",
+  "supportingText": "Find D.C. records with source, freshness and demonstration states kept close to the next action.",
+  "cta": "Compare dispensaries",
+  "designToken": "campaign-trust-before-handoff",
+  "destination": "/dispensaries",
+  "landing_page_match": "The dispensary route continues with source-labeled records and supported next actions.",
+  "altText": "Original evidence-ribbon illustration leading to a source-labeled marketplace doorway",
+  "desktopMedia": "/competitive-evolution/source-before-hype-desktop.svg",
+  "mobileMedia": "/competitive-evolution/source-before-hype-mobile.svg",
+  "audience": "Adults who value trustworthy D.C. marketplace context before a handoff",
+  "locationRelevance": "D.C.-specific source and record-state discipline",
+  "impressionEvent": "OWNER_REVIEW_SOURCE_BEFORE_HYPE_VIEW",
+  "clickEvent": "OWNER_REVIEW_SOURCE_BEFORE_HYPE_CLICK",
+  "expected_mechanism": "Visible source discipline increases trust without pretending ORDERWEEDDC verified unsupported facts.",
+  "testable_prediction": "Against the rejected control, dispensary-profile handoffs increase while truth-label comprehension remains non-inferior.",
+  "desktop": {
+    "campaign_system_id": "campaign-system-source-before-hype",
+    "composition": "wide evidence ribbon terminating at a bright doorway",
+    "focal_point": "72% 48%"
+  },
+  "mobile": {
+    "campaign_system_id": "campaign-system-source-before-hype",
+    "composition": "stacked evidence stamps with the same doorway motif",
+    "focal_point": "50% 45%"
+  }
+}

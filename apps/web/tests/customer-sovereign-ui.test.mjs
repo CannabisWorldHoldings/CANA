@@ -200,6 +200,32 @@ test('sponsored banner eligibility requires persisted canonical entitlement', as
   assert.equal(bannerPolicy.selectPrimaryBanner({ campaigns: [], houseCampaign: null, asOf }), null);
 });
 
+test('pending competitive campaigns render only through the local owner-review gate', () => {
+  const allowed = bannerPolicy.selectOwnerReviewBanner({
+    campaignId: 'owd-block-by-block',
+    hostname: 'orderweeddc.localhost',
+    reviewMode: 'LOCAL_ONLY',
+  });
+  assert.equal(allowed?.approvalStatus, 'OWNER_REVIEW_PENDING');
+  assert.equal(allowed?.desktopMedia, '/competitive-evolution/block-by-block-desktop.svg');
+  assert.equal(bannerPolicy.evaluateBannerCampaign(allowed, new Date('2026-08-03T12:00:00.000Z')).reason, 'UNAPPROVED');
+  assert.equal(bannerPolicy.selectOwnerReviewBanner({
+    campaignId: 'owd-block-by-block',
+    hostname: 'orderweeddc.com',
+    reviewMode: 'LOCAL_ONLY',
+  }), null);
+  assert.equal(bannerPolicy.selectOwnerReviewBanner({
+    campaignId: 'owd-block-by-block',
+    hostname: 'orderweeddc.localhost',
+    reviewMode: undefined,
+  }), null);
+  assert.equal(bannerPolicy.selectOwnerReviewBanner({
+    campaignId: '../owd-block-by-block',
+    hostname: 'orderweeddc.localhost',
+    reviewMode: 'LOCAL_ONLY',
+  }), null);
+});
+
 test('banner reserves dimensions, selects mobile media, and has no rotation or sound', () => {
   const banner = source('src/components/customer-sponsored-banner.tsx');
   const wordmark = source('src/components/brand-wordmark.tsx');

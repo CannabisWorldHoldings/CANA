@@ -1,0 +1,221 @@
+{
+  "scheduled_task_handoff": {
+    "schema_version": "cana.competitive-sensor-handoff/1.0.0",
+    "required": [
+      "handoff_id",
+      "task_name",
+      "run_id",
+      "produced_at",
+      "payload_kind",
+      "payload_sha256",
+      "payload",
+      "instruction_authority"
+    ],
+    "authority": "UNTRUSTED_SIGNAL_UNTIL_DIRECT_EVIDENCE_FUSION"
+  },
+  "growth_watch_signal_packet": {
+    "schema_version": "cana.growth-watch-signal-packet/1.0.0",
+    "required": [
+      "signal_id",
+      "entity_id",
+      "competitor_id",
+      "candidate_urls",
+      "claims",
+      "source_dates",
+      "novelty",
+      "uncertainty",
+      "observed_at"
+    ],
+    "authority": "DISCOVERY_SIGNAL_REQUIRES_DIRECT_CRAWL"
+  },
+  "crawl_job": {
+    "schema_version": "cana.competitor-crawl-job/1.0.0",
+    "required": [
+      "job_id",
+      "signal_id",
+      "competitor_id",
+      "url",
+      "requested_viewports",
+      "capture_requirements",
+      "not_before",
+      "rights_policy",
+      "rate_limit_policy"
+    ]
+  },
+  "crawler_observation": {
+    "schema_version": "cana.competitor-crawl-observation/1.0.0",
+    "required": [
+      "crawl_id",
+      "baseline_id",
+      "entity_id",
+      "competitor_id",
+      "surface_id",
+      "url",
+      "captured_at",
+      "before_content_sha256",
+      "after_content_sha256",
+      "before_screenshot_sha256",
+      "after_screenshot_sha256",
+      "dom_diff",
+      "visual_diff",
+      "semantic_diff",
+      "asset_diff",
+      "seo_diff",
+      "funnel_diff",
+      "ad_creative_diff",
+      "policy_context",
+      "direct_observation",
+      "inference",
+      "uncertainty",
+      "confidence",
+      "evidence_locations",
+      "rights_state",
+      "prompt_injection_state",
+      "importance_score",
+      "change_type",
+      "evidence_class"
+    ],
+    "authority": "DIRECT_CAPTURE_OR_EXPLICIT_OFFLINE_FIXTURE"
+  },
+  "competitor_event": {
+    "schema_version": "cana.competitor-event/1.0.0",
+    "required": [
+      "event_id",
+      "entity_id",
+      "competitor_id",
+      "surface_id",
+      "url",
+      "first_seen_at",
+      "last_verified_at",
+      "event_date",
+      "signal_source",
+      "crawl_id",
+      "baseline_id",
+      "before_content_sha256",
+      "after_content_sha256",
+      "before_screenshot_sha256",
+      "after_screenshot_sha256",
+      "dom_diff",
+      "visual_diff",
+      "semantic_diff",
+      "asset_diff",
+      "seo_diff",
+      "funnel_diff",
+      "ad_creative_diff",
+      "policy_context",
+      "direct_observation",
+      "inference",
+      "uncertainty",
+      "confidence",
+      "evidence_locations",
+      "rights_state",
+      "prompt_injection_state",
+      "deduplication_key",
+      "importance_score",
+      "change_type",
+      "routing_decision",
+      "evidence_class",
+      "capture_bytes_present",
+      "hashes_recomputed"
+    ]
+  },
+  "evidence_receipt": {
+    "schema_version": "cana.competitor-evidence-receipt/1.0.0",
+    "required": [
+      "event_id",
+      "crawl_id",
+      "direct_capture_present",
+      "evidence_class",
+      "capture_bytes_present",
+      "hashes_recomputed",
+      "promotion_allowed",
+      "rights_state",
+      "prompt_injection_state",
+      "production_modified",
+      "external_effect_count",
+      "receipt_hash"
+    ]
+  },
+  "rights_provenance": {
+    "schema_version": "cana.creative-rights-provenance/1.0.0",
+    "required": [
+      "asset_id",
+      "asset_sha256",
+      "source_kind",
+      "rights_state",
+      "training_eligibility",
+      "competitor_expression_copied",
+      "verified_at"
+    ],
+    "authority": "RIGHTS_VERIFICATION_REQUIRED_BEFORE_GENERATION_OR_REUSE"
+  },
+  "creative_record": {
+    "schema_version": "cana.competitive-creative-record/1.0.0",
+    "required": [
+      "campaign_system_id",
+      "strategy",
+      "target_audience",
+      "customer_problem",
+      "offer",
+      "message_hierarchy",
+      "visual_concept",
+      "desktop",
+      "mobile",
+      "rights_state",
+      "approvalStatus",
+      "expected_mechanism",
+      "testable_prediction"
+    ],
+    "authority": "OWNER_REVIEW_PENDING_NO_PUBLISH_AUTHORITY"
+  },
+  "preference_pair": {
+    "schema_version": "cana.owner-preference-pair/1.0.0",
+    "required": [
+      "pair_id",
+      "owner_decision_id",
+      "rejected",
+      "desired",
+      "owner_confidence",
+      "promotion_state"
+    ],
+    "authority": "OWNER_DECISION_ONLY"
+  },
+  "performance_outcome": {
+    "schema_version": "cana.first-party-performance-outcome/1.0.0",
+    "required": [
+      "experiment_id",
+      "campaign_id",
+      "execution_status",
+      "primary_metric",
+      "measurement_window",
+      "causal_method",
+      "measured_outcome",
+      "causal_confidence",
+      "owner_approval_ref"
+    ],
+    "authority": "DEFINED_NOT_RUN_UNTIL_OWNER_AND_PRODUCTION_APPROVAL"
+  },
+  "learning_receipt": {
+    "schema_version": "cana.competitive-evolution-learning-receipt/1.0.0",
+    "required": [
+      "recorded_at",
+      "source_owner_decision_id",
+      "source_owner_rejection_tags",
+      "tournament_status",
+      "candidate_owner_decision",
+      "what_changed",
+      "what_was_attempted",
+      "why",
+      "rights_state",
+      "measured_outcome",
+      "causal_confidence",
+      "failure_mechanism",
+      "memory_mutations",
+      "routing_mutations",
+      "next_mutation",
+      "unresolved_questions",
+      "receipt_hash"
+    ],
+    "authority": "SITEMIND_CANONICAL_LEARNING_STREAM"
+  }
+}

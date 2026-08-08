@@ -1,0 +1,154 @@
+{
+  "schema_version": "cana.owner-review-render-manifest/1.0.0",
+  "base_url": "http://orderweeddc.localhost:3410",
+  "rejected_source_commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+  "owner_decision_status": "PENDING",
+  "production_accessed": false,
+  "campaigns": {
+    "owd-block-by-block": {
+      "desktop": {
+        "route": "/?ownerReviewCampaign=owd-block-by-block",
+        "viewport": {
+          "width": 1440,
+          "height": 1100
+        },
+        "status": 200,
+        "page_context_path": "owd-block-by-block-desktop-homepage.png",
+        "page_context_sha256": "037cf6b68da45427ff4975cc40fdf2e2ff77dc0982749a8afd2bad4af445c3bd",
+        "isolated_path": "owd-block-by-block-desktop-billboard.png",
+        "isolated_sha256": "7af525a2194c7a07183bb74edf599c0da4ceb7646b48d6d893292748250e886c",
+        "image_source": "/competitive-evolution/block-by-block-desktop.svg",
+        "horizontal_overflow": false,
+        "console_problems": [],
+        "request_failures": [],
+        "serious_accessibility_findings": [],
+        "performance": {
+          "resource_count": 44,
+          "transferred_bytes": 702991
+        }
+      },
+      "mobile": {
+        "route": "/?ownerReviewCampaign=owd-block-by-block",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "status": 200,
+        "page_context_path": "owd-block-by-block-mobile-homepage.png",
+        "page_context_sha256": "dffbb4a5b8bf5caeb72050c2c34d27003949390621e8cedfd186e7fabb4eb5ae",
+        "isolated_path": "owd-block-by-block-mobile-billboard.png",
+        "isolated_sha256": "418cd1908b90d5ef3db6b525e5aeff0a954f2bb116484c23141af9ee5706f286",
+        "image_source": "/competitive-evolution/block-by-block-mobile.svg",
+        "horizontal_overflow": false,
+        "console_problems": [],
+        "request_failures": [],
+        "serious_accessibility_findings": [],
+        "performance": {
+          "resource_count": 28,
+          "transferred_bytes": 662367
+        }
+      }
+    },
+    "owd-tonights-shortlist": {
+      "desktop": {
+        "route": "/?ownerReviewCampaign=owd-tonights-shortlist",
+        "viewport": {
+          "width": 1440,
+          "height": 1100
+        },
+        "status": 200,
+        "page_context_path": "owd-tonights-shortlist-desktop-homepage.png",
+        "page_context_sha256": "49041c04c73fd30db00b4650b88a8382c021ee7c2ad19e32e8fa8a7af4c70c65",
+        "isolated_path": "owd-tonights-shortlist-desktop-billboard.png",
+        "isolated_sha256": "9609e2790fa679dc8c55d2b5d7ca85d64cae0051a43cfd13f9e498f3723bb71d",
+        "image_source": "/competitive-evolution/tonights-shortlist-desktop.svg",
+        "horizontal_overflow": false,
+        "console_problems": [],
+        "request_failures": [],
+        "serious_accessibility_findings": [],
+        "performance": {
+          "resource_count": 44,
+          "transferred_bytes": 703130
+        }
+      },
+      "mobile": {
+        "route": "/?ownerReviewCampaign=owd-tonights-shortlist",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "status": 200,
+        "page_context_path": "owd-tonights-shortlist-mobile-homepage.png",
+        "page_context_sha256": "6f84952cd6de8c4d3399120fd3f853b37167ba967515613e1e748bfe72485d70",
+        "isolated_path": "owd-tonights-shortlist-mobile-billboard.png",
+        "isolated_sha256": "50e8e90873a31b6e0b6f212d072121fabf5b5aa01e3320eb92097c7eb6e3f5a6",
+        "image_source": "/competitive-evolution/tonights-shortlist-mobile.svg",
+        "horizontal_overflow": false,
+        "console_problems": [],
+        "request_failures": [],
+        "serious_accessibility_findings": [],
+        "performance": {
+          "resource_count": 26,
+          "transferred_bytes": 660231
+        }
+      }
+    },
+    "owd-source-before-hype": {
+      "desktop": {
+        "route": "/?ownerReviewCampaign=owd-source-before-hype",
+        "viewport": {
+          "width": 1440,
+          "height": 1100
+        },
+        "status": 200,
+        "page_context_path": "owd-source-before-hype-desktop-homepage.png",
+        "page_context_sha256": "88f1abcf44ba919b069fe6b55b314247eca117cdaa65735e3b650a08c3c808b2",
+        "isolated_path": "owd-source-before-hype-desktop-billboard.png",
+        "isolated_sha256": "a9a71a4ea166a4fa52c833dc21d52cfbdd20a3c2a38077240e3066e11575170b",
+        "image_source": "/competitive-evolution/source-before-hype-desktop.svg",
+        "horizontal_overflow": false,
+        "console_problems": [],
+        "request_failures": [],
+        "serious_accessibility_findings": [],
+        "performance": {
+          "resource_count": 44,
+          "transferred_bytes": 702987
+        }
+      },
+      "mobile": {
+        "route": "/?ownerReviewCampaign=owd-source-before-hype",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "status": 200,
+        "page_context_path": "owd-source-before-hype-mobile-homepage.png",
+        "page_context_sha256": "195094e6e13e71faef0fa48f3d2907880703870bcb4a6953d727d0b335391b75",
+        "isolated_path": "owd-source-before-hype-mobile-billboard.png",
+        "isolated_sha256": "2498a4e09a1ff2a9380274219f5dac9471f7587c32e3b5b9e044f70a1fdb7e84",
+        "image_source": "/competitive-evolution/source-before-hype-mobile.svg",
+        "horizontal_overflow": false,
+        "console_problems": [],
+        "request_failures": [],
+        "serious_accessibility_findings": [],
+        "performance": {
+          "resource_count": 26,
+          "transferred_bytes": 660187
+        }
+      }
+    }
+  },
+  "release_identity": {
+    "status": "RELEASE_SHA_PRESENT",
+    "gitSha": "d8d6db5bb44c4e9d3a882619c5275f256c3f64e2",
+    "shortSha": "d8d6db5",
+    "builtAt": "2026-08-03T10:26:00.000Z",
+    "artifact": "local-owner-review-production-build",
+    "source": "env:RELEASE_RECEIPT_PATH",
+    "checkedAt": "2026-08-03T13:03:35.326Z"
+  },
+  "source_commit": "d8d6db5bb44c4e9d3a882619c5275f256c3f64e2",
+  "captured_at": "2026-08-03T13:03:43.969Z",
+  "screenshot_count": 12,
+  "status": "PASS"
+}

@@ -584,3 +584,39 @@ html[data-daypart="night"] .marketplace-hero__veil {
       );
   }
 }
+
+.sovereign-banner {
+  --campaign-surface: var(--brand-surface);
+  --campaign-accent: var(--brand-primary);
+  --campaign-ink: var(--brand-text);
+}
+
+.sovereign-banner[data-campaign-system="campaign-local-orientation"] {
+  --campaign-surface: #edf3ed;
+  --campaign-accent: #1b573b;
+  --campaign-ink: #10261b;
+}
+
+.sovereign-banner[data-campaign-system="campaign-bounded-choice"] {
+  --campaign-surface: #f8e7ca;
+  --campaign-accent: #9d3f24;
+  --campaign-ink: #34170f;
+}
+
+.sovereign-banner[data-campaign-system="campaign-trust-before-handoff"] {
+  --campaign-surface: #e8edf4;
+  --campaign-accent: #263f68;
+  --campaign-ink: #111d32;
+}
+
+.owner-review-marketplace-paths {
+  color: var(--campaign-ink, var(--brand-text));
+}
+
+.owner-review-marketplace-paths__rail {
+  background: var(--campaign-ink, var(--brand-text));
+}
+
+.owner-review-marketplace-paths__index {
+  color: var(--brand-surface);
+}

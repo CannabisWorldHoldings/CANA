@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 900" role="img" aria-labelledby="title desc">
+  <title id="title">Source before hype mobile evidence ribbon</title>
+  <desc id="desc">An original stack of source records leading to an open doorway.</desc>
+  <style>:root{--campaign-canvas:#203657;--campaign-paper:#f1f4f7;--campaign-accent:#f0c84b;--campaign-signal:#426696;--campaign-ink:#111d32;--campaign-white:#fff}</style>
+  <rect width="780" height="900" fill="var(--campaign-canvas)"/>
+  <path d="M64 76h652v410H64z" fill="var(--campaign-paper)"/>
+  <path d="M64 76h652v66H64z" fill="var(--campaign-accent)"/>
+  <g stroke="var(--campaign-canvas)" stroke-width="13" stroke-linecap="round">
+    <path d="M126 216h264M126 270h498M126 324h340M126 408h236"/>
+  </g>
+  <circle cx="590" cy="384" r="70" fill="none" stroke="var(--campaign-signal)" stroke-width="11"/>
+  <path d="M550 384l28 28 58-70" fill="none" stroke="var(--campaign-signal)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M188 520h404v336H188z" fill="var(--campaign-ink)"/>
+  <path d="M270 590h240v266H270z" fill="var(--campaign-accent)"/>
+  <path d="M326 646h184v210H326z" fill="var(--campaign-white)"/>
+  <circle cx="478" cy="760" r="14" fill="var(--campaign-canvas)"/>
+  <path d="M64 688h206" stroke="var(--campaign-accent)" stroke-width="22"/>
+  <path d="M210 632l92 56-92 56z" fill="var(--campaign-accent)"/>
+</svg>

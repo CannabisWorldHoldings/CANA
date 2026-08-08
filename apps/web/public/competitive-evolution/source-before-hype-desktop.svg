@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 720" role="img" aria-labelledby="title desc">
+  <title id="title">Source before hype evidence ribbon</title>
+  <desc id="desc">An original chain of source records leading to an open doorway.</desc>
+  <style>:root{--campaign-canvas:#203657;--campaign-paper:#f1f4f7;--campaign-accent:#f0c84b;--campaign-signal:#426696;--campaign-ink:#111d32;--campaign-white:#fff}</style>
+  <rect width="1680" height="720" fill="var(--campaign-canvas)"/>
+  <path d="M96 146h970v430H96z" fill="var(--campaign-paper)"/>
+  <path d="M96 146h970v72H96z" fill="var(--campaign-accent)"/>
+  <g stroke="var(--campaign-canvas)" stroke-width="14" stroke-linecap="round">
+    <path d="M174 298h380M174 356h716M174 414h622M174 500h290"/>
+  </g>
+  <g fill="none" stroke="var(--campaign-signal)" stroke-width="12">
+    <circle cx="920" cy="326" r="82"/><circle cx="920" cy="326" r="58"/>
+  </g>
+  <path d="M870 326l34 34 68-82" fill="none" stroke="var(--campaign-signal)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M1096 96h420v548h-420z" fill="var(--campaign-ink)"/>
+  <path d="M1188 174h258v470h-258z" fill="var(--campaign-accent)"/>
+  <path d="M1254 248h192v396h-192z" fill="var(--campaign-white)"/>
+  <circle cx="1412" cy="438" r="16" fill="var(--campaign-canvas)"/>
+  <path d="M1034 360h154" stroke="var(--campaign-accent)" stroke-width="24"/>
+  <path d="M1112 306l90 54-90 54z" fill="var(--campaign-accent)"/>
+</svg>

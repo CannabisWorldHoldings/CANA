@@ -160,3 +160,35 @@ export function assertPostable({ verification, humanApproval }) {
     imageSha256: verification.receipt.imageSha256,
   });
 }
+
+/** Canonical machine court for local campaign-system assets. */
+export function verifyCampaignSystemCreative({ brief, image, imageAnalysis }) {
+  if (!brief || brief.schemaVersion !== 'ad-creative.campaign-system-brief/1.0.0') {
+    throw new TypeError('campaign-system verification requires its canonical brief');
+  }
+  if (!imageAnalysis || typeof imageAnalysis !== 'object') {
+    throw new TypeError('campaign-system verification requires post-generation inspection');
+  }
+  const imageSha256 = createHash('sha256').update(Buffer.from(image.imageBase64, 'base64')).digest('hex');
+  const checks = [
+    ['repository-rights', brief.rightsState === 'CANA_OWNED_ORIGINAL_VECTOR', `rights=${brief.rightsState}`],
+    ['review-policy', brief.policyResult === 'PASS_FOR_OWNER_REVIEW', `policy=${brief.policyResult}`],
+    ['sponsorship-neutrality', brief.channel === 'featured-placement', `channel=${brief.channel}`],
+    ['responsive-identity', brief.responsiveIdentity === brief.campaignSystemId, `identity=${brief.responsiveIdentity}`],
+    ['image-safety', imageAnalysis.containsMinorsAppeal === false && imageAnalysis.containsHealthClaims === false,
+      `minorsAppeal=${imageAnalysis.containsMinorsAppeal} healthClaims=${imageAnalysis.containsHealthClaims}`],
+    ['no-rendered-text', imageAnalysis.containsRenderedText === false, `renderedText=${imageAnalysis.containsRenderedText}`],
+    ['deterministic-svg', image.mimeType === 'image/svg+xml' && imageAnalysis.matchesBrand === true,
+      `mime=${image.mimeType} inspected=${imageAnalysis.matchesBrand}`],
+    ['receipt-integrity', image.receipt?.imageSha256 === imageSha256 && imageAnalysis.receipt?.imageSha256 === imageSha256,
+      `recomputed=${imageSha256}`],
+    ['zero-network', image.receipt?.networkExecution === false && imageAnalysis.receipt?.networkExecution === false,
+      'generation and inspection are local'],
+  ].map(([name, passed, evidence]) => Object.freeze({ name, status: passed ? 'PASS' : 'FAIL', evidence }));
+  const failed = checks.filter((check) => check.status === 'FAIL');
+  return Object.freeze({
+    status: failed.length === 0 ? 'PASS' : 'FAIL',
+    checks: Object.freeze(checks),
+    receipt: Object.freeze({ imageSha256, failedChecks: Object.freeze(failed.map((check) => check.name)) }),
+  });
+}

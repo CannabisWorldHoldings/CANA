@@ -1,0 +1,20 @@
+[
+  {
+    "asset_id": "/competitive-evolution/tonights-shortlist-desktop.svg",
+    "asset_sha256": "a0c707f6c68cd1e5700a8575a4e62a2f3e909594edb4a331fdcf6ac1816d6dd8",
+    "source_kind": "REPOSITORY_ORIGINAL_VECTOR",
+    "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+    "training_eligibility": "CANA_OWNED_REVIEW_ASSET",
+    "competitor_expression_copied": false,
+    "verified_at": "2026-08-03T14:00:00.000Z"
+  },
+  {
+    "asset_id": "/competitive-evolution/tonights-shortlist-mobile.svg",
+    "asset_sha256": "39aaa2b45f148ace8343b99e2c9da09543371a5e19c24822c76fdfb361b7e6b2",
+    "source_kind": "REPOSITORY_ORIGINAL_VECTOR",
+    "rights_state": "CANA_OWNED_ORIGINAL_VECTOR",
+    "training_eligibility": "CANA_OWNED_REVIEW_ASSET",
+    "competitor_expression_copied": false,
+    "verified_at": "2026-08-03T14:00:00.000Z"
+  }
+]

@@ -1,0 +1,63 @@
+{
+  "schema_version": "cana.rejected-creative-genome/1.0.0",
+  "candidate": {
+    "pull_request": 21,
+    "branch": "codex/orderweeddc-customer-side-sovereign-ui",
+    "commit": "5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+    "tree": "4224e7efcc797b64152170d7b42c416eb787fe8d",
+    "canonical_base": "79bfd9d2936a250035fb2e7d3f47f1d24dc1c0dc"
+  },
+  "desktop_evidence": {
+    "source_name": "desktop-banner.png",
+    "sha256": "e4ae17edd0cb2c4b6f2d68e3a719132c2bf59c238417ed8283d5688d1d795332",
+    "bytes": 341598,
+    "object_path": "objects/e4ae17edd0cb2c4b6f2d68e3a719132c2bf59c238417ed8283d5688d1d795332",
+    "rights_state": "OWNER_PACKET_REJECTED_EVIDENCE",
+    "training_eligibility": "REFERENCE_ONLY"
+  },
+  "mobile_evidence": {
+    "source_name": "mobile-banner.png",
+    "sha256": "1b124691d8da52f05d3aada2ad009bb78d84439eeed9818fc7b68c2331c13f3d",
+    "bytes": 107820,
+    "object_path": "objects/1b124691d8da52f05d3aada2ad009bb78d84439eeed9818fc7b68c2331c13f3d",
+    "rights_state": "OWNER_PACKET_REJECTED_EVIDENCE",
+    "training_eligibility": "REFERENCE_ONLY"
+  },
+  "rejection_tags": [
+    "GENERIC",
+    "FAKE_LOOKING",
+    "LOW_CAMPAIGN_COHERENCE",
+    "WEAK_IMAGE_COPY_FIT",
+    "PROTOTYPE_LANGUAGE",
+    "WEAK_LOCAL_IDENTITY",
+    "LOW_MARKETPLACE_ENERGY",
+    "INSUFFICIENT_CREATIVE_INTELLIGENCE"
+  ],
+  "failure_mechanisms": [
+    "The house billboard is generic, low-intelligence and prototype-like.",
+    "Desktop and mobile art do not form one coherent campaign identity.",
+    "The desktop composition lacks a compelling merchant, product, offer, audience or emotional idea.",
+    "The mobile product pile risks reading as fake instead of premium and trustworthy.",
+    "The headline is bland and weakly connected to the imagery.",
+    "Internal review language appears in the customer experience.",
+    "Prototype retailer names remain visible.",
+    "The homepage is sparse, generic, long and low in marketplace energy.",
+    "Storefront imagery and listing presentation are too weak to create discovery or trust.",
+    "The candidate proves layout and truth behavior, not category-defining creative intelligence."
+  ],
+  "reusable_expression": [],
+  "mechanism_only_learning": {
+    "id": "orderweeddc-original-campaign-system",
+    "qualities": [
+      "original and premium",
+      "unmistakably ORDERWEEDDC",
+      "locally intelligent",
+      "authentic without pretending illustration is photography",
+      "strong customer and merchant value",
+      "clear offer or discovery idea",
+      "richer marketplace energy",
+      "measurable conversion hypothesis"
+    ],
+    "campaign_coherence": "DESKTOP_MOBILE_ONE_SYSTEM"
+  }
+}
