@@ -28,6 +28,10 @@ const fixedCreativeAuthorization = JSON.parse(readFileSync(
   new URL('../../packages/ad-creative/fixtures/offline-creative-draft-authorization.json', import.meta.url),
   'utf8',
 ));
+const fixedCreativeContextPacket = JSON.parse(readFileSync(
+  new URL('../../evidence/dynamic-creative/owner-review/sitemind-context-receipt.json', import.meta.url),
+  'utf8',
+));
 
 function fixtureProvider({
   name = 'deterministic-fixture',
@@ -374,7 +378,7 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   const { inspectDeterministicCreativeArtifacts, runControlledVerticalSlice, runVisualCourt } = await loadFoundation();
   assert.equal(typeof runControlledVerticalSlice, 'function', 'controlled vertical slice is missing');
   const registry = createProviderRegistry([createDeterministicFixtureProvider()]);
-  const context = compileCreativeCampaignContext(validContextInput());
+  const context = { packet: fixedCreativeContextPacket };
   const selfMintedGrant = makeGrant({
     capability: 'GENERATE_CREATIVE_DRAFT', budgetUnits: 8,
     expiresAt: '2026-08-05T04:00:00.000Z', issuedBy: 'CANA', now: NOW,
@@ -390,6 +394,19 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
   assert.equal(acceptFixedOfflineCreativeAuthorization({
     authorization: tamperedAuthorization,
     contextPacket: context.packet,
+    now: NOW,
+  }).valid, false);
+  const widenedContextBody = JSON.parse(JSON.stringify(context.packet));
+  delete widenedContextBody.packet_digest;
+  widenedContextBody.objective = 'Generate an arbitrary widened synthetic campaign unrelated to the fixed owner-review objective';
+  widenedContextBody.prohibited_elements = [];
+  const widenedContext = {
+    ...widenedContextBody,
+    packet_digest: actualSha(JSON.stringify(widenedContextBody)),
+  };
+  assert.equal(acceptFixedOfflineCreativeAuthorization({
+    authorization: fixedCreativeAuthorization,
+    contextPacket: widenedContext,
     now: NOW,
   }).valid, false);
   const grant = acceptFixedOfflineCreativeAuthorization({
@@ -509,7 +526,7 @@ test('controlled vertical slice remains LEVEL 1 and zero spend', async () => {
 
 test('controlled slice recomputes Hermes seals and refuses provider metadata impersonation', async () => {
   const { runControlledVerticalSlice } = await loadFoundation();
-  const context = compileCreativeCampaignContext(validContextInput());
+  const context = { packet: fixedCreativeContextPacket };
   const forgedPacket = {
     schema: 'hermes-governed-packet/1',
     context_digest: context.packet.packet_digest,

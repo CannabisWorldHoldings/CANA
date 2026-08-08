@@ -11,7 +11,7 @@
     "budget_units": 8,
     "expires_at": "2027-08-05T04:00:00.000Z",
     "issued_by": "CANA",
-    "authorization_digest": "7a79525de63d62c88c6e175e2237cce0398257d65895d8894e46dde76e635026",
+    "authorization_digest": "be6706f43437ce4ab1e048c3166e00e75ddd4543820024fac9515e718eeae5d7",
     "context_digest": "1991a33ebabf85f4d6eb32a7e92460c3d164006086c3e817f38ed11e09f2d5ee",
     "provider_id": "deterministic-fixture",
     "autonomy_level": "LEVEL_1_SHADOW_GENERATION_AND_SCORING",
@@ -30,5 +30,5 @@
     "subject:creative"
   ],
   "contradictions_checked_against_intent": true,
-  "packet_digest": "80a63763b1073bf794f3fa1314ab7169b13b7f3917efa82e7d449285bd27aadb"
+  "packet_digest": "70ef22cfd1121755bc1583343eb6c824dafac33ec617868c59f561e32def96e9"
 }

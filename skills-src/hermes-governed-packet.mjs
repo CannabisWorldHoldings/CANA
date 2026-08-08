@@ -38,7 +38,7 @@ const sha = (s) => createHash('sha256').update(s).digest('hex');
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
 const ISSUED_GRANTS = new WeakSet();
 const SEALED_PACKETS = new WeakSet();
-const FIXED_OFFLINE_CREATIVE_AUTHORIZATION_DIGEST = '7a79525de63d62c88c6e175e2237cce0398257d65895d8894e46dde76e635026';
+const FIXED_OFFLINE_CREATIVE_AUTHORIZATION_DIGEST = 'be6706f43437ce4ab1e048c3166e00e75ddd4543820024fac9515e718eeae5d7';
 
 /** Capabilities Hermes may be granted. Anything absent is refused. */
 export const CAPABILITIES = Object.freeze([
@@ -102,6 +102,7 @@ export function acceptFixedOfflineCreativeAuthorization({ authorization, context
   if (body.issued_by !== 'CANA') errors.push('creative authorization issuer must be CANA');
   if (body.capability !== 'GENERATE_CREATIVE_DRAFT') errors.push('creative authorization capability invalid');
   if (body.context_profile !== 'synthetic-anacostia-owner-review') errors.push('creative authorization context profile invalid');
+  if (body.context_digest !== contextPacket?.packet_digest) errors.push('creative authorization is not bound to the exact approved SiteMind context');
   if (contextPacket?.authority_boundary !== 'SITEMIND_CONTEXT_ONLY_NO_EXECUTION_AUTHORITY') {
     errors.push('creative authorization requires a canonical SiteMind context-only packet');
   }
@@ -135,7 +136,7 @@ export function acceptFixedOfflineCreativeAuthorization({ authorization, context
     errors: Object.freeze(errors),
     grant_id: body.authorization_id,
     authorization_digest: claimedDigest ?? null,
-    context_digest: contextPacket?.packet_digest ?? null,
+    context_digest: body.context_digest ?? null,
     provider_id: body.provider_id ?? null,
     autonomy_level: body.autonomy_level ?? null,
     scope: body.scope ?? null,
