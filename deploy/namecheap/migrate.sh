@@ -33,6 +33,7 @@ else
 fi
 
 MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
+SCHEMA_PATH="$SCHEMA_DIR/$SCHEMA"
 : "${DATABASE_URL:?HARD STOP: DATABASE_URL is required}"
 : "${DIRECT_URL:?HARD STOP: DIRECT_URL is required}"
 : "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"
@@ -109,7 +110,7 @@ else
   exit 3
 fi
 
-echo "schema:      $SCHEMA_DIR/$SCHEMA"
+echo "schema:      $SCHEMA_PATH"
 echo "migrations:  $MIGRATIONS_DIR ($(ls "$MIGRATIONS_DIR" | wc -l | tr -d ' ') entries)"
 if command -v sha256sum >/dev/null 2>&1; then
   BACKUP_RECEIPT_SHA=$(sha256sum "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" | cut -d' ' -f1)
@@ -123,7 +124,7 @@ echo "direct:      configured (URL redacted)"
 echo "backup receipt sha256: $BACKUP_RECEIPT_SHA"
 
 # --- Apply committed migrations ----------------------------------------------
-DATABASE_URL="$DATABASE_URL" DIRECT_URL="$DIRECT_URL" $PRISMA migrate deploy --schema "$SCHEMA" \
+DATABASE_URL="$DATABASE_URL" DIRECT_URL="$DIRECT_URL" $PRISMA migrate deploy --schema "$SCHEMA_PATH" \
   || { echo "MIGRATION FAILED — provider backup receipt remains: $BACKUP_RECEIPT_SHA"; exit 4; }
 
 echo "MIGRATIONS APPLIED. Record the commit, migration output, and backup-receipt"
