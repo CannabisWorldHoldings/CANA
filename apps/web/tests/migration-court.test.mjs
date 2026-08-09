@@ -23,6 +23,7 @@ import {
   validateCanonicalMigrationUniverse,
 } from '../src/lib/db-config.mjs';
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
+import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -792,6 +793,88 @@ test('ROLLBACK: the manual inverse refuses after a later successful migration', 
     `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('ContinuationMission','ContinuationTrigger','ContinuationReceipt','Opportunity','AskIntentSignal') ORDER BY tablename`,
   );
   assert.deepEqual(continuationTablesAfter, continuationTablesBefore, 'continuation schema must remain intact after refusal');
+});
+
+test('ASK WORK: one observation is atomic, deduplicated and leaves no partial state on failure', async () => {
+  const url = createDatabase('ask_work');
+  deploy(url);
+  const p = await client(url);
+  const now = new Date('2026-08-09T18:00:00Z');
+  const intent = {
+    raw_query: 'flower in dupont',
+    unknown_dimensions: [],
+    dimensions: { location: { status: 'KNOWN', value: 'dupont circle' } },
+  };
+  const answer = {
+    verified_candidate_count: 0,
+    zero_verified_result: true,
+    zero_result_reason: 'NO_VERIFIED_CURRENT_MATCH',
+    unsupported_known_dimensions: [],
+    opportunitySpec: {
+      tenant: 'orderweeddc.localhost',
+      kind: 'MARKET_GAP',
+      retailerId: null,
+      evidence: JSON.stringify({ verified_candidates: 0 }),
+      observedState: JSON.stringify({ location: 'dupont circle', verified_candidate_count: 0 }),
+      signal: intent.raw_query,
+      hypothesizedValue: null,
+      confidence: null,
+      recommendedAction: 'Verify merchant coverage from canonical evidence.',
+      requiredAuthority: 'PROPOSE_ONLY',
+      risk: 'LOW — proposal only',
+      rollback: 'Dismiss the opportunity',
+      measurementPlan: 'A registered consumer re-checks decision-eligible verified candidates.',
+    },
+  };
+  const input = {
+    answer, clientIdentity: '192.0.2.10', domain: 'orderweeddc.localhost', intent, now,
+  };
+
+  const first = await recordAskWork(p, input);
+  assert.equal(first.state, 'RECORDED');
+  assert.equal(first.opportunityRecorded, true);
+  assert.equal(first.continuationArmed, true);
+  const counts = async () => ({
+    reservations: await p.publicSubmissionEvent.count(),
+    opportunities: await p.opportunity.count(),
+    missions: await p.continuationMission.count(),
+    triggers: await p.continuationTrigger.count(),
+    signals: await p.askIntentSignal.count(),
+  });
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+
+  const duplicate = await recordAskWork(p, input);
+  assert.equal(duplicate.state, 'DUPLICATE');
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+
+  await p.$executeRawUnsafe(`
+    CREATE OR REPLACE FUNCTION refuse_ask_signal() RETURNS trigger AS $$
+    BEGIN
+      IF NEW."rawQuery" = 'failure in dupont' THEN RAISE EXCEPTION 'injected ask signal failure'; END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+  `);
+  await p.$executeRawUnsafe(`
+    CREATE TRIGGER ask_signal_failure BEFORE INSERT ON "AskIntentSignal"
+    FOR EACH ROW EXECUTE FUNCTION refuse_ask_signal();
+  `);
+  try {
+    const failedIntent = { ...intent, raw_query: 'failure in dupont' };
+    const failed = await recordAskWork(p, {
+      ...input,
+      intent: failedIntent,
+      answer: {
+        ...answer,
+        opportunitySpec: { ...answer.opportunitySpec, signal: failedIntent.raw_query },
+      },
+    });
+    assert.equal(failed.state, 'FAILED');
+    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+  } finally {
+    await p.$executeRawUnsafe('DROP TRIGGER IF EXISTS ask_signal_failure ON "AskIntentSignal";');
+    await p.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_ask_signal();');
+  }
 });
 
 test('RESTORE: a logical pre-migration backup is a working database with a verifying chain', async () => {

@@ -9,6 +9,7 @@ export const PUBLIC_SUBMISSION_POLICY = Object.freeze({
 });
 
 export const PUBLIC_SUBMISSION_SURFACES = Object.freeze({
+  ASK: 'ASK',
   CLAIM: 'CLAIM',
   CORRECTION: 'CORRECTION',
 });

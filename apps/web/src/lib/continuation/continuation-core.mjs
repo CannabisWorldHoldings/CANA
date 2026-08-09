@@ -146,7 +146,9 @@ export function validateTriggerSpec(spec, { now = new Date() } = {}) {
 
   if (!isNonEmptyString(spec.missionId)) errors.push('missionId is required');
   if (!isNonEmptyString(spec.tenant)) errors.push('tenant is required');
-  if (!TRIGGER_TYPES[spec.triggerType]) errors.push(`triggerType must be one of ${Object.keys(TRIGGER_TYPES).join('|')}`);
+  if (!Object.hasOwn(TRIGGER_TYPES, spec.triggerType)) {
+    errors.push(`triggerType must be one of ${Object.keys(TRIGGER_TYPES).join('|')}`);
+  }
   if (!isNonEmptyString(spec.reason)) errors.push('reason (purpose) is required — a trigger with no reason is rejected');
   if (!isNonEmptyString(spec.createdFrom)) errors.push('createdFrom (provenance) is required');
   if (!isNonEmptyString(spec.stopCondition)) errors.push('stopCondition is required — no unbounded continuations');
@@ -165,7 +167,9 @@ export function validateTriggerSpec(spec, { now = new Date() } = {}) {
   if (!expiresAt) errors.push('expiresAt is required — every trigger has a hard expiry');
   else if (expiresAt.getTime() <= now.getTime()) errors.push('expiresAt must be in the future');
 
-  const requiredField = TYPE_REQUIREMENTS[spec.triggerType];
+  const requiredField = Object.hasOwn(TYPE_REQUIREMENTS, spec.triggerType)
+    ? TYPE_REQUIREMENTS[spec.triggerType]
+    : undefined;
   if (requiredField) {
     if (requiredField === 'nextEligibleAt') {
       if (!asValidDate(spec.nextEligibleAt)) errors.push(`${spec.triggerType} triggers require a valid nextEligibleAt`);

@@ -257,8 +257,30 @@ test('C6b: a trigger cannot cross tenant or mission budget boundaries', async ()
   );
   await assert.rejects(
     () => createTrigger(prisma, triggerSpec(mission.id, { budgetCentsMax: 101 })),
-    /budget ceiling .* exceeds mission budget ceiling/,
+    /budget allocation .* exceeds mission budget ceiling/,
   );
+});
+
+test('C6d: aggregate trigger allocation cannot exceed the mission budget ceiling', async () => {
+  const mission = await createMission(prisma, missionSpec({ budgetCentsMax: 150 }));
+  await createTrigger(prisma, triggerSpec(mission.id, { budgetCentsMax: 100 }));
+  await assert.rejects(
+    () => createTrigger(prisma, triggerSpec(mission.id, { budgetCentsMax: 60 })),
+    /budget allocation 160 exceeds mission budget ceiling 150/,
+  );
+  assert.equal(await prisma.continuationTrigger.count({ where: { missionId: mission.id } }), 1);
+});
+
+test('C6e: concurrent trigger allocation cannot oversubscribe the mission budget', async () => {
+  const mission = await createMission(prisma, missionSpec({ budgetCentsMax: 100 }));
+  const clientB = await client(db.url);
+  const outcomes = await Promise.allSettled([
+    createTrigger(prisma, triggerSpec(mission.id, { budgetCentsMax: 60, reason: 'budget racer A' })),
+    createTrigger(clientB, triggerSpec(mission.id, { budgetCentsMax: 60, reason: 'budget racer B' })),
+  ]);
+  assert.equal(outcomes.filter((result) => result.status === 'fulfilled').length, 1);
+  assert.equal(outcomes.filter((result) => result.status === 'rejected').length, 1);
+  assert.equal(await prisma.continuationTrigger.count({ where: { missionId: mission.id } }), 1);
 });
 
 test('C6c: a dependency cannot point across mission or tenant authority boundaries', async () => {
@@ -342,6 +364,16 @@ test('C9b: deleting or reordering receipt history is detected', async () => {
   assert.equal(deletionRows.length, 2);
   await prisma.continuationReceipt.delete({ where: { id: deletionRows[0].id } });
   assert.equal((await verifyReceiptChain(prisma, deletionMission.id)).ok, false, 'deleted history must break the chain');
+
+  const tailMission = await createMission(prisma, missionSpec({ authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  const tailTrigger = await createTrigger(prisma, triggerSpec(tailMission.id, { authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  await approveTrigger(prisma, { triggerId: tailTrigger.id, approvedBy: 'owner', tickId: 'tail-approval' });
+  await runTick(prisma, { tickId: 'tail-fire' });
+  const tail = await prisma.continuationReceipt.findFirst({
+    where: { missionId: tailMission.id }, orderBy: { seq: 'desc' },
+  });
+  await prisma.continuationReceipt.delete({ where: { id: tail.id } });
+  assert.equal((await verifyReceiptChain(prisma, tailMission.id)).ok, false, 'deleted chain tail must break the latestReceiptId anchor');
 
   const reorderMission = await createMission(prisma, missionSpec({ authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
   const reorderTrigger = await createTrigger(prisma, triggerSpec(reorderMission.id, { authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));

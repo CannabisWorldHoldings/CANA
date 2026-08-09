@@ -37,9 +37,9 @@ const PR29_ASSIGNMENT_SHA256 =
   '5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2';
 const PR35_ASSIGNMENT = 'pr35_sovereign_continuation_integration_2026_08_09';
 const PR35_ASSIGNMENT_SHA256 =
-  '38694c5be1587ce7bd5210abd32f38481f2b38995151888334ac9ed3cd8a777a';
+  'f9d9293d5abe88cde2c6a6f01bc5b380a2f720535a7973d9a80f12da348c4ebf';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '14af2c468e3941faf5c65c06e8750b8cb427ad67b11ea65c8e7becce8b27beea';
+  '1d041b62c5359aec16ee40b723fcf4d412eccbf1994f0d896abb66b5a67e3ce8';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -89,11 +89,13 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/scripts/continuation-tick.mjs',
   'apps/web/src/app/api/v1/ask/route.ts',
   'apps/web/src/app/layout.tsx',
+  'apps/web/src/lib/ask/ask-work.mjs',
   'apps/web/src/lib/ask/ask-service.mjs',
   'apps/web/src/lib/ask/intent-ir.mjs',
   'apps/web/src/lib/continuation/continuation-core.mjs',
   'apps/web/src/lib/continuation/continuation-repository.mjs',
   'apps/web/src/lib/db-config.mjs',
+  'apps/web/src/lib/public-submission.mjs',
   'apps/web/tests/ask-intent-ir.test.mjs',
   'apps/web/tests/ask-service-where.test.mjs',
   'apps/web/tests/column-width-cutover-court.test.mjs',
@@ -103,8 +105,12 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/tests/migration-manifest.test.mjs',
   'apps/web/tests/release-gate.test.mjs',
   'deploy/namecheap/MANIFEST.json',
+  'deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md',
+  'deploy/namecheap/STAGING_RUNBOOK.md',
   'deploy/namecheap/build-artifact.mjs',
+  'deploy/namecheap/deploy.sh',
   'deploy/namecheap/migrate.sh',
+  'deploy/namecheap/verify-owner-artifact-input.sh',
   'deploy/namecheap/worker.mjs',
   'docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json',
   'docs/capabilities/cana.ask-orderweeddc.contract.json',
@@ -925,14 +931,13 @@ export function pr35OwnershipAssignment(ownership) {
   return ownership.explicit_user_assignment[PR35_ASSIGNMENT];
 }
 
-export function courtEditAdmitted(relative, ownership, bytes) {
+export function courtEditAdmitted(relative, ownership, bytes, assignmentName) {
   validateOwnershipManifest(ownership);
-  const admittedDigests = [PR29_ASSIGNMENT, PR35_ASSIGNMENT]
-    .map((assignment) => ownership.explicit_user_assignment[assignment].court_blob_sha256[relative])
-    .filter(Boolean);
-  if (!ownership.global_no_edit.includes(relative) || admittedDigests.length === 0) return false;
+  const assignment = ownership.explicit_user_assignment[assignmentName];
+  const admittedDigest = assignment?.court_blob_sha256?.[relative];
+  if (!ownership.global_no_edit.includes(relative) || !admittedDigest) return false;
   const content = bytes ?? fs.readFileSync(path.join(ROOT, relative));
-  return admittedDigests.includes(sha256Bytes(content));
+  return admittedDigest === sha256Bytes(content);
 }
 
 export function unownedPaths(changed, ownership) {
@@ -961,8 +966,12 @@ function prerequisites(source) {
     .filter(Boolean);
   const prohibited = changed.filter((file) => {
     if (!ownership.global_no_edit.includes(file)) return false;
+    const assignmentName = ownership.explicit_user_assignment[PR35_ASSIGNMENT]
+      .court_blob_sha256[file]
+      ? PR35_ASSIGNMENT
+      : PR29_ASSIGNMENT;
     return !fs.existsSync(path.join(ROOT, file)) ||
-      !courtEditAdmitted(file, ownership);
+      !courtEditAdmitted(file, ownership, undefined, assignmentName);
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const unowned = unownedPaths(changed, ownership);

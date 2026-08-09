@@ -21,7 +21,7 @@ const NOW = new Date('2026-08-09T17:00:00Z');
 function intactChain() {
   return {
     sourceSha: SHA_A,
-    receipt: { gitSha: SHA_A, builtAt: '2026-08-09T16:00:00Z', artifact: `orderweeddc-${SHA_A.slice(0, 7)}.tar.gz` },
+    receipt: { gitSha: SHA_A, builtAt: '2026-08-09T16:00:00Z', artifact: `orderweeddc-${SHA_A}.tar.gz` },
     release: { state: 'RELEASE_SHA_PRESENT', gitSha: SHA_A },
     surfaceHtml: `<!doctype html><html><head><meta name="cana-release-sha" content="${SHA_A}"/></head><body>ok</body></html>`,
     now: NOW,
@@ -82,12 +82,22 @@ const SABOTAGES = [
   },
   {
     name: 'S9 artifact name is rebound to a different release identity',
-    corrupt: (c) => { c.receipt.artifact = `orderweeddc-${SHA_B.slice(0, 7)}.tar.gz`; },
+    corrupt: (c) => { c.receipt.artifact = `orderweeddc-${SHA_B}.tar.gz`; },
     redLink: 'ARTIFACT',
   },
   {
     name: 'S10 intact old evidence bundle is replayed against a successor source',
     corrupt: (c) => { c.sourceSha = SHA_B; },
+    redLink: 'ARTIFACT',
+  },
+  {
+    name: 'S11 verifier clock is invalid',
+    corrupt: (c) => { c.now = new Date('invalid'); },
+    redLink: 'ARTIFACT',
+  },
+  {
+    name: 'S12 artifact identity is only an ambiguous short SHA',
+    corrupt: (c) => { c.receipt.artifact = `orderweeddc-${SHA_A.slice(0, 7)}.tar.gz`; },
     redLink: 'ARTIFACT',
   },
 ];

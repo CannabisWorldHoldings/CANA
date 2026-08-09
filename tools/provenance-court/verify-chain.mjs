@@ -51,6 +51,7 @@ function link(name, status, why, observed = null) {
 export function verifyChain(evidence) {
   const now = evidence.now instanceof Date ? evidence.now : new Date();
   const links = [];
+  const validNow = Number.isFinite(now.getTime());
 
   // LINK 1 — SOURCE: a full, exact commit identity. Short SHAs, refs, "HEAD",
   // "unknown" are all refused: no exact treatment identity, no settlement.
@@ -72,10 +73,12 @@ export function verifyChain(evidence) {
     links.push(link('ARTIFACT', 'RED', `receipt gitSha ${receipt.gitSha.slice(0, 12)}… does not match source ${String(sourceSha).slice(0, 12)}…`, { receipt }));
   } else {
     const artifactIdentity = typeof receipt.artifact === 'string'
-      ? receipt.artifact.match(/^orderweeddc-([0-9a-f]{7,40})(?:\.tar\.gz)?$/)
+      ? receipt.artifact.match(/^orderweeddc-([0-9a-f]{40})(?:\.tar\.gz)?$/)
       : null;
     const builtAt = receipt.builtAt ? new Date(receipt.builtAt) : null;
-    if (!artifactIdentity || artifactIdentity[1] !== receipt.gitSha.slice(0, artifactIdentity[1]?.length)) {
+    if (!validNow) {
+      links.push(link('ARTIFACT', 'RED', 'verifier clock is unreadable', { now: String(now) }));
+    } else if (!artifactIdentity || artifactIdentity[1] !== receipt.gitSha) {
       links.push(link('ARTIFACT', 'RED', `artifact name is missing or does not bind receipt gitSha: ${String(receipt.artifact)}`, { receipt }));
     } else if (!builtAt || !Number.isFinite(builtAt.getTime())) {
       links.push(link('ARTIFACT', 'RED', `receipt builtAt missing/unreadable: ${String(receipt.builtAt)}`, { receipt }));

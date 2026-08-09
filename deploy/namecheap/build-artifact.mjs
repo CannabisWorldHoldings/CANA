@@ -380,7 +380,7 @@ const releaseRepro = assertReleaseReproducible({
   allowDirty: process.env.ALLOW_DIRTY === '1',
 });
 
-const artifactName = `orderweeddc-${shortSha}`;
+const artifactName = `orderweeddc-${gitSha}`;
 const distRoot = path.join(repoRoot, 'dist/namecheap');
 const artifactRoot = path.join(distRoot, artifactName);
 

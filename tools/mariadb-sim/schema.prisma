@@ -797,7 +797,7 @@ model ContinuationReceipt {
   entryHash  String   @unique
   recordedAt DateTime @default(now())
 
-  /// One receipt per (trigger, tick): a replayed tick cannot double-record.
+  /// One trigger-scoped receipt per (trigger, tick, action).
   @@unique([triggerId, tickId, action])
   @@unique([missionId, seq])
   @@index([missionId, recordedAt])
@@ -815,7 +815,7 @@ model Opportunity {
   /// JSON: the evidence refs that justify this opportunity. Required.
   evidence           String @db.Text
   /// JSON: what was actually observed (query, filters, counts, timestamps).
-  observedState      String
+  observedState      String @db.Text
   /// What the customer/market signal was.
   signal             String
   hypothesizedValue  String?
@@ -845,9 +845,9 @@ model AskIntentSignal {
   tenant         String
   rawQuery       String
   /// JSON Intent IR including explicit unknown dimensions.
-  intentIr       String
+  intentIr       String @db.Text
   /// JSON answer summary: candidate count, unknowns surfaced, zero-state flag.
-  answerSummary  String
+  answerSummary  String @db.Text
   candidateCount Int
   opportunityId  String?
   createdAt      DateTime @default(now())

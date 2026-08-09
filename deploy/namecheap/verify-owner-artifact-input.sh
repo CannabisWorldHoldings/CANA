@@ -251,14 +251,15 @@ import sys
 
 release_directory = pathlib.Path(sys.argv[1])
 artifact = sys.argv[2]
-artifact_match = re.fullmatch(r"orderweeddc-([0-9a-f]{7})", artifact)
+artifact_match = re.fullmatch(r"orderweeddc-([0-9a-f]{40})", artifact)
 if artifact_match is None:
     print(
-        "RELEASE_IDENTITY_VERIFICATION_FAILED=artifact name must contain exactly 7 lowercase hex characters",
+        "RELEASE_IDENTITY_VERIFICATION_FAILED=artifact name must contain exactly 40 lowercase hex characters",
         file=sys.stderr,
     )
     raise SystemExit(1)
-short_sha = artifact_match.group(1)
+git_sha_from_name = artifact_match.group(1)
+short_sha = git_sha_from_name[:7]
 
 
 def bounded_regular_text(relative_path, maximum_bytes):
@@ -283,7 +284,7 @@ try:
         or receipt.get("artifact") != artifact
         or not isinstance(git_sha, str)
         or re.fullmatch(r"[0-9a-f]{40}", git_sha) is None
-        or not git_sha.startswith(short_sha)
+        or git_sha != git_sha_from_name
         or receipt.get("gitSha") != git_sha
         or release.get("shortSha") != short_sha
         or release.get("bundler") != "webpack"

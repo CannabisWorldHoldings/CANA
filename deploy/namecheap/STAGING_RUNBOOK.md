@@ -73,8 +73,8 @@ Do NOT click "Run NPM Install" — dependencies are pre-bundled.
 ## 3. Upload + verify + deploy the artifact
 
 ```
-cd ~/uploads && sha256sum -c orderweeddc-<shortsha>.tar.gz.sha256
-OWD_APP_HOME=$HOME/apps/orderweeddc-staging sh ~/uploads/deploy.sh orderweeddc-<shortsha>.tar.gz
+cd ~/uploads && sha256sum -c orderweeddc-<full-40-char-sha>.tar.gz.sha256
+OWD_APP_HOME=$HOME/apps/orderweeddc-staging sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz
 ```
 
 ## 4. Create the EMPTY provider database

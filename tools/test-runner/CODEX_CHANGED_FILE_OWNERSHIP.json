@@ -454,7 +454,7 @@
     },
     "pr35_sovereign_continuation_integration_2026_08_09": {
       "authorization": "CANA Ω∞ — CODEX SOVEREIGN INTEGRATION & CONTINUATION MISSION",
-      "scope": "The forty-two exact PR #35 continuation, ASK, provenance, migration-integration, portability, deployment-proof, workflow, court, benchmark-integration, documentation and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or self-promotion authority.",
+      "scope": "The forty-eight exact PR #35 continuation, ASK, provenance, migration-integration, portability, deployment-proof, workflow, court, benchmark-integration, documentation and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability path ownership and exact reviewed-court-blob admission only; no runtime execution, provider, credential, paid-call, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorized_paths": [
         ".github/workflows/cana-verify.yml",
@@ -466,11 +466,13 @@
         "apps/web/scripts/continuation-tick.mjs",
         "apps/web/src/app/api/v1/ask/route.ts",
         "apps/web/src/app/layout.tsx",
+        "apps/web/src/lib/ask/ask-work.mjs",
         "apps/web/src/lib/ask/ask-service.mjs",
         "apps/web/src/lib/ask/intent-ir.mjs",
         "apps/web/src/lib/continuation/continuation-core.mjs",
         "apps/web/src/lib/continuation/continuation-repository.mjs",
         "apps/web/src/lib/db-config.mjs",
+        "apps/web/src/lib/public-submission.mjs",
         "apps/web/tests/ask-intent-ir.test.mjs",
         "apps/web/tests/ask-service-where.test.mjs",
         "apps/web/tests/column-width-cutover-court.test.mjs",
@@ -480,8 +482,12 @@
         "apps/web/tests/migration-manifest.test.mjs",
         "apps/web/tests/release-gate.test.mjs",
         "deploy/namecheap/MANIFEST.json",
+        "deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md",
+        "deploy/namecheap/STAGING_RUNBOOK.md",
         "deploy/namecheap/build-artifact.mjs",
+        "deploy/namecheap/deploy.sh",
         "deploy/namecheap/migrate.sh",
+        "deploy/namecheap/verify-owner-artifact-input.sh",
         "deploy/namecheap/worker.mjs",
         "docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json",
         "docs/capabilities/cana.ask-orderweeddc.contract.json",
@@ -501,11 +507,11 @@
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
       "court_blob_sha256": {
-        "apps/web/tests/column-width-cutover-court.test.mjs": "aee5d6386facee63a56f939aa555d427cbcb4249c98848b9d837fd166c32fa24",
-        "apps/web/tests/migration-court.test.mjs": "6f16a949145803a10179e3e453e0218cd594c594f6d3b88e9394bb94f1c2b01c",
+        "apps/web/tests/column-width-cutover-court.test.mjs": "e06ac4a670893300c0912ee37327f6714caef81f9560d2a81149e697849a674c",
+        "apps/web/tests/migration-court.test.mjs": "b665a5256d9ac5de8f2a5b8091acbbbdf8a4f55fa2dfd73e84ecad28f57de1c2",
         "apps/web/tests/release-gate.test.mjs": "7749c882c325de9ea248883ae9462d47681048a268c75187f7e62728b8c198f0"
       },
-      "approval_sha256": "38694c5be1587ce7bd5210abd32f38481f2b38995151888334ac9ed3cd8a777a"
+      "approval_sha256": "f9d9293d5abe88cde2c6a6f01bc5b380a2f720535a7973d9a80f12da348c4ebf"
     }
   },
   "owned_create_paths": [
@@ -633,6 +639,7 @@
     ,"apps/web/prisma/migrations/20260809170000_continuation_kernel/migration.sql"
     ,"apps/web/scripts/continuation-tick.mjs"
     ,"apps/web/src/app/api/v1/ask/route.ts"
+    ,"apps/web/src/lib/ask/ask-work.mjs"
     ,"apps/web/src/lib/ask/ask-service.mjs"
     ,"apps/web/src/lib/ask/intent-ir.mjs"
     ,"apps/web/src/lib/continuation/continuation-core.mjs"
@@ -650,6 +657,7 @@
     ,"tools/provenance-court/verify-chain.mjs"
   ],
   "owned_modify_paths": [
+    "apps/web/src/lib/public-submission.mjs",
     "apps/web/tests/helpers/**",
     "apps/web/src/app/admin/site-intelligence/page.tsx",
     "apps/web/src/lib/site-intelligence.ts",

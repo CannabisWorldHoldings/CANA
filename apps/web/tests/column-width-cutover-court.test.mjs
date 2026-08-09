@@ -58,6 +58,9 @@ const LONG_FORM_COLUMNS = [
   ['LoyaltyTransaction', 'description'],
   ['ContinuationReceipt', 'evidence'],
   ['Opportunity', 'evidence'],
+  ['Opportunity', 'observedState'],
+  ['AskIntentSignal', 'intentIr'],
+  ['AskIntentSignal', 'answerSummary'],
 ];
 
 const MYSQL_DEFAULT_VARCHAR = 191;

@@ -83,7 +83,7 @@ export async function createMission(prisma, spec) {
  * ceiling <= mission ceiling) and L4 (effectful work born PENDING_APPROVAL).
  * Rejection throws — a rejected spec never reaches the table.
  */
-export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
+async function createTriggerInTransaction(prisma, spec, now) {
   const mission = await prisma.continuationMission.findUnique({ where: { id: spec?.missionId ?? '' } });
   if (!mission) throw new Error(`mission not found: ${String(spec?.missionId)}`);
   if (mission.status !== MISSION_STATES.ACTIVE && mission.status !== MISSION_STATES.WAITING) {
@@ -105,9 +105,14 @@ export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
       `authority ceiling ${spec.authorityCeiling} exceeds mission ceiling ${mission.authorityCeiling} — escalation is a human act`,
     );
   }
-  if (spec.budgetCentsMax > mission.budgetCentsMax) {
+  const reservedBudget = await prisma.continuationTrigger.aggregate({
+    where: { missionId: mission.id },
+    _sum: { budgetCentsMax: true },
+  });
+  const allocatedBudgetCents = reservedBudget._sum.budgetCentsMax ?? 0;
+  if (allocatedBudgetCents + spec.budgetCentsMax > mission.budgetCentsMax) {
     throw new Error(
-      `trigger budget ceiling ${spec.budgetCentsMax} exceeds mission budget ceiling ${mission.budgetCentsMax}`,
+      `trigger budget allocation ${allocatedBudgetCents + spec.budgetCentsMax} exceeds mission budget ceiling ${mission.budgetCentsMax}`,
     );
   }
   if (spec.triggerType === 'DEPENDENCY') {
@@ -141,6 +146,13 @@ export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
       expiresAt: spec.expiresAt,
     },
   });
+}
+
+export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
+  if (typeof prisma?.$transaction !== 'function') {
+    return createTriggerInTransaction(prisma, spec, now);
+  }
+  return inSerializableTransaction(prisma, (tx) => createTriggerInTransaction(tx, spec, now));
 }
 
 /**
@@ -234,7 +246,7 @@ export async function runTick(prisma, options = {}) {
 
   const candidates = await prisma.continuationTrigger.findMany({
     where: { status: TRIGGER_STATES.ARMED },
-    orderBy: [{ nextEligibleAt: 'asc' }, { createdAt: 'asc' }],
+    orderBy: [{ nextEligibleAt: { sort: 'asc', nulls: 'first' } }, { createdAt: 'asc' }],
     take: limit,
   });
 
@@ -345,6 +357,11 @@ export async function runTick(prisma, options = {}) {
 
 /** Read a mission's receipt chain and verify hash integrity end-to-end. */
 export async function verifyReceiptChain(prisma, missionId) {
+  const mission = await prisma.continuationMission.findUnique({
+    where: { id: missionId },
+    select: { latestReceiptId: true },
+  });
+  if (!mission) return { ok: false, reason: 'mission does not exist' };
   const rows = await prisma.continuationReceipt.findMany({
     where: { missionId },
     orderBy: { seq: 'asc' },
@@ -359,6 +376,14 @@ export async function verifyReceiptChain(prisma, missionId) {
       return { ok: false, brokenAtSeq: row.seq, reason: 'entryHash does not match recomputed hash' };
     }
     prevHash = row.entryHash;
+  }
+  const observedHeadId = rows.at(-1)?.id ?? null;
+  if (observedHeadId !== mission.latestReceiptId) {
+    return {
+      ok: false,
+      brokenAtSeq: rows.at(-1)?.seq ?? 0,
+      reason: 'receipt chain head does not match mission latestReceiptId',
+    };
   }
   return { ok: true, length: rows.length };
 }

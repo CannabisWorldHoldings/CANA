@@ -11,7 +11,7 @@
   ],
   "evidence_hooks": [
     "court receipt JSON (per-link status + why, --out path)",
-    "sabotage certification: tools/provenance-court/sabotage.test.mjs (8 tampering classes, all must turn RED)"
+    "sabotage certification: tools/provenance-court/sabotage.test.mjs (every registered tampering class must turn RED)"
   ],
   "continuation_hooks": [
     "a GREEN production verification should create a REVALIDATION trigger via cana.continuation-kernel (wired when a real deployment target exists — deployment state currently UNKNOWN)"

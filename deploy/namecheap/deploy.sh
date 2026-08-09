@@ -2,7 +2,7 @@
 # Server-side deploy: run in the cPanel Terminal AFTER uploading the
 # artifact zip to ~/uploads/. Swaps the release with rollback safety.
 #
-#   sh ~/apps/orderweeddc/deploy.sh orderweeddc-<shortsha>.zip
+#   sh ~/apps/orderweeddc/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz
 #
 # Layout it maintains:
 #   ~/apps/orderweeddc/current    <- live release (cPanel app root)
@@ -23,7 +23,7 @@ STAGE="$APP_HOME/stage-$$"
 mkdir -p "$APP_HOME" "$STAGE"
 tar -xzf "$TAR_PATH" -C "$STAGE"
 
-# The archive contains one directory: orderweeddc-<shortsha>/
+# The archive contains one directory: orderweeddc-<full-40-char-sha>/
 RELEASE_DIR=$(find "$STAGE" -mindepth 1 -maxdepth 1 -type d | head -1)
 [ -n "$RELEASE_DIR" ] || { echo "ERROR: archive did not contain a release directory"; exit 1; }
 [ -f "$RELEASE_DIR/server.js" ] || { echo "ERROR: release missing server.js"; exit 1; }

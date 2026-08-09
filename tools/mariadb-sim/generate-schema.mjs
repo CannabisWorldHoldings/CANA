@@ -19,7 +19,8 @@ const TEXT_FIELDS = new Map([
   ['StagingABCARetailer', new Set(['rawJson'])],
   ['DemandCreditEntry', new Set(['evidenceChain'])],
   ['ContinuationReceipt', new Set(['evidence'])],
-  ['Opportunity', new Set(['evidence'])],
+  ['Opportunity', new Set(['evidence', 'observedState'])],
+  ['AskIntentSignal', new Set(['intentIr', 'answerSummary'])],
 ]);
 
 export function generateCandidate(source) {

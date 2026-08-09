@@ -798,7 +798,7 @@ model ContinuationReceipt {
   entryHash  String   @unique
   recordedAt DateTime @default(now())
 
-  /// One receipt per (trigger, tick): a replayed tick cannot double-record.
+  /// One trigger-scoped receipt per (trigger, tick, action).
   @@unique([triggerId, tickId, action])
   @@unique([missionId, seq])
   @@index([missionId, recordedAt])

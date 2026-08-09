@@ -100,9 +100,12 @@ export function compileIntent(rawQuery, { now = new Date() } = {}) {
     }
   }
 
-  const openNow = findToken(normalized, 'open now') || findToken(normalized, 'open right now')
-    ? known(true, 'open now')
-    : UNKNOWN;
+  const openNowToken = findToken(normalized, 'open now')
+    ? 'open now'
+    : findToken(normalized, 'open right now')
+      ? 'open right now'
+      : null;
+  const openNow = openNowToken ? known(true, openNowToken) : UNKNOWN;
 
   const dimensions = { location, category, price_max_usd: priceMaxUsd, fulfillment, open_now: openNow };
   const unknownDimensions = Object.entries(dimensions)

@@ -54,6 +54,12 @@ test('fulfillment and open-now compile only from explicit language', () => {
   assert.equal(quiet.dimensions.open_now.status, 'UNKNOWN');
 });
 
+test('open-right-now evidence preserves the phrase that actually matched', () => {
+  const ir = compileIntent('flower in shaw open right now', { now: NOW });
+  assert.equal(ir.dimensions.open_now.value, true);
+  assert.equal(ir.dimensions.open_now.matched_token, 'open right now');
+});
+
 test('deterministic: identical input compiles to identical IR (same injected clock)', () => {
   const a = compileIntent('prerolls in georgetown under $25', { now: NOW });
   const b = compileIntent('prerolls in georgetown under $25', { now: NOW });

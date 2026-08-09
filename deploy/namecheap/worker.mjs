@@ -108,10 +108,11 @@ const JOBS = {
    * state with a reason — never a silent success.
    */
   async 'continuation-tick'() {
-    const script = process.env.WORKER_TICK_SCRIPT;
-    if (!script) {
+    const configuredScript = process.env.WORKER_TICK_SCRIPT;
+    if (!configuredScript) {
       return { skipped: true, reason: 'WORKER_TICK_SCRIPT not configured' };
     }
+    const script = path.resolve(configuredScript);
     if (!process.env.DATABASE_URL) {
       return { skipped: true, reason: 'DATABASE_URL not configured' };
     }

@@ -80,6 +80,14 @@ test('L1: type-specific bindings are required (EVENT needs eventKey, etc.)', () 
   assert.equal(validateTriggerSpec(validSpec({ triggerType: 'SCHEDULED', nextEligibleAt: undefined }), { now: NOW }).ok, false);
 });
 
+test('L1: inherited Object prototype names are not trigger types', () => {
+  for (const triggerType of ['constructor', 'toString', '__proto__']) {
+    const verdict = validateTriggerSpec(validSpec({ triggerType }), { now: NOW });
+    assert.equal(verdict.ok, false, `${triggerType} must not be a trigger vocabulary member`);
+    assert.match(verdict.errors.join('; '), /triggerType must be one of/);
+  }
+});
+
 // ---------------------------------------------------------------- L4
 test('L4: OBSERVE_ONLY arms automatically; EFFECTFUL is born PENDING_APPROVAL', () => {
   const observe = validateTriggerSpec(validSpec(), { now: NOW });

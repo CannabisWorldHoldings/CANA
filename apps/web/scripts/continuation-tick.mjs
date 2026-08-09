@@ -31,21 +31,22 @@ function parseArgs(argv) {
 async function main() {
   if (!process.env.DATABASE_URL) {
     console.error(JSON.stringify({ event: 'continuation-tick-skipped', reason: 'DATABASE_URL not configured' }));
-    process.exit(2);
+    return 2;
   }
   const { events, limit } = parseArgs(process.argv.slice(2));
-  const { PrismaClient } = await import('@prisma/client');
-  const prisma = new PrismaClient();
+  let prisma;
   try {
+    const { PrismaClient } = await import('@prisma/client');
+    prisma = new PrismaClient();
     const summary = await runTick(prisma, { events, limit });
     console.log(JSON.stringify({ event: 'continuation-tick', ...summary, receipts: summary.receipts.length }));
-    process.exit(0);
+    return 0;
   } catch (error) {
     console.error(JSON.stringify({ event: 'continuation-tick-failed', error: String(error?.message ?? error).slice(0, 300) }));
-    process.exit(3);
+    return 3;
   } finally {
-    await prisma.$disconnect().catch(() => {});
+    await prisma?.$disconnect().catch(() => {});
   }
 }
 
-main();
+process.exitCode = await main();
