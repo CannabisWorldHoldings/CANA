@@ -174,9 +174,9 @@ test('artifact operations emit deploy, restart, and rollback scripts byte-for-by
     const operationalScripts = verification.files;
     assert.deepEqual(operationalScripts.slice(0, 4), [
       'deploy.sh',
-      'bootstrap-production-db.sh',
       'restart.sh',
       'rollback.sh',
+      'migrate.sh',
     ], 'the executable builder must emit the deployment and rollback entry points');
 
     execFileSync('tar', ['-xzf', verification.tarPath, '-C', extractionRoot]);
@@ -544,15 +544,10 @@ test('builder contract: webpack-only, unresolved-external scan, out-of-repo isol
   }
 });
 
-test('Namecheap startup preserves the externally owned SQLite file', () => {
+test('Namecheap startup requires the canonical PostgreSQL URL pair', () => {
   const launcher = read('deploy/namecheap/app.js');
-  const prisma = read('apps/web/src/lib/prisma.ts');
-  const guard = "process.env.CANA_PRESERVE_SQLITE_FILE_BYTES = '1'";
-
-  assert.match(launcher, /CANA_PRESERVE_SQLITE_FILE_BYTES = '1'/);
-  assert.ok(
-    launcher.indexOf(guard) < launcher.indexOf("require('./server.js')"),
-    'the byte-preservation boundary must be established before Next.js starts',
-  );
-  assert.match(prisma, /preservePersistentPragmas:\s*process\.env\.CANA_PRESERVE_SQLITE_FILE_BYTES === '1'/);
+  assert.match(launcher, /!process\.env\.DATABASE_URL \|\| !process\.env\.DIRECT_URL/);
+  assert.match(launcher, /canonical PostgreSQL protocol/);
+  assert.doesNotMatch(launcher, /DATABASE_URL=file:/);
+  assert.doesNotMatch(launcher, /CANA_PRESERVE_SQLITE_FILE_BYTES/);
 });

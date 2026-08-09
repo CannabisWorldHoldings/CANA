@@ -5,8 +5,8 @@
     "runtime": "Node.js >= 20.9 via cPanel Setup Node.js App (selector path /opt/alt/alt-nodejsNN/root/usr/bin/node)",
     "reverseProxy": "Passenger (reverse port binding; app must .listen() once on the supplied PORT)",
     "appRoot": "~/apps/orderweeddc/current (staging: ~/apps/orderweeddc-staging/current via OWD_APP_HOME)",
-    "persistentData": "~/orderweeddc-data/prod.db (staging: ~/orderweeddc-staging-data via OWD_DATA_DIR)",
-    "backups": "~/orderweeddc-backups (override OWD_BACKUP_DIR)",
+    "persistentData": "Owner-provisioned managed PostgreSQL/PostGIS reached over outbound TLS; no canonical database file lives on cPanel",
+    "backups": "Managed-provider/operator authority; a verified receipt is required before migration",
     "capabilitiesEvidence": "deploy/namecheap/CAPABILITIES.md"
   },
   "artifact": {
@@ -20,7 +20,6 @@
     "mustContain": [
       "server.js", "app.js", ".next/static", "public", "node_modules (runtime, incl. .prisma rhel engine)",
       "release.json", "receipt.json", "prisma/schema.prisma",
-      "bootstrap/orderweeddc-schema-template.db", "bootstrap-production-db.sh",
       "migrate.sh", "restart.sh", "rollback.sh", "healthcheck.sh", "readycheck.sh",
       "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs"
     ],
@@ -31,16 +30,16 @@
   "commands": {
     "build": "node deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
     "deploy": "sh ~/uploads/deploy.sh orderweeddc-<shortsha>.tar.gz   (or upload verify-and-deploy.sh plus verify-owner-artifact-input.sh and run verify-and-deploy.sh for the gated one-command path)",
-    "initializeDatabase": "cd <app-home>/current && sh bootstrap-production-db.sh   (first deploy only; guarded, idempotent, zero demo data)",
-    "migrate": "cd <app-home>/current && sh migrate.sh   (applies apps/web/prisma/migrations/** BY CONVENTION; hard-stops when the migration lane has not landed)",
+    "initializeDatabase": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (empty owner-provisioned PostgreSQL only; never creates migrations)",
+    "migrate": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires DATABASE_URL + DIRECT_URL and committed migrations)",
     "restart": "sh <app-home>/restart.sh   (touch tmp/restart.txt — Passenger rolling restart)",
     "rollback": "sh <app-home>/rollback.sh   (code-only swap to previous; database never touched)",
     "healthCheck": "sh healthcheck.sh <base-url>   (liveness: 200 + HEALTHY)",
     "readinessCheck": "OWD_EXPECTED_SHA=<sha> sh readycheck.sh <base-url>   (health + provenance + SHA equality + render)",
     "smokeTest": "sh smoke-test.sh <base-url>   (full read-only battery; writes an environment-labelled receipt)",
-    "workerOnce": "node worker.mjs --once   (cron tick: backup + health jobs; mkdir lock; SIGTERM-graceful)",
-    "workerCron": "17 3 * * * cd <app-home>/current && /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once backup >> ~/orderweeddc-backups/cron.out 2>&1",
-    "restoreBackup": "sh restore-backup.sh <backup.db> <target-path>   (checksum-gated; refuses to overwrite without FORCE=1)"
+    "workerOnce": "node worker.mjs --once health   (cron tick: independent health job; mkdir lock; SIGTERM-graceful)",
+    "workerCron": "*/5 * * * * cd <app-home>/current && WORKER_HEALTH_URL=<owner-url> /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> ~/orderweeddc-backups/cron.out 2>&1",
+    "restoreBackup": "Provider/operator procedure; the shipped worker refuses to fabricate a local-file managed-PostgreSQL backup"
   },
   "endpoints": {
     "health": "/api/health (200 HEALTHY | 503 UNHEALTHY)",

@@ -7,7 +7,7 @@
 # Layout it maintains:
 #   ~/apps/orderweeddc/current    <- live release (cPanel app root)
 #   ~/apps/orderweeddc/previous   <- last-known-good (rollback target)
-#   ~/orderweeddc-data/prod.db    <- persistent database, NEVER touched here
+#   managed PostgreSQL            <- external canonical database, NEVER touched here
 set -eu
 
 # OWD_APP_HOME enables side-by-side STAGING installs
@@ -52,8 +52,8 @@ cp "$APP_HOME/current/rollback.sh" "$APP_HOME/rollback.sh" 2>/dev/null || true
 # Passenger restart signal.
 touch "$APP_HOME/current/tmp/restart.txt"
 
-echo "Deployed. FIRST deploy only — bootstrap the database (safe, guarded):"
-echo "  cd $APP_HOME/current && sh bootstrap-production-db.sh"
+echo "Deployed code only. Database migrations are a separate owner-authorized step:"
+echo "  cd $APP_HOME/current && CANA_PRE_MIGRATION_BACKUP_RECEIPT=<path> sh migrate.sh"
 echo "Restart:   sh $APP_HOME/restart.sh"
 echo "Rollback:  sh $APP_HOME/rollback.sh"
 echo "Verify:    curl -s https://orderweeddc.com/api/health"

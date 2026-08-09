@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  courtEditAdmitted,
   matchOwned,
   MISSION1_AUTHORIZED_PATHS,
   MISSION1_EVIDENCE_PATHS,
@@ -18,6 +19,7 @@ import {
   mission3M001OwnershipAssignment,
   ownershipPatterns,
   PR2_AUTHORIZED_PATHS,
+  pr29OwnershipAssignment,
   pr2OwnershipAssignment,
   STAGE_A_AUTHORIZED_PATHS,
   unownedPaths,
@@ -47,6 +49,41 @@ function cana(args, env = {}) {
 function ownership() {
   return JSON.parse(fs.readFileSync(OWNERSHIP_FILE, 'utf8'));
 }
+
+test('PR #29 recovery paths have exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  const assignment = pr29OwnershipAssignment(manifest);
+  assert.ok(assignment.authorized_paths.length > 60);
+  assert.ok(assignment.authorized_paths.every((entry) => !entry.includes('*')));
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/lib/geo/geo-repository-neighbor.mjs'], manifest),
+    ['apps/web/src/lib/geo/geo-repository-neighbor.mjs'],
+  );
+});
+
+test('PR #29 court admission is bound to the exact reviewed bytes', () => {
+  const manifest = ownership();
+  for (const courtPath of Object.keys(pr29OwnershipAssignment(manifest).court_blob_sha256)) {
+    assert.equal(courtEditAdmitted(courtPath, manifest), true);
+    assert.equal(courtEditAdmitted(courtPath, manifest, Buffer.from('tampered court')), false);
+  }
+});
+
+test('PR #29 ownership and court metadata tampering fail closed', () => {
+  const wildcard = ownership();
+  wildcard.explicit_user_assignment.pr29_canonical_recovery_2026_08_09.authorized_paths[0] =
+    'apps/web/**';
+  assert.throws(() => validateOwnershipManifest(wildcard), /unique exact repository paths/);
+
+  const digest = ownership();
+  digest.explicit_user_assignment.pr29_canonical_recovery_2026_08_09
+    .court_blob_sha256['apps/web/tests/release-gate.test.mjs'] = '0'.repeat(64);
+  assert.throws(
+    () => validateOwnershipManifest(digest),
+    /failed its owner-approval digest/,
+  );
+});
 
 test('the six owner-approved Stage A paths have exact changed-file ownership', () => {
   const manifest = ownership();

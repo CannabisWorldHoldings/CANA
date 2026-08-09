@@ -19,7 +19,6 @@ export const MARIA_IMAGE =
 const APPROVED_NODE_IMAGE =
   'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
 const NODE_IMAGE = process.env.CANA_VERIFY_IMAGE ?? APPROVED_NODE_IMAGE;
-const BASE_COMMIT = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 
 function command(commandName, args, {
   cwd,
@@ -473,6 +472,7 @@ export async function runMariaSimulation({ repoRoot }) {
 
   const sourceSchema = path.join(repoRoot, 'apps', 'web', 'prisma', 'schema.prisma');
   const candidateSchema = path.join(repoRoot, 'tools', 'mariadb-sim', 'schema.prisma');
+  const sourceSchemaSha256 = sha256File(sourceSchema);
   const generated = generateCandidate(fs.readFileSync(sourceSchema, 'utf8'));
   if (generated !== fs.readFileSync(candidateSchema, 'utf8')) {
     throw new Error('MariaDB candidate schema is stale; regenerate it before verification');
@@ -565,15 +565,11 @@ export async function runMariaSimulation({ repoRoot }) {
     );
     sql(databaseContainer, password, cutoverSql);
 
-    const liveDiff = command(
-      'git',
-      ['diff', '--quiet', BASE_COMMIT, '--', 'apps/web/prisma/schema.prisma'],
-      { cwd: repoRoot, allowFailure: true },
-    );
     check(
       checks,
-      'live provider remains unchanged',
-      liveDiff.status === 0 && /provider\s*=\s*"sqlite"/.test(fs.readFileSync(sourceSchema, 'utf8')),
+      'canonical provider remains unchanged',
+      sourceSchemaSha256 === sha256File(sourceSchema) &&
+        /provider\s*=\s*"postgresql"/.test(fs.readFileSync(sourceSchema, 'utf8')),
       `live schema sha256 ${sha256File(sourceSchema)}; candidate sha256 ${sha256File(candidateSchema)}`,
     );
 

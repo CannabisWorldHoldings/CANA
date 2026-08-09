@@ -7,8 +7,8 @@
 #   - downloads with curl --fail-with-body and verifies SHA-256 before anything
 #   - rejects non-webpack artifacts, failed/pending isolation receipts, and
 #     unresolved-external scan failures (reads receipt.json)
-#   - captures the production DB hash BEFORE the swap and proves it unchanged
-#     AFTER the swap (code-only deploys never touch data)
+#   - requires the canonical PostgreSQL URL pair without printing either value
+#     and keeps the code swap free of database commands
 #   - NEVER runs bootstrap or seed automatically
 #   - restarts via the release-local restart script (correct path)
 #   - waits with bounded retries; separates ORIGIN health (via --resolve when
@@ -23,7 +23,6 @@ FILE="${2:?artifact filename required}"
 EXPECTED_SHA="${3:?expected sha256 required}"
 
 APP_HOME="${OWD_APP_HOME:-$HOME/apps/orderweeddc}"
-DATA_DB="${OWD_DATA_DIR:-$HOME/orderweeddc-data}/prod.db"
 UPLOADS="$HOME/uploads"
 DOMAIN="orderweeddc.com"
 ORIGIN_IP="${OWD_ORIGIN_IP:-127.0.0.1}"
@@ -72,14 +71,12 @@ bash "$STRUCTURAL_COURT" --verify-extracted-identity \
 echo "receipt identity:"
 grep -E '"(artifact|gitSha|bundler|builtAt)"' "$RECEIPT" || true
 
-phase "GATE 3: production database hash (before)"
-if [ -f "$DATA_DB" ]; then
-  DB_BEFORE=$(sha256sum "$DATA_DB" | cut -d' ' -f1)
-  echo "db sha256 before: $DB_BEFORE"
-else
-  DB_BEFORE="(absent)"
-  echo "no production database present — this verifier still will NOT bootstrap; run bootstrap-production-db.sh explicitly for a first deploy"
-fi
+phase "GATE 3: canonical database configuration"
+: "${DATABASE_URL:?GATE FAILED: DATABASE_URL is required}"
+: "${DIRECT_URL:?GATE FAILED: DIRECT_URL is required}"
+case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) fail "DATABASE_URL must be PostgreSQL";; esac
+case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) fail "DIRECT_URL must be PostgreSQL";; esac
+echo "PostgreSQL pooled/direct configuration present (values redacted)"
 
 phase "GATE 4: code-only swap"
 mkdir -p "$RELEASE_DIR/tmp" "$APP_HOME"
@@ -95,16 +92,8 @@ cp "$APP_HOME/current/rollback.sh" "$APP_HOME/rollback.sh" 2>/dev/null || true
 touch "$APP_HOME/current/tmp/restart.txt"
 echo "swapped; restart signaled"
 
-phase "GATE 5: database hash unchanged (after swap)"
-if [ "$DB_BEFORE" != "(absent)" ]; then
-  DB_AFTER=$(sha256sum "$DATA_DB" | cut -d' ' -f1)
-  echo "db sha256 after:  $DB_AFTER"
-  if [ "$DB_BEFORE" != "$DB_AFTER" ]; then
-    echo "DATABASE HASH CHANGED BY A CODE DEPLOY — rolling code back"
-    sh "$APP_HOME/rollback.sh" || true
-    fail "database integrity gate"
-  fi
-fi
+phase "GATE 5: code-only database isolation"
+echo "No database command executed; migrations remain a separate owner-authorized operation"
 
 phase "GATE 6: origin health (bounded retries)"
 HEALTH_OK=0

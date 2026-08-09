@@ -17,7 +17,7 @@ evidence tiers — do not silently promote a claim to a higher tier:
 |---|---|---|
 | "Setup Node.js App" UI (CloudLinux Node Selector) | Create app: version, mode, application root, application URL, startup file, env vars, Passenger log file | FIRST-PARTY VERIFIED — the production app was created and ran through this UI (incident record 2026-07-23) |
 | Node versions offered | 6.17 → 24.13 incl. 20.20 / 22.22 / 24.13 (KB page updated 2026-02-19); Next 16 requires ≥ 20.9 | VENDOR-DOCUMENTED (KB 129/22, KB 10047); exact list on THIS account: UNVERIFIED until `probe.sh` (`/opt/alt/alt-nodejs*` scan) |
-| Selector node binary path | `/opt/alt/alt-nodejsNN/root/usr/bin/node` | FIRST-PARTY VERIFIED — `bootstrap-production-db.sh` uses it in production |
+| Selector node binary path | `/opt/alt/alt-nodejsNN/root/usr/bin/node` | FIRST-PARTY VERIFIED historically; current artifact uses the bundled runtime and `migrate.sh` may use the selector CLI path |
 | App root must sit OUTSIDE `public_html` | We use `~/apps/orderweeddc/current` | VENDOR-DOCUMENTED (KB 10686); layout FIRST-PARTY VERIFIED in production |
 
 ## 2. Startup file & reverse proxy (Passenger)
@@ -48,7 +48,8 @@ evidence tiers — do not silently promote a claim to a higher tier:
 
 | Capability | Detail | Tier |
 |---|---|---|
-| SQLite on `/home` filesystem | Runs; survives restarts and code deploys when kept outside the release dir (`~/orderweeddc-data/prod.db`) | FIRST-PARTY VERIFIED (production + isolated artifact test). **Classified LOCAL_TEST_DATABASE_ONLY for the handoff workload** — see `apps/web/src/lib/db-config.mjs` (measured single-writer non-determinism) |
+| SQLite on `/home` filesystem | Historical runtime was proven, but it is now restricted to local tests and the retained pre-cutover rollback snapshot | FIRST-PARTY historical evidence; **not a canonical deployment option** |
+| Outbound TLS to managed PostgreSQL/PostGIS | Required by ADR-0001; exact provider/account connectivity is owner-gated | UNVERIFIED on this cPanel account until staging; local disposable PostgreSQL verifier is not production proof |
 | MariaDB 11.4.9 | Offered on the plan (cPanel MySQL Databases UI) | VENDOR-DOCUMENTED (KB 129/22); provisioning/connectivity from Node: UNVERIFIED |
 | PostgreSQL 10.23 | Listed for Stellar Plus/Business | VENDOR-DOCUMENTED (KB 129/22, corrected finding); UNVERIFIED on this account |
 | Prisma engine on CloudLinux | CageFS hides `/etc/os-release` → Prisma platform detection guesses `debian` while the host is RHEL-family (OpenSSL 1.1.1k FIPS, probed live) → must pin `PRISMA_QUERY_ENGINE_LIBRARY` to the bundled `rhel-openssl-1.1.x` engine | FIRST-PARTY VERIFIED — genuine production incident, fix shipped in `app.js` |

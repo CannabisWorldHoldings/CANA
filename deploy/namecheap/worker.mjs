@@ -3,8 +3,9 @@
  *
  * HONESTY FIRST: this application has no in-process background daemons; its
  * request path is fully synchronous. What production genuinely needs on a
- * schedule is (a) database backups and (b) an independent health probe with a
- * local audit trail. That is what this worker does — nothing invented.
+ * schedule is an independent health probe with a local audit trail. Managed
+ * PostgreSQL backups remain provider/operator authority and are never faked by
+ * copying a local file.
  *
  * EXECUTION MODEL — cron ticks, not a daemon. Shared-hosting LVE policy
  * (40 entry processes, provider process management, CAPABILITIES.md §8) makes
@@ -21,26 +22,23 @@
  * considered stale (a killed tick) and is taken over, loudly.
  *
  * USAGE
- *   node worker.mjs --once                 # cron tick: all due jobs (backup, health)
- *   node worker.mjs --once backup          # one job only
+ *   node worker.mjs --once health          # independent health tick
+ *   node worker.mjs --once backup          # explicit fail-closed authority check
  *   node worker.mjs --loop --interval-ms 300000
  *
  * CRON LINE (cPanel -> Cron Jobs; cron does NOT inherit the app's env):
  *   17 3 * * * cd $HOME/apps/orderweeddc/current && \
- *     /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once backup >> $HOME/orderweeddc-backups/cron.out 2>&1
+ *     WORKER_HEALTH_URL=https://orderweeddc.com/api/health \
+ *     /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> $HOME/orderweeddc-backups/cron.out 2>&1
  *
- * ENV (all optional): OWD_DATA_DIR, OWD_BACKUP_DIR, OWD_BACKUP_KEEP,
- * WORKER_HEALTH_URL. No secrets read, no secrets logged.
+ * ENV (all optional): OWD_BACKUP_DIR, WORKER_HEALTH_URL. No secrets read,
+ * no secrets logged.
  */
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const DATA_DIR = process.env.OWD_DATA_DIR || path.join(os.homedir(), 'orderweeddc-data');
-const DB_PATH = path.join(DATA_DIR, 'prod.db');
 const BACKUP_DIR = process.env.OWD_BACKUP_DIR || path.join(os.homedir(), 'orderweeddc-backups');
-const KEEP = Math.max(1, Number(process.env.OWD_BACKUP_KEEP || 14));
 const LOCK_DIR = path.join(BACKUP_DIR, '.worker-lock');
 const LOG_FILE = path.join(BACKUP_DIR, 'worker-log.jsonl');
 const STALE_LOCK_MS = 30 * 60 * 1000;
@@ -70,10 +68,6 @@ function log(record) {
   }
 }
 
-function sha256File(file) {
-  return createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-}
-
 function acquireLock() {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   try {
@@ -99,52 +93,12 @@ function releaseLock() {
   fs.rmSync(LOCK_DIR, { recursive: true, force: true });
 }
 
-/**
- * Best-effort WAL checkpoint through the artifact's own Prisma client so the
- * copied file is a complete database. If the client is unavailable (repo
- * context, missing engine), the copy still happens but the record says so —
- * a backup that silently skipped its checkpoint is a false receipt.
- */
-async function checkpointDatabase() {
-  try {
-    const { createRequire } = await import('node:module');
-    const requireFromApp = createRequire(path.join(process.cwd(), 'noop.js'));
-    const { PrismaClient } = requireFromApp('@prisma/client');
-    const prisma = new PrismaClient({ datasources: { db: { url: `file:${DB_PATH}` } } });
-    try {
-      await prisma.$queryRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
-      return 'CHECKPOINTED';
-    } finally {
-      await prisma.$disconnect();
-    }
-  } catch (error) {
-    return `CHECKPOINT_UNAVAILABLE: ${String(error?.message ?? error).slice(0, 120)}`;
-  }
-}
-
 const JOBS = {
-  /** Copy the production database to a timestamped, hash-sidecarred backup. */
+  /** Refuse to forge a managed-database backup receipt from the web host. */
   async backup() {
-    if (!fs.existsSync(DB_PATH)) {
-      return { skipped: true, reason: `database absent at configured data dir` };
-    }
-    const checkpoint = await checkpointDatabase();
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const target = path.join(BACKUP_DIR, `prod-${stamp}.db`);
-    fs.copyFileSync(DB_PATH, target);
-    const digest = sha256File(target);
-    fs.writeFileSync(`${target}.sha256`, `${digest}  ${path.basename(target)}\n`);
-    // Retention: keep the newest KEEP backups (+ sidecars); prune the rest.
-    const backups = fs.readdirSync(BACKUP_DIR)
-      .filter((name) => /^prod-.*\.db$/.test(name))
-      .sort()
-      .reverse();
-    const prunedFiles = backups.slice(KEEP);
-    for (const name of prunedFiles) {
-      fs.rmSync(path.join(BACKUP_DIR, name), { force: true });
-      fs.rmSync(path.join(BACKUP_DIR, `${name}.sha256`), { force: true });
-    }
-    return { checkpoint, backup: path.basename(target), sha256: digest, kept: Math.min(backups.length, KEEP), pruned: prunedFiles.length };
+    throw new Error(
+      'MANAGED_POSTGRES_BACKUP_AUTHORITY_REQUIRED: obtain and verify a provider/operator backup receipt',
+    );
   },
 
   /** Probe the deployed app from outside the request path; log the verdict. */

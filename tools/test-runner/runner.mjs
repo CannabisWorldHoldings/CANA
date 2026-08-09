@@ -6,6 +6,10 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { sha256Bytes, sha256File, writeReceipt } from './receipt.mjs';
+import {
+  startDisposablePostgres,
+  stopDisposablePostgres,
+} from '../postgres-sim/runtime.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const APPROVED_IMAGE =
@@ -166,13 +170,21 @@ function runContainer({ profile, sourceBundle, expected }) {
   const suffix = crypto.randomBytes(6).toString('hex');
   const name = `cana-verify-${profile.replaceAll('-', '')}-${suffix}`;
   let created = false;
+  let database = null;
   let output = '';
   let result;
   try {
+    database = startDisposablePostgres({ label: profile });
     command('docker', [
       'create',
       '--name',
       name,
+      '--network',
+      `container:${database.name}`,
+      '--env',
+      `DATABASE_URL=${database.databaseUrl}`,
+      '--env',
+      `DIRECT_URL=${database.databaseUrl}`,
       '-w',
       '/workspace',
       IMAGE,
@@ -198,6 +210,10 @@ function runContainer({ profile, sourceBundle, expected }) {
       if (!output) output = `${logs.stdout}${logs.stderr}`;
       command('docker', ['rm', '-f', name], { allowFailure: true, timeout: 30_000 });
     }
+    if (database && !stopDisposablePostgres(database)) {
+      output += `\nCANA_POSTGRES_CLEANUP_FAILED ${database.name}\n`;
+      if (result?.status === 0) result.status = 72;
+    }
   }
   const remains = command(
     'docker',
@@ -209,6 +225,20 @@ function runContainer({ profile, sourceBundle, expected }) {
     exitCode: result?.status ?? null,
     passed: result?.status === 0,
     cleanup: remains === '',
+    database: database
+      ? {
+          imageId: database.image.imageId,
+          dockerfileSha256: database.image.dockerfileSha256,
+          baseImage: database.image.base,
+          loopbackOnly: true,
+          pooledAndDirectSameDisposableInstance: true,
+          cleanup: command(
+            'docker',
+            ['container', 'inspect', database.name],
+            { allowFailure: true, timeout: 30_000 },
+          ).status !== 0,
+        }
+      : null,
     output,
     outputSha256: sha256Bytes(output),
   };
@@ -259,7 +289,7 @@ async function standardVerification(profile) {
       source,
       isolation: {
         worktree: true,
-        database: 'container-local disposable database',
+        database: 'container-local disposable PostgreSQL with PostGIS and H3',
         port: 'container network namespace only; host port is not published',
         dockerImage: IMAGE,
         dockerImageDigest: dockerImage,
@@ -293,6 +323,7 @@ async function standardVerification(profile) {
         cleanup: container.cleanup,
         outputSha256: container.outputSha256,
         outputTail: tail(container.output),
+        database: container.database,
       },
     };
   } finally {

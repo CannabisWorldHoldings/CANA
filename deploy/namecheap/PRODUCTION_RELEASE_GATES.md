@@ -21,21 +21,22 @@ approvals.
    package inside the artifact. Any hit fails the build.
 5. **Completeness checks** — `server.js`, `app.js`, `.next/static`, fonts,
    artwork, `node_modules/@prisma/client`, `node_modules/.prisma/client`,
-   the `rhel-openssl-1.1.x` engine, schema template, bootstrap script.
+   the `rhel-openssl-1.1.x` engine, PostgreSQL schema, and committed migrations.
 
 ## Isolation gates (the artifact, not the source tree)
 
 6. **Extraction outside the repository** — brand-new temp directory with no
    parent `node_modules` anywhere above it; `NODE_PATH` not inherited.
-7. **Copied test database** — bootstrap runs against an isolated data dir;
+7. **Disposable canonical database** — all migrations run against disposable
+   PostgreSQL with `DATABASE_URL` and `DIRECT_URL` bound to that same instance;
    must yield exactly `canonicalBrands:1, retailers:74, demonstrationRetailers:0`.
 8. **Runtime matrix** from the extracted `app.js` only:
    `/api/health` 200+HEALTHY (brandCount 1, totalRetailers 74) · homepage,
    pricing, robots.txt, sitemap.xml, llms.txt all 200 · www→apex 308 ·
    unknown host 421 · tenant spoof 404.
 9. **Restart persistence** — kill + restart, records intact.
-10. **Rollback integrity** — deploy→deploy→rollback leaves the database
-    byte-identical (SHA-256 compared).
+10. **Rollback integrity** — deploy→deploy→rollback executes no database
+    command and leaves the measured canonical database state unchanged.
 11. **Secret scan** — zero findings inside the extracted artifact.
 
 ## Delivery gates
@@ -68,10 +69,10 @@ approvals.
 ## Database laws (always)
 
 - Code deploys and rollbacks never modify the persistent database.
-- DB SHA-256 is captured before a release swap and re-checked after; a changed
-  hash is a hard stop unless an explicitly approved migration shipped.
-- Bootstrap/seed are first-deploy-only and are blocked automatically when a
-  populated production database exists.
+- Migration requires a verified managed-provider/operator backup receipt,
+  both PostgreSQL URLs, and committed migration files.
+- The cPanel worker never claims that a local file copy is a managed database
+  backup. Provider restore authority stays outside the application runtime.
 - Never bootstrap, seed, migrate, or replace a database because an endpoint
   returned 500. Exonerate or convict the database with a read-only check first.
 

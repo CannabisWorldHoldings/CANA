@@ -32,15 +32,41 @@
 //      case-sensitive. Uniques on User.email / Brand.domain become stricter on
 //      MariaDB — near-duplicate rows differing only by case must be resolved
 //      before import.
+//
+// OWNER DECISION EXECUTED (2026-08-08, ADR-0001): the canonical CANA datastore
+// is managed PostgreSQL + PostGIS. The migration-lane audit above remains the
+// authoritative record of cross-provider differences; the canary in
+// tests/migration-court.test.mjs now swaps FROM postgresql to prove sqlite and
+// mysql DDL still generate from this one file. SQLite is demoted to a
+// read-only rollback-snapshot format (DB_CLASSIFICATION in src/lib/db-config.mjs),
+// exactly as that classification always demanded.
+//
+// COLUMN-WIDTH REVIEW EXECUTED FOR POSTGRESQL (2026-08-09). Difference (1) above is
+// the VARCHAR(191) hazard, and it is MySQL-family ONLY. On PostgreSQL an unannotated
+// `String` maps to unbounded `text`, so NONE of the long-form columns listed in (1)
+// needs `@db.Text` — verified against the live database (every such column is
+// data_type=text, character_maximum_length=NULL). tests/column-width-cutover-court
+// .test.mjs now clears `postgresql` on that recorded finding and instead PROSCRIBES
+// bounding these columns with `@db.VarChar`, which is the only way truncation could
+// return here; the full review is docs/migration/SQLITE_TO_POSTGRES.md
+// §"Column-width review (PostgreSQL)". The tripwire remains armed for any future flip
+// to an unreviewed provider.
+//
+// DATABASE_URL -> pooled connection, used by the running application.
+// DIRECT_URL   -> unpooled connection, used by `prisma migrate`/introspection.
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
+  url        = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
+  // postgresqlExtensions lets Prisma manage PostGIS declaratively rather than
+  // relying on an out-of-band CREATE EXTENSION that migrations cannot see.
   // native: local dev/test/build machines. rhel-openssl-*: CloudLinux
-  // (RHEL-family) shared hosting used by the Namecheap production target.
+  // (RHEL-family) shared hosting used by the Namecheap production target, which
+  // now opens an outbound TLS connection to managed PostgreSQL instead of
+  // reading a local database file.
   binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
 }
 
@@ -544,4 +570,106 @@ model DemandCreditEntry {
   /// 20260726000100_ledger_recorded_at_index — the first post-baseline
   /// migration, so forward migration is exercised rather than asserted.
   @@index([merchantId, recordedAt])
+}
+// ============================================================================
+// CANA GEO KERNEL — minimum primitives (Slice 1a)
+//
+// Design laws enforced here:
+//  1. CANA owns canonical identity. A provider's ID is an ALIAS, never truth.
+//  2. Nothing is true because a provider said so. Assertions live in GeoClaim
+//     with source, freshness, confidence and an explicit UNKNOWN state.
+//  3. Every entity is temporal (validFrom/validUntil) and carries provenance.
+//
+// Deliberately NOT built yet (later slices, see docs/geo/ROADMAP.md):
+//  GeoCell state, feature store, routing cache, isochrones, opportunity and
+//  simulation tables. Interfaces exist; tables are not invented ahead of use.
+// ============================================================================
+
+/// Canonical geographic entity. The CANA-owned identity for any place.
+/// `geom` is real PostGIS geometry and is therefore Unsupported by Prisma
+/// Client: it is written/read through the SQL helpers in
+/// apps/web/src/lib/geo/geometry.mjs, never through the ORM. `lat`/`lng` are
+/// kept as a portable, ORM-readable mirror and are the source for `geom`.
+model GeoEntity {
+  /// CANA_LOCATION_ID — sovereign identifier. Never a provider ID.
+  id           String    @id @default(uuid())
+  kind         String    @default("business") // business, neighborhood, jurisdiction, service_area, poi
+  name         String
+  /// Portable coordinate mirror. Canonical geometry lives in `geom`.
+  lat          Float
+  lng          Float
+  /// PostGIS point, SRID 4326. Maintained from lat/lng by trigger-free
+  /// explicit sync in the geo helpers so the two can never silently diverge.
+  geom         Unsupported("geometry")?
+  /// H3 index (resolution 9) for aggregation and privacy coarsening.
+  h3R9         String?
+  /// Optional link back to the operational record this entity represents.
+  retailerId   String?   @unique
+
+  // -- provenance / temporality (Omega-6) --
+  source       String    @default("UNKNOWN")
+  sourceUrl    String?
+  observedAt   DateTime?
+  validFrom    DateTime  @default(now())
+  validUntil   DateTime?
+  confidence   Float?
+  /// UNKNOWN | HYPOTHESIS | SUPPORTED | VERIFIED | CONTRADICTED | STALE
+  verification String    @default("UNKNOWN")
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  aliases      GeoEntityAlias[]
+  claims       GeoClaim[]
+
+  @@index([kind, verification])
+  @@index([h3R9])
+  @@index([validUntil])
+}
+
+/// External references to a canonical entity. Evidence and join keys only —
+/// an alias never confers truth. Overture GERS, OSM, and provider IDs land here.
+model GeoEntityAlias {
+  id           String    @id @default(uuid())
+  geoEntityId  String
+  /// overture_gers | osm | provider:<name> | partner:<system>
+  namespace    String
+  externalId   String
+  observedAt   DateTime?
+  confidence   Float?
+  createdAt    DateTime  @default(now())
+
+  geoEntity    GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
+
+  @@unique([namespace, externalId])
+  @@index([geoEntityId])
+}
+
+/// An evidence-bound geographic assertion. The public map may only render
+/// claims that pass the evidence threshold; everything else renders as UNKNOWN.
+model GeoClaim {
+  id                   String    @id @default(uuid())
+  geoEntityId          String
+  /// e.g. is_open, serves_area, located_at, licensed_in
+  claimType            String
+  claimValue           String
+  source               String
+  sourceUrl            String?
+  observedAt           DateTime?
+  freshnessExpiresAt   DateTime?
+  confidence           Float?
+  corroboratingSources Int       @default(0)
+  contradictorySources Int       @default(0)
+  /// UNKNOWN | HYPOTHESIS | SUPPORTED | VERIFIED | CONTRADICTED | REFUTED | STALE
+  verification         String    @default("UNKNOWN")
+  /// False blocks the claim from customer-facing surfaces regardless of score.
+  decisionEligible     Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  geoEntity            GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
+
+  @@index([geoEntityId, claimType])
+  @@index([verification, decisionEligible])
+  @@index([freshnessExpiresAt])
 }

@@ -15,15 +15,15 @@
  *   1. Clean: remove .next + old artifact; optional CLEAN_INSTALL=1 npm ci;
  *      record working-tree state in the receipt.
  *   2. Restore brand assets, prisma generate (RHEL engines), build --webpack.
- *   3. Assemble artifact (server, static, public, prisma tooling, bootstrap
- *      script, schema-template db) and prune server-mismatched binaries when
+ *   3. Assemble artifact (server, static, public, prisma tooling) and prune
+ *      server-mismatched binaries when
  *      SERVER_OPENSSL=1.1.
  *   4. Hard-stop verification, including a scan of every compiled
  *      .next/server JS file for unresolved hashed externals.
  *   5. Package, then run the ISOLATED RUNTIME TEST: extract the tarball into
  *      a directory outside the repository (no parent node_modules, cleared
- *      NODE_PATH), bootstrap a copied test database, start app.js, and pass
- *      the full HTTP battery + restart persistence + rollback db-integrity.
+ *      NODE_PATH), migrate a disposable PostgreSQL database, start app.js, and
+ *      pass the full HTTP battery + restart persistence + rollback isolation.
  *   6. Write the final receipt (bundler, versions, scan + test results) into
  *      the artifact and re-package. The tarball is only kept if EVERYTHING
  *      passed.
@@ -45,6 +45,7 @@ import { auditArtifactExclusions } from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
 import { selectTestPrismaEngine } from './select-test-engine.mjs';
+import { startDisposablePostgres, stopDisposablePostgres } from '../../tools/postgres-sim/runtime.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const webRoot = path.join(repoRoot, 'apps/web');
@@ -273,7 +274,6 @@ function copyDir(from, to) {
 
 const operationalScripts = Object.freeze([
   'deploy.sh',
-  'bootstrap-production-db.sh',
   'restart.sh',
   'rollback.sh',
   'migrate.sh',
@@ -394,7 +394,10 @@ if (process.env.CLEAN_INSTALL === '1') {
 run('node scripts/restore-brand-assets.mjs', { cwd: webRoot });
 run('npx prisma generate', {
   cwd: webRoot,
-  env: releaseChildEnvironment({ DATABASE_URL: 'file:./.cana-prisma-generate-only.db' }),
+  env: releaseChildEnvironment({
+    DATABASE_URL: 'postgresql://postgres@127.0.0.1:5432/cana_build_only',
+    DIRECT_URL: 'postgresql://postgres@127.0.0.1:5432/cana_build_only',
+  }),
 });
 run('npx next build --webpack', {
   cwd: webRoot,
@@ -479,23 +482,6 @@ fs.copyFileSync(
   path.join(artifactRoot, 'docs/competitive/dc-merchant-universe.json'),
 );
 
-// Schema-template database (schema only, zero data) — see bootstrap script.
-const templateDir = path.join(artifactRoot, 'bootstrap');
-fs.mkdirSync(templateDir, { recursive: true });
-const templateDb = path.join(templateDir, 'orderweeddc-schema-template.db');
-fs.rmSync(templateDb, { force: true });
-run(`npx prisma db push --skip-generate --schema prisma/schema.prisma`, {
-  cwd: webRoot,
-  env: releaseChildEnvironment({ DATABASE_URL: `file:${templateDb}` }),
-});
-const templateInventory = JSON.parse(
-  capture(`node scripts/db-inspect.mjs`, {
-    cwd: webRoot,
-    env: { ...process.env, DATABASE_URL: `file:${templateDb}` },
-  }),
-);
-const templateSha256 = sha256File(templateDb);
-
 // Server-fit pruning (probe evidence: OpenSSL 1.1.1k on glibc; the server
 // pins the rhel-1.1.x engine explicitly, so other engines are dead bytes).
 const pruned = [];
@@ -540,16 +526,12 @@ const engineFiles = fs.existsSync(prismaClientDir)
 checks['prisma engines found'] = engineFiles.length > 0;
 checks['rhel-openssl-1.1.x engine present (probe: OpenSSL 1.1.1k)'] =
   engineFiles.some((file) => file.includes('rhel-openssl-1.1.x'));
-checks['schema template present'] = fs.existsSync(templateDb);
-checks['schema template has core tables'] =
-  templateInventory.coreTablesPresent === true && templateInventory.tableCount > 10;
-checks['schema template is data-free'] =
-  (templateInventory.counts?.organizations ?? 0) === 0 &&
-  (templateInventory.counts?.brands ?? 0) === 0 &&
-  (templateInventory.counts?.retailers ?? 0) === 0;
-checks['bootstrap script present'] = fs.existsSync(
-  path.join(artifactRoot, 'bootstrap-production-db.sh'),
+checks['canonical schema is PostgreSQL'] = /provider\s*=\s*"postgresql"/.test(
+  fs.readFileSync(path.join(artifactRoot, 'prisma/schema.prisma'), 'utf8'),
 );
+checks['no SQLite bootstrap shipped'] =
+  !fs.existsSync(path.join(artifactRoot, 'bootstrap-production-db.sh')) &&
+  !fs.existsSync(path.join(artifactRoot, 'bootstrap'));
 checks['release.json present with full 40-hex gitSha'] =
   fs.existsSync(path.join(artifactRoot, 'release.json')) &&
   /^[0-9a-f]{40}$/.test(releaseIdentity.gitSha) &&
@@ -639,11 +621,10 @@ function writeReceipt(extra = {}) {
       pattern: hashedExternalPattern.source,
       unresolved: unresolvedHits,
     },
-    schemaTemplate: {
-      file: 'bootstrap/orderweeddc-schema-template.db',
-      sha256: templateSha256,
-      tableCount: templateInventory.tableCount,
-      tables: templateInventory.tables,
+    databaseContract: {
+      canonicalProvider: 'postgresql',
+      directUrlRequired: true,
+      sqliteRole: 'pre-cutover-rollback-snapshot-only',
     },
     checks,
     ...extra,
@@ -704,24 +685,38 @@ async function isolatedRuntimeTest() {
     testEngine,
   );
 
-  // Bootstrap a test database inside isolation (also exercises the script).
-  const dataDir = path.join(isoRoot, 'data');
-  run(
-    `PRISMA_QUERY_ENGINE_LIBRARY=${JSON.stringify(testEnginePath)} OWD_DATA_DIR=${JSON.stringify(dataDir)} OWD_NODE=${JSON.stringify(process.execPath)} sh bootstrap-production-db.sh`,
-    { cwd: appRoot },
-  );
+  const postgres = startDisposablePostgres({ label: 'artifact', publishLoopback: true });
+  try {
+  run('npx --no-install prisma migrate deploy --schema prisma/schema.prisma', {
+    cwd: webRoot,
+    env: {
+      ...process.env,
+      DATABASE_URL: postgres.databaseUrl,
+      DIRECT_URL: postgres.databaseUrl,
+    },
+  });
+  run('node prisma/seed.mjs', {
+    cwd: webRoot,
+    env: {
+      ...process.env,
+      NODE_ENV: 'development',
+      DATABASE_URL: postgres.databaseUrl,
+      DIRECT_URL: postgres.databaseUrl,
+    },
+  });
   const inspect = JSON.parse(
     capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
-      cwd: appRoot,
+      cwd: webRoot,
       env: {
         PATH: process.env.PATH,
-        DATABASE_URL: `file:${path.join(dataDir, 'prod.db')}`,
+        DATABASE_URL: postgres.databaseUrl,
+        DIRECT_URL: postgres.databaseUrl,
         PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
       },
     }),
   );
   record(
-    'bootstrap: canonical brand + 74 retailers, zero demo',
+    'migrations + disposable seed: canonical brand + 74 retailers, zero demo',
     inspect.counts?.canonicalBrands === 1 &&
       inspect.counts?.retailers === 74 &&
       inspect.counts?.demonstrationRetailers === 0,
@@ -735,7 +730,8 @@ async function isolatedRuntimeTest() {
     HOME: isoRoot,
     NODE_ENV: 'production',
     PORT: String(port),
-    DATABASE_URL: `file:${path.join(dataDir, 'prod.db')}`,
+    DATABASE_URL: postgres.databaseUrl,
+    DIRECT_URL: postgres.databaseUrl,
     // Test-only: app.js keeps its production RHEL pin when this is UNSET; here we
     // supply the machine-native engine so the isolated app starts on macOS too.
     PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
@@ -828,8 +824,7 @@ async function isolatedRuntimeTest() {
   );
   results.artifactExclusionAudit = exclusionAudit;
 
-  // Code rollback leaves the database byte-identical.
-  const dbBefore = sha256File(path.join(dataDir, 'prod.db'));
+  const databaseStateBefore = JSON.stringify(inspect.counts);
   const fakeHome = path.join(isoRoot, 'rollback-home');
   fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
   fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
@@ -842,11 +837,30 @@ async function isolatedRuntimeTest() {
   run(
     `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`,
   );
-  const dbAfter = sha256File(path.join(dataDir, 'prod.db'));
-  record('rollback leaves database byte-identical', dbBefore === dbAfter, dbBefore);
+  const inspectAfter = JSON.parse(
+    capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
+      cwd: webRoot,
+      env: {
+        PATH: process.env.PATH,
+        DATABASE_URL: postgres.databaseUrl,
+        DIRECT_URL: postgres.databaseUrl,
+        PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+      },
+    }),
+  );
+  record(
+    'code rollback leaves canonical database state unchanged',
+    databaseStateBefore === JSON.stringify(inspectAfter.counts),
+    databaseStateBefore,
+  );
 
   results.serverLogTail = serverLog.slice(-400);
   return results;
+  } finally {
+    if (!stopDisposablePostgres(postgres)) {
+      throw new Error('Isolated runtime test failed to remove its disposable PostgreSQL container');
+    }
+  }
 }
 
 const isolatedResults = await isolatedRuntimeTest();

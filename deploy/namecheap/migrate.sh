@@ -12,16 +12,11 @@
 #     committed. No migrations directory -> HARD STOP, not improvisation.
 #   - `prisma db push` is NOT a migration and is never run here against a
 #     populated database (it can drop and re-create structures).
-#   - A timestamped backup is taken BEFORE any change; the pre/post SHA-256
-#     of the database file is printed so the change is attributable.
+#   - A provider/operator backup receipt is required BEFORE any change. This
+#     script cannot manufacture a truthful managed-PostgreSQL snapshot.
 #   - Never run this because an endpoint returned 500. Exonerate or convict
 #     the database with a read-only check first (db-inspect.mjs).
 #
-# DATABASE INITIALIZATION (first deploy, empty provider database) is a
-# DIFFERENT command and stays separate on purpose:
-#   cd <release-root> && sh bootstrap-production-db.sh
-# (installs the build-verified schema template ONLY into an absent/empty db,
-#  then runs the idempotent canonical init + real ABCA seed; zero demo data.)
 set -eu
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -38,15 +33,20 @@ else
 fi
 
 MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
-DATA_DIR="${OWD_DATA_DIR:-$HOME/orderweeddc-data}"
-DB="${OWD_DB_PATH:-$DATA_DIR/prod.db}"
+: "${DATABASE_URL:?HARD STOP: DATABASE_URL is required}"
+: "${DIRECT_URL:?HARD STOP: DIRECT_URL is required}"
+: "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"
+
+case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
+case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
+[ -f "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] && [ ! -L "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] && [ -s "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] || {
+  echo "HARD STOP: backup receipt must be a nonempty regular file, not a symlink"; exit 6;
+}
 
 # --- Convention gate: the migration lane's work must exist ------------------
 if [ ! -d "$MIGRATIONS_DIR" ] || [ -z "$(ls -A "$MIGRATIONS_DIR" 2>/dev/null)" ]; then
   echo "HARD STOP: no committed migrations at $MIGRATIONS_DIR."
   echo "Migrations are authored by the migration lane (apps/web/prisma/migrations/**)."
-  echo "Until they land, schema installation happens ONLY via the guarded"
-  echo "first-deploy bootstrap:  sh bootstrap-production-db.sh"
   exit 2
 fi
 
@@ -71,26 +71,14 @@ fi
 
 echo "schema:      $SCHEMA_DIR/$SCHEMA"
 echo "migrations:  $MIGRATIONS_DIR ($(ls "$MIGRATIONS_DIR" | wc -l | tr -d ' ') entries)"
-echo "database:    $DB"
-
-# --- Backup + before-hash (attributable change) ------------------------------
-if [ -f "$DB" ]; then
-  BEFORE_SHA=$(sha256sum "$DB" | cut -d' ' -f1)
-  BACKUP="$DB.pre-migrate-$(date -u +%Y%m%d%H%M%S)"
-  cp -p "$DB" "$BACKUP"
-  echo "db sha256 before: $BEFORE_SHA"
-  echo "backup:           $BACKUP"
-else
-  echo "database absent — 'migrate deploy' will create it with full history."
-  BEFORE_SHA="(absent)"
-fi
+BACKUP_RECEIPT_SHA=$(sha256sum "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" | cut -d' ' -f1)
+echo "database:    canonical PostgreSQL (URL redacted)"
+echo "direct:      configured (URL redacted)"
+echo "backup receipt sha256: $BACKUP_RECEIPT_SHA"
 
 # --- Apply committed migrations ----------------------------------------------
-DATABASE_URL="file:$DB" $PRISMA migrate deploy --schema "$SCHEMA" \
-  || { echo "MIGRATION FAILED — database backup preserved: ${BACKUP:-n/a}"; exit 4; }
+DATABASE_URL="$DATABASE_URL" DIRECT_URL="$DIRECT_URL" $PRISMA migrate deploy --schema "$SCHEMA" \
+  || { echo "MIGRATION FAILED — provider backup receipt remains: $BACKUP_RECEIPT_SHA"; exit 4; }
 
-AFTER_SHA=$(sha256sum "$DB" | cut -d' ' -f1)
-echo "db sha256 after:  $AFTER_SHA"
-echo "MIGRATIONS APPLIED. Record both hashes in the deployment log; a code-only"
-echo "deploy must never change the database hash — this command is the ONLY"
-echo "approved way a release changes it."
+echo "MIGRATIONS APPLIED. Record the commit, migration output, and backup-receipt"
+echo "hash in the deployment log. This command never creates migrations."

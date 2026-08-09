@@ -16,11 +16,9 @@ verification receipts produced DURING an owner-executed cutover.
       `isolatedRuntimeTest.passed: true`, empty unresolved-external scan.
 - [ ] The release SHA is reachable on the remote
       (`release-preflight.mjs` gate — unreachable-commit incident 2026-07-23).
-- [ ] Owner has confirmed the production data plane decision. Current
-      classification (`db-config.mjs`): SQLite = LOCAL_TEST_DATABASE_ONLY for
-      the handoff workload; MariaDB/PostgreSQL exist on the plan
-      (VENDOR-DOCUMENTED, UNVERIFIED). **Selecting and provisioning the
-      production database is an owner action.**
+- [ ] Owner has selected and provisioned the managed PostgreSQL/PostGIS
+      provider allowed by ADR-0001. Provider policy, credentials, outbound
+      cPanel connectivity, backups, and restore remain owner-gated evidence.
 - [ ] Rollback rehearsed on staging within this release cycle.
 
 ## 1. Pre-cutover snapshot (production account, cPanel Terminal)
@@ -28,8 +26,8 @@ verification receipts produced DURING an owner-executed cutover.
 ```
 sh ~/apps/orderweeddc/current/healthcheck.sh https://orderweeddc.com || true   # record current state
 curl -s https://orderweeddc.com/api/release | tee ~/cutover-logs/release-before.json
-node ~/apps/orderweeddc/current/worker.mjs --once backup                        # fresh pre-cutover backup
-sha256sum ~/orderweeddc-data/prod.db | tee ~/cutover-logs/db-before.sha256
+# OWNER/PROVIDER: create a restorable PostgreSQL backup or branch and save its
+# redacted receipt at ~/cutover-logs/provider-backup-before.json
 ```
 
 ## 2. Deploy through the gated verifier (one command, auto-rollback)
@@ -46,21 +44,21 @@ sh ~/uploads/verify-and-deploy.sh <https-artifact-url> orderweeddc-<shortsha>.ta
 The verifier fails closed when its adjacent structural helper is absent. It snapshots
 the downloaded archive into its private verification directory, then uses that same
 checksum-verified snapshot for structural inspection and extraction. The verifier
-enforces: checksum, receipt and release identity acceptance, DB-hash-unchanged across
-the swap, origin health with bounded retries, automatic code rollback on
+enforces: checksum, receipt and release identity acceptance, PostgreSQL URL
+configuration without printing values, origin health with bounded retries, automatic code rollback on
 failure, and separates ORIGIN health from PUBLIC-DNS health
 (`ORIGIN_HEALTHY_PUBLIC_DNS_PENDING` is a real state — never conflate).
 
 ## 3. Migrations (ONLY when this release ships approved migrations)
 
 ```
-cd ~/apps/orderweeddc/current && sh migrate.sh
+CANA_PRE_MIGRATION_BACKUP_RECEIPT=~/cutover-logs/provider-backup-before.json \
+  sh ~/apps/orderweeddc/current/migrate.sh
 ```
 
-Database laws apply: pre/post hashes recorded; a code-only release must show
-an UNCHANGED database hash; `migrate.sh` is the only approved way a release
-changes it. If the migration lane shipped nothing, this step is SKIPPED — do
-not improvise schema changes on the box.
+Database laws apply: the backup receipt, exact release SHA, and migration
+output are retained; a code-only release runs no database command. If the
+migration lane shipped nothing, this step is SKIPPED rather than improvised.
 
 ## 4. Post-cutover verification (owner-witnessed)
 
@@ -82,8 +80,8 @@ homepage + mobile nav, retailer/product/legal pages, `/business/*` and
 ## 5. Rollback triggers and procedure
 
 Trigger on ANY of: readiness failure; `/api/health` non-200 or UNHEALTHY;
-`/api/release` serving the WRONG SHA; database hash changed by a code-only
-deploy; error spike in `stderr.log`.
+`/api/release` serving the WRONG SHA; unexpected database mutation attributable
+to the release procedure; error spike in `stderr.log`.
 
 ```
 sh ~/apps/orderweeddc/rollback.sh     # code-only; database untouched; broken release preserved
@@ -100,6 +98,6 @@ trigger.
 - [ ] `release-after.json` (from `/api/release`) archived next to
       `release-before.json`; SHAs differ exactly as intended.
 - [ ] Production smoke receipt archived.
-- [ ] Post-cutover backup taken (`worker.mjs --once backup`).
+- [ ] Post-cutover provider backup taken and its restore authority recorded.
 - [ ] Deployment log updated: artifact name, tarball sha256, release SHA,
-      db hashes before/after, receipts, operator, timestamps.
+      migration and provider-backup receipts, operator, timestamps.

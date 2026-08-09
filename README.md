@@ -35,16 +35,10 @@ for recovery-package provenance and limits.
 From the repository root:
 
 ```powershell
-npm install
-npm run prisma:generate -w apps/web
-npm run prisma:db -w apps/web
-npm run benchmark:discovery -w apps/web
-npm test
-npm run test:db -w apps/web
-npm run lint
-npx tsc --noEmit -p apps/web/tsconfig.json
-npm run build
-npm run start -w apps/web
+npm ci
+./cana verify focused
+./cana verify maria
+./cana verify cpanel
 ```
 
 With the production server listening on port 3000:
@@ -55,7 +49,8 @@ node apps/web/scripts/lab-check.mjs
 ```
 
 Local bootstrap credentials are generated with high entropy, written only to
-the ignored local credential document, and never printed. The SQLite database,
+the ignored local credential document, and never printed. Verifiers provision
+disposable PostgreSQL/PostGIS/H3 instances and remove them after the run;
 runtime logs, generated build output, local credentials, and loop state are
 excluded from source control.
 
@@ -63,7 +58,7 @@ No deployment, external provider runtime, or external model access is part of
 the application release path.
 
 The product-discovery benchmark uses a frozen, explicitly synthetic corpus and
-a disposable local SQLite database. Its JSON receipt is local regression
+a disposable verifier database. Its JSON receipt is local regression
 evidence only: it is not evidence of real-user conversion, revenue, legal
 approval, accessibility certification, public deployment, or competitor
 superiority. See [`docs/FRONTIER_BENCHMARK.md`](docs/FRONTIER_BENCHMARK.md) for

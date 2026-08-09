@@ -14,7 +14,8 @@ receipts), no = non-secret configuration.
 
 | Name | Purpose | Required | Secret | Supplied by |
 |---|---|---|---|---|
-| `DATABASE_URL` | Prisma datasource. Current data plane: `file:` SQLite path OUTSIDE the release dir (e.g. under `~/orderweeddc-data/`). If the owner selects MariaDB/PostgreSQL (see `db-config.mjs` classification), this becomes a connection string CONTAINING A PASSWORD → treat as secret then | R | path form: no · server-DB form: **YES** | Owner (cPanel env panel) |
+| `DATABASE_URL` | Pooled managed PostgreSQL connection used by the application | R | **YES** | Owner (cPanel env panel) |
+| `DIRECT_URL` | Direct/unpooled managed PostgreSQL connection used by Prisma migration tooling | R | **YES** | Owner (cPanel env panel / operator shell) |
 | `NODE_ENV` | Must be `production` in every deployed environment (staging included — staging differs by data and hostname, not by build mode) | R (F: `production`) | no | Fixed |
 | `PRISMA_QUERY_ENGINE_LIBRARY` | Absolute path to the bundled `rhel-openssl-1.1.x` Prisma engine. CageFS hides os-release, so auto-detection guesses wrong. `app.js` self-sets it when unset; setting explicitly is always safe | O (recommended) | no | Owner (path only) |
 | `CANA_ALLOWED_HOSTS` | Extra allowed request hostnames, comma-separated, beyond the built-in tenant list. Staging host goes here (e.g. the staging subdomain) | O | no | Owner |
@@ -27,16 +28,16 @@ receipts), no = non-secret configuration.
 | Name | Why it is listed |
 |---|---|
 | `GEMINI_API_KEY` | **Never a production runtime variable.** The public app makes no external model calls. The key belongs to operator-side ad-creative tooling, injected per-run on the operator's machine, never stored on the server. Its appearance in a server env panel is a finding, not a configuration |
-| `CANA_DEMO_ADMIN_PASSWORD` / `CANA_DEMO_RETAILER_PASSWORD` / `CANA_DEMO_CUSTOMER_PASSWORD` | Local-development seed overrides only (owner-supplied secrets when used). The production/staging bootstrap path (`bootstrap-production-db.sh` → `init-production-db.mjs` + ABCA seed) seeds **zero demonstration records**, so these must never be set on the server |
+| `CANA_DEMO_ADMIN_PASSWORD` / `CANA_DEMO_RETAILER_PASSWORD` / `CANA_DEMO_CUSTOMER_PASSWORD` | Local-development seed overrides only. They must never be set on the server; production/staging seeding is a separate owner-authorized procedure |
 
 ## Ops scripts (cPanel Terminal / cron), all optional overrides
 
 | Name | Purpose | Used by | Secret |
 |---|---|---|---|
 | `OWD_APP_HOME` | App home override (default `$HOME/apps/orderweeddc`). Set for STAGING side-by-side installs (e.g. `$HOME/apps/orderweeddc-staging`) | `deploy.sh`, `rollback.sh`, `restart.sh`, `verify-and-deploy.sh`, `readycheck.sh` | no |
-| `OWD_DATA_DIR` | Persistent data dir override (default `$HOME/orderweeddc-data`). Staging MUST set its own (e.g. `$HOME/orderweeddc-staging-data`) so staging never opens the production database | `bootstrap-production-db.sh`, `migrate.sh`, `worker.mjs`, `verify-and-deploy.sh` | no |
-| `OWD_BACKUP_DIR` | Backup destination (default `$HOME/orderweeddc-backups`) | `worker.mjs`, `restore-backup.sh` | no |
-| `OWD_NODE` | Absolute node binary (default CloudLinux selector path) | `bootstrap-production-db.sh`, `migrate.sh`, cron lines | no |
+| `CANA_PRE_MIGRATION_BACKUP_RECEIPT` | Path to a nonempty provider/operator backup receipt required before `migrate deploy` | `migrate.sh` | no |
+| `OWD_BACKUP_DIR` | Worker audit-log destination; not a managed-database backup destination | `worker.mjs` | no |
+| `OWD_NODE` | Absolute node binary (default CloudLinux selector path) | `migrate.sh`, cron lines | no |
 | `OWD_ORIGIN_IP` | Origin IP for `--resolve` health checks while public DNS lags | `verify-and-deploy.sh`, `healthcheck.sh`, `smoke-test.sh` | no |
 | `OWD_BASE_URL` | Base URL under test (e.g. `https://staging.example.com`). Refuses to default to production in staging tooling | `healthcheck.sh`, `readycheck.sh`, `smoke-test.sh` | no |
 | `OWD_EXPECTED_SHA` | The 40-hex SHA the deployment MUST be running; readiness fails on mismatch | `readycheck.sh`, `smoke-test.sh` | no |
@@ -60,5 +61,5 @@ receipts), no = non-secret configuration.
 2. **No invented values.** Where a value is owner-supplied, the runbooks say
    "owner provides"; nothing in this repo fabricates one.
 3. **Fail loud on missing required config.** `app.js` refuses to start
-   without `DATABASE_URL` — a site that silently starts without its database
+   without both PostgreSQL URLs — a site that silently starts without its database
    is worse than one that refuses to start.

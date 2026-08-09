@@ -13,11 +13,6 @@
 
 process.env.NODE_ENV = 'production';
 
-// The production SQLite file is persistent state owned outside each release.
-// Do not let application startup rewrite its file-level journal mode. Connection-
-// local safety settings are still applied by db-config.mjs.
-process.env.CANA_PRESERVE_SQLITE_FILE_BYTES = '1';
-
 // Bind to loopback: Passenger proxies external traffic to this process.
 if (!process.env.HOSTNAME) {
   process.env.HOSTNAME = '127.0.0.1';
@@ -42,12 +37,16 @@ if (!process.env.PRISMA_QUERY_ENGINE_LIBRARY) {
 // Fail loudly and early if the operator forgot the database location —
 // a directory site that silently starts without its database is worse
 // than one that refuses to start.
-if (!process.env.DATABASE_URL) {
+if (!process.env.DATABASE_URL || !process.env.DIRECT_URL) {
   throw new Error(
-    'DATABASE_URL is not set. In cPanel > Setup Node.js App, add ' +
-      'DATABASE_URL=file:/home/<cpanel-user>/orderweeddc-data/prod.db ' +
-      'and restart.',
+    'DATABASE_URL and DIRECT_URL are required. Configure the owner-provisioned ' +
+      'pooled and direct PostgreSQL URLs in cPanel > Setup Node.js App, then restart.',
   );
+}
+for (const name of ['DATABASE_URL', 'DIRECT_URL']) {
+  if (!/^postgres(?:ql)?:\/\//.test(process.env[name])) {
+    throw new Error(`${name} must use the canonical PostgreSQL protocol.`);
+  }
 }
 
 require('./server.js');

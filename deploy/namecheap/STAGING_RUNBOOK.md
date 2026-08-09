@@ -14,13 +14,13 @@ receipt from this runbook may claim production is live.
 | Concern | Production | Staging |
 |---|---|---|
 | App home | `~/apps/orderweeddc` | `~/apps/orderweeddc-staging` (`OWD_APP_HOME`) |
-| Data dir | `~/orderweeddc-data` | `~/orderweeddc-staging-data` (`OWD_DATA_DIR`) |
+| Database | owner-provisioned production PostgreSQL | separate owner-provisioned staging PostgreSQL |
 | Hostname | `orderweeddc.com` / `www` | owner-chosen staging subdomain, added via `CANA_ALLOWED_HOSTS` |
 | cPanel Node app | production entry | a SECOND "Setup Node.js App" entry |
-| Backups | `~/orderweeddc-backups` | `~/orderweeddc-staging-backups` (`OWD_BACKUP_DIR`) |
+| Backups | provider/operator production policy | separate provider/operator staging backup + receipt |
 
-Staging must NEVER read `~/orderweeddc-data/prod.db`. Every staging command
-below sets `OWD_*` overrides explicitly — copy-paste them as written.
+Staging must NEVER receive production database credentials. Both staging URLs
+must identify only the owner-provisioned staging database.
 
 ## 0. Preconditions (owner-gated)
 
@@ -61,7 +61,8 @@ Environment variables (names in `ENV_MANIFEST.md`; values owner-typed, never
 in git):
 
 ```
-DATABASE_URL=file:/home/<cpanel-user>/orderweeddc-staging-data/prod.db
+DATABASE_URL=postgresql://<owner-pooled-staging-url>
+DIRECT_URL=postgresql://<owner-direct-staging-url>
 NODE_ENV=production
 CANA_ALLOWED_HOSTS=<staging-subdomain>
 PRISMA_QUERY_ENGINE_LIBRARY=/home/<cpanel-user>/apps/orderweeddc-staging/current/node_modules/.prisma/client/libquery_engine-rhel-openssl-1.1.x.so.node
@@ -72,28 +73,21 @@ Do NOT click "Run NPM Install" — dependencies are pre-bundled.
 ## 3. Upload + verify + deploy the artifact
 
 ```
-mkdir -p ~/orderweeddc-staging-data
 cd ~/uploads && sha256sum -c orderweeddc-<shortsha>.tar.gz.sha256
 OWD_APP_HOME=$HOME/apps/orderweeddc-staging sh ~/uploads/deploy.sh orderweeddc-<shortsha>.tar.gz
 ```
 
-## 4. Create the EMPTY provider database, then initialize
+## 4. Create the EMPTY provider database
 
-```
-cd ~/apps/orderweeddc-staging/current
-OWD_DATA_DIR=$HOME/orderweeddc-staging-data sh bootstrap-production-db.sh
-```
-
-The bootstrap installs the build-verified schema template ONLY into an
-absent/empty database, then runs the idempotent canonical init and the real
-ABCA retailer seed (`AWAITING_VERIFICATION`, **zero demonstration records**).
-It prints a JSON verification receipt — keep it in the staging log.
+Use the owner-selected managed PostgreSQL provider. Enable PostGIS/H3 as the
+migration runbook requires, capture a restorable provider snapshot/branch, and
+save its non-secret receipt. Provider choice and credentials remain owner-gated.
 
 ## 5. Apply migrations (BY CONVENTION — migration lane's work)
 
 ```
 cd ~/apps/orderweeddc-staging/current
-OWD_DATA_DIR=$HOME/orderweeddc-staging-data sh migrate.sh
+CANA_PRE_MIGRATION_BACKUP_RECEIPT=<receipt-path> sh migrate.sh
 ```
 
 `migrate.sh` applies `prisma/migrations/**` exactly as committed by the
@@ -124,31 +118,26 @@ claim about production. That sentence is load-bearing; do not edit it out.
 
 ```
 cd ~/apps/orderweeddc-staging/current
-OWD_DATA_DIR=$HOME/orderweeddc-staging-data OWD_BACKUP_DIR=$HOME/orderweeddc-staging-backups node worker.mjs --once backup
+WORKER_HEALTH_URL=https://<staging-subdomain>/api/health node worker.mjs --once health
 ```
 
 Then install the cron line (cPanel → Cron Jobs; ≥ 5-minute granularity,
 absolute selector node path — cron does not inherit the app env):
 
 ```
-17 3 * * * cd $HOME/apps/orderweeddc-staging/current && OWD_DATA_DIR=$HOME/orderweeddc-staging-data OWD_BACKUP_DIR=$HOME/orderweeddc-staging-backups /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once backup >> $HOME/orderweeddc-staging-backups/cron.out 2>&1
+*/5 * * * * cd $HOME/apps/orderweeddc-staging/current && WORKER_HEALTH_URL=https://<staging-subdomain>/api/health /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> $HOME/orderweeddc-staging-backups/cron.out 2>&1
 ```
 
 Graceful-shutdown proof: start `node worker.mjs --loop --interval-ms 10000`,
 send SIGTERM, confirm the log ends with `worker-shutdown","graceful":true`
 and the lock dir is gone.
 
-## 9. Backup / restore-elsewhere proof
+## 9. Managed backup / restore-elsewhere proof
 
-```
-cd ~/apps/orderweeddc-staging/current
-OWD_DATA_DIR=$HOME/orderweeddc-staging-data OWD_BACKUP_DIR=$HOME/orderweeddc-staging-backups node worker.mjs --once backup
-sh restore-backup.sh $HOME/orderweeddc-staging-backups/prod-<stamp>.db $HOME/restore-proof/prod.db
-```
-
-`restore-backup.sh` verifies the checksum, refuses to overwrite, and proves
-the restored file readable via `db-inspect.mjs` — restorability is only
-proven by the inventory it prints.
+Use the provider/operator backup mechanism, restore into a distinct staging
+database, run `db-inspect.mjs --assert-core` plus the geo smoke test against
+that restored URL, and retain the redacted receipt. The web worker intentionally
+refuses to fabricate this proof from a local file.
 
 ## 10. Rollback drill
 
@@ -156,8 +145,10 @@ Deploy the SAME artifact a second time (creates `previous`), then:
 
 ```
 OWD_APP_HOME=$HOME/apps/orderweeddc-staging sh ~/apps/orderweeddc-staging/rollback.sh
-OWD_DATA_DIR=$HOME/orderweeddc-staging-data  # db hash must be UNCHANGED by the swap
 ```
+
+Re-run the read-only database inventory before and after; a code swap executes
+no migration and the measured counts/migration set must remain unchanged.
 
 ## 11. Restart-survival drill
 

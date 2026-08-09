@@ -32,8 +32,11 @@ const MISSION2_ASSIGNMENT_SHA256 =
 const MISSION3_M001_ASSIGNMENT = 'mission3_m001_shadow_slice_2026_07_29';
 const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
+const PR29_ASSIGNMENT = 'pr29_canonical_recovery_2026_08_09';
+const PR29_ASSIGNMENT_SHA256 =
+  'd41119cfb88c4113b60c32136a770dc914649e1925ed1590dab5ee4cd4429598';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '81272b3fba9972a010e5324037f68843b0afaa556c687061ab3c0bcf642a066f';
+  '5f41385642443e4b23a7980dc54441a819807ad87073c2350c1158cd069e2151';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -653,6 +656,59 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const pr29Assignment = ownership.explicit_user_assignment[PR29_ASSIGNMENT];
+  if (
+    !exactKeys(pr29Assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'authorized_paths',
+      'court_blob_sha256',
+      'approval_sha256',
+    ]) ||
+    !Array.isArray(pr29Assignment.authorized_paths) ||
+    pr29Assignment.authorization_effect !==
+      'Durability path ownership and exact reviewed-court-blob admission only; no external-effect authority.'
+  ) {
+    refusal('PR #29 recovery ownership assignment is malformed');
+  }
+  const pr29Paths = pr29Assignment.authorized_paths;
+  if (
+    new Set(pr29Paths).size !== pr29Paths.length ||
+    pr29Paths.some(
+      (entry) =>
+        typeof entry !== 'string' ||
+        entry.length === 0 ||
+        entry.startsWith('/') ||
+        entry.includes('\\') ||
+        entry.includes('*') ||
+        entry.includes('..') ||
+        path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('PR #29 recovery paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of pr29Paths) {
+    const exactOccurrences = allOwnedPaths.filter(
+      (pattern) => pattern === authorizedPath,
+    ).length;
+    if (exactOccurrences !== 1) {
+      refusal(`PR #29 path must have exactly one exact ownership entry: ${authorizedPath}`);
+    }
+  }
+  const courtEntries = Object.entries(pr29Assignment.court_blob_sha256 ?? {});
+  if (
+    courtEntries.length !== 2 ||
+    courtEntries.some(
+      ([courtPath, digest]) =>
+        !ownership.global_no_edit.includes(courtPath) ||
+        !pr29Paths.includes(courtPath) ||
+        !/^[0-9a-f]{64}$/.test(digest),
+    )
+  ) {
+    refusal('PR #29 court blob admission is malformed');
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -660,6 +716,16 @@ export function validateOwnershipManifest(ownership) {
   }));
   if (ownershipDigest !== CHANGED_FILE_OWNERSHIP_SHA256) {
     refusal('changed-file ownership patterns failed the owner-approved scope digest');
+  }
+
+  const { approval_sha256: pr29RecordedDigest, ...pr29ApprovalPayload } =
+    pr29Assignment;
+  const pr29ActualDigest = sha256Bytes(canonicalJson(pr29ApprovalPayload));
+  if (
+    pr29RecordedDigest !== PR29_ASSIGNMENT_SHA256 ||
+    pr29ActualDigest !== PR29_ASSIGNMENT_SHA256
+  ) {
+    refusal('PR #29 recovery assignment failed its owner-approval digest');
   }
 
   const { approval_sha256: pr2RecordedDigest, ...pr2ApprovalPayload } = pr2Assignment;
@@ -741,6 +807,20 @@ export function ownershipPatterns(ownership) {
   ];
 }
 
+export function pr29OwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[PR29_ASSIGNMENT];
+}
+
+export function courtEditAdmitted(relative, ownership, bytes) {
+  validateOwnershipManifest(ownership);
+  const admittedDigest =
+    ownership.explicit_user_assignment[PR29_ASSIGNMENT].court_blob_sha256[relative];
+  if (!ownership.global_no_edit.includes(relative) || !admittedDigest) return false;
+  const content = bytes ?? fs.readFileSync(path.join(ROOT, relative));
+  return sha256Bytes(content) === admittedDigest;
+}
+
 export function unownedPaths(changed, ownership) {
   const patterns = ownershipPatterns(ownership);
   return changed.filter((file) => !patterns.some((pattern) => matchOwned(file, pattern)));
@@ -761,10 +841,15 @@ function prerequisites(source) {
   const ownership = readJson(
     path.join(ROOT, 'tools', 'test-runner', 'CODEX_CHANGED_FILE_OWNERSHIP.json'),
   );
+  validateOwnershipManifest(ownership);
   const changed = git(['diff', '--name-only', `${BASE}..${source.commit}`])
     .split('\n')
     .filter(Boolean);
-  const prohibited = changed.filter((file) => ownership.global_no_edit.includes(file));
+  const prohibited = changed.filter((file) => {
+    if (!ownership.global_no_edit.includes(file)) return false;
+    return !fs.existsSync(path.join(ROOT, file)) ||
+      !courtEditAdmitted(file, ownership);
+  });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const unowned = unownedPaths(changed, ownership);
   if (unowned.length) refusal(`outgoing paths lack lane ownership:\n${unowned.join('\n')}`);

@@ -341,6 +341,82 @@
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
       "approval_sha256": "8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452"
+    },
+    "pr29_canonical_recovery_2026_08_09": {
+      "authorization": "YOU ARE TAKING OVER CANONICAL RECOVERY, PR RECONCILIATION, AND RELEASE-GATE REPAIR",
+      "scope": "Exact PR #29 PostgreSQL, PostGIS, H3, verifier, release-gate, documentation and regression-test paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, merge, close, verification-bypass or self-promotion authority.",
+      "authorization_effect": "Durability path ownership and exact reviewed-court-blob admission only; no external-effect authority.",
+      "authorized_paths": [
+        ".env.example",
+        "AGENTS.md",
+        "README.md",
+        "apps/web/package.json",
+        "apps/web/prisma/migrations/20260726000000_baseline/migration.sql",
+        "apps/web/prisma/migrations/20260726000100_ledger_recorded_at_index/down.sql",
+        "apps/web/prisma/migrations/20260809100000_geo_kernel/migration.sql",
+        "apps/web/prisma/migrations/migration_lock.toml",
+        "apps/web/prisma/schema.prisma",
+        "apps/web/prisma/seed-safety.mjs",
+        "apps/web/prisma/seed.mjs",
+        "apps/web/prisma/sql/geo_kernel_postgis.sql",
+        "apps/web/prisma/sql/geo_smoke_test.sql",
+        "apps/web/prisma/sql/postgres_semantics_guards.sql",
+        "apps/web/scripts/backfill-geo-entities.mjs",
+        "apps/web/scripts/benchmark-product-discovery.mjs",
+        "apps/web/scripts/db-inspect.mjs",
+        "apps/web/scripts/etl-abca-retailers.mjs",
+        "apps/web/scripts/ingest-abca-feed.mjs",
+        "apps/web/scripts/migrate-sqlite-to-postgres.mjs",
+        "apps/web/scripts/test-public-submission.mjs",
+        "apps/web/src/app/[domain]/education/page.tsx",
+        "apps/web/src/app/admin/page.tsx",
+        "apps/web/src/app/api/geo/viewport/route.ts",
+        "apps/web/src/components/retailer-map-loader.tsx",
+        "apps/web/src/components/retailer-map-maplibre.tsx",
+        "apps/web/src/lib/admin-mutations.mjs",
+        "apps/web/src/lib/directory-search.mjs",
+        "apps/web/src/lib/geo/geo-repository.mjs",
+        "apps/web/src/lib/geo/public-map-projection.mjs",
+        "apps/web/src/lib/geo/routing-provider.mjs",
+        "apps/web/src/lib/geo/tile-sources.mjs",
+        "apps/web/src/lib/merchant-dashboard.mjs",
+        "apps/web/src/lib/product-discovery.mjs",
+        "apps/web/tests/column-width-cutover-court.test.mjs",
+        "apps/web/tests/demand-credits.test.mjs",
+        "apps/web/tests/merchant-dashboard.test.mjs",
+        "apps/web/tests/pilot-package-court.test.mjs",
+        "apps/web/tests/postgres-semantics.test.mjs",
+        "apps/web/tests/product-benchmark.test.mjs",
+        "apps/web/tests/public-map-projection.test.mjs",
+        "apps/web/tests/release-gate.test.mjs",
+        "apps/web/tests/routing-provider.test.mjs",
+        "deploy/namecheap/CAPABILITIES.md",
+        "deploy/namecheap/ENV_MANIFEST.md",
+        "deploy/namecheap/PRODUCTION_RELEASE_GATES.md",
+        "deploy/namecheap/STAGING_DEFINITION_OF_DONE.md",
+        "deploy/namecheap/STAGING_RUNBOOK.md",
+        "deploy/namecheap/bootstrap-production-db.sh",
+        "deploy/namecheap/deploy.sh",
+        "deploy/namecheap/env.production.example",
+        "deploy/namecheap/failure-signatures.json",
+        "deploy/namecheap/migrate.sh",
+        "deploy/namecheap/worker.mjs",
+        "docs/adr/0001-postgresql-postgis-canonical-datastore.md",
+        "docs/adr/0002-managed-postgres-provider-selection.md",
+        "docs/geo/DATABASE_PORTABILITY.md",
+        "docs/geo/EVIDENCE_LEDGER.md",
+        "docs/geo/SLICE2_MAP_PARITY.md",
+        "docs/migration/REHEARSAL_RECEIPT.md",
+        "docs/migration/SQLITE_TO_POSTGRES.md",
+        "package-lock.json",
+        "tools/postgres-sim/Dockerfile",
+        "tools/postgres-sim/runtime.mjs"
+      ],
+      "court_blob_sha256": {
+        "apps/web/tests/column-width-cutover-court.test.mjs": "ee0d5f3b49b940a234d027e0d3e1b8332c326ec229a453496b5c85becd7ff8e1",
+        "apps/web/tests/release-gate.test.mjs": "5498f770ac91f6647c3bed26386999b75d2ee0b01ce0612a5e87ab5dbd5d7dac"
+      },
+      "approval_sha256": "d41119cfb88c4113b60c32136a770dc914649e1925ed1590dab5ee4cd4429598"
     }
   },
   "owned_create_paths": [
@@ -437,6 +513,31 @@
     "apps/web/src/lib/daypart-theme.mjs",
     "apps/web/tests/daypart-theme.test.mjs",
     "apps/web/tests/marketplace-ui.test.mjs"
+    ,"AGENTS.md"
+    ,"apps/web/prisma/migrations/20260809100000_geo_kernel/migration.sql"
+    ,"apps/web/prisma/sql/geo_kernel_postgis.sql"
+    ,"apps/web/prisma/sql/geo_smoke_test.sql"
+    ,"apps/web/prisma/sql/postgres_semantics_guards.sql"
+    ,"apps/web/scripts/backfill-geo-entities.mjs"
+    ,"apps/web/scripts/migrate-sqlite-to-postgres.mjs"
+    ,"apps/web/src/app/api/geo/viewport/route.ts"
+    ,"apps/web/src/components/retailer-map-maplibre.tsx"
+    ,"apps/web/src/lib/geo/geo-repository.mjs"
+    ,"apps/web/src/lib/geo/public-map-projection.mjs"
+    ,"apps/web/src/lib/geo/routing-provider.mjs"
+    ,"apps/web/src/lib/geo/tile-sources.mjs"
+    ,"apps/web/tests/postgres-semantics.test.mjs"
+    ,"apps/web/tests/public-map-projection.test.mjs"
+    ,"apps/web/tests/routing-provider.test.mjs"
+    ,"docs/adr/0001-postgresql-postgis-canonical-datastore.md"
+    ,"docs/adr/0002-managed-postgres-provider-selection.md"
+    ,"docs/geo/DATABASE_PORTABILITY.md"
+    ,"docs/geo/EVIDENCE_LEDGER.md"
+    ,"docs/geo/SLICE2_MAP_PARITY.md"
+    ,"docs/migration/REHEARSAL_RECEIPT.md"
+    ,"docs/migration/SQLITE_TO_POSTGRES.md"
+    ,"tools/postgres-sim/Dockerfile"
+    ,"tools/postgres-sim/runtime.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/tests/helpers/**",
@@ -478,7 +579,46 @@
     "apps/web/src/components/age-gate.tsx",
     "apps/web/src/components/marketplace-featured-retailers.tsx",
     "apps/web/src/lib/product-brand.mjs",
-    "apps/web/src/lib/product-brand.ts"
+    "apps/web/src/lib/product-brand.ts",
+    ".env.example",
+    "README.md",
+    "apps/web/package.json",
+    "apps/web/prisma/migrations/20260726000000_baseline/migration.sql",
+    "apps/web/prisma/migrations/20260726000100_ledger_recorded_at_index/down.sql",
+    "apps/web/prisma/migrations/migration_lock.toml",
+    "apps/web/prisma/schema.prisma",
+    "apps/web/prisma/seed-safety.mjs",
+    "apps/web/prisma/seed.mjs",
+    "apps/web/scripts/benchmark-product-discovery.mjs",
+    "apps/web/scripts/db-inspect.mjs",
+    "apps/web/scripts/etl-abca-retailers.mjs",
+    "apps/web/scripts/ingest-abca-feed.mjs",
+    "apps/web/scripts/test-public-submission.mjs",
+    "apps/web/src/app/[domain]/education/page.tsx",
+    "apps/web/src/app/admin/page.tsx",
+    "apps/web/src/components/retailer-map-loader.tsx",
+    "apps/web/src/lib/admin-mutations.mjs",
+    "apps/web/src/lib/directory-search.mjs",
+    "apps/web/src/lib/merchant-dashboard.mjs",
+    "apps/web/src/lib/product-discovery.mjs",
+    "apps/web/tests/column-width-cutover-court.test.mjs",
+    "apps/web/tests/demand-credits.test.mjs",
+    "apps/web/tests/merchant-dashboard.test.mjs",
+    "apps/web/tests/pilot-package-court.test.mjs",
+    "apps/web/tests/product-benchmark.test.mjs",
+    "apps/web/tests/release-gate.test.mjs",
+    "deploy/namecheap/CAPABILITIES.md",
+    "deploy/namecheap/ENV_MANIFEST.md",
+    "deploy/namecheap/PRODUCTION_RELEASE_GATES.md",
+    "deploy/namecheap/STAGING_DEFINITION_OF_DONE.md",
+    "deploy/namecheap/STAGING_RUNBOOK.md",
+    "deploy/namecheap/bootstrap-production-db.sh",
+    "deploy/namecheap/deploy.sh",
+    "deploy/namecheap/env.production.example",
+    "deploy/namecheap/failure-signatures.json",
+    "deploy/namecheap/migrate.sh",
+    "deploy/namecheap/worker.mjs",
+    "package-lock.json"
   ],
   "planned_candidate_files": [
     "cana",
@@ -610,7 +750,49 @@
     "apps/web/src/lib/product-brand.mjs",
     "apps/web/src/lib/product-brand.ts",
     "apps/web/tests/daypart-theme.test.mjs",
-    "apps/web/tests/marketplace-ui.test.mjs"
+    "apps/web/tests/marketplace-ui.test.mjs",
+    ".env.example",
+    "README.md",
+    "apps/web/package.json",
+    "apps/web/prisma/migrations/20260726000000_baseline/migration.sql",
+    "apps/web/prisma/migrations/20260726000100_ledger_recorded_at_index/down.sql",
+    "apps/web/prisma/migrations/migration_lock.toml",
+    "apps/web/prisma/schema.prisma",
+    "apps/web/prisma/seed-safety.mjs",
+    "apps/web/prisma/seed.mjs",
+    "apps/web/scripts/benchmark-product-discovery.mjs",
+    "apps/web/scripts/db-inspect.mjs",
+    "apps/web/scripts/etl-abca-retailers.mjs",
+    "apps/web/scripts/ingest-abca-feed.mjs",
+    "apps/web/scripts/test-public-submission.mjs",
+    "apps/web/src/app/[domain]/education/page.tsx",
+    "apps/web/src/app/admin/page.tsx",
+    "apps/web/src/components/retailer-map-loader.tsx",
+    "apps/web/src/lib/admin-mutations.mjs",
+    "apps/web/src/lib/directory-search.mjs",
+    "apps/web/src/lib/merchant-dashboard.mjs",
+    "apps/web/src/lib/product-discovery.mjs",
+    "apps/web/tests/column-width-cutover-court.test.mjs",
+    "apps/web/tests/demand-credits.test.mjs",
+    "apps/web/tests/merchant-dashboard.test.mjs",
+    "apps/web/tests/pilot-package-court.test.mjs",
+    "apps/web/tests/postgres-semantics.test.mjs",
+    "apps/web/tests/product-benchmark.test.mjs",
+    "apps/web/tests/public-map-projection.test.mjs",
+    "apps/web/tests/release-gate.test.mjs",
+    "apps/web/tests/routing-provider.test.mjs",
+    "deploy/namecheap/CAPABILITIES.md",
+    "deploy/namecheap/ENV_MANIFEST.md",
+    "deploy/namecheap/PRODUCTION_RELEASE_GATES.md",
+    "deploy/namecheap/STAGING_DEFINITION_OF_DONE.md",
+    "deploy/namecheap/STAGING_RUNBOOK.md",
+    "deploy/namecheap/bootstrap-production-db.sh",
+    "deploy/namecheap/deploy.sh",
+    "deploy/namecheap/env.production.example",
+    "deploy/namecheap/failure-signatures.json",
+    "deploy/namecheap/migrate.sh",
+    "deploy/namecheap/worker.mjs",
+    "package-lock.json"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",
