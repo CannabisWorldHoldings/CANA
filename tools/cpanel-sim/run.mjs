@@ -451,7 +451,20 @@ function createNamecheapArtifact(root, name, commit) {
   );
   const tarName = `${name}.tar.gz`;
   const tarFile = path.join(uploads, tarName);
-  command('tar', ['-czf', tarFile, '-C', buildRoot, name], {
+  const tarVersion = command('tar', ['--version']).stdout;
+  const tarArgs = ['--no-xattrs'];
+  if (/bsdtar/i.test(tarVersion)) tarArgs.push('--no-mac-metadata');
+  tarArgs.push(
+    '--exclude=._*',
+    '--exclude=.DS_Store',
+    '--exclude=__MACOSX',
+    '-czf',
+    tarFile,
+    '-C',
+    buildRoot,
+    name,
+  );
+  command('tar', tarArgs, {
     env: {
       ...process.env,
       COPYFILE_DISABLE: '1',
