@@ -47,14 +47,10 @@ export async function GET(request: NextRequest) {
   }
 
   let brand;
-  let answer;
   const now = new Date();
   const intent = compileIntent(q, { now });
   try {
     brand = await prisma.brand.findUnique({ where: { domain }, select: { id: true, name: true } });
-    if (brand) {
-      answer = await answerIntent(prisma, { intent, brandId: brand.id, tenantDomain: domain, now });
-    }
   } catch {
     return NextResponse.json(
       { api_version: API_VERSION, error: 'STORE_UNAVAILABLE', detail: 'evidence-gated store could not be read' },
@@ -65,6 +61,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { api_version: API_VERSION, error: 'UNKNOWN_TENANT', detail: `host "${domain}" is not a configured tenant` },
       { status: 421, headers: { 'X-API-Version': API_VERSION } },
+    );
+  }
+
+  let answer;
+  try {
+    answer = await answerIntent(prisma, { intent, brandId: brand.id, tenantDomain: domain, now });
+  } catch {
+    return NextResponse.json(
+      { api_version: API_VERSION, error: 'STORE_UNAVAILABLE', detail: 'evidence-gated store could not be read' },
+      { status: 503, headers: { 'X-API-Version': API_VERSION } },
     );
   }
 
