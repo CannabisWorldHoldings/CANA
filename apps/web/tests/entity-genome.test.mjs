@@ -12,7 +12,7 @@ import {
  */
 
 const FRESH = '2026-08-08T15:00:00-04:00';
-const env = (status = 'VERIFIED') => ({ verified: { status, checked_at: FRESH } });
+const env = (status = 'VERIFIED_CURRENT') => ({ verified: { status, checked_at: FRESH } });
 const merchant = (id, over = {}) => ({ class: 'merchant', id, name: id, kind: 'STOREFRONT', ...env(), ...over });
 
 test('genome covers every D8 class the owner spec enumerated', () => {
@@ -122,4 +122,14 @@ test('graph: verified vs unverified counts feed the owner god-eye', () => {
   assert.equal(res.verifiedCount, 2);
   assert.equal(res.unverifiedCount, 1);
   assert.deepEqual(res.byClass, { merchant: 2, service_area: 1 });
+});
+
+test('T2 vocabulary adoption: ONLY the HOST status VERIFIED_CURRENT crosses — forge-era and non-current statuses are all unverified', () => {
+  for (const status of ['VERIFIED', 'AWAITING_VERIFICATION', 'STALE', 'DISPUTED', 'DEMONSTRATION_ONLY', 'PENDING']) {
+    const r = validateEntity(merchant('m-' + status.toLowerCase(), env(status)));
+    assert.equal(r.verified, false, status + ' must not cross to customer projections');
+    assert.match(r.reasons.join(' '), /VERIFIED_CURRENT/, 'refusal names the one true status');
+  }
+  const ok = validateEntity(merchant('m-current'));
+  assert.equal(ok.verified, true, 'VERIFIED_CURRENT crosses');
 });

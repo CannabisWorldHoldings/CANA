@@ -21,6 +21,9 @@
  *    { verified: bool, checked_at }. Missing/false verification is allowed to
  *    EXIST in the graph (owner god-eye needs to see it) but is marked
  *    unverified — customer projections exclude it (fail closed downstream).
+ *    T2 VOCABULARY ADOPTION: the crossing status is the HOST's —
+ *    DATA_STATUS.VERIFIED_CURRENT (data-status.mjs). Canonical seams win;
+ *    the forge-era 'VERIFIED' literal does NOT cross (no aliases, one truth).
  * 2. SPONSORSHIP IS QUARANTINED: only the sponsored_media_unit class may carry
  *    sponsorship. Any other entity with a sponsorship field is INVALID — hidden
  *    organic truth is not for sale (mirrors market-page-compiler law 3).
@@ -34,6 +37,7 @@
  *    dangling or mistyped reference is INVALID.
  */
 import { createHash } from 'node:crypto';
+import { DATA_STATUS } from './data-status.mjs';
 
 /* Inlined from the forge's reality.mjs (provenance: ORDERWEEDDC sandbox
  * packages/reality-learning/src/reality.mjs @ commit 2680e88) so T1 lands
@@ -155,9 +159,9 @@ export function validateEntity(entity) {
     if (!hasEnvelope(entity)) {
       verified = false;
       reasons.push(`${cls} lacks a verified envelope — exists for owner god-eye, excluded from customer projections (law 1)`);
-    } else if (entity.verified.status !== 'VERIFIED') {
+    } else if (entity.verified.status !== DATA_STATUS.VERIFIED_CURRENT) {
       verified = false;
-      reasons.push(`${cls} envelope status is ${entity.verified.status}, not VERIFIED (law 1)`);
+      reasons.push(`${cls} envelope status is ${entity.verified.status}, not ${DATA_STATUS.VERIFIED_CURRENT} (law 1 — host data-status vocabulary, T2 adoption)`);
     }
   }
 
