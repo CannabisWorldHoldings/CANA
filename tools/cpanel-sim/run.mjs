@@ -96,6 +96,7 @@ function runRealPrismaProof(source) {
   let volumeCreated = false;
   let networkCreated = false;
   let postgres = null;
+  let postgresContainerId = '';
   let result;
   let output = '';
   let executionNetwork = '';
@@ -235,6 +236,11 @@ model EnginePrefetch {
       networkAlias: 'postgres',
       sharedNetworkNamespace: true,
     });
+    postgresContainerId = command(
+      'docker',
+      ['inspect', postgres.name, '--format', '{{.Id}}'],
+      { timeout: 30_000 },
+    ).stdout.trim();
     command('docker', [
       'create',
       '--name',
@@ -262,8 +268,8 @@ model EnginePrefetch {
       ['inspect', proofContainer, '--format', '{{.HostConfig.NetworkMode}}'],
       { timeout: 30_000 },
     ).stdout.trim();
-    if (executionNetwork !== `container:${postgres.name}`) {
-      throw new Error(`real Prisma proof network is ${executionNetwork}, expected container:${postgres.name}`);
+    if (executionNetwork !== `container:${postgresContainerId}`) {
+      throw new Error(`real Prisma proof network is ${executionNetwork}, expected container:${postgresContainerId}`);
     }
     command('docker', ['cp', bundle, `${proofContainer}:/source.bundle`], {
       timeout: 120_000,
