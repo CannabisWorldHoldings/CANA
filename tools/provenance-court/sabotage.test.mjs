@@ -80,6 +80,16 @@ const SABOTAGES = [
     corrupt: (c) => { c.receipt.builtAt = '2027-01-01T00:00:00Z'; },
     redLink: 'ARTIFACT',
   },
+  {
+    name: 'S9 artifact name is rebound to a different release identity',
+    corrupt: (c) => { c.receipt.artifact = `orderweeddc-${SHA_B.slice(0, 7)}.tar.gz`; },
+    redLink: 'ARTIFACT',
+  },
+  {
+    name: 'S10 intact old evidence bundle is replayed against a successor source',
+    corrupt: (c) => { c.sourceSha = SHA_B; },
+    redLink: 'ARTIFACT',
+  },
 ];
 
 for (const sabotage of SABOTAGES) {

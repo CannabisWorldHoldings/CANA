@@ -71,8 +71,13 @@ export function verifyChain(evidence) {
   } else if (sourceSha && receipt.gitSha !== sourceSha) {
     links.push(link('ARTIFACT', 'RED', `receipt gitSha ${receipt.gitSha.slice(0, 12)}… does not match source ${String(sourceSha).slice(0, 12)}…`, { receipt }));
   } else {
+    const artifactIdentity = typeof receipt.artifact === 'string'
+      ? receipt.artifact.match(/^orderweeddc-([0-9a-f]{7,40})(?:\.tar\.gz)?$/)
+      : null;
     const builtAt = receipt.builtAt ? new Date(receipt.builtAt) : null;
-    if (!builtAt || !Number.isFinite(builtAt.getTime())) {
+    if (!artifactIdentity || artifactIdentity[1] !== receipt.gitSha.slice(0, artifactIdentity[1]?.length)) {
+      links.push(link('ARTIFACT', 'RED', `artifact name is missing or does not bind receipt gitSha: ${String(receipt.artifact)}`, { receipt }));
+    } else if (!builtAt || !Number.isFinite(builtAt.getTime())) {
       links.push(link('ARTIFACT', 'RED', `receipt builtAt missing/unreadable: ${String(receipt.builtAt)}`, { receipt }));
     } else if (builtAt.getTime() > now.getTime() + FUTURE_SKEW_MS) {
       links.push(link('ARTIFACT', 'RED', `receipt builtAt is in the future: ${receipt.builtAt} — tampered or clock-forged`, { receipt }));

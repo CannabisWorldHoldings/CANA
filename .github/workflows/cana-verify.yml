@@ -26,7 +26,8 @@ jobs:
         with:
           node-version: 24.14.1
           package-manager-cache: false
-      - run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs tools/mission-2/mission-2.test.mjs tools/growth-foundry/m001/claim-graph.test.mjs
+      - name: Run candidate units and evaluator sabotage certification
+        run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs tools/mission-2/mission-2.test.mjs tools/growth-foundry/m001/claim-graph.test.mjs tools/provenance-court/sabotage.test.mjs apps/web/tests/migration-manifest.test.mjs
 
   focused-verifier:
     runs-on: ubuntu-latest
