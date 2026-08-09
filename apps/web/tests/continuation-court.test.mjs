@@ -249,6 +249,30 @@ test('C6: a trigger cannot exceed its mission authority ceiling — no self-rais
   );
 });
 
+test('C6b: a trigger cannot cross tenant or mission budget boundaries', async () => {
+  const mission = await createMission(prisma, missionSpec({ budgetCentsMax: 100 }));
+  await assert.rejects(
+    () => createTrigger(prisma, triggerSpec(mission.id, { tenant: 'other.example' })),
+    /tenant .* does not match mission tenant/,
+  );
+  await assert.rejects(
+    () => createTrigger(prisma, triggerSpec(mission.id, { budgetCentsMax: 101 })),
+    /budget ceiling .* exceeds mission budget ceiling/,
+  );
+});
+
+test('C6c: a dependency cannot point across mission or tenant authority boundaries', async () => {
+  const missionA = await createMission(prisma, missionSpec());
+  const missionB = await createMission(prisma, missionSpec());
+  const triggerA = await createTrigger(prisma, triggerSpec(missionA.id));
+  await assert.rejects(
+    () => createTrigger(prisma, triggerSpec(missionB.id, {
+      triggerType: 'DEPENDENCY', dependsOnTriggerId: triggerA.id, nextEligibleAt: undefined,
+    })),
+    /dependency must belong to the same mission and tenant/,
+  );
+});
+
 test('C7: EFFECTFUL work is born PENDING_APPROVAL, ignored by ticks, and fires only after approval', async () => {
   const mission = await createMission(prisma, missionSpec({ authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
   const trigger = await createTrigger(prisma, triggerSpec(mission.id, { authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
@@ -305,4 +329,78 @@ test('C9: receipts are TAMPER-EVIDENT — editing history breaks the chain', asy
   const tampered = await verifyReceiptChain(prisma, mission.id);
   assert.equal(tampered.ok, false, 'a rewritten receipt must break the chain');
   assert.equal(tampered.brokenAtSeq, first.seq);
+});
+
+test('C9b: deleting or reordering receipt history is detected', async () => {
+  const deletionMission = await createMission(prisma, missionSpec({ authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  const deletionTrigger = await createTrigger(prisma, triggerSpec(deletionMission.id, { authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  await approveTrigger(prisma, { triggerId: deletionTrigger.id, approvedBy: 'owner', tickId: 'delete-approval' });
+  await runTick(prisma, { tickId: 'delete-fire' });
+  const deletionRows = await prisma.continuationReceipt.findMany({
+    where: { missionId: deletionMission.id }, orderBy: { seq: 'asc' },
+  });
+  assert.equal(deletionRows.length, 2);
+  await prisma.continuationReceipt.delete({ where: { id: deletionRows[0].id } });
+  assert.equal((await verifyReceiptChain(prisma, deletionMission.id)).ok, false, 'deleted history must break the chain');
+
+  const reorderMission = await createMission(prisma, missionSpec({ authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  const reorderTrigger = await createTrigger(prisma, triggerSpec(reorderMission.id, { authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  await approveTrigger(prisma, { triggerId: reorderTrigger.id, approvedBy: 'owner', tickId: 'reorder-approval' });
+  await runTick(prisma, { tickId: 'reorder-fire' });
+  const reorderRows = await prisma.continuationReceipt.findMany({
+    where: { missionId: reorderMission.id }, orderBy: { seq: 'asc' },
+  });
+  await prisma.continuationReceipt.update({ where: { id: reorderRows[0].id }, data: { seq: 1000 } });
+  await prisma.continuationReceipt.update({ where: { id: reorderRows[1].id }, data: { seq: 1 } });
+  await prisma.continuationReceipt.update({ where: { id: reorderRows[0].id }, data: { seq: 2 } });
+  assert.equal((await verifyReceiptChain(prisma, reorderMission.id)).ok, false, 'reordered history must break the chain');
+});
+
+test('C10: firing state and its truth receipt commit atomically', async () => {
+  const mission = await createMission(prisma, missionSpec());
+  const trigger = await createTrigger(prisma, triggerSpec(mission.id));
+  await prisma.$executeRawUnsafe(`
+    CREATE OR REPLACE FUNCTION refuse_continuation_receipt() RETURNS trigger AS $$
+    BEGIN
+      IF NEW."tickId" = 'receipt-failure' THEN RAISE EXCEPTION 'injected receipt failure'; END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    CREATE TRIGGER continuation_receipt_failure BEFORE INSERT ON "ContinuationReceipt"
+    FOR EACH ROW EXECUTE FUNCTION refuse_continuation_receipt();
+  `);
+  try {
+    await assert.rejects(() => runTick(prisma, { tickId: 'receipt-failure' }), /injected receipt failure/);
+    const after = await prisma.continuationTrigger.findUnique({ where: { id: trigger.id } });
+    assert.equal(after.status, 'ARMED', 'a missing receipt must roll back the firing projection');
+    assert.equal(await prisma.continuationReceipt.count({ where: { triggerId: trigger.id } }), 0);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS continuation_receipt_failure ON "ContinuationReceipt"; DROP FUNCTION IF EXISTS refuse_continuation_receipt();');
+  }
+});
+
+test('C10b: approval state and its truth receipt commit atomically', async () => {
+  const mission = await createMission(prisma, missionSpec({ authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  const trigger = await createTrigger(prisma, triggerSpec(mission.id, { authorityCeiling: 'EFFECTFUL_WITH_APPROVAL' }));
+  await prisma.$executeRawUnsafe(`
+    CREATE OR REPLACE FUNCTION refuse_continuation_approval() RETURNS trigger AS $$
+    BEGIN
+      IF NEW."tickId" = 'approval-failure' THEN RAISE EXCEPTION 'injected approval receipt failure'; END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+    CREATE TRIGGER continuation_approval_failure BEFORE INSERT ON "ContinuationReceipt"
+    FOR EACH ROW EXECUTE FUNCTION refuse_continuation_approval();
+  `);
+  try {
+    await assert.rejects(
+      () => approveTrigger(prisma, { triggerId: trigger.id, approvedBy: 'owner', tickId: 'approval-failure' }),
+      /injected approval receipt failure/,
+    );
+    const after = await prisma.continuationTrigger.findUnique({ where: { id: trigger.id } });
+    assert.equal(after.status, 'PENDING_APPROVAL', 'a missing approval receipt must roll back arming');
+    assert.equal(await prisma.continuationReceipt.count({ where: { triggerId: trigger.id } }), 0);
+  } finally {
+    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS continuation_approval_failure ON "ContinuationReceipt"; DROP FUNCTION IF EXISTS refuse_continuation_approval();');
+  }
 });

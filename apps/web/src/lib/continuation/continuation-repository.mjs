@@ -40,6 +40,17 @@ function requireNonEmpty(value, label) {
   return value;
 }
 
+async function inSerializableTransaction(prisma, operation, attempt = 0) {
+  try {
+    return await prisma.$transaction(operation, { isolationLevel: 'Serializable', timeout: 10_000 });
+  } catch (error) {
+    if (attempt < 3 && ['P2002', 'P2034'].includes(String(error?.code))) {
+      return inSerializableTransaction(prisma, operation, attempt + 1);
+    }
+    throw error;
+  }
+}
+
 /** Create a mission. L1 applies to missions too: purpose, stop condition, budget, ceiling. */
 export async function createMission(prisma, spec) {
   requireNonEmpty(spec?.tenant, 'tenant');
@@ -79,6 +90,10 @@ export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
     throw new Error(`mission ${mission.id} is ${mission.status}; only ACTIVE/WAITING missions accept triggers`);
   }
 
+  if (spec?.tenant !== mission.tenant) {
+    throw new Error(`trigger tenant ${String(spec?.tenant)} does not match mission tenant ${mission.tenant}`);
+  }
+
   const verdict = validateTriggerSpec(spec, { now });
   if (!verdict.ok) {
     throw new Error(`trigger spec rejected: ${verdict.errors.join('; ')}`);
@@ -89,6 +104,20 @@ export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
     throw new Error(
       `authority ceiling ${spec.authorityCeiling} exceeds mission ceiling ${mission.authorityCeiling} — escalation is a human act`,
     );
+  }
+  if (spec.budgetCentsMax > mission.budgetCentsMax) {
+    throw new Error(
+      `trigger budget ceiling ${spec.budgetCentsMax} exceeds mission budget ceiling ${mission.budgetCentsMax}`,
+    );
+  }
+  if (spec.triggerType === 'DEPENDENCY') {
+    const dependency = await prisma.continuationTrigger.findUnique({
+      where: { id: spec.dependsOnTriggerId },
+      select: { missionId: true, tenant: true },
+    });
+    if (!dependency || dependency.missionId !== mission.id || dependency.tenant !== mission.tenant) {
+      throw new Error('dependency must belong to the same mission and tenant');
+    }
   }
 
   return prisma.continuationTrigger.create({
@@ -119,7 +148,7 @@ export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
  * the @@unique([missionId, seq]) constraint: a concurrent writer that loses
  * the seq race gets a unique violation and retries once with the fresh head.
  */
-export async function appendReceipt(prisma, body, { attempt = 0 } = {}) {
+export async function appendReceipt(prisma, body, { attempt = 0, retryOnConflict = true } = {}) {
   const head = await prisma.continuationReceipt.findFirst({
     where: { missionId: body.missionId },
     orderBy: { seq: 'desc' },
@@ -155,8 +184,8 @@ export async function appendReceipt(prisma, body, { attempt = 0 } = {}) {
     return receipt;
   } catch (error) {
     // Unique violation on (missionId, seq): another writer advanced the head.
-    if (attempt < 3 && String(error?.code) === 'P2002') {
-      return appendReceipt(prisma, body, { attempt: attempt + 1 });
+    if (retryOnConflict && attempt < 3 && String(error?.code) === 'P2002') {
+      return appendReceipt(prisma, body, { attempt: attempt + 1, retryOnConflict });
     }
     throw error;
   }
@@ -165,20 +194,23 @@ export async function appendReceipt(prisma, body, { attempt = 0 } = {}) {
 /** The ONLY path from PENDING_APPROVAL to ARMED. L4. */
 export async function approveTrigger(prisma, { triggerId, approvedBy, tickId }) {
   requireNonEmpty(approvedBy, 'approvedBy');
-  const claimed = await prisma.continuationTrigger.updateMany({
-    where: { id: triggerId, status: TRIGGER_STATES.PENDING_APPROVAL },
-    data: { status: TRIGGER_STATES.ARMED },
+  const approvalTickId = tickId ?? `approval-${Date.now()}`;
+  return inSerializableTransaction(prisma, async (tx) => {
+    const claimed = await tx.continuationTrigger.updateMany({
+      where: { id: triggerId, status: TRIGGER_STATES.PENDING_APPROVAL },
+      data: { status: TRIGGER_STATES.ARMED },
+    });
+    if (claimed.count !== 1) return { approved: false, reason: 'trigger was not PENDING_APPROVAL' };
+    const trigger = await tx.continuationTrigger.findUnique({ where: { id: triggerId } });
+    const receipt = await appendReceipt(tx, {
+      missionId: trigger.missionId,
+      triggerId,
+      tickId: approvalTickId,
+      action: 'APPROVED',
+      detail: `approved by ${approvedBy}`,
+    }, { retryOnConflict: false });
+    return { approved: true, receipt };
   });
-  if (claimed.count !== 1) return { approved: false, reason: 'trigger was not PENDING_APPROVAL' };
-  const trigger = await prisma.continuationTrigger.findUnique({ where: { id: triggerId } });
-  const receipt = await appendReceipt(prisma, {
-    missionId: trigger.missionId,
-    triggerId,
-    tickId: tickId ?? `approval-${Date.now()}`,
-    action: 'APPROVED',
-    detail: `approved by ${approvedBy}`,
-  });
-  return { approved: true, receipt };
 }
 
 /**
@@ -192,6 +224,9 @@ export async function approveTrigger(prisma, { triggerId, approvedBy, tickId }) 
  */
 export async function runTick(prisma, options = {}) {
   const now = options.now ?? new Date();
+  if (!(now instanceof Date) || !Number.isFinite(now.getTime())) {
+    throw new Error('runTick requires a valid injected clock');
+  }
   const tickId = options.tickId ?? `tick-${now.getTime()}-${Math.random().toString(36).slice(2, 10)}`;
   const events = new Set(options.events ?? []);
   const conditionResults = new Map(Object.entries(options.conditionResults ?? {}));
@@ -238,35 +273,37 @@ export async function runTick(prisma, options = {}) {
     }
 
     if (disposition.action === 'EXPIRE') {
-      const claimed = await prisma.continuationTrigger.updateMany({
-        where: { id: trigger.id, status: TRIGGER_STATES.ARMED },
-        data: { status: TRIGGER_STATES.EXPIRED },
+      const outcome = await inSerializableTransaction(prisma, async (tx) => {
+        const claimed = await tx.continuationTrigger.updateMany({
+          where: { id: trigger.id, status: TRIGGER_STATES.ARMED },
+          data: { status: TRIGGER_STATES.EXPIRED },
+        });
+        if (claimed.count !== 1) return null;
+        const receipt = await appendReceipt(tx, {
+          missionId: trigger.missionId,
+          triggerId: trigger.id,
+          tickId,
+          action: 'EXPIRED',
+          detail: disposition.why,
+        }, { retryOnConflict: false });
+        return { receipt };
       });
-      if (claimed.count === 1) {
+      if (outcome) {
         expired.push(trigger.id);
-        receipts.push(
-          await appendReceipt(prisma, {
-            missionId: trigger.missionId,
-            triggerId: trigger.id,
-            tickId,
-            action: 'EXPIRED',
-            detail: disposition.why,
-          }),
-        );
+        receipts.push(outcome.receipt);
       }
       continue;
     }
 
-    // FIRE — conditional claim; the database adjudicates exactly one winner.
-    const claimed = await prisma.continuationTrigger.updateMany({
-      where: { id: trigger.id, status: TRIGGER_STATES.ARMED },
-      data: { status: TRIGGER_STATES.FIRED, firedAt: now },
-    });
-    if (claimed.count !== 1) continue; // another tick won; write nothing.
-
-    fired.push(trigger.id);
-    receipts.push(
-      await appendReceipt(prisma, {
+    // FIRE — claim, truth receipt and bounded successor commit as one unit.
+    const outcome = await inSerializableTransaction(prisma, async (tx) => {
+      const claimed = await tx.continuationTrigger.updateMany({
+        where: { id: trigger.id, status: TRIGGER_STATES.ARMED },
+        data: { status: TRIGGER_STATES.FIRED, firedAt: now },
+      });
+      if (claimed.count !== 1) return null;
+      const transitionReceipts = [];
+      transitionReceipts.push(await appendReceipt(tx, {
         missionId: trigger.missionId,
         triggerId: trigger.id,
         tickId,
@@ -278,35 +315,28 @@ export async function runTick(prisma, options = {}) {
           authorityCeiling: trigger.authorityCeiling,
           firedAt: now.toISOString(),
         }),
-      }),
-    );
+      }, { retryOnConflict: false }));
 
-    // Bounded recurrence (L6): successor inherits ceiling verbatim, expiry outranks.
-    const successorSpec = nextRescheduledSpec(trigger, { now });
-    if (successorSpec) {
-      try {
-        const successor = await createTrigger(prisma, successorSpec, { now });
-        successors.push(successor.id);
-        receipts.push(
-          await appendReceipt(prisma, {
-            missionId: trigger.missionId,
-            triggerId: trigger.id,
-            tickId,
-            action: 'RESCHEDULED',
-            detail: `successor ${successor.id} eligible at ${successorSpec.nextEligibleAt.toISOString()}`,
-          }),
-        );
-      } catch (error) {
-        receipts.push(
-          await appendReceipt(prisma, {
-            missionId: trigger.missionId,
-            triggerId: trigger.id,
-            tickId,
-            action: 'REJECTED',
-            detail: `successor rejected: ${String(error?.message ?? error).slice(0, 300)}`,
-          }),
-        );
+      // Bounded recurrence (L6): successor inherits ceiling verbatim, expiry outranks.
+      const successorSpec = nextRescheduledSpec(trigger, { now });
+      let successorId = null;
+      if (successorSpec) {
+        const successor = await createTrigger(tx, successorSpec, { now });
+        successorId = successor.id;
+        transitionReceipts.push(await appendReceipt(tx, {
+          missionId: trigger.missionId,
+          triggerId: trigger.id,
+          tickId,
+          action: 'RESCHEDULED',
+          detail: `successor ${successor.id} eligible at ${successorSpec.nextEligibleAt.toISOString()}`,
+        }, { retryOnConflict: false }));
       }
+      return { receipts: transitionReceipts, successorId };
+    });
+    if (outcome) {
+      fired.push(trigger.id);
+      receipts.push(...outcome.receipts);
+      if (outcome.successorId) successors.push(outcome.successorId);
     }
   }
 

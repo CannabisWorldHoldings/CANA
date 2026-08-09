@@ -52,6 +52,58 @@ export function buildCandidateWhere(intent, { brandId, now = new Date() }) {
  * opportunity spec when the evidence itself exposes a market gap.
  */
 export async function answerIntent(prisma, { intent, brandId, tenantDomain, now = new Date() }) {
+  const dimensions = intent?.dimensions ?? {};
+  const location = dimensions.location;
+  const unsupportedKnownDimensions = ['category', 'price_max_usd', 'fulfillment', 'open_now']
+    .filter((name) => dimensions[name]?.status === 'KNOWN');
+
+  if (location?.status !== 'KNOWN') {
+    return {
+      candidates: [],
+      verified_candidate_count: 0,
+      zero_verified_result: true,
+      zero_result_reason: 'REQUIRED_INTENT_DIMENSION_UNKNOWN',
+      unsupported_known_dimensions: unsupportedKnownDimensions,
+      opportunitySpec: null,
+    };
+  }
+
+  if (unsupportedKnownDimensions.length > 0) {
+    return {
+      candidates: [],
+      verified_candidate_count: 0,
+      zero_verified_result: true,
+      zero_result_reason: 'UNSUPPORTED_VERIFIED_DIMENSION',
+      unsupported_known_dimensions: unsupportedKnownDimensions,
+      opportunitySpec: {
+        tenant: tenantDomain,
+        kind: 'CAPABILITY_GAP',
+        retailerId: null,
+        signal: intent.raw_query,
+        evidence: JSON.stringify({
+          intent_ir: intent,
+          decision_eligible: false,
+          unsupported_known_dimensions: unsupportedKnownDimensions,
+          observed_at: now.toISOString(),
+        }),
+        observedState: JSON.stringify({
+          location: location.value,
+          unsupported_known_dimensions: unsupportedKnownDimensions,
+          verified_candidate_count: null,
+        }),
+        hypothesizedValue: null,
+        confidence: null,
+        recommendedAction:
+          `Add evidence-gated support for ${unsupportedKnownDimensions.join(', ')} before this ASK can return decision-eligible candidates.`,
+        requiredAuthority: 'PROPOSE_ONLY',
+        risk: 'LOW — proposal only; no market claim or customer action is inferred',
+        rollback: 'Dismiss the capability gap; no market state changes',
+        measurementPlan:
+          'Re-run the exact intent after the missing dimensions consume canonical verified truth; answerability improves only when the query becomes decision-eligible.',
+      },
+    };
+  }
+
   const where = buildCandidateWhere(intent, { brandId, now });
 
   const rows = await prisma.retailer.findMany({
@@ -96,7 +148,6 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
   // Slice 1 emits exactly one class: a located intent that verified supply
   // cannot answer is a MARKET_GAP. The observed state IS the evidence.
   let opportunitySpec = null;
-  const location = intent?.dimensions?.location;
   if (candidates.length === 0 && location?.status === 'KNOWN') {
     opportunitySpec = {
       tenant: tenantDomain,
@@ -132,6 +183,8 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
     candidates,
     verified_candidate_count: candidates.length,
     zero_verified_result: candidates.length === 0,
+    zero_result_reason: candidates.length === 0 ? 'NO_VERIFIED_CURRENT_MATCH' : null,
+    unsupported_known_dimensions: [],
     opportunitySpec,
   };
 }

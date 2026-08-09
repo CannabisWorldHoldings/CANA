@@ -57,7 +57,7 @@ test('L1: a spec missing reason (purpose) is REJECTED', () => {
 });
 
 test('L1: a spec with no budget ceiling is REJECTED', () => {
-  for (const bad of [0, -5, 2.5, NaN, undefined, 'lots']) {
+  for (const bad of [0, -5, 2.5, NaN, Infinity, null, undefined, 'lots']) {
     const verdict = validateTriggerSpec(validSpec({ budgetCentsMax: bad }), { now: NOW });
     assert.equal(verdict.ok, false, `budget ${String(bad)} must be rejected`);
   }
@@ -165,8 +165,21 @@ test('L6: continuation policy must be finite and well-formed', () => {
   assert.equal(parseContinuationPolicy(JSON.stringify({ kind: 'RESCHEDULE', intervalMs: 1000, remaining: 2 })).ok, true);
   assert.equal(parseContinuationPolicy(JSON.stringify({ kind: 'RESCHEDULE', intervalMs: -1, remaining: 2 })).ok, false);
   assert.equal(parseContinuationPolicy(JSON.stringify({ kind: 'RESCHEDULE', intervalMs: 1000, remaining: Infinity })).ok, false);
+  assert.equal(parseContinuationPolicy({ kind: 'RESCHEDULE', intervalMs: null, remaining: 2 }).ok, false);
+  assert.equal(parseContinuationPolicy({ kind: 'RESCHEDULE', intervalMs: 1000, remaining: null }).ok, false);
+  assert.equal(parseContinuationPolicy({ kind: 'RESCHEDULE', intervalMs: NaN, remaining: 2 }).ok, false);
   assert.equal(parseContinuationPolicy(JSON.stringify({ kind: 'FOREVER' })).ok, false);
   assert.equal(parseContinuationPolicy('not json').ok, false);
+});
+
+test('L6: an invalid injected clock cannot create an invalid successor', () => {
+  const trigger = {
+    id: 't-clock', missionId: 'm-1', tenant: 'x', triggerType: 'FOLLOW_UP', reason: 'recheck',
+    stopCondition: 'closed', budgetCentsMax: 100, authorityCeiling: 'OBSERVE_ONLY',
+    expiresAt: FUTURE,
+    continuationPolicy: JSON.stringify({ kind: 'RESCHEDULE', intervalMs: 1000, remaining: 1 }),
+  };
+  assert.equal(nextRescheduledSpec(trigger, { now: new Date('invalid') }), null);
 });
 
 test('L6: remaining=0 produces NO successor — recurrence is finite', () => {

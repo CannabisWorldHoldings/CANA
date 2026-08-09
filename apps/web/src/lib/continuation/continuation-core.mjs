@@ -253,6 +253,7 @@ export function resolveTriggerDisposition(trigger, ctx) {
  * eligible at/after the hard expiry. L6: expiry outranks recurrence.
  */
 export function nextRescheduledSpec(trigger, { now }) {
+  if (!(now instanceof Date) || !Number.isFinite(now.getTime())) return null;
   const parsed = parseContinuationPolicy(trigger.continuationPolicy);
   if (!parsed.ok || !parsed.policy) return null;
   const { intervalMs, remaining } = parsed.policy;

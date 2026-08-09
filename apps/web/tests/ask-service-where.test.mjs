@@ -9,7 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildCandidateWhere } from '../src/lib/ask/ask-service.mjs';
+import { answerIntent, buildCandidateWhere } from '../src/lib/ask/ask-service.mjs';
 import { compileIntent } from '../src/lib/ask/intent-ir.mjs';
 
 const NOW = new Date('2026-08-09T12:00:00Z');
@@ -37,4 +37,31 @@ test('a KNOWN location becomes an EXPLICITLY case-insensitive contains match', (
 test('an UNKNOWN location adds NO location filter — the compiler never guessed one', () => {
   const where = buildCandidateWhere(compileIntent('weed near me', { now: NOW }), { brandId: BRAND, now: NOW });
   assert.equal(where.OR, undefined);
+});
+
+test('known unsupported decision dimensions produce an honest CAPABILITY_GAP, not fabricated matches', async () => {
+  let reads = 0;
+  const prisma = { retailer: { findMany: async () => { reads += 1; return []; } } };
+  const intent = compileIntent('delivery flower under $30 in dupont open now', { now: NOW });
+  const answer = await answerIntent(prisma, {
+    intent, brandId: BRAND, tenantDomain: 'orderweeddc.com', now: NOW,
+  });
+  assert.equal(reads, 0, 'an ineligible query must not be disguised as a market-store result');
+  assert.deepEqual(answer.candidates, []);
+  assert.equal(answer.zero_result_reason, 'UNSUPPORTED_VERIFIED_DIMENSION');
+  assert.deepEqual(answer.unsupported_known_dimensions, ['category', 'price_max_usd', 'fulfillment', 'open_now']);
+  assert.equal(answer.opportunitySpec.kind, 'CAPABILITY_GAP');
+});
+
+test('unknown location yields an honest zero without inventing nearby supply or market work', async () => {
+  let reads = 0;
+  const prisma = { retailer: { findMany: async () => { reads += 1; return []; } } };
+  const intent = compileIntent('weed near me', { now: NOW });
+  const answer = await answerIntent(prisma, {
+    intent, brandId: BRAND, tenantDomain: 'orderweeddc.com', now: NOW,
+  });
+  assert.equal(reads, 0);
+  assert.deepEqual(answer.candidates, []);
+  assert.equal(answer.zero_result_reason, 'REQUIRED_INTENT_DIMENSION_UNKNOWN');
+  assert.equal(answer.opportunitySpec, null, 'missing customer context is not fabricated into a market gap');
 });

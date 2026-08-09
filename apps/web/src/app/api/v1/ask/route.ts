@@ -125,6 +125,7 @@ export async function GET(request: NextRequest) {
         answerSummary: JSON.stringify({
           verified_candidate_count: answer.verified_candidate_count,
           zero_verified_result: answer.zero_verified_result,
+          zero_result_reason: answer.zero_result_reason,
           unknown_dimensions: intent.unknown_dimensions,
           opportunity_emitted: !!answer.opportunitySpec,
         }),
@@ -146,8 +147,12 @@ export async function GET(request: NextRequest) {
       answer: {
         verified_candidate_count: answer.verified_candidate_count,
         zero_verified_result: answer.zero_verified_result,
+        zero_result_reason: answer.zero_result_reason,
+        unsupported_known_dimensions: answer.unsupported_known_dimensions,
         zero_result_meaning: answer.zero_verified_result
-          ? 'No VERIFIED_CURRENT record matches this intent. This is an honest absence, not proof that no supply exists.'
+          ? answer.zero_result_reason === 'NO_VERIFIED_CURRENT_MATCH'
+            ? 'No VERIFIED_CURRENT record matches this supported intent. This is an honest absence, not proof that no supply exists.'
+            : 'CANA cannot make this intent decision-eligible from its current verified dimensions. No supply or eligibility conclusion was inferred.'
           : null,
         candidates: answer.candidates,
       },
