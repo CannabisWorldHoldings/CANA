@@ -195,7 +195,7 @@ function runContainer({ profile, sourceBundle, expected, verifierImage }) {
       '--env',
       `DIRECT_URL=${database.databaseUrl}`,
       '--env',
-      `CANA_DISPOSABLE_DATABASE_ATTESTATION=${database.attestation}`,
+      `CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=${database.systemIdentifier}`,
       '-w',
       '/workspace',
       verifierImage.tag,

@@ -845,15 +845,31 @@ test('SEED HAPPY PATH: a fresh migrated LOOPBACK postgres database seeds, and a 
   assert.equal(r2.code, 0, `re-seeding a demonstration database must work: ${r2.err.slice(0, 400)}`);
 });
 
+test('SEED REFUSAL: a client-forged custom GUC cannot impersonate a disposable PostgreSQL cluster', async () => {
+  const url = createDatabase('forged_identity');
+  deploy(url);
+  const forgedGuc = 'a'.repeat(64);
+  const forgedUrl = `${url}?options=${encodeURIComponent(`-c cana.disposable_attestation=${forgedGuc}`)}`;
+  const r = await runSeed({
+    DATABASE_URL: forgedUrl,
+    DIRECT_URL: forgedUrl,
+    CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '9999999999999999999',
+  });
+  assert.notEqual(r.code, 0);
+  assert.match(r.err, /R3_DISPOSABLE_SYSTEM_ID_MISMATCH/);
+  const p = await client(url);
+  assert.equal(await p.retailer.count(), 0, 'identity refusal must precede destructive or seed writes');
+});
+
 test('the refusal rules themselves are visible and testable as data', async () => {
   // file: is still a SAFE substrate (R3 allows it) — no environment refusal.
   assert.equal(environmentRefusalsForSeed({ databaseUrl: 'file:./x.db', nodeEnv: 'test' }).length, 0);
   // A LOOPBACK postgres URL is the new SAFE substrate — also no refusal.
-  const attestation = process.env.CANA_DISPOSABLE_DATABASE_ATTESTATION;
-  assert.match(attestation ?? '', /^[0-9a-f]{64}$/);
-  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test', disposableAttestation: attestation }).length, 0);
-  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@localhost:5432/court_x', nodeEnv: 'test', disposableAttestation: attestation }).length, 0);
-  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test' })[0].rule, 'R3_DISPOSABLE_ATTESTATION_REQUIRED');
+  const systemIdentifier = process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER;
+  assert.match(systemIdentifier ?? '', /^\d{10,}$/);
+  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test', disposableSystemIdentifier: systemIdentifier }).length, 0);
+  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@localhost:5432/court_x', nodeEnv: 'test', disposableSystemIdentifier: systemIdentifier }).length, 0);
+  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test' })[0].rule, 'R3_DISPOSABLE_SYSTEM_ID_REQUIRED');
   // Production is refused whatever the URL.
   assert.equal(environmentRefusalsForSeed({ databaseUrl: 'file:./x.db', nodeEnv: 'production' })[0].rule, 'R1_PRODUCTION_NODE_ENV');
   // A REMOTE postgres (real hostname) is a server database — still R3.

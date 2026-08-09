@@ -39,6 +39,22 @@ MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
 
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
+node <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS outside repository-owned disposable verification"; exit 5; }
+const names = ['DATABASE_URL', 'DIRECT_URL'];
+let urls;
+try {
+  urls = names.map((name) => new URL(process.env[name]));
+} catch {
+  process.exit(1);
+}
+const disposableLoopback =
+  process.env.DATABASE_URL === process.env.DIRECT_URL &&
+  urls.every((url) => ['127.0.0.1', 'localhost', '::1'].includes(url.hostname)) &&
+  /^\d{10,}$/.test(process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER ?? '');
+if (!disposableLoopback && urls.some((url) =>
+  url.searchParams.get('sslmode') !== 'require' || url.searchParams.get('sslaccept') !== 'strict'
+)) process.exit(1);
+NODE
 [ -f "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] && [ ! -L "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] && [ -s "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] || {
   echo "HARD STOP: backup receipt must be a nonempty regular file, not a symlink"; exit 6;
 }

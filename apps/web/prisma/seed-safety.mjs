@@ -27,12 +27,14 @@
  * a hole punched in the guard — it is the deliberately-written widening the
  * original comment promised, with its own reviewed property:
  *
- *   LOOPBACK + DISPOSABLE ATTESTATION. A database reachable over the network
+ *   LOOPBACK + DISPOSABLE SYSTEM IDENTITY. A database reachable over the network
  *   from another machine is a server database, and the demonstration seed must
  *   never target one. Loopback alone is insufficient because a local tunnel can
  *   terminate at a managed database. The repository verifier therefore writes a
- *   random server-side attestation into its disposable PostgreSQL instance; the
- *   seed must receive and verify that exact value before any destructive write.
+ *   reads the PostgreSQL cluster system identifier out of band from its
+ *   disposable container; the seed must receive and verify that immutable
+ *   server identity before any destructive write. Unlike a custom GUC, the
+ *   cluster system identifier cannot be supplied or changed by a client session.
  *   Every
  *   non-loopback server URL (mysql, remote postgres, anything with a real
  *   hostname) is refused exactly as before. R4 — the deepest guard — still
@@ -46,10 +48,10 @@
  *       has any business existing in a production process, ever.
  *   R2  DATABASE_URL missing/blank             → refuse. Seeding "whatever the
  *       default resolves to" is how the wrong database gets seeded.
- *   R3  DATABASE_URL is not a local file: URL and not an attested LOOPBACK
+ *   R3  DATABASE_URL is not a local file: URL and not an identified LOOPBACK
  *       postgres URL → refuse. A local SQLite rollback fixture is still safe;
- *       PostgreSQL requires both a loopback host and a matching 64-hex verifier
- *       attestation checked from the server after connection.
+ *       PostgreSQL requires both a loopback host and a matching cluster system
+ *       identifier checked from the server after connection.
  *   R4  The database already holds NON-demonstration data → refuse. This is the
  *       deepest rule: a database containing even one real (isDemonstration:
  *       false) provenance row, one demand-credit ledger entry, one lead event,
@@ -108,7 +110,7 @@ const isSafeSeedSubstrate = (u) => isFileUrl(u) || isLoopbackPostgresUrl(u);
  * any connection is opened — a guard that must first CONNECT to the production
  * database it is refusing has already gone too far.
  */
-export function environmentRefusalsForSeed({ databaseUrl, nodeEnv, disposableAttestation } = {}) {
+export function environmentRefusalsForSeed({ databaseUrl, nodeEnv, disposableSystemIdentifier } = {}) {
   const refusals = [];
   if (String(nodeEnv ?? '').trim().toLowerCase() === 'production') {
     refusals.push({
@@ -128,32 +130,32 @@ export function environmentRefusalsForSeed({ databaseUrl, nodeEnv, disposableAtt
         + 'nor a LOOPBACK postgres URL (127.0.0.1/localhost/::1) — a routable server database '
         + '(MariaDB, remote PostgreSQL, anything with a real hostname) is never a demonstration target',
     });
-  } else if (isLoopbackPostgresUrl(databaseUrl) && !/^[0-9a-f]{64}$/.test(String(disposableAttestation ?? ''))) {
+  } else if (isLoopbackPostgresUrl(databaseUrl) && !/^\d{10,}$/.test(String(disposableSystemIdentifier ?? ''))) {
     refusals.push({
-      rule: 'R3_DISPOSABLE_ATTESTATION_REQUIRED',
+      rule: 'R3_DISPOSABLE_SYSTEM_ID_REQUIRED',
       detail: 'A loopback PostgreSQL URL is not sufficient: a tunnel could reach a managed database. '
-        + 'CANA_DISPOSABLE_DATABASE_ATTESTATION must come from the repository disposable-database runtime',
+        + 'CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER must come from the repository disposable-database runtime',
     });
   }
   return refusals;
 }
 
-/** Verify that the connected PostgreSQL server owns the random attestation the
- * repository disposable-database runtime issued. This check is read-only and
- * happens before the first destructive seed statement. */
-async function databaseAttestationRefusals(prisma, { databaseUrl, disposableAttestation }) {
+/** Verify the connected PostgreSQL cluster identity against the value the
+ * repository runtime read out of band from its disposable container. This is
+ * read-only and happens before the first destructive seed statement. */
+async function databaseIdentityRefusals(prisma, { databaseUrl, disposableSystemIdentifier }) {
   if (!isLoopbackPostgresUrl(databaseUrl)) return [];
   const [identity] = await prisma.$queryRawUnsafe(
-    "SELECT current_database() AS database, current_setting('cana.disposable_attestation', true) AS attestation",
+    'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
   );
   const expectedDatabase = new URL(databaseUrl).pathname.slice(1);
   if (
-    identity?.attestation !== disposableAttestation ||
+    identity?.system_identifier !== disposableSystemIdentifier ||
     identity?.database !== expectedDatabase
   ) {
     return [{
-      rule: 'R3_DISPOSABLE_ATTESTATION_MISMATCH',
-      detail: 'The connected PostgreSQL server did not present the expected disposable-database attestation',
+      rule: 'R3_DISPOSABLE_SYSTEM_ID_MISMATCH',
+      detail: 'The connected PostgreSQL cluster did not present the expected disposable system identity',
     }];
   }
   return [];
@@ -239,19 +241,19 @@ export async function assertSeedTargetIsSafe({
   prisma,
   databaseUrl,
   nodeEnv,
-  disposableAttestation,
+  disposableSystemIdentifier,
 }) {
   const envRefusals = environmentRefusalsForSeed({
     databaseUrl,
     nodeEnv,
-    disposableAttestation,
+    disposableSystemIdentifier,
   });
   if (envRefusals.length > 0) throw new SeedRefusedError(envRefusals);
-  const attestationRefusals = await databaseAttestationRefusals(prisma, {
+  const identityRefusals = await databaseIdentityRefusals(prisma, {
     databaseUrl,
-    disposableAttestation,
+    disposableSystemIdentifier,
   });
-  if (attestationRefusals.length > 0) throw new SeedRefusedError(attestationRefusals);
+  if (identityRefusals.length > 0) throw new SeedRefusedError(identityRefusals);
   const dataRefusals = await dataRefusalsForSeed(prisma);
   if (dataRefusals.length > 0) throw new SeedRefusedError(dataRefusals);
   return { safe: true };

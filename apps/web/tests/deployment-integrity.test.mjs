@@ -571,3 +571,36 @@ test('Namecheap startup requires the canonical PostgreSQL URL pair', () => {
   assert.doesNotMatch(launcher, /DATABASE_URL=file:/);
   assert.doesNotMatch(launcher, /CANA_PRESERVE_SQLITE_FILE_BYTES/);
 });
+
+test('Passenger startup and standalone migration refuse remote PostgreSQL without strict TLS', () => {
+  const insecureEnvironment = {
+    ...process.env,
+    DATABASE_URL: 'postgresql://app@db.example/orderweeddc',
+    DIRECT_URL: 'postgresql://app@db.example/orderweeddc',
+  };
+  const startup = spawnSync(process.execPath, [path.join(repoRoot, 'deploy/namecheap/app.js')], {
+    encoding: 'utf8',
+    env: insecureEnvironment,
+  });
+  assert.notEqual(startup.status, 0);
+  assert.match(startup.stderr, /sslmode=require and sslaccept=strict/);
+
+  const receiptRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-tls-court-'));
+  const receipt = path.join(receiptRoot, 'backup-receipt.json');
+  fs.writeFileSync(receipt, '{"court":"tls-refusal"}\n');
+  try {
+    const migration = spawnSync('sh', [path.join(repoRoot, 'deploy/namecheap/migrate.sh')], {
+      cwd: webRoot,
+      encoding: 'utf8',
+      env: {
+        ...insecureEnvironment,
+        CANA_PRE_MIGRATION_BACKUP_RECEIPT: receipt,
+      },
+    });
+    assert.notEqual(migration.status, 0);
+    assert.match(`${migration.stdout}\n${migration.stderr}`, /must enforce strict TLS/);
+    assert.doesNotMatch(`${migration.stdout}\n${migration.stderr}`, /prisma migrate deploy/);
+  } finally {
+    fs.rmSync(receiptRoot, { recursive: true, force: true });
+  }
+});

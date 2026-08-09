@@ -352,7 +352,7 @@ function walkFiles(dir, out = []) {
 
 async function httpCode(port, hostHeader, pathname) {
   return capture(
-    `curl -s -o /dev/null -w "%{http_code}" -H ${JSON.stringify(`Host: ${hostHeader}`)} http://127.0.0.1:${port}${pathname}`,
+    `curl -s -o /dev/null -w "%{http_code}" -H ${JSON.stringify(`Host: ${hostHeader}`)} ${JSON.stringify(`http://127.0.0.1:${port}${pathname}`)}`,
   );
 }
 
@@ -704,7 +704,7 @@ async function isolatedRuntimeTest() {
       NODE_ENV: 'development',
       DATABASE_URL: postgres.databaseUrl,
       DIRECT_URL: postgres.databaseUrl,
-      CANA_DISPOSABLE_DATABASE_ATTESTATION: postgres.attestation,
+      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
     },
   });
   const inspect = JSON.parse(
@@ -735,6 +735,7 @@ async function isolatedRuntimeTest() {
     PORT: String(port),
     DATABASE_URL: postgres.databaseUrl,
     DIRECT_URL: postgres.databaseUrl,
+    CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
     // Test-only: app.js keeps its production RHEL pin when this is UNSET; here we
     // supply the machine-native engine so the isolated app starts on macOS too.
     PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
@@ -799,6 +800,21 @@ async function isolatedRuntimeTest() {
       ['127.0.0.1 Host spoof 421', '127.0.0.1', '/orderweeddc.localhost', '421'],
     ]) {
       record(label, (await httpCode(port, host, pathname)) === expected);
+    }
+
+    for (const [label, query] of [
+      ['geo viewport missing bounds', ''],
+      ['geo viewport blank bounds', '?south=&west=&north=&east='],
+      ['geo viewport reversed bounds', '?south=39&west=-77&north=38&east=-76'],
+      ['geo viewport excessive area', '?south=0&west=0&north=2&east=2'],
+    ]) {
+      const response = capture(
+        `curl -s -o /dev/null -D - -w "\\n%{http_code}" -H "Host: orderweeddc.com" ${JSON.stringify(`http://127.0.0.1:${port}/api/geo/viewport${query}`)}`,
+      );
+      record(
+        `${label} returns uncached 400`,
+        response.endsWith('\n400') && response.toLowerCase().includes('cache-control: no-store'),
+      );
     }
 
     // Restart persistence.

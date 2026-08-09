@@ -43,9 +43,27 @@ if (!process.env.DATABASE_URL || !process.env.DIRECT_URL) {
       'pooled and direct PostgreSQL URLs in cPanel > Setup Node.js App, then restart.',
   );
 }
-for (const name of ['DATABASE_URL', 'DIRECT_URL']) {
-  if (!/^postgres(?:ql)?:\/\//.test(process.env[name])) {
+const databaseUrls = ['DATABASE_URL', 'DIRECT_URL'].map((name) => {
+  let url;
+  try {
+    url = new URL(process.env[name]);
+  } catch {
+    throw new Error(`${name} must be a valid canonical PostgreSQL URL.`);
+  }
+  if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
     throw new Error(`${name} must use the canonical PostgreSQL protocol.`);
+  }
+  return url;
+});
+const disposableLoopback =
+  process.env.DATABASE_URL === process.env.DIRECT_URL &&
+  databaseUrls.every((url) => ['127.0.0.1', 'localhost', '::1'].includes(url.hostname)) &&
+  /^\d{10,}$/.test(process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER ?? '');
+if (!disposableLoopback) {
+  for (const url of databaseUrls) {
+    if (url.searchParams.get('sslmode') !== 'require' || url.searchParams.get('sslaccept') !== 'strict') {
+      throw new Error('DATABASE_URL and DIRECT_URL must enforce sslmode=require and sslaccept=strict.');
+    }
   }
 }
 

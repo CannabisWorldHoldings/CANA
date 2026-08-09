@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { PrismaClient } from '@prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL ?? '';
-const disposableAttestation = process.env.CANA_DISPOSABLE_DATABASE_ATTESTATION ?? '';
+const disposableSystemIdentifier = process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER ?? '';
 let parsedDatabaseUrl;
 try {
   parsedDatabaseUrl = new URL(databaseUrl);
@@ -26,24 +26,24 @@ if (
   !parsedDatabaseUrl ||
   !['postgres:', 'postgresql:'].includes(parsedDatabaseUrl.protocol) ||
   !['127.0.0.1', 'localhost', '::1'].includes(parsedDatabaseUrl.hostname) ||
-  !/^[0-9a-f]{64}$/.test(disposableAttestation)
+  !/^\d{10,}$/.test(disposableSystemIdentifier)
 ) {
   throw new Error(
     'postgres-semantics.test.mjs requires a loopback PostgreSQL URL and a ' +
-      'CANA_DISPOSABLE_DATABASE_ATTESTATION issued by the repository verifier.',
+      'CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER issued by the repository verifier.',
   );
 }
 
 const prisma = new PrismaClient();
 const [databaseIdentity] = await prisma.$queryRawUnsafe(
-  "SELECT current_database() AS database, current_setting('cana.disposable_attestation', true) AS attestation",
+  'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
 );
 if (
-  databaseIdentity?.attestation !== disposableAttestation ||
+  databaseIdentity?.system_identifier !== disposableSystemIdentifier ||
   databaseIdentity?.database !== parsedDatabaseUrl.pathname.slice(1)
 ) {
   await prisma.$disconnect();
-  throw new Error('PostgreSQL semantics tests refuse a database without the matching disposable-server attestation');
+  throw new Error('PostgreSQL semantics tests refuse a database without the matching disposable cluster identity');
 }
 const RUN = `pgsem-${Date.now()}`;
 
