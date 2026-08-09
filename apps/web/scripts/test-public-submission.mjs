@@ -100,8 +100,15 @@ try {
     baselineCorrection,
   );
 
+  // Engine-portable index introspection. PostgreSQL is the canonical CANA
+  // datastore; the SQLite branch is retained so rollback snapshots stay
+  // verifiable with the same gate.
+  const databaseUrl = process.env.DATABASE_URL ?? '';
+  const sqlite = databaseUrl.startsWith('file:') || databaseUrl.endsWith('.db');
   const indexes = await prisma.$queryRawUnsafe(
-    "PRAGMA index_list('PublicSubmissionEvent')",
+    sqlite
+      ? "PRAGMA index_list('PublicSubmissionEvent')"
+      : "SELECT indexname AS name FROM pg_indexes WHERE schemaname = 'public' AND tablename = 'PublicSubmissionEvent'",
   );
   const indexNames = new Set(indexes.map((index) => index.name));
   for (const expected of [
@@ -113,7 +120,7 @@ try {
     assert.equal(indexNames.has(expected), true, `Missing index ${expected}.`);
   }
 
-  console.log('PASS: real SQLite reservations retain only pseudonymous digests.');
+  console.log('PASS: real database reservations retain only pseudonymous digests.');
   console.log('PASS: duplicate and rate-limit failures roll back atomically.');
   console.log('PASS: caller failure rolls back its reservation.');
   console.log('PASS: all public submission uniqueness and lookup indexes exist.');

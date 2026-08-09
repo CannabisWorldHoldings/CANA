@@ -18,14 +18,37 @@
  * synthetic data), that is a NEW, deliberately-written code path with its own
  * review — not a hole punched in this one.
  *
+ * THAT NEW CODE PATH IS NOW HERE, AND THIS IS ITS REVIEW (2026-08-09,
+ * docs/adr/0001). The owner decision made managed PostgreSQL + PostGIS the
+ * canonical CANA datastore, so local development and the test suites no longer
+ * seed a SQLite file — they seed a LOOPBACK PostgreSQL database. R3 is amended
+ * to admit exactly that and nothing more: a postgresql:// URL is allowed ONLY
+ * when its host is a loopback address (127.0.0.1, localhost, ::1). This is not
+ * a hole punched in the guard — it is the deliberately-written widening the
+ * original comment promised, with its own reviewed property:
+ *
+ *   LOOPBACK-ONLY. A database reachable over the network from another machine
+ *   is a server database, and the demonstration seed must never target one.
+ *   Loopback is unroutable off-box, so a loopback URL cannot be a production
+ *   database on Neon, on a managed provider, or on any host with a real name.
+ *   The production-protection property therefore survives verbatim: every
+ *   non-loopback server URL (mysql, remote postgres, anything with a real
+ *   hostname) is refused exactly as before. R4 — the deepest guard — still
+ *   applies to loopback databases: a loopback postgres holding real rows is
+ *   refused just like any other. Nothing about the no-override philosophy is
+ *   weakened; the set of SAFE targets is widened by one substrate, under a
+ *   property (unroutability) that is checked, not assumed.
+ *
  * The rules, each independently sufficient to refuse:
  *   R1  NODE_ENV=production                    → refuse. No demonstration seed
  *       has any business existing in a production process, ever.
  *   R2  DATABASE_URL missing/blank             → refuse. Seeding "whatever the
  *       default resolves to" is how the wrong database gets seeded.
- *   R3  DATABASE_URL is not a local file: URL  → refuse. MariaDB/PostgreSQL/
- *       anything with a hostname is a server database; the demonstration seed
- *       supports exactly one substrate: a local SQLite file.
+ *   R3  DATABASE_URL is not a local file: URL and not a LOOPBACK postgres URL
+ *       → refuse. A local SQLite file (file:) is still fine; a postgresql://
+ *       URL is allowed ONLY when its host is loopback (127.0.0.1/localhost/::1),
+ *       because loopback cannot be a routable production server. MariaDB, remote
+ *       PostgreSQL (Neon and the like), anything with a real hostname — refused.
  *   R4  The database already holds NON-demonstration data → refuse. This is the
  *       deepest rule: a database containing even one real (isDemonstration:
  *       false) provenance row, one demand-credit ledger entry, one lead event,
@@ -53,6 +76,32 @@ const PROVENANCE_TABLES = Object.freeze([
 
 const isFileUrl = (u) => /^file:/i.test(String(u ?? '').trim());
 
+/** Loopback hosts — unroutable off-box, so a postgres URL pointing at one
+ *  cannot be a production server. IPv6 loopback may arrive bracketed ([::1]),
+ *  which is how it appears in a URL authority. */
+const LOOPBACK_HOSTS = Object.freeze(new Set(['127.0.0.1', 'localhost', '::1', '[::1]']));
+
+/**
+ * Is this a LOOPBACK PostgreSQL URL — the one server substrate the demonstration
+ * seed is now allowed to target (docs/adr/0001)? True ONLY for postgresql:// /
+ * postgres:// URLs whose host is a loopback address. Anything with a real
+ * hostname (Neon, a managed provider, db.internal.example) is NOT loopback and
+ * stays refused. Parse failures fail closed: an unparseable URL is not loopback.
+ */
+const isLoopbackPostgresUrl = (u) => {
+  const raw = String(u ?? '').trim();
+  if (!/^postgres(ql)?:\/\//i.test(raw)) return false;
+  try {
+    return LOOPBACK_HOSTS.has(new URL(raw).hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+};
+
+/** The safe substrates for the demonstration seed: a local SQLite file, or a
+ *  loopback PostgreSQL database. Every other URL is a server database. */
+const isSafeSeedSubstrate = (u) => isFileUrl(u) || isLoopbackPostgresUrl(u);
+
 /**
  * Environment-level refusals. Pure and synchronous so it can be checked before
  * any connection is opened — a guard that must first CONNECT to the production
@@ -71,11 +120,12 @@ export function environmentRefusalsForSeed({ databaseUrl, nodeEnv } = {}) {
       rule: 'R2_DATABASE_URL_REQUIRED',
       detail: 'DATABASE_URL is not set — refusing to seed an implicit default database',
     });
-  } else if (!isFileUrl(databaseUrl)) {
+  } else if (!isSafeSeedSubstrate(databaseUrl)) {
     refusals.push({
       rule: 'R3_SERVER_DATABASE_REFUSED',
-      detail: `DATABASE_URL (${String(databaseUrl).split('@').pop().slice(0, 60)}…) is not a local file: SQLite URL — `
-        + 'a server database (MariaDB/PostgreSQL/anything with a hostname) is never a demonstration target',
+      detail: `DATABASE_URL (${String(databaseUrl).split('@').pop().slice(0, 60)}…) is neither a local file: SQLite URL `
+        + 'nor a LOOPBACK postgres URL (127.0.0.1/localhost/::1) — a routable server database '
+        + '(MariaDB, remote PostgreSQL, anything with a real hostname) is never a demonstration target',
     });
   }
   return refusals;

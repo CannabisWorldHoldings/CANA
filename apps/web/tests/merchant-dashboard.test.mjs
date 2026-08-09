@@ -55,10 +55,13 @@ test('catalog selection excludes the current tenant inventory and bounds search 
         retailerId: 'retailer-one',
       },
     },
+    // mode:'insensitive' is REQUIRED on PostgreSQL: SQLite matched
+    // case-insensitively by default, PostgreSQL does not. See
+    // docs/migration/SQLITE_TO_POSTGRES.md §1 and tests/postgres-semantics.test.mjs.
     OR: [
-      { name: { contains: 'Edibles' } },
-      { category: { contains: 'Edibles' } },
-      { description: { contains: 'Edibles' } },
+      { name: { contains: 'Edibles', mode: 'insensitive' } },
+      { category: { contains: 'Edibles', mode: 'insensitive' } },
+      { description: { contains: 'Edibles', mode: 'insensitive' } },
     ],
   });
   assert.throws(() => availableCatalogWhere('../retailer', ''), TypeError);

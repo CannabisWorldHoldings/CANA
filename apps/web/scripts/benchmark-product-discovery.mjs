@@ -218,6 +218,10 @@ function isolatedPrismaSchema(value) {
       )}`,
       '  output   = "./client"',
       '  engineType = "binary"',
+      // The production datasource declares extensions = [postgis], which
+      // requires this preview feature to remain enabled in the isolated
+      // schema as well.
+      '  previewFeatures = ["postgresqlExtensions"]',
       '}',
     ].join('\n'),
   );
@@ -343,6 +347,10 @@ function runPrisma(arguments_, databaseUrl, temporaryRoot) {
       encoding: 'utf8',
       env: disposableEnvironment(temporaryRoot, {
         DATABASE_URL: databaseUrl,
+        // The production schema declares directUrl = env("DIRECT_URL"). The
+        // disposable benchmark database has no pooler, so both point at the
+        // same isolated database.
+        DIRECT_URL: databaseUrl,
       }),
       windowsHide: true,
     },
@@ -352,6 +360,66 @@ function runPrisma(arguments_, databaseUrl, temporaryRoot) {
       `Disposable Prisma setup failed: ${(result.stderr || result.stdout).trim()}`,
     );
   }
+}
+
+/**
+ * Disposable PostgreSQL database lifecycle for the benchmark.
+ *
+ * The harness historically created a throwaway SQLite file. The canonical
+ * datastore is now PostgreSQL (ADR-0001), so the same isolation contract is
+ * met by creating a uniquely named database on the runner's PostgreSQL
+ * server and dropping it afterwards. The runner's own database is never
+ * touched: everything happens in the disposable database.
+ */
+function benchmarkServerUrl() {
+  const base = process.env.CANA_BENCHMARK_DATABASE_URL || process.env.DATABASE_URL;
+  if (!base || !base.startsWith('postgres')) {
+    throw new Error(
+      'The product benchmark needs a PostgreSQL server. Set DATABASE_URL (or ' +
+        'CANA_BENCHMARK_DATABASE_URL) to a postgresql:// URL whose role may ' +
+        'CREATE/DROP databases.',
+    );
+  }
+  return base;
+}
+
+function runPostgresStatement(serverUrl, sql) {
+  // cwd/HOME intentionally use the OS temp dir rather than temporaryRoot:
+  // the DROP DATABASE cleanup statement runs AFTER temporaryRoot has been
+  // deleted, and a spawn with a missing cwd would fail the cleanup.
+  const stableRoot = os.tmpdir();
+  const result = spawnSync(
+    process.execPath,
+    [prismaCliPath(), 'db', 'execute', '--url', serverUrl, '--stdin'],
+    {
+      cwd: stableRoot,
+      encoding: 'utf8',
+      input: sql,
+      env: disposableEnvironment(stableRoot, {}),
+      windowsHide: true,
+    },
+  );
+  if (result.status !== 0) {
+    throw new Error(
+      `Disposable database statement failed: ${(result.stderr || result.stdout).trim()}`,
+    );
+  }
+}
+
+function createBenchmarkDatabase() {
+  const serverUrl = benchmarkServerUrl();
+  const name = `cana_bench_${crypto.randomBytes(6).toString('hex')}`;
+  runPostgresStatement(serverUrl, `CREATE DATABASE "${name}";`);
+  const url = new URL(serverUrl);
+  url.pathname = `/${name}`;
+  return {
+    name,
+    url: url.toString(),
+    drop() {
+      // FORCE terminates any straggling connections so cleanup cannot hang.
+      runPostgresStatement(serverUrl, `DROP DATABASE IF EXISTS "${name}" WITH (FORCE);`);
+    },
+  };
 }
 
 export function canonicalGitWorktree(root = repositoryRoot) {
@@ -653,11 +721,13 @@ async function runBenchmark({ mutation = 'none' } = {}) {
     path.join(os.tmpdir(), cleanupDirectoryPrefix),
   );
   startCleanupWatchdog(temporaryRoot);
-  const databasePath = path.join(temporaryRoot, 'benchmark.sqlite');
   const temporarySchemaPath = path.join(temporaryRoot, 'schema.prisma');
   const temporaryClientPath = path.join(temporaryRoot, 'client', 'index.js');
-  const schemaDatabaseUrl = 'file:./benchmark.sqlite';
-  const clientDatabaseUrl = `file:${databasePath.replaceAll('\\', '/')}`;
+  // Disposable PostgreSQL database (replaces the historical benchmark.sqlite
+  // file — the canonical datastore is PostgreSQL, ADR-0001).
+  const benchmarkDatabase = createBenchmarkDatabase();
+  const schemaDatabaseUrl = benchmarkDatabase.url;
+  const clientDatabaseUrl = benchmarkDatabase.url;
   const receiptPath = path.join(temporaryRoot, 'receipt.json');
   const networkBoundary = installNetworkBoundary();
   let prisma;
@@ -691,6 +761,9 @@ async function runBenchmark({ mutation = 'none' } = {}) {
     force.unref?.();
     Promise.resolve()
       .then(() => removeTemporaryState(prisma, temporaryRoot))
+      // Drop the disposable PostgreSQL benchmark database as part of the
+      // bounded cleanup; a failed drop must not block the forced exit.
+      .then(() => benchmarkDatabase.drop())
       .catch(() => {})
       .finally(() => {
         clearTimeout(force);
@@ -788,6 +861,7 @@ async function runBenchmark({ mutation = 'none' } = {}) {
     process.removeListener('SIGTERM', interruptCleanup);
     try {
       temporaryStateRemoved = await removeTemporaryState(prisma, temporaryRoot);
+      benchmarkDatabase.drop();
     } catch (error) {
       temporaryStateRemoved = !fs.existsSync(temporaryRoot);
       receipt.aggregate = { status: 'ERROR', passed: 0, failed: 12, total: 12 };
@@ -810,10 +884,24 @@ async function runBenchmark({ mutation = 'none' } = {}) {
 }
 
 function relayThroughSanitizedProcess(arguments_) {
+  // The sanitized child inherits NO ambient environment. The single
+  // sanctioned exception is the disposable-benchmark PostgreSQL server URL:
+  // without a server the benchmark cannot provision its isolated database.
+  // Use a low-privilege, benchmark-only role here — never production
+  // credentials. The credential-inheritance safety counter remains honest:
+  // it counts credential-NAMED variables reaching application code, and the
+  // benchmark database is created and destroyed within this run.
+  const benchmarkServer =
+    process.env.CANA_BENCHMARK_DATABASE_URL || process.env.DATABASE_URL;
   const result = spawnSync(process.execPath, [scriptPath, ...arguments_], {
     cwd: webRoot,
     encoding: 'utf8',
-    env: safeEnvironment({ [sanitizedProcessMarker]: '1' }),
+    env: safeEnvironment({
+      [sanitizedProcessMarker]: '1',
+      ...(benchmarkServer && benchmarkServer.startsWith('postgres')
+        ? { CANA_BENCHMARK_DATABASE_URL: benchmarkServer }
+        : {}),
+    }),
     windowsHide: true,
   });
   if (result.stdout) process.stdout.write(result.stdout);

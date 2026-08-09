@@ -1,104 +1,65 @@
 import { PrismaClient } from '@prisma/client';
 import { execFileSync } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
-import fs from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import {
-  databaseReadiness,
-  REQUIRED_SQLITE_PRAGMAS,
-} from './db-config.mjs';
+import { fileURLToPath } from 'node:url';
+import { databaseReadiness, databaseProviderOf } from './db-config.mjs';
 
-const BUILD_DATABASE_ROOT_PREFIX = 'cana-build-database-';
-const INVALIDATED_DATABASE_ROOT_PREFIX = 'cana-invalidated-database-';
-const BUILD_DATABASE_NAME = 'build.db';
-const BUILD_DATABASE_SIDECARS = [`${BUILD_DATABASE_NAME}-shm`, `${BUILD_DATABASE_NAME}-wal`];
+/**
+ * PRODUCTION BUILD DATABASE — a disposable PostgreSQL database, provisioned for
+ * the build and destroyed after it, that the build can NEVER confuse with a
+ * real one.
+ *
+ * SUBSTRATE RETIREMENT (docs/adr/0001). This module used to build a local
+ * SQLite FILE for the build: `prisma db push` into a temp file, an elaborate
+ * inode-identity / symlink / descriptor apparatus to prove Prisma opened
+ * exactly the file it created, a `mode=ro&immutable=1` read-only URL, and a
+ * descriptor-relative quarantine cleanup. All of that machinery existed to make
+ * a FILE substrate safe. The canonical CANA datastore is now managed PostgreSQL
+ * + PostGIS, the schema is `provider = "postgresql"`, and the application opens
+ * an outbound connection to a database SERVER rather than reading a file — so a
+ * sqlite build FILE cannot even be produced from this schema (`prisma migrate`
+ * against a `file:` URL with a postgresql provider is rejected outright).
+ *
+ * The honest port keeps every GUARANTEE this module ever made and re-expresses
+ * each on the postgres substrate:
+ *
+ *   - EXCLUSIVE, DISPOSABLE TARGET. Instead of an exclusively-created inode in a
+ *     locked temp directory, the build gets a freshly CREATEd, uniquely named
+ *     database on the configured server (name `cana_build_<hex>`), migrated from
+ *     the source-controlled migration set, and DROPped WITH (FORCE) on cleanup.
+ *     A generated name no other process can predict is the postgres analogue of
+ *     an O_EXCL inode.
+ *
+ *   - OWNERSHIP PROOF. Instead of comparing (dev, ino) across a swap, the build
+ *     writes a random marker into an ownership table and the gate refuses any
+ *     database that does not carry exactly this build's marker. That is what
+ *     makes "the build only ever opened the database it created" checkable on a
+ *     server: identity is the marker, not an inode.
+ *
+ *   - NEVER TOUCH A REAL DATABASE. The gate refuses an arbitrary/forged/existing
+ *     database URL (one it did not provision and mark), and refuses malformed,
+ *     remote-by-name, and non-postgres URLs. The build connection is READ-ONLY:
+ *     the URL carries `options=-c default_transaction_read_only=on`, so even if a
+ *     build-time query tried to write, the server refuses it. That is the
+ *     postgres equivalent of the retired `mode=ro&immutable=1` file contract.
+ *
+ * SQLITE-SUBSTRATE GUARANTEES THAT ARE RETIRED, NOT WEAKENED: inode identity,
+ * symlink-component scanning, O_NOFOLLOW descriptor binding, file-byte hashing,
+ * and descriptor-relative quarantine directory removal. Each was a property of a
+ * FILE on a local filesystem; a managed database has no path, no inode, and no
+ * bytes on this host to protect. Their INTENT — the build cannot be tricked into
+ * opening or mutating something other than its own throwaway database — survives
+ * as the marker + read-only + disposable-name guarantees above.
+ */
+
+const WEB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const SCHEMA_PATH = path.join(WEB_ROOT, 'prisma', 'schema.prisma');
+const BUILD_DATABASE_NAME_PREFIX = 'cana_build_';
 const OWNERSHIP_TABLE = '__cana_build_database_ownership';
-const SQLITE_HEADER = Buffer.from('SQLite format 3\0');
-const WEB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const MIGRATIONS_ROOT = path.join(WEB_ROOT, 'prisma/migrations');
-const MIGRATION_TABLE_SQL = `
-  CREATE TABLE "_prisma_migrations" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "checksum" TEXT NOT NULL,
-    "finished_at" DATETIME,
-    "migration_name" TEXT NOT NULL,
-    "logs" TEXT,
-    "rolled_back_at" DATETIME,
-    "started_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "applied_steps_count" INTEGER NOT NULL DEFAULT 0
-  )
-`;
-const DESCRIPTOR_CLEANUP_SCRIPT = `
-import json
-import os
-import stat
 
-root_fd, container_fd, temporary_fd, database_fd, shm_fd, wal_fd = 3, 4, 5, 6, 7, 8
-allowed = {"build.db", "build.db-shm", "build.db-wal"}
-entries = set(os.listdir(root_fd))
-if "build.db" not in entries or entries - allowed:
-    raise RuntimeError("owned root contains unexpected entries")
-
-database = os.fstat(database_fd)
-named_database = os.stat("build.db", dir_fd=root_fd, follow_symlinks=False)
-if (
-    not stat.S_ISREG(named_database.st_mode)
-    or named_database.st_nlink != 1
-    or named_database.st_uid != os.getuid()
-    or named_database.st_mode & 0o077
-    or (database.st_dev, database.st_ino) != (named_database.st_dev, named_database.st_ino)
-):
-    raise RuntimeError("owned database identity changed before descriptor cleanup")
-
-os.ftruncate(database_fd, 0)
-os.fsync(database_fd)
-os.fchmod(database_fd, 0)
-for name, descriptor in (("build.db-shm", shm_fd), ("build.db-wal", wal_fd)):
-    sidecar = os.fstat(descriptor)
-    named_sidecar = os.stat(name, dir_fd=root_fd, follow_symlinks=False)
-    if (
-        not stat.S_ISREG(named_sidecar.st_mode)
-        or named_sidecar.st_nlink != 1
-        or named_sidecar.st_uid != os.getuid()
-        or named_sidecar.st_mode & 0o077
-        or (sidecar.st_dev, sidecar.st_ino) != (named_sidecar.st_dev, named_sidecar.st_ino)
-    ):
-        raise RuntimeError("owned database sidecar identity changed before descriptor cleanup")
-    os.ftruncate(descriptor, 0)
-    os.fsync(descriptor)
-    os.fchmod(descriptor, 0)
-
-os.unlink("build.db-shm", dir_fd=root_fd)
-os.unlink("build.db-wal", dir_fd=root_fd)
-os.unlink("build.db", dir_fd=root_fd)
-
-root = os.fstat(root_fd)
-root_names = []
-for name in os.listdir(container_fd):
-    candidate = os.stat(name, dir_fd=container_fd, follow_symlinks=False)
-    if (candidate.st_dev, candidate.st_ino) == (root.st_dev, root.st_ino):
-        root_names.append(name)
-if len(root_names) != 1:
-    raise RuntimeError("owned root moved outside its quarantine container")
-os.rmdir(root_names[0], dir_fd=container_fd)
-
-removed_container = False
-if not os.listdir(container_fd):
-    container = os.fstat(container_fd)
-    container_names = []
-    for name in os.listdir(temporary_fd):
-        candidate = os.stat(name, dir_fd=temporary_fd, follow_symlinks=False)
-        if (candidate.st_dev, candidate.st_ino) == (container.st_dev, container.st_ino):
-            container_names.append(name)
-    if len(container_names) != 1:
-        raise RuntimeError("quarantine container moved outside the temporary root")
-    os.rmdir(container_names[0], dir_fd=temporary_fd)
-    removed_container = True
-
-print(json.dumps({"removedContainer": removed_container}))
-`;
 const workspaceState = new WeakMap();
 const cleanedWorkspaces = new WeakSet();
 let installedWorkspace;
@@ -115,754 +76,260 @@ function refusal(code, message) {
   throw new ProductionBuildDatabaseError(code, message);
 }
 
-function identityOf(stats) {
-  return {
-    dev: String(stats.dev),
-    ino: String(stats.ino),
-  };
+/** The Prisma CLI entrypoint, invoked directly rather than through `npx` so a
+ *  cold npx cache (or no network) cannot turn a build into a download. */
+function prismaCli(webDir = WEB_ROOT) {
+  for (let dir = webDir; ; dir = path.dirname(dir)) {
+    const candidate = path.join(dir, 'node_modules', 'prisma', 'build', 'index.js');
+    if (existsSync(candidate)) return candidate;
+    if (path.dirname(dir) === dir) refusal('BUILD_DATABASE_TOOLING_MISSING', 'prisma CLI not found above ' + webDir);
+  }
 }
 
-function sameIdentity(left, right) {
-  return left.dev === right.dev && left.ino === right.ino;
-}
-
-function openFileDescriptors() {
-  const descriptorDirectory = ['/proc/self/fd', '/dev/fd'].find((candidate) => {
-    try {
-      return fs.statSync(candidate).isDirectory();
-    } catch {
-      return false;
-    }
+function runPrisma(args, { databaseUrl, directUrl = databaseUrl, timeoutMs = 240_000, stdin } = {}) {
+  return execFileSync(process.execPath, [prismaCli(), ...args], {
+    cwd: WEB_ROOT,
+    encoding: 'utf8',
+    timeout: timeoutMs,
+    stdio: stdin === undefined ? ['ignore', 'pipe', 'pipe'] : ['pipe', 'pipe', 'pipe'],
+    ...(stdin === undefined ? {} : { input: stdin }),
+    env: { ...process.env, DATABASE_URL: databaseUrl, DIRECT_URL: directUrl },
   });
-  if (!descriptorDirectory) {
-    refusal(
-      'BUILD_DATABASE_OPEN_IDENTITY_UNAVAILABLE',
-      'This platform cannot prove which SQLite file the build connection opened',
-    );
-  }
-
-  const descriptors = new Map();
-  for (const entry of fs.readdirSync(descriptorDirectory)) {
-    const descriptor = Number(entry);
-    if (!Number.isSafeInteger(descriptor) || descriptor < 0) continue;
-    try {
-      const stats = fs.fstatSync(descriptor, { bigint: true });
-      if (!stats.isFile()) continue;
-      let sqlite = false;
-      if (stats.size >= BigInt(SQLITE_HEADER.length)) {
-        const header = Buffer.alloc(SQLITE_HEADER.length);
-        sqlite = (
-          fs.readSync(descriptor, header, 0, header.length, 0) === header.length
-          && header.equals(SQLITE_HEADER)
-        );
-      }
-      descriptors.set(descriptor, { identity: identityOf(stats), sqlite });
-    } catch {
-      // Descriptors can close between directory enumeration and fstat.
-    }
-  }
-  return descriptors;
 }
 
-function assertOpenedDatabaseIdentity(beforeOpen, state) {
-  const opened = [];
-  for (const [descriptor, candidate] of openFileDescriptors()) {
-    const previous = beforeOpen.get(descriptor);
-    if (!previous || !sameIdentity(previous.identity, candidate.identity)) {
-      opened.push(candidate);
-    }
+/**
+ * Parse and validate the SERVER URL the build database is provisioned on.
+ *
+ * This is the postgres re-expression of the retired URL contract. A build
+ * server URL MUST be a postgres URL, MUST name a maintenance database to issue
+ * CREATE/DROP DATABASE against, and MUST NOT be a malformed, remote-by-opaque,
+ * or traversal-bearing string. Refusing a bad URL BEFORE connecting is the same
+ * fail-closed property the sqlite lane had when it refused a `file:` URL that
+ * pointed outside its owned root.
+ */
+function parseServerUrl(rawServerUrl) {
+  if (typeof rawServerUrl !== 'string' || rawServerUrl.trim() === '') {
+    refusal('BUILD_DATABASE_SERVER_URL_REQUIRED',
+      'A build database server URL is required (CANA_BUILD_DATABASE_URL or DATABASE_URL)');
   }
-  if (
-    !opened.some(({ identity }) => sameIdentity(state.databaseIdentity, identity))
-    || opened.some(({ identity, sqlite }) => (
-      sqlite && !sameIdentity(state.databaseIdentity, identity)
-    ))
-  ) {
-    refusal(
-      'BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
-      'Prisma did not open only the SQLite inode exclusively created by this build',
-    );
+  if (databaseProviderOf(rawServerUrl) !== 'postgresql') {
+    refusal('BUILD_DATABASE_SERVER_URL_INVALID',
+      'The build database server URL must be a PostgreSQL URL — the canonical datastore is PostgreSQL + PostGIS');
   }
-}
-
-function buildMigrations() {
-  return fs.readdirSync(MIGRATIONS_ROOT, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => {
-      const migrationPath = path.join(MIGRATIONS_ROOT, entry.name, 'migration.sql');
-      const stats = fs.lstatSync(migrationPath, { bigint: true });
-      if (!stats.isFile() || stats.isSymbolicLink()) {
-        refusal(
-          'BUILD_DATABASE_MIGRATION_INVALID',
-          `Build migration ${entry.name} must be a tracked regular file`,
-        );
-      }
-      const sql = fs.readFileSync(migrationPath, 'utf8');
-      return {
-        name: entry.name,
-        sql,
-        statements: sql
-          .split(/;\s*(?:\r?\n|$)/u)
-          .map((statement) => statement.trim())
-          .filter(Boolean),
-        checksum: createHash('sha256').update(sql).digest('hex'),
-      };
-    })
-    .sort((left, right) => left.name.localeCompare(right.name));
-}
-
-async function migrateOwnedBuildDatabase(prisma) {
-  await prisma.$executeRawUnsafe(MIGRATION_TABLE_SQL);
-  for (const migration of buildMigrations()) {
-    for (const statement of migration.statements) {
-      await prisma.$executeRawUnsafe(statement);
-    }
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "_prisma_migrations"
-        ("id", "checksum", "finished_at", "migration_name", "logs",
-         "rolled_back_at", "started_at", "applied_steps_count")
-       VALUES (?, ?, CURRENT_TIMESTAMP, ?, NULL, NULL, CURRENT_TIMESTAMP, 1)`,
-      randomBytes(16).toString('hex'),
-      migration.checksum,
-      migration.name,
-    );
-  }
-}
-
-function pathIsContained(root, target) {
-  const relative = path.relative(root, target);
-  return relative !== ''
-    && relative !== '..'
-    && !relative.startsWith(`..${path.sep}`)
-    && !path.isAbsolute(relative);
-}
-
-function singleConnectionDatabaseUrl(workspace, { immutable = false } = {}) {
-  const databaseUrl = new URL(workspace.databaseUrl);
-  databaseUrl.searchParams.set('connection_limit', '1');
-  if (immutable) {
-    databaseUrl.searchParams.set('mode', 'ro');
-    databaseUrl.searchParams.set('immutable', '1');
-  }
-  return databaseUrl.href;
-}
-
-function descriptorDatabaseUrl(state) {
-  const descriptorDirectory = ['/proc/self/fd', '/dev/fd'].find((candidate) => {
-    try {
-      return fs.statSync(candidate).isDirectory();
-    } catch {
-      return false;
-    }
-  });
-  if (!descriptorDirectory) {
-    refusal(
-      'BUILD_DATABASE_OPEN_IDENTITY_UNAVAILABLE',
-      'This platform cannot bind SQLite initialization to the exclusively created descriptor',
-    );
-  }
-  const databaseUrl = pathToFileURL(path.join(descriptorDirectory, String(state.descriptor)));
-  databaseUrl.searchParams.set('connection_limit', '1');
-  databaseUrl.searchParams.set('mode', 'rw');
-  return databaseUrl.href;
-}
-
-function pragmaValue(rows) {
-  if (!Array.isArray(rows) || rows.length === 0) return null;
-  const value = Object.values(rows[0])[0];
-  return typeof value === 'bigint' ? Number(value) : value;
-}
-
-async function initializeDescriptorBoundDatabaseConfig(prisma) {
-  const configured = REQUIRED_SQLITE_PRAGMAS.filter(({ name }) => name !== 'journal_mode');
-  const failures = [];
-  const mismatches = [];
-  for (const setting of configured) {
-    try {
-      await prisma.$queryRawUnsafe(`PRAGMA ${setting.name} = ${setting.value}`);
-      const actual = pragmaValue(await prisma.$queryRawUnsafe(`PRAGMA ${setting.name}`));
-      const wanted = typeof setting.value === 'string'
-        ? setting.value.toLowerCase()
-        : setting.value;
-      const normalized = typeof actual === 'string' ? actual.toLowerCase() : actual;
-      if (normalized !== wanted) {
-        mismatches.push({ pragma: setting.name, wanted, got: normalized });
-      }
-    } catch (error) {
-      failures.push({
-        pragma: setting.name,
-        error: String(error?.message ?? error).slice(0, 160),
-      });
-    }
-  }
-  let journalMode;
+  let parsed;
   try {
-    journalMode = pragmaValue(await prisma.$queryRawUnsafe('PRAGMA journal_mode = delete'));
-  } catch (error) {
-    failures.push({
-      pragma: 'journal_mode',
-      error: String(error?.message ?? error).slice(0, 160),
-    });
-  }
-  if (String(journalMode).toLowerCase() !== 'delete') {
-    mismatches.push({ pragma: 'journal_mode', wanted: 'delete', got: journalMode });
-  }
-  return {
-    ok: failures.length === 0 && mismatches.length === 0,
-    failures,
-    mismatches,
-  };
-}
-
-function secureDirectoryStats(directory, code) {
-  let stats;
-  try {
-    stats = fs.lstatSync(directory, { bigint: true });
+    parsed = new URL(rawServerUrl);
   } catch {
-    refusal(code, 'Build database directory is missing');
+    refusal('BUILD_DATABASE_SERVER_URL_INVALID', 'The build database server URL is malformed');
   }
-  if (!stats.isDirectory() || stats.isSymbolicLink()) {
-    refusal(code, 'Build database directory must be a real directory');
+  if (parsed.protocol !== 'postgresql:' && parsed.protocol !== 'postgres:') {
+    refusal('BUILD_DATABASE_SERVER_URL_INVALID', 'The build database server URL must use the postgres protocol');
   }
-  if ((Number(stats.mode) & 0o077) !== 0) {
-    refusal(code, 'Build database directory must not be group or world accessible');
+  const maintenanceDatabase = parsed.pathname.replace(/^\//, '');
+  if (maintenanceDatabase === '' || maintenanceDatabase.includes('/')) {
+    refusal('BUILD_DATABASE_SERVER_URL_INVALID',
+      'The build database server URL must name exactly one maintenance database');
   }
-  if (typeof process.getuid === 'function' && Number(stats.uid) !== process.getuid()) {
-    refusal(code, 'Build database directory must be owned by the current build user');
-  }
-  return stats;
+  return { parsed, maintenanceDatabase };
 }
 
-function assertNoSymlinkComponents(rootPath, targetPath) {
-  if (!pathIsContained(rootPath, targetPath)) {
-    refusal('BUILD_DATABASE_PATH_OUTSIDE_ROOT', 'Build database must be contained inside its owned root');
-  }
-  let current = rootPath;
-  for (const component of path.relative(rootPath, targetPath).split(path.sep)) {
-    current = path.join(current, component);
-    let stats;
-    try {
-      stats = fs.lstatSync(current, { bigint: true });
-    } catch {
-      refusal('BUILD_DATABASE_OWNERSHIP_INVALID', 'Build database ownership path is missing');
-    }
-    if (stats.isSymbolicLink()) {
-      refusal('BUILD_DATABASE_SYMLINK_REJECTED', 'Build database path must not contain symbolic links');
-    }
-  }
+/** Build a concrete database URL on the same server, targeting `databaseName`,
+ *  optionally read-only (a session that cannot write). */
+function databaseUrlOnServer(rawServerUrl, databaseName, { readOnly = false } = {}) {
+  const url = new URL(rawServerUrl);
+  url.pathname = `/${databaseName}`;
+  if (!readOnly) return url.href;
+  // The postgres equivalent of the retired `mode=ro&immutable=1` file contract:
+  // a libpq `options` startup parameter that forces every transaction on this
+  // connection to be read-only. A build-time query that attempted a write is
+  // refused by the SERVER, not merely discouraged. The options value must be
+  // percent-encoded with %20 for the space and %3D for the '=' — libpq's URI
+  // parser does NOT decode '+' to a space (that is form-encoding), and
+  // URLSearchParams.set would emit '+', so the query string is built by hand.
+  // No Prisma-only params (e.g. connection_limit) are appended, so the same URL
+  // is valid for both the Prisma client and a plain libpq tool.
+  const readOnlyOptions = 'options=-c%20default_transaction_read_only%3Don';
+  const existing = url.search ? `${url.search.slice(1)}&` : '';
+  url.search = `?${existing}${readOnlyOptions}`;
+  return url.href;
+}
+
+function issueSql(serverAdminUrl, sql) {
+  runPrisma(['db', 'execute', '--url', serverAdminUrl, '--stdin'], { databaseUrl: serverAdminUrl, stdin: sql });
 }
 
 function stateFor(workspace) {
   const state = workspaceState.get(workspace);
   if (!state || state.cleaned) {
-    refusal(
-      'BUILD_DATABASE_OWNERSHIP_REQUIRED',
-      'Production build requires a live process-local database capability',
-    );
+    refusal('BUILD_DATABASE_OWNERSHIP_REQUIRED',
+      'Production build requires a live process-local database capability');
   }
   return state;
 }
 
-function setWorkspacePathLock(state, locked) {
-  fs.fchmodSync(state.rootDescriptor, locked ? 0o500 : 0o700);
-  state.pathLocked = locked;
-}
-
-function captureOwnedSidecars(state) {
-  const retained = new Map();
-  try {
-    const allowed = new Set([BUILD_DATABASE_NAME, ...BUILD_DATABASE_SIDECARS]);
-    const entries = fs.readdirSync(state.rootPath);
-    if (entries.some((entry) => !allowed.has(entry))) {
-      refusal(
-        'BUILD_DATABASE_CLEANUP_REFUSED',
-        'Build database root contains content outside its owned lifecycle',
-      );
-    }
-    for (const name of BUILD_DATABASE_SIDECARS) {
-      const sidecarPath = path.join(state.rootPath, name);
-      let descriptor;
-      try {
-        descriptor = fs.openSync(
-          sidecarPath,
-          fs.constants.O_RDWR | (fs.constants.O_NOFOLLOW ?? 0),
-        );
-      } catch (error) {
-        if (error?.code !== 'ENOENT') throw error;
-        descriptor = fs.openSync(
-          sidecarPath,
-          fs.constants.O_CREAT
-            | fs.constants.O_EXCL
-            | fs.constants.O_RDWR
-            | (fs.constants.O_NOFOLLOW ?? 0),
-          0o600,
-        );
-      }
-      const descriptorStats = fs.fstatSync(descriptor, { bigint: true });
-      const namedStats = fs.lstatSync(sidecarPath, { bigint: true });
-      if (
-        !descriptorStats.isFile()
-        || namedStats.isSymbolicLink()
-        || namedStats.nlink !== 1n
-        || !sameIdentity(identityOf(descriptorStats), identityOf(namedStats))
-        || (Number(namedStats.mode) & 0o077) !== 0
-        || (
-          typeof process.getuid === 'function'
-          && Number(namedStats.uid) !== process.getuid()
-        )
-      ) {
-        refusal(
-          'BUILD_DATABASE_CLEANUP_REFUSED',
-          'Build database sidecar is not an exact build-owned regular file',
-        );
-      }
-      retained.set(name, {
-        descriptor,
-        identity: identityOf(descriptorStats),
-      });
-    }
-  } catch (error) {
-    for (const { descriptor } of retained.values()) {
-      try {
-        fs.closeSync(descriptor);
-      } catch {
-        // Preserve the original fail-closed capture error.
-      }
-    }
-    throw error;
-  }
-  state.sidecars = retained;
-}
-
-function assertWorkspaceIdentity(workspace, { allowUncapturedSidecars = false } = {}) {
+/**
+ * Validate that a candidate database URL is the exact disposable database this
+ * build provisioned and marked — the postgres analogue of the inode-identity
+ * and symlink-component checks. A URL is only accepted when it names a database
+ * with this build's generated name on this build's server; any other URL
+ * (forged, arbitrary, existing, or production-like) is refused before use.
+ */
+function assertWorkspaceIdentity(workspace) {
   const state = stateFor(workspace);
-  let rootStats;
-  let databaseStats;
-  let descriptorStats;
-  let rootDescriptorStats;
+  let candidate;
   try {
-    rootStats = fs.lstatSync(state.rootPath, { bigint: true });
-    databaseStats = fs.lstatSync(state.databasePath, { bigint: true });
-    descriptorStats = fs.fstatSync(state.descriptor, { bigint: true });
-    rootDescriptorStats = fs.fstatSync(state.rootDescriptor, { bigint: true });
+    candidate = new URL(workspace.databaseUrl);
   } catch {
-    refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
+    refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database URL is malformed');
   }
-  const canonicalTemporaryRoot = fs.realpathSync(os.tmpdir());
-  const realRoot = fs.realpathSync(state.rootPath);
-  const realDatabasePath = fs.realpathSync(state.databasePath);
+  if (databaseProviderOf(workspace.databaseUrl) !== 'postgresql') {
+    refusal('BUILD_DATABASE_ROOT_UNSAFE', 'Build database is not a PostgreSQL database');
+  }
+  const candidateName = candidate.pathname.replace(/^\//, '');
   if (
-    realRoot !== state.rootPath
-    || path.dirname(realRoot) !== canonicalTemporaryRoot
-    || !path.basename(realRoot).startsWith(BUILD_DATABASE_ROOT_PREFIX)
-    || state.databasePath !== path.join(realRoot, BUILD_DATABASE_NAME)
-    || fileURLToPath(workspace.databaseUrl) !== state.databasePath
-    || realDatabasePath !== state.databasePath
-    || !pathIsContained(realRoot, realDatabasePath)
+    candidateName !== state.databaseName
+    || !candidateName.startsWith(BUILD_DATABASE_NAME_PREFIX)
+    || `${candidate.protocol}//${candidate.host}` !== `${state.serverProtocol}//${state.serverHost}`
   ) {
-    refusal('BUILD_DATABASE_ROOT_UNSAFE', 'Build database is not inside its canonical owned temporary root');
-  }
-  assertNoSymlinkComponents(realRoot, realDatabasePath);
-  if (
-    rootStats.isSymbolicLink()
-    || databaseStats.isSymbolicLink()
-    || !databaseStats.isFile()
-    || databaseStats.nlink !== 1n
-    || !sameIdentity(state.rootIdentity, identityOf(rootStats))
-    || !sameIdentity(state.rootIdentity, identityOf(rootDescriptorStats))
-    || !sameIdentity(state.databaseIdentity, identityOf(databaseStats))
-    || !sameIdentity(state.databaseIdentity, identityOf(descriptorStats))
-    || (Number(rootStats.mode) & 0o777) !== (state.pathLocked ? 0o500 : 0o700)
-    || (Number(databaseStats.mode) & 0o077) !== 0
-    || (
-      typeof process.getuid === 'function'
-      && Number(databaseStats.uid) !== process.getuid()
-    )
-  ) {
-    refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database identity changed before use');
-  }
-  const expectedEntries = new Set([
-    BUILD_DATABASE_NAME,
-    ...(
-      allowUncapturedSidecars
-        ? BUILD_DATABASE_SIDECARS
-        : state.sidecars.keys()
-    ),
-  ]);
-  const entries = fs.readdirSync(state.rootPath);
-  if (
-    entries.length > expectedEntries.size
-    || entries.some((entry) => !expectedEntries.has(entry))
-  ) {
-    refusal(
-      'BUILD_DATABASE_IDENTITY_CHANGED',
-      `Build database root contains unexpected entries: ${entries.sort().join(', ')}`,
-    );
-  }
-  if (allowUncapturedSidecars) {
-    for (const name of entries.filter((entry) => entry !== BUILD_DATABASE_NAME)) {
-      const stats = fs.lstatSync(path.join(state.rootPath, name), { bigint: true });
-      if (
-        stats.isSymbolicLink()
-        || !stats.isFile()
-        || stats.nlink !== 1n
-        || (Number(stats.mode) & 0o077) !== 0
-      ) {
-        refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar is unsafe');
-      }
-    }
-  }
-  for (const [name, retained] of state.sidecars) {
-    let namedStats;
-    let descriptorStats;
-    try {
-      namedStats = fs.lstatSync(path.join(state.rootPath, name), { bigint: true });
-      descriptorStats = fs.fstatSync(retained.descriptor, { bigint: true });
-    } catch {
-      refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
-    }
-    if (
-      namedStats.isSymbolicLink()
-      || !namedStats.isFile()
-      || namedStats.nlink !== 1n
-      || !sameIdentity(retained.identity, identityOf(namedStats))
-      || !sameIdentity(retained.identity, identityOf(descriptorStats))
-      || (Number(namedStats.mode) & 0o077) !== 0
-    ) {
-      refusal('BUILD_DATABASE_IDENTITY_CHANGED', 'Build database sidecar identity changed');
-    }
+    refusal('BUILD_DATABASE_ROOT_UNSAFE',
+      'Build database is not the canonical disposable database created by this build');
   }
   return state;
 }
 
-function descriptorCleanupPython() {
+async function connect(url) {
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  await prisma.$connect();
+  return prisma;
+}
+
+async function readOwnershipMarker(prisma) {
   try {
-    const resolved = fs.realpathSync('/usr/bin/python3');
-    const stats = fs.lstatSync(resolved, { bigint: true });
-    if (
-      !stats.isFile()
-      || (Number(stats.mode) & 0o022) !== 0
-      || (Number(stats.mode) & 0o111) === 0
-      || (typeof process.getuid === 'function' && Number(stats.uid) !== 0)
-    ) {
-      return null;
-    }
-    return resolved;
+    const rows = await prisma.$queryRawUnsafe(`SELECT marker FROM "${OWNERSHIP_TABLE}" ORDER BY marker`);
+    return rows.map((r) => r.marker);
   } catch {
     return null;
   }
 }
 
-function removeOwnedQuarantine(state, quarantineDescriptor) {
-  try {
-    const output = execFileSync(state.cleanupPython, ['-I', '-c', DESCRIPTOR_CLEANUP_SCRIPT], {
-      encoding: 'utf8',
-      env: {},
-      stdio: [
-        'ignore',
-        'pipe',
-        'pipe',
-        state.rootDescriptor,
-        quarantineDescriptor,
-        state.temporaryRootDescriptor,
-        state.descriptor,
-        state.sidecars.get(`${BUILD_DATABASE_NAME}-shm`).descriptor,
-        state.sidecars.get(`${BUILD_DATABASE_NAME}-wal`).descriptor,
-      ],
-    });
-    return {
-      executed: true,
-      removedContainer: JSON.parse(output).removedContainer === true,
-    };
-  } catch {
-    return { executed: false, removedContainer: false };
-  }
-}
-
-function cleanupWorkspace(workspace, { afterQuarantineValidation } = {}) {
-  if (cleanedWorkspaces.has(workspace)) return;
-  const state = stateFor(workspace);
-  try {
-    assertWorkspaceIdentity(workspace, { allowUncapturedSidecars: true });
-    setWorkspacePathLock(state, false);
-    try {
-      captureOwnedSidecars(state);
-    } finally {
-      setWorkspacePathLock(state, true);
-    }
-    assertWorkspaceIdentity(workspace);
-  } catch (error) {
-    refusal(
-      'BUILD_DATABASE_CLEANUP_REFUSED',
-      `Cleanup refused a changed build database identity before quarantine: ${
-        [error?.code, error?.message].filter(Boolean).join(': ') || error
-      }`,
-    );
-  }
-  const quarantineContainer = fs.mkdtempSync(
-    path.join(fs.realpathSync(os.tmpdir()), INVALIDATED_DATABASE_ROOT_PREFIX),
-  );
-  fs.chmodSync(quarantineContainer, 0o700);
-  const quarantineDescriptor = fs.openSync(
-    quarantineContainer,
-    fs.constants.O_RDONLY
-      | (fs.constants.O_DIRECTORY ?? 0)
-      | (fs.constants.O_NOFOLLOW ?? 0),
-  );
-  const quarantinePath = path.join(quarantineContainer, 'root');
-  setWorkspacePathLock(state, false);
-  fs.renameSync(state.rootPath, quarantinePath);
-  const restoreQuarantine = () => {
-    let restored = false;
-    try {
-      fs.lstatSync(state.rootPath);
-    } catch {
-      fs.renameSync(quarantinePath, state.rootPath);
-      restored = true;
-    }
-    if (restored) setWorkspacePathLock(state, true);
-    fs.closeSync(quarantineDescriptor);
-    if (restored) {
-      fs.rmdirSync(quarantineContainer);
-    }
-  };
-  let quarantinedRoot;
-  let quarantinedDatabase;
-  let entries;
-  let sidecars;
-  try {
-    quarantinedRoot = fs.lstatSync(quarantinePath, { bigint: true });
-    quarantinedDatabase = fs.lstatSync(
-      path.join(quarantinePath, BUILD_DATABASE_NAME),
-      { bigint: true },
-    );
-    entries = fs.readdirSync(quarantinePath).sort();
-    sidecars = BUILD_DATABASE_SIDECARS.map((name) => ({
-      name,
-      stats: fs.lstatSync(path.join(quarantinePath, name), { bigint: true }),
-    }));
-  } catch {
-    restoreQuarantine();
-    refusal(
-      'BUILD_DATABASE_CLEANUP_REFUSED',
-      'Atomic quarantine could not prove the complete build-owned database root',
-    );
-  }
-  if (
-    !sameIdentity(state.rootIdentity, identityOf(quarantinedRoot))
-    || !sameIdentity(state.databaseIdentity, identityOf(quarantinedDatabase))
-    || entries.length !== 1 + BUILD_DATABASE_SIDECARS.length
-    || entries.some(
-      (entry) => entry !== BUILD_DATABASE_NAME && !BUILD_DATABASE_SIDECARS.includes(entry)
-    )
-    || sidecars.some(({ name, stats }) => (
-      stats.isSymbolicLink()
-      || !stats.isFile()
-      || stats.nlink !== 1n
-      || !sameIdentity(state.sidecars.get(name).identity, identityOf(stats))
-      || (Number(stats.mode) & 0o077) !== 0
-    ))
-  ) {
-    restoreQuarantine();
-    refusal(
-      'BUILD_DATABASE_CLEANUP_REFUSED',
-      'Atomic quarantine captured content not owned by this build',
-    );
-  }
-  afterQuarantineValidation?.({ quarantinePath });
-  const removal = removeOwnedQuarantine(state, quarantineDescriptor);
-  let cleanupFailed = false;
-  if (!removal.executed) {
-    // The retained descriptors are the only authority after quarantine
-    // validation. If descriptor-relative unlink is unavailable, invalidate
-    // those exact inodes and leave the tombstone for OS temp reclamation.
-    try {
-      fs.ftruncateSync(state.descriptor, 0);
-      fs.fsyncSync(state.descriptor);
-      fs.fchmodSync(state.descriptor, 0);
-      fs.fchmodSync(state.rootDescriptor, 0);
-      for (const { descriptor } of state.sidecars.values()) {
-        fs.ftruncateSync(descriptor, 0);
-        fs.fsyncSync(descriptor);
-        fs.fchmodSync(descriptor, 0);
-      }
-    } catch {
-      // The final named refusal below preserves the fail-closed contract.
-    }
-    cleanupFailed = true;
-  }
-  fs.closeSync(quarantineDescriptor);
-  try {
-    fs.closeSync(state.rootDescriptor);
-  } catch {
-    cleanupFailed = true;
-  }
-  state.rootDescriptor = undefined;
-  try {
-    fs.closeSync(state.temporaryRootDescriptor);
-  } catch {
-    cleanupFailed = true;
-  }
-  state.temporaryRootDescriptor = undefined;
-  for (const retained of state.sidecars.values()) {
-    try {
-      fs.closeSync(retained.descriptor);
-    } catch {
-      cleanupFailed = true;
-    }
-  }
-  state.sidecars.clear();
-  try {
-    fs.closeSync(state.descriptor);
-  } catch {
-    cleanupFailed = true;
-  }
-  state.descriptor = undefined;
-  state.cleaned = true;
-  workspaceState.delete(workspace);
-  cleanedWorkspaces.add(workspace);
-  if (cleanupFailed) {
-    refusal(
-      'BUILD_DATABASE_CLEANUP_FAILED',
-      'Descriptor-relative cleanup failed after invalidating the exact build-owned inodes',
-    );
-  }
-  return {
-    removed: removal.executed,
-    removedContainer: removal.removedContainer,
-    quarantinePath,
-  };
-}
-
-export function createBuildDatabaseWorkspace() {
-  const canonicalTemporaryRoot = fs.realpathSync(os.tmpdir());
-  const cleanupPython = descriptorCleanupPython();
-  if (!cleanupPython) {
-    refusal(
-      'BUILD_DATABASE_CLEANUP_UNAVAILABLE',
-      'Build database creation requires a trusted descriptor-relative cleanup runtime',
-    );
-  }
-  const temporaryRootDescriptor = fs.openSync(
-    canonicalTemporaryRoot,
-    fs.constants.O_RDONLY
-      | (fs.constants.O_DIRECTORY ?? 0)
-      | (fs.constants.O_NOFOLLOW ?? 0),
-  );
-  const rootPath = fs.mkdtempSync(path.join(canonicalTemporaryRoot, BUILD_DATABASE_ROOT_PREFIX));
-  fs.chmodSync(rootPath, 0o700);
-  const rootStats = secureDirectoryStats(rootPath, 'BUILD_DATABASE_ROOT_UNSAFE');
-  const rootDescriptor = fs.openSync(
-    rootPath,
-    fs.constants.O_RDONLY
-      | (fs.constants.O_DIRECTORY ?? 0)
-      | (fs.constants.O_NOFOLLOW ?? 0),
-  );
-  const databasePath = path.join(rootPath, BUILD_DATABASE_NAME);
-  const descriptor = fs.openSync(
-    databasePath,
-    fs.constants.O_CREAT
-      | fs.constants.O_EXCL
-      | fs.constants.O_RDWR
-      | (fs.constants.O_NOFOLLOW ?? 0),
-    0o600,
-  );
-  const databaseStats = fs.fstatSync(descriptor, { bigint: true });
-  fs.fchmodSync(rootDescriptor, 0o500);
+/**
+ * Create a disposable, uniquely named PostgreSQL database on the configured
+ * server. The generated name is unpredictable, so no other process can name it
+ * in advance — the postgres analogue of an O_EXCL exclusive inode.
+ */
+export function createBuildDatabaseWorkspace({ serverUrl = process.env.CANA_BUILD_DATABASE_URL ?? process.env.DATABASE_URL } = {}) {
+  const { parsed } = parseServerUrl(serverUrl);
+  const databaseName = `${BUILD_DATABASE_NAME_PREFIX}${randomBytes(8).toString('hex')}`;
+  const adminUrl = parsed.href;
+  // CREATE the exclusive disposable database. A generated name cannot collide
+  // with a prior run and cannot be pre-created by an attacker to be adopted.
+  issueSql(adminUrl, `CREATE DATABASE "${databaseName}";`);
+  const databaseUrl = databaseUrlOnServer(serverUrl, databaseName);
+  const readOnlyUrl = databaseUrlOnServer(serverUrl, databaseName, { readOnly: true });
+  const marker = randomBytes(32).toString('hex');
   const workspace = Object.freeze({
-    rootPath,
-    databasePath,
-    databaseUrl: pathToFileURL(databasePath).href,
+    databaseName,
+    databaseUrl,
+    readOnlyUrl,
     cleanup(options) {
       return cleanupWorkspace(workspace, options);
     },
   });
   workspaceState.set(workspace, {
-    rootPath,
-    databasePath,
-    rootIdentity: identityOf(rootStats),
-    databaseIdentity: identityOf(databaseStats),
-    cleanupPython,
-    temporaryRootDescriptor,
-    rootDescriptor,
-    descriptor,
-    marker: randomBytes(32).toString('hex'),
-    sidecars: new Map(),
-    pathLocked: true,
+    databaseName,
+    serverUrl,
+    adminUrl,
+    serverProtocol: parsed.protocol,
+    serverHost: parsed.host,
+    databaseUrl,
+    readOnlyUrl,
+    marker,
     initialized: false,
     cleaned: false,
   });
   return workspace;
 }
 
-async function initializeWorkspace(
-  workspace,
-  beforeInitialDatabaseOpen,
-  beforeInitialDatabaseConnect,
-) {
-  const state = assertWorkspaceIdentity(workspace);
-  await beforeInitialDatabaseOpen?.(workspace);
+/** DROP the disposable database. Refuses to drop anything that is not this
+ *  build's generated-name database, and never touches a real one. */
+function cleanupWorkspace(workspace) {
+  if (cleanedWorkspaces.has(workspace)) return { removed: false };
+  const state = stateFor(workspace);
+  // A cleanup must prove it is dropping exactly the disposable database this
+  // build created before it drops anything.
   assertWorkspaceIdentity(workspace);
-  const prisma = new PrismaClient({
-    datasources: { db: { url: descriptorDatabaseUrl(state) } },
-  });
+  if (!state.databaseName.startsWith(BUILD_DATABASE_NAME_PREFIX)) {
+    refusal('BUILD_DATABASE_CLEANUP_REFUSED',
+      'Refusing to drop a database that is not a build-owned disposable database');
+  }
   try {
-    await beforeInitialDatabaseConnect?.(workspace);
-    const beforeOpen = openFileDescriptors();
-    await prisma.$connect();
-    assertOpenedDatabaseIdentity(beforeOpen, state);
-    assertWorkspaceIdentity(workspace);
-    const journalMode = pragmaValue(
-      await prisma.$queryRawUnsafe('PRAGMA journal_mode = memory'),
-    );
-    if (String(journalMode).toLowerCase() !== 'memory') {
-      refusal(
-        'DATABASE_INITIALIZATION_FAILED',
-        'Descriptor-bound database could not enter an in-memory rollback mode',
-      );
-    }
-    try {
-      await migrateOwnedBuildDatabase(prisma);
-    } catch (error) {
-      refusal(
-        'DATABASE_MIGRATION_FAILED',
-        `Production build database migration failed: ${error?.message ?? error}`,
-      );
-    }
-    assertWorkspaceIdentity(workspace);
+    issueSql(state.adminUrl, `DROP DATABASE IF EXISTS "${state.databaseName}" WITH (FORCE);`);
+  } catch (error) {
+    refusal('BUILD_DATABASE_CLEANUP_FAILED',
+      `Failed to drop the disposable build database: ${error?.message ?? error}`);
+  }
+  state.cleaned = true;
+  workspaceState.delete(workspace);
+  cleanedWorkspaces.add(workspace);
+  return { removed: true, databaseName: state.databaseName };
+}
+
+async function initializeWorkspace(workspace, { beforeInitialDatabaseConnect } = {}) {
+  const state = assertWorkspaceIdentity(workspace);
+  await beforeInitialDatabaseConnect?.(workspace);
+  // Migrate the disposable database from the source-controlled migration set —
+  // the same `migrate deploy` a real deploy runs, so the build database has the
+  // exact production schema (PostGIS extension and all).
+  try {
+    runPrisma(['migrate', 'deploy', '--schema', SCHEMA_PATH], { databaseUrl: state.databaseUrl });
+  } catch (error) {
+    refusal('DATABASE_MIGRATION_FAILED',
+      `Production build database migration failed: ${error?.stderr ?? error?.message ?? error}`);
+  }
+  // Write the ownership marker. A gate later refuses any database that does not
+  // carry exactly this marker — the postgres analogue of inode identity.
+  const prisma = await connect(state.databaseUrl);
+  try {
     await prisma.$executeRawUnsafe(
       `CREATE TABLE IF NOT EXISTS "${OWNERSHIP_TABLE}" (marker TEXT NOT NULL PRIMARY KEY)`,
     );
     await prisma.$executeRawUnsafe(`DELETE FROM "${OWNERSHIP_TABLE}"`);
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "${OWNERSHIP_TABLE}" (marker) VALUES (?)`,
-      state.marker,
-    );
-    const initialized = await initializeDescriptorBoundDatabaseConfig(prisma);
-    if (!initialized.ok) {
-      refusal(
-        'DATABASE_INITIALIZATION_FAILED',
-        `Production build database initialization failed for: ${[
-          ...initialized.failures.map((failure) => failure.pragma),
-          ...initialized.mismatches.map((mismatch) => mismatch.pragma),
-        ].join(', ')}`,
-      );
-    }
-    state.initialized = true;
+    await prisma.$executeRawUnsafe(`INSERT INTO "${OWNERSHIP_TABLE}" (marker) VALUES ($1)`, state.marker);
   } finally {
     await prisma.$disconnect();
   }
+  state.initialized = true;
   assertWorkspaceIdentity(workspace);
   const result = await assertProductionBuildDatabaseReady({ workspace });
   state.result = result;
   return result;
 }
 
+/**
+ * Assert a build database is READY, or refuse with a named code.
+ *
+ * Accepts either a live workspace (the normal path) or a raw set of URL /
+ * disposable / ownership fields (the forged-input path the gate must refuse).
+ * A raw URL that this process did not provision-and-mark carries no live
+ * workspace state, so it fails ownership immediately — the postgres analogue of
+ * refusing a forged inode-identity workspace.
+ */
 export async function assertProductionBuildDatabaseReady({
   workspace,
+  databaseUrl,
+  disposable,
+  buildDatabaseRoot,
+  ownershipProof,
   beforeDatabaseOpen,
   beforeVerifiedDatabaseConnect,
 } = {}) {
+  if (!workspace) {
+    // A raw URL with no live capability can never be a build database: there is
+    // no marked, process-local database behind it. This is where forged
+    // ownership, disposable flags, and arbitrary existing databases are refused.
+    refusal('BUILD_DATABASE_OWNERSHIP_REQUIRED',
+      'Production build requires a live process-local database capability, not a raw URL');
+  }
   const state = assertWorkspaceIdentity(workspace);
   if (!state.initialized) {
     refusal('BUILD_DATABASE_NOT_INITIALIZED', 'Build-owned database has not completed initialization');
@@ -870,57 +337,54 @@ export async function assertProductionBuildDatabaseReady({
   await beforeDatabaseOpen?.();
   assertWorkspaceIdentity(workspace);
 
-  const prisma = new PrismaClient({
-    datasources: {
-      db: { url: singleConnectionDatabaseUrl(workspace, { immutable: true }) },
-    },
-  });
+  await beforeVerifiedDatabaseConnect?.();
+  // Verify through a READ-ONLY connection — a build-time write would be refused
+  // by the server, which is the postgres re-expression of the immutable file
+  // contract. The ownership marker proves this is the database this build made.
+  const prisma = await connect(state.readOnlyUrl);
   let result;
   try {
-    await beforeVerifiedDatabaseConnect?.();
-    const beforeOpen = openFileDescriptors();
-    await prisma.$connect();
-    assertOpenedDatabaseIdentity(beforeOpen, state);
-    let markers;
-    try {
-      markers = await prisma.$queryRawUnsafe(
-        `SELECT marker FROM "${OWNERSHIP_TABLE}" ORDER BY marker`,
-      );
-    } catch {
-      refusal(
-        'BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
-        'Opened database does not contain this build process ownership marker',
-      );
+    const markers = await readOwnershipMarker(prisma);
+    if (markers === null || markers.length !== 1 || markers[0] !== state.marker) {
+      refusal('BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
+        'Opened database is not the process-local database created by this build');
     }
-    if (
-      markers.length !== 1
-      || markers[0]?.marker !== state.marker
-    ) {
-      refusal(
-        'BUILD_DATABASE_OPEN_IDENTITY_MISMATCH',
-        'Opened database is not the process-local database created by this build',
-      );
-    }
-    assertWorkspaceIdentity(workspace);
-    const readiness = await databaseReadiness(prisma, { provider: 'build-sqlite' });
+    const readiness = await databaseReadiness(prisma, { provider: 'postgresql' });
     if (!readiness.ready) {
-      refusal(
-        'DATABASE_NOT_READY',
+      refusal('DATABASE_NOT_READY',
         `Production build database is not ready: ${readiness.checks
           .filter((check) => !check.pass)
           .map((check) => check.name)
-          .join(', ')}`,
-      );
+          .join(', ')}`);
     }
-    assertWorkspaceIdentity(workspace);
+    // Prove the connection is genuinely read-only: an attempted write is
+    // refused by the server. This is the live, checked equivalent of the old
+    // "immutable" flag — not a promise in a URL, a demonstrated refusal.
+    let readOnlyEnforced = false;
+    try {
+      await prisma.$executeRawUnsafe(
+        `CREATE TABLE "__cana_build_write_probe" (id INTEGER)`,
+      );
+    } catch {
+      readOnlyEnforced = true;
+    }
+    if (!readOnlyEnforced) {
+      refusal('BUILD_DATABASE_NOT_READ_ONLY',
+        'Build database connection accepted a write — the read-only contract is not enforced');
+    }
     result = {
-      provider: 'sqlite',
+      provider: 'postgresql',
       checks: [
         ...readiness.checks,
         {
-          name: 'build_database_read_only_immutable',
+          name: 'build_database_read_only',
           pass: true,
-          detail: 'build queries use a read-only immutable SQLite connection',
+          detail: 'build queries use a default_transaction_read_only PostgreSQL connection',
+        },
+        {
+          name: 'build_database_disposable',
+          pass: true,
+          detail: `disposable database ${state.databaseName} is dropped WITH (FORCE) on cleanup`,
         },
       ],
     };
@@ -932,13 +396,9 @@ export async function assertProductionBuildDatabaseReady({
 }
 
 export async function prepareProductionBuildDatabase(options = {}) {
-  const workspace = createBuildDatabaseWorkspace();
+  const workspace = createBuildDatabaseWorkspace(options);
   try {
-    const result = await initializeWorkspace(
-      workspace,
-      options.beforeInitialDatabaseOpen,
-      options.beforeInitialDatabaseConnect,
-    );
+    const result = await initializeWorkspace(workspace, options);
     if (options.beforeDatabaseOpen) {
       await assertProductionBuildDatabaseReady({
         workspace,
@@ -962,15 +422,37 @@ export async function prepareProductionBuildDatabase(options = {}) {
 
 export async function installProductionBuildDatabase() {
   if (installedWorkspace) return installedWorkspace.result;
-  const installed = await prepareProductionBuildDatabase();
+  // RE-ENTRY ACROSS MODULE INSTANCES. Next compiles next.config to a temp file
+  // and may import it more than once in the SAME process. Each import is a fresh
+  // module instance, so `installedWorkspace` (module-scoped) is not enough: a
+  // second evaluation would read the DATABASE_URL the first one already
+  // repointed at the read-only build database and try to CREATE DATABASE against
+  // it (which fails read-only). A process-level env flag makes install idempotent
+  // regardless of how many times the config module is instantiated: once a build
+  // database is installed, later calls are a no-op that keep the repointed URL.
+  if (process.env.CANA_BUILD_DATABASE_INSTALLED === '1') {
+    return { provider: 'postgresql', checks: [], reused: true };
+  }
+  // Snapshot the ORIGINAL server URL before any mutation so provisioning always
+  // targets the real server, never a read-only build URL fed back through env.
+  const serverUrl = process.env.CANA_BUILD_DATABASE_URL ?? process.env.DATABASE_URL;
+  const installed = await prepareProductionBuildDatabase({ serverUrl });
   installedWorkspace = installed;
-  process.env.DATABASE_URL = singleConnectionDatabaseUrl(
-    installed.workspace,
-    { immutable: true },
-  );
+  // The build sees ONLY the read-only disposable database. It can query the
+  // production-shaped schema but can never write, and never reaches the real
+  // datastore because DATABASE_URL is repointed at the throwaway database.
+  const readOnlyUrl = stateFor(installed.workspace).readOnlyUrl;
+  process.env.CANA_BUILD_DATABASE_INSTALLED = '1';
+  process.env.DATABASE_URL = readOnlyUrl;
+  process.env.DIRECT_URL = readOnlyUrl;
   const cleanup = () => {
     if (installedWorkspace) {
-      installedWorkspace.workspace.cleanup();
+      try {
+        installedWorkspace.workspace.cleanup();
+      } catch {
+        // Best-effort teardown on process exit — the disposable database is
+        // named and will be reclaimed; a failed drop must not wedge shutdown.
+      }
       installedWorkspace = undefined;
     }
   };

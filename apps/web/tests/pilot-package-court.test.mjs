@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * PILOT PACKAGE COURT — the document must match the running system.
@@ -15,7 +17,26 @@ import { readFileSync, existsSync } from 'node:fs';
  * rather than quietly becoming a lie.
  */
 
-const PKG = '/agent/workspace/deliverables/MERCHANT_PILOT_PACKAGE_V1.md';
+// The pilot package is a repo-tracked deliverable at <repo>/deliverables/. The
+// original path hard-coded /agent/workspace/deliverables/, which only resolved when
+// the repo happened to be checked out at exactly /agent/workspace/. That is a
+// property of the checkout location, not of the deliverable — and the deliverable is
+// present and git-tracked. Resolve it by walking UP from this test file until the
+// repo-root deliverables/ tree appears, so the court is robust to where (and under
+// what directory name) the repo is checked out.
+const REL = 'deliverables/MERCHANT_PILOT_PACKAGE_V1.md';
+function resolvePackage() {
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 8; i++) {
+    const candidate = path.join(dir, REL);
+    if (existsSync(candidate)) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+}
+const PKG = resolvePackage() ?? `<repo>/${REL}`;
 const doc = existsSync(PKG) ? readFileSync(PKG, 'utf8') : null;
 
 test('the package exists and is readable', () => {

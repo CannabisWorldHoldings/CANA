@@ -25,7 +25,10 @@ async function run() {
     
     const record = {
       tradeName: values[0],
-      licenseNumber: values[1],
+      // Uppercase to keep entity resolution stable: PostgreSQL unique
+      // constraints are case-sensitive, so "abca-1001" and "ABCA-1001"
+      // would otherwise stage as two different licenses.
+      licenseNumber: values[1]?.trim().toUpperCase(),
       address: values[2],
       status: values[3],
       rawJson: JSON.stringify({

@@ -90,9 +90,9 @@ export function availableCatalogWhere(retailerId, query = '') {
     ...(normalizedQuery
       ? {
           OR: [
-            { name: { contains: normalizedQuery } },
-            { category: { contains: normalizedQuery } },
-            { description: { contains: normalizedQuery } },
+            { name: { contains: normalizedQuery, mode: /** @type {const} */ ('insensitive') } },
+            { category: { contains: normalizedQuery, mode: /** @type {const} */ ('insensitive') } },
+            { description: { contains: normalizedQuery, mode: /** @type {const} */ ('insensitive') } },
           ],
         }
       : {}),

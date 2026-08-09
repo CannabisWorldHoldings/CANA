@@ -14,7 +14,9 @@
     "prisma:generate": "prisma generate",
     "prisma:db": "prisma db push",
     "seed": "node prisma/seed.mjs",
-    "credentials:rotate-demo": "node prisma/rotate-demo-credentials.mjs"
+    "credentials:rotate-demo": "node prisma/rotate-demo-credentials.mjs",
+    "test:geo": "node --test tests/public-map-projection.test.mjs tests/routing-provider.test.mjs",
+    "test:pgsem": "node --test tests/postgres-semantics.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -23,7 +25,8 @@
     "next": "16.3.0-canary.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "maplibre-gl": "^5.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.2",

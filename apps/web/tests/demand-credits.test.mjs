@@ -1,41 +1,89 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createDemandCredits, GENESIS_HASH } from '../src/lib/demand-credits.mjs';
 
 /**
  * Persisted Demand Credit ledger — DB-state verification.
  *
- * These run against a REAL disposable SQLite database, not a mock, because the
+ * These run against a REAL disposable database, not a mock, because the
  * invariants being tested (derived balance, gapless hash chain, cross-merchant
  * isolation, idempotency) are properties of persistence. A mock would let all
  * of them pass while the real thing was broken.
+ *
+ * SUBSTRATE: the canonical CANA datastore is managed PostgreSQL + PostGIS
+ * (docs/adr/0001), so this suite now provisions a uniquely named, DISPOSABLE
+ * PostgreSQL database on the loopback server — the real substrate — instead of
+ * a self-provisioned SQLite file. The ledger invariants are substrate-neutral,
+ * so every test's intent and assertion is unchanged; only the fixture that
+ * stands the schema up moved from `prisma db push` on a `file:` URL to
+ * `migrate deploy` against a fresh postgres database. The disposable database
+ * is created in `before` and DROPped WITH (FORCE) in `after`, so no shared
+ * database (cana_app or otherwise) is ever touched. (Reuses the exact isolation
+ * pattern proven in tests/migration-court.test.mjs.)
  */
 
-let prisma, credits, tmpDir, PrismaClient;
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
+
+/** The loopback PostgreSQL server every disposable database lives on. The
+ *  `postgres` maintenance database is where CREATE/DROP DATABASE are issued —
+ *  you cannot drop a database while connected to it. */
+const PG_HOST = 'postgresql://postgres@127.0.0.1:5432';
+const PG_ADMIN_URL = `${PG_HOST}/postgres`;
+
+function prismaCliPath() {
+  for (let dir = WEB; ; dir = path.dirname(dir)) {
+    const c = path.join(dir, 'node_modules', 'prisma', 'build', 'index.js');
+    if (fs.existsSync(c)) return c;
+    if (path.dirname(dir) === dir) throw new Error('prisma CLI not found');
+  }
+}
+
+/** Invoke the Prisma CLI. A defined `stdin` is fed to the process (for
+ *  `db execute --stdin`); otherwise stdin is inherited-pipe. */
+function prisma_(args, env = {}, stdin) {
+  return execFileSync(process.execPath, [prismaCliPath(), ...args], {
+    cwd: WEB, encoding: 'utf8', timeout: 240_000, stdio: 'pipe',
+    ...(stdin === undefined ? {} : { input: stdin }),
+    env: { ...process.env, ...env },
+  });
+}
+
+let prisma, credits, dbUrl, dbName;
 const A = 'merchant_alpha';
 const B = 'merchant_beta';
 
 before(async () => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dc-test-'));
-  const dbFile = path.join(tmpDir, 'test.db');
-  const schema = path.join(tmpDir, 'schema.prisma');
-  // Copy the real schema so the test cannot drift from production shape.
-  fs.copyFileSync(path.resolve('prisma/schema.prisma'), schema);
-  execFileSync('npx', ['prisma', 'db', 'push', '--schema', schema, '--skip-generate', '--accept-data-loss'], {
-    env: { ...process.env, DATABASE_URL: `file:${dbFile}` }, stdio: 'pipe',
-  });
-  ({ PrismaClient } = await import('@prisma/client'));
-  prisma = new PrismaClient({ datasources: { db: { url: `file:${dbFile}` } } });
+  // Create a uniquely named disposable database on the loopback server. The
+  // name is `dc_<random hex>` so parallel runs and crashed prior runs never
+  // collide. CREATE DATABASE is issued through the Prisma CLI against the
+  // maintenance database.
+  dbName = `dc_${randomBytes(6).toString('hex')}`;
+  prisma_(['db', 'execute', '--url', PG_ADMIN_URL, '--stdin'], {}, `CREATE DATABASE "${dbName}";`);
+  dbUrl = `${PG_HOST}/${dbName}`;
+  // Deploy the real, source-controlled migration set so the test cannot drift
+  // from production shape. `migrate deploy` reads the schema's directUrl =
+  // env("DIRECT_URL"), so BOTH env vars must point at the disposable database.
+  prisma_(['migrate', 'deploy', '--schema', SCHEMA], { DATABASE_URL: dbUrl, DIRECT_URL: dbUrl });
+  const { PrismaClient } = await import('@prisma/client');
+  prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
   credits = createDemandCredits(prisma);
 });
 
 after(async () => {
   await prisma?.$disconnect();
-  if (tmpDir) fs.rmSync(tmpDir, { recursive: true, force: true });
+  // Drop the disposable database. WITH (FORCE) terminates any lingering backend
+  // connection so a still-open pool cannot wedge the drop.
+  if (dbName) {
+    try {
+      prisma_(['db', 'execute', '--url', PG_ADMIN_URL, '--stdin'], {}, `DROP DATABASE IF EXISTS "${dbName}" WITH (FORCE);`);
+    } catch { /* best-effort teardown — a failed drop must not fail the suite */ }
+  }
 });
 
 const future = () => new Date(Date.now() + 30 * 86400_000);

@@ -587,3 +587,78 @@ html[data-daypart="night"] .marketplace-hero__veil {
       );
   }
 }
+/* -------------------------------------------------------------------------
+   CANA MapLibre surface (Slice 2). Marker + popup visual parity with the
+   Leaflet div-icon language: circular initial chip, brand colors, hover
+   scale. Popups render evidence-gated data only; the unknown state is a
+   deliberately visible design element, not an omission.
+   ------------------------------------------------------------------------- */
+.cana-marker {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  background: #052e1f; /* emerald-950 parity with the Leaflet icon */
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(2, 44, 34, 0.35);
+  transition: transform 120ms ease;
+}
+.cana-marker:hover,
+.cana-marker:focus-visible {
+  transform: scale(1.25);
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 2px;
+}
+.cana-marker-verified {
+  background: var(--brand-primary);
+}
+
+.cana-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 150px;
+  font-family: var(--font-sans, ui-sans-serif);
+  text-align: center;
+}
+.cana-pop-name { font-size: 0.85rem; color: #0f172a; line-height: 1.2; }
+.cana-pop-type {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 900;
+  color: var(--brand-primary);
+}
+.cana-pop-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--brand-primary) 12%, white);
+  color: var(--brand-primary);
+}
+.cana-pop-badge-pending { background: #f1f5f9; color: #64748b; }
+.cana-pop-status { font-size: 0.7rem; font-weight: 600; color: #0f172a; }
+.cana-pop-unknown { color: #94a3b8; font-style: italic; }
+.cana-pop-hours { font-size: 0.65rem; color: #475569; }
+.cana-pop-link {
+  margin-top: 0.25rem;
+  width: 100%;
+  border-radius: 0.375rem;
+  background: var(--brand-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.35rem 1rem;
+  text-align: center;
+}
+.cana-pop-link:hover { filter: brightness(1.1); }
+
+.maplibregl-popup-content { border-radius: 12px; padding: 0.75rem; }

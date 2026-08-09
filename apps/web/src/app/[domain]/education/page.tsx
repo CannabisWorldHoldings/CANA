@@ -113,7 +113,7 @@ export default async function EducationHubPage({ params, searchParams }: Props) 
     ...publicRecordWhere,
     category: 'flower',
     name: requestedSearch.strain
-      ? { contains: requestedSearch.strain }
+      ? { contains: requestedSearch.strain, mode: 'insensitive' as const }
       : undefined,
   };
   const [articleCount, strainCount] = await Promise.all([

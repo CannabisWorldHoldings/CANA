@@ -26,6 +26,8 @@ import {
 } from '@/lib/structured-data.mjs';
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 import RetailerMapLoader from '@/components/retailer-map-loader';
+import { selectedMapEngine } from '@/lib/geo/tile-sources.mjs';
+import { projectMarkers } from '@/lib/geo/public-map-projection.mjs';
 import FavoriteButton from '@/components/favorite-button';
 import DiscoverySupportBand from '@/components/discovery-support-band';
 import MarketplaceCategoryRail from '@/components/marketplace-category-rail';
@@ -751,6 +753,12 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
                 lng: r.lng,
                 type: r.type,
               }))}
+              engine={selectedMapEngine()}
+              projectedMarkers={
+                selectedMapEngine() === 'maplibre'
+                  ? projectMarkers({ retailers, asOf }).markers
+                  : undefined
+              }
             />
           </div>
 

@@ -43,6 +43,12 @@ function safeEnvironment() {
     'NODE_EXTRA_CA_CERTS',
     'SSL_CERT_FILE',
     'SSL_CERT_DIR',
+    // Sanctioned disposable-benchmark PostgreSQL server URL. The canonical
+    // datastore is PostgreSQL (ADR-0001); the benchmark provisions and drops
+    // an isolated database on this server per run. Use a low-privilege
+    // benchmark role, never production credentials.
+    'CANA_BENCHMARK_DATABASE_URL',
+    'DATABASE_URL',
   ]) {
     if (typeof process.env[key] === 'string') environment[key] = process.env[key];
   }
