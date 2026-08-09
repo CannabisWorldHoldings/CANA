@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { projectGraphToRecords } from '../src/lib/market-graph-projection.mjs';
 import { DATA_STATUS } from '../src/lib/data-status.mjs';
+import { compileMarketPage } from '../src/lib/market-page-compiler.mjs';
 
 /**
  * D12 boundary — ONE entity graph (D8 genome) → projection records. This is
@@ -124,4 +125,58 @@ test('deterministic: same graph + clock → identical projection', () => {
   const a = projectGraphToRecords(graph(), { now: NOW });
   const b = projectGraphToRecords(graph(), { now: NOW });
   assert.deepEqual(a, b);
+});
+
+// ============ T3 RESTORATION: the six compiler-junction tests ============
+
+test('law 1 chain: the unverified merchant deal projects but the COMPILER excludes it as unlicensed', () => {
+  const { records } = projectGraphToRecords(graph(), { now: NOW });
+  const page = compileMarketPage(records, { market: 'Washington, D.C.', now: NOW });
+  const deals = page.modules.find((m) => m.kind === 'deals');
+  assert.ok(!deals.items.some((d) => d.id === 'd-ghost'), 'ghost deal never surfaces');
+  assert.equal(deals.provenance.excluded.unlicensed, 1, 'and the exclusion is counted');
+});
+
+test('law 4 end-to-end: the auditable license datum travels graph → projection → compiled page (MM-008)', () => {
+  const { records } = projectGraphToRecords(graph(), { now: NOW });
+  const page = compileMarketPage(records, { market: 'Washington, D.C.', now: NOW });
+  const disp = page.modules.find((m) => m.kind === 'dispensaries').items.find((i) => i.merchant_id === 'anchor');
+  assert.equal(disp.verified.license_number, 'R-2023-DC-0031');
+  assert.equal(disp.verified.authority, 'DC ABCA');
+  assert.equal(disp.verified.auditable, true);
+});
+
+test('service_area joins to its merchant and D13 eligibility rules the compiled delivery rail (owner law end-to-end)', () => {
+  const { records } = projectGraphToRecords(graph(), { now: NOW });
+  const page = compileMarketPage(records, { market: 'Washington, D.C.', now: NOW, neighborhood: 'Navy Yard' });
+  const rail = page.modules.find((m) => m.kind === 'delivery_services');
+  assert.deepEqual(rail.items.map((i) => i.merchant_id), ['green-line'], '8-mi server surfaces; 3-mi non-server (Georgetown-only) excluded');
+  assert.equal(rail.items[0].eligibility, 'ELIGIBLE_OPEN');
+  assert.deepEqual(rail.items[0].facts, { minimum_usd: 45, fee_usd: 0, eta_minutes: [35, 55], serves: ['Navy Yard'] });
+});
+
+test('unverified service_area fails closed downstream: D13 says UNVERIFIED, never guesses', () => {
+  const g = graph().map((e) => (e.id === 'sa-green' ? { ...e, verified: { status: DATA_STATUS.AWAITING_VERIFICATION, checked_at: FRESH } } : e));
+  const { records } = projectGraphToRecords(g, { now: NOW });
+  const page = compileMarketPage(records, { market: 'Washington, D.C.', now: NOW, neighborhood: 'Navy Yard' });
+  const rail = page.modules.find((m) => m.kind === 'delivery_services');
+  const glRow = rail.items.find((i) => i.merchant_id === 'green-line');
+  assert.equal(glRow.eligibility, 'UNVERIFIED', 'D13 fails closed — we say we do not know, we never guess');
+});
+
+test('sponsorship quarantine holds through the compiled page: hero is SOLD and labeled', () => {
+  const { records } = projectGraphToRecords(graph(), { now: NOW });
+  const page = compileMarketPage(records, { market: 'Washington, D.C.', now: NOW });
+  const hero = page.modules.find((m) => m.kind === 'hero_media');
+  assert.equal(hero.state, 'SOLD');
+  assert.equal(hero.items[0].label, 'Sponsored');
+});
+
+test('deterministic end-to-end: same graph + clock → identical projection AND compiled page', () => {
+  const a = projectGraphToRecords(graph(), { now: NOW });
+  const b = projectGraphToRecords(graph(), { now: NOW });
+  assert.deepEqual(
+    compileMarketPage(a.records, { market: 'Washington, D.C.', now: NOW, neighborhood: 'Navy Yard' }),
+    compileMarketPage(b.records, { market: 'Washington, D.C.', now: NOW, neighborhood: 'Navy Yard' }),
+  );
 });
