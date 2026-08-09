@@ -12,7 +12,7 @@
  * Leaflet implementation remains the default engine until that gate is green.
  */
 import { useEffect, useRef, useState } from 'react';
-import maplibregl, { type StyleSpecification } from 'maplibre-gl';
+import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { basemapStyle } from '@/lib/geo/tile-sources.mjs';
 
@@ -95,7 +95,7 @@ export default function RetailerMapMapLibre({ markers, onMarkerSelect, selectedR
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: basemapStyle() as StyleSpecification,
+        style: basemapStyle(),
         center: DC_CENTER,
         zoom: DC_ZOOM,
         // Parity P7: never hijack page scroll.

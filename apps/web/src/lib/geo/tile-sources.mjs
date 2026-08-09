@@ -19,7 +19,10 @@
 const CARTO_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
-/** MapLibre style document for the configured provider. */
+/**
+ * MapLibre style document for the configured provider.
+ * @returns {string | import('maplibre-gl').StyleSpecification}
+ */
 export function basemapStyle({
   provider = process.env.NEXT_PUBLIC_CANA_MAP_TILE_PROVIDER || 'carto-raster',
   maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY,
@@ -39,7 +42,8 @@ export function basemapStyle({
         throw new Error('CANA_MAP_TILE_PROVIDER=pmtiles requires NEXT_PUBLIC_CANA_PMTILES_URL.');
       }
       // Consumers must register the PMTiles protocol handler before use.
-      return {
+      /** @type {import('maplibre-gl').StyleSpecification} */
+      const style = {
         version: 8,
         sources: {
           cana: { type: 'vector', url: `pmtiles://${pmtilesUrl}` },
@@ -48,10 +52,12 @@ export function basemapStyle({
         // tiles themselves; this stub is intentionally minimal until then.
         layers: [],
       };
+      return style;
     }
     case 'carto-raster':
     default:
-      return {
+      /** @type {import('maplibre-gl').StyleSpecification} */
+      const style = {
         version: 8,
         sources: {
           'carto-voyager': {
@@ -69,6 +75,7 @@ export function basemapStyle({
           { id: 'carto-voyager', type: 'raster', source: 'carto-voyager' },
         ],
       };
+      return style;
   }
 }
 
