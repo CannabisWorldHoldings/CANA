@@ -430,6 +430,8 @@ function createNamecheapArtifact(root, name, commit) {
   fs.mkdirSync(release, { recursive: true });
   fs.mkdirSync(uploads, { recursive: true });
   fs.cpSync(TEMPLATES, release, { recursive: true });
+  fs.mkdirSync(path.join(release, '.next'), { recursive: true });
+  fs.writeFileSync(path.join(release, '.next', 'BUILD_ID'), `${commit}\n`);
   const scriptHashes = copyNamecheapScripts(release);
   fs.copyFileSync(path.join(TEMPLATES, 'passenger-server.cjs'), path.join(release, 'server.js'));
   fs.cpSync(path.join(ROOT, 'apps', 'web', 'prisma'), path.join(release, 'prisma'), {
