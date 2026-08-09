@@ -525,9 +525,8 @@ async function startPassengerWeb(root, releaseRoot) {
     cwd: releaseRoot,
     env: {
       ...runtimeEnvironment(root, releaseRoot, portFile),
-      DATABASE_URL: 'postgresql://postgres@127.0.0.1:5432/cana_cpanel_simulation',
-      DIRECT_URL: 'postgresql://postgres@127.0.0.1:5432/cana_cpanel_simulation',
-      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '1000000000',
+      DATABASE_URL: 'postgresql://app@db.example/orderweeddc?sslmode=require&sslaccept=strict',
+      DIRECT_URL: 'postgresql://app@db.example/orderweeddc?sslmode=require&sslaccept=strict',
       HOSTNAME: '127.0.0.1',
       PORT: '0',
     },
