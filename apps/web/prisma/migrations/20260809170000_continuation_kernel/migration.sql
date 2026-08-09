@@ -74,6 +74,7 @@ CREATE TABLE "ContinuationReceipt" (
 CREATE TABLE "Opportunity" (
     "id" TEXT NOT NULL,
     "tenant" TEXT NOT NULL,
+    "dedupeKey" TEXT NOT NULL,
     "kind" TEXT NOT NULL,
     "retailerId" TEXT,
     "evidence" TEXT NOT NULL,
@@ -123,4 +124,5 @@ CREATE UNIQUE INDEX "ContinuationReceipt_missionId_seq_key" ON "ContinuationRece
 CREATE INDEX "ContinuationReceipt_missionId_recordedAt_idx" ON "ContinuationReceipt"("missionId", "recordedAt");
 CREATE INDEX "Opportunity_tenant_status_idx" ON "Opportunity"("tenant", "status");
 CREATE INDEX "Opportunity_kind_verification_idx" ON "Opportunity"("kind", "verification");
+CREATE UNIQUE INDEX "Opportunity_tenant_dedupeKey_key" ON "Opportunity"("tenant", "dedupeKey");
 CREATE INDEX "AskIntentSignal_tenant_createdAt_idx" ON "AskIntentSignal"("tenant", "createdAt");

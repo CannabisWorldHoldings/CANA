@@ -23,7 +23,17 @@ const BRAND = 'brand-1';
 
 test('ASK persistence scope is tenant-controlled, never a caller-supplied proxy identity', () => {
   assert.equal(askPersistenceScope('orderweeddc.com'), 'tenant:orderweeddc.com');
-  for (const untrusted of ['', 'ORDERWEEDDC.COM', 'orderweeddc.com, 203.0.113.4', '../tenant']) {
+  for (const untrusted of [
+    '',
+    'ORDERWEEDDC.COM',
+    'orderweeddc.com, 203.0.113.4',
+    '../tenant',
+    '.orderweeddc.com',
+    'orderweeddc.com.',
+    'orderweeddc..com',
+    '-orderweeddc.com',
+    'orderweeddc-.com',
+  ]) {
     assert.throws(() => askPersistenceScope(untrusted), /canonical tenant domain/);
   }
 });

@@ -14,11 +14,7 @@ export async function inSerializableTransaction(prisma, operation, attempt = 0) 
   }
 }
 
-export async function appendReceipt(
-  prisma,
-  body,
-  { attempt = 0, retryOnConflict = true } = {},
-) {
+async function appendReceiptInTransaction(prisma, body) {
   const head = await prisma.continuationReceipt.findFirst({
     where: { missionId: body.missionId },
     orderBy: { seq: 'desc' },
@@ -27,40 +23,43 @@ export async function appendReceipt(
   const seq = (head?.seq ?? 0) + 1;
   const prevHash = head?.entryHash ?? GENESIS_HASH;
   const entryHash = await receiptHash({ ...body, seq }, prevHash);
-  try {
-    const receipt = await prisma.continuationReceipt.create({
-      data: {
-        seq,
-        missionId: body.missionId,
-        triggerId: body.triggerId ?? null,
-        tickId: body.tickId,
-        action: body.action,
-        detail: body.detail ?? null,
-        evidence: body.evidence ?? null,
-        prevHash,
-        entryHash,
-      },
-    });
-    await prisma.continuationMission.update({
-      where: { id: body.missionId },
+  const receipt = await prisma.continuationReceipt.create({
+    data: {
+      seq,
+      missionId: body.missionId,
+      triggerId: body.triggerId ?? null,
+      tickId: body.tickId,
+      action: body.action,
+      detail: body.detail ?? null,
+      evidence: body.evidence ?? null,
+      prevHash,
+      entryHash,
+    },
+  });
+  await prisma.continuationMission.update({
+    where: { id: body.missionId },
+    data: { latestReceiptId: receipt.id },
+  });
+  if (body.triggerId) {
+    await prisma.continuationTrigger.update({
+      where: { id: body.triggerId },
       data: { latestReceiptId: receipt.id },
     });
-    if (body.triggerId) {
-      await prisma.continuationTrigger.update({
-        where: { id: body.triggerId },
-        data: { latestReceiptId: receipt.id },
-      });
-    }
-    return receipt;
-  } catch (error) {
-    if (retryOnConflict && attempt < 3 && String(error?.code) === 'P2002') {
-      return appendReceipt(prisma, body, {
-        attempt: attempt + 1,
-        retryOnConflict,
-      });
-    }
-    throw error;
   }
+  return receipt;
+}
+
+export async function appendReceipt(
+  prisma,
+  body,
+  { retryOnConflict = true } = {},
+) {
+  if (typeof prisma?.$transaction !== 'function') {
+    return appendReceiptInTransaction(prisma, body);
+  }
+  if (!retryOnConflict) return appendReceiptInTransaction(prisma, body);
+  return inSerializableTransaction(prisma, (tx) =>
+    appendReceiptInTransaction(tx, body));
 }
 
 export async function verifyReceiptChain(prisma, missionId) {

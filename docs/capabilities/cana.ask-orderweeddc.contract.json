@@ -11,8 +11,8 @@
     { "action_id": "ask.compile-intent", "description": "Compile raw language to Intent IR (deterministic, unknowns explicit)", "entry": "apps/web/src/lib/ask/intent-ir.mjs#compileIntent" }
   ],
   "evidence_hooks": [
-    "one AskIntentSignal row per admitted public observation (full IR + answer summary)",
-    "Opportunity row (verification UNKNOWN) when the evidence exposes a MARKET_GAP or CAPABILITY_GAP",
+    "one AskIntentSignal row per admitted public observation (SHA-256 intent identity + minimized raw-free IR + answer summary)",
+    "one tenant-scoped semantically deduplicated Opportunity row (verification UNKNOWN) when the evidence exposes a MARKET_GAP or CAPABILITY_GAP",
     "candidate provenance object per answer (same shape as /api/v1/retailers)"
   ],
   "continuation_hooks": [

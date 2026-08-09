@@ -842,15 +842,30 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     signals: await p.askIntentSignal.count(),
   });
   assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+  const [storedSignal] = await p.askIntentSignal.findMany();
+  const [storedOpportunity] = await p.opportunity.findMany();
+  assert.match(storedSignal.rawQuery, /^sha256:[a-f0-9]{64}$/);
+  assert.doesNotMatch(storedSignal.intentIr, /flower in dupont/);
+  assert.doesNotMatch(storedOpportunity.signal, /flower in dupont/);
+  assert.doesNotMatch(storedOpportunity.evidence, /flower in dupont/);
 
   const duplicate = await recordAskWork(p, input);
   assert.equal(duplicate.state, 'DUPLICATE');
   assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
 
+  const semanticReplay = await recordAskWork(p, {
+    ...input,
+    intent: { ...intent, raw_query: 'dupont flower please' },
+    now: new Date(now.getTime() + 25 * 60 * 60 * 1000),
+  });
+  assert.equal(semanticReplay.state, 'RECORDED');
+  assert.equal(semanticReplay.opportunity.id, first.opportunity.id);
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
+
   await p.$executeRawUnsafe(`
     CREATE OR REPLACE FUNCTION refuse_ask_signal() RETURNS trigger AS $$
     BEGIN
-      IF NEW."rawQuery" = 'failure in dupont' THEN RAISE EXCEPTION 'injected ask signal failure'; END IF;
+      RAISE EXCEPTION 'injected ask signal failure';
       RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
@@ -860,7 +875,14 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     FOR EACH ROW EXECUTE FUNCTION refuse_ask_signal();
   `);
   try {
-    const failedIntent = { ...intent, raw_query: 'failure in dupont' };
+    const failedIntent = {
+      ...intent,
+      raw_query: 'failure in shaw',
+      dimensions: {
+        ...intent.dimensions,
+        location: { status: 'KNOWN', value: 'shaw' },
+      },
+    };
     const failed = await recordAskWork(p, {
       ...input,
       intent: failedIntent,
@@ -870,7 +892,7 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
       },
     });
     assert.equal(failed.state, 'FAILED');
-    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
   } finally {
     await p.$executeRawUnsafe('DROP TRIGGER IF EXISTS ask_signal_failure ON "AskIntentSignal";');
     await p.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_ask_signal();');

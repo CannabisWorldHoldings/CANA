@@ -809,6 +809,8 @@ model ContinuationReceipt {
 model Opportunity {
   id                 String   @id @default(uuid())
   tenant             String
+  /// Stable tenant-scoped semantic identity; never raw customer language.
+  dedupeKey          String
   /// MARKET_GAP | MERCHANT_GAP | ... (kind vocabulary grows by evidence, not invention)
   kind               String
   /// Plain string ref, no FK (a gap opportunity may reference no retailer).
@@ -838,14 +840,16 @@ model Opportunity {
 
   @@index([tenant, status])
   @@index([kind, verification])
+  @@unique([tenant, dedupeKey])
 }
 
 /// Track A instrumentation: every real ask is a provenance-carrying signal.
 model AskIntentSignal {
   id             String   @id @default(uuid())
   tenant         String
+  /// SHA-256 identity of the minimized intent; raw customer language is not persisted.
   rawQuery       String
-  /// JSON Intent IR including explicit unknown dimensions.
+  /// JSON minimized Intent IR including explicit unknown dimensions, without raw text.
   intentIr       String
   /// JSON answer summary: candidate count, unknowns surfaced, zero-state flag.
   answerSummary  String

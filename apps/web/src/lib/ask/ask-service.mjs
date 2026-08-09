@@ -22,6 +22,7 @@
 
 import { currentPublicRecordWhere } from '../seo-truth.mjs';
 import { isPubliclyVerified } from '../data-status.mjs';
+import { persistenceSafeIntent } from './intent-ir.mjs';
 
 const MAX_CANDIDATES = 10;
 
@@ -53,6 +54,7 @@ export function buildCandidateWhere(intent, { brandId, now = new Date() }) {
  */
 export async function answerIntent(prisma, { intent, brandId, tenantDomain, now = new Date() }) {
   const dimensions = intent?.dimensions ?? {};
+  const persistedIntent = persistenceSafeIntent(intent);
   const location = dimensions.location;
   const unsupportedKnownDimensions = ['category', 'price_max_usd', 'fulfillment', 'open_now']
     .filter((name) => dimensions[name]?.status === 'KNOWN');
@@ -79,9 +81,9 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
         tenant: tenantDomain,
         kind: 'CAPABILITY_GAP',
         retailerId: null,
-        signal: intent.raw_query,
+        signal: 'MINIMIZED_INTENT_IR',
         evidence: JSON.stringify({
-          intent_ir: intent,
+          intent_ir: persistedIntent,
           decision_eligible: false,
           unsupported_known_dimensions: unsupportedKnownDimensions,
           observed_at: now.toISOString(),
@@ -153,9 +155,9 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
       tenant: tenantDomain,
       kind: 'MARKET_GAP',
       retailerId: null,
-      signal: intent.raw_query,
+      signal: 'MINIMIZED_INTENT_IR',
       evidence: JSON.stringify({
-        intent_ir: intent,
+        intent_ir: persistedIntent,
         query_gate: 'currentPublicRecordWhere + isPubliclyVerified',
         verified_candidates: 0,
         observed_at: now.toISOString(),

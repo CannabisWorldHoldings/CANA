@@ -20,6 +20,21 @@
 
 export const IR_VERSION = 1;
 
+export function persistenceSafeIntent(intent) {
+  const source = intent && typeof intent === 'object' ? intent : {};
+  return {
+    ir_version: Number.isInteger(source.ir_version) ? source.ir_version : null,
+    compiler: typeof source.compiler === 'string' ? source.compiler : null,
+    dimensions:
+      source.dimensions && typeof source.dimensions === 'object'
+        ? source.dimensions
+        : {},
+    unknown_dimensions: Array.isArray(source.unknown_dimensions)
+      ? source.unknown_dimensions
+      : [],
+  };
+}
+
 /** D.C. area tokens customers actually type. Tokenization only — see header. */
 const LOCATION_LEXICON = [
   'adams morgan', 'anacostia', 'brookland', 'capitol hill', 'columbia heights',

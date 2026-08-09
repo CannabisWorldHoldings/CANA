@@ -1,4 +1,6 @@
+import { createHash } from 'node:crypto';
 import { createMission, createTrigger } from '../continuation/continuation-repository.mjs';
+import { persistenceSafeIntent } from './intent-ir.mjs';
 import {
   PUBLIC_SUBMISSION_SURFACES,
   publicSubmissionErrorCode,
@@ -8,10 +10,36 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function askPersistenceScope(domain) {
-  if (typeof domain !== 'string' || !/^[a-z0-9.-]{1,253}$/.test(domain)) {
+  const labels = typeof domain === 'string' ? domain.split('.') : [];
+  if (
+    typeof domain !== 'string' ||
+    domain.length > 253 ||
+    labels.length < 2 ||
+    labels.some(
+      (label) =>
+        label.length < 1 ||
+        label.length > 63 ||
+        !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(label),
+    )
+  ) {
     throw new TypeError('ASK persistence requires a canonical tenant domain');
   }
   return `tenant:${domain}`;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function digest(value) {
+  return `sha256:${createHash('sha256').update(canonicalJson(value)).digest('hex')}`;
 }
 
 function opportunityPolicy(spec, intent) {
@@ -53,59 +81,93 @@ export async function recordAskWork(
   { answer, domain, intent, now = new Date() },
 ) {
   try {
+    const persistedIntent = persistenceSafeIntent(intent);
+    const intentDigest = digest({ version: 1, intent: persistedIntent });
     return await prisma.$transaction(async (tx) => {
       await reservePublicSubmission(tx, {
         clientIdentity: askPersistenceScope(domain),
         surface: PUBLIC_SUBMISSION_SURFACES.ASK,
-        subject: JSON.stringify({ version: 1, domain, query: intent.raw_query }),
+        subject: JSON.stringify({ version: 2, domain, intentDigest }),
         now,
       });
 
       let opportunity = null;
       let continuationArmed = false;
       if (answer.opportunitySpec) {
-        const created = await tx.opportunity.create({
-          data: { ...answer.opportunitySpec, verification: 'UNKNOWN', status: 'OPEN' },
+        const dedupeKey = digest({
+          version: 1,
+          domain,
+          kind: answer.opportunitySpec.kind,
+          retailerId: answer.opportunitySpec.retailerId ?? null,
+          intent: persistedIntent,
         });
-        const policy = opportunityPolicy(answer.opportunitySpec, {
-          raw_query: intent.raw_query,
-          unsupported_known_dimensions: answer.unsupported_known_dimensions,
+        const created = await tx.opportunity.upsert({
+          where: { tenant_dedupeKey: { tenant: domain, dedupeKey } },
+          update: {},
+          create: {
+            ...answer.opportunitySpec,
+            tenant: domain,
+            dedupeKey,
+            signal: intentDigest,
+            evidence: JSON.stringify({
+              intent_ir: persistedIntent,
+              zero_result_reason: answer.zero_result_reason,
+              verified_candidate_count: answer.verified_candidate_count,
+              unsupported_known_dimensions: answer.unsupported_known_dimensions,
+              observed_at: now.toISOString(),
+            }),
+            observedState: JSON.stringify({
+              dimensions: persistedIntent.dimensions,
+              verified_candidate_count: answer.verified_candidate_count,
+              unsupported_known_dimensions: answer.unsupported_known_dimensions,
+            }),
+            verification: 'UNKNOWN',
+            status: 'OPEN',
+          },
         });
-        const mission = await createMission(tx, {
-          tenant: domain,
-          purpose: `${policy.purpose}: ${created.id}`,
-          createdFrom: 'TRACK_A_ASK',
-          authorityCeiling: 'OBSERVE_ONLY',
-          budgetCentsMax: 500,
-          stopCondition: policy.stopCondition,
-        });
-        const trigger = await createTrigger(tx, {
-          missionId: mission.id,
-          tenant: domain,
-          triggerType: 'FOLLOW_UP',
-          reason: policy.reason,
-          createdFrom: `OPPORTUNITY:${created.id}`,
-          authorityCeiling: 'OBSERVE_ONLY',
-          budgetCentsMax: 100,
-          stopCondition: policy.stopCondition,
-          nextEligibleAt: new Date(now.getTime() + DAY_MS),
-          expiresAt: new Date(now.getTime() + 7 * DAY_MS),
-          continuationPolicy: JSON.stringify({ kind: 'RESCHEDULE', intervalMs: DAY_MS, remaining: 2 }),
-          evidenceRequirements: JSON.stringify({ ...policy.evidenceRequirements, opportunityId: created.id }),
-        }, { now });
-        await tx.opportunity.update({
-          where: { id: created.id },
-          data: { followUpTriggerId: trigger.id },
-        });
-        opportunity = { id: created.id, kind: created.kind, follow_up_trigger_id: trigger.id };
-        continuationArmed = true;
+        let followUpTriggerId = created.followUpTriggerId;
+        if (!followUpTriggerId) {
+          const policy = opportunityPolicy(answer.opportunitySpec, {
+            raw_query: intentDigest,
+            unsupported_known_dimensions: answer.unsupported_known_dimensions,
+          });
+          const mission = await createMission(tx, {
+            tenant: domain,
+            purpose: `${policy.purpose}: ${created.id}`,
+            createdFrom: 'TRACK_A_ASK',
+            authorityCeiling: 'OBSERVE_ONLY',
+            budgetCentsMax: 500,
+            stopCondition: policy.stopCondition,
+          });
+          const trigger = await createTrigger(tx, {
+            missionId: mission.id,
+            tenant: domain,
+            triggerType: 'FOLLOW_UP',
+            reason: policy.reason,
+            createdFrom: `OPPORTUNITY:${created.id}`,
+            authorityCeiling: 'OBSERVE_ONLY',
+            budgetCentsMax: 100,
+            stopCondition: policy.stopCondition,
+            nextEligibleAt: new Date(now.getTime() + DAY_MS),
+            expiresAt: new Date(now.getTime() + 7 * DAY_MS),
+            continuationPolicy: JSON.stringify({ kind: 'RESCHEDULE', intervalMs: DAY_MS, remaining: 2 }),
+            evidenceRequirements: JSON.stringify({ ...policy.evidenceRequirements, opportunityId: created.id }),
+          }, { now });
+          followUpTriggerId = trigger.id;
+          await tx.opportunity.update({
+            where: { id: created.id },
+            data: { followUpTriggerId },
+          });
+        }
+        opportunity = { id: created.id, kind: created.kind, follow_up_trigger_id: followUpTriggerId };
+        continuationArmed = followUpTriggerId !== null;
       }
 
       await tx.askIntentSignal.create({
         data: {
           tenant: domain,
-          rawQuery: intent.raw_query,
-          intentIr: JSON.stringify(intent),
+          rawQuery: intentDigest,
+          intentIr: JSON.stringify(persistedIntent),
           answerSummary: JSON.stringify({
             verified_candidate_count: answer.verified_candidate_count,
             zero_verified_result: answer.zero_verified_result,

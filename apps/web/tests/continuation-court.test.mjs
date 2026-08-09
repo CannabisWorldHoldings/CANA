@@ -39,6 +39,7 @@ import {
   createMission,
   createTrigger,
   approveTrigger,
+  appendReceipt,
   runTick,
   verifyReceiptChain,
 } from '../src/lib/continuation/continuation-repository.mjs';
@@ -410,6 +411,33 @@ test('C9b: deleting or reordering receipt history is detected', async () => {
   await prisma.continuationReceipt.update({ where: { id: reorderRows[1].id }, data: { seq: 1 } });
   await prisma.continuationReceipt.update({ where: { id: reorderRows[0].id }, data: { seq: 2 } });
   assert.equal((await verifyReceiptChain(prisma, reorderMission.id)).ok, false, 'reordered history must break the chain');
+});
+
+test('C9c: concurrent direct receipt appends leave the mission pointer at the chain tail', async () => {
+  const mission = await createMission(prisma, missionSpec());
+  const clientB = await client(db.url);
+  await Promise.all([
+    appendReceipt(prisma, {
+      missionId: mission.id,
+      tickId: 'direct-append-a',
+      action: 'MISSION_COMPLETED',
+    }),
+    appendReceipt(clientB, {
+      missionId: mission.id,
+      tickId: 'direct-append-b',
+      action: 'MISSION_ABANDONED',
+    }),
+  ]);
+  const rows = await prisma.continuationReceipt.findMany({
+    where: { missionId: mission.id },
+    orderBy: { seq: 'asc' },
+  });
+  const updated = await prisma.continuationMission.findUnique({
+    where: { id: mission.id },
+  });
+  assert.deepEqual(rows.map((row) => row.seq), [1, 2]);
+  assert.equal(updated.latestReceiptId, rows.at(-1).id);
+  assert.equal((await verifyReceiptChain(prisma, mission.id)).ok, true);
 });
 
 test('C10: firing state and its truth receipt commit atomically', async () => {
