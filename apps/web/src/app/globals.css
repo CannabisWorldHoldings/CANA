@@ -69,11 +69,127 @@
   --brand-gold-onwhite: #8c6206;
   --brand-primary-fill-strong: #08663c;
 
-  --font-family-display: "Geist", system-ui, sans-serif;
-  --font-family-body: "Geist", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* T6 APPLE TOKEN LAYER — font register (owner APPLE_STANDARD ruling,
+     2026-08-09: "use the same fonts as them"). SF system stack first: renders
+     real SF Pro on Apple devices with zero font files (CSP-safe); self-hosted
+     Geist remains the metric-compatible fallback everywhere else. */
+  --font-family-display: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Geist", system-ui, sans-serif;
+  --font-family-body: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Geist", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-family-evidence: "Geist Mono", ui-monospace, SFMono-Regular,
     Menlo, monospace;
+}
+
+/* ============================================================
+   T6 APPLE TOKEN LAYER — transplanted from the forge's compiled-CSS
+   anatomy of apple.com (foundry/apple_standard_anatomy.md, owner
+   APPLE_STANDARD north-star law). Tokens are additive; consuming
+   surfaces adopt them incrementally. Grammar rules that ride along:
+   - type does the hierarchy work: weights cap at 600, no
+     uppercase-tracked label chrome (mono is for machine data only)
+   - overlays on imagery: SMALL + TRANSLUCENT (frosted) + OFF-SUBJECT —
+     the image must stay visible (owner overlay law)
+   ============================================================ */
+:root {
+  /* the shared reading column (apple.com: 980px + 22px gutters) */
+  --apple-column: 980px;
+  --apple-gutter: 22px;
+
+  /* SF type scale (compiled px from apple.com) */
+  --type-hero: 56px;
+  --type-display: 48px;
+  --type-title: 40px;
+  --type-headline: 32px;
+  --type-section: 28px;
+  --type-intro: 21px;
+  --type-body: 19px;
+  --type-caption: 14px;
+  --type-fine: 12px;
+
+  /* frosted chrome recipe (apple.com gnav, compiled) */
+  --frost-chrome-light: rgba(250, 250, 252, 0.8);
+  --frost-chrome-dark: rgba(22, 22, 23, 0.8);
+  --frost-filter: saturate(180%) blur(20px);
+
+  /* tech-specs anatomy */
+  --specs-label-size: 24px;   /* 24/600 section labels */
+  --specs-value-color: #a1a1a6;
+  --specs-hairline: #d2d2d7;  /* ONE hairline per section — padding is the table */
+
+  /* footer opacity hierarchy (apple.com footer, compiled) */
+  --footnote-strong: 0.88;
+  --footnote-mid: 0.72;
+  --footnote-soft: 0.56;
+  --footnote-faint: 0.48;
+}
+
+/* the apple.com frosted navigation material */
+.frosted-nav {
+  background: var(--frost-chrome-light);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+.frosted-nav-dark {
+  background: var(--frost-chrome-dark);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+
+/* tint-chip grammar: low-alpha brand tint, deep text, no border chrome */
+.tint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 100px;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary-fill-strong);
+}
+
+/* tech-specs rows: 24/600 label + muted value + single hairline per section */
+.tech-specs {
+  max-width: 660px;
+  margin: 0 auto;
+  border-top: 1px solid var(--specs-hairline);
+  padding-top: 34px;
+}
+.tech-specs .spec-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 6px 34px;
+  padding: 14px 0;
+}
+.tech-specs .spec-label {
+  font-size: var(--specs-label-size);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.tech-specs .spec-value {
+  font-size: 14px;
+  color: var(--specs-value-color);
+  align-self: center;
+}
+@media (max-width: 600px) {
+  .tech-specs .spec-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* overlay law utility: anything layered over imagery stays small,
+   frosted, and off the subject — never a solid pill smothering the tile */
+.media-overlay {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: var(--frost-chrome-light);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
 }
 
 *,
@@ -172,8 +288,11 @@ h3 {
 
 /* Glassmorphism utility card styling */
 .glass-panel {
-  background: color-mix(in srgb, var(--brand-surface) 72%, transparent);
-  backdrop-filter: blur(14px);
+  /* T6: upgraded to the compiled apple.com material — 80% chrome,
+     saturate(180%) blur(20px) — from the forge anatomy extraction */
+  background: color-mix(in srgb, var(--brand-surface) 80%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
   border: 1px solid var(--brand-border);
 }
 
