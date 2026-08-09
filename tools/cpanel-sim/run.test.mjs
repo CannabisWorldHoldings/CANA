@@ -12,7 +12,7 @@ test('the cPanel simulator exposes a runnable verification surface', async () =>
   assert.equal(typeof module.runCpanelSimulation, 'function');
 });
 
-test('the package contains explicit web worker migration backup and restore launchers', () => {
+test('the package contains explicit web, migration, and simulation-control launchers', () => {
   for (const file of [
     'web-launcher.sh',
     'worker-launcher.sh',
@@ -34,8 +34,9 @@ test('the real Prisma proof is an executable container surface', () => {
   const source = fs.readFileSync(proof, 'utf8');
   assert.doesNotMatch(source, /\bnpm\s+(?:ci|install)\b/);
   assert.match(source, /npx --no-install prisma generate/);
-  assert.match(source, /CHECKPOINTED/);
-  assert.match(source, /db-inspect\.mjs/);
+  assert.match(source, /DIRECT_URL/);
+  assert.match(source, /PROVIDER_OPERATOR_REQUIRED/);
+  assert.doesNotMatch(source, /DATABASE_URL=file:/);
 });
 
 test('the simulated web process labels itself and exposes all operational probes', () => {

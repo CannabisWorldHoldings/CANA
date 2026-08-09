@@ -1,0 +1,10 @@
+FROM node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec
+
+RUN apt-get update \
+  && apt-get install --yes --no-install-recommends postgresql-client \
+  && rm -rf /var/lib/apt/lists/* \
+  && mkdir -p /workspace /agent/workspace \
+  && chown -R node:node /workspace /agent
+
+WORKDIR /workspace
+USER node

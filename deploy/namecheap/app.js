@@ -13,11 +13,6 @@
 
 process.env.NODE_ENV = 'production';
 
-// The production SQLite file is persistent state owned outside each release.
-// Do not let application startup rewrite its file-level journal mode. Connection-
-// local safety settings are still applied by db-config.mjs.
-process.env.CANA_PRESERVE_SQLITE_FILE_BYTES = '1';
-
 // Bind to loopback: Passenger proxies external traffic to this process.
 if (!process.env.HOSTNAME) {
   process.env.HOSTNAME = '127.0.0.1';
@@ -42,12 +37,59 @@ if (!process.env.PRISMA_QUERY_ENGINE_LIBRARY) {
 // Fail loudly and early if the operator forgot the database location —
 // a directory site that silently starts without its database is worse
 // than one that refuses to start.
-if (!process.env.DATABASE_URL) {
+if (!process.env.DATABASE_URL || !process.env.DIRECT_URL) {
   throw new Error(
-    'DATABASE_URL is not set. In cPanel > Setup Node.js App, add ' +
-      'DATABASE_URL=file:/home/<cpanel-user>/orderweeddc-data/prod.db ' +
-      'and restart.',
+    'DATABASE_URL and DIRECT_URL are required. Configure the owner-provisioned ' +
+      'pooled and direct PostgreSQL URLs in cPanel > Setup Node.js App, then restart.',
   );
 }
+const databaseUrls = ['DATABASE_URL', 'DIRECT_URL'].map((name) => {
+  let url;
+  try {
+    url = new URL(process.env[name]);
+  } catch {
+    throw new Error(`${name} must be a valid canonical PostgreSQL URL.`);
+  }
+  if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
+    throw new Error(`${name} must use the canonical PostgreSQL protocol.`);
+  }
+  return url;
+});
+const disposableLoopback =
+  process.env.DATABASE_URL === process.env.DIRECT_URL &&
+  databaseUrls.every((url) => ['127.0.0.1', 'localhost', '::1'].includes(url.hostname)) &&
+  /^\d{10,}$/.test(process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER ?? '');
+if (!disposableLoopback) {
+  for (const url of databaseUrls) {
+    if (url.searchParams.get('sslmode') !== 'require' || url.searchParams.get('sslaccept') !== 'strict') {
+      throw new Error('DATABASE_URL and DIRECT_URL must enforce sslmode=require and sslaccept=strict.');
+    }
+  }
+}
 
-require('./server.js');
+async function verifyDisposableDatabaseIdentity() {
+  if (!disposableLoopback) return;
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  try {
+    const [identity] = await prisma.$queryRawUnsafe(
+      'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
+    );
+    const expectedDatabase = databaseUrls[0].pathname.slice(1);
+    if (
+      identity?.database !== expectedDatabase ||
+      identity?.system_identifier !== process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER
+    ) {
+      throw new Error('identity mismatch');
+    }
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+verifyDisposableDatabaseIdentity()
+  .then(() => require('./server.js'))
+  .catch(() => {
+    console.error('Disposable PostgreSQL identity verification failed; refusing startup.');
+    process.exit(1);
+  });

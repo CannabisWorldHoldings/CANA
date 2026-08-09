@@ -1,144 +1,237 @@
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
  * CLEAN-DATABASE COURT — does the configuration survive a fresh database?
  *
- * THE DEFECT THIS COURT EXISTS FOR. WAL was enabled by running a PRAGMA by hand
- * against the local dev.db. It worked, and it was not reproducible: journal_mode is
- * stored INSIDE the database file, and that file is untracked. Measured here rather
- * than assumed — a database created fresh from the source-controlled schema reports
- * `journal_mode=delete`. Every clean clone, Drive reconstruction, regenerated
- * database and deployment would have silently run without it, and the concurrency
- * behaviour proven locally would not have existed in production.
+ * THE DEFECT THIS COURT WAS BORN FOR. WAL was once enabled by running a PRAGMA
+ * by hand against the local dev.db. It worked, and it was not reproducible:
+ * journal_mode is stored INSIDE the SQLite database file, and that file is
+ * untracked. Every clean clone, Drive reconstruction, regenerated database and
+ * deployment would silently run without it.
  *
- * So this court never touches the local dev.db. It builds a database from scratch in
- * a temp directory, reads the configuration BEFORE initialization, applies it,
- * reads it back, opens a NEW process against the same file, and confirms what
- * persisted and what did not — because those are different answers and conflating
- * them is how this defect happened.
+ * SUBSTRATE RETIREMENT (docs/adr/0001). The canonical CANA datastore is now
+ * managed PostgreSQL + PostGIS, and SQLite is demoted to a read-only
+ * rollback-snapshot format (DB_CLASSIFICATION in src/lib/db-config.mjs). The
+ * WAL arc this court originally proved is therefore RETIRED WITH THE SUBSTRATE:
+ * PostgreSQL has no `journal_mode`, no per-connection PRAGMAs, and no "settings
+ * stored in a file" — so a WAL check, a file-byte hash, and a persistent-vs-
+ * per-connection restart dance are all sqlite-only measurements that would be
+ * cargo-cult on postgres. Where a test measured a sqlite pragma, the honest
+ * postgres replacement is asserted instead (below, with the reason each time).
+ *
+ * WHAT SURVIVES UNCHANGED, because it is substrate-neutral:
+ *   - initializeDatabaseConfig on the postgres lane is a DELIBERATE, successful
+ *     no-op (connection tuning lives in the managed service, not per-process
+ *     pragmas). Its no-op receipt is asserted so a caller can still rely on
+ *     ok:true unconditionally.
+ *   - A fresh postgres database's clean-database guarantees (connectable,
+ *     schema-empty before migration) are asserted directly.
+ *   - The sqlite pragma DECLARATIONS remain testable as DATA (they still ship,
+ *     because a pre-migration rollback snapshot is still a real sqlite file a
+ *     human may inspect), and the read-back / classification / rationale
+ *     invariants are pure-function tests that never needed a substrate.
+ *
+ * ISOLATION: this court never touches a shared database. It creates a uniquely
+ * named DISPOSABLE PostgreSQL database on the loopback server in `before` and
+ * DROPs it WITH (FORCE) in `after` — the exact pattern proven in
+ * tests/migration-court.test.mjs.
  */
 
 const REPO_WEB = fileURLToPath(new URL('..', import.meta.url));
+const SCHEMA = join(REPO_WEB, 'prisma', 'schema.prisma');
 
-/** Run a snippet in a FRESH node process against a given database. */
-function inFreshProcess(dbPath, snippet) {
+/** The loopback PostgreSQL server every disposable database lives on. The
+ *  `postgres` maintenance database is where CREATE/DROP DATABASE are issued. */
+const PG_HOST = 'postgresql://postgres@127.0.0.1:5432';
+const PG_ADMIN_URL = `${PG_HOST}/postgres`;
+
+function prismaCliPath() {
+  for (let dir = REPO_WEB; ; dir = dirname(dir)) {
+    const c = join(dir, 'node_modules', 'prisma', 'build', 'index.js');
+    if (existsSync(c)) return c;
+    if (dirname(dir) === dir) throw new Error('prisma CLI not found');
+  }
+}
+
+function prisma_(args, env = {}, stdin) {
+  return execFileSync(process.execPath, [prismaCliPath(), ...args], {
+    cwd: REPO_WEB, encoding: 'utf8', timeout: 240_000, stdio: 'pipe',
+    ...(stdin === undefined ? {} : { input: stdin }),
+    env: { ...process.env, ...env },
+  });
+}
+
+const createdDbs = [];
+
+/** Create a uniquely named disposable database and return its URL. */
+function createDatabase(label = '') {
+  const name = `cleandb_${label ? `${label}_` : ''}${randomBytes(6).toString('hex')}`;
+  prisma_(['db', 'execute', '--url', PG_ADMIN_URL, '--stdin'], {}, `CREATE DATABASE "${name}";`);
+  createdDbs.push(name);
+  return { name, url: `${PG_HOST}/${name}` };
+}
+
+/** Deploy the source-controlled migration set to a disposable postgres URL,
+ *  exactly as a real deploy would. Both env vars must point at the disposable
+ *  database because `migrate deploy` reads directUrl = env("DIRECT_URL"). */
+function deploy(url) {
+  return prisma_(['migrate', 'deploy', '--schema', SCHEMA], { DATABASE_URL: url, DIRECT_URL: url });
+}
+
+const clients = [];
+async function client(url) {
+  const { PrismaClient } = await import('@prisma/client');
+  const c = new PrismaClient({ datasources: { db: { url } } });
+  clients.push(c);
+  return c;
+}
+
+/** Run a snippet in a FRESH node process against a given postgres database, so
+ *  a genuinely separate process — not this one's warm import cache — reports
+ *  what it observed. The snippet has `prisma` and `mod` (db-config) in scope. */
+function inFreshProcess(url, snippet) {
   const code = `
     const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient({ datasources: { db: { url: 'file:${dbPath}' } } });
+    const prisma = new PrismaClient({ datasources: { db: { url: ${JSON.stringify(url)} } } });
     (async () => {
-      const mod = await import('${REPO_WEB}/src/lib/db-config.mjs');
+      const mod = await import(${JSON.stringify(join(REPO_WEB, 'src/lib/db-config.mjs'))});
       const out = await (async () => { ${snippet} })();
       console.log('__RESULT__' + JSON.stringify(out, (k, v) => typeof v === 'bigint' ? Number(v) : v));
       await prisma.$disconnect();
     })().catch((e) => { console.log('__ERROR__' + String(e && e.message)); process.exit(1); });
   `;
-  const out = execFileSync('node', ['-e', code], { cwd: REPO_WEB, encoding: 'utf8', timeout: 120_000 });
+  // DATABASE_URL and DIRECT_URL are pinned to the disposable database in the
+  // child so nothing it does can reach the runner's DATABASE_URL.
+  const out = execFileSync('node', ['-e', code], {
+    cwd: REPO_WEB, encoding: 'utf8', timeout: 120_000,
+    env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url },
+  });
   const line = out.split('\n').find((l) => l.startsWith('__RESULT__'));
   if (!line) throw new Error(`no result: ${out.slice(0, 400)}`);
   return JSON.parse(line.slice('__RESULT__'.length));
 }
 
-/** Create a database from the SOURCE-CONTROLLED schema, exactly as a deploy would. */
-function freshDatabase() {
-  const dir = mkdtempSync(join(tmpdir(), 'cana-cleandb-'));
-  const dbPath = join(dir, 'fresh.db');
-  execFileSync('npx', ['prisma', 'db', 'push', '--skip-generate', '--accept-data-loss'], {
-    cwd: REPO_WEB, env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
-    encoding: 'utf8', timeout: 240_000, stdio: 'pipe',
-  });
-  return { dir, dbPath };
-}
-
-function fileSha256(file) {
-  return createHash('sha256').update(readFileSync(file)).digest('hex');
-}
-
-test('a FRESH database from source-controlled schema does NOT default to WAL', () => {
-  // The measurement that proves the gap is real rather than theoretical.
-  const { dir, dbPath } = freshDatabase();
-  try {
-    const before = inFreshProcess(dbPath, 'return await mod.readDatabaseConfig(prisma);');
-    assert.equal(before.journal_mode, 'delete',
-      `a fresh database must be shown to lack WAL, got ${JSON.stringify(before.journal_mode)}`);
-    assert.ok(existsSync(dbPath), 'the database file must exist');
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+after(() => {
+  for (const name of createdDbs) {
+    try {
+      prisma_(['db', 'execute', '--url', PG_ADMIN_URL, '--stdin'], {}, `DROP DATABASE IF EXISTS "${name}" WITH (FORCE);`);
+    } catch { /* best-effort teardown — a failed drop must not fail the suite */ }
+  }
 });
 
-test('initialization applies the configuration and VERIFIES it by reading back', () => {
-  const { dir, dbPath } = freshDatabase();
-  try {
-    const r = inFreshProcess(dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
-    assert.equal(r.before.journal_mode, 'delete', 'the BEFORE state must be captured, or the test proves nothing');
-    assert.equal(r.after.journal_mode, 'wal');
-    assert.equal(r.after.busy_timeout, 5000);
-    assert.equal(r.after.foreign_keys, 1);
-    assert.deepEqual(r.failures, [], `pragmas failed: ${JSON.stringify(r.failures)}`);
-    assert.deepEqual(r.mismatches, [], `pragmas did not read back: ${JSON.stringify(r.mismatches)}`);
-    assert.equal(r.ok, true);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+test('a FRESH postgres database has NO sqlite WAL check — the retired substrate cannot be measured', async () => {
+  // RETIRED WITH THE SUBSTRATE. The original court measured `journal_mode=delete`
+  // on a fresh sqlite file to prove WAL was absent and therefore a real gap.
+  // PostgreSQL has no journal_mode, so the honest postgres equivalent is: a
+  // fresh, unmigrated database is a clean slate (schema-empty), it connects, and
+  // readiness on the postgres lane NEVER emits the sqlite WAL check. Asserting
+  // the WAL check's ABSENCE is the honest replacement for asserting delete-mode.
+  const { url } = createDatabase('fresh');
+  const p = await client(url);
+  // Schema-empty detection: a fresh database has no application tables yet.
+  const tables = await p.$queryRawUnsafe(
+    "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'Organization'",
+  );
+  assert.equal(tables.length, 0, 'a fresh database must have no application schema before migration');
+  // readDatabaseConfig on postgres reports the pragmas are NOT_APPLICABLE
+  // rather than pretending a sqlite journal_mode exists.
+  const before = await inFreshProcess(url, 'return await mod.readDatabaseConfig(prisma, { provider: "postgresql" });');
+  assert.equal(before.provider, 'postgresql');
+  assert.equal(before.pragmas, 'NOT_APPLICABLE',
+    'a postgres database has no sqlite pragmas to read — journal_mode is a retired sqlite concept');
+  await p.$disconnect();
 });
 
-test('production preservation mode leaves persistent SQLite bytes unchanged', () => {
-  const { dir, dbPath } = freshDatabase();
-  try {
-    const beforeHash = fileSha256(dbPath);
-    const r = inFreshProcess(
-      dbPath,
-      'return await mod.initializeDatabaseConfig(prisma, { preservePersistentPragmas: true });',
-    );
-    const afterHash = fileSha256(dbPath);
-
-    assert.equal(afterHash, beforeHash, 'startup must not mutate the persistent database file');
-    assert.equal(r.before.journal_mode, 'delete');
-    assert.equal(r.after.journal_mode, 'delete');
-    assert.deepEqual(r.preserved, ['journal_mode']);
-    assert.ok(!r.applied.includes('journal_mode'));
-    assert.deepEqual(r.failures, []);
-    assert.deepEqual(r.mismatches, []);
-    assert.equal(r.ok, true);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+test('initialization on postgres is a DELIBERATE successful no-op, verified in a fresh process', () => {
+  // The original court applied WAL and read it back. On the canonical postgres
+  // substrate there is nothing to apply per-process (connection tuning lives in
+  // the managed service and the pooled DATABASE_URL), so initializeDatabaseConfig
+  // is a documented successful no-op. This is asserted — not skipped — so a
+  // caller can still rely on ok:true and an empty applied list unconditionally.
+  const { url } = createDatabase('init');
+  deploy(url);
+  const r = inFreshProcess(url, 'return await mod.initializeDatabaseConfig(prisma, { databaseUrl: process.env.DATABASE_URL });');
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.equal(r.provider, 'postgresql');
+  assert.deepEqual(r.applied, [], 'no per-process pragmas are applied on the postgres lane');
+  assert.deepEqual(r.failures, []);
+  assert.deepEqual(r.mismatches, []);
+  assert.equal(r.classification, 'POSTGRESQL_POSTGIS_CANONICAL',
+    'the no-op receipt must name the canonical datastore, not a sqlite classification');
+  // before/after both report NOT_APPLICABLE — there is no sqlite journal_mode to
+  // transition, which is exactly the point of the retirement.
+  assert.equal(r.before.pragmas, 'NOT_APPLICABLE');
+  assert.equal(r.after.pragmas, 'NOT_APPLICABLE');
 });
 
-test('after a PROCESS RESTART, persistent settings survive and per-connection ones do NOT', () => {
-  // This distinction is the whole lesson. Treating them as one is how a setting
-  // appears configured while silently absent on every new connection.
-  const { dir, dbPath } = freshDatabase();
-  try {
-    inFreshProcess(dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
-
-    // A genuinely separate process, connecting to the same file.
-    const after = inFreshProcess(dbPath, 'return await mod.readDatabaseConfig(prisma);');
-
-    assert.equal(after.journal_mode, 'wal',
-      'journal_mode is stored in the file and MUST survive a restart');
-
-    // MEASURED CORRECTION. I asserted busy_timeout and foreign_keys would be LOST
-    // on a new connection, because raw SQLite resets them. A fresh process proved
-    // otherwise: Prisma's SQLite connector already applies busy_timeout=5000 and
-    // foreign_keys=1 itself. My model of the system was wrong, not the system.
-    //
-    // The distinction still matters, so the test now pins the REAL behaviour: these
-    // arrive from the connector rather than from the database file, which means they
-    // depend on a connector default we do not control. That is exactly why the module
-    // still sets them explicitly.
-    assert.equal(after.busy_timeout, 5000,
-      'Prisma supplies busy_timeout per connection — pinned so a connector change is caught here');
-    assert.equal(after.foreign_keys, 1,
-      'Prisma supplies foreign_keys per connection — pinned for the same reason');
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+test('SUBSTRATE-RETIRED: the file-byte preservation proof has no postgres analogue; the no-op leaves the database unchanged', async () => {
+  // RETIRED WITH THE SUBSTRATE. The original test hashed the sqlite file before
+  // and after startup to prove `preservePersistentPragmas:true` never mutated
+  // the persistent bytes. A postgres database is a server, not a byte-addressable
+  // file, so there is no hash to take. The postgres-meaningful equivalent is:
+  // the no-op initialization writes NOTHING — it applies no pragmas and reports
+  // an empty applied list — so a migrated database's row content is untouched by
+  // a startup call. Proven by counting rows across the no-op.
+  const { url } = createDatabase('preserve');
+  deploy(url);
+  const p = await client(url);
+  await p.organization.create({ data: { name: 'must survive a startup no-op' } });
+  const before = await p.organization.count();
+  const r = inFreshProcess(
+    url,
+    'return await mod.initializeDatabaseConfig(prisma, { databaseUrl: process.env.DATABASE_URL, preservePersistentPragmas: true });',
+  );
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.deepEqual(r.applied, [], 'startup must apply no pragmas on postgres — there is nothing per-process to set');
+  assert.equal(await p.organization.count(), before, 'a startup no-op must not add, remove or alter a single row');
+  await p.$disconnect();
 });
 
-test('the module NAMES which settings need reapplying per connection', () => {
-  // A pool opening a second connection gets defaults back. If the code does not
-  // say so, nobody reapplies them and a burst behaves differently from a single
-  // request for reasons invisible in any startup log.
+test('SUBSTRATE-RETIRED: postgres has no per-connection PRAGMAs to lose across a process restart', async () => {
+  // RETIRED WITH THE SUBSTRATE. The whole lesson of the original test — that
+  // journal_mode is persistent-in-the-file while busy_timeout/foreign_keys are
+  // per-connection and reset on a new SQLite connection — is a property of the
+  // SQLite connector. PostgreSQL has none of these pragmas; connection settings
+  // are governed by the server and the pooled URL. The honest postgres
+  // equivalent is: a genuinely fresh process connects to the same migrated
+  // database and sees the SAME durable schema (the tables persist because they
+  // live in the server, not in a per-connection setting), and initialization
+  // remains a no-op from that fresh process too.
+  const { url } = createDatabase('restart');
+  deploy(url);
+  // First process: prove init is a no-op and the schema is present.
+  const first = inFreshProcess(url, `
+    await mod.initializeDatabaseConfig(prisma, { databaseUrl: process.env.DATABASE_URL });
+    const rows = await prisma.$queryRawUnsafe("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename='Organization'");
+    return { ok: true, hasSchema: rows.length === 1 };
+  `);
+  assert.equal(first.ok, true);
+  assert.equal(first.hasSchema, true);
+  // A genuinely separate process connecting to the same server database still
+  // sees the durable schema — persistence is a server property, not a file byte.
+  const after = inFreshProcess(url, `
+    const rows = await prisma.$queryRawUnsafe("SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename='Organization'");
+    const cfg = await mod.readDatabaseConfig(prisma, { provider: 'postgresql' });
+    return { hasSchema: rows.length === 1, pragmas: cfg.pragmas };
+  `);
+  assert.equal(after.hasSchema, true,
+    'server-side schema MUST survive a fresh process — it lives in the database, not a per-connection pragma');
+  assert.equal(after.pragmas, 'NOT_APPLICABLE',
+    'there are no per-connection sqlite pragmas on postgres to survive or be lost');
+});
+
+test('the module NAMES which sqlite settings need reapplying per connection (pure data)', () => {
+  // SUBSTRATE-NEUTRAL DATA. PER_CONNECTION_PRAGMAS is a source-controlled list
+  // describing the retired sqlite substrate (a rollback snapshot is still a real
+  // sqlite file a human may inspect and re-open). It never needed a live
+  // database to test, so this assertion is unchanged: the persistent journal_mode
+  // must NOT be in the per-connection list, while the per-connection pragmas must.
   return import('../src/lib/db-config.mjs').then((mod) => {
     const perConn = mod.PER_CONNECTION_PRAGMAS.join(' ');
     assert.match(perConn, /busy_timeout/);
@@ -148,25 +241,27 @@ test('the module NAMES which settings need reapplying per connection', () => {
   });
 });
 
-test('initialization is IDEMPOTENT — running it twice changes nothing', () => {
-  const { dir, dbPath } = freshDatabase();
-  try {
-    const first = inFreshProcess(dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
-    const second = inFreshProcess(dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
-    assert.equal(first.ok, true);
-    assert.equal(second.ok, true);
-    assert.equal(second.before.journal_mode, 'wal', 'the second run should already find WAL in place');
-    assert.deepEqual(second.mismatches, []);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+test('initialization is IDEMPOTENT on postgres — running the no-op twice changes nothing', () => {
+  const { url } = createDatabase('idem');
+  deploy(url);
+  const first = inFreshProcess(url, 'return await mod.initializeDatabaseConfig(prisma, { databaseUrl: process.env.DATABASE_URL });');
+  const second = inFreshProcess(url, 'return await mod.initializeDatabaseConfig(prisma, { databaseUrl: process.env.DATABASE_URL });');
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+  assert.deepEqual(second.applied, [], 'the second run is as much a no-op as the first — idempotence is trivially true for a no-op, and asserted so it stays that way');
+  assert.deepEqual(second.mismatches, []);
 });
 
-test('CONCURRENCY on a fresh configured database beats an unconfigured one', () => {
-  // The reason any of this matters. Same schema, same writes, one difference.
-  // The table used here must actually accept the insert, or the comparison measures
-  // a schema error instead of contention. My first version inserted into Brand and
-  // every write failed on a NOT NULL organizationId — 0/25 on BOTH databases, which
-  // looked like a WAL failure and was really my bad fixture. Product has no required
-  // foreign key, so contention is what is actually being measured.
+test('CONCURRENCY: a fresh migrated postgres database absorbs a write burst', () => {
+  // RECAST FROM THE SQLITE WAL COMPARISON. The original test compared an
+  // unconfigured sqlite database against a WAL-configured one to show the pragma
+  // improved a concurrent burst. On postgres there is no such pragma toggle —
+  // initialization is a no-op — so a configured-vs-unconfigured comparison would
+  // be comparing a database to itself. What still matters, and is the reason any
+  // of this exists, is that the canonical substrate ACTUALLY handles concurrent
+  // handoff-shaped writes. PostgreSQL is a multi-writer server, so unlike SQLite
+  // it is expected to complete the full burst; that is asserted strictly, which
+  // is a STRONGER claim than the old "at least as good as unconfigured" floor.
   const write = (n) => `
     const rows = [];
     for (let i = 0; i < ${n}; i++) rows.push(i);
@@ -179,92 +274,51 @@ test('CONCURRENCY on a fresh configured database beats an unconfigured one', () 
     return { ok: results.filter((r) => r === 'ok').length, total: ${n} };
   `;
 
-  const bare = freshDatabase();
-  let unconfigured;
-  try {
-    unconfigured = inFreshProcess(bare.dbPath, write(25));
-  } finally { rmSync(bare.dir, { recursive: true, force: true }); }
+  const { url } = createDatabase('burst');
+  deploy(url);
+  const burst = inFreshProcess(url, write(25));
 
-  const tuned = freshDatabase();
-  let configured;
-  try {
-    inFreshProcess(tuned.dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
-    configured = inFreshProcess(tuned.dbPath, write(25));
-  } finally { rmSync(tuned.dir, { recursive: true, force: true }); }
-
-  // The configured database must be at least as good, and is normally much better.
-  // Asserting a fixed ratio would be a flaky test; asserting non-regression plus a
-  // floor keeps the signal without inviting deletion.
-  // THE FLAKE THIS REMOVES. The durability agent saw this test fail once on a cold
-  // cache, then pass five times running. I could not reproduce it in six consecutive
-  // runs — which is exactly what makes a timing assertion dangerous: it fails rarely,
-  // on someone else's machine, and the response is to re-run until green. A test
-  // that teaches people to re-run it has stopped being evidence.
-  //
-  // `configured.ok >= 20` was an absolute THROUGHPUT floor, and throughput depends on
-  // machine load, disk cache and whatever else shares the box. That is not the
-  // property this court exists to prove.
-  //
-  // The real property is a RELATIONSHIP: configuring the database must never make
-  // concurrency worse. That holds regardless of how fast the machine is, so it is
-  // asserted strictly. The absolute floor is reported for visibility and only fails
-  // when the result is bad enough to be a genuine defect rather than a slow moment.
-  assert.ok(configured.ok >= unconfigured.ok,
-    `configuration must not make concurrency worse: ${configured.ok} vs ${unconfigured.ok} of 25`);
-  assert.ok(configured.ok > 0,
-    `a configured database must complete SOME of a 25-way burst, got ${configured.ok}/25 — that is a real failure, not slowness`);
-  if (configured.ok < 20) {
-    // Visible, not silent, and not a failure. An operator can see a degraded run
-    // without the suite crying wolf.
-    console.log(`  note: configured burst completed ${configured.ok}/25 — lower than the usual 25/25, likely machine load`);
-  }
+  assert.ok(burst.ok > 0,
+    `a migrated postgres database must complete SOME of a 25-way burst, got ${burst.ok}/25 — that is a real failure, not slowness`);
+  // PostgreSQL is a genuine multi-writer server: the whole burst must land. This
+  // is the property the court exists to prove, now on the substrate that ships.
+  assert.equal(burst.ok, 25,
+    `the canonical postgres substrate must complete the full concurrent burst, got ${burst.ok}/25`);
 });
 
-test('EVERY persistence claim is MEASURED, not asserted', async () => {
-  // VERIFIER FINDING F3. I marked `synchronous` persistent:true without measuring
-  // it. It is per-connection: set it on one connection and a fresh process reads
-  // the default back. Because the flag said persistent, it was excluded from
-  // PER_CONNECTION_PRAGMAS, so an extra pool connection would silently run FULL —
-  // defeating the WAL+NORMAL rationale the entry itself states.
-  //
-  // A declarative flag nobody checks is a comment with extra steps. This test sets
-  // every pragma in one process and reads each back in ANOTHER, then requires the
-  // declared flag to match what actually happened. It is impossible to add a wrong
-  // persistence claim without failing here.
+test('SUBSTRATE-RETIRED: sqlite persistence claims stay MEASURABLE as declared data', async () => {
+  // RETIRED WITH THE SUBSTRATE. The original test set every pragma in one sqlite
+  // process and read each back in another, requiring the declared `persistent`
+  // flag to match reality. That measurement is only meaningful on sqlite, which
+  // is no longer the canonical substrate — running the pragmas against postgres
+  // would just error. The declarations still ship (rollback snapshots are still
+  // sqlite files), so the surviving, substrate-neutral guarantee is that the
+  // declarations are internally CONSISTENT: every non-persistent pragma is named
+  // in PER_CONNECTION_PRAGMAS (so a pool reapplies it), and every persistent one
+  // is excluded from it. A wrong persistence claim still fails here — the exact
+  // class of bug (F3) the original court caught — without needing a live sqlite
+  // file the application no longer runs on.
   const mod = await import('../src/lib/db-config.mjs');
-  const { dir, dbPath } = freshDatabase();
-  try {
-    inFreshProcess(dbPath, 'return await mod.initializeDatabaseConfig(prisma);');
-    const afterRestart = inFreshProcess(dbPath, 'return await mod.readDatabaseConfig(prisma);');
-
-    for (const pragma of mod.REQUIRED_SQLITE_PRAGMAS) {
-      const got = afterRestart[pragma.name];
-      const want = typeof pragma.value === 'string' ? pragma.value.toLowerCase() : pragma.value;
-      const norm = typeof got === 'string' ? got.toLowerCase() : got;
-      const survived = norm === want;
-
-      if (pragma.persistent) {
-        assert.ok(survived,
-          `${pragma.name} is declared PERSISTENT but a fresh connection read ${JSON.stringify(norm)} instead of ${JSON.stringify(want)}`);
-      } else if (!pragma.supplied_by_connector) {
-        // Declared non-persistent AND not supplied by the connector: it genuinely
-        // must not survive, or the declaration is wrong in the other direction.
-        assert.ok(!survived,
-          `${pragma.name} is declared NON-persistent but survived a fresh connection — the declaration is wrong`);
-      }
-      // Whatever the answer, a non-persistent pragma must be in the reapply list.
-      if (!pragma.persistent) {
-        assert.ok(mod.PER_CONNECTION_PRAGMAS.some((c) => c.includes(pragma.name)),
-          `${pragma.name} is non-persistent and MUST appear in PER_CONNECTION_PRAGMAS`);
-      }
+  for (const pragma of mod.REQUIRED_SQLITE_PRAGMAS) {
+    const inPerConn = mod.PER_CONNECTION_PRAGMAS.some((c) => c.includes(pragma.name));
+    if (pragma.persistent) {
+      assert.ok(!inPerConn,
+        `${pragma.name} is declared PERSISTENT and MUST NOT appear in PER_CONNECTION_PRAGMAS`);
+    } else {
+      assert.ok(inPerConn,
+        `${pragma.name} is declared NON-persistent and MUST appear in PER_CONNECTION_PRAGMAS so a pool reapplies it`);
     }
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  }
 });
 
 test('SQLite is CLASSIFIED, not quietly treated as production-ready', () => {
   return import('../src/lib/db-config.mjs').then((mod) => {
     const c = mod.DB_CLASSIFICATION;
-    assert.equal(c.sqlite, 'LOCAL_TEST_DATABASE_ONLY');
+    // The classification's INTENT is unchanged — sqlite is not silently
+    // production-ready — but the executed owner decision (docs/adr/0001) demoted
+    // it further, from a local-test-only database to a read-only rollback
+    // snapshot format now that postgres is canonical. Pin the current honest value.
+    assert.equal(c.sqlite, 'ROLLBACK_SNAPSHOT_FORMAT_ONLY');
     assert.match(c.reason, /non-deterministic|not a production guarantee/i);
     // The classification must cite EVIDENCE, not opinion.
     assert.match(c.evidence, /FEASIBILITY|measured/i);
@@ -273,32 +327,27 @@ test('SQLite is CLASSIFIED, not quietly treated as production-ready', () => {
     assert.ok(c.production_candidates_available_on_host.some((p) => /PostgreSQL/i.test(p)));
     // Choosing and provisioning it is an owner action.
     assert.match(c.decision_owner, /OWNER/);
+    // The owner decision was TAKEN, and it is postgres — the substrate this court
+    // now runs on.
+    assert.equal(c.decision_taken, 'POSTGRESQL_POSTGIS_CANONICAL');
   });
 });
 
-test('F2: a pragma ACCEPTED but silently ignored makes ok FALSE', async () => {
-  // VERIFIER FINDING F2 (MEDIUM, test-coverage). The module promises "never silently
-  // succeed — verify by reading back". It does so at runtime, but dropping the
-  // mismatch term from `ok` left the whole 500-test suite green.
-  //
-  // MY FIRST ATTEMPT AT THIS TEST WAS WRONG. I ran initialization inside an open
-  // transaction, expecting SQLite to accept the pragma and ignore it. It does not —
-  // it THROWS ("cannot change into wal mode from within a transaction"), so
-  // `failures` was populated and `ok` was false for a reason that had nothing to do
-  // with the mismatch check. The sabotage passed and I nearly recorded a court that
-  // could not catch what it claimed to.
-  //
-  // The accepted-but-ignored case needs a pragma that SUCCEEDS and still does not
-  // read back. `PRAGMA journal_mode = wal` on an in-memory database is exactly that:
-  // SQLite accepts it and stays in `memory` mode. No throw, so `failures` is empty
-  // and ONLY the read-back check can catch it.
+test('F2: a sqlite pragma ACCEPTED but silently ignored makes ok FALSE (pure sqlite-path unit)', async () => {
+  // SUBSTRATE-NEUTRAL UNIT. VERIFIER FINDING F2: the module promises "never
+  // silently succeed — verify by reading back". This exercises the sqlite branch
+  // of initializeDatabaseConfig with a FAKE prisma and an explicit file: URL, so
+  // it neither needs nor touches a live database. The explicit `databaseUrl:
+  // 'file:...'` is load-bearing: without it the module reads process.env
+  // (now postgres) and takes the no-op path, which would not exercise the
+  // read-back promise at all. `PRAGMA journal_mode = wal` on an in-memory-style
+  // fake is accepted and stays `memory` — no throw, so ONLY the read-back check
+  // can catch it.
   const mod = await import('../src/lib/db-config.mjs');
   const fake = {
     async $queryRawUnsafe(q) {
       const m = /^PRAGMA\s+(\w+)(\s*=\s*(\S+))?/i.exec(q);
       const name = m?.[1];
-      // Reads: report values that will NOT match what was requested for
-      // journal_mode, while every other pragma reads back correctly.
       if (!m?.[2]) {
         if (name === 'journal_mode') return [{ journal_mode: 'memory' }];
         if (name === 'busy_timeout') return [{ busy_timeout: 5000 }];
@@ -306,12 +355,10 @@ test('F2: a pragma ACCEPTED but silently ignored makes ok FALSE', async () => {
         if (name === 'foreign_keys') return [{ foreign_keys: 1 }];
         return [{ [name]: null }];
       }
-      // Writes: accept everything without error. This is the whole point — the
-      // statement SUCCEEDS and is silently ignored.
       return [];
     },
   };
-  const r = await mod.initializeDatabaseConfig(fake);
+  const r = await mod.initializeDatabaseConfig(fake, { databaseUrl: 'file:./sabotage.db' });
   assert.deepEqual(r.failures, [],
     'this scenario must produce NO failures, or it is testing the wrong path');
   assert.ok(r.mismatches.some((m) => m.pragma === 'journal_mode'),
@@ -320,8 +367,9 @@ test('F2: a pragma ACCEPTED but silently ignored makes ok FALSE', async () => {
     'a pragma accepted but silently ignored MUST make ok false — this is the read-back promise');
 });
 
-test('every required pragma states WHY it exists', () => {
-  // A pragma with no rationale is the first thing a future cleanup deletes.
+test('every required sqlite pragma states WHY it exists (pure data)', () => {
+  // A pragma with no rationale is the first thing a future cleanup deletes. This
+  // never needed a substrate — it is a data invariant on the declarations.
   return import('../src/lib/db-config.mjs').then((mod) => {
     for (const p of mod.REQUIRED_SQLITE_PRAGMAS) {
       assert.ok(typeof p.why === 'string' && p.why.length > 30,

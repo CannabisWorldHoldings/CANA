@@ -34,11 +34,16 @@
  * carries a consumer's handoff. Saying so plainly is the point.
  */
 export const DB_CLASSIFICATION = Object.freeze({
-  sqlite: 'LOCAL_TEST_DATABASE_ONLY',
+  sqlite: 'ROLLBACK_SNAPSHOT_FORMAT_ONLY',
   reason: 'single-writer locking makes concurrent handoff writes non-deterministic; measured 0/10 succeeding before repair and 7-10/10 after, which is not a production guarantee',
   production_candidates_available_on_host: ['MariaDB 11.4.9', 'PostgreSQL 10.23'],
   evidence: 'deploy/namecheap/FEASIBILITY.md (host capability research) + measured concurrency in this repo',
   decision_owner: 'OWNER — selecting and provisioning the production database is an owner action, not an agent action',
+  // OWNER DECISION EXECUTED (2026-08-08, docs/adr/0001): managed PostgreSQL +
+  // PostGIS is the canonical datastore. SQLite files remain readable so
+  // pre-migration rollback snapshots stay inspectable (scripts/db-inspect.mjs),
+  // and never become an independently writable production store.
+  decision_taken: 'POSTGRESQL_POSTGIS_CANONICAL',
 });
 
 /**
@@ -102,7 +107,10 @@ function scalar(rows) {
  * Read the settings this module cares about, without changing anything.
  * Used to prove the BEFORE state, which is what makes an assertion meaningful.
  */
-export async function readDatabaseConfig(prisma) {
+export async function readDatabaseConfig(prisma, { provider = 'sqlite' } = {}) {
+  // PRAGMAs are SQLite-only tuning. On the canonical PostgreSQL lane there is
+  // nothing to read here — report that honestly instead of erroring.
+  if (provider !== 'sqlite') return { provider, pragmas: 'NOT_APPLICABLE' };
   const out = {};
   for (const p of REQUIRED_SQLITE_PRAGMAS) {
     try {
@@ -142,6 +150,22 @@ export async function initializeDatabaseConfig(
     preservePersistentPragmas = false,
   } = {},
 ) {
+  const provider = databaseProviderOf(databaseUrl);
+  if (provider !== 'sqlite') {
+    // Canonical PostgreSQL lane: connection tuning lives in the managed
+    // service and the pooled DATABASE_URL, not in per-process pragmas. This
+    // is a successful no-op, not a skipped requirement.
+    return {
+      ok: true,
+      provider,
+      before: { provider, pragmas: 'NOT_APPLICABLE' },
+      after: { provider, pragmas: 'NOT_APPLICABLE' },
+      applied: [],
+      failures: [],
+      mismatches: [],
+      classification: DB_CLASSIFICATION.decision_taken,
+    };
+  }
   const before = await readDatabaseConfig(prisma);
   if (isImmutableReadOnlyDatabase(databaseUrl)) {
     return {

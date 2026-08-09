@@ -216,7 +216,11 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         name: true,
         lastLicenseCheck: true,
       },
-      orderBy: [{ lastLicenseCheck: 'asc' }, { id: 'asc' }],
+      // nulls:'first' keeps never-checked retailers at the top of the stale
+      // queue. SQLite sorted ASC NULLS FIRST implicitly; PostgreSQL defaults
+      // to NULLS LAST, which would silently bury unchecked retailers on the
+      // final page of the queue.
+      orderBy: [{ lastLicenseCheck: { sort: 'asc', nulls: 'first' } }, { id: 'asc' }],
       skip: queuePageOffset(pages.stalePage),
       take: ADMIN_QUEUE_PAGE_SIZE,
     }),

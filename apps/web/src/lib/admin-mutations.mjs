@@ -540,8 +540,14 @@ export async function resolveRetailerClaim(
         return { outcome: 'BLOCKED_INVALID_CREDENTIAL' };
       }
 
+      // Defense in depth: the public submission validator lowercases emails,
+      // but legacy rows or direct writes may not be normalized. On SQLite the
+      // unique constraint was case-insensitive and masked this; PostgreSQL is
+      // case-sensitive, so an un-normalized lookup could miss an existing
+      // account and create a duplicate differing only in case.
+      const normalizedClaimEmail = claim.email.trim().toLowerCase();
       const existingUser = await transaction.user.findUnique({
-        where: { email: claim.email },
+        where: { email: normalizedClaimEmail },
         select: { id: true },
       });
       if (existingUser) {
@@ -571,7 +577,7 @@ export async function resolveRetailerClaim(
 
       const manager = await transaction.user.create({
         data: {
-          email: claim.email,
+          email: normalizedClaimEmail,
           password: claim.requestedPasswordHash,
           name: claim.retailer.name,
           role: 'RETAILER_MANAGER',

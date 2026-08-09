@@ -43,6 +43,12 @@ function safeEnvironment() {
     'NODE_EXTRA_CA_CERTS',
     'SSL_CERT_FILE',
     'SSL_CERT_DIR',
+    // Sanctioned disposable-benchmark PostgreSQL server URL. The canonical
+    // datastore is PostgreSQL (ADR-0001); the benchmark provisions and drops
+    // an isolated database on this server per run. Use a low-privilege
+    // benchmark role, never production credentials.
+    'CANA_BENCHMARK_DATABASE_URL',
+    'CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER',
   ]) {
     if (typeof process.env[key] === 'string') environment[key] = process.env[key];
   }
@@ -68,6 +74,18 @@ function runBenchmark(mutation = 'none') {
   return { ...result, receipt: JSON.parse(result.stdout) };
 }
 
+function runBenchmarkWithEnvironment(additions) {
+  const result = spawnSync(process.execPath, [runnerPath], {
+    cwd: webRoot,
+    encoding: 'utf8',
+    env: { ...safeEnvironment(), ...additions },
+    timeout: 120_000,
+    windowsHide: true,
+  });
+  assert.doesNotThrow(() => JSON.parse(result.stdout));
+  return { ...result, receipt: JSON.parse(result.stdout) };
+}
+
 test('frozen discovery corpus has exactly twelve synthetic task contracts', () => {
   const fixtureBytes = normalizedTextBytes(fs.readFileSync(fixturePath));
   const corpus = validateCorpus(JSON.parse(fixtureBytes.toString('utf8')));
@@ -87,6 +105,29 @@ test('frozen discovery corpus has exactly twelve synthetic task contracts', () =
       ...corpus.scenarios,
     ].every(({ benchmarkOnly }) => benchmarkOnly === true),
   );
+});
+
+test('benchmark refuses remote and forged-loopback PostgreSQL identities before database DDL', () => {
+  const remote = runBenchmarkWithEnvironment({
+    CANA_BENCHMARK_DATABASE_URL: 'postgresql://benchmark@db.internal.example/cana_verify',
+    CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '9999999999999999999',
+  });
+  assert.notEqual(remote.status, 0);
+  assert.match(remote.receipt.error, /refuses non-loopback PostgreSQL servers/);
+  assert.doesNotMatch(remote.receipt.error, /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/);
+
+  assert.match(
+    process.env.CANA_BENCHMARK_DATABASE_URL ?? '',
+    /^postgres(?:ql)?:\/\//,
+    'forged-loopback case requires the disposable benchmark database URL',
+  );
+  const forged = runBenchmarkWithEnvironment({
+    CANA_BENCHMARK_DATABASE_URL: process.env.CANA_BENCHMARK_DATABASE_URL,
+    CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '9999999999999999999',
+  });
+  assert.notEqual(forged.status, 0);
+  assert.match(forged.receipt.error, /without the matching disposable identity/);
+  assert.doesNotMatch(forged.receipt.error, /Disposable database statement failed/);
 });
 
 test('clean benchmark is deterministic and exercises all twelve scenarios', () => {

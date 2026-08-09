@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 
 /**
  * COLUMN WIDTH CUTOVER COURT.
@@ -34,7 +36,8 @@ import crypto from 'node:crypto';
  * the provider without widening the columns.
  */
 
-const SCHEMA = 'prisma/schema.prisma';
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 
 /** Columns the codebase writes long-form values into. */
 const LONG_FORM_COLUMNS = [
@@ -105,31 +108,111 @@ test('MEASURED: five links is not the worst case — chains grow', () => {
 });
 
 // ------------------------------------------------------------- the live guard
-test('THE GATE: if the provider is MySQL-family, long columns MUST be widened', () => {
-  // This is the assertion that makes the defect impossible to forget. It is inert
-  // while the provider is sqlite and becomes a hard blocker the instant it is not.
+//
+// REVIEWED PROVIDER SET. Every provider this schema is allowed to run under must
+// have a RECORDED column-width review — a finding about how Prisma maps an
+// unannotated `String` on that engine, and what (if anything) the long-form
+// columns therefore require. The gate stays armed: a provider that is NOT in this
+// set trips the court, because it means someone flipped the provider without doing
+// the review this court exists to force. Adding a provider means adding its
+// recorded finding here AND encoding the check that enforces it below.
+//
+//   sqlite      String -> TEXT (unbounded). No hazard. The original test substrate.
+//   postgresql  String -> TEXT (unbounded). No hazard. Verified 2026-08-09 against
+//               the live cana_app database: every column in LONG_FORM_COLUMNS is
+//               data_type=text, character_maximum_length=NULL (see
+//               docs/migration/SQLITE_TO_POSTGRES.md §"Column-width review
+//               (PostgreSQL)"). The VARCHAR(191) truncation hazard is MySQL-family
+//               ONLY. No @db.Text annotation is needed on PostgreSQL, and PROSCRIBING
+//               a bounded @db.VarChar on these columns keeps it that way.
+//   mysql /     String -> VARCHAR(191). HARD HAZARD. The long-form columns MUST carry
+//   mariadb     @db.Text / @db.MediumText / @db.LongText or their values truncate —
+//               and DemandCreditEntry.evidenceChain is hashed into the ledger, so a
+//               truncated chain silently fails its own evidence check.
+const REVIEWED_PROVIDERS = new Set(['sqlite', 'postgresql', 'mysql', 'mariadb']);
+
+test('THE GATE: the provider must be REVIEWED, and its column-width finding enforced', () => {
+  // This is the assertion that makes the defect impossible to forget. It stays inert
+  // on a reviewed engine whose finding holds, and becomes a hard blocker the instant
+  // the provider changes to something unreviewed OR a long-form column is bounded on
+  // an engine where it must not be.
   const src = schema();
   const provider = providerOf(src);
   assert.ok(provider, 'the schema must declare a provider');
 
-  if (!['mysql', 'mariadb'].includes(provider)) {
-    // Not yet applicable — but the reason must stay visible in the record.
-    assert.equal(provider, 'sqlite',
-      `unexpected provider "${provider}" — review column widths before proceeding`);
+  // A provider with no recorded review trips the court. This is the tripwire the
+  // migration re-armed FROM sqlite TO postgresql: the same message fires for any
+  // future flip to an engine nobody has reviewed.
+  assert.ok(REVIEWED_PROVIDERS.has(provider),
+    `unexpected provider "${provider}" — review column widths before proceeding. `
+    + 'Add its recorded finding to REVIEWED_PROVIDERS and encode the enforcing check, '
+    + 'the way sqlite and postgresql are documented above.');
+
+  if (['mysql', 'mariadb'].includes(provider)) {
+    // MySQL-family: unannotated String is VARCHAR(191). The long-form columns MUST be
+    // widened or they truncate.
+    const unwidened = [];
+    for (const [model, field] of LONG_FORM_COLUMNS) {
+      const line = fieldLine(src, model, field);
+      if (!line) continue; // the model may have been removed; absence is not a defect
+      if (!/@db\.(Text|LongText|MediumText)/.test(line)) unwidened.push(`${model}.${field}`);
+    }
+    assert.deepEqual(unwidened, [],
+      `these columns hold long-form values and would be TRUNCATED at VARCHAR(191) on ${provider}. `
+      + 'DemandCreditEntry.evidenceChain in particular is hashed into the ledger: truncation makes '
+      + 'every attributed action fail its own evidence check, and a merchant\'s proven value silently '
+      + 'drops to zero. Add @db.Text in the SAME change that flips the provider.');
     return;
   }
 
-  const unwidened = [];
+  // sqlite and postgresql both map an unannotated String to unbounded TEXT, so the
+  // hazard is the REVERSE one: someone bounding a long-form column with an explicit
+  // @db.VarChar(n) would reintroduce truncation on the very columns this court
+  // protects. The finding for these engines is "leave them unbounded"; enforce it.
+  const bounded = [];
   for (const [model, field] of LONG_FORM_COLUMNS) {
     const line = fieldLine(src, model, field);
-    if (!line) continue; // the model may have been removed; absence is not a defect
-    if (!/@db\.(Text|LongText|MediumText)/.test(line)) unwidened.push(`${model}.${field}`);
+    if (!line) continue;
+    const m = line.match(/@db\.(VarChar|Char)\((\d+)\)/);
+    if (m) bounded.push(`${model}.${field} is @db.${m[1]}(${m[2]})`);
   }
-  assert.deepEqual(unwidened, [],
-    `these columns hold long-form values and would be TRUNCATED at VARCHAR(191) on ${provider}. `
-    + 'DemandCreditEntry.evidenceChain in particular is hashed into the ledger: truncation makes '
-    + 'every attributed action fail its own evidence check, and a merchant\'s proven value silently '
-    + 'drops to zero. Add @db.Text in the SAME change that flips the provider.');
+  assert.deepEqual(bounded, [],
+    `on ${provider} an unannotated String is unbounded TEXT, which is exactly what these `
+    + 'long-form columns need. A bounded @db.VarChar/@db.Char here would reintroduce the '
+    + 'truncation this court blocks — DemandCreditEntry.evidenceChain is hashed into the ledger. '
+    + 'Remove the bound, or record a new review explaining why the bound is safe.');
+});
+
+test('RECORDED: the PostgreSQL column-width review exists in the migration record', () => {
+  // The gate above cites a recorded finding for postgresql. That citation must not be
+  // able to rot into a claim with no artifact behind it: if the provider is postgres,
+  // the review it points at has to actually exist and name the columns it cleared.
+  const src = schema();
+  if (providerOf(src) !== 'postgresql') return;
+  // Resolve the review by walking UP from this test file until the repo-root
+  // docs/ tree appears, rather than hard-coding a checkout depth. The doc lives at
+  // <repo>/docs/migration/…; the test at <repo>/apps/web/tests/…. An upward walk is
+  // robust to where the repo is checked out and to the checkout's directory name.
+  const REL = 'docs/migration/SQLITE_TO_POSTGRES.md';
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  let docPath = null;
+  for (let i = 0; i < 8; i++) {
+    const candidate = path.join(dir, REL);
+    if (fs.existsSync(candidate)) { docPath = candidate; break; }
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  assert.ok(docPath, `the postgres column-width review must exist at <repo>/${REL}`);
+  const doc = fs.readFileSync(docPath, 'utf8');
+  assert.match(doc, /Column-width review \(PostgreSQL\)/,
+    'the migration record must contain a section titled "Column-width review (PostgreSQL)"');
+  // The review must actually clear the hashed-evidence column by name and state the
+  // mapping it relied on — a review that does not name evidenceChain has not reviewed
+  // the column whose truncation this whole court exists to prevent.
+  assert.match(doc, /DemandCreditEntry\.evidenceChain/,
+    'the review must name DemandCreditEntry.evidenceChain, the ledger-hashed column');
+  assert.match(doc, /\btext\b/i, 'the review must record the String -> text mapping it relied on');
 });
 
 test('the at-risk column list stays honest as the schema grows', () => {

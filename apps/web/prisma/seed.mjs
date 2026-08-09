@@ -22,12 +22,15 @@ const DEMONSTRATION_PROVENANCE = {
 async function main() {
   // HARD SAFETY GATE, before anything else. This seed DELETES most of the
   // schema and inserts DEMONSTRATION_ONLY rows; assertSeedTargetIsSafe throws
-  // (no override, no flag) unless the target is a local SQLite file that
-  // contains nothing but demonstration data. See prisma/seed-safety.mjs.
+  // (no override, no flag) unless the target is a safe demonstration substrate
+  // — a local SQLite rollback fixture OR an identified disposable LOOPBACK
+  // PostgreSQL database (docs/adr/0001) — that contains nothing but
+  // demonstration data. See prisma/seed-safety.mjs.
   await assertSeedTargetIsSafe({
     prisma,
     databaseUrl: process.env.DATABASE_URL,
     nodeEnv: process.env.NODE_ENV,
+    disposableSystemIdentifier: process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER,
   });
 
   const bootstrapCredentials = createBootstrapCredentials();

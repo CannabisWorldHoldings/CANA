@@ -48,22 +48,22 @@
       "ownerActionRequired": "Only if the env var must be added in cPanel UI."
     },
     {
-      "signature": "The table main.<Model> does not exist in the current database",
+      "signature": "The table public.<Model> does not exist in the current database",
       "layer": "database-schema (never data corruption by itself)",
       "confidence": "PROVEN when db-inspect shows tableCount 0",
-      "safeDiagnostic": "Read-only scripts/db-inspect.mjs. If schema-empty AND backed up: install the build-verified schema template via bootstrap-production-db.sh. If nonempty with unknown tables: HARD STOP.",
-      "prohibitedAction": "prisma db push/migrate on the server; --force-reset; deleting a nonempty database.",
+      "safeDiagnostic": "Run read-only scripts/db-inspect.mjs with the exact PostgreSQL URL. Confirm the provider backup receipt and committed migration set before any owner-authorized migrate deploy.",
+      "prohibitedAction": "prisma db push; --force-reset; inventing a schema template; migrating without a verified backup receipt.",
       "rollbackTrigger": false,
-      "ownerActionRequired": "Run bootstrap-production-db.sh (first deploy only)."
+      "ownerActionRequired": "Authorize the backup and migration procedure after the read-only diagnosis."
     },
     {
-      "signature": "database file missing or zero bytes at $DATA_DIR/prod.db",
-      "layer": "database-file",
-      "confidence": "PROVEN by stat",
-      "safeDiagnostic": "First deploy: bootstrap installs the schema template (with backup rules). Established production: HARD STOP — locate backups (prod.db.bak-*), never regenerate silently.",
-      "prohibitedAction": "Silent regeneration over a previously-populated production path.",
+      "signature": "P1001: Can't reach database server",
+      "layer": "database-connectivity",
+      "confidence": "PROVEN only after the exact endpoint and network path are tested without exposing credentials",
+      "safeDiagnostic": "Check managed-provider status, cPanel outbound connectivity, TLS requirements, pooled/direct host roles, and credential validity using redacted output.",
+      "prohibitedAction": "Creating a local SQLite fallback; logging URLs; changing schema; claiming provider outage without an independent check.",
       "rollbackTrigger": false,
-      "ownerActionRequired": "Confirm whether this is a first deploy."
+      "ownerActionRequired": "Provider or cPanel control-plane action may be required after diagnosis."
     },
     {
       "signature": "restart script path not found (sh: restart.sh: No such file)",

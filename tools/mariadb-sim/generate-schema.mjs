@@ -35,12 +35,17 @@ export function generateCandidate(source) {
     return `${indent}${field}${type} @db.Text${spacing}${suffix}`.trimEnd();
   }).join('\n');
 
-  const provider = transformed.replace(
-    /datasource db \{\n\s+provider = "sqlite"/,
-    'datasource db {\n  provider = "mysql"',
-  );
+  const provider = transformed
+    .replace(
+      /datasource db \{\n\s+provider\s+=\s+"postgresql"/,
+      'datasource db {\n  provider = "mysql"',
+    )
+    .replace(/\n\s*directUrl\s*=\s*env\("DIRECT_URL"\)/, '')
+    .replace(/\n\s*extensions\s*=\s*\[postgis\]/, '')
+    .replace(/\n\s*previewFeatures\s*=\s*\["postgresqlExtensions"\]/, '')
+    .replaceAll('Unsupported("geometry(Point, 4326)")', 'Unsupported("geometry")');
   if (provider === transformed) {
-    throw new Error('source schema does not contain the expected sqlite datasource');
+    throw new Error('source schema does not contain the expected PostgreSQL datasource');
   }
   return [
     '// GENERATED PROVIDER CANDIDATE. Do not merge this provider flip into the live schema.',

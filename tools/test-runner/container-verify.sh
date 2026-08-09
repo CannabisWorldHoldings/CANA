@@ -5,9 +5,19 @@ PROFILE="${1:?verification profile required}"
 EXPECTED_SHA="${2:?expected commit required}"
 ROOT=/workspace
 WEB="$ROOT/apps/web"
-DB=""
-BUILD_DATABASE_ROOT=""
 SERVER_PID=""
+
+: "${DATABASE_URL:?disposable PostgreSQL DATABASE_URL required}"
+: "${DIRECT_URL:?disposable PostgreSQL DIRECT_URL required}"
+test "$DATABASE_URL" = "$DIRECT_URL"
+case "$DATABASE_URL" in
+  postgresql://postgres@127.0.0.1:5432/cana_verify) ;;
+  *)
+    echo "CANA_DATABASE_CONTRACT_REFUSED unexpected disposable database URL" >&2
+    exit 72
+    ;;
+esac
+echo "CANA_DATABASE_CONTRACT_PASS PostgreSQL pooled/direct URLs share one disposable loopback instance"
 
 mkdir -p /agent/workspace
 ln -s /workspace /agent/workspace/ui-recover
@@ -30,18 +40,6 @@ cleanup() {
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
     echo "CANA_CLEANUP_FAILED server pid $SERVER_PID is still alive" >&2
     exit 70
-  fi
-  if [ -n "$BUILD_DATABASE_ROOT" ]; then
-    case "$BUILD_DATABASE_ROOT" in
-      /tmp/cana-container-database-*)
-        test ! -L "$BUILD_DATABASE_ROOT"
-        rm -rf -- "$BUILD_DATABASE_ROOT"
-        ;;
-      *)
-        echo "CANA_CLEANUP_FAILED refusing unexpected build database root: $BUILD_DATABASE_ROOT" >&2
-        exit 71
-        ;;
-    esac
   fi
   echo "CANA_CLEANUP_PASS owned server terminated; container namespace owns port 3000"
   exit "$prior"
@@ -67,17 +65,6 @@ npm ci --no-audit --no-fund
   npx --no-install prisma generate
 )
 
-BUILD_DATABASE_ROOT="$(mktemp -d /tmp/cana-container-database-XXXXXX)"
-chmod 700 "$BUILD_DATABASE_ROOT"
-DB="$BUILD_DATABASE_ROOT/runtime.db"
-(
-  umask 077
-  set -o noclobber
-  : > "$DB"
-)
-test -d "$BUILD_DATABASE_ROOT"
-test -f "$DB"
-
 build_web() {
   local started
   local build_log
@@ -100,14 +87,14 @@ build_web() {
 prepare_build_database() {
   (
     cd "$WEB"
-    DATABASE_URL="file:$DB" npx --no-install prisma migrate deploy --schema prisma/schema.prisma
+    npx --no-install prisma migrate deploy --schema prisma/schema.prisma
   )
 }
 
 seed_database() {
   (
     cd "$WEB"
-    DATABASE_URL="file:$DB" NODE_ENV=development node prisma/seed.mjs
+    NODE_ENV=development node prisma/seed.mjs
   )
 }
 
@@ -189,7 +176,6 @@ start_server() {
     cd "$WEB"
     PORT=3000 \
     HOSTNAME=127.0.0.1 \
-    DATABASE_URL="file:$DB" \
     NODE_ENV=production \
     CANA_EXPECTED_SHA="$EXPECTED_SHA" \
     npm start -- -H 127.0.0.1 -p 3000
@@ -234,7 +220,7 @@ case "$PROFILE" in
     start_server
     (
       cd "$WEB"
-      DATABASE_URL="file:$DB" node --test \
+      node --test \
         tests/release-identity.test.mjs \
         tests/release-sha.test.mjs
     )
@@ -249,8 +235,9 @@ case "$PROFILE" in
       cd "$WEB"
       CANA_DETERMINISTIC_TEST_RANDOM=1 \
       CANA_DETERMINISTIC_TEST_SEED="$EXPECTED_SHA" \
+      CANA_BENCHMARK_DATABASE_URL="$DATABASE_URL" \
+      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER="$CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER" \
       NODE_OPTIONS="--require=$ROOT/tools/test-runner/deterministic-crypto.cjs${NODE_OPTIONS:+ $NODE_OPTIONS}" \
-      DATABASE_URL="file:$DB" \
       node --test --test-concurrency=1 tests/*.test.mjs
     )
     (

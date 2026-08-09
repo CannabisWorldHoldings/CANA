@@ -177,9 +177,13 @@ export function productDiscoveryWhere({
   if (parsed.query) {
     entryConstraints.push({
       OR: [
-        { product: { name: { contains: parsed.query } } },
-        { product: { description: { contains: parsed.query } } },
-        { retailer: { name: { contains: parsed.query } } },
+        { product: { name: { contains: parsed.query, mode: 'insensitive' } } },
+        {
+          product: {
+            description: { contains: parsed.query, mode: 'insensitive' },
+          },
+        },
+        { retailer: { name: { contains: parsed.query, mode: 'insensitive' } } },
       ],
     });
   }

@@ -145,15 +145,15 @@ export function directoryRetailerWhere({ brandId, filters, asOf = new Date() }) 
   if (parsedFilters.query) {
     constraints.push({
       OR: [
-        { name: { contains: parsedFilters.query } },
-        { zip: { contains: parsedFilters.query } },
-        { address: { contains: parsedFilters.query } },
-        { city: { contains: parsedFilters.query } },
+        { name: { contains: parsedFilters.query, mode: 'insensitive' } },
+        { zip: { contains: parsedFilters.query, mode: 'insensitive' } },
+        { address: { contains: parsedFilters.query, mode: 'insensitive' } },
+        { city: { contains: parsedFilters.query, mode: 'insensitive' } },
         {
           menus: {
             some: {
               product: {
-                name: { contains: parsedFilters.query },
+                name: { contains: parsedFilters.query, mode: 'insensitive' },
               },
               brandMenus: {
                 some: {
@@ -175,7 +175,9 @@ export function directoryRetailerWhere({ brandId, filters, asOf = new Date() }) 
   if (parsedFilters.neighborhood && DC_NEIGHBORHOOD_MAP[parsedFilters.neighborhood]) {
     const keywords = DC_NEIGHBORHOOD_MAP[parsedFilters.neighborhood].keywords;
     constraints.push({
-      OR: keywords.map((kw) => ({ address: { contains: kw } })),
+      OR: keywords.map((kw) => ({
+        address: { contains: kw, mode: 'insensitive' },
+      })),
     });
   }
 

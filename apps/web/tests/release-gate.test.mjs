@@ -72,6 +72,20 @@ const API_ROUTES = [
   // product lane's full-suite run failed G10 by name. That is the gate working:
   // a new public surface cannot reach main without someone deciding it is governed.
   { path: '/api/v1/neighborhoods', method: 'GET', truthBearing: true },
+  // /api/geo/viewport publishes geographic ENTITY records (name, coordinates,
+  // verification) to the customer map. It ships with the PostGIS geo kernel and
+  // G10 caught it ungoverned on the first full-suite run after the migration —
+  // exactly the gate working. It is truth-bearing: it must serve no demonstration
+  // data and must never be cached. Its response shape differs from the v1 list
+  // endpoints (records live under `entities`, and it needs a bounding box rather
+  // than a page), so it declares both, and the invariants below read them —
+  // the invariant is "no demonstration record on a public map", not "the array is
+  // called data".
+  {
+    path: '/api/geo/viewport', method: 'GET', truthBearing: true,
+    query: '?south=38.79&west=-77.12&north=38.995&east=-76.91',
+    records: (b) => b.entities,
+  },
   // /api/release reports which commit is deployed. Not truth-bearing in the
   // consumer sense — it publishes no merchant or product claim — but it must still
   // satisfy the leak, header and error-shape gates like every other public route.
@@ -111,11 +125,19 @@ test('G2: no truth-bearing route serves demonstration data', async () => {
   // Every seeded retailer is demonstration data, so any published record here
   // would be a leak. This is the invariant the whole system rests on.
   for (const route of API_ROUTES.filter((r) => r.truthBearing && r.method === 'GET')) {
-    const r = await req('GET', `${route.path}?pageSize=50`);
+    // A route may declare the query that yields its record set (a bounding box for
+    // the geo map, a page size for the list endpoints) and the accessor for the
+    // array inside its response. The demonstration-leak invariant is checked on
+    // whatever array the route actually returns — the shape may differ, the rule
+    // may not.
+    const query = route.query ?? '?pageSize=50';
+    const records = route.records ?? ((b) => b.data);
+    const r = await req('GET', `${route.path}${query}`);
     assert.equal(r.status, 200, `${route.path} should answer 200`);
     const b = r.json();
-    assert.ok(Array.isArray(b.data), `${route.path} must expose a data array`);
-    for (const rec of b.data) {
+    const recs = records(b);
+    assert.ok(Array.isArray(recs), `${route.path} must expose a record array`);
+    for (const rec of recs) {
       const demo = rec.provenance?.is_demonstration ?? rec.is_demonstration;
       assert.notEqual(demo, true, `${route.path} published a demonstration record`);
     }
@@ -187,7 +209,10 @@ test('G5: no route echoes an attacker-controlled string unescaped', async () => 
 test('G6: truth-bearing API routes are never cached', async () => {
   // A cached freshness claim is a stale freshness claim.
   for (const route of API_ROUTES.filter((r) => r.truthBearing)) {
-    const r = await req(route.method, route.path, { body: route.body ?? null });
+    // Exercise the route with the query that yields a real 200 where it declares
+    // one, so this asserts no-store on the SUCCESS path — the response a consumer
+    // and any shared cache actually see — not merely on a validation error.
+    const r = await req(route.method, `${route.path}${route.query ?? ''}`, { body: route.body ?? null });
     const cc = String(r.headers['cache-control'] ?? '');
     assert.match(cc, /no-store/, `${route.path} is cacheable: cache-control=${cc}`);
   }

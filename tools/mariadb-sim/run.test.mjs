@@ -6,10 +6,17 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SCHEMA = path.join(ROOT, 'tools', 'mariadb-sim', 'schema.prisma');
+const codeOnly = (source) => source
+  .split('\n')
+  .filter((line) => !line.trim().startsWith('//'))
+  .join('\n');
 
 test('the MariaDB candidate is provider-specific and annotates every approved long field', () => {
   const schema = fs.readFileSync(SCHEMA, 'utf8');
+  const code = codeOnly(schema);
   assert.match(schema, /provider\s*=\s*"mysql"/);
+  assert.doesNotMatch(code, /\bdirectUrl\b|extensions\s*=\s*\[postgis\]|postgresqlExtensions/);
+  assert.match(schema, /geom\s+Unsupported\("geometry"\)\?/);
   for (const field of [
     'description',
     'notes',
@@ -26,6 +33,17 @@ test('the MariaDB candidate is provider-specific and annotates every approved lo
   ]) {
     assert.match(schema, new RegExp(`\\b${field}\\s+String\\??\\s+@db\\.Text\\b`));
   }
+});
+
+test('the candidate is generated from canonical PostgreSQL without changing that source', async () => {
+  const sourcePath = path.join(ROOT, 'apps', 'web', 'prisma', 'schema.prisma');
+  const source = fs.readFileSync(sourcePath, 'utf8');
+  const { generateCandidate } = await import('./generate-schema.mjs');
+  const candidate = generateCandidate(source);
+  assert.match(source, /provider\s*=\s*"postgresql"/);
+  assert.match(candidate, /provider\s*=\s*"mysql"/);
+  assert.equal(fs.readFileSync(sourcePath, 'utf8'), source);
+  assert.doesNotMatch(codeOnly(candidate), /\bdirectUrl\b|extensions\s*=\s*\[postgis\]|postgresqlExtensions/);
 });
 
 test('the MariaDB runner exposes the exact 11.4 execution surface', async () => {

@@ -6,6 +6,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 
+import { startDisposablePostgres, stopDisposablePostgres } from '../postgres-sim/runtime.mjs';
 import { sha256Bytes, sha256File, writeReceipt } from '../test-runner/receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -82,6 +83,7 @@ function runRealPrismaProof(source) {
   const dependencyContainer = `cana-cpanel-deps-${suffix}`;
   const proofContainer = `cana-cpanel-prisma-${suffix}`;
   const dependencyVolume = `cana-cpanel-deps-${suffix}`;
+  const proofNetwork = `cana-cpanel-prisma-${suffix}`;
   const packageFiles = [
     'package.json',
     'package-lock.json',
@@ -92,6 +94,9 @@ function runRealPrismaProof(source) {
   let dependencyCreated = false;
   let proofCreated = false;
   let volumeCreated = false;
+  let networkCreated = false;
+  let postgres = null;
+  let postgresContainerId = '';
   let result;
   let output = '';
   let executionNetwork = '';
@@ -105,8 +110,8 @@ function runRealPrismaProof(source) {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:/tmp/cana-engine-prefetch.db"
+  provider = "postgresql"
+  url      = "postgresql://postgres@127.0.0.1:5432/cana_engine_prefetch"
 }
 
 model EnginePrefetch {
@@ -223,12 +228,31 @@ model EnginePrefetch {
     }
     command('docker', ['rm', '-f', dependencyContainer], { timeout: 30_000 });
     dependencyCreated = false;
+    command('docker', ['network', 'create', '--internal', proofNetwork], { timeout: 30_000 });
+    networkCreated = true;
+    postgres = startDisposablePostgres({
+      label: 'cpanel',
+      network: proofNetwork,
+      networkAlias: 'postgres',
+      sharedNetworkNamespace: true,
+    });
+    postgresContainerId = command(
+      'docker',
+      ['inspect', postgres.name, '--format', '{{.Id}}'],
+      { timeout: 30_000 },
+    ).stdout.trim();
     command('docker', [
       'create',
       '--name',
       proofContainer,
       '--network',
-      'none',
+      `container:${postgres.name}`,
+      '--env',
+      `DATABASE_URL=${postgres.databaseUrl}`,
+      '--env',
+      `DIRECT_URL=${postgres.databaseUrl}`,
+      '--env',
+      `CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=${postgres.systemIdentifier}`,
       '-w',
       '/workspace',
       '--mount',
@@ -244,8 +268,8 @@ model EnginePrefetch {
       ['inspect', proofContainer, '--format', '{{.HostConfig.NetworkMode}}'],
       { timeout: 30_000 },
     ).stdout.trim();
-    if (executionNetwork !== 'none') {
-      throw new Error(`real Prisma proof network is ${executionNetwork}, expected none`);
+    if (executionNetwork !== `container:${postgresContainerId}`) {
+      throw new Error(`real Prisma proof network is ${executionNetwork}, expected container:${postgresContainerId}`);
     }
     command('docker', ['cp', bundle, `${proofContainer}:/source.bundle`], {
       timeout: 120_000,
@@ -281,6 +305,13 @@ model EnginePrefetch {
         timeout: 30_000,
       });
     }
+    if (postgres) stopDisposablePostgres(postgres);
+    if (networkCreated) {
+      command('docker', ['network', 'rm', proofNetwork], {
+        allowFailure: true,
+        timeout: 30_000,
+      });
+    }
     fs.rmSync(runRoot, { recursive: true, force: true });
   }
   const proofRemains = command(
@@ -298,6 +329,11 @@ model EnginePrefetch {
     ['volume', 'inspect', dependencyVolume],
     { allowFailure: true, timeout: 30_000 },
   ).status === 0;
+  const networkRemains = command(
+    'docker',
+    ['network', 'inspect', proofNetwork],
+    { allowFailure: true, timeout: 30_000 },
+  ).status === 0;
   const marker = output
     .split('\n')
     .find((line) => line.startsWith('CANA_REAL_PRISMA_PROOF '));
@@ -309,11 +345,12 @@ model EnginePrefetch {
     proofRemains ||
     dependencyRemains ||
     volumeRemains ||
+    networkRemains ||
     proof?.overall !== 'PASS' ||
     proof?.commit !== source.commit
   ) {
     throw new Error(
-      `real Prisma cPanel proof failed: exit=${result?.status ?? 'none'} proof-remains=${proofRemains || 'none'} dependency-remains=${dependencyRemains || 'none'} volume-remains=${volumeRemains}\n${output.slice(-12_000)}`,
+      `real Prisma cPanel proof failed: exit=${result?.status ?? 'none'} proof-remains=${proofRemains || 'none'} dependency-remains=${dependencyRemains || 'none'} volume-remains=${volumeRemains} network-remains=${networkRemains}\n${output.slice(-12_000)}`,
     );
   }
   return {
@@ -326,13 +363,15 @@ model EnginePrefetch {
       prismaClientEnginePrefetched: true,
       packageFiles,
     },
-    executionNetwork,
+    executionNetwork: 'internal-only-disposable-postgresql',
     outputSha256: sha256Bytes(output),
     outputTail: output.slice(-4_000),
     cleanup: {
       containerRemoved: true,
       dependencyContainerRemoved: true,
       volumeRemoved: true,
+      databaseContainerRemoved: true,
+      networkRemoved: true,
     },
     proof,
   };
@@ -478,7 +517,7 @@ async function startWeb(root, releaseRoot) {
   throw new Error('simulated web launcher did not publish its port');
 }
 
-async function startPassengerWeb(root, releaseRoot, database) {
+async function startPassengerWeb(root, releaseRoot) {
   const portFile = path.join(root, 'shared', 'logs', `passenger-port-${crypto.randomBytes(4).toString('hex')}`);
   const logFile = path.join(root, 'shared', 'logs', 'passenger-process.log');
   const descriptor = fs.openSync(logFile, 'a');
@@ -486,7 +525,8 @@ async function startPassengerWeb(root, releaseRoot, database) {
     cwd: releaseRoot,
     env: {
       ...runtimeEnvironment(root, releaseRoot, portFile),
-      DATABASE_URL: `file:${database}`,
+      DATABASE_URL: 'postgresql://app@db.example/orderweeddc?sslmode=require&sslaccept=strict',
+      DIRECT_URL: 'postgresql://app@db.example/orderweeddc?sslmode=require&sslaccept=strict',
       HOSTNAME: '127.0.0.1',
       PORT: '0',
     },
@@ -560,7 +600,7 @@ async function exerciseExistingNamecheapScripts({
   const newName = `orderweeddc-${source.commit.slice(0, 12)}`;
   const oldArtifact = createNamecheapArtifact(root, oldName, BASE);
   const newArtifact = createNamecheapArtifact(root, newName, source.commit);
-  const database = path.join(directories.data, 'prod.db');
+  const database = path.join(directories.data, 'simulation-control.db');
   const baseEnvironment = {
     ...process.env,
     HOME: accountHome,
@@ -603,7 +643,7 @@ async function exerciseExistingNamecheapScripts({
       `deploy.sh installed ${source.commit}, preserved ${BASE}, and copied exact existing scripts`,
     );
 
-    passenger = await startPassengerWeb(root, current, database);
+    passenger = await startPassengerWeb(root, current);
     const baseUrl = `http://127.0.0.1:${passenger.port}`;
     const health = command('sh', [path.join(current, 'healthcheck.sh'), baseUrl], {
       env: baseEnvironment,
@@ -682,7 +722,7 @@ async function exerciseExistingNamecheapScripts({
     const rolledBackReceipt = JSON.parse(
       fs.readFileSync(path.join(appHome, 'current', 'receipt.json'), 'utf8'),
     );
-    passenger = await startPassengerWeb(root, path.join(appHome, 'current'), database);
+    passenger = await startPassengerWeb(root, path.join(appHome, 'current'));
     const rollbackReady = command(
       'sh',
       [
@@ -709,7 +749,7 @@ async function exerciseExistingNamecheapScripts({
       artifact: newArtifact.tarName,
       output: redeploy.stdout.trim(),
     });
-    passenger = await startPassengerWeb(root, path.join(appHome, 'current'), database);
+    passenger = await startPassengerWeb(root, path.join(appHome, 'current'));
     const finalReady = command(
       'sh',
       [
@@ -962,29 +1002,38 @@ export async function runCpanelSimulation({ repoRoot }) {
       checks,
       'existing migration script with real Prisma CLI',
       realPrismaProof.proof.prismaVersion === '6.19.3' &&
-        realPrismaProof.proof.migrationsApplied === 2 &&
+        realPrismaProof.proof.migrationsApplied === 3 &&
         realPrismaProof.proof.coreTables === 2 &&
+        /^3\./.test(realPrismaProof.proof.postgis) &&
+        realPrismaProof.proof.h3 === '4.2.3' &&
+        realPrismaProof.proof.directUrlContract === 'SAME_DISPOSABLE_POSTGRESQL_INSTANCE' &&
+        realPrismaProof.proof.forgedLoopbackIdentityRefusalProven === true &&
+        realPrismaProof.proof.appIdentityRefusalProven === true &&
+        realPrismaProof.proof.appIdentityAcceptanceProven === true &&
+        realPrismaProof.proof.migrationOutputRedacted === true &&
         realPrismaProof.dependencyFetch.sourceMounted === false &&
         realPrismaProof.dependencyFetch.lifecycleScriptsEnabled === false &&
         realPrismaProof.dependencyFetch.prismaEnginePrefetch === '6.19.3' &&
         realPrismaProof.dependencyFetch.prismaClientEnginePrefetched === true &&
-        realPrismaProof.executionNetwork === 'none',
-      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and both migrations after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
+        realPrismaProof.executionNetwork === 'internal-only-disposable-postgresql',
+      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and all three PostgreSQL migrations after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
     );
     check(
       checks,
-      'existing worker checkpoint and backup with real Prisma client',
-      realPrismaProof.proof.workerCheckpoint === 'CHECKPOINTED' &&
-        /^[0-9a-f]{64}$/.test(realPrismaProof.proof.backupSha256) &&
-        realPrismaProof.cleanup.containerRemoved,
-      `worker.mjs checkpointed through @prisma/client and wrote ${realPrismaProof.proof.backupSha256}`,
+      'managed PostgreSQL backup authority refusal',
+      realPrismaProof.proof.backupAuthority === 'PROVIDER_OPERATOR_REQUIRED' &&
+        realPrismaProof.proof.backupRefusalProven === true,
+      'worker.mjs refused to fabricate a local-file backup',
     );
     check(
       checks,
-      'existing restore script schema inspection',
-      realPrismaProof.proof.restoreInspector === 'coreTablesPresent=true' &&
-        realPrismaProof.proof.restoredSentinel === 'before-real-backup',
-      'restore-backup.sh ran db-inspect.mjs and the restored database retained the pre-backup sentinel',
+      'real Prisma proof resource cleanup',
+      realPrismaProof.cleanup.containerRemoved &&
+        realPrismaProof.cleanup.dependencyContainerRemoved &&
+        realPrismaProof.cleanup.volumeRemoved &&
+        realPrismaProof.cleanup.databaseContainerRemoved &&
+        realPrismaProof.cleanup.networkRemoved,
+      'source, dependency, database, volume, and internal-network proof resources were removed',
     );
   } catch (error) {
     failure = error instanceof Error ? error.message : String(error);

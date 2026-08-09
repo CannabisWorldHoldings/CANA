@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 /**
  * TRANSACTIONAL IDEMPOTENCY — attacks on concurrent duplicate attribution.
@@ -147,14 +148,86 @@ test('50 SIMULTANEOUS identical requests commit EXACTLY ONE attribution', async 
 });
 
 test('the DATABASE, not the application, adjudicates the concurrent case', async () => {
-  // If every refusal came from the pre-insert lookup, the constraint would be
-  // untested and the race would still be live under tighter timing.
+  // Force the optional fast-path lookup to miss while keeping every real
+  // database operation intact. This deterministically drives the second write
+  // into the canonical unique constraint instead of hoping an HTTP scheduling
+  // race happens to reach it on this machine.
   const rid = await mk('DBADJ');
-  const results = await Promise.all(Array.from({ length: 30 }, () => post(rid, 'MENU_VIEW')));
-  const byDb = results.filter((r) => /database uniqueness constraint/.test(r.body)).length;
-  assert.ok(byDb > 0,
-    'at least one refusal must be decided by the DB constraint — otherwise only the fast path is exercised');
+  const p = await db();
+  const table = p.demandCreditEntry;
+  const { createDemandCredits } = await import('../src/lib/demand-credits.mjs');
+  const credits = createDemandCredits({
+    demandCreditEntry: {
+      findFirst: (args) => (
+        args?.where?.kind === 'ATTRIBUTION'
+          ? null
+          : table.findFirst(args)
+      ),
+      findMany: (...args) => table.findMany(...args),
+      create: (...args) => table.create(...args),
+      count: (...args) => table.count(...args),
+    },
+  });
+  const input = {
+    merchantId: rid,
+    actionKind: 'MENU_VIEW',
+    evidenceChain: [{ step: 'request', ref: 'deterministic-db-court' }],
+    observedAt: new Date(),
+  };
+  const winner = await credits.attribute(input);
+  const duplicate = await credits.attribute(input);
+  await p.$disconnect();
+  assert.equal(winner.accepted, true);
+  assert.equal(duplicate.accepted, false);
+  assert.equal(duplicate.denial_code, 'DUPLICATE_ATTRIBUTION');
+  assert.equal(duplicate.decided_by, 'database uniqueness constraint');
+  assert.ok(duplicate.existing, 'the database-decided refusal must return the winning row');
   assert.equal(await attributionCount(rid), 1);
+});
+
+test('a sequence-constraint race rechecks event identity before reporting contention', async () => {
+  const { createDemandCredits, eventIdentityOf, IDENTITY_WINDOW_MS } =
+    await import('../src/lib/demand-credits.mjs');
+  const merchantId = 'forced-seq-collision';
+  const input = {
+    merchantId,
+    actionKind: 'MENU_VIEW',
+    evidenceChain: [{ step: 'request', ref: 'forced-seq-collision' }],
+    observedAt: new Date('2026-08-09T00:00:00Z'),
+  };
+  const eventIdentity = eventIdentityOf({
+    merchantId,
+    actionKind: input.actionKind,
+    evidenceChainSha256: createHash('sha256')
+      .update(JSON.stringify(input.evidenceChain))
+      .digest('hex'),
+    windowBucket: Math.floor(input.observedAt.getTime() / IDENTITY_WINDOW_MS),
+    idempotencyKey: null,
+  });
+  const winner = { id: 'winner', merchantId, eventIdentity, seq: 0 };
+  let identityLookups = 0;
+  const credits = createDemandCredits({
+    demandCreditEntry: {
+      findFirst: async (args) => {
+        if (args?.where?.eventIdentity === eventIdentity) {
+          identityLookups += 1;
+          return winner;
+        }
+        return null;
+      },
+      create: async () => {
+        const error = new Error('Unique constraint failed on merchantId, seq');
+        error.code = 'P2002';
+        error.meta = { target: ['merchantId', 'seq'] };
+        throw error;
+      },
+    },
+  });
+  const result = await credits.attribute(input);
+  assert.equal(result.accepted, false);
+  assert.equal(result.denial_code, 'DUPLICATE_ATTRIBUTION');
+  assert.equal(result.existing, winner);
+  assert.equal(identityLookups, 1, 'the seq-collision branch must read the canonical event winner');
 });
 
 test('a refused duplicate returns the row that WON, not a bare error', async () => {

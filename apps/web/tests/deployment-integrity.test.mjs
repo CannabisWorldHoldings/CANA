@@ -174,9 +174,9 @@ test('artifact operations emit deploy, restart, and rollback scripts byte-for-by
     const operationalScripts = verification.files;
     assert.deepEqual(operationalScripts.slice(0, 4), [
       'deploy.sh',
-      'bootstrap-production-db.sh',
       'restart.sh',
       'rollback.sh',
+      'migrate.sh',
     ], 'the executable builder must emit the deployment and rollback entry points');
 
     execFileSync('tar', ['-xzf', verification.tarPath, '-C', extractionRoot]);
@@ -466,6 +466,26 @@ test('canonical deployment verifier snapshots before structural inspection and e
   assert.match(runbook, /verify-owner-artifact-input\.sh/);
 });
 
+test('maintenance health job exits nonzero when the probe is unhealthy', (t) => {
+  const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-worker-health-'));
+  t.after(() => fs.rmSync(backupDir, { recursive: true, force: true }));
+  const result = spawnSync(process.execPath, [
+    path.join(repoRoot, 'deploy/namecheap/worker.mjs'),
+    '--once',
+    'health',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      OWD_BACKUP_DIR: backupDir,
+      WORKER_HEALTH_URL: 'http://127.0.0.1:1/api/health',
+    },
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(`${result.stdout}${result.stderr}`, /HEALTH_PROBE_UNHEALTHY/);
+});
+
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
   const fixtureParent = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-contam-'));
   try {
@@ -544,15 +564,43 @@ test('builder contract: webpack-only, unresolved-external scan, out-of-repo isol
   }
 });
 
-test('Namecheap startup preserves the externally owned SQLite file', () => {
+test('Namecheap startup requires the canonical PostgreSQL URL pair', () => {
   const launcher = read('deploy/namecheap/app.js');
-  const prisma = read('apps/web/src/lib/prisma.ts');
-  const guard = "process.env.CANA_PRESERVE_SQLITE_FILE_BYTES = '1'";
+  assert.match(launcher, /!process\.env\.DATABASE_URL \|\| !process\.env\.DIRECT_URL/);
+  assert.match(launcher, /canonical PostgreSQL protocol/);
+  assert.doesNotMatch(launcher, /DATABASE_URL=file:/);
+  assert.doesNotMatch(launcher, /CANA_PRESERVE_SQLITE_FILE_BYTES/);
+});
 
-  assert.match(launcher, /CANA_PRESERVE_SQLITE_FILE_BYTES = '1'/);
-  assert.ok(
-    launcher.indexOf(guard) < launcher.indexOf("require('./server.js')"),
-    'the byte-preservation boundary must be established before Next.js starts',
-  );
-  assert.match(prisma, /preservePersistentPragmas:\s*process\.env\.CANA_PRESERVE_SQLITE_FILE_BYTES === '1'/);
+test('Passenger startup and standalone migration refuse remote PostgreSQL without strict TLS', () => {
+  const insecureEnvironment = {
+    ...process.env,
+    DATABASE_URL: 'postgresql://app@db.example/orderweeddc',
+    DIRECT_URL: 'postgresql://app@db.example/orderweeddc',
+  };
+  const startup = spawnSync(process.execPath, [path.join(repoRoot, 'deploy/namecheap/app.js')], {
+    encoding: 'utf8',
+    env: insecureEnvironment,
+  });
+  assert.notEqual(startup.status, 0);
+  assert.match(startup.stderr, /sslmode=require and sslaccept=strict/);
+
+  const receiptRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-tls-court-'));
+  const receipt = path.join(receiptRoot, 'backup-receipt.json');
+  fs.writeFileSync(receipt, '{"court":"tls-refusal"}\n');
+  try {
+    const migration = spawnSync('sh', [path.join(repoRoot, 'deploy/namecheap/migrate.sh')], {
+      cwd: webRoot,
+      encoding: 'utf8',
+      env: {
+        ...insecureEnvironment,
+        CANA_PRE_MIGRATION_BACKUP_RECEIPT: receipt,
+      },
+    });
+    assert.notEqual(migration.status, 0);
+    assert.match(`${migration.stdout}\n${migration.stderr}`, /must enforce strict TLS/);
+    assert.doesNotMatch(`${migration.stdout}\n${migration.stderr}`, /prisma migrate deploy/);
+  } finally {
+    fs.rmSync(receiptRoot, { recursive: true, force: true });
+  }
 });
