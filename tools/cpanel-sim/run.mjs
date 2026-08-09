@@ -233,13 +233,14 @@ model EnginePrefetch {
       label: 'cpanel',
       network: proofNetwork,
       networkAlias: 'postgres',
+      sharedNetworkNamespace: true,
     });
     command('docker', [
       'create',
       '--name',
       proofContainer,
       '--network',
-      proofNetwork,
+      `container:${postgres.name}`,
       '--env',
       `DATABASE_URL=${postgres.databaseUrl}`,
       '--env',
@@ -261,8 +262,8 @@ model EnginePrefetch {
       ['inspect', proofContainer, '--format', '{{.HostConfig.NetworkMode}}'],
       { timeout: 30_000 },
     ).stdout.trim();
-    if (executionNetwork !== proofNetwork) {
-      throw new Error(`real Prisma proof network is ${executionNetwork}, expected ${proofNetwork}`);
+    if (executionNetwork !== `container:${postgres.name}`) {
+      throw new Error(`real Prisma proof network is ${executionNetwork}, expected container:${postgres.name}`);
     }
     command('docker', ['cp', bundle, `${proofContainer}:/source.bundle`], {
       timeout: 120_000,

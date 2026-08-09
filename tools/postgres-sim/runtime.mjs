@@ -59,9 +59,13 @@ export function startDisposablePostgres({
   network,
   networkAlias,
   publishLoopback = false,
+  sharedNetworkNamespace = false,
 } = {}) {
   if (network && !networkAlias) {
     throw new Error('a disposable PostgreSQL network requires an explicit networkAlias');
+  }
+  if (sharedNetworkNamespace && (!network || !networkAlias || publishLoopback)) {
+    throw new Error('sharedNetworkNamespace requires an unpublished PostgreSQL container on an explicit internal network');
   }
   const image = ensurePostgresImage();
   const suffix = crypto.randomBytes(6).toString('hex');
@@ -141,7 +145,7 @@ export function startDisposablePostgres({
         if (!/^\d{10,}$/.test(systemIdentifier)) {
           throw new Error('disposable PostgreSQL system identifier could not be verified out of band');
         }
-        const host = networkAlias || '127.0.0.1';
+        const host = sharedNetworkNamespace ? '127.0.0.1' : (networkAlias || '127.0.0.1');
         let port = 5432;
         if (publishLoopback) {
           port = Number(command(
