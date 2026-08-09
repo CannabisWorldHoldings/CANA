@@ -22,6 +22,30 @@ cd "$ROOT"
 PRISMA_VERSION="$(npx --no-install prisma -v | sed -n 's/^prisma[[:space:]]*:[[:space:]]*//p' | head -1)"
 test "$PRISMA_VERSION" = "6.19.3"
 
+APP_IDENTITY_ROOT="$ROOT/.cana-local/cpanel-app-identity"
+rm -rf "$APP_IDENTITY_ROOT"
+mkdir -p "$APP_IDENTITY_ROOT"
+cp deploy/namecheap/app.js "$APP_IDENTITY_ROOT/app.js"
+printf '%s\n' "process.stdout.write('CANA_APP_IDENTITY_ACCEPTED\\n');" > "$APP_IDENTITY_ROOT/server.js"
+set +e
+APP_IDENTITY_REFUSAL_OUTPUT="$(
+  cd "$APP_IDENTITY_ROOT"
+  CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=9999999999999999999 \
+  node app.js 2>&1
+)"
+APP_IDENTITY_REFUSAL_STATUS=$?
+set -e
+test "$APP_IDENTITY_REFUSAL_STATUS" -ne 0
+grep -q 'Disposable PostgreSQL identity verification failed' <<<"$APP_IDENTITY_REFUSAL_OUTPUT"
+! grep -q 'CANA_APP_IDENTITY_ACCEPTED' <<<"$APP_IDENTITY_REFUSAL_OUTPUT"
+if grep -Fq "$DATABASE_URL" <<<"$APP_IDENTITY_REFUSAL_OUTPUT" || grep -Fq "$DIRECT_URL" <<<"$APP_IDENTITY_REFUSAL_OUTPUT"; then
+  echo 'CANA_DATABASE_URL_DISCLOSURE_REFUSED app identity-refusal output contained a database URL' >&2
+  exit 1
+fi
+APP_IDENTITY_ACCEPT_OUTPUT="$(cd "$APP_IDENTITY_ROOT" && node app.js 2>&1)"
+grep -q 'CANA_APP_IDENTITY_ACCEPTED' <<<"$APP_IDENTITY_ACCEPT_OUTPUT"
+rm -rf "$APP_IDENTITY_ROOT"
+
 set +e
 IDENTITY_REFUSAL_OUTPUT="$(
   cd apps/web
@@ -92,6 +116,8 @@ node -e '
     ...db,
     directUrlContract: "SAME_DISPOSABLE_POSTGRESQL_INSTANCE",
     forgedLoopbackIdentityRefusalProven: true,
+    appIdentityRefusalProven: true,
+    appIdentityAcceptanceProven: true,
     migrationOutputRedacted: true,
     backupAuthority: "PROVIDER_OPERATOR_REQUIRED",
     backupRefusalProven: true
