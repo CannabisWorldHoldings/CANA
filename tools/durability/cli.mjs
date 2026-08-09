@@ -37,7 +37,7 @@ const PR29_ASSIGNMENT_SHA256 =
   '5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2';
 const PR35_ASSIGNMENT = 'pr35_sovereign_continuation_integration_2026_08_09';
 const PR35_ASSIGNMENT_SHA256 =
-  'aadc6de3e70f1cc95635fea4aab77f2af317181880cb10b9add680967f9b9be3';
+  '38694c5be1587ce7bd5210abd32f38481f2b38995151888334ac9ed3cd8a777a';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
   '14af2c468e3941faf5c65c06e8750b8cb427ad67b11ea65c8e7becce8b27beea';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
@@ -85,6 +85,7 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/prisma/migration-manifest.mjs',
   'apps/web/prisma/migrations/20260809170000_continuation_kernel/migration.sql',
   'apps/web/prisma/schema.prisma',
+  'apps/web/scripts/benchmark-product-discovery.mjs',
   'apps/web/scripts/continuation-tick.mjs',
   'apps/web/src/app/api/v1/ask/route.ts',
   'apps/web/src/app/layout.tsx',
@@ -100,6 +101,7 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/tests/continuation-court.test.mjs',
   'apps/web/tests/migration-court.test.mjs',
   'apps/web/tests/migration-manifest.test.mjs',
+  'apps/web/tests/release-gate.test.mjs',
   'deploy/namecheap/MANIFEST.json',
   'deploy/namecheap/build-artifact.mjs',
   'deploy/namecheap/migrate.sh',
@@ -795,7 +797,7 @@ export function validateOwnershipManifest(ownership) {
   }
   const pr35CourtEntries = Object.entries(pr35Assignment.court_blob_sha256 ?? {});
   if (
-    pr35CourtEntries.length !== 2 ||
+    pr35CourtEntries.length !== 3 ||
     pr35CourtEntries.some(
       ([courtPath, digest]) =>
         !ownership.global_no_edit.includes(courtPath) ||

@@ -366,6 +366,8 @@ test('C10: firing state and its truth receipt commit atomically', async () => {
       RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
+  `);
+  await prisma.$executeRawUnsafe(`
     CREATE TRIGGER continuation_receipt_failure BEFORE INSERT ON "ContinuationReceipt"
     FOR EACH ROW EXECUTE FUNCTION refuse_continuation_receipt();
   `);
@@ -375,7 +377,8 @@ test('C10: firing state and its truth receipt commit atomically', async () => {
     assert.equal(after.status, 'ARMED', 'a missing receipt must roll back the firing projection');
     assert.equal(await prisma.continuationReceipt.count({ where: { triggerId: trigger.id } }), 0);
   } finally {
-    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS continuation_receipt_failure ON "ContinuationReceipt"; DROP FUNCTION IF EXISTS refuse_continuation_receipt();');
+    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS continuation_receipt_failure ON "ContinuationReceipt";');
+    await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_continuation_receipt();');
   }
 });
 
@@ -389,6 +392,8 @@ test('C10b: approval state and its truth receipt commit atomically', async () =>
       RETURN NEW;
     END;
     $$ LANGUAGE plpgsql;
+  `);
+  await prisma.$executeRawUnsafe(`
     CREATE TRIGGER continuation_approval_failure BEFORE INSERT ON "ContinuationReceipt"
     FOR EACH ROW EXECUTE FUNCTION refuse_continuation_approval();
   `);
@@ -401,6 +406,7 @@ test('C10b: approval state and its truth receipt commit atomically', async () =>
     assert.equal(after.status, 'PENDING_APPROVAL', 'a missing approval receipt must roll back arming');
     assert.equal(await prisma.continuationReceipt.count({ where: { triggerId: trigger.id } }), 0);
   } finally {
-    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS continuation_approval_failure ON "ContinuationReceipt"; DROP FUNCTION IF EXISTS refuse_continuation_approval();');
+    await prisma.$executeRawUnsafe('DROP TRIGGER IF EXISTS continuation_approval_failure ON "ContinuationReceipt";');
+    await prisma.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_continuation_approval();');
   }
 });

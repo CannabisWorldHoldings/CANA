@@ -91,7 +91,7 @@ test('PR #35 sovereign integration has exact ownership without neighboring autho
   const manifest = ownership();
   const assignment = pr35OwnershipAssignment(manifest);
   assert.deepEqual(assignment.authorized_paths, [...PR35_AUTHORIZED_PATHS]);
-  assert.equal(assignment.authorized_paths.length, 40);
+  assert.equal(assignment.authorized_paths.length, 42);
   assert.ok(assignment.authorized_paths.every((entry) => !entry.includes('*')));
   assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
   assert.deepEqual(
