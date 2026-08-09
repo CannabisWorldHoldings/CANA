@@ -740,7 +740,7 @@ test('ROLLBACK: the known inverse DDL reverses the index migration with data int
   assert.match(downSql, /SET LOCAL lock_timeout = '5s'/);
   assert.match(downSql, /pg_advisory_xact_lock\(72707369\)/);
   await p.$transaction(async (tx) => {
-    await tx.$queryRawUnsafe('SELECT pg_advisory_xact_lock(72707369)');
+    await tx.$executeRawUnsafe('SELECT pg_advisory_xact_lock(72707369)');
     let lockRefusal = null;
     try { prisma_(['db', 'execute', '--url', url, '--stdin'], {}, downSql); } catch (error) { lockRefusal = error; }
     assert.ok(lockRefusal, 'manual reversal must refuse while Prisma migration advisory lock is held');
