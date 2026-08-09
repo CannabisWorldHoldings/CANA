@@ -451,7 +451,13 @@ function createNamecheapArtifact(root, name, commit) {
   );
   const tarName = `${name}.tar.gz`;
   const tarFile = path.join(uploads, tarName);
-  command('tar', ['-czf', tarFile, '-C', buildRoot, name]);
+  command('tar', ['-czf', tarFile, '-C', buildRoot, name], {
+    env: {
+      ...process.env,
+      COPYFILE_DISABLE: '1',
+      COPY_EXTENDED_ATTRIBUTES_DISABLE: '1',
+    },
+  });
   return { tarName, tarFile, tarSha256: sha256File(tarFile), scriptHashes };
 }
 
