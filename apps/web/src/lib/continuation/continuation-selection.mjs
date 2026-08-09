@@ -1,5 +1,12 @@
 import { TRIGGER_STATES, TRIGGER_TYPES } from './continuation-core.mjs';
 
+const TIME_BASED_TRIGGER_TYPES = [
+  TRIGGER_TYPES.SCHEDULED,
+  TRIGGER_TYPES.FOLLOW_UP,
+  TRIGGER_TYPES.REVALIDATION,
+  TRIGGER_TYPES.LEARNING,
+];
+
 function interleaveBounded(primary, reactive, limit) {
   const selected = [];
   for (let index = 0; selected.length < limit; index += 1) {
@@ -46,7 +53,10 @@ export async function selectTickCandidates(
         status: TRIGGER_STATES.ARMED,
         OR: [
           { expiresAt: { lte: now } },
-          { nextEligibleAt: { lte: now } },
+          {
+            triggerType: { in: TIME_BASED_TRIGGER_TYPES },
+            nextEligibleAt: { lte: now },
+          },
         ],
       },
       orderBy: { createdAt: 'asc' },
@@ -56,7 +66,6 @@ export async function selectTickCandidates(
       where: {
         status: TRIGGER_STATES.ARMED,
         expiresAt: { gt: now },
-        nextEligibleAt: null,
         OR: reactiveKinds,
       },
       orderBy: { createdAt: 'asc' },

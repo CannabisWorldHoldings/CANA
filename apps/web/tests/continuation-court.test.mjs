@@ -236,9 +236,10 @@ test('C4b: a passive reactive backlog cannot starve due scheduled work', async (
   const mission = await createMission(prisma, missionSpec());
   for (let index = 0; index < 50; index += 1) {
     await createTrigger(prisma, triggerSpec(mission.id, {
-      triggerType: 'EVENT',
-      eventKey: `unobserved:${index}`,
-      nextEligibleAt: undefined,
+      triggerType: index % 2 === 0 ? 'EVENT' : 'CONDITION_WATCH',
+      eventKey: index % 2 === 0 ? `unobserved:${index}` : undefined,
+      conditionRef: index % 2 === 1 ? `unknown:${index}` : undefined,
+      nextEligibleAt: new Date(Date.now() - HOUR),
       budgetCentsMax: 1,
     }));
   }
