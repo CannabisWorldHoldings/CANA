@@ -1,0 +1,21 @@
+{
+  "id": "cana.provenance-court",
+  "version": "0.1.0",
+  "description": "Deployment Provenance Integrity Court: verifies SOURCE SHA -> ARTIFACT -> ACTIVE RELEASE -> RENDERED SURFACE as one identity chain, fails closed, and is certified by sabotage (a corrupted chain that stays green fails the evaluator, not the deployment).",
+  "domain": "proof",
+  "real_outcome": "No exact treatment identity -> no causal settlement. Outcomes observed on an unverifiable surface are never attributed to a source change.",
+  "authority_class": "OBSERVE_ONLY",
+  "reversibility": "Pure verification; emits receipts only.",
+  "canonical_actions": [
+    { "action_id": "provenance.verify-chain", "description": "Walk the full identity chain and emit a GREEN/RED receipt", "entry": "tools/provenance-court/verify-chain.mjs" }
+  ],
+  "evidence_hooks": [
+    "court receipt JSON (per-link status + why, --out path)",
+    "sabotage certification: tools/provenance-court/sabotage.test.mjs (8 tampering classes, all must turn RED)"
+  ],
+  "continuation_hooks": [
+    "a GREEN production verification should create a REVALIDATION trigger via cana.continuation-kernel (wired when a real deployment target exists — deployment state currently UNKNOWN)"
+  ],
+  "backend_adapters": ["file inputs (court/CI runs)", "URL inputs (/api/release + rendered page on a live deployment)"],
+  "status": "STRUCTURALLY_VALIDATED"
+}
