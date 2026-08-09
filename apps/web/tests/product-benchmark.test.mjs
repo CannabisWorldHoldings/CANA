@@ -48,7 +48,6 @@ function safeEnvironment() {
     // an isolated database on this server per run. Use a low-privilege
     // benchmark role, never production credentials.
     'CANA_BENCHMARK_DATABASE_URL',
-    'DATABASE_URL',
   ]) {
     if (typeof process.env[key] === 'string') environment[key] = process.env[key];
   }

@@ -365,8 +365,15 @@ export async function assertProductionBuildDatabaseReady({
       await prisma.$executeRawUnsafe(
         `CREATE TABLE "__cana_build_write_probe" (id INTEGER)`,
       );
-    } catch {
-      readOnlyEnforced = true;
+    } catch (error) {
+      const detail = `${error?.meta?.code ?? ''} ${error?.message ?? error}`;
+      readOnlyEnforced = /25006|read-only transaction/iu.test(detail);
+      if (!readOnlyEnforced) {
+        refusal(
+          'BUILD_DATABASE_NOT_READ_ONLY',
+          `Build database write probe failed for an unrelated reason: ${detail}`,
+        );
+      }
     }
     if (!readOnlyEnforced) {
       refusal('BUILD_DATABASE_NOT_READ_ONLY',

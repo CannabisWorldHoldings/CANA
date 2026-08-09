@@ -76,6 +76,16 @@ phase "GATE 3: canonical database configuration"
 : "${DIRECT_URL:?GATE FAILED: DIRECT_URL is required}"
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) fail "DATABASE_URL must be PostgreSQL";; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) fail "DIRECT_URL must be PostgreSQL";; esac
+node <<'NODE' || fail "database URLs must enforce strict TLS certificate validation"
+for (const name of ['DATABASE_URL', 'DIRECT_URL']) {
+  const url = new URL(process.env[name]);
+  if (
+    !['postgres:', 'postgresql:'].includes(url.protocol) ||
+    url.searchParams.get('sslmode') !== 'require' ||
+    url.searchParams.get('sslaccept') !== 'strict'
+  ) process.exit(1);
+}
+NODE
 echo "PostgreSQL pooled/direct configuration present (values redacted)"
 
 phase "GATE 4: code-only swap"

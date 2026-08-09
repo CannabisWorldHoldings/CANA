@@ -27,11 +27,13 @@
  * a hole punched in the guard — it is the deliberately-written widening the
  * original comment promised, with its own reviewed property:
  *
- *   LOOPBACK-ONLY. A database reachable over the network from another machine
- *   is a server database, and the demonstration seed must never target one.
- *   Loopback is unroutable off-box, so a loopback URL cannot be a production
- *   database on Neon, on a managed provider, or on any host with a real name.
- *   The production-protection property therefore survives verbatim: every
+ *   LOOPBACK + DISPOSABLE ATTESTATION. A database reachable over the network
+ *   from another machine is a server database, and the demonstration seed must
+ *   never target one. Loopback alone is insufficient because a local tunnel can
+ *   terminate at a managed database. The repository verifier therefore writes a
+ *   random server-side attestation into its disposable PostgreSQL instance; the
+ *   seed must receive and verify that exact value before any destructive write.
+ *   Every
  *   non-loopback server URL (mysql, remote postgres, anything with a real
  *   hostname) is refused exactly as before. R4 — the deepest guard — still
  *   applies to loopback databases: a loopback postgres holding real rows is
@@ -44,11 +46,10 @@
  *       has any business existing in a production process, ever.
  *   R2  DATABASE_URL missing/blank             → refuse. Seeding "whatever the
  *       default resolves to" is how the wrong database gets seeded.
- *   R3  DATABASE_URL is not a local file: URL and not a LOOPBACK postgres URL
- *       → refuse. A local SQLite file (file:) is still fine; a postgresql://
- *       URL is allowed ONLY when its host is loopback (127.0.0.1/localhost/::1),
- *       because loopback cannot be a routable production server. MariaDB, remote
- *       PostgreSQL (Neon and the like), anything with a real hostname — refused.
+ *   R3  DATABASE_URL is not a local file: URL and not an attested LOOPBACK
+ *       postgres URL → refuse. A local SQLite rollback fixture is still safe;
+ *       PostgreSQL requires both a loopback host and a matching 64-hex verifier
+ *       attestation checked from the server after connection.
  *   R4  The database already holds NON-demonstration data → refuse. This is the
  *       deepest rule: a database containing even one real (isDemonstration:
  *       false) provenance row, one demand-credit ledger entry, one lead event,
@@ -107,7 +108,7 @@ const isSafeSeedSubstrate = (u) => isFileUrl(u) || isLoopbackPostgresUrl(u);
  * any connection is opened — a guard that must first CONNECT to the production
  * database it is refusing has already gone too far.
  */
-export function environmentRefusalsForSeed({ databaseUrl, nodeEnv } = {}) {
+export function environmentRefusalsForSeed({ databaseUrl, nodeEnv, disposableAttestation } = {}) {
   const refusals = [];
   if (String(nodeEnv ?? '').trim().toLowerCase() === 'production') {
     refusals.push({
@@ -127,8 +128,35 @@ export function environmentRefusalsForSeed({ databaseUrl, nodeEnv } = {}) {
         + 'nor a LOOPBACK postgres URL (127.0.0.1/localhost/::1) — a routable server database '
         + '(MariaDB, remote PostgreSQL, anything with a real hostname) is never a demonstration target',
     });
+  } else if (isLoopbackPostgresUrl(databaseUrl) && !/^[0-9a-f]{64}$/.test(String(disposableAttestation ?? ''))) {
+    refusals.push({
+      rule: 'R3_DISPOSABLE_ATTESTATION_REQUIRED',
+      detail: 'A loopback PostgreSQL URL is not sufficient: a tunnel could reach a managed database. '
+        + 'CANA_DISPOSABLE_DATABASE_ATTESTATION must come from the repository disposable-database runtime',
+    });
   }
   return refusals;
+}
+
+/** Verify that the connected PostgreSQL server owns the random attestation the
+ * repository disposable-database runtime issued. This check is read-only and
+ * happens before the first destructive seed statement. */
+async function databaseAttestationRefusals(prisma, { databaseUrl, disposableAttestation }) {
+  if (!isLoopbackPostgresUrl(databaseUrl)) return [];
+  const [identity] = await prisma.$queryRawUnsafe(
+    "SELECT current_database() AS database, current_setting('cana.disposable_attestation', true) AS attestation",
+  );
+  const expectedDatabase = new URL(databaseUrl).pathname.slice(1);
+  if (
+    identity?.attestation !== disposableAttestation ||
+    identity?.database !== expectedDatabase
+  ) {
+    return [{
+      rule: 'R3_DISPOSABLE_ATTESTATION_MISMATCH',
+      detail: 'The connected PostgreSQL server did not present the expected disposable-database attestation',
+    }];
+  }
+  return [];
 }
 
 /** Count rows defensively: a missing table (fresh, unmigrated file) is zero,
@@ -207,9 +235,23 @@ export class SeedRefusedError extends Error {
  * the first category of refusal; environment rules are checked BEFORE any
  * query is issued, so a production URL is refused without ever connecting.
  */
-export async function assertSeedTargetIsSafe({ prisma, databaseUrl, nodeEnv }) {
-  const envRefusals = environmentRefusalsForSeed({ databaseUrl, nodeEnv });
+export async function assertSeedTargetIsSafe({
+  prisma,
+  databaseUrl,
+  nodeEnv,
+  disposableAttestation,
+}) {
+  const envRefusals = environmentRefusalsForSeed({
+    databaseUrl,
+    nodeEnv,
+    disposableAttestation,
+  });
   if (envRefusals.length > 0) throw new SeedRefusedError(envRefusals);
+  const attestationRefusals = await databaseAttestationRefusals(prisma, {
+    databaseUrl,
+    disposableAttestation,
+  });
+  if (attestationRefusals.length > 0) throw new SeedRefusedError(attestationRefusals);
   const dataRefusals = await dataRefusalsForSeed(prisma);
   if (dataRefusals.length > 0) throw new SeedRefusedError(dataRefusals);
   return { safe: true };

@@ -104,13 +104,13 @@ async function main() {
         continue;
       }
 
-      if (existing) {
-        await prisma.geoEntity.update({ where: { id: existing.id }, data: payload });
-        receipt.updated++;
-      } else {
-        await prisma.geoEntity.create({ data: payload });
-        receipt.created++;
-      }
+      await prisma.geoEntity.upsert({
+        where: { retailerId: retailer.id },
+        update: payload,
+        create: payload,
+      });
+      if (existing) receipt.updated++;
+      else receipt.created++;
     }
 
     receipt.skippedCount = receipt.skipped.length;

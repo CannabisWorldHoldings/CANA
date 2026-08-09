@@ -66,8 +66,12 @@ export function projectRetailerMarker({ retailer, geoEntity = null, claims = [],
   // Coordinates: prefer the canonical geo entity; fall back to the legacy
   // retailer floats during the transition window. Track which one was used
   // so observability can measure canonicalization progress.
-  const lat = geoEntity?.lat ?? retailer.lat;
-  const lng = geoEntity?.lng ?? retailer.lng;
+  // Once a canonical geo entity exists, it owns the coordinate truth. Invalid
+  // or missing canonical coordinates must make the entity unmappable rather
+  // than silently falling back to legacy retailer floats while claiming the
+  // canonical source.
+  const lat = geoEntity ? geoEntity.lat : retailer.lat;
+  const lng = geoEntity ? geoEntity.lng : retailer.lng;
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || (lat === 0 && lng === 0)) {
     return null; // unmappable — the entity is simply absent from the map
   }

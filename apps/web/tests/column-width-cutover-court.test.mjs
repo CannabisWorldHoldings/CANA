@@ -36,7 +36,8 @@ import { fileURLToPath } from 'node:url';
  * the provider without widening the columns.
  */
 
-const SCHEMA = 'prisma/schema.prisma';
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 
 /** Columns the codebase writes long-form values into. */
 const LONG_FORM_COLUMNS = [

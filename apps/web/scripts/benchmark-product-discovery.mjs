@@ -372,12 +372,21 @@ function runPrisma(arguments_, databaseUrl, temporaryRoot) {
  * touched: everything happens in the disposable database.
  */
 function benchmarkServerUrl() {
-  const base = process.env.CANA_BENCHMARK_DATABASE_URL || process.env.DATABASE_URL;
-  if (!base || !base.startsWith('postgres')) {
+  const base = process.env.CANA_BENCHMARK_DATABASE_URL;
+  if (!base) {
     throw new Error(
-      'The product benchmark needs a PostgreSQL server. Set DATABASE_URL (or ' +
-        'CANA_BENCHMARK_DATABASE_URL) to a postgresql:// URL whose role may ' +
+      'The product benchmark needs CANA_BENCHMARK_DATABASE_URL pointing at a ' +
+        'postgresql:// URL whose benchmark-only role may ' +
         'CREATE/DROP databases.',
+    );
+  }
+  const parsed = new URL(base);
+  if (
+    !['postgres:', 'postgresql:'].includes(parsed.protocol) ||
+    !['127.0.0.1', 'localhost', '::1'].includes(parsed.hostname)
+  ) {
+    throw new Error(
+      'The product benchmark refuses non-loopback PostgreSQL servers because it creates and drops databases.',
     );
   }
   return base;
@@ -761,6 +770,7 @@ async function runBenchmark({ mutation = 'none' } = {}) {
     force.unref?.();
     Promise.resolve()
       .then(() => removeTemporaryState(prisma, temporaryRoot))
+      .catch(() => {})
       // Drop the disposable PostgreSQL benchmark database as part of the
       // bounded cleanup; a failed drop must not block the forced exit.
       .then(() => benchmarkDatabase.drop())
@@ -859,9 +869,9 @@ async function runBenchmark({ mutation = 'none' } = {}) {
   } finally {
     process.removeListener('SIGINT', interruptCleanup);
     process.removeListener('SIGTERM', interruptCleanup);
+    let databaseRemoved = false;
     try {
       temporaryStateRemoved = await removeTemporaryState(prisma, temporaryRoot);
-      benchmarkDatabase.drop();
     } catch (error) {
       temporaryStateRemoved = !fs.existsSync(temporaryRoot);
       receipt.aggregate = { status: 'ERROR', passed: 0, failed: 12, total: 12 };
@@ -873,12 +883,26 @@ async function runBenchmark({ mutation = 'none' } = {}) {
       ]
         .filter(Boolean)
         .join(' ');
+    }
+    try {
+      benchmarkDatabase.drop();
+      databaseRemoved = true;
+    } catch (error) {
+      receipt.aggregate = { status: 'ERROR', passed: 0, failed: 12, total: 12 };
+      receipt.error = [
+        receipt.error,
+        `Temporary-database cleanup failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      ]
+        .filter(Boolean)
+        .join(' ');
     } finally {
       networkBoundary.restore();
     }
+    receipt.safety.temporaryDatabaseRemoved = databaseRemoved;
   }
 
-  receipt.safety.temporaryDatabaseRemoved = temporaryStateRemoved;
   receipt.safety.temporaryReceiptDirectoryRemoved = temporaryStateRemoved;
   return receipt;
 }
@@ -891,14 +915,13 @@ function relayThroughSanitizedProcess(arguments_) {
   // credentials. The credential-inheritance safety counter remains honest:
   // it counts credential-NAMED variables reaching application code, and the
   // benchmark database is created and destroyed within this run.
-  const benchmarkServer =
-    process.env.CANA_BENCHMARK_DATABASE_URL || process.env.DATABASE_URL;
+  const benchmarkServer = process.env.CANA_BENCHMARK_DATABASE_URL;
   const result = spawnSync(process.execPath, [scriptPath, ...arguments_], {
     cwd: webRoot,
     encoding: 'utf8',
     env: safeEnvironment({
       [sanitizedProcessMarker]: '1',
-      ...(benchmarkServer && benchmarkServer.startsWith('postgres')
+      ...(benchmarkServer
         ? { CANA_BENCHMARK_DATABASE_URL: benchmarkServer }
         : {}),
     }),

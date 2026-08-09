@@ -244,6 +244,8 @@ model EnginePrefetch {
       `DATABASE_URL=${postgres.databaseUrl}`,
       '--env',
       `DIRECT_URL=${postgres.databaseUrl}`,
+      '--env',
+      `CANA_DISPOSABLE_DATABASE_ATTESTATION=${postgres.attestation}`,
       '-w',
       '/workspace',
       '--mount',

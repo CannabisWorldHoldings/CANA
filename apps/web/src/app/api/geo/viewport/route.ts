@@ -14,12 +14,8 @@
  * ceiling to make the cheap path the only working path for huge viewports.
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { findEntitiesInViewport } from '@/lib/geo/geo-repository.mjs';
-
-const globalForPrisma = globalThis as unknown as { canaPrisma?: PrismaClient };
-const prisma = globalForPrisma.canaPrisma ?? new PrismaClient();
-if (process.env.NODE_ENV !== 'production') globalForPrisma.canaPrisma = prisma;
 
 /** Reject viewports larger than roughly the DC metro area (~1.0 deg^2). */
 const MAX_VIEWPORT_AREA_DEG2 = 1.0;
@@ -31,15 +27,18 @@ const NO_STORE = { 'Cache-Control': 'no-store' } as const;
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
-  const south = Number(params.get('south'));
-  const west = Number(params.get('west'));
-  const north = Number(params.get('north'));
-  const east = Number(params.get('east'));
+  const rawBounds = ['south', 'west', 'north', 'east'].map((key) => params.get(key));
+  const [south, west, north, east] = rawBounds.map((value) =>
+    value === null || value.trim() === '' ? Number.NaN : Number(value));
   const kind = params.get('kind') ?? undefined;
 
-  if (![south, west, north, east].every(Number.isFinite)) {
+  if (
+    ![south, west, north, east].every(Number.isFinite) ||
+    south >= north ||
+    west >= east
+  ) {
     return NextResponse.json(
-      { error: 'south, west, north, east are required finite numbers' },
+      { error: 'south, west, north, east are required finite numbers with south < north and west < east' },
       { status: 400, headers: NO_STORE },
     );
   }

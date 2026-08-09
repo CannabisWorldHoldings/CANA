@@ -80,6 +80,12 @@ function ensureDocker() {
     throw new Error('CANA_VERIFY_IMAGE overrides are refused; use the repository verifier image');
   }
   command('docker', ['info'], { timeout: 30_000 });
+  const dockerfile = fs.readFileSync(DOCKERFILE, 'utf8');
+  const fromInstructions = [...dockerfile.matchAll(/^FROM\s+(\S+)/gmi)]
+    .map((match) => match[1]);
+  if (fromInstructions.length !== 1 || fromInstructions[0] !== APPROVED_BASE_IMAGE) {
+    throw new Error(`verifier Dockerfile must use approved base ${APPROVED_BASE_IMAGE}`);
+  }
   const dockerfileSha256 = sha256File(DOCKERFILE);
   const tag = `cana-node-verifier:${dockerfileSha256.slice(0, 16)}`;
   const existing = command('docker', ['image', 'inspect', tag], {
@@ -188,6 +194,8 @@ function runContainer({ profile, sourceBundle, expected, verifierImage }) {
       `DATABASE_URL=${database.databaseUrl}`,
       '--env',
       `DIRECT_URL=${database.databaseUrl}`,
+      '--env',
+      `CANA_DISPOSABLE_DATABASE_ATTESTATION=${database.attestation}`,
       '-w',
       '/workspace',
       verifierImage.tag,

@@ -14,17 +14,13 @@
  * Exit codes: 0 ok · 2 core tables missing (with --assert-core)
  */
 import { PrismaClient } from '@prisma/client';
+import { databaseProviderOf } from '../src/lib/db-config.mjs';
 
 const assertCore = process.argv.includes('--assert-core');
 
-/** True when DATABASE_URL points at a SQLite file rather than a server. */
-function isSqliteUrl(url) {
-  return url.startsWith('file:') || url.endsWith('.db');
-}
-
 /** Redact credentials so the receipt is safe to print and archive. */
 function redactUrl(url) {
-  if (isSqliteUrl(url)) return url.replace(/^file:/, 'file:…/');
+  if (databaseProviderOf(url) === 'sqlite') return url.replace(/^file:/, 'file:…/');
   try {
     const parsed = new URL(url);
     parsed.password = '';
@@ -40,7 +36,11 @@ async function main() {
     throw new Error('DATABASE_URL is required');
   }
   const databaseUrl = process.env.DATABASE_URL;
-  const sqlite = isSqliteUrl(databaseUrl);
+  const provider = databaseProviderOf(databaseUrl);
+  if (!['postgresql', 'sqlite'].includes(provider)) {
+    throw new Error(`Unsupported database provider: ${provider}`);
+  }
+  const sqlite = provider === 'sqlite';
   const prisma = new PrismaClient();
   const receipt = { databaseUrl: redactUrl(databaseUrl), engine: sqlite ? 'sqlite' : 'postgresql' };
   try {

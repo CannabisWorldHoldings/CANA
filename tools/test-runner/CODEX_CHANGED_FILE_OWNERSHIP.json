@@ -368,12 +368,16 @@
         "apps/web/scripts/ingest-abca-feed.mjs",
         "apps/web/scripts/migrate-sqlite-to-postgres.mjs",
         "apps/web/scripts/test-public-submission.mjs",
+        "apps/web/src/app/[domain]/page.tsx",
         "apps/web/src/app/[domain]/education/page.tsx",
         "apps/web/src/app/admin/page.tsx",
         "apps/web/src/app/api/geo/viewport/route.ts",
+        "apps/web/src/app/globals.css",
         "apps/web/src/components/retailer-map-loader.tsx",
         "apps/web/src/components/retailer-map-maplibre.tsx",
         "apps/web/src/lib/admin-mutations.mjs",
+        "apps/web/src/lib/build-database.mjs",
+        "apps/web/src/lib/db-config.mjs",
         "apps/web/src/lib/demand-credits.mjs",
         "apps/web/src/lib/directory-search.mjs",
         "apps/web/src/lib/geo/geo-repository.mjs",
@@ -385,8 +389,12 @@
         "apps/web/tests/column-width-cutover-court.test.mjs",
         "apps/web/tests/api-v1-deals.test.mjs",
         "apps/web/tests/attribution-idempotency.test.mjs",
+        "apps/web/tests/build-database-gate.test.mjs",
+        "apps/web/tests/clean-database-court.test.mjs",
+        "apps/web/tests/deployment-integrity.test.mjs",
         "apps/web/tests/demand-credits.test.mjs",
         "apps/web/tests/merchant-dashboard.test.mjs",
+        "apps/web/tests/migration-court.test.mjs",
         "apps/web/tests/pilot-package-court.test.mjs",
         "apps/web/tests/postgres-semantics.test.mjs",
         "apps/web/tests/product-benchmark.test.mjs",
@@ -395,14 +403,20 @@
         "apps/web/tests/routing-provider.test.mjs",
         "deploy/namecheap/CAPABILITIES.md",
         "deploy/namecheap/ENV_MANIFEST.md",
+        "deploy/namecheap/MANIFEST.json",
+        "deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md",
         "deploy/namecheap/PRODUCTION_RELEASE_GATES.md",
+        "deploy/namecheap/SIMULATION_NOTES.md",
         "deploy/namecheap/STAGING_DEFINITION_OF_DONE.md",
         "deploy/namecheap/STAGING_RUNBOOK.md",
         "deploy/namecheap/bootstrap-production-db.sh",
+        "deploy/namecheap/app.js",
+        "deploy/namecheap/build-artifact.mjs",
         "deploy/namecheap/deploy.sh",
         "deploy/namecheap/env.production.example",
         "deploy/namecheap/failure-signatures.json",
         "deploy/namecheap/migrate.sh",
+        "deploy/namecheap/verify-and-deploy.sh",
         "deploy/namecheap/worker.mjs",
         "docs/adr/0001-postgresql-postgis-canonical-datastore.md",
         "docs/adr/0002-managed-postgres-provider-selection.md",
@@ -411,17 +425,32 @@
         "docs/geo/SLICE2_MAP_PARITY.md",
         "docs/migration/REHEARSAL_RECEIPT.md",
         "docs/migration/SQLITE_TO_POSTGRES.md",
+        "docs/MARIADB_SIMULATION.md",
         "package-lock.json",
+        "tools/cpanel-sim/real-prisma-proof.sh",
+        "tools/cpanel-sim/run.mjs",
+        "tools/cpanel-sim/run.test.mjs",
+        "tools/durability/cli.mjs",
+        "tools/durability/cli.test.mjs",
+        "tools/mariadb-sim/generate-schema.mjs",
+        "tools/mariadb-sim/run.mjs",
+        "tools/mariadb-sim/run.test.mjs",
+        "tools/mariadb-sim/schema.prisma",
         "tools/postgres-sim/Dockerfile",
         "tools/postgres-sim/runtime.mjs",
-        "tools/test-runner/Dockerfile"
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+        "tools/test-runner/Dockerfile",
+        "tools/test-runner/container-verify.sh",
+        "tools/test-runner/runner.mjs"
       ],
       "court_blob_sha256": {
         "apps/web/src/lib/demand-credits.mjs": "c881bc446ef6cb5b3d9d148a929022011915cba155aed24ea7d65a91eac1aa8a",
-        "apps/web/tests/column-width-cutover-court.test.mjs": "ee0d5f3b49b940a234d027e0d3e1b8332c326ec229a453496b5c85becd7ff8e1",
+        "apps/web/prisma/migrations/20260726000100_ledger_recorded_at_index/down.sql": "3a856b364ec94f0854f448e81199cc4fb0f1b2ad155bd7fb9bb281512a9e1533",
+        "apps/web/tests/column-width-cutover-court.test.mjs": "887ca75acb6bdcf648c9d4fa24d9abafe90959f3f874b9b8061873696a3ffa95",
+        "apps/web/tests/migration-court.test.mjs": "45484c95e022581bf952f50bbcf713af33f2d2fb1f813e11b8209b25c720ed73",
         "apps/web/tests/release-gate.test.mjs": "5498f770ac91f6647c3bed26386999b75d2ee0b01ce0612a5e87ab5dbd5d7dac"
       },
-      "approval_sha256": "2565425c942a5f595aa4833b06be11b13775d266af43711a45f3ebb67bcb1fdd"
+      "approval_sha256": "a4c369790ce9dc6f42753612d5e295b7b072add0d0a7a7939c1508bf61594d08"
     }
   },
   "owned_create_paths": [
@@ -628,6 +657,15 @@
     "deploy/namecheap/migrate.sh",
     "deploy/namecheap/worker.mjs",
     "package-lock.json"
+    ,"tools/cpanel-sim/real-prisma-proof.sh"
+    ,"tools/cpanel-sim/run.mjs"
+    ,"tools/cpanel-sim/run.test.mjs"
+    ,"tools/mariadb-sim/generate-schema.mjs"
+    ,"tools/mariadb-sim/run.mjs"
+    ,"tools/mariadb-sim/run.test.mjs"
+    ,"tools/mariadb-sim/schema.prisma"
+    ,"tools/test-runner/container-verify.sh"
+    ,"tools/test-runner/runner.mjs"
   ],
   "planned_candidate_files": [
     "cana",
@@ -812,6 +850,8 @@
     "apps/web/src/lib/evidence-spill.mjs",
     "apps/web/tests/release-gate.test.mjs",
     "apps/web/tests/column-width-cutover-court.test.mjs"
+    ,"apps/web/prisma/migrations/20260726000100_ledger_recorded_at_index/down.sql"
+    ,"apps/web/tests/migration-court.test.mjs"
   ],
   "never_include_or_commit": [
     ".env and any environment file",

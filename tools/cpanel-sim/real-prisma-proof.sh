@@ -25,11 +25,14 @@ test "$PRISMA_VERSION" = "6.19.3"
 MIGRATION_OUTPUT="$(
   cd apps/web
   CANA_PRE_MIGRATION_BACKUP_RECEIPT="$BACKUP_RECEIPT" \
-  sh ../../deploy/namecheap/migrate.sh
+  sh ../../deploy/namecheap/migrate.sh 2>&1
 )"
 printf '%s\n' "$MIGRATION_OUTPUT"
 grep -q 'MIGRATIONS APPLIED' <<<"$MIGRATION_OUTPUT"
-! grep -Fq "$DATABASE_URL" <<<"$MIGRATION_OUTPUT"
+if grep -Fq "$DATABASE_URL" <<<"$MIGRATION_OUTPUT" || grep -Fq "$DIRECT_URL" <<<"$MIGRATION_OUTPUT"; then
+  echo 'CANA_DATABASE_URL_DISCLOSURE_REFUSED migration output contained a database URL' >&2
+  exit 1
+fi
 
 PROOF_JSON="$(node --input-type=module <<'NODE'
 import { PrismaClient } from '@prisma/client';

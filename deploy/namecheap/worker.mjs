@@ -27,7 +27,8 @@
  *   node worker.mjs --loop --interval-ms 300000
  *
  * CRON LINE (cPanel -> Cron Jobs; cron does NOT inherit the app's env):
- *   17 3 * * * cd $HOME/apps/orderweeddc/current && \
+ *   mkdir -p $HOME/orderweeddc-backups && cd $HOME/apps/orderweeddc/current && \
+ *     OWD_BACKUP_DIR=$HOME/orderweeddc-backups \
  *     WORKER_HEALTH_URL=https://orderweeddc.com/api/health \
  *     /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> $HOME/orderweeddc-backups/cron.out 2>&1
  *
@@ -139,6 +140,9 @@ async function runTick(jobNames) {
     }
     try {
       const result = await JOBS[name]();
+      if (name === 'health' && result.skipped !== true && result.healthy !== true) {
+        throw new Error(`HEALTH_PROBE_UNHEALTHY: ${JSON.stringify(result)}`);
+      }
       log({ event: 'job-complete', job: name, result });
     } catch (error) {
       log({ event: 'job-failed', job: name, error: String(error?.message ?? error).slice(0, 300) });

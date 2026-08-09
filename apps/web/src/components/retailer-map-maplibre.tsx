@@ -12,7 +12,7 @@
  * Leaflet implementation remains the default engine until that gate is green.
  */
 import { useEffect, useRef, useState } from 'react';
-import maplibregl from 'maplibre-gl';
+import maplibregl, { type StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { basemapStyle } from '@/lib/geo/tile-sources.mjs';
 
@@ -86,6 +86,7 @@ export default function RetailerMapMapLibre({ markers, onMarkerSelect, selectedR
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerObjectsRef = useRef<maplibregl.Marker[]>([]);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [initFailed, setInitFailed] = useState(false);
 
   // Map lifecycle.
   useEffect(() => {
@@ -94,7 +95,7 @@ export default function RetailerMapMapLibre({ markers, onMarkerSelect, selectedR
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: basemapStyle() as never,
+        style: basemapStyle() as StyleSpecification,
         center: DC_CENTER,
         zoom: DC_ZOOM,
         // Parity P7: never hijack page scroll.
@@ -105,7 +106,10 @@ export default function RetailerMapMapLibre({ markers, onMarkerSelect, selectedR
       // Deferred so the state update happens outside the synchronous effect
       // body (avoids cascading-render lint rule while keeping the visible
       // error state).
-      queueMicrotask(() => setMapError('The map could not be initialized.'));
+      queueMicrotask(() => {
+        setInitFailed(true);
+        setMapError('The map could not be initialized.');
+      });
       return;
     }
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
@@ -164,7 +168,7 @@ export default function RetailerMapMapLibre({ markers, onMarkerSelect, selectedR
     if (target) map.flyTo({ center: [target.lng, target.lat], zoom: 15 });
   }, [selectedRetailerId, markers]);
 
-  if (mapError) {
+  if (initFailed) {
     return (
       <div
         role="alert"
@@ -175,5 +179,17 @@ export default function RetailerMapMapLibre({ markers, onMarkerSelect, selectedR
     );
   }
 
-  return <div ref={containerRef} className="h-full w-full rounded-lg" aria-label="Map of retailers" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={containerRef} className="h-full w-full rounded-lg" aria-label="Map of retailers" />
+      {mapError ? (
+        <div
+          role="alert"
+          className="absolute inset-x-3 top-3 rounded-lg bg-white/95 p-3 text-center text-xs text-slate-600 shadow-sm"
+        >
+          {mapError} The directory list below remains fully usable.
+        </div>
+      ) : null}
+    </div>
+  );
 }

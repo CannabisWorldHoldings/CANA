@@ -67,7 +67,12 @@ function coerceRow(row, model) {
   for (const field of model.fields) {
     if (field.kind === 'object') continue; // relations are carried by scalar FKs
     if (field.type === 'Unsupported') continue; // geometry is derived, never copied
-    if (!(field.dbName ?? field.name in row) && !(field.name in row)) continue;
+    if (field.dbName && field.dbName !== field.name) {
+      throw new Error(
+        `Mapped field ${model.name}.${field.name} (${field.dbName}) is unsupported by the SQLite migration`,
+      );
+    }
+    if (!(field.name in row)) continue;
 
     const key = field.name;
     const value = row[key];
@@ -129,11 +134,12 @@ async function main() {
     const models = Prisma.dmmf.datamodel.models.filter((m) => !POSTGRES_ONLY.has(m.name));
     const order = topologicallyOrderModels(models).filter((n) => !POSTGRES_ONLY.has(n));
     const byName = new Map(models.map((m) => [m.name, m]));
+    const copyAndVerify = async (destination) => {
 
     // -- Guard: destination must be empty unless explicitly overridden. -------
     const preexisting = [];
     for (const name of order) {
-      const delegate = prisma[name.charAt(0).toLowerCase() + name.slice(1)];
+      const delegate = destination[name.charAt(0).toLowerCase() + name.slice(1)];
       if (!delegate) continue;
       const count = await delegate.count();
       if (count > 0) preexisting.push(`${name}=${count}`);
@@ -149,7 +155,7 @@ async function main() {
     // -- Copy, parent tables first. ------------------------------------------
     for (const name of order) {
       const model = byName.get(name);
-      const delegate = prisma[name.charAt(0).toLowerCase() + name.slice(1)];
+      const delegate = destination[name.charAt(0).toLowerCase() + name.slice(1)];
       if (!delegate) continue;
 
       let sourceRows = [];
@@ -176,7 +182,7 @@ async function main() {
     // -- Verify: per-table counts must match the source exactly. -------------
     const mismatches = [];
     for (const name of order) {
-      const delegate = prisma[name.charAt(0).toLowerCase() + name.slice(1)];
+      const delegate = destination[name.charAt(0).toLowerCase() + name.slice(1)];
       if (!delegate) continue;
       const expected = receipt.tables[name]?.source ?? 0;
       const actual = DRY_RUN ? expected : await delegate.count();
@@ -191,11 +197,11 @@ async function main() {
     // These protect the truth laws the directory depends on.
     const [retailers, verifiedRetailers, demoRetailers, brands, orphanRetailerCoords] =
       await Promise.all([
-        prisma.retailer.count(),
-        prisma.retailer.count({ where: { dataStatus: 'VERIFIED_CURRENT' } }),
-        prisma.retailer.count({ where: { isDemonstration: true } }),
-        prisma.brand.count(),
-        prisma.retailer.count({ where: { OR: [{ lat: 0 }, { lng: 0 }] } }),
+        destination.retailer.count(),
+        destination.retailer.count({ where: { dataStatus: 'VERIFIED_CURRENT' } }),
+        destination.retailer.count({ where: { isDemonstration: true } }),
+        destination.brand.count(),
+        destination.retailer.count({ where: { OR: [{ lat: 0 }, { lng: 0 }] } }),
       ]);
     receipt.invariants = {
       retailers,
@@ -209,6 +215,13 @@ async function main() {
         `${orphanRetailerCoords} retailer(s) carry (0,0) coordinates. ` +
           'These would become invalid geo entities. Fix the source data before migrating.',
       );
+    }
+    };
+
+    if (DRY_RUN) {
+      await copyAndVerify(prisma);
+    } else {
+      await prisma.$transaction(copyAndVerify, { maxWait: 10_000, timeout: 15 * 60_000 });
     }
 
     receipt.status = DRY_RUN ? 'DRY_RUN_OK' : 'MIGRATED_AND_VERIFIED';

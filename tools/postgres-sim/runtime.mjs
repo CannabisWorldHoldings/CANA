@@ -60,8 +60,12 @@ export function startDisposablePostgres({
   networkAlias,
   publishLoopback = false,
 } = {}) {
+  if (network && !networkAlias) {
+    throw new Error('a disposable PostgreSQL network requires an explicit networkAlias');
+  }
   const image = ensurePostgresImage();
   const suffix = crypto.randomBytes(6).toString('hex');
+  const attestation = crypto.randomBytes(32).toString('hex');
   const name = `cana-postgres-${label.replaceAll(/[^a-z0-9]/g, '')}-${suffix}`;
   const createArgs = [
     'create',
@@ -120,6 +124,25 @@ export function startDisposablePostgres({
         ) {
           throw new Error(`disposable PostgreSQL extension contract failed: ${availableExtensions.join(', ')}`);
         }
+        command(
+          'docker',
+          [
+            'exec',
+            name,
+            'psql',
+            '-U',
+            'postgres',
+            '-d',
+            'cana_verify',
+            '-v',
+            'ON_ERROR_STOP=1',
+            '-c',
+            `ALTER SYSTEM SET cana.disposable_attestation = '${attestation}'`,
+            '-c',
+            'SELECT pg_reload_conf()',
+          ],
+          { timeout: 30_000 },
+        );
         const host = networkAlias || '127.0.0.1';
         let port = 5432;
         if (publishLoopback) {
@@ -136,6 +159,7 @@ export function startDisposablePostgres({
           name,
           image,
           databaseUrl: `postgresql://postgres@${host}:${port}/cana_verify`,
+          attestation,
           availableExtensions,
         };
       }

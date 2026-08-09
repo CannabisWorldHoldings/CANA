@@ -168,9 +168,9 @@ Note on H3 extensions: the geo kernel requires `h3` + `h3_postgis`
 (`CREATE EXTENSION h3_postgis CASCADE` pulls in `postgis_raster`). Neon ships
 h3 4.1.3 on PG17 — verified supported. The kernel uses `h3_lat_lng_to_cell`,
 which is the current name on 4.1.3 and still valid (deprecation warning only)
-on 4.2.3. If a future host lacks the h3 extension entirely, the kernel
-provisioning fails closed with instructions to switch `h3R9` maintenance to an
-application-side H3 library — the H3 semantics are portable by design.
+on 4.2.3. A host without both `h3` and `h3_postgis` is rejected. The kernel
+fails closed rather than moving H3 derivation into application code, which
+would create a second geographic truth path.
 
 The migration script **refuses to run against a non-empty PostgreSQL** unless
 `--allow-nonempty` is passed, so it cannot silently double-insert. It verifies
@@ -211,7 +211,9 @@ The application no longer ships a database file. It connects outbound.
   application environment. **Never** commit them.
 - Confirm the host permits outbound TLS on the provider's port (commonly 5432).
   Some shared hosts restrict outbound ports — verify before cutover.
-- `sslmode=require` must be present in both URLs.
+- `sslmode=require&sslaccept=strict` must be present in both URLs. Supply the
+  provider CA through the system trust store or Prisma's supported `sslcert`
+  option, and verify each endpoint hostname matches its certificate SAN.
 - Neither variable may appear in any client bundle. `NEXT_PUBLIC_` prefixed
   variables are exposed to the browser; the database URLs must never use it.
 
@@ -261,8 +263,8 @@ locally for this work (see the evidence ledger).
 > acceptable-use grounds). Then supply two connection strings:
 >
 > ```
-> DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.REGION.provider.tech/DBNAME?sslmode=require"
-> DIRECT_URL="postgresql://USER:PASSWORD@HOST.REGION.provider.tech/DBNAME?sslmode=require"
+> DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.REGION.provider.tech/DBNAME?sslmode=require&sslaccept=strict"
+> DIRECT_URL="postgresql://USER:PASSWORD@HOST.REGION.provider.tech/DBNAME?sslmode=require&sslaccept=strict"
 > ```
 >
 > `DATABASE_URL` = pooled endpoint, `DIRECT_URL` = direct/unpooled endpoint.

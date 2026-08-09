@@ -56,6 +56,7 @@ const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 const MIGRATIONS = path.join(WEB, 'prisma', 'migrations');
 const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
+const SECOND_MIGRATION_DOWN = path.join(MIGRATIONS, SECOND_MIGRATION, 'down.sql');
 const GEO_MIGRATION = '20260809100000_geo_kernel';
 const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 
@@ -385,7 +386,7 @@ test('health check answers with latency on a live database and failure on a dead
 
 /* ─────────── 2. OLDER SCHEMA, POPULATED → FORWARD MIGRATION ─────────────── */
 
-let popUrl, popSnapBefore, backupUrl;
+let popUrl, popSnapBefore;
 
 test('a POPULATED database on the OLDER schema migrates forward without losing anything', async () => {
   popUrl = createDatabase('populated');
@@ -401,12 +402,6 @@ test('a POPULATED database on the OLDER schema migrates forward without losing a
 
   // The restore fixture: a logical backup taken BEFORE migrating. A byte-copy
   // of a file is meaningless on a server database; the postgres equivalent is a
-  // fresh database loaded from a dump. `pg_dump | psql` is not available (no pg
-  // client installed), so the backup is captured as the baseline-schema state
-  // plus a re-population that reproduces the exact pre-migration snapshot — a
-  // logical, not physical, restore. Deferred: taken lazily in the RESTORE test.
-  backupUrl = null;
-
   deploy(popUrl); // full migration set — forward migration of an older, populated database
   const q = await client(popUrl);
   assert.equal(await indexExists(q, NEW_INDEX), true, 'forward migration must add the index');
@@ -729,12 +724,10 @@ test('INTERRUPTED migration: deploy refuses to continue, readiness says why, and
 });
 
 test('ROLLBACK: the known inverse DDL reverses the index migration with data intact, and forward re-applies', async () => {
-  // The repo ships NO stored down.sql (the migration set is forward-only on
-  // disk). Rolling an APPLIED migration back is therefore its known-inverse
-  // DDL + removing its bookkeeping row so a later deploy re-applies it. For the
-  // index migration the inverse is a single DROP INDEX — asserted here rather
-  // than read from a file that does not exist. (`migrate resolve --rolled-back`
-  // is only for migrations in a FAILED state — exercised in INTERRUPTED above.)
+  // The checked-in rollback artifact is the sole inverse procedure. The court
+  // executes those exact bytes so operator instructions cannot drift from the
+  // rollback that was actually proven. (`migrate resolve --rolled-back` is only
+  // for migrations in a FAILED state — exercised in INTERRUPTED above.)
   const url = createDatabase('rollback');
   deploy(url);
   const p = await client(url);
@@ -742,10 +735,8 @@ test('ROLLBACK: the known inverse DDL reverses the index migration with data int
   const before = await snapshot(p);
   assert.ok(await indexExists(p, NEW_INDEX));
 
-  // Inverse of 20260726000100_ledger_recorded_at_index (a CREATE INDEX): drop it.
-  const downSql = `DROP INDEX "${NEW_INDEX}";`;
+  const downSql = fs.readFileSync(SECOND_MIGRATION_DOWN, 'utf8');
   prisma_(['db', 'execute', '--url', url, '--stdin'], {}, downSql);
-  await p.$executeRawUnsafe(`DELETE FROM _prisma_migrations WHERE migration_name = '${SECOND_MIGRATION}'`);
 
   assert.equal(await indexExists(p, NEW_INDEX), false, 'the inverse DDL must remove what the migration added');
   assert.deepEqual(await snapshot(p), before, 'rollback of a schema-only migration must not touch data');
@@ -858,8 +849,11 @@ test('the refusal rules themselves are visible and testable as data', async () =
   // file: is still a SAFE substrate (R3 allows it) — no environment refusal.
   assert.equal(environmentRefusalsForSeed({ databaseUrl: 'file:./x.db', nodeEnv: 'test' }).length, 0);
   // A LOOPBACK postgres URL is the new SAFE substrate — also no refusal.
-  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test' }).length, 0);
-  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@localhost:5432/court_x', nodeEnv: 'test' }).length, 0);
+  const attestation = process.env.CANA_DISPOSABLE_DATABASE_ATTESTATION;
+  assert.match(attestation ?? '', /^[0-9a-f]{64}$/);
+  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test', disposableAttestation: attestation }).length, 0);
+  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@localhost:5432/court_x', nodeEnv: 'test', disposableAttestation: attestation }).length, 0);
+  assert.equal(environmentRefusalsForSeed({ databaseUrl: 'postgresql://postgres@127.0.0.1:5432/court_x', nodeEnv: 'test' })[0].rule, 'R3_DISPOSABLE_ATTESTATION_REQUIRED');
   // Production is refused whatever the URL.
   assert.equal(environmentRefusalsForSeed({ databaseUrl: 'file:./x.db', nodeEnv: 'production' })[0].rule, 'R1_PRODUCTION_NODE_ENV');
   // A REMOTE postgres (real hostname) is a server database — still R3.
@@ -887,7 +881,7 @@ test('provider classification fails closed and the on-disk migration set is comp
   assert.equal(databaseProviderOf('mongodb://h/db'), 'unknown');
   assert.equal(databaseProviderOf(undefined), 'unknown');
   // The forward-only migration set on disk: baseline, the ledger index, and the
-  // PostGIS geo kernel. (The repo ships no stored down.sql — rollback is the
+  // PostGIS geo kernel. (The stored down.sql is operator-invoked only — rollback is the
   // known inverse DDL, exercised in the ROLLBACK test above.)
   const onDisk = migrationsOnDisk(MIGRATIONS);
   assert.deepEqual(onDisk, [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION]);

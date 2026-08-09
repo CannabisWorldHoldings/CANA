@@ -71,7 +71,13 @@ fi
 
 echo "schema:      $SCHEMA_DIR/$SCHEMA"
 echo "migrations:  $MIGRATIONS_DIR ($(ls "$MIGRATIONS_DIR" | wc -l | tr -d ' ') entries)"
-BACKUP_RECEIPT_SHA=$(sha256sum "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" | cut -d' ' -f1)
+if command -v sha256sum >/dev/null 2>&1; then
+  BACKUP_RECEIPT_SHA=$(sha256sum "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" | cut -d' ' -f1)
+elif command -v shasum >/dev/null 2>&1; then
+  BACKUP_RECEIPT_SHA=$(shasum -a 256 "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" | cut -d' ' -f1)
+else
+  echo "HARD STOP: sha256sum or shasum is required to bind the backup receipt"; exit 7
+fi
 echo "database:    canonical PostgreSQL (URL redacted)"
 echo "direct:      configured (URL redacted)"
 echo "backup receipt sha256: $BACKUP_RECEIPT_SHA"

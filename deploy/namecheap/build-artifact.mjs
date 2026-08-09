@@ -686,6 +686,8 @@ async function isolatedRuntimeTest() {
   );
 
   const postgres = startDisposablePostgres({ label: 'artifact', publishLoopback: true });
+  let primaryError;
+  let cleanupOk = false;
   try {
   run('npx --no-install prisma migrate deploy --schema prisma/schema.prisma', {
     cwd: webRoot,
@@ -702,6 +704,7 @@ async function isolatedRuntimeTest() {
       NODE_ENV: 'development',
       DATABASE_URL: postgres.databaseUrl,
       DIRECT_URL: postgres.databaseUrl,
+      CANA_DISPOSABLE_DATABASE_ATTESTATION: postgres.attestation,
     },
   });
   const inspect = JSON.parse(
@@ -855,12 +858,16 @@ async function isolatedRuntimeTest() {
   );
 
   results.serverLogTail = serverLog.slice(-400);
-  return results;
+  } catch (error) {
+    primaryError = error;
   } finally {
-    if (!stopDisposablePostgres(postgres)) {
-      throw new Error('Isolated runtime test failed to remove its disposable PostgreSQL container');
-    }
+    cleanupOk = stopDisposablePostgres(postgres);
   }
+  if (primaryError) throw primaryError;
+  if (!cleanupOk) {
+    throw new Error('Isolated runtime test failed to remove its disposable PostgreSQL container');
+  }
+  return results;
 }
 
 const isolatedResults = await isolatedRuntimeTest();

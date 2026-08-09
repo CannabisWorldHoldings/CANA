@@ -184,6 +184,42 @@ test('the DATABASE, not the application, adjudicates the concurrent case', async
   assert.equal(await attributionCount(rid), 1);
 });
 
+test('a sequence-constraint race rechecks event identity before reporting contention', async () => {
+  const { createDemandCredits, eventIdentityOf } = await import('../src/lib/demand-credits.mjs');
+  const merchantId = 'forced-seq-collision';
+  const input = {
+    merchantId,
+    actionKind: 'MENU_VIEW',
+    evidenceChain: [{ step: 'request', ref: 'forced-seq-collision' }],
+    observedAt: new Date('2026-08-09T00:00:00Z'),
+  };
+  const eventIdentity = eventIdentityOf(input);
+  const winner = { id: 'winner', merchantId, eventIdentity, seq: 0 };
+  let identityLookups = 0;
+  const credits = createDemandCredits({
+    demandCreditEntry: {
+      findFirst: async (args) => {
+        if (args?.where?.eventIdentity === eventIdentity) {
+          identityLookups += 1;
+          return identityLookups === 1 ? null : winner;
+        }
+        return null;
+      },
+      create: async () => {
+        const error = new Error('Unique constraint failed on merchantId, seq');
+        error.code = 'P2002';
+        error.meta = { target: ['merchantId', 'seq'] };
+        throw error;
+      },
+    },
+  });
+  const result = await credits.attribute(input);
+  assert.equal(result.accepted, false);
+  assert.equal(result.denial_code, 'DUPLICATE_ATTRIBUTION');
+  assert.equal(result.existing, winner);
+  assert.equal(identityLookups, 2, 'the seq-collision branch must re-read the canonical event winner');
+});
+
 test('a refused duplicate returns the row that WON, not a bare error', async () => {
   // A retrying caller must be able to learn what actually happened.
   const rid = await mk('WINNER');

@@ -122,6 +122,14 @@ test('FALSIFICATION: Null Island and non-finite coordinates are unmappable, not 
   assert.equal(projectRetailerMarker({ retailer: verifiedRetailer({ lat: NaN, lng: -77 }), asOf: NOW }), null);
 });
 
+test('FALSIFICATION: a canonical geo entity with null coordinates cannot fall back to legacy truth', () => {
+  assert.equal(projectRetailerMarker({
+    retailer: verifiedRetailer(),
+    geoEntity: { id: 'g-null', lat: null, lng: null, verification: 'UNKNOWN' },
+    asOf: NOW,
+  }), null);
+});
+
 test('unverified retailer maps but carries publiclyVerified=false, never a fake badge', () => {
   const marker = projectRetailerMarker({
     retailer: verifiedRetailer({ dataStatus: 'AWAITING_VERIFICATION', verifiedAt: null }),

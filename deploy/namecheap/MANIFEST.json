@@ -38,7 +38,7 @@
     "readinessCheck": "OWD_EXPECTED_SHA=<sha> sh readycheck.sh <base-url>   (health + provenance + SHA equality + render)",
     "smokeTest": "sh smoke-test.sh <base-url>   (full read-only battery; writes an environment-labelled receipt)",
     "workerOnce": "node worker.mjs --once health   (cron tick: independent health job; mkdir lock; SIGTERM-graceful)",
-    "workerCron": "*/5 * * * * cd <app-home>/current && WORKER_HEALTH_URL=<owner-url> /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> ~/orderweeddc-backups/cron.out 2>&1",
+    "workerCron": "*/5 * * * * mkdir -p ~/orderweeddc-backups && cd <app-home>/current && OWD_BACKUP_DIR=~/orderweeddc-backups WORKER_HEALTH_URL=<owner-url> /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> ~/orderweeddc-backups/cron.out 2>&1",
     "restoreBackup": "Provider/operator procedure; the shipped worker refuses to fabricate a local-file managed-PostgreSQL backup"
   },
   "endpoints": {

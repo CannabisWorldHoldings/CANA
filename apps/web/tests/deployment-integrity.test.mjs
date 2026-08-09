@@ -466,6 +466,26 @@ test('canonical deployment verifier snapshots before structural inspection and e
   assert.match(runbook, /verify-owner-artifact-input\.sh/);
 });
 
+test('maintenance health job exits nonzero when the probe is unhealthy', (t) => {
+  const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-worker-health-'));
+  t.after(() => fs.rmSync(backupDir, { recursive: true, force: true }));
+  const result = spawnSync(process.execPath, [
+    path.join(repoRoot, 'deploy/namecheap/worker.mjs'),
+    '--once',
+    'health',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      OWD_BACKUP_DIR: backupDir,
+      WORKER_HEALTH_URL: 'http://127.0.0.1:1/api/health',
+    },
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(`${result.stdout}${result.stderr}`, /HEALTH_PROBE_UNHEALTHY/);
+});
+
 test('contamination regression: parent node_modules falsely satisfies an incomplete artifact; isolation catches it', () => {
   const fixtureParent = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-contam-'));
   try {

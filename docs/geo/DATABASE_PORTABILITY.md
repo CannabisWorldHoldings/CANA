@@ -23,7 +23,7 @@ Application code contains zero Neon references.
 1. Provision target with PostGIS + h3 extensions.
 2. `psql "$TARGET" -f prisma/sql/geo_smoke_test.sql` — **before** trusting it.
    (Will fail until step 4 creates tables; run again after.)
-3. `pg_dump "$DIRECT_URL" | pg_restore` into target (or logical replication for
+3. `pg_dump --format=custom "$DIRECT_URL" | pg_restore --dbname="$TARGET"` into target (or logical replication for
    minimal downtime — available on Neon all plans).
 4. `prisma migrate deploy` + `geo_kernel_postgis.sql` + `postgres_semantics_guards.sql`
    against target if starting from schema instead of dump.
@@ -33,9 +33,9 @@ Application code contains zero Neon references.
 Known host-capability requirement: the target must offer the `h3`/`h3_postgis`
 extensions (Neon: yes, verified in docs; Crunchy Bridge: full extension suite
 including pgRouting; self-managed: install h3-pg as done in this repo's local
-verification). If a target cannot, the kernel fails closed with instructions
-to move `h3R9` maintenance to an application-side H3 library — the H3 cell
-values themselves are spec-identical either way.
+verification). A target without both extensions is rejected. H3 derivation
+remains database-owned; an application-side fallback would create a second
+geographic truth path and is not a portability mechanism.
 
 ## Standing rule for future work
 

@@ -15,14 +15,36 @@ import assert from 'node:assert/strict';
 import { PrismaClient } from '@prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL ?? '';
-if (!databaseUrl.startsWith('postgres')) {
+const disposableAttestation = process.env.CANA_DISPOSABLE_DATABASE_ATTESTATION ?? '';
+let parsedDatabaseUrl;
+try {
+  parsedDatabaseUrl = new URL(databaseUrl);
+} catch {
+  parsedDatabaseUrl = null;
+}
+if (
+  !parsedDatabaseUrl ||
+  !['postgres:', 'postgresql:'].includes(parsedDatabaseUrl.protocol) ||
+  !['127.0.0.1', 'localhost', '::1'].includes(parsedDatabaseUrl.hostname) ||
+  !/^[0-9a-f]{64}$/.test(disposableAttestation)
+) {
   throw new Error(
-    'postgres-semantics.test.mjs requires DATABASE_URL to point at PostgreSQL. ' +
-      'These regressions are engine-specific and cannot be validated on SQLite.',
+    'postgres-semantics.test.mjs requires a loopback PostgreSQL URL and a ' +
+      'CANA_DISPOSABLE_DATABASE_ATTESTATION issued by the repository verifier.',
   );
 }
 
 const prisma = new PrismaClient();
+const [databaseIdentity] = await prisma.$queryRawUnsafe(
+  "SELECT current_database() AS database, current_setting('cana.disposable_attestation', true) AS attestation",
+);
+if (
+  databaseIdentity?.attestation !== disposableAttestation ||
+  databaseIdentity?.database !== parsedDatabaseUrl.pathname.slice(1)
+) {
+  await prisma.$disconnect();
+  throw new Error('PostgreSQL semantics tests refuse a database without the matching disposable-server attestation');
+}
 const RUN = `pgsem-${Date.now()}`;
 
 function retailerFixture(overrides) {

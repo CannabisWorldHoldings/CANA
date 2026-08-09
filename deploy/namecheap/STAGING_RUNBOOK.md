@@ -125,7 +125,7 @@ Then install the cron line (cPanel → Cron Jobs; ≥ 5-minute granularity,
 absolute selector node path — cron does not inherit the app env):
 
 ```
-*/5 * * * * cd $HOME/apps/orderweeddc-staging/current && WORKER_HEALTH_URL=https://<staging-subdomain>/api/health /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> $HOME/orderweeddc-staging-backups/cron.out 2>&1
+*/5 * * * * mkdir -p $HOME/orderweeddc-staging-backups && cd $HOME/apps/orderweeddc-staging/current && OWD_BACKUP_DIR=$HOME/orderweeddc-staging-backups WORKER_HEALTH_URL=https://<staging-subdomain>/api/health /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> $HOME/orderweeddc-staging-backups/cron.out 2>&1
 ```
 
 Graceful-shutdown proof: start `node worker.mjs --loop --interval-ms 10000`,
