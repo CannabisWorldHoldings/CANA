@@ -37,7 +37,7 @@ const PR29_ASSIGNMENT_SHA256 =
   '5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2';
 const PR35_ASSIGNMENT = 'pr35_sovereign_continuation_integration_2026_08_09';
 const PR35_ASSIGNMENT_SHA256 =
-  'f9d9293d5abe88cde2c6a6f01bc5b380a2f720535a7973d9a80f12da348c4ebf';
+  '535d9e3861129e781d49a5424e4adef34f6ef0e5b20aa517641ad9556adf7e14';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
   '1d041b62c5359aec16ee40b723fcf4d412eccbf1994f0d896abb66b5a67e3ce8';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
@@ -101,6 +101,7 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/tests/column-width-cutover-court.test.mjs',
   'apps/web/tests/continuation-core.test.mjs',
   'apps/web/tests/continuation-court.test.mjs',
+  'apps/web/tests/deployment-integrity.test.mjs',
   'apps/web/tests/migration-court.test.mjs',
   'apps/web/tests/migration-manifest.test.mjs',
   'apps/web/tests/release-gate.test.mjs',
@@ -803,7 +804,7 @@ export function validateOwnershipManifest(ownership) {
   }
   const pr35CourtEntries = Object.entries(pr35Assignment.court_blob_sha256 ?? {});
   if (
-    pr35CourtEntries.length !== 3 ||
+    pr35CourtEntries.length !== 4 ||
     pr35CourtEntries.some(
       ([courtPath, digest]) =>
         !ownership.global_no_edit.includes(courtPath) ||

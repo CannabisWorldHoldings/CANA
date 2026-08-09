@@ -347,8 +347,8 @@ test('artifact snapshot is immutable after the upload path is replaced', (t) => 
 test('extracted release identity is bounded and internally consistent', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-release-identity-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const artifact = 'orderweeddc-abcdef0';
-  const gitSha = `${artifact.slice('orderweeddc-'.length)}${'a'.repeat(33)}`;
+  const gitSha = `abcdef0${'a'.repeat(33)}`;
+  const artifact = `orderweeddc-${gitSha}`;
   fs.mkdirSync(path.join(root, '.next'), { recursive: true });
   fs.writeFileSync(path.join(root, '.next/BUILD_ID'), 'bounded-build-id\n');
   fs.writeFileSync(path.join(root, 'release.json'), JSON.stringify({
