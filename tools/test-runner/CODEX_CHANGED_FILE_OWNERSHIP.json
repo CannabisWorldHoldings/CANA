@@ -374,6 +374,7 @@
         "apps/web/src/components/retailer-map-loader.tsx",
         "apps/web/src/components/retailer-map-maplibre.tsx",
         "apps/web/src/lib/admin-mutations.mjs",
+        "apps/web/src/lib/demand-credits.mjs",
         "apps/web/src/lib/directory-search.mjs",
         "apps/web/src/lib/geo/geo-repository.mjs",
         "apps/web/src/lib/geo/public-map-projection.mjs",
@@ -416,10 +417,11 @@
         "tools/test-runner/Dockerfile"
       ],
       "court_blob_sha256": {
+        "apps/web/src/lib/demand-credits.mjs": "c881bc446ef6cb5b3d9d148a929022011915cba155aed24ea7d65a91eac1aa8a",
         "apps/web/tests/column-width-cutover-court.test.mjs": "ee0d5f3b49b940a234d027e0d3e1b8332c326ec229a453496b5c85becd7ff8e1",
         "apps/web/tests/release-gate.test.mjs": "5498f770ac91f6647c3bed26386999b75d2ee0b01ce0612a5e87ab5dbd5d7dac"
       },
-      "approval_sha256": "581d9ff8c7d6f2bcfb573a508e160cdf384cf75f42923d4529bc18f9494f356e"
+      "approval_sha256": "2565425c942a5f595aa4833b06be11b13775d266af43711a45f3ebb67bcb1fdd"
     }
   },
   "owned_create_paths": [
@@ -602,6 +604,7 @@
     "apps/web/src/app/admin/page.tsx",
     "apps/web/src/components/retailer-map-loader.tsx",
     "apps/web/src/lib/admin-mutations.mjs",
+    "apps/web/src/lib/demand-credits.mjs",
     "apps/web/src/lib/directory-search.mjs",
     "apps/web/src/lib/merchant-dashboard.mjs",
     "apps/web/src/lib/product-discovery.mjs",

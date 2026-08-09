@@ -34,9 +34,9 @@ const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const PR29_ASSIGNMENT = 'pr29_canonical_recovery_2026_08_09';
 const PR29_ASSIGNMENT_SHA256 =
-  '581d9ff8c7d6f2bcfb573a508e160cdf384cf75f42923d4529bc18f9494f356e';
+  '2565425c942a5f595aa4833b06be11b13775d266af43711a45f3ebb67bcb1fdd';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '6923d739dadb9238c5318016727137b5838df07c99ac59ccb02884cf977e54a1';
+  '97238ffad4428ca237ba31fcc6d7b9c33b218b24973ae9f25a77edf9e7a4cfc4';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -698,7 +698,7 @@ export function validateOwnershipManifest(ownership) {
   }
   const courtEntries = Object.entries(pr29Assignment.court_blob_sha256 ?? {});
   if (
-    courtEntries.length !== 2 ||
+    courtEntries.length !== 3 ||
     courtEntries.some(
       ([courtPath, digest]) =>
         !ownership.global_no_edit.includes(courtPath) ||
