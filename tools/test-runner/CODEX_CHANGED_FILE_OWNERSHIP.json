@@ -410,13 +410,14 @@
         "docs/migration/SQLITE_TO_POSTGRES.md",
         "package-lock.json",
         "tools/postgres-sim/Dockerfile",
-        "tools/postgres-sim/runtime.mjs"
+        "tools/postgres-sim/runtime.mjs",
+        "tools/test-runner/Dockerfile"
       ],
       "court_blob_sha256": {
         "apps/web/tests/column-width-cutover-court.test.mjs": "ee0d5f3b49b940a234d027e0d3e1b8332c326ec229a453496b5c85becd7ff8e1",
         "apps/web/tests/release-gate.test.mjs": "5498f770ac91f6647c3bed26386999b75d2ee0b01ce0612a5e87ab5dbd5d7dac"
       },
-      "approval_sha256": "d41119cfb88c4113b60c32136a770dc914649e1925ed1590dab5ee4cd4429598"
+      "approval_sha256": "c7e3029ed3ee658c724e7b41dd4e664a78ff6be660d678a841622dc68149b71b"
     }
   },
   "owned_create_paths": [
@@ -538,6 +539,7 @@
     ,"docs/migration/SQLITE_TO_POSTGRES.md"
     ,"tools/postgres-sim/Dockerfile"
     ,"tools/postgres-sim/runtime.mjs"
+    ,"tools/test-runner/Dockerfile"
   ],
   "owned_modify_paths": [
     "apps/web/tests/helpers/**",

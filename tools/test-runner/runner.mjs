@@ -12,9 +12,9 @@ import {
 } from '../postgres-sim/runtime.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const APPROVED_IMAGE =
+const DOCKERFILE = path.join(ROOT, 'tools', 'test-runner', 'Dockerfile');
+const APPROVED_BASE_IMAGE =
   'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
-const IMAGE = process.env.CANA_VERIFY_IMAGE ?? APPROVED_IMAGE;
 const STANDARD_PROFILES = new Set(['focused', 'full', 'clean-clone', 'release']);
 const TIMEOUTS = {
   focused: 12 * 60_000,
@@ -76,26 +76,29 @@ function requireClean(source) {
 }
 
 function ensureDocker() {
-  if (IMAGE !== APPROVED_IMAGE) {
-    throw new Error(
-      `CANA_VERIFY_IMAGE is not approved; expected immutable ${APPROVED_IMAGE}`,
-    );
+  if (process.env.CANA_VERIFY_IMAGE) {
+    throw new Error('CANA_VERIFY_IMAGE overrides are refused; use the repository verifier image');
   }
   command('docker', ['info'], { timeout: 30_000 });
-  let inspect = command(
-    'docker',
-    ['image', 'inspect', IMAGE, '--format', '{{json .RepoDigests}}'],
-    { allowFailure: true, timeout: 30_000 },
-  );
-  if (inspect.status !== 0) {
-    command('docker', ['pull', IMAGE], { timeout: 8 * 60_000 });
-    inspect = command(
+  const dockerfileSha256 = sha256File(DOCKERFILE);
+  const tag = `cana-node-verifier:${dockerfileSha256.slice(0, 16)}`;
+  const existing = command('docker', ['image', 'inspect', tag], {
+    allowFailure: true,
+    timeout: 30_000,
+  });
+  if (existing.status !== 0) {
+    command(
       'docker',
-      ['image', 'inspect', IMAGE, '--format', '{{json .RepoDigests}}'],
-      { timeout: 30_000 },
+      ['build', '--tag', tag, '--file', DOCKERFILE, ROOT],
+      { timeout: 8 * 60_000, maxBuffer: 64 * 1024 * 1024 },
     );
   }
-  return inspect.stdout.trim();
+  return {
+    tag,
+    imageId: command('docker', ['image', 'inspect', tag, '--format', '{{.Id}}']).stdout.trim(),
+    dockerfileSha256,
+    base: APPROVED_BASE_IMAGE,
+  };
 }
 
 function addWorktree(runRoot, commit) {
@@ -166,7 +169,7 @@ function cleanClone(runRoot, expected) {
   };
 }
 
-function runContainer({ profile, sourceBundle, expected }) {
+function runContainer({ profile, sourceBundle, expected, verifierImage }) {
   const suffix = crypto.randomBytes(6).toString('hex');
   const name = `cana-verify-${profile.replaceAll('-', '')}-${suffix}`;
   let created = false;
@@ -187,7 +190,7 @@ function runContainer({ profile, sourceBundle, expected }) {
       `DIRECT_URL=${database.databaseUrl}`,
       '-w',
       '/workspace',
-      IMAGE,
+      verifierImage.tag,
       'bash',
       '-lc',
       `git clone --quiet /source.bundle /workspace && cd /workspace && git checkout --quiet ${expected} && bash tools/test-runner/container-verify.sh ${profile} ${expected}`,
@@ -252,7 +255,7 @@ async function standardVerification(profile) {
   const startedAt = new Date().toISOString();
   const source = identity();
   requireClean(source);
-  const dockerImage = ensureDocker();
+  const verifierImage = ensureDocker();
   const runRoot = fs.mkdtempSync(path.join(os.tmpdir(), `cana-${profile}-`));
   const worktree = addWorktree(runRoot, source.commit);
   let worktreeCleanup = { removed: false, detail: 'not attempted' };
@@ -279,6 +282,7 @@ async function standardVerification(profile) {
       profile,
       sourceBundle,
       expected: source.commit,
+      verifierImage,
     });
     if (!container.cleanup) {
       throw new Error(`verification container ${container.name} was not removed`);
@@ -291,8 +295,9 @@ async function standardVerification(profile) {
         worktree: true,
         database: 'container-local disposable PostgreSQL with PostGIS and H3',
         port: 'container network namespace only; host port is not published',
-        dockerImage: IMAGE,
-        dockerImageDigest: dockerImage,
+        dockerImage: verifierImage.imageId,
+        dockerfileSha256: verifierImage.dockerfileSha256,
+        baseImage: verifierImage.base,
       },
       timeLimitMs: TIMEOUTS[profile],
       staleBuild: {
