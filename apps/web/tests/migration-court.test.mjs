@@ -729,21 +729,49 @@ test('ROLLBACK: the known inverse DDL reverses the index migration with data int
   // rollback that was actually proven. (`migrate resolve --rolled-back` is only
   // for migrations in a FAILED state — exercised in INTERRUPTED above.)
   const url = createDatabase('rollback');
-  deploy(url);
+  const rollbackStage = stage('rollback', [BASELINE_MIGRATION_NAME, SECOND_MIGRATION]);
+  deploy(url, rollbackStage.schema);
   const p = await client(url);
   await populate(p);
   const before = await snapshot(p);
   assert.ok(await indexExists(p, NEW_INDEX));
 
   const downSql = fs.readFileSync(SECOND_MIGRATION_DOWN, 'utf8');
+  assert.match(downSql, /SET LOCAL lock_timeout = '5s'/);
+  assert.match(downSql, /pg_advisory_xact_lock\(72707369\)/);
+  await p.$transaction(async (tx) => {
+    await tx.$queryRawUnsafe('SELECT pg_advisory_xact_lock(72707369)');
+    let lockRefusal = null;
+    try { prisma_(['db', 'execute', '--url', url, '--stdin'], {}, downSql); } catch (error) { lockRefusal = error; }
+    assert.ok(lockRefusal, 'manual reversal must refuse while Prisma migration advisory lock is held');
+    assert.match(`${lockRefusal.stderr ?? ''}${lockRefusal.message ?? ''}`, /lock timeout|canceling statement/i);
+  }, { timeout: 15_000 });
+  assert.ok(await indexExists(p, NEW_INDEX), 'lock refusal must leave the index intact');
+
   prisma_(['db', 'execute', '--url', url, '--stdin'], {}, downSql);
 
   assert.equal(await indexExists(p, NEW_INDEX), false, 'the inverse DDL must remove what the migration added');
   assert.deepEqual(await snapshot(p), before, 'rollback of a schema-only migration must not touch data');
 
-  deploy(url); // roll forward again
+  deploy(url, rollbackStage.schema); // roll forward again
   assert.ok(await indexExists(p, NEW_INDEX), 'the rolled-back migration re-applies cleanly');
   assert.deepEqual(await snapshot(p), before);
+});
+
+test('ROLLBACK: the manual inverse refuses after a later successful migration', async () => {
+  const url = createDatabase('rollback_later');
+  deploy(url);
+  const p = await client(url);
+  const downSql = fs.readFileSync(SECOND_MIGRATION_DOWN, 'utf8');
+  let refusal = null;
+  try { prisma_(['db', 'execute', '--url', url, '--stdin'], {}, downSql); } catch (error) { refusal = error; }
+  assert.ok(refusal, 'manual reversal must refuse when the geo migration is already applied');
+  assert.match(`${refusal.stderr ?? ''}${refusal.message ?? ''}`, /later successful migration is applied/);
+  assert.ok(await indexExists(p, NEW_INDEX), 'later-migration refusal must roll back the index drop');
+  const applied = await p.$queryRawUnsafe(
+    'SELECT count(*)::int AS count FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL',
+  );
+  assert.equal(applied[0].count, 3);
 });
 
 test('RESTORE: a logical pre-migration backup is a working database with a verifying chain', async () => {

@@ -30,12 +30,11 @@
  *   LOOPBACK + DISPOSABLE SYSTEM IDENTITY. A database reachable over the network
  *   from another machine is a server database, and the demonstration seed must
  *   never target one. Loopback alone is insufficient because a local tunnel can
- *   terminate at a managed database. The repository verifier therefore writes a
- *   reads the PostgreSQL cluster system identifier out of band from its
- *   disposable container; the seed must receive and verify that immutable
- *   server identity before any destructive write. Unlike a custom GUC, the
- *   cluster system identifier cannot be supplied or changed by a client session.
- *   Every
+ *   terminate at a managed database. The repository verifier therefore reads the
+ *   PostgreSQL cluster system identifier out of band from its disposable
+ *   container; the seed must receive and verify that immutable server identity
+ *   before any destructive write. Unlike a custom GUC, the cluster system
+ *   identifier cannot be supplied or changed by a client session. Every
  *   non-loopback server URL (mysql, remote postgres, anything with a real
  *   hostname) is refused exactly as before. R4 — the deepest guard — still
  *   applies to loopback databases: a loopback postgres holding real rows is

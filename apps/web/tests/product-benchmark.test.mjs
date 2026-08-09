@@ -116,6 +116,11 @@ test('benchmark refuses remote and forged-loopback PostgreSQL identities before 
   assert.match(remote.receipt.error, /refuses non-loopback PostgreSQL servers/);
   assert.doesNotMatch(remote.receipt.error, /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/);
 
+  assert.match(
+    process.env.CANA_BENCHMARK_DATABASE_URL ?? '',
+    /^postgres(?:ql)?:\/\//,
+    'forged-loopback case requires the disposable benchmark database URL',
+  );
   const forged = runBenchmarkWithEnvironment({
     CANA_BENCHMARK_DATABASE_URL: process.env.CANA_BENCHMARK_DATABASE_URL,
     CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '9999999999999999999',

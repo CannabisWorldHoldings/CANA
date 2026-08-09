@@ -71,6 +71,10 @@ approvals.
 - Code deploys and rollbacks never modify the persistent database.
 - Migration requires a verified managed-provider/operator backup receipt,
   both PostgreSQL URLs, and committed migration files.
+- A manual schema reversal is a separate owner-authorized database operation,
+  never part of `rollback.sh`. It requires the same backup gate, an exclusive
+  maintenance window, no later successful migration, and the Prisma Migrate
+  advisory lock so it cannot overlap `migrate deploy` or `migrate resolve`.
 - The cPanel worker never claims that a local file copy is a managed database
   backup. Provider restore authority stays outside the application runtime.
 - Never bootstrap, seed, migrate, or replace a database because an endpoint

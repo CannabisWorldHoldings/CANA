@@ -8,6 +8,11 @@ BACKUP_RECEIPT="$ACCOUNT/provider-backup-receipt.json"
 
 : "${DATABASE_URL:?disposable PostgreSQL DATABASE_URL required}"
 : "${DIRECT_URL:?disposable PostgreSQL DIRECT_URL required}"
+: "${CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER:?disposable PostgreSQL system identifier required}"
+if [[ ! "$CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER" =~ ^[0-9]{10,}$ ]]; then
+  echo 'CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER must be numeric' >&2
+  exit 1
+fi
 test "$DATABASE_URL" = "$DIRECT_URL"
 test "$(git -C "$ROOT" rev-parse HEAD)" = "$EXPECTED_SHA"
 test -z "$(git -C "$ROOT" status --porcelain)"
@@ -37,7 +42,10 @@ APP_IDENTITY_REFUSAL_STATUS=$?
 set -e
 test "$APP_IDENTITY_REFUSAL_STATUS" -ne 0
 grep -q 'Disposable PostgreSQL identity verification failed' <<<"$APP_IDENTITY_REFUSAL_OUTPUT"
-! grep -q 'CANA_APP_IDENTITY_ACCEPTED' <<<"$APP_IDENTITY_REFUSAL_OUTPUT"
+if grep -q 'CANA_APP_IDENTITY_ACCEPTED' <<<"$APP_IDENTITY_REFUSAL_OUTPUT"; then
+  echo 'CANA_APP_IDENTITY_REFUSAL_INVALID server started after identity refusal' >&2
+  exit 1
+fi
 if grep -Fq "$DATABASE_URL" <<<"$APP_IDENTITY_REFUSAL_OUTPUT" || grep -Fq "$DIRECT_URL" <<<"$APP_IDENTITY_REFUSAL_OUTPUT"; then
   echo 'CANA_DATABASE_URL_DISCLOSURE_REFUSED app identity-refusal output contained a database URL' >&2
   exit 1
@@ -48,10 +56,10 @@ rm -rf "$APP_IDENTITY_ROOT"
 
 set +e
 IDENTITY_REFUSAL_OUTPUT="$(
-  cd apps/web
+  cd "$ACCOUNT"
   CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=9999999999999999999 \
   CANA_PRE_MIGRATION_BACKUP_RECEIPT="$BACKUP_RECEIPT" \
-  sh ../../deploy/namecheap/migrate.sh 2>&1
+  sh "$ROOT/deploy/namecheap/migrate.sh" 2>&1
 )"
 IDENTITY_REFUSAL_STATUS=$?
 set -e
@@ -63,9 +71,9 @@ if grep -Fq "$DATABASE_URL" <<<"$IDENTITY_REFUSAL_OUTPUT" || grep -Fq "$DIRECT_U
 fi
 
 MIGRATION_OUTPUT="$(
-  cd apps/web
+  cd "$ACCOUNT"
   CANA_PRE_MIGRATION_BACKUP_RECEIPT="$BACKUP_RECEIPT" \
-  sh ../../deploy/namecheap/migrate.sh 2>&1
+  sh "$ROOT/deploy/namecheap/migrate.sh" 2>&1
 )"
 printf '%s\n' "$MIGRATION_OUTPUT"
 grep -q 'MIGRATIONS APPLIED' <<<"$MIGRATION_OUTPUT"
@@ -83,6 +91,14 @@ try {
     prisma.$queryRawUnsafe(`SELECT count(*)::int AS count FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('Organization','Brand')`),
     prisma.$queryRawUnsafe(`SELECT postgis_lib_version() AS postgis, h3_get_extension_version() AS h3`),
   ]);
+  if (
+    migrationCount[0]?.count !== 3 ||
+    coreTables[0]?.count !== 2 ||
+    typeof versions[0]?.postgis !== 'string' || versions[0].postgis.length === 0 ||
+    typeof versions[0]?.h3 !== 'string' || versions[0].h3.length === 0
+  ) {
+    throw new Error('CANA_REAL_PRISMA_DATABASE_STATE_INVALID');
+  }
   process.stdout.write(JSON.stringify({
     migrationsApplied: migrationCount[0].count,
     coreTables: coreTables[0].count,

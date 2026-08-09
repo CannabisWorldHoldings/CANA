@@ -39,7 +39,9 @@ MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
 
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
-node <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS or match the connected disposable PostgreSQL identity"; exit 5; }
+CANA_SCHEMA_DIR="$SCHEMA_DIR" node <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS or match the connected disposable PostgreSQL identity"; exit 5; }
+const path = require('node:path');
+const { createRequire } = require('node:module');
 const names = ['DATABASE_URL', 'DIRECT_URL'];
 let urls;
 try {
@@ -55,7 +57,10 @@ if (!disposableLoopback && urls.some((url) =>
   url.searchParams.get('sslmode') !== 'require' || url.searchParams.get('sslaccept') !== 'strict'
 )) process.exit(1);
 if (disposableLoopback) {
-  const { PrismaClient } = require('@prisma/client');
+  const schemaRequire = createRequire(
+    path.join(process.env.CANA_SCHEMA_DIR, '__cana_migrate_resolver__.cjs'),
+  );
+  const { PrismaClient } = schemaRequire('@prisma/client');
   const prisma = new PrismaClient();
   (async () => {
     try {
