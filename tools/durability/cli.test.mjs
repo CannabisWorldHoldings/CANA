@@ -18,8 +18,10 @@ import {
   MISSION3_M001_AUTHORIZED_PATHS,
   mission3M001OwnershipAssignment,
   ownershipPatterns,
+  PR35_AUTHORIZED_PATHS,
   PR2_AUTHORIZED_PATHS,
   pr29OwnershipAssignment,
+  pr35OwnershipAssignment,
   pr2OwnershipAssignment,
   STAGE_A_AUTHORIZED_PATHS,
   unownedPaths,
@@ -79,6 +81,42 @@ test('PR #29 ownership and court metadata tampering fail closed', () => {
   const digest = ownership();
   digest.explicit_user_assignment.pr29_canonical_recovery_2026_08_09
     .court_blob_sha256['apps/web/tests/release-gate.test.mjs'] = '0'.repeat(64);
+  assert.throws(
+    () => validateOwnershipManifest(digest),
+    /failed its owner-approval digest/,
+  );
+});
+
+test('PR #35 sovereign integration has exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  const assignment = pr35OwnershipAssignment(manifest);
+  assert.deepEqual(assignment.authorized_paths, [...PR35_AUTHORIZED_PATHS]);
+  assert.equal(assignment.authorized_paths.length, 40);
+  assert.ok(assignment.authorized_paths.every((entry) => !entry.includes('*')));
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/lib/continuation/neighboring-sovereign-brain.mjs'], manifest),
+    ['apps/web/src/lib/continuation/neighboring-sovereign-brain.mjs'],
+  );
+});
+
+test('PR #35 court admission is bound to the exact integrated bytes', () => {
+  const manifest = ownership();
+  for (const courtPath of Object.keys(pr35OwnershipAssignment(manifest).court_blob_sha256)) {
+    assert.equal(courtEditAdmitted(courtPath, manifest), true);
+    assert.equal(courtEditAdmitted(courtPath, manifest, Buffer.from('tampered PR35 court')), false);
+  }
+});
+
+test('PR #35 ownership and court metadata tampering fail closed', () => {
+  const wildcard = ownership();
+  wildcard.explicit_user_assignment.pr35_sovereign_continuation_integration_2026_08_09
+    .authorized_paths[0] = 'apps/web/**';
+  assert.throws(() => validateOwnershipManifest(wildcard), /exact reviewed repository paths/);
+
+  const digest = ownership();
+  digest.explicit_user_assignment.pr35_sovereign_continuation_integration_2026_08_09
+    .court_blob_sha256['apps/web/tests/migration-court.test.mjs'] = '0'.repeat(64);
   assert.throws(
     () => validateOwnershipManifest(digest),
     /failed its owner-approval digest/,

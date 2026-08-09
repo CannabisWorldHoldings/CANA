@@ -35,8 +35,11 @@ const MISSION3_M001_ASSIGNMENT_SHA256 =
 const PR29_ASSIGNMENT = 'pr29_canonical_recovery_2026_08_09';
 const PR29_ASSIGNMENT_SHA256 =
   '5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2';
+const PR35_ASSIGNMENT = 'pr35_sovereign_continuation_integration_2026_08_09';
+const PR35_ASSIGNMENT_SHA256 =
+  'aadc6de3e70f1cc95635fea4aab77f2af317181880cb10b9add680967f9b9be3';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '150f5ff19b1af535e7629067f671ae550771b8c6b756fc21b90947d3699b8b20';
+  '14af2c468e3941faf5c65c06e8750b8cb427ad67b11ea65c8e7becce8b27beea';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -75,6 +78,48 @@ export const MISSION1_VALIDATOR_PATHS = Object.freeze([
 export const MISSION1_AUTHORIZED_PATHS = Object.freeze([
   ...MISSION1_EVIDENCE_PATHS,
   ...MISSION1_VALIDATOR_PATHS,
+]);
+export const PR35_AUTHORIZED_PATHS = Object.freeze([
+  '.github/workflows/cana-verify.yml',
+  'apps/web/prisma/migration-manifest.json',
+  'apps/web/prisma/migration-manifest.mjs',
+  'apps/web/prisma/migrations/20260809170000_continuation_kernel/migration.sql',
+  'apps/web/prisma/schema.prisma',
+  'apps/web/scripts/continuation-tick.mjs',
+  'apps/web/src/app/api/v1/ask/route.ts',
+  'apps/web/src/app/layout.tsx',
+  'apps/web/src/lib/ask/ask-service.mjs',
+  'apps/web/src/lib/ask/intent-ir.mjs',
+  'apps/web/src/lib/continuation/continuation-core.mjs',
+  'apps/web/src/lib/continuation/continuation-repository.mjs',
+  'apps/web/src/lib/db-config.mjs',
+  'apps/web/tests/ask-intent-ir.test.mjs',
+  'apps/web/tests/ask-service-where.test.mjs',
+  'apps/web/tests/column-width-cutover-court.test.mjs',
+  'apps/web/tests/continuation-core.test.mjs',
+  'apps/web/tests/continuation-court.test.mjs',
+  'apps/web/tests/migration-court.test.mjs',
+  'apps/web/tests/migration-manifest.test.mjs',
+  'deploy/namecheap/MANIFEST.json',
+  'deploy/namecheap/build-artifact.mjs',
+  'deploy/namecheap/migrate.sh',
+  'deploy/namecheap/worker.mjs',
+  'docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json',
+  'docs/capabilities/cana.ask-orderweeddc.contract.json',
+  'docs/capabilities/cana.continuation-kernel.contract.json',
+  'docs/capabilities/cana.provenance-court.contract.json',
+  'docs/migration/SQLITE_TO_POSTGRES.md',
+  'tools/cpanel-sim/real-prisma-proof.sh',
+  'tools/cpanel-sim/run.mjs',
+  'tools/durability/cli.mjs',
+  'tools/durability/cli.test.mjs',
+  'tools/mariadb-sim/generate-schema.mjs',
+  'tools/mariadb-sim/run.mjs',
+  'tools/mariadb-sim/run.test.mjs',
+  'tools/mariadb-sim/schema.prisma',
+  'tools/provenance-court/sabotage.test.mjs',
+  'tools/provenance-court/verify-chain.mjs',
+  'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
 ]);
 export const MISSION2_AUTHORIZED_PATHS = Object.freeze([
   '.github/workflows/cana-verify.yml',
@@ -709,6 +754,58 @@ export function validateOwnershipManifest(ownership) {
     refusal('PR #29 court blob admission is malformed');
   }
 
+  const pr35Assignment = ownership.explicit_user_assignment[PR35_ASSIGNMENT];
+  if (
+    !exactKeys(pr35Assignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'authorized_paths',
+      'court_blob_sha256',
+      'approval_sha256',
+    ]) ||
+    !Array.isArray(pr35Assignment.authorized_paths) ||
+    pr35Assignment.authorization_effect !==
+      'Durability path ownership and exact reviewed-court-blob admission only; no runtime execution, provider, credential, paid-call, deployment, production, external-effect, verification-bypass or self-promotion authority.'
+  ) {
+    refusal('PR #35 sovereign integration ownership assignment is malformed');
+  }
+  const pr35Paths = pr35Assignment.authorized_paths;
+  if (
+    JSON.stringify(pr35Paths) !== JSON.stringify(PR35_AUTHORIZED_PATHS) ||
+    new Set(pr35Paths).size !== pr35Paths.length ||
+    pr35Paths.some(
+      (entry) =>
+        typeof entry !== 'string' ||
+        entry.length === 0 ||
+        entry.startsWith('/') ||
+        entry.includes('\\') ||
+        entry.includes('*') ||
+        entry.includes('..') ||
+        path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('PR #35 sovereign integration paths must be the exact reviewed repository paths');
+  }
+  for (const authorizedPath of pr35Paths) {
+    const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
+    if (exactOccurrences !== 1) {
+      refusal(`PR #35 path must have exactly one exact ownership entry: ${authorizedPath}`);
+    }
+  }
+  const pr35CourtEntries = Object.entries(pr35Assignment.court_blob_sha256 ?? {});
+  if (
+    pr35CourtEntries.length !== 2 ||
+    pr35CourtEntries.some(
+      ([courtPath, digest]) =>
+        !ownership.global_no_edit.includes(courtPath) ||
+        !pr35Paths.includes(courtPath) ||
+        !/^[0-9a-f]{64}$/.test(digest),
+    )
+  ) {
+    refusal('PR #35 court blob admission is malformed');
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -726,6 +823,15 @@ export function validateOwnershipManifest(ownership) {
     pr29ActualDigest !== PR29_ASSIGNMENT_SHA256
   ) {
     refusal('PR #29 recovery assignment failed its owner-approval digest');
+  }
+  const { approval_sha256: pr35RecordedDigest, ...pr35ApprovalPayload } =
+    pr35Assignment;
+  const pr35ActualDigest = sha256Bytes(canonicalJson(pr35ApprovalPayload));
+  if (
+    pr35RecordedDigest !== PR35_ASSIGNMENT_SHA256 ||
+    pr35ActualDigest !== PR35_ASSIGNMENT_SHA256
+  ) {
+    refusal('PR #35 sovereign integration assignment failed its owner-approval digest');
   }
 
   const { approval_sha256: pr2RecordedDigest, ...pr2ApprovalPayload } = pr2Assignment;
@@ -812,13 +918,19 @@ export function pr29OwnershipAssignment(ownership) {
   return ownership.explicit_user_assignment[PR29_ASSIGNMENT];
 }
 
+export function pr35OwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[PR35_ASSIGNMENT];
+}
+
 export function courtEditAdmitted(relative, ownership, bytes) {
   validateOwnershipManifest(ownership);
-  const admittedDigest =
-    ownership.explicit_user_assignment[PR29_ASSIGNMENT].court_blob_sha256[relative];
-  if (!ownership.global_no_edit.includes(relative) || !admittedDigest) return false;
+  const admittedDigests = [PR29_ASSIGNMENT, PR35_ASSIGNMENT]
+    .map((assignment) => ownership.explicit_user_assignment[assignment].court_blob_sha256[relative])
+    .filter(Boolean);
+  if (!ownership.global_no_edit.includes(relative) || admittedDigests.length === 0) return false;
   const content = bytes ?? fs.readFileSync(path.join(ROOT, relative));
-  return sha256Bytes(content) === admittedDigest;
+  return admittedDigests.includes(sha256Bytes(content));
 }
 
 export function unownedPaths(changed, ownership) {
