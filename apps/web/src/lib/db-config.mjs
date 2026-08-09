@@ -507,7 +507,7 @@ export async function ensureDatabaseMigrated({
 
 /** Does the application schema exist? Provider-aware probe of one anchor table.
  *  PROVEN on sqlite; the information_schema branch is argued until MariaDB exists. */
-async function probeApplicationTables(prisma, provider) {
+export async function probeApplicationTables(prisma, provider) {
   try {
     if (provider === 'sqlite') {
       const r = await prisma.$queryRawUnsafe(

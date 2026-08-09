@@ -393,17 +393,10 @@ function applyPrismaCandidate({
 
 async function runDbConfigInformationSchemaProbe({
   repoRoot,
-  runRoot,
   databaseContainer,
   password,
 }) {
   const sourceFile = path.join(repoRoot, 'apps', 'web', 'src', 'lib', 'db-config.mjs');
-  const instrumented = path.join(runRoot, 'db-config-probe.mjs');
-  fs.writeFileSync(
-    instrumented,
-    `${fs.readFileSync(sourceFile, 'utf8')}\nexport { probeApplicationTables as __canaProbeApplicationTables };\n`,
-    { encoding: 'utf8', mode: 0o600 },
-  );
   const queries = [];
   const prisma = {
     async $queryRawUnsafe(statement) {
@@ -416,9 +409,9 @@ async function runDbConfigInformationSchemaProbe({
     },
   };
   const module = await import(
-    `${pathToFileURL(instrumented).href}?run=${crypto.randomBytes(8).toString('hex')}`
+    `${pathToFileURL(sourceFile).href}?run=${crypto.randomBytes(8).toString('hex')}`
   );
-  const found = await module.__canaProbeApplicationTables(prisma, 'mysql');
+  const found = await module.probeApplicationTables(prisma, 'mysql');
   return {
     found,
     query: queries.at(-1) ?? '',
@@ -546,7 +539,6 @@ export async function runMariaSimulation({ repoRoot }) {
 
     const dbConfigProbe = await runDbConfigInformationSchemaProbe({
       repoRoot,
-      runRoot,
       databaseContainer,
       password,
     });
