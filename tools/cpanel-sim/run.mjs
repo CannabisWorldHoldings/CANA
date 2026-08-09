@@ -1010,11 +1010,18 @@ export async function runCpanelSimulation({ repoRoot }) {
       checks,
       'managed PostgreSQL backup authority refusal',
       realPrismaProof.proof.backupAuthority === 'PROVIDER_OPERATOR_REQUIRED' &&
-        realPrismaProof.proof.backupRefusalProven === true &&
-        realPrismaProof.cleanup.containerRemoved &&
+        realPrismaProof.proof.backupRefusalProven === true,
+      'worker.mjs refused to fabricate a local-file backup',
+    );
+    check(
+      checks,
+      'real Prisma proof resource cleanup',
+      realPrismaProof.cleanup.containerRemoved &&
+        realPrismaProof.cleanup.dependencyContainerRemoved &&
+        realPrismaProof.cleanup.volumeRemoved &&
         realPrismaProof.cleanup.databaseContainerRemoved &&
         realPrismaProof.cleanup.networkRemoved,
-      'worker.mjs refused to fabricate a local-file backup and all disposable proof resources were removed',
+      'source, dependency, database, volume, and internal-network proof resources were removed',
     );
   } catch (error) {
     failure = error instanceof Error ? error.message : String(error);
