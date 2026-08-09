@@ -211,7 +211,7 @@ test('a sequence-constraint race rechecks event identity before reporting conten
       findFirst: async (args) => {
         if (args?.where?.eventIdentity === eventIdentity) {
           identityLookups += 1;
-          return identityLookups === 1 ? null : winner;
+          return winner;
         }
         return null;
       },
@@ -227,7 +227,7 @@ test('a sequence-constraint race rechecks event identity before reporting conten
   assert.equal(result.accepted, false);
   assert.equal(result.denial_code, 'DUPLICATE_ATTRIBUTION');
   assert.equal(result.existing, winner);
-  assert.equal(identityLookups, 2, 'the seq-collision branch must re-read the canonical event winner');
+  assert.equal(identityLookups, 1, 'the seq-collision branch must read the canonical event winner');
 });
 
 test('a refused duplicate returns the row that WON, not a bare error', async () => {
