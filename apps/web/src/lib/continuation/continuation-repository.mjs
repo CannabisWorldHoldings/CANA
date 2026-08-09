@@ -22,33 +22,28 @@
  */
 
 import {
-  GENESIS_HASH,
   MISSION_STATES,
   TRIGGER_STATES,
   authorityRank,
   ceilingWithin,
   nextRescheduledSpec,
-  receiptHash,
   resolveTriggerDisposition,
   validateTriggerSpec,
 } from './continuation-core.mjs';
+import { selectTickCandidates } from './continuation-selection.mjs';
+import {
+  appendReceipt,
+  inSerializableTransaction,
+  verifyReceiptChain,
+} from './continuation-storage.mjs';
+
+export { appendReceipt, verifyReceiptChain } from './continuation-storage.mjs';
 
 function requireNonEmpty(value, label) {
   if (typeof value !== 'string' || value.trim().length === 0) {
     throw new Error(`${label} is required`);
   }
   return value;
-}
-
-async function inSerializableTransaction(prisma, operation, attempt = 0) {
-  try {
-    return await prisma.$transaction(operation, { isolationLevel: 'Serializable', timeout: 10_000 });
-  } catch (error) {
-    if (attempt < 3 && ['P2002', 'P2034'].includes(String(error?.code))) {
-      return inSerializableTransaction(prisma, operation, attempt + 1);
-    }
-    throw error;
-  }
 }
 
 /** Create a mission. L1 applies to missions too: purpose, stop condition, budget, ceiling. */
@@ -155,54 +150,6 @@ export async function createTrigger(prisma, spec, { now = new Date() } = {}) {
   return inSerializableTransaction(prisma, (tx) => createTriggerInTransaction(tx, spec, now));
 }
 
-/**
- * Append a receipt to the mission's hash chain. Serialized per mission via
- * the @@unique([missionId, seq]) constraint: a concurrent writer that loses
- * the seq race gets a unique violation and retries once with the fresh head.
- */
-export async function appendReceipt(prisma, body, { attempt = 0, retryOnConflict = true } = {}) {
-  const head = await prisma.continuationReceipt.findFirst({
-    where: { missionId: body.missionId },
-    orderBy: { seq: 'desc' },
-    select: { seq: true, entryHash: true },
-  });
-  const seq = (head?.seq ?? 0) + 1;
-  const prevHash = head?.entryHash ?? GENESIS_HASH;
-  const entryHash = await receiptHash({ ...body, seq }, prevHash);
-  try {
-    const receipt = await prisma.continuationReceipt.create({
-      data: {
-        seq,
-        missionId: body.missionId,
-        triggerId: body.triggerId ?? null,
-        tickId: body.tickId,
-        action: body.action,
-        detail: body.detail ?? null,
-        evidence: body.evidence ?? null,
-        prevHash,
-        entryHash,
-      },
-    });
-    await prisma.continuationMission.update({
-      where: { id: body.missionId },
-      data: { latestReceiptId: receipt.id },
-    });
-    if (body.triggerId) {
-      await prisma.continuationTrigger.update({
-        where: { id: body.triggerId },
-        data: { latestReceiptId: receipt.id },
-      });
-    }
-    return receipt;
-  } catch (error) {
-    // Unique violation on (missionId, seq): another writer advanced the head.
-    if (retryOnConflict && attempt < 3 && String(error?.code) === 'P2002') {
-      return appendReceipt(prisma, body, { attempt: attempt + 1, retryOnConflict });
-    }
-    throw error;
-  }
-}
-
 /** The ONLY path from PENDING_APPROVAL to ARMED. L4. */
 export async function approveTrigger(prisma, { triggerId, approvedBy, tickId }) {
   requireNonEmpty(approvedBy, 'approvedBy');
@@ -244,10 +191,11 @@ export async function runTick(prisma, options = {}) {
   const conditionResults = new Map(Object.entries(options.conditionResults ?? {}));
   const limit = Math.min(Math.max(1, Number(options.limit) || 50), 500);
 
-  const candidates = await prisma.continuationTrigger.findMany({
-    where: { status: TRIGGER_STATES.ARMED },
-    orderBy: [{ nextEligibleAt: { sort: 'asc', nulls: 'first' } }, { createdAt: 'asc' }],
-    take: limit,
+  const candidates = await selectTickCandidates(prisma, {
+    conditionResults,
+    events,
+    limit,
+    now,
   });
 
   // Resolve dependency satisfaction from durable state, not memory.
@@ -353,37 +301,4 @@ export async function runTick(prisma, options = {}) {
   }
 
   return { tickId, now: now.toISOString(), fired, expired, successors, waiting: waiting.length, receipts };
-}
-
-/** Read a mission's receipt chain and verify hash integrity end-to-end. */
-export async function verifyReceiptChain(prisma, missionId) {
-  const mission = await prisma.continuationMission.findUnique({
-    where: { id: missionId },
-    select: { latestReceiptId: true },
-  });
-  if (!mission) return { ok: false, reason: 'mission does not exist' };
-  const rows = await prisma.continuationReceipt.findMany({
-    where: { missionId },
-    orderBy: { seq: 'asc' },
-  });
-  let prevHash = GENESIS_HASH;
-  for (const row of rows) {
-    if (row.prevHash !== prevHash) {
-      return { ok: false, brokenAtSeq: row.seq, reason: 'prevHash does not match chain head' };
-    }
-    const expected = await receiptHash(row, prevHash);
-    if (row.entryHash !== expected) {
-      return { ok: false, brokenAtSeq: row.seq, reason: 'entryHash does not match recomputed hash' };
-    }
-    prevHash = row.entryHash;
-  }
-  const observedHeadId = rows.at(-1)?.id ?? null;
-  if (observedHeadId !== mission.latestReceiptId) {
-    return {
-      ok: false,
-      brokenAtSeq: rows.at(-1)?.seq ?? 0,
-      reason: 'receipt chain head does not match mission latestReceiptId',
-    };
-  }
-  return { ok: true, length: rows.length };
 }

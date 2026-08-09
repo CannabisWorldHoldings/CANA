@@ -231,6 +231,24 @@ test('C4: DEPENDENCY fires only after its dependency has durably FIRED', async (
   assert.ok(tick2.fired.includes(downstream.id), 'dependency satisfied in durable state must fire');
 });
 
+test('C4b: a passive reactive backlog cannot starve due scheduled work', async () => {
+  const mission = await createMission(prisma, missionSpec());
+  for (let index = 0; index < 50; index += 1) {
+    await createTrigger(prisma, triggerSpec(mission.id, {
+      triggerType: 'EVENT',
+      eventKey: `unobserved:${index}`,
+      nextEligibleAt: undefined,
+      budgetCentsMax: 1,
+    }));
+  }
+  const due = await createTrigger(prisma, triggerSpec(mission.id, {
+    budgetCentsMax: 1,
+  }));
+
+  const tick = await runTick(prisma, { tickId: 'backlog-fairness', limit: 50 });
+  assert.ok(tick.fired.includes(due.id), 'due work must survive a full passive reactive backlog');
+});
+
 test('C5: a spec with no stop condition NEVER reaches the table', async () => {
   const mission = await createMission(prisma, missionSpec());
   const beforeCount = await prisma.continuationTrigger.count();
@@ -316,21 +334,27 @@ test('C7: EFFECTFUL work is born PENDING_APPROVAL, ignored by ticks, and fires o
 });
 
 test('C8: RECURRENCE IS FINITE — remaining=1 fires exactly twice, ever', async () => {
+  const tickNow = new Date(Date.now() + 1000);
   const mission = await createMission(prisma, missionSpec());
   const trigger = await createTrigger(prisma, triggerSpec(mission.id, {
     continuationPolicy: JSON.stringify({ kind: 'RESCHEDULE', intervalMs: 1, remaining: 1 }),
   }));
 
-  const tick1 = await runTick(prisma, { tickId: 'recur-1' });
+  const tick1 = await runTick(prisma, { tickId: 'recur-1', now: tickNow });
   assert.ok(tick1.fired.includes(trigger.id));
   assert.equal(tick1.successors.length, 1);
 
-  await new Promise((r) => setTimeout(r, 10)); // let the 1ms successor come due
-  const tick2 = await runTick(prisma, { tickId: 'recur-2' });
+  const tick2 = await runTick(prisma, {
+    tickId: 'recur-2',
+    now: new Date(tickNow.getTime() + 2),
+  });
   assert.ok(tick2.fired.includes(tick1.successors[0]));
   assert.equal(tick2.successors.length, 0, 'remaining exhausted — no further successor');
 
-  const tick3 = await runTick(prisma, { tickId: 'recur-3' });
+  const tick3 = await runTick(prisma, {
+    tickId: 'recur-3',
+    now: new Date(tickNow.getTime() + 3),
+  });
   assert.deepEqual(tick3.fired, []);
   const lineage = await prisma.continuationTrigger.count({ where: { missionId: mission.id } });
   assert.equal(lineage, 2, 'exactly two triggers ever existed in this lineage');

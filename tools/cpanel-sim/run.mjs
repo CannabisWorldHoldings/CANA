@@ -390,7 +390,9 @@ function releaseIdentity(commit, artifact) {
     environment: 'CPANEL_SIMULATION',
     claim: 'Local cPanel-like staging simulation only. This is not a live deployment.',
     gitSha: commit,
+    shortSha: commit.slice(0, 7),
     artifact,
+    bundler: 'webpack',
     createdAt: new Date().toISOString(),
   };
 }
@@ -440,6 +442,9 @@ function createNamecheapArtifact(root, name, commit) {
     `${JSON.stringify({
       artifact: name,
       gitSha: commit,
+      bundler: 'webpack',
+      unresolvedExternalScan: { unresolved: [] },
+      isolatedRuntimeTest: { passed: true },
       builtAt: identity.createdAt,
       environment: 'CPANEL_SIMULATION',
     }, null, 2)}\n`,
@@ -447,7 +452,7 @@ function createNamecheapArtifact(root, name, commit) {
   const tarName = `${name}.tar.gz`;
   const tarFile = path.join(uploads, tarName);
   command('tar', ['-czf', tarFile, '-C', buildRoot, name]);
-  return { tarName, tarFile, scriptHashes };
+  return { tarName, tarFile, tarSha256: sha256File(tarFile), scriptHashes };
 }
 
 function makeImmutable(directory) {
@@ -598,8 +603,8 @@ async function exerciseExistingNamecheapScripts({
 }) {
   const accountHome = path.join(root, 'account-home');
   const appHome = path.join(accountHome, 'apps', 'orderweeddc-staging');
-  const oldName = `orderweeddc-${BASE.slice(0, 12)}`;
-  const newName = `orderweeddc-${source.commit.slice(0, 12)}`;
+  const oldName = `orderweeddc-${BASE}`;
+  const newName = `orderweeddc-${source.commit}`;
   const oldArtifact = createNamecheapArtifact(root, oldName, BASE);
   const newArtifact = createNamecheapArtifact(root, newName, source.commit);
   const database = path.join(directories.data, 'simulation-control.db');
@@ -618,7 +623,11 @@ async function exerciseExistingNamecheapScripts({
   let passenger = null;
   try {
     for (const artifact of [oldArtifact, newArtifact]) {
-      const deployed = command('sh', [path.join(NAMECHEAP, 'deploy.sh'), artifact.tarName], {
+      const deployed = command('sh', [
+        path.join(NAMECHEAP, 'deploy.sh'),
+        artifact.tarName,
+        artifact.tarSha256,
+      ], {
         env: baseEnvironment,
       });
       executed.push({
@@ -743,7 +752,11 @@ async function exerciseExistingNamecheapScripts({
     await stopWeb(passenger);
     passenger = null;
 
-    const redeploy = command('sh', [path.join(NAMECHEAP, 'deploy.sh'), newArtifact.tarName], {
+    const redeploy = command('sh', [
+      path.join(NAMECHEAP, 'deploy.sh'),
+      newArtifact.tarName,
+      newArtifact.tarSha256,
+    ], {
       env: baseEnvironment,
     });
     executed.push({

@@ -37,9 +37,9 @@ const PR29_ASSIGNMENT_SHA256 =
   '5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2';
 const PR35_ASSIGNMENT = 'pr35_sovereign_continuation_integration_2026_08_09';
 const PR35_ASSIGNMENT_SHA256 =
-  '535d9e3861129e781d49a5424e4adef34f6ef0e5b20aa517641ad9556adf7e14';
+  'cf5ec4ef370c9055d286c58531fe5a138b1c615213b8be27bd13eee72fb590b7';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '1d041b62c5359aec16ee40b723fcf4d412eccbf1994f0d896abb66b5a67e3ce8';
+  'd77184f9a3784ce8834da8cdbb97ce27e39ecbc8e4af836e2e8cb00b7f63773a';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -94,6 +94,8 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/intent-ir.mjs',
   'apps/web/src/lib/continuation/continuation-core.mjs',
   'apps/web/src/lib/continuation/continuation-repository.mjs',
+  'apps/web/src/lib/continuation/continuation-selection.mjs',
+  'apps/web/src/lib/continuation/continuation-storage.mjs',
   'apps/web/src/lib/db-config.mjs',
   'apps/web/src/lib/public-submission.mjs',
   'apps/web/tests/ask-intent-ir.test.mjs',
@@ -111,6 +113,7 @@ export const PR35_AUTHORIZED_PATHS = Object.freeze([
   'deploy/namecheap/build-artifact.mjs',
   'deploy/namecheap/deploy.sh',
   'deploy/namecheap/migrate.sh',
+  'deploy/namecheap/verify-and-deploy.sh',
   'deploy/namecheap/verify-owner-artifact-input.sh',
   'deploy/namecheap/worker.mjs',
   'docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json',

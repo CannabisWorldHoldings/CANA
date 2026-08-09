@@ -892,10 +892,10 @@ async function isolatedRuntimeTest() {
   fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
   fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
   run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz`,
+    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
   );
   run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz`,
+    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
   );
   run(
     `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`,

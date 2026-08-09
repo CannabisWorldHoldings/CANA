@@ -29,7 +29,7 @@
   },
   "commands": {
     "build": "node deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
-    "deploy": "sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz   (or upload verify-and-deploy.sh plus verify-owner-artifact-input.sh and run verify-and-deploy.sh for the gated one-command path)",
+    "deploy": "Upload deploy.sh plus verify-owner-artifact-input.sh, then run: sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-tarball-sha256>. The script snapshots and enforces checksum, archive structure, full-SHA release identity, receipt, and isolated-runtime proof before swapping code. verify-and-deploy.sh remains the gated download + deploy path.",
     "initializeDatabase": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (empty owner-provisioned PostgreSQL only; never creates migrations)",
     "migrate": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires DATABASE_URL + DIRECT_URL and committed migrations)",
     "restart": "sh <app-home>/restart.sh   (touch tmp/restart.txt — Passenger rolling restart)",

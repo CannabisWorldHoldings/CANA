@@ -827,7 +827,7 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     },
   };
   const input = {
-    answer, clientIdentity: '192.0.2.10', domain: 'orderweeddc.localhost', intent, now,
+    answer, domain: 'orderweeddc.localhost', intent, now,
   };
 
   const first = await recordAskWork(p, input);

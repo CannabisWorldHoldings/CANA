@@ -86,6 +86,10 @@ function isUniqueConstraintError(error) {
   );
 }
 
+function sharedSurfaceLimitApplies(surface) {
+  return surface !== PUBLIC_SUBMISSION_SURFACES.ASK;
+}
+
 async function currentCounts(
   publicSubmissionEvent,
   { clientDigest, surface, timestamp },
@@ -130,7 +134,8 @@ export async function checkPublicSubmissionThrottle(
   return {
     allowed:
       counts.clientCount < PUBLIC_SUBMISSION_POLICY.clientLimit &&
-      counts.surfaceCount < PUBLIC_SUBMISSION_POLICY.surfaceLimit,
+      (!sharedSurfaceLimitApplies(validSubmissionSurface) ||
+        counts.surfaceCount < PUBLIC_SUBMISSION_POLICY.surfaceLimit),
     ...counts,
     retryAfterSeconds: Math.ceil(PUBLIC_SUBMISSION_POLICY.windowMs / 1000),
   };
@@ -179,7 +184,8 @@ export async function reservePublicSubmission(
   });
   if (
     counts.clientCount > PUBLIC_SUBMISSION_POLICY.clientLimit ||
-    counts.surfaceCount > PUBLIC_SUBMISSION_POLICY.surfaceLimit
+    (sharedSurfaceLimitApplies(validSubmissionSurface) &&
+      counts.surfaceCount > PUBLIC_SUBMISSION_POLICY.surfaceLimit)
   ) {
     throw new PublicSubmissionThrottleError();
   }

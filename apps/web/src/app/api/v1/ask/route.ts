@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { compileIntent } from '@/lib/ask/intent-ir.mjs';
 import { answerIntent } from '@/lib/ask/ask-service.mjs';
 import { recordAskWork } from '@/lib/ask/ask-work.mjs';
-import { authenticationClientIdentity } from '@/lib/auth/request-policy.mjs';
 
 /**
  * PUBLIC API v1 — ASK ORDERWEEDDC (Track A vertical slice).
@@ -76,7 +75,6 @@ export async function GET(request: NextRequest) {
 
   const recording = await recordAskWork(prisma, {
     answer,
-    clientIdentity: authenticationClientIdentity(request),
     domain,
     intent,
     now,

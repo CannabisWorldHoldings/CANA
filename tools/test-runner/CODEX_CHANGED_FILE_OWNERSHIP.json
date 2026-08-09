@@ -454,7 +454,7 @@
     },
     "pr35_sovereign_continuation_integration_2026_08_09": {
       "authorization": "CANA Ω∞ — CODEX SOVEREIGN INTEGRATION & CONTINUATION MISSION",
-      "scope": "The forty-nine exact PR #35 continuation, ASK, provenance, migration-integration, portability, deployment-proof, workflow, court, benchmark-integration, documentation and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or self-promotion authority.",
+      "scope": "The fifty-two exact PR #35 continuation, ASK, provenance, migration-integration, portability, deployment-proof, workflow, court, benchmark-integration, documentation and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability path ownership and exact reviewed-court-blob admission only; no runtime execution, provider, credential, paid-call, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorized_paths": [
         ".github/workflows/cana-verify.yml",
@@ -471,6 +471,8 @@
         "apps/web/src/lib/ask/intent-ir.mjs",
         "apps/web/src/lib/continuation/continuation-core.mjs",
         "apps/web/src/lib/continuation/continuation-repository.mjs",
+        "apps/web/src/lib/continuation/continuation-selection.mjs",
+        "apps/web/src/lib/continuation/continuation-storage.mjs",
         "apps/web/src/lib/db-config.mjs",
         "apps/web/src/lib/public-submission.mjs",
         "apps/web/tests/ask-intent-ir.test.mjs",
@@ -488,6 +490,7 @@
         "deploy/namecheap/build-artifact.mjs",
         "deploy/namecheap/deploy.sh",
         "deploy/namecheap/migrate.sh",
+        "deploy/namecheap/verify-and-deploy.sh",
         "deploy/namecheap/verify-owner-artifact-input.sh",
         "deploy/namecheap/worker.mjs",
         "docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json",
@@ -509,11 +512,11 @@
       ],
       "court_blob_sha256": {
         "apps/web/tests/column-width-cutover-court.test.mjs": "e06ac4a670893300c0912ee37327f6714caef81f9560d2a81149e697849a674c",
-        "apps/web/tests/deployment-integrity.test.mjs": "0026b8b90db89dcc251e3387429c51ef829ac93569eb9b1ec27d0505e545e506",
-        "apps/web/tests/migration-court.test.mjs": "b665a5256d9ac5de8f2a5b8091acbbbdf8a4f55fa2dfd73e84ecad28f57de1c2",
+        "apps/web/tests/deployment-integrity.test.mjs": "1d40b447f7745fb4ab18fbd6591941dd91bad37728e1bb65015a9657c6017df2",
+        "apps/web/tests/migration-court.test.mjs": "9a633e5b0f33c9bd39b6a6472d6a87c977509acda9ea36b160a4ac7a987d21ee",
         "apps/web/tests/release-gate.test.mjs": "7749c882c325de9ea248883ae9462d47681048a268c75187f7e62728b8c198f0"
       },
-      "approval_sha256": "535d9e3861129e781d49a5424e4adef34f6ef0e5b20aa517641ad9556adf7e14"
+      "approval_sha256": "cf5ec4ef370c9055d286c58531fe5a138b1c615213b8be27bd13eee72fb590b7"
     }
   },
   "owned_create_paths": [
@@ -646,6 +649,8 @@
     ,"apps/web/src/lib/ask/intent-ir.mjs"
     ,"apps/web/src/lib/continuation/continuation-core.mjs"
     ,"apps/web/src/lib/continuation/continuation-repository.mjs"
+    ,"apps/web/src/lib/continuation/continuation-selection.mjs"
+    ,"apps/web/src/lib/continuation/continuation-storage.mjs"
     ,"apps/web/tests/ask-intent-ir.test.mjs"
     ,"apps/web/tests/ask-service-where.test.mjs"
     ,"apps/web/tests/continuation-core.test.mjs"

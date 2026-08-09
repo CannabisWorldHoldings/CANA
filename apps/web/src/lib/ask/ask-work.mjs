@@ -7,6 +7,13 @@ import {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+export function askPersistenceScope(domain) {
+  if (typeof domain !== 'string' || !/^[a-z0-9.-]{1,253}$/.test(domain)) {
+    throw new TypeError('ASK persistence requires a canonical tenant domain');
+  }
+  return `tenant:${domain}`;
+}
+
 function opportunityPolicy(spec, intent) {
   if (spec.kind === 'MARKET_GAP') {
     return {
@@ -43,14 +50,14 @@ function opportunityPolicy(spec, intent) {
  */
 export async function recordAskWork(
   prisma,
-  { answer, clientIdentity, domain, intent, now = new Date() },
+  { answer, domain, intent, now = new Date() },
 ) {
   try {
     return await prisma.$transaction(async (tx) => {
       await reservePublicSubmission(tx, {
-        clientIdentity,
+        clientIdentity: askPersistenceScope(domain),
         surface: PUBLIC_SUBMISSION_SURFACES.ASK,
-        subject: JSON.stringify({ version: 1, clientIdentity, domain, query: intent.raw_query }),
+        subject: JSON.stringify({ version: 1, domain, query: intent.raw_query }),
         now,
       });
 

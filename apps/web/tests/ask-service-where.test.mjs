@@ -10,10 +10,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { answerIntent, buildCandidateWhere } from '../src/lib/ask/ask-service.mjs';
+import { askPersistenceScope } from '../src/lib/ask/ask-work.mjs';
 import { compileIntent } from '../src/lib/ask/intent-ir.mjs';
+import {
+  checkPublicSubmissionThrottle,
+  PUBLIC_SUBMISSION_POLICY,
+  PUBLIC_SUBMISSION_SURFACES,
+} from '../src/lib/public-submission.mjs';
 
 const NOW = new Date('2026-08-09T12:00:00Z');
 const BRAND = 'brand-1';
+
+test('ASK persistence scope is tenant-controlled, never a caller-supplied proxy identity', () => {
+  assert.equal(askPersistenceScope('orderweeddc.com'), 'tenant:orderweeddc.com');
+  for (const untrusted of ['', 'ORDERWEEDDC.COM', 'orderweeddc.com, 203.0.113.4', '../tenant']) {
+    assert.throws(() => askPersistenceScope(untrusted), /canonical tenant domain/);
+  }
+});
+
+test('ASK tenant budgets cannot exhaust one another through the shared public surface quota', async () => {
+  const db = {
+    publicSubmissionEvent: {
+      async count({ where }) {
+        return where.clientDigest
+          ? PUBLIC_SUBMISSION_POLICY.clientLimit - 1
+          : PUBLIC_SUBMISSION_POLICY.surfaceLimit + 1;
+      },
+    },
+  };
+  const decision = await checkPublicSubmissionThrottle(db, {
+    clientIdentity: askPersistenceScope('orderweeddc.com'),
+    surface: PUBLIC_SUBMISSION_SURFACES.ASK,
+    now: NOW,
+  });
+  assert.equal(decision.clientCount, PUBLIC_SUBMISSION_POLICY.clientLimit - 1);
+  assert.equal(decision.surfaceCount, PUBLIC_SUBMISSION_POLICY.surfaceLimit + 1);
+  assert.equal(decision.allowed, true);
+});
 
 test('the evidence gate travels with every ask query, verbatim', () => {
   const where = buildCandidateWhere(compileIntent('anything', { now: NOW }), { brandId: BRAND, now: NOW });

@@ -443,11 +443,48 @@ test('canonical deployment verifier rejects unsafe artifact names before downloa
       env: { ...process.env, HOME: root },
     });
     assert.notEqual(result.status, 0, invalidName);
-    assert.match(result.stdout, /artifact filename must be orderweeddc-<7 lowercase hex>/);
+    assert.match(result.stdout, /artifact filename must be orderweeddc-<full-40-char-sha>/);
   }
 
   assert.equal(fs.existsSync(path.join(root, 'uploads')), false);
   assert.equal(fs.existsSync(path.join(root, 'escape.tar.gz')), false);
+
+  const invalidDigest = spawnSync('sh', [
+    verifier,
+    'https://example.invalid/artifact',
+    `orderweeddc-${'a'.repeat(40)}.tar.gz`,
+    'not-a-digest',
+  ], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...process.env, HOME: root },
+  });
+  assert.notEqual(invalidDigest.status, 0);
+  assert.match(invalidDigest.stdout, /expected SHA-256 must be exactly 64/);
+  assert.equal(fs.existsSync(path.join(root, 'uploads')), false);
+});
+
+test('every advertised deploy entrypoint verifies immutable full-SHA artifact identity before swap', () => {
+  const deployScript = read('deploy/namecheap/deploy.sh');
+  const manifest = JSON.parse(read('deploy/namecheap/MANIFEST.json'));
+  const structuralCall = deployScript.indexOf(
+    'bash "$STRUCTURAL_COURT" --snapshot-structure-only',
+  );
+  const extraction = deployScript.indexOf('tar -xzf "$VERIFIED_ARCHIVE"');
+  const identityCall = deployScript.indexOf(
+    'bash "$STRUCTURAL_COURT" --verify-extracted-identity',
+  );
+  const swap = deployScript.indexOf('mv "$RELEASE_DIR" "$APP_HOME/current"');
+
+  assert.match(deployScript, /\^orderweeddc-\[0-9a-f\]\{40\}/);
+  assert.match(deployScript, /\^\[0-9a-f\]\{64\}\$/);
+  assert.ok(structuralCall >= 0, 'direct deploy must invoke the structural court');
+  assert.ok(extraction > structuralCall, 'verification must finish before extraction');
+  assert.ok(identityCall > extraction, 'extracted identity must be verified');
+  assert.ok(swap > identityCall, 'the code swap must follow every artifact gate');
+  assert.doesNotMatch(deployScript, /tar -xzf "\$TAR_PATH"/);
+  assert.match(manifest.commands.deploy, /trusted-tarball-sha256/);
+  assert.match(manifest.commands.deploy, /verify-owner-artifact-input\.sh/);
 });
 
 test('canonical deployment verifier snapshots before structural inspection and extraction', () => {
