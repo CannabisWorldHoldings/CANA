@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 /**
  * TRANSACTIONAL IDEMPOTENCY — attacks on concurrent duplicate attribution.
@@ -185,7 +186,8 @@ test('the DATABASE, not the application, adjudicates the concurrent case', async
 });
 
 test('a sequence-constraint race rechecks event identity before reporting contention', async () => {
-  const { createDemandCredits, eventIdentityOf } = await import('../src/lib/demand-credits.mjs');
+  const { createDemandCredits, eventIdentityOf, IDENTITY_WINDOW_MS } =
+    await import('../src/lib/demand-credits.mjs');
   const merchantId = 'forced-seq-collision';
   const input = {
     merchantId,
@@ -193,7 +195,15 @@ test('a sequence-constraint race rechecks event identity before reporting conten
     evidenceChain: [{ step: 'request', ref: 'forced-seq-collision' }],
     observedAt: new Date('2026-08-09T00:00:00Z'),
   };
-  const eventIdentity = eventIdentityOf(input);
+  const eventIdentity = eventIdentityOf({
+    merchantId,
+    actionKind: input.actionKind,
+    evidenceChainSha256: createHash('sha256')
+      .update(JSON.stringify(input.evidenceChain))
+      .digest('hex'),
+    windowBucket: Math.floor(input.observedAt.getTime() / IDENTITY_WINDOW_MS),
+    idempotencyKey: null,
+  });
   const winner = { id: 'winner', merchantId, eventIdentity, seq: 0 };
   let identityLookups = 0;
   const credits = createDemandCredits({
