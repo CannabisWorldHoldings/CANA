@@ -34,9 +34,9 @@ const MISSION3_M001_ASSIGNMENT_SHA256 =
   '8a7ec1a50cad4c8d5c0ff1fb830e0ab3af987a6d49135a31241f9671d8b16452';
 const PR29_ASSIGNMENT = 'pr29_canonical_recovery_2026_08_09';
 const PR29_ASSIGNMENT_SHA256 =
-  'c7e3029ed3ee658c724e7b41dd4e664a78ff6be660d678a841622dc68149b71b';
+  '581d9ff8c7d6f2bcfb573a508e160cdf384cf75f42923d4529bc18f9494f356e';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '2f49d02f1456dc0bcb974db845aff7c83602300f87341ef2a7a5954de686fb06';
+  '6923d739dadb9238c5318016727137b5838df07c99ac59ccb02884cf977e54a1';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',

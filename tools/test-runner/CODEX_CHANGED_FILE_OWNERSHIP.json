@@ -382,6 +382,8 @@
         "apps/web/src/lib/merchant-dashboard.mjs",
         "apps/web/src/lib/product-discovery.mjs",
         "apps/web/tests/column-width-cutover-court.test.mjs",
+        "apps/web/tests/api-v1-deals.test.mjs",
+        "apps/web/tests/attribution-idempotency.test.mjs",
         "apps/web/tests/demand-credits.test.mjs",
         "apps/web/tests/merchant-dashboard.test.mjs",
         "apps/web/tests/pilot-package-court.test.mjs",
@@ -417,7 +419,7 @@
         "apps/web/tests/column-width-cutover-court.test.mjs": "ee0d5f3b49b940a234d027e0d3e1b8332c326ec229a453496b5c85becd7ff8e1",
         "apps/web/tests/release-gate.test.mjs": "5498f770ac91f6647c3bed26386999b75d2ee0b01ce0612a5e87ab5dbd5d7dac"
       },
-      "approval_sha256": "c7e3029ed3ee658c724e7b41dd4e664a78ff6be660d678a841622dc68149b71b"
+      "approval_sha256": "581d9ff8c7d6f2bcfb573a508e160cdf384cf75f42923d4529bc18f9494f356e"
     }
   },
   "owned_create_paths": [
@@ -604,6 +606,8 @@
     "apps/web/src/lib/merchant-dashboard.mjs",
     "apps/web/src/lib/product-discovery.mjs",
     "apps/web/tests/column-width-cutover-court.test.mjs",
+    "apps/web/tests/api-v1-deals.test.mjs",
+    "apps/web/tests/attribution-idempotency.test.mjs",
     "apps/web/tests/demand-credits.test.mjs",
     "apps/web/tests/merchant-dashboard.test.mjs",
     "apps/web/tests/pilot-package-court.test.mjs",

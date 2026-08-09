@@ -147,13 +147,40 @@ test('50 SIMULTANEOUS identical requests commit EXACTLY ONE attribution', async 
 });
 
 test('the DATABASE, not the application, adjudicates the concurrent case', async () => {
-  // If every refusal came from the pre-insert lookup, the constraint would be
-  // untested and the race would still be live under tighter timing.
+  // Force the optional fast-path lookup to miss while keeping every real
+  // database operation intact. This deterministically drives the second write
+  // into the canonical unique constraint instead of hoping an HTTP scheduling
+  // race happens to reach it on this machine.
   const rid = await mk('DBADJ');
-  const results = await Promise.all(Array.from({ length: 30 }, () => post(rid, 'MENU_VIEW')));
-  const byDb = results.filter((r) => /database uniqueness constraint/.test(r.body)).length;
-  assert.ok(byDb > 0,
-    'at least one refusal must be decided by the DB constraint — otherwise only the fast path is exercised');
+  const p = await db();
+  const table = p.demandCreditEntry;
+  const { createDemandCredits } = await import('../src/lib/demand-credits.mjs');
+  const credits = createDemandCredits({
+    demandCreditEntry: {
+      findFirst: (args) => (
+        args?.where?.kind === 'ATTRIBUTION'
+          ? null
+          : table.findFirst(args)
+      ),
+      findMany: (...args) => table.findMany(...args),
+      create: (...args) => table.create(...args),
+      count: (...args) => table.count(...args),
+    },
+  });
+  const input = {
+    merchantId: rid,
+    actionKind: 'MENU_VIEW',
+    evidenceChain: [{ step: 'request', ref: 'deterministic-db-court' }],
+    observedAt: new Date(),
+  };
+  const winner = await credits.attribute(input);
+  const duplicate = await credits.attribute(input);
+  await p.$disconnect();
+  assert.equal(winner.accepted, true);
+  assert.equal(duplicate.accepted, false);
+  assert.equal(duplicate.denial_code, 'DUPLICATE_ATTRIBUTION');
+  assert.equal(duplicate.decided_by, 'database uniqueness constraint');
+  assert.ok(duplicate.existing, 'the database-decided refusal must return the winning row');
   assert.equal(await attributionCount(rid), 1);
 });
 

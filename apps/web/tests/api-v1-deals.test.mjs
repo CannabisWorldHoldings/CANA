@@ -116,6 +116,11 @@ before(async () => {
     await new Promise((r) => setTimeout(r, 500));
   }
   fixture = await createFixture();
+  // The HTTP server and this test process share a VM wall clock, but a tiny
+  // clock correction can otherwise make the server observe the fixture's
+  // captured boundary as being in the future. Cross the boundary deliberately
+  // before asserting that the exclusive expiry rule withholds it.
+  await new Promise((resolve) => setTimeout(resolve, 100));
 });
 after(async () => { await destroyFixture(fixture); });
 
