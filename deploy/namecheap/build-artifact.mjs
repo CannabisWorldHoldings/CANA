@@ -747,6 +747,35 @@ async function isolatedRuntimeTest() {
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
     });
+  const forgedIdentityChild = spawn(process.execPath, ['app.js'], {
+    cwd: appRoot,
+    env: {
+      ...serverEnv,
+      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '9999999999999999999',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: false,
+  });
+  let forgedIdentityLog = '';
+  forgedIdentityChild.stdout.on('data', (data) => { forgedIdentityLog += data; });
+  forgedIdentityChild.stderr.on('data', (data) => { forgedIdentityLog += data; });
+  const forgedIdentityExit = await new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      forgedIdentityChild.kill('SIGKILL');
+      resolve(null);
+    }, 5_000);
+    forgedIdentityChild.once('exit', (code) => {
+      clearTimeout(timeout);
+      resolve(code);
+    });
+  });
+  record(
+    'app.js refuses a forged loopback disposable-system identity before startup',
+    forgedIdentityExit !== null &&
+      forgedIdentityExit !== 0 &&
+      forgedIdentityLog.includes('Disposable PostgreSQL identity verification failed') &&
+      !forgedIdentityLog.includes(postgres.databaseUrl),
+  );
   let child = startServer();
   let serverLog = '';
   child.stdout.on('data', (d) => (serverLog += d));

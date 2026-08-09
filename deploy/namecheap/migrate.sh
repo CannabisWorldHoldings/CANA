@@ -39,7 +39,7 @@ MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
 
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
-node <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS outside repository-owned disposable verification"; exit 5; }
+node <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS or match the connected disposable PostgreSQL identity"; exit 5; }
 const names = ['DATABASE_URL', 'DIRECT_URL'];
 let urls;
 try {
@@ -54,6 +54,25 @@ const disposableLoopback =
 if (!disposableLoopback && urls.some((url) =>
   url.searchParams.get('sslmode') !== 'require' || url.searchParams.get('sslaccept') !== 'strict'
 )) process.exit(1);
+if (disposableLoopback) {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  (async () => {
+    try {
+      const [identity] = await prisma.$queryRawUnsafe(
+        'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
+      );
+      if (
+        identity?.database !== urls[0].pathname.slice(1) ||
+        identity?.system_identifier !== process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER
+      ) process.exitCode = 1;
+    } catch {
+      process.exitCode = 1;
+    } finally {
+      await prisma.$disconnect().catch(() => {});
+    }
+  })();
+}
 NODE
 [ -f "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] && [ ! -L "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] && [ -s "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" ] || {
   echo "HARD STOP: backup receipt must be a nonempty regular file, not a symlink"; exit 6;

@@ -22,6 +22,22 @@ cd "$ROOT"
 PRISMA_VERSION="$(npx --no-install prisma -v | sed -n 's/^prisma[[:space:]]*:[[:space:]]*//p' | head -1)"
 test "$PRISMA_VERSION" = "6.19.3"
 
+set +e
+IDENTITY_REFUSAL_OUTPUT="$(
+  cd apps/web
+  CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=9999999999999999999 \
+  CANA_PRE_MIGRATION_BACKUP_RECEIPT="$BACKUP_RECEIPT" \
+  sh ../../deploy/namecheap/migrate.sh 2>&1
+)"
+IDENTITY_REFUSAL_STATUS=$?
+set -e
+test "$IDENTITY_REFUSAL_STATUS" -ne 0
+grep -q 'match the connected disposable PostgreSQL identity' <<<"$IDENTITY_REFUSAL_OUTPUT"
+if grep -Fq "$DATABASE_URL" <<<"$IDENTITY_REFUSAL_OUTPUT" || grep -Fq "$DIRECT_URL" <<<"$IDENTITY_REFUSAL_OUTPUT"; then
+  echo 'CANA_DATABASE_URL_DISCLOSURE_REFUSED identity-refusal output contained a database URL' >&2
+  exit 1
+fi
+
 MIGRATION_OUTPUT="$(
   cd apps/web
   CANA_PRE_MIGRATION_BACKUP_RECEIPT="$BACKUP_RECEIPT" \
@@ -75,6 +91,7 @@ node -e '
     prismaVersion: process.argv[2],
     ...db,
     directUrlContract: "SAME_DISPOSABLE_POSTGRESQL_INSTANCE",
+    forgedLoopbackIdentityRefusalProven: true,
     migrationOutputRedacted: true,
     backupAuthority: "PROVIDER_OPERATOR_REQUIRED",
     backupRefusalProven: true

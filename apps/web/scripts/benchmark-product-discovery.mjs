@@ -373,6 +373,7 @@ function runPrisma(arguments_, databaseUrl, temporaryRoot) {
  */
 function benchmarkServerUrl() {
   const base = process.env.CANA_BENCHMARK_DATABASE_URL;
+  const expectedSystemIdentifier = process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER;
   if (!base) {
     throw new Error(
       'The product benchmark needs CANA_BENCHMARK_DATABASE_URL pointing at a ' +
@@ -389,7 +390,31 @@ function benchmarkServerUrl() {
       'The product benchmark refuses non-loopback PostgreSQL servers because it creates and drops databases.',
     );
   }
+  if (!/^\d{10,}$/.test(expectedSystemIdentifier ?? '')) {
+    throw new Error(
+      'The product benchmark requires the repository disposable PostgreSQL system identifier.',
+    );
+  }
   return base;
+}
+
+async function verifyBenchmarkServerIdentity(serverUrl) {
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient({ datasources: { db: { url: serverUrl } } });
+  try {
+    const [identity] = await prisma.$queryRawUnsafe(
+      'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
+    );
+    const expectedDatabase = new URL(serverUrl).pathname.slice(1);
+    if (
+      identity?.database !== expectedDatabase ||
+      identity?.system_identifier !== process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER
+    ) {
+      throw new Error('The product benchmark refuses a PostgreSQL server without the matching disposable identity.');
+    }
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 function runPostgresStatement(serverUrl, sql) {
@@ -415,8 +440,9 @@ function runPostgresStatement(serverUrl, sql) {
   }
 }
 
-function createBenchmarkDatabase() {
+async function createBenchmarkDatabase() {
   const serverUrl = benchmarkServerUrl();
+  await verifyBenchmarkServerIdentity(serverUrl);
   const name = `cana_bench_${crypto.randomBytes(6).toString('hex')}`;
   runPostgresStatement(serverUrl, `CREATE DATABASE "${name}";`);
   const url = new URL(serverUrl);
@@ -734,11 +760,11 @@ async function runBenchmark({ mutation = 'none' } = {}) {
   const temporaryClientPath = path.join(temporaryRoot, 'client', 'index.js');
   // Disposable PostgreSQL database (replaces the historical benchmark.sqlite
   // file — the canonical datastore is PostgreSQL, ADR-0001).
-  const benchmarkDatabase = createBenchmarkDatabase();
-  const schemaDatabaseUrl = benchmarkDatabase.url;
-  const clientDatabaseUrl = benchmarkDatabase.url;
   const receiptPath = path.join(temporaryRoot, 'receipt.json');
   const networkBoundary = installNetworkBoundary();
+  let benchmarkDatabase;
+  let schemaDatabaseUrl;
+  let clientDatabaseUrl;
   let prisma;
   let revision;
   let temporaryStateRemoved = false;
@@ -773,7 +799,7 @@ async function runBenchmark({ mutation = 'none' } = {}) {
       .catch(() => {})
       // Drop the disposable PostgreSQL benchmark database as part of the
       // bounded cleanup; a failed drop must not block the forced exit.
-      .then(() => benchmarkDatabase.drop())
+      .then(() => benchmarkDatabase?.drop())
       .catch(() => {})
       .finally(() => {
         clearTimeout(force);
@@ -785,6 +811,9 @@ async function runBenchmark({ mutation = 'none' } = {}) {
   process.once('SIGTERM', interruptCleanup);
 
   try {
+    benchmarkDatabase = await createBenchmarkDatabase();
+    schemaDatabaseUrl = benchmarkDatabase.url;
+    clientDatabaseUrl = benchmarkDatabase.url;
     revision = gitRevision(temporaryRoot);
     fs.writeFileSync(
       temporarySchemaPath,
@@ -885,8 +914,10 @@ async function runBenchmark({ mutation = 'none' } = {}) {
         .join(' ');
     }
     try {
-      benchmarkDatabase.drop();
-      databaseRemoved = true;
+      if (benchmarkDatabase) {
+        benchmarkDatabase.drop();
+        databaseRemoved = true;
+      }
     } catch (error) {
       receipt.aggregate = { status: 'ERROR', passed: 0, failed: 12, total: 12 };
       receipt.error = [
@@ -916,6 +947,7 @@ function relayThroughSanitizedProcess(arguments_) {
   // it counts credential-NAMED variables reaching application code, and the
   // benchmark database is created and destroyed within this run.
   const benchmarkServer = process.env.CANA_BENCHMARK_DATABASE_URL;
+  const disposableSystemIdentifier = process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER;
   const result = spawnSync(process.execPath, [scriptPath, ...arguments_], {
     cwd: webRoot,
     encoding: 'utf8',
@@ -923,6 +955,9 @@ function relayThroughSanitizedProcess(arguments_) {
       [sanitizedProcessMarker]: '1',
       ...(benchmarkServer
         ? { CANA_BENCHMARK_DATABASE_URL: benchmarkServer }
+        : {}),
+      ...(disposableSystemIdentifier
+        ? { CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: disposableSystemIdentifier }
         : {}),
     }),
     windowsHide: true,

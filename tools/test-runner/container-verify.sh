@@ -236,6 +236,7 @@ case "$PROFILE" in
       CANA_DETERMINISTIC_TEST_RANDOM=1 \
       CANA_DETERMINISTIC_TEST_SEED="$EXPECTED_SHA" \
       CANA_BENCHMARK_DATABASE_URL="$DATABASE_URL" \
+      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER="$CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER" \
       NODE_OPTIONS="--require=$ROOT/tools/test-runner/deterministic-crypto.cjs${NODE_OPTIONS:+ $NODE_OPTIONS}" \
       node --test --test-concurrency=1 tests/*.test.mjs
     )

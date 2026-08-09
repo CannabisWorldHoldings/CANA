@@ -67,4 +67,29 @@ if (!disposableLoopback) {
   }
 }
 
-require('./server.js');
+async function verifyDisposableDatabaseIdentity() {
+  if (!disposableLoopback) return;
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+  try {
+    const [identity] = await prisma.$queryRawUnsafe(
+      'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
+    );
+    const expectedDatabase = databaseUrls[0].pathname.slice(1);
+    if (
+      identity?.database !== expectedDatabase ||
+      identity?.system_identifier !== process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER
+    ) {
+      throw new Error('identity mismatch');
+    }
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+verifyDisposableDatabaseIdentity()
+  .then(() => require('./server.js'))
+  .catch(() => {
+    console.error('Disposable PostgreSQL identity verification failed; refusing startup.');
+    process.exit(1);
+  });

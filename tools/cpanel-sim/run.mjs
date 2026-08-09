@@ -1008,6 +1008,7 @@ export async function runCpanelSimulation({ repoRoot }) {
         /^3\./.test(realPrismaProof.proof.postgis) &&
         realPrismaProof.proof.h3 === '4.2.3' &&
         realPrismaProof.proof.directUrlContract === 'SAME_DISPOSABLE_POSTGRESQL_INSTANCE' &&
+        realPrismaProof.proof.forgedLoopbackIdentityRefusalProven === true &&
         realPrismaProof.proof.migrationOutputRedacted === true &&
         realPrismaProof.dependencyFetch.sourceMounted === false &&
         realPrismaProof.dependencyFetch.lifecycleScriptsEnabled === false &&
