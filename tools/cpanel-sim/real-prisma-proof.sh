@@ -84,15 +84,19 @@ fi
 
 PROOF_JSON="$(node --input-type=module <<'NODE'
 import { PrismaClient } from '@prisma/client';
+import { loadCanonicalMigrationManifest, validateCanonicalMigrationUniverse } from './apps/web/prisma/migration-manifest.mjs';
+const migrationUniverse = validateCanonicalMigrationUniverse({ manifest: loadCanonicalMigrationManifest() });
 const prisma = new PrismaClient();
 try {
-  const [migrationCount, coreTables, versions] = await Promise.all([
-    prisma.$queryRawUnsafe('SELECT count(*)::int AS count FROM "_prisma_migrations" WHERE finished_at IS NOT NULL'),
+  const [migrationRows, coreTables, versions] = await Promise.all([
+    prisma.$queryRawUnsafe('SELECT migration_name, checksum FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY migration_name'),
     prisma.$queryRawUnsafe(`SELECT count(*)::int AS count FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('Organization','Brand')`),
     prisma.$queryRawUnsafe(`SELECT postgis_lib_version() AS postgis, h3_get_extension_version() AS h3`),
   ]);
+  const expectedMigrations = migrationUniverse.migrations;
+  const appliedMigrations = migrationRows.map((row) => ({ name: row.migration_name, sha256: row.checksum }));
   if (
-    migrationCount[0]?.count !== 3 ||
+    JSON.stringify(appliedMigrations) !== JSON.stringify(expectedMigrations) ||
     coreTables[0]?.count !== 2 ||
     typeof versions[0]?.postgis !== 'string' || versions[0].postgis.length === 0 ||
     typeof versions[0]?.h3 !== 'string' || versions[0].h3.length === 0
@@ -100,7 +104,8 @@ try {
     throw new Error('CANA_REAL_PRISMA_DATABASE_STATE_INVALID');
   }
   process.stdout.write(JSON.stringify({
-    migrationsApplied: migrationCount[0].count,
+    migrationsApplied: appliedMigrations.length,
+    migrationUniverse: appliedMigrations,
     coreTables: coreTables[0].count,
     postgis: versions[0].postgis,
     h3: versions[0].h3,

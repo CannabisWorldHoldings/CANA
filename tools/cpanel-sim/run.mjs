@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { startDisposablePostgres, stopDisposablePostgres } from '../postgres-sim/runtime.mjs';
 import { sha256Bytes, sha256File, writeReceipt } from '../test-runner/receipt.mjs';
+import { loadCanonicalMigrationManifest } from '../../apps/web/prisma/migration-manifest.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEMPLATES = path.join(ROOT, 'tools', 'cpanel-sim', 'templates');
@@ -16,6 +17,7 @@ const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const APPROVED_IMAGE =
   'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
 const IMAGE = process.env.CANA_CPANEL_IMAGE ?? APPROVED_IMAGE;
+const CANONICAL_MIGRATIONS = loadCanonicalMigrationManifest().migrations;
 const NAMECHEAP_SCRIPTS = [
   'app.js',
   'deploy.sh',
@@ -1002,7 +1004,8 @@ export async function runCpanelSimulation({ repoRoot }) {
       checks,
       'existing migration script with real Prisma CLI',
       realPrismaProof.proof.prismaVersion === '6.19.3' &&
-        realPrismaProof.proof.migrationsApplied === 3 &&
+        realPrismaProof.proof.migrationsApplied === CANONICAL_MIGRATIONS.length &&
+        JSON.stringify(realPrismaProof.proof.migrationUniverse) === JSON.stringify(CANONICAL_MIGRATIONS) &&
         realPrismaProof.proof.coreTables === 2 &&
         /^3\./.test(realPrismaProof.proof.postgis) &&
         realPrismaProof.proof.h3 === '4.2.3' &&
@@ -1016,7 +1019,7 @@ export async function runCpanelSimulation({ repoRoot }) {
         realPrismaProof.dependencyFetch.prismaEnginePrefetch === '6.19.3' &&
         realPrismaProof.dependencyFetch.prismaClientEnginePrefetched === true &&
         realPrismaProof.executionNetwork === 'internal-only-disposable-postgresql',
-      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and all three PostgreSQL migrations after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
+      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and the exact ${CANONICAL_MIGRATIONS.length}-migration reviewed PostgreSQL universe after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
     );
     check(
       checks,

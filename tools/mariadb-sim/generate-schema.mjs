@@ -18,6 +18,8 @@ const TEXT_FIELDS = new Map([
   ['Dispute', new Set(['oldValue', 'newValue'])],
   ['StagingABCARetailer', new Set(['rawJson'])],
   ['DemandCreditEntry', new Set(['evidenceChain'])],
+  ['ContinuationReceipt', new Set(['evidence'])],
+  ['Opportunity', new Set(['evidence'])],
 ]);
 
 export function generateCandidate(source) {

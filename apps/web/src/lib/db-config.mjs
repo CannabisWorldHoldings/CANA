@@ -271,6 +271,12 @@ import path from 'node:path';
 import os from 'node:os';
 import { createHash as _createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import {
+  loadCanonicalMigrationManifest,
+  validateCanonicalMigrationUniverse,
+} from '../../prisma/migration-manifest.mjs';
+
+export { loadCanonicalMigrationManifest, validateCanonicalMigrationUniverse };
 
 /** The migration that captures the pre-migration-era schema. An existing
  *  db-push database adopts migrations by being marked as already having this. */
@@ -413,8 +419,16 @@ export async function readMigrationRows(prisma) {
     return await prisma.$queryRawUnsafe(
       'SELECT migration_name, started_at, finished_at, rolled_back_at FROM _prisma_migrations ORDER BY started_at',
     );
-  } catch {
-    return null; // table absent: an unmigrated (fresh or db-push-era) database
+  } catch (error) {
+    const providerCode = String(error?.meta?.code ?? error?.code ?? '');
+    const detail = `${error?.meta?.message ?? ''} ${error?.message ?? ''}`;
+    const namesLedger = /_prisma_migrations/i.test(detail);
+    const isAbsent = namesLedger && (
+      providerCode === '42P01' || providerCode === '1146' ||
+      /relation .* does not exist|table .* doesn't exist|no such table/i.test(detail)
+    );
+    if (isAbsent) return null;
+    throw error;
   }
 }
 
@@ -443,6 +457,10 @@ export async function ensureDatabaseMigrated({
   lockOpts = {},
 } = {}) {
   if (!databaseUrl) throw new Error('ensureDatabaseMigrated requires an explicit databaseUrl — never assume a default database');
+  const migrationUniverse = validateCanonicalMigrationUniverse({
+    migrationsDir,
+    manifest: loadCanonicalMigrationManifest(),
+  });
   return withMigrationLock(databaseUrl, async () => {
     const factory = prismaClientFactory ?? (async () => {
       const { PrismaClient } = await import('@prisma/client');
@@ -483,7 +501,7 @@ export async function ensureDatabaseMigrated({
     const dep = runPrisma(['migrate', 'deploy', '--schema', schemaPath], { databaseUrl, webDir });
     actions.push({ action: 'migrate deploy', ok: dep.ok });
     if (!dep.ok) return { ok: false, state, actions, error: (dep.stderr || dep.stdout).slice(0, 800) };
-    return { ok: true, state, actions, migrationsOnDisk: migrationsOnDisk(migrationsDir) };
+    return { ok: true, state, actions, migrationsOnDisk: migrationUniverse.migrations.map((entry) => entry.name) };
   }, lockOpts);
 }
 
@@ -542,6 +560,17 @@ export async function databaseReadiness(prisma, {
   const checks = [];
   const push = (name, pass, detail) => checks.push({ name, pass, detail });
 
+  let migrationUniverse = null;
+  try {
+    migrationUniverse = validateCanonicalMigrationUniverse({
+      migrationsDir,
+      manifest: loadCanonicalMigrationManifest(),
+    });
+    push('canonical_migration_universe', true, `${migrationUniverse.migrations.length} reviewed migrations match names and SHA-256 digests`);
+  } catch (error) {
+    push('canonical_migration_universe', false, String(error?.message ?? error));
+  }
+
   const live = await databaseHealth(prisma);
   push('database_connectable', live.healthy, live.healthy ? `latency ${live.latencyMs}ms` : live.error);
 
@@ -555,7 +584,7 @@ export async function databaseReadiness(prisma, {
       push('no_failed_migrations', broken.length === 0,
         broken.length ? `interrupted/failed: ${broken.map((r) => r.migration_name).join(', ')}` : 'all recorded migrations finished or were rolled back');
       const applied = new Set(rows.filter((r) => r.finished_at != null).map((r) => r.migration_name));
-      const pending = migrationsOnDisk(migrationsDir).filter((name) => !applied.has(name));
+      const pending = (migrationUniverse?.migrations ?? []).map((entry) => entry.name).filter((name) => !applied.has(name));
       push('no_pending_migrations', pending.length === 0,
         pending.length ? `pending: ${pending.join(', ')}` : 'disk and database agree');
     }

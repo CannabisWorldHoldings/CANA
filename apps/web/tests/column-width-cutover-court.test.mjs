@@ -56,6 +56,8 @@ const LONG_FORM_COLUMNS = [
   ['Product', 'description'],
   ['Deal', 'description'],
   ['LoyaltyTransaction', 'description'],
+  ['ContinuationReceipt', 'evidence'],
+  ['Opportunity', 'evidence'],
 ];
 
 const MYSQL_DEFAULT_VARCHAR = 191;

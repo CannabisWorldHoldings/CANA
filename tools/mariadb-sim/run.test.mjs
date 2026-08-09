@@ -33,6 +33,11 @@ test('the MariaDB candidate is provider-specific and annotates every approved lo
   ]) {
     assert.match(schema, new RegExp(`\\b${field}\\s+String\\??\\s+@db\\.Text\\b`));
   }
+  for (const model of ['ContinuationReceipt', 'Opportunity']) {
+    const block = schema.match(new RegExp(`model ${model} \\{([\\s\\S]*?)\\n\\}`))?.[1] ?? '';
+    assert.match(block, /\bevidence\s+String\??\s+@db\.Text\b/,
+      `${model}.evidence must be widened independently on the MariaDB candidate`);
+  }
 });
 
 test('the candidate is generated from canonical PostgreSQL without changing that source', async () => {

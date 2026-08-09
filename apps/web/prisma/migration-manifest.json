@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "provider": "postgresql",
+  "migrations": [
+    {
+      "name": "20260726000000_baseline",
+      "sha256": "c50ac9283a8215d91de190a5d3555ded120425c9822ac871c4614b5d67e7f464"
+    },
+    {
+      "name": "20260726000100_ledger_recorded_at_index",
+      "sha256": "c145a8c82691c6da05f302d73fb89b2615f662ecefcce037d38481683f7904fa"
+    },
+    {
+      "name": "20260809100000_geo_kernel",
+      "sha256": "207a0ba8727fee8b7bf65d47d835e27f6db0b25c782161862da47d475a2bba26"
+    },
+    {
+      "name": "20260809170000_continuation_kernel",
+      "sha256": "40ad028e1c126c346a1bc16d6acb62887ec7a837ed6922dfae0093cc6d1f8520"
+    }
+  ]
+}

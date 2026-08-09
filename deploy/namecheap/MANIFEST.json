@@ -19,12 +19,12 @@
     },
     "mustContain": [
       "server.js", "app.js", ".next/static", "public", "node_modules (runtime, incl. .prisma rhel engine)",
-      "release.json", "receipt.json", "prisma/schema.prisma",
+      "release.json", "receipt.json", "prisma/schema.prisma", "prisma/migration-manifest.json", "prisma/migration-manifest.mjs",
       "migrate.sh", "restart.sh", "rollback.sh", "healthcheck.sh", "readycheck.sh",
       "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs"
     ],
     "conditional": [
-      "prisma/migrations/** — shipped verbatim only when the migration lane has committed them; never authored by the builder"
+      "prisma/migrations/** — shipped only when the exact reviewed names and migration.sql SHA-256 digests match prisma/migration-manifest.json; never authored by the builder"
     ]
   },
   "commands": {

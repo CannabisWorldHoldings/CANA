@@ -19,6 +19,8 @@ import {
   databaseHealth,
   databaseReadiness,
   initializeDatabaseConfig,
+  loadCanonicalMigrationManifest,
+  validateCanonicalMigrationUniverse,
 } from '../src/lib/db-config.mjs';
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
 
@@ -58,6 +60,8 @@ const MIGRATIONS = path.join(WEB, 'prisma', 'migrations');
 const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
 const SECOND_MIGRATION_DOWN = path.join(MIGRATIONS, SECOND_MIGRATION, 'down.sql');
 const GEO_MIGRATION = '20260809100000_geo_kernel';
+const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
+const CANONICAL_MIGRATIONS = loadCanonicalMigrationManifest().migrations.map((entry) => entry.name);
 const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 
 /** The loopback PostgreSQL server every disposable database lives on. The
@@ -762,16 +766,32 @@ test('ROLLBACK: the manual inverse refuses after a later successful migration', 
   const url = createDatabase('rollback_later');
   deploy(url);
   const p = await client(url);
+  const ledgerBefore = await p.$queryRawUnsafe(
+    'SELECT migration_name, checksum, finished_at, rolled_back_at, applied_steps_count FROM "_prisma_migrations" ORDER BY migration_name',
+  );
+  const continuationTablesBefore = await p.$queryRawUnsafe(
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('ContinuationMission','ContinuationTrigger','ContinuationReceipt','Opportunity','AskIntentSignal') ORDER BY tablename`,
+  );
+  assert.equal(continuationTablesBefore.length, 5, 'the later continuation schema must exist before reversal is attempted');
   const downSql = fs.readFileSync(SECOND_MIGRATION_DOWN, 'utf8');
   let refusal = null;
   try { prisma_(['db', 'execute', '--url', url, '--stdin'], {}, downSql); } catch (error) { refusal = error; }
   assert.ok(refusal, 'manual reversal must refuse when the geo migration is already applied');
   assert.match(`${refusal.stderr ?? ''}${refusal.message ?? ''}`, /later successful migration is applied/);
   assert.ok(await indexExists(p, NEW_INDEX), 'later-migration refusal must roll back the index drop');
-  const applied = await p.$queryRawUnsafe(
-    'SELECT count(*)::int AS count FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL',
+  const ledgerAfter = await p.$queryRawUnsafe(
+    'SELECT migration_name, checksum, finished_at, rolled_back_at, applied_steps_count FROM "_prisma_migrations" ORDER BY migration_name',
   );
-  assert.equal(applied[0].count, 3);
+  assert.deepEqual(ledgerAfter, ledgerBefore, 'refusal must not partially mutate Prisma migration bookkeeping');
+  assert.deepEqual(
+    ledgerAfter.filter((row) => row.finished_at != null && row.rolled_back_at == null).map((row) => row.migration_name),
+    CANONICAL_MIGRATIONS,
+    'every canonical migration must remain successfully applied after refusal',
+  );
+  const continuationTablesAfter = await p.$queryRawUnsafe(
+    `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename IN ('ContinuationMission','ContinuationTrigger','ContinuationReceipt','Opportunity','AskIntentSignal') ORDER BY tablename`,
+  );
+  assert.deepEqual(continuationTablesAfter, continuationTablesBefore, 'continuation schema must remain intact after refusal');
 });
 
 test('RESTORE: a logical pre-migration backup is a working database with a verifying chain', async () => {
@@ -916,7 +936,7 @@ test('the refusal rules themselves are visible and testable as data', async () =
 
 /* ─────────────────────────── 6. BOOKKEEPING ─────────────────────────────── */
 
-test('provider classification fails closed and the on-disk migration set is complete', () => {
+test('provider classification fails closed and the reviewed migration manifest exactly matches disk', () => {
   assert.equal(databaseProviderOf('file:./dev.db'), 'sqlite');
   assert.equal(databaseProviderOf('mysql://h/db'), 'mysql');
   assert.equal(databaseProviderOf('mariadb://h/db'), 'mysql');
@@ -924,9 +944,14 @@ test('provider classification fails closed and the on-disk migration set is comp
   assert.equal(databaseProviderOf('postgres://h/db'), 'postgresql');
   assert.equal(databaseProviderOf('mongodb://h/db'), 'unknown');
   assert.equal(databaseProviderOf(undefined), 'unknown');
-  // The forward-only migration set on disk: baseline, the ledger index, and the
-  // PostGIS geo kernel. (The stored down.sql is operator-invoked only — rollback is the
-  // known inverse DDL, exercised in the ROLLBACK test above.)
-  const onDisk = migrationsOnDisk(MIGRATIONS);
-  assert.deepEqual(onDisk, [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION]);
+  // Approval is explicit rather than derived from arbitrary directories. The
+  // stored down.sql is operator-invoked only; its guarded inverse is exercised above.
+  const verified = validateCanonicalMigrationUniverse({
+    migrationsDir: MIGRATIONS,
+    manifest: loadCanonicalMigrationManifest(),
+  });
+  assert.deepEqual(
+    verified.migrations.map((entry) => entry.name),
+    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION],
+  );
 });
