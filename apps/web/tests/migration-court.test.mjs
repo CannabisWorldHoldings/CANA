@@ -24,6 +24,7 @@ import {
 } from '../src/lib/db-config.mjs';
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
 import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
+import { buildAnswerabilityFrontier } from '../src/lib/ask/answerability-frontier.mjs';
 import {
   compileLiveMarketAcquisition,
   compileOfficialMarketSnapshot,
@@ -1369,11 +1370,15 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     unknown_dimensions: [],
     dimensions: { location: { status: 'KNOWN', value: 'dupont circle' } },
   };
+  const answerabilityFrontier = buildAnswerabilityFrontier({
+    tenant: 'orderweeddc.localhost', intent, claimDecisions: [], asOf: now,
+  });
   const answer = {
     verified_candidate_count: 0,
     zero_verified_result: true,
     zero_result_reason: 'NO_VERIFIED_CURRENT_MATCH',
     unsupported_known_dimensions: [],
+    answerability_frontier: answerabilityFrontier,
     opportunitySpec: {
       tenant: 'orderweeddc.localhost',
       kind: 'MARKET_GAP',
@@ -1412,6 +1417,8 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
   assert.doesNotMatch(storedSignal.intentIr, /flower in dupont/);
   assert.doesNotMatch(storedOpportunity.signal, /flower in dupont/);
   assert.doesNotMatch(storedOpportunity.evidence, /flower in dupont/);
+  assert.equal(JSON.parse(storedOpportunity.evidence).answerability_frontier.frontier_key, answerabilityFrontier.frontier_key);
+  assert.equal(JSON.parse(storedOpportunity.observedState).demand_priority.components.admitted_signal_count, 1);
 
   const duplicate = await recordAskWork(p, input);
   assert.equal(duplicate.state, 'DUPLICATE');
@@ -1425,6 +1432,11 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
   assert.equal(semanticReplay.state, 'RECORDED');
   assert.equal(semanticReplay.opportunity.id, first.opportunity.id);
   assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
+  assert.equal(
+    JSON.parse((await p.opportunity.findUnique({ where: { id: first.opportunity.id } })).observedState)
+      .demand_priority.components.admitted_signal_count,
+    2,
+  );
 
   await p.$executeRawUnsafe(`
     CREATE OR REPLACE FUNCTION refuse_ask_signal() RETURNS trigger AS $$
@@ -1461,6 +1473,62 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     await p.$executeRawUnsafe('DROP TRIGGER IF EXISTS ask_signal_failure ON "AskIntentSignal";');
     await p.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_ask_signal();');
   }
+});
+
+test('ASK FRONTIER: ten concurrent duplicate signals create one admitted signal and one durable work unit', async () => {
+  const url = createDatabase('ask_frontier_concurrent');
+  deploy(url);
+  const p = await client(url);
+  const now = new Date('2026-08-10T12:00:00.000Z');
+  const intent = {
+    raw_query: 'licensed retailer in dupont',
+    unknown_dimensions: ['category', 'price_max_usd', 'fulfillment', 'open_now'],
+    dimensions: { location: { status: 'KNOWN', value: 'dupont circle' } },
+  };
+  const answerabilityFrontier = buildAnswerabilityFrontier({
+    tenant: 'orderweeddc.localhost', intent, claimDecisions: [], asOf: now,
+  });
+  const answer = {
+    verified_candidate_count: 0,
+    zero_verified_result: true,
+    zero_result_reason: 'NO_VERIFIED_CURRENT_MATCH',
+    unsupported_known_dimensions: [],
+    answerability_frontier: answerabilityFrontier,
+    opportunitySpec: {
+      tenant: 'orderweeddc.localhost',
+      kind: 'MARKET_GAP',
+      retailerId: null,
+      evidence: '{}',
+      observedState: '{}',
+      signal: 'MINIMIZED_INTENT_IR',
+      hypothesizedValue: null,
+      confidence: null,
+      recommendedAction: 'Verify current source-authoritative evidence.',
+      requiredAuthority: 'PROPOSE_ONLY',
+      risk: 'LOW — proposal only',
+      rollback: 'Dismiss the opportunity',
+      measurementPlan: 'Close only when the exact frontier is answerable.',
+    },
+  };
+  const results = await Promise.all(Array.from({ length: 10 }, () => recordAskWork(p, {
+    answer,
+    domain: 'orderweeddc.localhost',
+    intent,
+    now,
+  })));
+  assert.equal(results.filter((result) => result.state === 'RECORDED').length, 1);
+  assert.equal(results.filter((result) => result.state === 'DUPLICATE').length, 9);
+  assert.equal(await p.publicSubmissionEvent.count(), 1);
+  assert.equal(await p.askIntentSignal.count(), 1, 'abusive duplicates are not admitted as demand evidence');
+  assert.equal(await p.opportunity.count(), 1);
+  assert.equal(await p.continuationMission.count(), 1);
+  assert.equal(await p.continuationTrigger.count(), 1);
+  const trigger = await p.continuationTrigger.findFirst();
+  const requirement = JSON.parse(trigger.evidenceRequirements);
+  assert.equal(requirement.frontierKey, answerabilityFrontier.frontier_key);
+  assert.equal(requirement.frontierEvidenceDigest, answerabilityFrontier.evidence_digest);
+  assert.equal(requirement.loopMode, 'REFLECTION_ONLY');
+  assert.equal(trigger.authorityCeiling, 'OBSERVE_ONLY');
 });
 
 test('RESTORE: a logical pre-migration backup is a working database with a verifying chain', async () => {

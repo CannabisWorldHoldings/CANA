@@ -8,6 +8,8 @@ import { GENESIS_HASH, receiptHash } from '../src/lib/continuation/continuation-
 let reality;
 let marketGap;
 let continuationConsumers;
+let answerability;
+let askWork;
 
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -16,6 +18,8 @@ before(async () => {
     reality = await import('../src/lib/reality/reality-compiler.mjs');
     marketGap = await import('../src/lib/ask/market-gap-recheck.mjs');
     continuationConsumers = await import('../src/lib/continuation/continuation-consumers.mjs');
+    answerability = await import('../src/lib/ask/answerability-frontier.mjs');
+    askWork = await import('../src/lib/ask/ask-work.mjs');
   } catch (error) {
     assert.fail(`Reality organism loop is not implemented: ${error.message}`);
   }
@@ -31,11 +35,16 @@ async function marketGapHarness({
 } = {}) {
   const now = new Date('2026-08-10T04:00:00.000Z');
   const updates = [];
-  const evidenceRequirements = JSON.stringify({
-    consumer: 'ask_market_gap_recheck',
-    recheck: 'verified_candidate_count',
-    opportunityId: 'gap-1',
+  const storedIntent = {
+    raw_query: 'sha256:minimized', unknown_dimensions: [], unsupported_known_dimensions: [],
+    dimensions: { location: { status: 'KNOWN', value: 'Dupont Circle' } },
+  };
+  const storedFrontier = answerability.buildAnswerabilityFrontier({
+    tenant: 'orderweeddc.com', intent: storedIntent, claimDecisions: [], asOf: now,
   });
+  const evidenceRequirements = JSON.stringify(askWork.frontierWorkRequirements({
+    opportunityId: 'gap-1', frontier: storedFrontier,
+  }));
   const mission = {
     id: 'mission-1', tenant: 'orderweeddc.com', status: 'ACTIVE',
     latestReceiptId: 'receipt-fired-1',
@@ -80,10 +89,10 @@ async function marketGapHarness({
   const opportunity = {
     id: 'gap-1', tenant: 'orderweeddc.com', kind: 'MARKET_GAP', status: 'OPEN',
     followUpTriggerId: opportunityTriggerId,
-    evidence: JSON.stringify({ intent_ir: {
-      raw_query: 'sha256:minimized', unknown_dimensions: [], unsupported_known_dimensions: [],
-      dimensions: { location: { status: 'KNOWN', value: 'Dupont Circle' } },
-    } }),
+    evidence: JSON.stringify({
+      intent_ir: storedIntent,
+      answerability_frontier: storedFrontier,
+    }),
   };
   let brandFailuresRemaining = 0;
   const tx = {

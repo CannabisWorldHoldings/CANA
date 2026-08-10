@@ -75,7 +75,7 @@ function canonicalIntentScope(intent) {
     const dimension = dimensions[name];
     if (dimension?.status === 'KNOWN') {
       scope[name] = canonicalDimensionValue(name, dimension.value);
-    } else if (dimension?.status !== 'UNKNOWN') {
+    } else if (dimension !== undefined && dimension?.status !== 'UNKNOWN') {
       fail('CANA_ANSWERABILITY_INTENT_INVALID');
     }
   }
