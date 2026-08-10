@@ -507,7 +507,7 @@ export function createPrismaAcquisitionStore(prisma) {
     async runExclusive(scope, work) {
       return prisma.$transaction(async (tx) => {
         await tx.$queryRawUnsafe(
-          'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))',
+          'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result',
           `${scope.sourceKey}:${scope.workClass}`,
         );
         return work(transactionStore(tx));
