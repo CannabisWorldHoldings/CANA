@@ -619,7 +619,7 @@ test('REALITY COMPILER: contradiction lineage uses stored observation IDs and de
   const changed = buildSnapshotArtifacts({
     metadataBytes,
     pageParts: [{ offset: 0, bytes: pageBytes }],
-    fetchedAt: new Date('2026-06-07T00:00:00.000Z'),
+    fetchedAt: new Date('2026-08-10T05:00:00.000Z'),
   });
   const changedDirectory = path.join(BASE, 'reality-contradiction-fixture');
   fs.mkdirSync(changedDirectory);
