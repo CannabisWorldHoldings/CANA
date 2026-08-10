@@ -165,16 +165,17 @@ export async function recordAskWork(
   prisma,
   { answer, domain, intent, now = new Date() },
 ) {
-  try {
-    const persistedIntent = persistenceSafeIntent(intent);
-    const intentDigest = digest({ version: 1, intent: persistedIntent });
-    return await inSerializableTransaction(prisma, async (tx) => {
-      await reservePublicSubmission(tx, {
-        clientIdentity: askPersistenceScope(domain),
-        surface: PUBLIC_SUBMISSION_SURFACES.ASK,
-        subject: JSON.stringify({ version: 2, domain, intentDigest }),
-        now,
-      });
+  const persistedIntent = persistenceSafeIntent(intent);
+  const intentDigest = digest({ version: 1, intent: persistedIntent });
+  const persist = (reserveSubmission) => inSerializableTransaction(prisma, async (tx) => {
+      if (reserveSubmission) {
+        await reservePublicSubmission(tx, {
+          clientIdentity: askPersistenceScope(domain),
+          surface: PUBLIC_SUBMISSION_SURFACES.ASK,
+          subject: JSON.stringify({ version: 2, domain, intentDigest }),
+          now,
+        });
+      }
 
       let opportunity = null;
       let continuationArmed = false;
@@ -326,8 +327,21 @@ export async function recordAskWork(
         continuationArmed,
       };
     });
+  try {
+    return await persist(true);
   } catch (error) {
-    const code = publicSubmissionErrorCode(error);
+    let failure = error;
+    if (error?.code === 'PUBLIC_SUBMISSION_DUPLICATE') {
+      // The failed serializable transaction has already rolled back. Reuse the
+      // existing pseudonymous reservation while retaining this ask as a new
+      // demand signal; the frontier lock still deduplicates all durable work.
+      try {
+        return await persist(false);
+      } catch (retryError) {
+        failure = retryError;
+      }
+    }
+    const code = publicSubmissionErrorCode(failure);
     if (code === 'duplicate') {
       return { state: 'DUPLICATE', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
     }

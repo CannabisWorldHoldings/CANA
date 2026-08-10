@@ -1567,8 +1567,9 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
   assert.equal(JSON.parse(storedOpportunity.observedState).demand_priority.components.admitted_signal_count, 1);
 
   const duplicate = await recordAskWork(p, input);
-  assert.equal(duplicate.state, 'DUPLICATE');
-  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+  assert.equal(duplicate.state, 'RECORDED');
+  assert.equal(duplicate.opportunity.id, first.opportunity.id);
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
 
   const semanticReplay = await recordAskWork(p, {
     ...input,
@@ -1577,11 +1578,11 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
   });
   assert.equal(semanticReplay.state, 'RECORDED');
   assert.equal(semanticReplay.opportunity.id, first.opportunity.id);
-  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 3 });
   assert.equal(
     JSON.parse((await p.opportunity.findUnique({ where: { id: first.opportunity.id } })).observedState)
       .demand_priority.components.admitted_signal_count,
-    2,
+    3,
   );
 
   await p.$executeRawUnsafe(`
@@ -1614,14 +1615,14 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
       },
     });
     assert.equal(failed.state, 'FAILED');
-    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
+    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 3 });
   } finally {
     await p.$executeRawUnsafe('DROP TRIGGER IF EXISTS ask_signal_failure ON "AskIntentSignal";');
     await p.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_ask_signal();');
   }
 });
 
-test('ASK FRONTIER: ten concurrent duplicate signals create one admitted signal and one durable work unit', async () => {
+test('ASK FRONTIER: ten concurrent equivalent demands create ten signals and one durable work unit', async () => {
   const url = createDatabase('ask_frontier_concurrent');
   deploy(url);
   const p = await client(url);
@@ -1662,10 +1663,10 @@ test('ASK FRONTIER: ten concurrent duplicate signals create one admitted signal 
     intent,
     now,
   })));
-  assert.equal(results.filter((result) => result.state === 'RECORDED').length, 1);
-  assert.equal(results.filter((result) => result.state === 'DUPLICATE').length, 9);
+  assert.equal(results.filter((result) => result.state === 'RECORDED').length, 10);
+  assert.equal(results.filter((result) => result.state === 'DUPLICATE').length, 0);
   assert.equal(await p.publicSubmissionEvent.count(), 1);
-  assert.equal(await p.askIntentSignal.count(), 1, 'abusive duplicates are not admitted as demand evidence');
+  assert.equal(await p.askIntentSignal.count(), 10, 'each admitted ask remains countable demand evidence');
   assert.equal(await p.opportunity.count(), 1);
   assert.equal(await p.continuationMission.count(), 1);
   assert.equal(await p.continuationTrigger.count(), 1);
@@ -1675,6 +1676,11 @@ test('ASK FRONTIER: ten concurrent duplicate signals create one admitted signal 
   assert.equal(requirement.frontierEvidenceDigest, answerabilityFrontier.evidence_digest);
   assert.equal(requirement.loopMode, 'REFLECTION_ONLY');
   assert.equal(trigger.authorityCeiling, 'OBSERVE_ONLY');
+  assert.equal(
+    JSON.parse((await p.opportunity.findFirst()).observedState)
+      .demand_priority.components.admitted_signal_count,
+    10,
+  );
 });
 
 test('RESTORE: a logical pre-migration backup is a working database with a verifying chain', async () => {
