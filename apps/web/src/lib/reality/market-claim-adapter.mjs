@@ -105,6 +105,11 @@ export function selectCurrentClaimDecisions({
       snapshotId: claim.snapshotId ?? claim.snapshot_id,
       observationIds: claim.observationIds ?? claim.observation_ids ?? [],
       parserVersion: claim.parserVersion ?? claim.parser_version,
+      policyVersions: [
+        claim.policyVersion ?? claim.policy_version,
+        claim.authorityPolicyVersion ?? claim.authority_policy_version,
+        claim.freshnessPolicyVersion ?? claim.freshness_policy_version,
+      ].filter(Boolean),
       revocations,
       asOf: clock,
     })) continue;

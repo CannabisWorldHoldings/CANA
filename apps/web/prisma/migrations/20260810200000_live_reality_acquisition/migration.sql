@@ -270,7 +270,7 @@ SELECT
     'content:legacy:' || ordered."id",
     ordered."id",
     repeat('0', 64),
-    md5(ordered."sourceKey" || ':' || ordered."id") || md5('legacy:' || ordered."sourceKey" || ':' || ordered."id"),
+    encode(sha256(convert_to(ordered."sourceKey" || ':' || ordered."id", 'UTF8')), 'hex'),
     ordered."fetchedAt"
 FROM ordered;
 

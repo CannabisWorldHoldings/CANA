@@ -79,7 +79,16 @@ export function applyRevocationCourt({ decisions, blastRadius, revocationEventId
   }));
 }
 
-export function isEvidenceRevoked({ claimId, acquisitionEventId, snapshotId, observationIds = [], parserVersion, revocations, asOf }) {
+export function isEvidenceRevoked({
+  claimId,
+  acquisitionEventId,
+  snapshotId,
+  observationIds = [],
+  parserVersion,
+  policyVersions = [],
+  revocations,
+  asOf,
+}) {
   const clock = asOf instanceof Date ? asOf : new Date(asOf);
   if (!Number.isFinite(clock.getTime()) || !Array.isArray(revocations)) return true;
   const applicable = revocations
@@ -92,6 +101,7 @@ export function isEvidenceRevoked({ claimId, acquisitionEventId, snapshotId, obs
         || kind === 'SNAPSHOT' && target === snapshotId
         || kind === 'OBSERVATION' && observationIds.includes(target)
         || kind === 'PARSER_VERSION' && target === parserVersion
+        || kind === 'POLICY_VERSION' && policyVersions.includes(target)
         || typeof acquisitionEventId === 'string' && acquisitionEventId.length > 0
           && event.acquisitionEventId === acquisitionEventId
         || typeof snapshotId === 'string' && snapshotId.length > 0
