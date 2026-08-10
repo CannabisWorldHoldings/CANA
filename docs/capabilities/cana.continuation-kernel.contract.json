@@ -1,6 +1,6 @@
 {
   "id": "cana.continuation-kernel",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Durable, database-owned continuation state: CANA remembers what must happen later, knows what it is waiting for, and wakes missions by time, event, condition, dependency, follow-up, revalidation or learning triggers. External runtimes tick it; none of them own it.",
   "domain": "continuation",
   "real_outcome": "A conversation ending, a model failing, or a machine restarting never erases a future mission.",
@@ -10,13 +10,14 @@
     { "action_id": "continuation.create-mission", "description": "Create a bounded durable mission", "entry": "apps/web/src/lib/continuation/continuation-repository.mjs#createMission" },
     { "action_id": "continuation.create-trigger", "description": "Create a bounded trigger (rejected without purpose/stop/budget/ceiling/expiry, or when aggregate trigger allocation exceeds the mission ceiling)", "entry": "apps/web/src/lib/continuation/continuation-repository.mjs#createTrigger" },
     { "action_id": "continuation.approve", "description": "The ONLY path arming EFFECTFUL work", "entry": "apps/web/src/lib/continuation/continuation-repository.mjs#approveTrigger" },
-    { "action_id": "continuation.tick", "description": "Evaluate durable readiness (exactly-once firing; any runtime may invoke; FIRED does not claim a domain action executed)", "entry": "apps/web/scripts/continuation-tick.mjs" }
+    { "action_id": "continuation.tick", "description": "Evaluate tenant-scoped durable readiness and claim exactly once; consumers treat returned receipt IDs only as hints and independently verify the durable FIRED chain plus trigger, mission, tenant and tick bindings before any reflected mutation", "entry": "apps/web/scripts/continuation-tick.mjs" }
   ],
   "evidence_hooks": [
     "ContinuationReceipt hash chain per mission (tamper-evident, verifyReceiptChain)",
-    "worker JSONL audit line per cron tick (deploy/namecheap/worker.mjs continuation-tick job)"
+    "worker JSONL audit line per cron tick (deploy/namecheap/worker.mjs continuation-tick job)",
+    "REFLECTED receipt for the registered ask_market_gap_recheck consumer, including canonical gate and candidate count"
   ],
-  "continuation_hooks": ["consumed by cana.ask-orderweeddc (FOLLOW_UP); provenance-court REVALIDATION is planned and not installed"],
+  "continuation_hooks": ["consumed by cana.ask-orderweeddc (FOLLOW_UP with ask_market_gap_recheck); provenance-court REVALIDATION remains planned and not installed"],
   "backend_adapters": ["cPanel cron via deploy/namecheap/worker.mjs", "any runtime able to run node apps/web/scripts/continuation-tick.mjs"],
   "status": "STRUCTURALLY_VALIDATED"
 }

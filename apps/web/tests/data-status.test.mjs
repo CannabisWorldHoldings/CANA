@@ -44,6 +44,15 @@ test('verification requires evidence time and an unexpired freshness window', ()
     resolveDataStatus({ ...current, verifiedAt: null }, asOf),
     DATA_STATUS.AWAITING_VERIFICATION,
   );
+  const futureVerification = {
+    ...current,
+    verifiedAt: new Date('2026-07-18T00:00:00.000Z'),
+  };
+  assert.equal(
+    resolveDataStatus(futureVerification, asOf),
+    DATA_STATUS.AWAITING_VERIFICATION,
+  );
+  assert.equal(isPubliclyVerified(futureVerification, asOf), false);
 });
 
 test('public source files do not reintroduce known unsupported truth claims', () => {

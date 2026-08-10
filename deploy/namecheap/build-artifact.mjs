@@ -460,7 +460,6 @@ const releaseIdentity = writeReleaseIdentity();
 fs.mkdirSync(path.join(artifactRoot, 'scripts'), { recursive: true });
 for (const script of [
   'scripts/init-production-db.mjs',
-  'scripts/seed-abca-retailers.mjs',
   'scripts/db-inspect.mjs',
   'scripts/restore-brand-assets.mjs',
   'scripts/brand-assets.b64.json',
@@ -546,6 +545,11 @@ checks['canonical schema is PostgreSQL'] = /provider\s*=\s*"postgresql"/.test(
 checks['no SQLite bootstrap shipped'] =
   !fs.existsSync(path.join(artifactRoot, 'bootstrap-production-db.sh')) &&
   !fs.existsSync(path.join(artifactRoot, 'bootstrap'));
+checks['no legacy ABCA import bypass shipped'] = [
+  'scripts/etl-abca-retailers.mjs',
+  'scripts/ingest-abca-feed.mjs',
+  'scripts/seed-abca-retailers.mjs',
+].every((script) => !fs.existsSync(path.join(artifactRoot, script)));
 checks['release.json present with full 40-hex gitSha'] =
   fs.existsSync(path.join(artifactRoot, 'release.json')) &&
   /^[0-9a-f]{40}$/.test(releaseIdentity.gitSha) &&

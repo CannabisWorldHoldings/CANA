@@ -24,6 +24,11 @@ import {
 } from '../src/lib/db-config.mjs';
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
 import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
+import {
+  compileOfficialMarketSnapshot,
+  verifyOfficialMarketSnapshot,
+} from '../src/lib/reality/reality-repository.mjs';
+import { buildSnapshotArtifacts } from '../src/lib/reality/official-source-snapshot.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -62,6 +67,14 @@ const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
 const SECOND_MIGRATION_DOWN = path.join(MIGRATIONS, SECOND_MIGRATION, 'down.sql');
 const GEO_MIGRATION = '20260809100000_geo_kernel';
 const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
+const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
+const REALITY_FIXTURE = path.join(
+  WEB,
+  'fixtures',
+  'reality',
+  'dc-abca-layer-31',
+  '2026-06-05',
+);
 const CANONICAL_MIGRATIONS = loadCanonicalMigrationManifest().migrations.map((entry) => entry.name);
 const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 
@@ -340,6 +353,306 @@ test('forward migration from EMPTY: deploy applies every migration and records i
   // The schema is genuinely usable, not merely recorded.
   await p.organization.create({ data: { name: 'smoke' } });
   assert.equal(await p.organization.count(), 1);
+});
+
+test('REALITY COMPILER: evidence records are present and append-only after migration', async () => {
+  const url = createDatabase('reality_compiler');
+  deploy(url);
+  const p = await client(url);
+  const snapshot = await p.marketSourceSnapshot.create({
+    data: {
+      sourceKey: 'dc_abca_retailers',
+      sourceUrl: 'https://maps2.dcgis.dc.gov/example',
+      queryParameters: '{}',
+      fetchedAt: new Date('2026-08-09T20:00:00Z'),
+      payloadSha256: 'a'.repeat(64),
+      payloadBytes: 2,
+      recordCount: 0,
+      schemaVersion: 'dc-abca-arcgis-v1',
+      payloadJson: '{}',
+      completeness: 'UNKNOWN',
+    },
+  });
+  await assert.rejects(
+    p.marketSourceSnapshot.update({ where: { id: snapshot.id }, data: { recordCount: 1 } }),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.marketSourceSnapshot.delete({ where: { id: snapshot.id } }),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  assert.equal(await p.marketSourceSnapshot.count(), 1);
+});
+
+test('REALITY COMPILER: repeated court verification is an exact database no-op', async () => {
+  const url = createDatabase('reality_idempotency');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.create({
+    data: {
+      id: 'reality-idempotency-retailer',
+      name: 'Capital City Care',
+      type: 'storefront',
+      address: '1115 U St NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.916804,
+      lng: -77.027099,
+      licenseNumber: 'ABCA-133578',
+    },
+  });
+
+  const compiled = await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: REALITY_FIXTURE,
+    tenant: 'orderweeddc.com',
+  });
+  assert.equal(compiled.state, 'COMPILED');
+  assert.ok(compiled.claims > 0);
+
+  const historicalClock = new Date('2026-06-06T00:00:00.000Z');
+  const firstHistorical = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: historicalClock,
+  });
+  assert.ok(firstHistorical.verification_events_created > 0);
+  const historicalCounts = {
+    claims: await p.marketClaim.count(),
+    events: await p.marketVerificationEvent.count(),
+  };
+  const secondHistorical = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: historicalClock,
+  });
+  assert.equal(secondHistorical.verification_events_created, 0);
+  assert.deepEqual(
+    {
+      claims: await p.marketClaim.count(),
+      events: await p.marketVerificationEvent.count(),
+    },
+    historicalCounts,
+  );
+
+  const currentClock = new Date('2026-08-10T00:00:00.000Z');
+  const firstCurrent = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: currentClock,
+  });
+  assert.ok(firstCurrent.verification_events_created > 0);
+  const currentCounts = {
+    claims: await p.marketClaim.count(),
+    events: await p.marketVerificationEvent.count(),
+  };
+  const secondCurrent = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: currentClock,
+  });
+  assert.equal(secondCurrent.verification_events_created, 0);
+  assert.deepEqual(
+    {
+      claims: await p.marketClaim.count(),
+      events: await p.marketVerificationEvent.count(),
+    },
+    currentCounts,
+  );
+});
+
+test('REALITY COMPILER: forged identity resolution cannot verify or project onto a victim retailer', async () => {
+  const url = createDatabase('reality_forged_identity');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.createMany({ data: [
+    {
+      id: 'reality-right-retailer',
+      name: 'Capital City Care',
+      type: 'storefront',
+      address: '1115 U St NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.916804,
+      lng: -77.027099,
+      licenseNumber: 'ABCA-133578',
+    },
+    {
+      id: 'reality-victim-retailer',
+      name: 'Unrelated Victim',
+      type: 'storefront',
+      address: '200 Unrelated Ave NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.9,
+      lng: -77.01,
+      licenseNumber: 'VICTIM-0001',
+    },
+  ] });
+  const victimGeo = await p.geoEntity.create({
+    data: {
+      id: 'reality-victim-geo',
+      name: 'Unrelated Victim',
+      lat: 38.9,
+      lng: -77.01,
+      retailerId: 'reality-victim-retailer',
+      source: 'hostile-test',
+      observedAt: new Date('2026-06-05T00:00:00.000Z'),
+      verification: 'UNKNOWN',
+    },
+  });
+
+  await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: REALITY_FIXTURE,
+    tenant: 'evidence-seed.example',
+  });
+  const seedResolution = await p.marketEntityResolution.findFirstOrThrow({
+    where: { compilation: { tenant: 'evidence-seed.example' }, sourceRecordId: 'ABCA-133578' },
+    include: { snapshot: true },
+  });
+  const forgedCompilation = await p.marketCompilation.create({
+    data: { tenant: 'orderweeddc.com', snapshotId: seedResolution.snapshotId },
+  });
+  const forgedResolution = await p.marketEntityResolution.create({
+    data: {
+      snapshotId: seedResolution.snapshotId,
+      compilationId: forgedCompilation.id,
+      sourceRecordId: seedResolution.sourceRecordId,
+      sourceRecordSha256: seedResolution.sourceRecordSha256,
+      normalizedLicense: seedResolution.normalizedLicense,
+      normalizedName: seedResolution.normalizedName,
+      normalizedAddress: seedResolution.normalizedAddress,
+      status: 'MATCH',
+      reason: 'EXACT_LICENSE',
+      candidateIds: JSON.stringify(['reality-victim-retailer']),
+      normalizationVersion: seedResolution.normalizationVersion,
+      retailerId: 'reality-victim-retailer',
+      geoEntityId: victimGeo.id,
+    },
+  });
+  const observations = await p.marketObservation.findMany({
+    where: { snapshotId: seedResolution.snapshotId, sourceRecordId: seedResolution.sourceRecordId },
+  });
+  for (const observation of observations) {
+    const claim = await p.marketClaim.create({
+      data: {
+        tenant: 'orderweeddc.com',
+        claimKey: `reality-victim-retailer:${observation.fieldName}`,
+        claimType: observation.fieldName,
+        claimValue: observation.normalizedValue,
+        version: 1,
+        resolutionId: forgedResolution.id,
+        snapshotId: seedResolution.snapshotId,
+        compilationId: forgedCompilation.id,
+        observedAt: observation.observedAt,
+        freshnessExpiresAt: observation.freshnessExpiresAt,
+        confidence: observation.confidence,
+        uncertaintyJson: observation.uncertaintyJson,
+        verification: 'UNKNOWN',
+        decisionEligible: false,
+      },
+    });
+    await p.marketClaimEvidence.create({
+      data: { claimId: claim.id, observationId: observation.id, role: 'SUPPORTS' },
+    });
+  }
+
+  const verdict = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: new Date('2026-06-06T00:00:00.000Z'),
+  });
+  assert.equal(verdict.admitted_claims, 0);
+  assert.equal(verdict.public_cohorts, 0);
+  const victim = await p.retailer.findUniqueOrThrow({ where: { id: 'reality-victim-retailer' } });
+  assert.notEqual(victim.dataStatus, 'VERIFIED_CURRENT');
+  assert.equal(await p.geoClaim.count({
+    where: { geoEntityId: victimGeo.id, decisionEligible: true },
+  }), 0);
+});
+
+test('REALITY COMPILER: contradiction lineage uses stored observation IDs and demotes older court projections', async () => {
+  const url = createDatabase('reality_contradiction_lineage');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.create({
+    data: {
+      id: 'reality-contradiction-retailer',
+      name: 'Capital City Care',
+      type: 'storefront',
+      address: '1115 U St NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.916804,
+      lng: -77.027099,
+      licenseNumber: 'ABCA-133578',
+    },
+  });
+  const geo = await p.geoEntity.create({
+    data: {
+      id: 'reality-contradiction-geo',
+      name: 'Capital City Care',
+      lat: 38.916804,
+      lng: -77.027099,
+      retailerId: 'reality-contradiction-retailer',
+      source: 'hostile-test',
+      observedAt: new Date('2026-06-05T00:00:00.000Z'),
+      verification: 'UNKNOWN',
+    },
+  });
+
+  await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: REALITY_FIXTURE,
+    tenant: 'orderweeddc.com',
+  });
+  const admitted = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: new Date('2026-06-06T00:00:00.000Z'),
+  });
+  assert.equal(admitted.public_cohorts, 1);
+  await p.retailer.update({
+    where: { id: 'reality-contradiction-retailer' },
+    data: { reviewedBy: 'older-court-version' },
+  });
+
+  const originalEnvelope = JSON.parse(fs.readFileSync(path.join(REALITY_FIXTURE, 'snapshot.json'), 'utf8'));
+  const metadataBytes = Buffer.from(originalEnvelope.metadata_base64, 'base64');
+  const firstPage = JSON.parse(Buffer.from(originalEnvelope.pages[0].response_base64, 'base64').toString('utf8'));
+  const target = firstPage.features.find((feature) => feature.attributes.ABCA_NUMBER === 'ABCA-133578');
+  assert.ok(target, 'the hostile fixture must contain the exact licensed retailer');
+  target.attributes.STATUS = 'Inactive';
+  const pageBytes = Buffer.from(JSON.stringify(firstPage));
+  const changed = buildSnapshotArtifacts({
+    metadataBytes,
+    pageParts: [{ offset: 0, bytes: pageBytes }],
+    fetchedAt: new Date('2026-08-10T05:00:00.000Z'),
+  });
+  const changedDirectory = path.join(BASE, 'reality-contradiction-fixture');
+  fs.mkdirSync(changedDirectory);
+  fs.writeFileSync(path.join(changedDirectory, 'snapshot.json'), changed.snapshotBytes);
+  fs.writeFileSync(path.join(changedDirectory, 'manifest.json'), changed.manifestBytes);
+
+  const second = await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: changedDirectory,
+    tenant: 'orderweeddc.com',
+  });
+  assert.ok(second.contradictions > 0);
+  const rows = await p.marketClaimContradiction.findMany({
+    where: { tenant: 'orderweeddc.com' },
+  });
+  assert.ok(rows.length > 0);
+  const storedObservationIds = new Set((await p.marketObservation.findMany({ select: { id: true } })).map(({ id }) => id));
+  for (const row of rows) {
+    const earlier = JSON.parse(row.earlierObservationIdsJson);
+    const later = JSON.parse(row.laterObservationIdsJson);
+    assert.equal(earlier.length > 0 && earlier.every((id) => storedObservationIds.has(id)), true);
+    assert.equal(later.length > 0 && later.every((id) => storedObservationIds.has(id)), true);
+  }
+
+  const denied = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: new Date('2026-06-08T00:00:00.000Z'),
+  });
+  assert.equal(denied.public_cohorts, 0);
+  const retailer = await p.retailer.findUniqueOrThrow({ where: { id: 'reality-contradiction-retailer' } });
+  assert.equal(retailer.dataStatus, 'DISPUTED');
+  assert.equal(await p.geoClaim.count({
+    where: { geoEntityId: geo.id, decisionEligible: true },
+  }), 0);
 });
 
 test('readiness is HONEST on a fresh postgres deploy: ready once migrated, and the WAL check is ABSENT', async () => {
@@ -1057,6 +1370,6 @@ test('provider classification fails closed and the reviewed migration manifest e
   });
   assert.deepEqual(
     verified.migrations.map((entry) => entry.name),
-    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION],
+    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION],
   );
 });

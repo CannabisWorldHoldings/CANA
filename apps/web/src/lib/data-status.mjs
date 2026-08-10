@@ -60,6 +60,11 @@ export function resolveDataStatus(record, asOf = new Date()) {
       return DATA_STATUS.AWAITING_VERIFICATION;
     }
 
+    const verifiedAt = new Date(record.verifiedAt);
+    if (Number.isNaN(verifiedAt.getTime()) || verifiedAt > asOf) {
+      return DATA_STATUS.AWAITING_VERIFICATION;
+    }
+
     const expiry = new Date(record.freshnessExpiresAt);
     if (Number.isNaN(expiry.getTime()) || expiry <= asOf) {
       return DATA_STATUS.STALE;

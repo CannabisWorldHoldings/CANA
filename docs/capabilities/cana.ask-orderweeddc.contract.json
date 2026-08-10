@@ -1,6 +1,6 @@
 {
   "id": "cana.ask-orderweeddc",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Compile real customer language into a typed Intent IR, answer it from the evidence-gated market store with honest unknowns, and expose merchant-actionable opportunity from the same evidence.",
   "domain": "customer-demand",
   "real_outcome": "REAL USER INTENT -> USEFUL EVIDENCE-GATED ANSWER -> MERCHANT OPPORTUNITY",
@@ -8,7 +8,8 @@
   "reversibility": "Answers are reads; bounded public observations are pseudonymously deduplicated and throttled; emitted opportunities are dismissable records; follow-up triggers expire by construction.",
   "canonical_actions": [
     { "action_id": "ask.answer", "description": "Answer a customer intent from verified market truth", "entry": "apps/web/src/app/api/v1/ask/route.ts (GET /api/v1/ask?q=)" },
-    { "action_id": "ask.compile-intent", "description": "Compile raw language to Intent IR (deterministic, unknowns explicit)", "entry": "apps/web/src/lib/ask/intent-ir.mjs#compileIntent" }
+    { "action_id": "ask.compile-intent", "description": "Compile raw language to Intent IR (deterministic, unknowns explicit)", "entry": "apps/web/src/lib/ask/intent-ir.mjs#compileIntent" },
+    { "action_id": "ask.recheck-market-gap", "description": "Re-evaluate one tenant-scoped MARKET_GAP against the same current truth gate; close only after a verified candidate exists", "entry": "apps/web/src/lib/ask/market-gap-recheck.mjs#recheckMarketGap" }
   ],
   "evidence_hooks": [
     "one AskIntentSignal row per admitted public observation (SHA-256 intent identity + minimized raw-free IR + answer summary)",
@@ -16,7 +17,7 @@
     "candidate provenance object per answer (same shape as /api/v1/retailers)"
   ],
   "continuation_hooks": [
-    "atomically creates one FOLLOW_UP trigger (OBSERVE_ONLY, budgeted, stop-conditioned, 7d expiry, bounded 24h recurrence) per admitted opportunity; FIRED means due for a registered consumer, not that revalidation happened"
+    "atomically creates one FOLLOW_UP trigger (OBSERVE_ONLY, budgeted, stop-conditioned, 7d expiry, bounded 24h recurrence) per admitted opportunity; the registered ask_market_gap_recheck consumer appends REFLECTED and closes only on current verified candidates"
   ],
   "backend_adapters": ["deterministic-lexicon-v1 (a model-backed compiler may compete as a challenger behind the same IR contract)"],
   "status": "STRUCTURALLY_VALIDATED"

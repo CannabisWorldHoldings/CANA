@@ -85,6 +85,9 @@ until an owner-authorized observation supplies a new receipt. Columns cleared, b
 | `Brand.description` / `Product.description` / `Deal.description` | `text` | unbounded |
 | `StagingABCARetailer.rawJson` / `LoyaltyTransaction.description` | `text` | unbounded (where the model is present) |
 | `ContinuationReceipt.evidence` / `Opportunity.evidence` | `text` | unbounded (schema + disposable PostgreSQL proof; production unverified) |
+| `MarketSourceSnapshot.queryParameters` / `.payloadJson` | `text` | unbounded (Phase B schema + disposable PostgreSQL proof; production unverified) |
+| `MarketObservation.rawValue` / `.normalizedValue` / `.uncertainty` | `text` | unbounded (Phase B schema + disposable PostgreSQL proof; production unverified) |
+| `MarketEntityResolution.candidateIds` / `MarketClaim.claimValue` / `.uncertainty` | `text` | unbounded (Phase B schema + disposable PostgreSQL proof; production unverified) |
 
 Re-run the evidence query any time with:
 
@@ -93,7 +96,8 @@ psql "$DATABASE_URL" -c "SELECT table_name, column_name, data_type, character_ma
   FROM information_schema.columns
   WHERE table_schema='public' AND column_name IN
    ('evidenceChain','content','details','rawJson','summary','evidence','uncertainty',
-    'preparedAction','oldValue','newValue','notes','description');"
+    'preparedAction','oldValue','newValue','notes','description','queryParameters',
+    'payloadJson','rawValue','normalizedValue','uncertainty','candidateIds','claimValue');"
 ```
 
 The tripwire stays armed for any FUTURE provider flip: a provider not in the court's

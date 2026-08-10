@@ -1,0 +1,52 @@
+{
+  "schema_version": "cana-reality-benchmark-v1",
+  "mode": "OFFLINE_COMMITTED_FIXTURE_REPLAY",
+  "as_of": "2026-06-06T00:00:00.000Z",
+  "source": {
+    "id": "dcgis:abca:licensed-medical-cannabis-retailers:layer-31",
+    "catalog_modified_date": "2026-06-05",
+    "captured_at": "2026-08-10T03:49:50.514Z",
+    "fixture_snapshot_sha256": "ae7b9aec975e05f4db4fc1bef93e175e80931591fff6f63ce1bf8730d6be338a",
+    "raw_query_sha256": "94f314a0021ca26693cf1dfad899db102eca86771f796acaacddf190409c2ffc",
+    "records": 74
+  },
+  "compiler": {
+    "observations": 592,
+    "invalid_observations": 0,
+    "resolutions": 74,
+    "claims_unknown_before_court": 592
+  },
+  "court": {
+    "admitted_claims": 296,
+    "denied_claims": 296,
+    "unsupported_claims_admitted": 0,
+    "tampered_snapshot_decision": "DENY",
+    "stale_current_decision": "MARK_STALE"
+  },
+  "entity_resolution": {
+    "exact_matches": 74,
+    "review_required_records": 0,
+    "unmatched_records": 0,
+    "malformed_records": 0,
+    "false_automatic_links": 0
+  },
+  "organism": {
+    "gap_closed_in_deterministic_replay": true,
+    "site_intelligence_coverage_delta": 4
+  },
+  "cognitive_evolution": {
+    "state": "REFLECTION_ONLY",
+    "value_state": "VALUE_NOT_ESTABLISHED",
+    "cognitive_mutations_promoted": 0,
+    "receipt_sha256": "1c928a77d91404b816864817497ae8966953e7f07b06008c7b5c59613ff59b1c"
+  },
+  "effects": {
+    "network_live_source_calls": 0,
+    "provider_calls": 0,
+    "paid_calls": 0,
+    "spend_cents": 0,
+    "production_mutations": 0,
+    "deployments": 0,
+    "cognitive_promotions": 0
+  }
+}

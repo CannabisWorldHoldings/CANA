@@ -98,7 +98,7 @@ function statusWhere(status, asOf) {
       return {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: asOf },
         freshnessExpiresAt: { gt: asOf },
       };
     case 'DEMONSTRATION_ONLY':
@@ -239,7 +239,7 @@ export function publicCatalogRecordWhere(asOf = new Date()) {
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: timestamp },
         freshnessExpiresAt: { gt: timestamp },
       },
     ],

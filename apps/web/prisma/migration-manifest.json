@@ -17,6 +17,10 @@
     {
       "name": "20260809170000_continuation_kernel",
       "sha256": "a3f043e4ec37bd2b9150c9c20f2b62ab6b764796ca4b3f37d3dc0b60976dbe94"
+    },
+    {
+      "name": "20260810000000_market_reality_compiler",
+      "sha256": "b22adb329a829ba350097042b0272d38fbdabbd130587dabfab63f50d0c53062"
     }
   ]
 }

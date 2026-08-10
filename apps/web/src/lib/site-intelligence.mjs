@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-export const SITE_INTELLIGENCE_SCHEMA_VERSION = 1;
+export const SITE_INTELLIGENCE_SCHEMA_VERSION = 2;
 export const MAX_SITE_INTELLIGENCE_SNAPSHOTS = 100;
 
 export const SITE_ROUTE_INVENTORY = Object.freeze([
@@ -81,6 +81,13 @@ const INTEGER_METRICS = Object.freeze([
   'canonicalSitemapArticles',
   'leadsLast30Days',
   'persistedSnapshots',
+  'marketSourceSnapshots',
+  'marketClaimsTotal',
+  'marketClaimsEligible',
+  'marketClaimsUnknown',
+  'marketResolutionsReviewRequired',
+  'marketGapsOpen',
+  'marketGapsClosed',
 ]);
 
 function validDate(value, label) {
@@ -299,6 +306,40 @@ function buildObservations(metrics) {
         'Use the local count for operational attribution only; do not label it conversion or revenue.',
       authority: 'READ_ONLY',
       quantity: metrics.leadsLast30Days,
+    }),
+    observation({
+      key: 'REALITY_COMPILER_COVERAGE',
+      plane: 'OBSERVATION',
+      state: metrics.marketClaimsEligible > 0 ? 'HEALTHY' : 'ATTENTION',
+      severity: metrics.marketClaimsEligible > 0 ? 'INFO' : 'HIGH',
+      title: 'Verification Court market coverage',
+      summary: `${metrics.marketClaimsEligible} of ${metrics.marketClaimsTotal} compiled market claims are decision eligible; ${metrics.marketClaimsUnknown} remain UNKNOWN and ${metrics.marketResolutionsReviewRequired} identity resolutions require review.`,
+      evidence: `database: sourceSnapshots=${metrics.marketSourceSnapshots}; claimsTotal=${metrics.marketClaimsTotal}; claimsEligible=${metrics.marketClaimsEligible}; claimsUnknown=${metrics.marketClaimsUnknown}; resolutionsReviewRequired=${metrics.marketResolutionsReviewRequired}`,
+      uncertainty:
+        'Coverage measures only persisted court decisions from admitted snapshots; it does not prove whole-market completeness.',
+      preparedAction:
+        metrics.marketResolutionsReviewRequired > 0
+          ? 'Review exact-identifier conflicts without using names or addresses as automatic identity.'
+          : 'Keep snapshot freshness and court decisions under review.',
+      authority: 'ADMIN_REVIEW_REQUIRED',
+      quantity: metrics.marketClaimsEligible,
+    }),
+    observation({
+      key: 'MARKET_GAP_FEEDBACK_LOOP',
+      plane: 'INTELLIGENCE',
+      state: metrics.marketGapsOpen > 0 ? 'ATTENTION' : 'HEALTHY',
+      severity: metrics.marketGapsOpen > 0 ? 'MEDIUM' : 'INFO',
+      title: 'ASK market-gap feedback loop',
+      summary: `${metrics.marketGapsOpen} MARKET_GAP opportunities remain open and ${metrics.marketGapsClosed} have closed after a verified-candidate recheck.`,
+      evidence: `database: marketGapsOpen=${metrics.marketGapsOpen}; marketGapsClosed=${metrics.marketGapsClosed}`,
+      uncertainty:
+        'A closed evidence gap proves answerability improved; it does not prove demand, conversion, or commercial value.',
+      preparedAction:
+        metrics.marketGapsOpen > 0
+          ? 'Continue bounded OBSERVE_ONLY rechecks until evidence improves or recurrence expires.'
+          : 'No market-gap recheck action is currently prepared.',
+      authority: 'READ_ONLY',
+      quantity: metrics.marketGapsOpen,
     }),
     observation({
       key: 'SEARCH_CONSOLE_GATE',

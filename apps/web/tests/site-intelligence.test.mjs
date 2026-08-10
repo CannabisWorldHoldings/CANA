@@ -8,6 +8,7 @@ import {
   MAX_SITE_INTELLIGENCE_SNAPSHOTS,
   persistSiteIntelligenceSnapshot,
   SITE_ROUTE_INVENTORY,
+  SITE_INTELLIGENCE_SCHEMA_VERSION,
 } from '../src/lib/site-intelligence.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -37,11 +38,19 @@ function baseMetrics(overrides = {}) {
     canonicalSitemapArticles: 0,
     leadsLast30Days: 0,
     persistedSnapshots: 0,
+    marketSourceSnapshots: 0,
+    marketClaimsTotal: 0,
+    marketClaimsEligible: 0,
+    marketClaimsUnknown: 0,
+    marketResolutionsReviewRequired: 0,
+    marketGapsOpen: 0,
+    marketGapsClosed: 0,
     ...overrides,
   };
 }
 
 test('Site Brain produces deterministic local findings with explicit external gates', () => {
+  assert.equal(SITE_INTELLIGENCE_SCHEMA_VERSION, 2);
   const first = buildSiteIntelligenceSnapshot(
     baseMetrics(),
     new Date('2026-07-17T12:00:00.000Z'),
@@ -88,6 +97,13 @@ test('truth, evidence, freshness, and source debt change only their bounded find
       canonicalSitemapRetailers: 2,
       canonicalSitemapArticles: 1,
       leadsLast30Days: 4,
+      marketSourceSnapshots: 1,
+      marketClaimsTotal: 12,
+      marketClaimsEligible: 4,
+      marketClaimsUnknown: 8,
+      marketResolutionsReviewRequired: 2,
+      marketGapsOpen: 1,
+      marketGapsClosed: 3,
     }),
     new Date('2026-07-17T12:00:00.000Z'),
   );
@@ -110,6 +126,10 @@ test('truth, evidence, freshness, and source debt change only their bounded find
     byKey.LOCAL_HANDOFF_OUTCOMES.uncertainty,
     /does not prove purchase or revenue/i,
   );
+  assert.equal(byKey.REALITY_COMPILER_COVERAGE.quantity, 4);
+  assert.match(byKey.REALITY_COMPILER_COVERAGE.summary, /8 remain UNKNOWN/);
+  assert.equal(byKey.MARKET_GAP_FEEDBACK_LOOP.quantity, 1);
+  assert.match(byKey.MARKET_GAP_FEEDBACK_LOOP.uncertainty, /does not prove demand, conversion, or commercial value/i);
 });
 
 test('Site Brain rejects malformed metrics and timestamps', () => {

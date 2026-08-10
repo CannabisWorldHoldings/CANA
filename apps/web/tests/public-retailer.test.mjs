@@ -12,51 +12,53 @@ const AS_OF = new Date('2026-07-17T20:00:00.000Z');
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(testDirectory, '..');
 
-test('new real submissions remain private until evidence has been reviewed', () => {
-  assert.equal(
-    isPubliclyDiscoverable({
-      isDemonstration: false,
+test('public discovery accepts only current, non-demo evidence verified by asOf', () => {
+  const currentRecord = {
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: new Date('2026-07-16T20:00:00.000Z'),
+    freshnessExpiresAt: new Date('2026-07-18T20:00:00.000Z'),
+  };
+
+  for (const [label, retailer] of [
+    ['awaiting verification', {
+      ...currentRecord,
       dataStatus: 'AWAITING_VERIFICATION',
-      verifiedAt: null,
-    }, AS_OF),
-    false,
-  );
-  assert.equal(
-    isPubliclyDiscoverable({
-      isDemonstration: false,
+    }],
+    ['stale', {
+      ...currentRecord,
       dataStatus: 'STALE',
-      verifiedAt: new Date('2026-06-17T20:00:00.000Z'),
-    }, AS_OF),
-    true,
-  );
-  assert.equal(
-    isPubliclyDiscoverable({
-      isDemonstration: false,
-      verifiedAt: new Date('2026-07-18T20:00:00.000Z'),
-    }, AS_OF),
-    false,
-  );
-  assert.equal(
-    isPubliclyDiscoverable({
+      freshnessExpiresAt: new Date('2026-07-16T20:00:00.000Z'),
+    }],
+    ['missing freshness', {
+      ...currentRecord,
+      freshnessExpiresAt: null,
+    }],
+    ['expired freshness', {
+      ...currentRecord,
+      freshnessExpiresAt: AS_OF,
+    }],
+    ['demonstration', {
+      ...currentRecord,
       isDemonstration: true,
-      verifiedAt: null,
-    }, AS_OF),
-    true,
-  );
+    }],
+    ['future verification', {
+      ...currentRecord,
+      verifiedAt: new Date('2026-07-18T20:00:00.000Z'),
+    }],
+  ]) {
+    assert.equal(isPubliclyDiscoverable(retailer, AS_OF), false, label);
+  }
+
+  assert.equal(isPubliclyDiscoverable(currentRecord, AS_OF), true);
 });
 
 test('Prisma discovery policy mirrors the in-memory release boundary', () => {
   assert.deepEqual(publicRetailerWhere(AS_OF), {
-    OR: [
-      { isDemonstration: true },
-      {
-        isDemonstration: false,
-        verifiedAt: {
-          not: null,
-          lte: AS_OF,
-        },
-      },
-    ],
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: { not: null, lte: AS_OF },
+    freshnessExpiresAt: { gt: AS_OF },
   });
 });
 

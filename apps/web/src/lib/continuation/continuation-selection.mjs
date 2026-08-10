@@ -33,7 +33,7 @@ function interleaveBounded(primary, reactive, limit) {
  */
 export async function selectTickCandidates(
   prisma,
-  { conditionResults, events, limit, now },
+  { conditionResults, events, limit, now, tenant },
 ) {
   const eventKeys = [...events];
   const conditionRefs = [...conditionResults.keys()];
@@ -50,6 +50,7 @@ export async function selectTickCandidates(
   const [timeBased, reactive] = await Promise.all([
     prisma.continuationTrigger.findMany({
       where: {
+        ...(tenant ? { tenant } : {}),
         status: TRIGGER_STATES.ARMED,
         OR: [
           { expiresAt: { lte: now } },
@@ -64,6 +65,7 @@ export async function selectTickCandidates(
     }),
     prisma.continuationTrigger.findMany({
       where: {
+        ...(tenant ? { tenant } : {}),
         status: TRIGGER_STATES.ARMED,
         expiresAt: { gt: now },
         OR: reactiveKinds,

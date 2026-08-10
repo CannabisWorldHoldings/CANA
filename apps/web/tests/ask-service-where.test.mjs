@@ -62,7 +62,7 @@ test('the evidence gate travels with every ask query, verbatim', () => {
   const where = buildCandidateWhere(compileIntent('anything', { now: NOW }), { brandId: BRAND, now: NOW });
   assert.equal(where.isDemonstration, false);
   assert.equal(where.dataStatus, 'VERIFIED_CURRENT');
-  assert.deepEqual(where.verifiedAt, { not: null });
+  assert.deepEqual(where.verifiedAt, { not: null, lte: NOW });
   assert.ok(where.freshnessExpiresAt.gt instanceof Date);
   assert.deepEqual(where.menus, { some: { brandMenus: { some: { brandId: BRAND } } } });
 });
