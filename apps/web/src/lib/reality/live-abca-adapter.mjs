@@ -149,13 +149,45 @@ function publicIpv4(address) {
   return true;
 }
 
+function ipv6Words(address) {
+  let normalized = address.toLowerCase();
+  if (normalized.includes('%')) return null;
+  if (normalized.includes('.')) {
+    const separator = normalized.lastIndexOf(':');
+    const octets = normalized.slice(separator + 1).split('.').map(Number);
+    if (separator < 0 || octets.length !== 4 || octets.some((value) => (
+      !Number.isInteger(value) || value < 0 || value > 255
+    ))) return null;
+    normalized = `${normalized.slice(0, separator + 1)}${((octets[0] << 8) | octets[1]).toString(16)}:${((octets[2] << 8) | octets[3]).toString(16)}`;
+  }
+  const halves = normalized.split('::');
+  if (halves.length > 2) return null;
+  const left = halves[0] ? halves[0].split(':') : [];
+  const right = halves.length === 2 && halves[1] ? halves[1].split(':') : [];
+  const missing = 8 - left.length - right.length;
+  if ((halves.length === 1 && missing !== 0) || (halves.length === 2 && missing < 1)) return null;
+  const fields = halves.length === 2 ? [...left, ...Array(missing).fill('0'), ...right] : left;
+  if (fields.length !== 8 || fields.some((field) => !/^[0-9a-f]{1,4}$/.test(field))) return null;
+  return fields.map((field) => Number.parseInt(field, 16));
+}
+
 function publicIpv6(address) {
-  const lower = address.toLowerCase();
-  if (lower.includes('%') || lower === '::' || lower === '::1') return false;
-  if (lower.startsWith('::ffff:')) return publicIpv4(lower.slice(7));
-  const first = Number.parseInt(lower.split(':')[0] || '0', 16);
+  const words = ipv6Words(address);
+  if (!words) return false;
+  if (words.every((word) => word === 0)) return false;
+  if (words.slice(0, 7).every((word) => word === 0) && words[7] === 1) return false;
+  if (words.slice(0, 5).every((word) => word === 0) && words[5] === 0xffff) {
+    const embedded = `${words[6] >> 8}.${words[6] & 0xff}.${words[7] >> 8}.${words[7] & 0xff}`;
+    return publicIpv4(embedded);
+  }
+  if (words.slice(0, 6).every((word) => word === 0)) return false;
+  const first = words[0];
   if ((first & 0xfe00) === 0xfc00 || (first & 0xffc0) === 0xfe80 || (first & 0xff00) === 0xff00) return false;
-  if (lower.startsWith('2001:db8:')) return false;
+  if ((first & 0xffc0) === 0xfec0) return false;
+  if (first === 0x0064 && words[1] === 0xff9b && (words[2] === 0 || words[2] === 1)) return false;
+  if (first === 0x0100 && words.slice(1, 4).every((word) => word === 0)) return false;
+  if (first === 0x2001 && words[1] === 0x0db8) return false;
+  if (first === 0x2002) return false;
   return true;
 }
 

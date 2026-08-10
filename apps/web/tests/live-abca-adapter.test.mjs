@@ -295,9 +295,20 @@ test('SSRF validation accepts only public DNS answers and rejects rebinding cand
     '::',
     '::1',
     '::ffff:127.0.0.1',
+    '::ffff:7f00:1',
+    '0:0:0:0:0:0:0:0',
+    '0:0:0:0:0:0:0:1',
+    '0:0:0:0:0:ffff:127.0.0.1',
+    '0:0:0:0:0:ffff:7f00:1',
     'fc00::1',
+    'fc00:0:0:0:0:0:0:1',
     'fe80::1',
+    'fe80:0:0:0:0:0:0:1',
     'ff02::1',
+    'ff02:0:0:0:0:0:0:1',
+    '64:ff9b::7f00:1',
+    '2001:0db8:0:0:0:0:0:1',
+    '2002:7f00:1::1',
   ]) {
     assert.throws(
       () => validateResolvedAddresses([{ address }]),
@@ -305,6 +316,9 @@ test('SSRF validation accepts only public DNS answers and rejects rebinding cand
       address,
     );
   }
+  assert.deepEqual(validateResolvedAddresses([
+    { address: '2600:1408:ec00:36:0:0:1736:7f24', family: 6 },
+  ]), ['2600:1408:ec00:36:0:0:1736:7f24']);
   assert.throws(() => validateResolvedAddresses([]), /CANA_LIVE_REALITY_DNS_INVALID/);
   assert.throws(() => validateResolvedAddresses([{ address: 'not-an-ip' }]), /CANA_LIVE_REALITY_DNS_INVALID/);
 });
