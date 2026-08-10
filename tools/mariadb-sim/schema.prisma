@@ -733,16 +733,19 @@ model MarketCompilation {
   id                 String   @id @default(uuid())
   tenant             String
   snapshotId         String
+  contentArtifactId  String?
   acquisitionEventId String?
   createdAt          DateTime @default(now())
 
   snapshot         MarketSourceSnapshot          @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  contentArtifact  MarketSourceContentArtifact?  @relation(fields: [contentArtifactId], references: [id], onDelete: Restrict)
   acquisitionEvent MarketSourceAcquisitionEvent? @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
   resolutions      MarketEntityResolution[]
   claims           MarketClaim[]
 
   @@unique([tenant, snapshotId])
   @@index([snapshotId])
+  @@index([contentArtifactId])
   @@index([acquisitionEventId])
 }
 
@@ -881,7 +884,7 @@ model MarketClaimEvidence {
 /// Append-only Verification Court outcome, including preservation of conflicts
 /// and explicit reasons for every eligibility decision.
 model MarketVerificationEvent {
-  id                   String   @id @default(uuid())
+  id                   String    @id @default(uuid())
   claimId              String
   acquisitionEventId   String?
   evidenceRevocationId String?
@@ -890,13 +893,14 @@ model MarketVerificationEvent {
   evaluatorVersion     String
   evidenceDigest       String
   asOf                 DateTime
-  createdAt            DateTime @default(now())
+  freshnessExpiresAt   DateTime?
+  createdAt            DateTime  @default(now())
 
   claim              MarketClaim                    @relation(fields: [claimId], references: [id], onDelete: Restrict)
   acquisitionEvent   MarketSourceAcquisitionEvent?  @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
   evidenceRevocation MarketEvidenceRevocationEvent? @relation(fields: [evidenceRevocationId], references: [id], onDelete: Restrict)
 
-  @@unique([claimId, evidenceDigest])
+  @@unique([claimId, evidenceDigest, acquisitionEventId])
   @@index([claimId, createdAt])
   @@index([decision, createdAt])
   @@index([acquisitionEventId])
@@ -916,15 +920,20 @@ model MarketVerificationEvent {
 /// linked MarketSourceSnapshot. This row deliberately does not duplicate the
 /// payloadJson blob.
 model MarketSourceContentArtifact {
-  id            String   @id @default(uuid())
-  snapshotId    String   @unique
-  sourceKey     String
-  contentSha256 String
-  payloadBytes  Int
-  createdAt     DateTime @default(now())
+  id                    String   @id @default(uuid())
+  snapshotId            String   @unique
+  sourceKey             String
+  sourceUrl             String
+  requestContractDigest String
+  contentSha256         String
+  payloadBytes          Int
+  recordCount           Int
+  schemaVersion         String
+  createdAt             DateTime @default(now())
 
   snapshot          MarketSourceSnapshot            @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
   acquisitionEvents MarketSourceAcquisitionEvent[]
+  compilations      MarketCompilation[]
   revocations       MarketEvidenceRevocationEvent[]
 
   @@unique([sourceKey, contentSha256])
@@ -939,13 +948,18 @@ model MarketSourceAcquisitionEvent {
   sourceKey                String
   attemptId                String
   sequence                 Int
-  /// SOURCE_CHANGED | SOURCE_UNCHANGED | SOURCE_PARTIAL | SOURCE_FAILED | SOURCE_SCHEMA_CHANGED | SOURCE_UNKNOWN
+  /// REQUESTED | PREFLIGHT_VALIDATED | FETCHING | CAPTURED | POSTFLIGHT_VALIDATED | CHANGED | PERSISTED | UNCHANGED | REVALIDATION_PENDING | COMPLETED | FAILED | IMPORTED_FIXTURE
   state                    String
+  /// SOURCE_CHANGED | SOURCE_UNCHANGED | SOURCE_PARTIAL | SOURCE_FAILED | SOURCE_SCHEMA_CHANGED | SOURCE_UNKNOWN
+  outcome                  String?
   predicateScope           String @db.Text
   requestedAt              DateTime
+  eventAt                  DateTime
   fetchedAt                DateTime?
   completedAt              DateTime?
   sourceRevision           String
+  preSourceRevision        String?
+  postSourceRevision       String?
   /// OBSERVED | UNKNOWN
   revisionState            String    @default("UNKNOWN")
   etag                     String?
@@ -955,6 +969,8 @@ model MarketSourceAcquisitionEvent {
   requestDigest            String
   completeness             String    @default("UNKNOWN")
   observedRecordCount      Int?
+  preObservedRecordCount   Int?
+  postObservedRecordCount  Int?
   observedPayloadBytes     Int?
   adapterVersion           String
   adapterContractDigest    String?
@@ -983,8 +999,7 @@ model MarketSourceAcquisitionEvent {
   verificationEvents MarketVerificationEvent[]
   revocations        MarketEvidenceRevocationEvent[]
 
-  @@unique([sourceKey, attemptId])
-  @@unique([sourceKey, sequence])
+  @@unique([attemptId, sequence])
   @@unique([eventHash])
   @@index([sourceKey, createdAt])
   @@index([contentArtifactId])
@@ -1017,7 +1032,7 @@ model MarketSourceCircuitEvent {
   id             String    @id @default(uuid())
   sourceKey      String
   workClass      String
-  tenant         String?
+  tenant         String
   sequence       Int
   /// HEALTHY | DEGRADED | OPEN_CIRCUIT | PROBE_ALLOWED
   state          String

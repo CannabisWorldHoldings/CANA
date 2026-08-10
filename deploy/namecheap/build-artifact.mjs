@@ -550,6 +550,11 @@ checks['no legacy ABCA import bypass shipped'] = [
   'scripts/ingest-abca-feed.mjs',
   'scripts/seed-abca-retailers.mjs',
 ].every((script) => !fs.existsSync(path.join(artifactRoot, script)));
+checks['no live acquisition tooling shipped'] = [
+  'scripts/acquire-live-market-reality.mjs',
+  'src/lib/reality/live-abca-adapter.mjs',
+  'src/lib/reality/live-reality-acquisition.mjs',
+].every((file) => !fs.existsSync(path.join(artifactRoot, file)));
 checks['release.json present with full 40-hex gitSha'] =
   fs.existsSync(path.join(artifactRoot, 'release.json')) &&
   /^[0-9a-f]{40}$/.test(releaseIdentity.gitSha) &&

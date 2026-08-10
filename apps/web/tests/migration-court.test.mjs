@@ -411,7 +411,7 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
     'SELECT "id", "sourceKey", "contentSha256" FROM "MarketSourceContentArtifact"',
   );
   const firstEvents = await p.$queryRawUnsafe(
-    'SELECT "id", "contentArtifactId", "snapshotId", "attemptId", "sequence", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "sequence"',
+    'SELECT "id", "contentArtifactId", "snapshotId", "attemptId", "sequence", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "fetchedAt", "id"',
   );
   assert.equal(artifacts.length, 1, 'upgrade must create one immutable content identity');
   assert.equal(artifacts[0].sourceKey, snapshot.sourceKey);
@@ -423,21 +423,21 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
 
   await p.$executeRawUnsafe(`
     INSERT INTO "MarketSourceAcquisitionEvent" (
-      "id", "sourceKey", "attemptId", "sequence", "state", "predicateScope",
-      "requestedAt", "fetchedAt", "sourceRevision", "revisionState", "requestDigest",
+      "id", "sourceKey", "attemptId", "sequence", "state", "outcome", "predicateScope",
+      "requestedAt", "eventAt", "fetchedAt", "sourceRevision", "revisionState", "requestDigest",
       "completeness", "adapterVersion", "parserVersion", "repositoryCommitSha",
       "contentArtifactId", "snapshotId", "priorEventHash", "eventHash"
     ) VALUES (
-      'live-reality-acquisition-2', '${snapshot.sourceKey}', 'attempt-2026-08-17', 2,
-      'SOURCE_UNCHANGED', 'licensed_retailer_identity,status,address,coordinates',
-      TIMESTAMP '2026-08-17 12:00:00+00', TIMESTAMP '2026-08-17 12:00:01+00',
+      'live-reality-acquisition-2', '${snapshot.sourceKey}', 'attempt-2026-08-17', 1,
+      'COMPLETED', 'SOURCE_UNCHANGED', 'licensed_retailer_identity,status,address,coordinates',
+      TIMESTAMP '2026-08-17 12:00:00+00', TIMESTAMP '2026-08-17 12:00:01+00', TIMESTAMP '2026-08-17 12:00:01+00',
       'UNKNOWN', 'UNKNOWN', '${'b'.repeat(64)}', 'COMPLETE',
       'dc-abca-live-v1', 'dc-abca-arcgis-v1', 'VERSION_PROVENANCE_UNKNOWN',
       '${artifacts[0].id}', '${snapshot.id}', '${'c'.repeat(64)}', '${'d'.repeat(64)}'
     )
   `);
   const secondEvents = await p.$queryRawUnsafe(
-    'SELECT "id", "contentArtifactId", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "sequence"',
+    'SELECT "id", "contentArtifactId", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "fetchedAt", "id"',
   );
   assert.equal(await p.$queryRawUnsafe('SELECT "id" FROM "MarketSourceContentArtifact"').then((rows) => rows.length), 1);
   assert.equal(secondEvents.length, 2, 'identical bytes at a later time must remain a separate acquisition');

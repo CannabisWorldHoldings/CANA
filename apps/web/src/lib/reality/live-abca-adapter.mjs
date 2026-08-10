@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { lookup as defaultLookup } from 'node:dns/promises';
 import { request as httpsRequest } from 'node:https';
 import { isIP } from 'node:net';
@@ -8,6 +9,8 @@ import {
   ABCA_LAYER_URL,
   ABCA_QUERY_URL,
   ABCA_SOURCE_ID,
+  buildSnapshotArtifacts,
+  validateOfficialSourceSnapshotBytes,
 } from './official-source-snapshot.mjs';
 
 export const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
@@ -39,6 +42,20 @@ export const ABCA_LIVE_CONTRACT = Object.freeze({
   bodyTimeoutMs: BODY_TIMEOUT_MS,
   runTimeoutMs: RUN_TIMEOUT_MS,
 });
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function digest(value) {
+  return createHash('sha256').update(typeof value === 'string' ? value : canonicalJson(value)).digest('hex');
+}
+
+export const ABCA_LIVE_CONTRACT_DIGEST = digest(ABCA_LIVE_CONTRACT);
 
 function fail(code, detail) {
   const error = new Error(detail === undefined ? code : `${code}:${detail}`);
@@ -133,7 +150,7 @@ export function validateResolvedAddresses(records) {
   if (!Array.isArray(records) || records.length === 0) fail('CANA_LIVE_REALITY_DNS_INVALID');
   const addresses = [];
   for (const record of records) {
-    const address = record?.address;
+    const address = typeof record === 'string' ? record : record?.address;
     const family = isIP(address ?? '');
     if (!family) fail('CANA_LIVE_REALITY_DNS_INVALID');
     if (family === 4 ? !publicIpv4(address) : !publicIpv6(address)) {
@@ -307,4 +324,182 @@ export async function fetchAbcaResponse(url, { fetchImpl, signal, resolvedAddres
     });
   }
   return pinnedHttpsResponse(url, { addresses, signal });
+}
+
+function exactRevision(metadata) {
+  if (metadata?.error || metadata?.id !== ABCA_LIVE_CONTRACT.layerId) {
+    fail('CANA_LIVE_REALITY_SCHEMA_CHANGED');
+  }
+  const fields = new Set(Array.isArray(metadata.fields) ? metadata.fields.map((field) => field?.name) : []);
+  if (ABCA_FIELDS.some((field) => !fields.has(field))) fail('CANA_LIVE_REALITY_SCHEMA_CHANGED');
+  if (
+    !String(metadata.capabilities ?? '').split(',').map((value) => value.trim()).includes('Query')
+    || metadata.supportsPagination !== true
+    || metadata.advancedQueryCapabilities?.supportsPagination !== true
+    || metadata.advancedQueryCapabilities?.supportsOrderBy !== true
+    || !Number.isInteger(metadata.maxRecordCount)
+    || metadata.maxRecordCount < 1
+  ) fail('CANA_LIVE_REALITY_SCHEMA_CHANGED');
+  const revision = metadata.editingInfo?.lastEditDate;
+  if (!Number.isFinite(revision) || revision < 0) fail('CANA_LIVE_REALITY_REVISION_UNKNOWN');
+  return revision;
+}
+
+function exactCount(body, maximum) {
+  if (body?.error || !Number.isInteger(body?.count) || body.count < 0 || body.count > maximum) {
+    fail('CANA_LIVE_REALITY_COUNT_INVALID');
+  }
+  return body.count;
+}
+
+function summarizeResponse(response) {
+  return {
+    etag: response.metadata.etag,
+    last_modified: response.metadata.last_modified,
+    http_status: response.metadata.http_status,
+    content_type: response.metadata.content_type,
+  };
+}
+
+export async function captureAbcaReality({
+  fetchImpl,
+  lookup = defaultLookup,
+  clock = () => new Date(),
+  onStage = async () => {},
+} = {}) {
+  if (typeof clock !== 'function' || typeof onStage !== 'function') fail('CANA_LIVE_REALITY_ADAPTER_INPUT_INVALID');
+  const urls = buildAbcaRequestUrls();
+  const controller = new AbortController();
+  const deadline = Date.now() + RUN_TIMEOUT_MS;
+  let timedOut = false;
+  const runTimer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, RUN_TIMEOUT_MS);
+  const withRunTimeout = (promise) => Promise.race([
+    promise,
+    new Promise((_, reject) => controller.signal.addEventListener('abort', () => {
+      const error = new Error('CANA_LIVE_REALITY_RUN_TIMEOUT');
+      error.code = 'CANA_LIVE_REALITY_RUN_TIMEOUT';
+      reject(error);
+    }, { once: true })),
+  ]);
+  let totalBytes = 0;
+  let resolvedAddresses;
+  const read = async (url) => {
+    if (timedOut) fail('CANA_LIVE_REALITY_RUN_TIMEOUT');
+    let response;
+    try {
+      response = await withRunTimeout(
+        fetchAbcaResponse(url, { fetchImpl, signal: controller.signal, resolvedAddresses }),
+      );
+    } catch (error) {
+      if (timedOut || error?.name === 'AbortError') fail('CANA_LIVE_REALITY_RUN_TIMEOUT');
+      throw error;
+    }
+    const remainingMs = deadline - Date.now();
+    if (remainingMs < 1) fail('CANA_LIVE_REALITY_RUN_TIMEOUT');
+    let result;
+    try {
+      result = await readBoundedJsonResponse(response, { timeoutMs: Math.min(BODY_TIMEOUT_MS, remainingMs) });
+    } catch (error) {
+      if (timedOut) fail('CANA_LIVE_REALITY_RUN_TIMEOUT');
+      throw error;
+    }
+    totalBytes += result.bytes.length;
+    if (totalBytes > MAX_RUN_BYTES) fail('CANA_LIVE_REALITY_RUN_OVERSIZE');
+    return result;
+  };
+
+  try {
+    resolvedAddresses = await withRunTimeout(resolveAbcaAddresses({ lookup }));
+    const preMetadata = await read(urls.metadata);
+    const preRevision = exactRevision(preMetadata.body);
+    const preCountResponse = await read(urls.count);
+    const preCount = exactCount(preCountResponse.body, Math.min(MAX_RECORDS, preMetadata.body.maxRecordCount));
+    const recordsResponse = await read(urls.records);
+    const features = recordsResponse.body?.features;
+    if (recordsResponse.body?.error || !Array.isArray(features)) fail('CANA_LIVE_REALITY_RECORDS_INVALID');
+    if (recordsResponse.body.exceededTransferLimit !== false) fail('CANA_LIVE_REALITY_PARTIAL_REFUSED');
+    if (features.length !== preCount) fail('CANA_LIVE_REALITY_RECORD_COUNT_MISMATCH');
+    const fetchedAt = new Date(clock()).toISOString();
+    await onStage('CAPTURED', {
+      fetched_at: fetchedAt,
+      pre_revision: String(preRevision),
+      pre_count: preCount,
+      record_count: features.length,
+      payload_bytes: totalBytes,
+    });
+
+    const postMetadata = await read(urls.metadata);
+    const postRevision = exactRevision(postMetadata.body);
+    const postCountResponse = await read(urls.count);
+    const postCount = exactCount(postCountResponse.body, Math.min(MAX_RECORDS, postMetadata.body.maxRecordCount));
+    if (postRevision !== preRevision) fail('CANA_LIVE_REALITY_REVISION_DRIFT');
+    if (postCount !== preCount) fail('CANA_LIVE_REALITY_COUNT_DRIFT');
+
+    const artifacts = buildSnapshotArtifacts({
+      metadataBytes: preMetadata.bytes,
+      pageParts: [{ offset: 0, bytes: recordsResponse.bytes }],
+      fetchedAt,
+      sourceModifiedAt: new Date(preRevision).toISOString(),
+      sourceCatalogModifiedDate: null,
+      provenanceMode: 'LIVE',
+    });
+    const validated = validateOfficialSourceSnapshotBytes({
+      manifestBytes: artifacts.manifestBytes,
+      snapshotBytes: artifacts.snapshotBytes,
+    });
+    if (validated.record_count !== preCount) fail('CANA_LIVE_REALITY_RECORD_COUNT_MISMATCH');
+    const schemaDigest = digest(ABCA_FIELDS);
+    const capability = {
+      schema_version: 'cana-live-reality-source-capability/v1',
+      source_key: ABCA_LIVE_CONTRACT.sourceKey,
+      revision: String(preRevision),
+      current_version: preMetadata.body.currentVersion,
+      capabilities: preMetadata.body.capabilities,
+      pagination: true,
+      order_by: true,
+      fields: [...ABCA_FIELDS],
+      schema_digest: schemaDigest,
+      limits: {
+        source_max_record_count: preMetadata.body.maxRecordCount,
+        adapter_max_records: MAX_RECORDS,
+        response_bytes: MAX_RESPONSE_BYTES,
+        run_bytes: MAX_RUN_BYTES,
+      },
+    };
+    await onStage('POSTFLIGHT_VALIDATED', {
+      fetched_at: fetchedAt,
+      pre_revision: String(preRevision),
+      post_revision: String(postRevision),
+      pre_count: preCount,
+      post_count: postCount,
+      payload_bytes: totalBytes,
+      content_sha256: validated.snapshot_sha256,
+    });
+    return Object.freeze({
+      source_id: ABCA_LIVE_CONTRACT.sourceId,
+      source_key: ABCA_LIVE_CONTRACT.sourceKey,
+      source_url: ABCA_LIVE_CONTRACT.layerUrl,
+      request_digest: ABCA_LIVE_CONTRACT_DIGEST,
+      content_sha256: validated.snapshot_sha256,
+      snapshot_bytes: artifacts.snapshotBytes,
+      manifest_bytes: artifacts.manifestBytes,
+      manifest: artifacts.manifest,
+      fetched_at: fetchedAt,
+      source_modified_at: new Date(preRevision).toISOString(),
+      pre_revision: String(preRevision),
+      post_revision: String(postRevision),
+      pre_count: preCount,
+      post_count: postCount,
+      record_count: preCount,
+      payload_bytes: artifacts.snapshotBytes.length,
+      wire_bytes: totalBytes,
+      response: Object.freeze(summarizeResponse(recordsResponse)),
+      capability: Object.freeze(capability),
+    });
+  } finally {
+    clearTimeout(runTimer);
+  }
 }
