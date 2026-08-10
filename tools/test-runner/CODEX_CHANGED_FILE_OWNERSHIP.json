@@ -513,10 +513,10 @@
       "court_blob_sha256": {
         "apps/web/tests/column-width-cutover-court.test.mjs": "e06ac4a670893300c0912ee37327f6714caef81f9560d2a81149e697849a674c",
         "apps/web/tests/deployment-integrity.test.mjs": "1d40b447f7745fb4ab18fbd6591941dd91bad37728e1bb65015a9657c6017df2",
-        "apps/web/tests/migration-court.test.mjs": "f7be2222a99b889f395cd518a500246828a28c90d5d795fe260b38aa91ab74c8",
+        "apps/web/tests/migration-court.test.mjs": "eb0bf2f921f27d5c59061e1418813d7918e946a19f9967b26f4c9b5c0409bf84",
         "apps/web/tests/release-gate.test.mjs": "7749c882c325de9ea248883ae9462d47681048a268c75187f7e62728b8c198f0"
       },
-      "approval_sha256": "e105c970d215a44ceb87e2466b6f27f2d3fde3a7d4999060a4f481d9766e7ff0"
+      "approval_sha256": "ee11c6f8f9508225f603fdc89b97c25d28a6458f5b17b9459592d91f9adbbac5"
     },
     "phase_b_reality_compiler_slice1_2026_08_09": {
       "authorization": "CANA PHASE B OMEGA INFINITY REALITY COMPILER SLICE 1 EXECUTION",
