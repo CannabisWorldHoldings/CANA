@@ -1,0 +1,12 @@
+{
+  "schema_version": "cana-evidence-blast-radius/v1",
+  "mode": "OFFLINE_COURT_CASE",
+  "target_kind": "SOURCE_ACQUISITION",
+  "target_id": "benchmark-acquisition-2",
+  "observation_ids": ["benchmark-observation-license-status"],
+  "claim_ids": ["benchmark-claim-license-status"],
+  "verification_event_ids": ["benchmark-court-license-status"],
+  "projection_ids": ["benchmark-projection-license-status"],
+  "gap_ids": ["benchmark-frontier-gap"],
+  "replacement_truth_created": 0
+}

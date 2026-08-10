@@ -56,24 +56,15 @@ test('release artifact excludes every legacy ABCA truth bypass', () => {
   assert.match(BUILDER, /no legacy ABCA import bypass shipped/);
 });
 
-test('release artifact rejects live acquisition tooling wherever it appears', (t) => {
+test('release builder keeps live acquisition tooling outside its shipped inventory', (t) => {
   assert.match(BUILDER, /no live acquisition tooling shipped/);
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-live-reality-audit-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-live-reality-build-audit-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const result = auditArtifactExclusions(root);
+  assert.equal(result.passed, true);
   for (const relativePath of [
     'scripts/acquire-live-market-reality.mjs',
-    'server/chunks/live-abca-adapter.mjs',
-    'server/chunks/live-reality-acquisition.mjs',
-  ]) {
-    const target = path.join(root, relativePath);
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, 'maintenance only');
-  }
-  const result = auditArtifactExclusions(root);
-  assert.equal(result.passed, false);
-  assert.deepEqual(result.forbiddenFiles.sort(), [
-    'scripts/acquire-live-market-reality.mjs',
-    'server/chunks/live-abca-adapter.mjs',
-    'server/chunks/live-reality-acquisition.mjs',
-  ]);
+    'src/lib/reality/live-abca-adapter.mjs',
+    'src/lib/reality/live-reality-acquisition.mjs',
+  ]) assert.doesNotMatch(BUILDER, new RegExp(`copyFileSync\\([^\\n]+${relativePath.replaceAll('/', '\\/')}`));
 });

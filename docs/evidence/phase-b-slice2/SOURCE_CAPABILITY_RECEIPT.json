@@ -1,0 +1,21 @@
+{
+  "schema_version": "cana-live-source-capability-receipt/v1",
+  "state": "PENDING_GOVERNED_LIVE_ACQUISITION",
+  "evidence_class": "DISCOVERY_READ_NOT_TRUTH_EVIDENCE",
+  "source_key": "dcgis_abca_retailers_layer_31",
+  "source_id": "dcgis:abca:licensed-medical-cannabis-retailers:layer-31",
+  "fixed_url": "https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Health_WebMercator/MapServer/31",
+  "request_contract_digest": "a1627a3d0877444bba717adb158f757d8004e5b11bd1f7c4c12efe5cea3a1dc0",
+  "observed_discovery": {
+    "date": "2026-08-10",
+    "record_count": 74,
+    "source_revision": 1781114729000,
+    "etag_present": true,
+    "last_modified": null,
+    "pagination_supported": true,
+    "ordering_supported": true,
+    "max_record_count": 1000
+  },
+  "truth_mutations": 0,
+  "decision_eligible_claims": 0
+}

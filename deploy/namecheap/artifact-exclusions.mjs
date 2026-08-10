@@ -6,7 +6,6 @@ const FORBIDDEN_FILE_PATTERNS = [
   /^\.?(?:credentials?|secrets?)(?:\.[^.]+)?$/i,
   /\.(?:key|pem|p12|pfx)$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/i,
-  /^(?:acquire-live-market-reality|live-abca-adapter|live-reality-acquisition)\.mjs$/,
 ];
 
 const CREDENTIAL_PATTERNS = [

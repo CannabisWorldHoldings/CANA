@@ -1,0 +1,12 @@
+{
+  "schema_version": "cana-live-reality-circuit-state/v1",
+  "mode": "OFFLINE_SCRIPTED_REPLAY",
+  "source_key": "dcgis_abca_retailers_layer_31",
+  "work_class": "LIVE_ACQUISITION",
+  "tenant": "orderweeddc.com",
+  "failure_threshold": 3,
+  "cooldown_ms": 600000,
+  "states": ["HEALTHY", "DEGRADED", "OPEN_CIRCUIT", "PROBE_ALLOWED"],
+  "demand_bypass_allowed": false,
+  "truth_mutations_on_failure": 0
+}

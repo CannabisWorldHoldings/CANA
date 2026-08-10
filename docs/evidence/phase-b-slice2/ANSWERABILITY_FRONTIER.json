@@ -1,0 +1,36 @@
+{
+  "schema_version": "cana-answerability-frontier/v1",
+  "evidence_gate_version": "current-public-record+subject-cohort/v1",
+  "tenant": "orderweeddc.com",
+  "intent_scope": {
+    "location": "dupont circle"
+  },
+  "required_predicates": [
+    "license_number",
+    "license_status",
+    "operating_status",
+    "regulated_address"
+  ],
+  "unsupported_known_dimensions": [],
+  "answerable": false,
+  "answerable_subject_ref": null,
+  "covered_predicates": [],
+  "blocking_predicates": [
+    "license_number",
+    "license_status",
+    "operating_status",
+    "regulated_address"
+  ],
+  "stale_predicates": [],
+  "contradicted_predicates": [],
+  "unknown_predicates": [],
+  "missing_evidence": [
+    "license_number",
+    "license_status",
+    "operating_status",
+    "regulated_address"
+  ],
+  "subject_coverage": [],
+  "evidence_digest": "sha256:5d0abfa23c6dae4ddbc928b5f51e24ee1bfa7256658fbe2af24cdde5e7980bd3",
+  "frontier_key": "sha256:a8d762da9c8c4440831156e8d6369811895ce4a58f163cebd161780a00dfadcf"
+}
