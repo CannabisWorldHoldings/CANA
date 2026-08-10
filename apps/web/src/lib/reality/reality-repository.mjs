@@ -28,6 +28,23 @@ function observationTime(loaded) {
   return loaded.source_modified_at ?? `${loaded.source_catalog_modified_date}T00:00:00.000Z`;
 }
 
+function storedObservationTime(snapshot) {
+  if (snapshot.sourceModifiedAt instanceof Date && Number.isFinite(snapshot.sourceModifiedAt.getTime())) {
+    return snapshot.sourceModifiedAt.toISOString();
+  }
+  let parameters;
+  try {
+    parameters = JSON.parse(snapshot.queryParameters);
+  } catch {
+    throw new Error('CANA_REALITY_SOURCE_OBSERVATION_TIME_MISSING');
+  }
+  const catalogDate = parameters?.source_catalog_modified_date;
+  if (typeof catalogDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(catalogDate)) {
+    throw new Error('CANA_REALITY_SOURCE_OBSERVATION_TIME_MISSING');
+  }
+  return `${catalogDate}T00:00:00.000Z`;
+}
+
 function runtimeSnapshot(loaded) {
   return createEvidenceSnapshot({
     sourceId: DC_ABCA_SOURCE.source_id,
@@ -334,7 +351,7 @@ function courtInput(claim, snapshot) {
     snapshot: createEvidenceSnapshot({
       sourceId: snapshot.sourceKey,
       payloadBytes: Buffer.from(snapshot.payloadJson),
-      fetchedAt: snapshot.fetchedAt,
+      fetchedAt: storedObservationTime(snapshot),
       completeness: snapshot.completeness,
     }),
   };
