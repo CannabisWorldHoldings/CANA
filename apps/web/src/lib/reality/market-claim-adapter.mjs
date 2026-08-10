@@ -1,5 +1,6 @@
 import { isEvidenceRevoked } from './evidence-revocation.mjs';
 import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
+import { MARKET_CLAIM_COURT_VERSION } from './market-claim-court.mjs';
 
 const PUBLIC_FIELDS = Object.freeze([
   'license',
@@ -84,7 +85,10 @@ function admittedAcquisition(claim, event, acquisition, eventAsOf) {
   const outcome = acquisition?.outcome;
   const revisionState = field(acquisition, 'revisionState', 'revision_state');
   const lineageVersions = [
+    field(acquisition, 'adapterVersion', 'adapter_version'),
     field(acquisition, 'parserVersion', 'parser_version'),
+    field(acquisition, 'compilerVersion', 'compiler_version'),
+    field(acquisition, 'entityResolverVersion', 'entity_resolver_version'),
     field(acquisition, 'authorityPolicyVersion', 'authority_policy_version'),
     field(acquisition, 'freshnessPolicyVersion', 'freshness_policy_version'),
     courtVersion,
@@ -107,6 +111,7 @@ function admittedAcquisition(claim, event, acquisition, eventAsOf) {
     && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryCommitSha', 'repository_commit_sha') ?? '')
     && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryTreeSha', 'repository_tree_sha') ?? '')
     && lineageVersions.every((value) => typeof value === 'string' && value.length > 0)
+    && courtVersion === MARKET_CLAIM_COURT_VERSION
     && evaluatorVersion === courtVersion
     && ['OBSERVED', 'UNKNOWN'].includes(revisionState)
     && (outcome !== 'SOURCE_UNCHANGED' || revisionState === 'OBSERVED');

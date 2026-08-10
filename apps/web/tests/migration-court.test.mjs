@@ -711,6 +711,30 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   }).some((claim) => claim.claim_id === forgedClaim.id), false,
   'a persisted failed, cross-tenant, wrong-source acquisition cannot authorize current truth');
 
+  const persistedSecondAcquisition = await p.marketSourceAcquisitionEvent.findUnique({
+    where: { id: second.acquisition_event_id },
+  });
+  const mismatchedCourtAcquisition = await p.marketSourceAcquisitionEvent.create({
+    data: {
+      ...persistedSecondAcquisition,
+      id: undefined,
+      createdAt: undefined,
+      attemptId: 'live-court-version-mismatch',
+      sequence: 1,
+      verificationCourtVersion: 'forged-court-v9',
+      priorEventHash: 'a'.repeat(64),
+      eventHash: 'b'.repeat(64),
+    },
+  });
+  await assert.rejects(
+    verifyLiveMarketAcquisition(p, {
+      tenant: 'orderweeddc.com',
+      acquisitionEventId: mismatchedCourtAcquisition.id,
+      asOf: new Date('2026-08-20T14:25:00.000Z'),
+    }),
+    /CANA_REALITY_ACQUISITION_COURT_VERSION_MISMATCH/,
+  );
+
   const policyRevoked = await revokeMarketEvidence(p, {
     tenant: 'orderweeddc.com',
     targetKind: 'POLICY_VERSION',

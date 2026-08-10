@@ -19,6 +19,7 @@ before(async () => {
 
 const ACQUIRED_AT = '2026-08-10T15:00:00.000Z';
 const AS_OF = new Date('2026-08-11T15:00:00.000Z');
+const COURT_VERSION = 'cana-market-claim-court-v1';
 
 function evidence(overrides = {}) {
   const snapshot = {
@@ -60,6 +61,15 @@ function evidence(overrides = {}) {
     postObservedRecordCount: 1,
     requestDigest: ABCA_LIVE_CONTRACT_DIGEST,
     adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST,
+    adapterVersion: 'dc-abca-live-v1',
+    parserVersion: 'cana-dc-abca-arcgis-snapshot-v1',
+    compilerVersion: 'cana-reality-compiler-v1',
+    entityResolverVersion: 'dc-abca-identity-v1',
+    authorityPolicyVersion: 'dc-abca-authority-v1',
+    freshnessPolicyVersion: 'dc-abca-freshness-v1',
+    verificationCourtVersion: COURT_VERSION,
+    repositoryCommitSha: 'a'.repeat(40),
+    repositoryTreeSha: 'b'.repeat(40),
     contentArtifactId: artifact.id,
     snapshotId: snapshot.id,
     errorCode: null,
@@ -166,6 +176,9 @@ test('failed, cross-tenant, drifted, partial, future, and digest-mismatched acqu
     [evidence({ event: { postObservedRecordCount: 2 } }), 'ACQUISITION_COUNT_DRIFT'],
     [evidence({ event: { completeness: 'PARTIAL' } }), 'ACQUISITION_NOT_COMPLETE'],
     [evidence({ event: { requestDigest: 'b'.repeat(64) } }), 'ACQUISITION_REQUEST_CONTRACT_MISMATCH'],
+    [evidence({ event: { compilerVersion: null } }), 'ACQUISITION_VERSION_PROVENANCE_INVALID'],
+    [evidence({ event: { repositoryTreeSha: null } }), 'ACQUISITION_VERSION_PROVENANCE_INVALID'],
+    [evidence({ event: { verificationCourtVersion: 'forged-court-v9' } }), 'ACQUISITION_COURT_VERSION_MISMATCH'],
     [evidence({ artifact: { contentSha256: 'b'.repeat(64) } }), 'CONTENT_IDENTITY_MISMATCH'],
   ];
   for (const [input, reason] of cases) {
@@ -278,12 +291,12 @@ test('current truth requires a current acquisition-bound court event and exclude
     { id: 'laundered', tenant: 'orderweeddc.com', claimType: 'hours', claimValue: '24/7', verification: 'VERIFIED', decisionEligible: true, observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
   ];
   const events = [
-    { id: 'event-a', claimId: 'claim-a', acquisitionEventId: 'acq-a', decision: 'ALLOW', evaluatorVersion: 'court-v1', asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
-    { id: 'event-b', claimId: 'claim-b', acquisitionEventId: 'acq-b', decision: 'ALLOW', evaluatorVersion: 'court-v1', asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'event-a', claimId: 'claim-a', acquisitionEventId: 'acq-a', decision: 'ALLOW', evaluatorVersion: COURT_VERSION, asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'event-b', claimId: 'claim-b', acquisitionEventId: 'acq-b', decision: 'ALLOW', evaluatorVersion: COURT_VERSION, asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
   ];
   const acquisitions = [
-    { id: 'acq-a', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-a', contentArtifactId: 'content-a', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', parserVersion: 'parser-v1', authorityPolicyVersion: 'policy-v2', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: 'court-v1', repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
-    { id: 'acq-b', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-b', contentArtifactId: 'content-b', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', parserVersion: 'parser-v1', authorityPolicyVersion: 'policy-v1', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: 'court-v1', repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
+    { id: 'acq-a', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-a', contentArtifactId: 'content-a', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'adapter-v1', parserVersion: 'parser-v1', compilerVersion: 'compiler-v1', entityResolverVersion: 'resolver-v1', authorityPolicyVersion: 'policy-v2', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
+    { id: 'acq-b', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-b', contentArtifactId: 'content-b', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'adapter-v1', parserVersion: 'parser-v1', compilerVersion: 'compiler-v1', entityResolverVersion: 'resolver-v1', authorityPolicyVersion: 'policy-v1', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
   ];
   const current = adapter.selectCurrentClaimDecisions({
     claims,
@@ -307,7 +320,7 @@ test('current truth requires a current acquisition-bound court event and exclude
     claims,
     verificationEvents: events,
     acquisitionEvents: acquisitions,
-    revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: 'court-v1', effectiveAt: AS_OF }],
+    revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: COURT_VERSION, effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
   assert.deepEqual(courtRevoked, []);
@@ -320,6 +333,9 @@ test('current truth requires a current acquisition-bound court event and exclude
     { contentArtifactId: null },
     { completeness: 'PARTIAL' },
     { verificationCourtVersion: 'forged-court' },
+    { adapterVersion: null },
+    { compilerVersion: null },
+    { entityResolverVersion: null },
     { authorityPolicyVersion: null },
     { outcome: 'SOURCE_UNCHANGED', revisionState: 'UNKNOWN' },
     { fetchedAt: new Date('2026-08-12T01:00:00.000Z') },

@@ -75,6 +75,23 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
     || artifact.requestContractDigest !== ABCA_LIVE_CONTRACT_DIGEST) {
     return acquisitionDecision({ reason: 'ACQUISITION_REQUEST_CONTRACT_MISMATCH' });
   }
+  const versionLineage = [
+    event.adapterVersion,
+    event.parserVersion,
+    event.compilerVersion,
+    event.entityResolverVersion,
+    event.authorityPolicyVersion,
+    event.freshnessPolicyVersion,
+    event.verificationCourtVersion,
+  ];
+  if (!versionLineage.every((value) => typeof value === 'string' && value.length > 0)
+    || !/^[a-f0-9]{40}$/.test(event.repositoryCommitSha ?? '')
+    || !/^[a-f0-9]{40}$/.test(event.repositoryTreeSha ?? '')) {
+    return acquisitionDecision({ reason: 'ACQUISITION_VERSION_PROVENANCE_INVALID' });
+  }
+  if (event.verificationCourtVersion !== MARKET_CLAIM_COURT_VERSION) {
+    return acquisitionDecision({ reason: 'ACQUISITION_COURT_VERSION_MISMATCH' });
+  }
   if (event.contentArtifactId !== artifact.id
     || event.snapshotId !== snapshot.id
     || artifact.snapshotId !== snapshot.id
