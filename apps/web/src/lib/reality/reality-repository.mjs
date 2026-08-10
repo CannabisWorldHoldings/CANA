@@ -25,6 +25,7 @@ export const PUBLIC_REALITY_PROJECTION_TENANT = 'orderweeddc.com';
 
 const MAX_IDENTITY_CANDIDATES = 5_000;
 const MAX_RELEVANT_CLAIM_HISTORY = 20_000;
+const MAX_REVOCATION_LINEAGE = 5_000;
 
 const TENANT_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/;
 
@@ -562,43 +563,6 @@ async function loadCourtIdentityContext(tx, claims) {
   return { retailers, aliases };
 }
 
-async function appendClaimState(tx, claim, { verification, decisionEligible }) {
-  const latest = await tx.marketClaim.findFirst({
-    where: { tenant: claim.tenant, claimKey: claim.claimKey },
-    orderBy: { version: 'desc' },
-    select: { version: true },
-  });
-  const next = await tx.marketClaim.create({
-    data: {
-      tenant: claim.tenant,
-      claimKey: claim.claimKey,
-      claimType: claim.claimType,
-      claimValue: claim.claimValue,
-      version: (latest?.version ?? claim.version) + 1,
-      resolutionId: claim.resolutionId,
-      snapshotId: claim.snapshotId,
-      compilationId: claim.compilationId,
-      supersedesClaimId: claim.id,
-      observedAt: claim.observedAt,
-      freshnessExpiresAt: claim.freshnessExpiresAt,
-      confidence: claim.confidence,
-      uncertaintyJson: claim.uncertaintyJson,
-      verification,
-      decisionEligible,
-    },
-  });
-  if (claim.evidence.length > 0) {
-    await tx.marketClaimEvidence.createMany({
-      data: claim.evidence.map((evidence) => ({
-        claimId: next.id,
-        observationId: evidence.observationId,
-        role: evidence.role,
-      })),
-    });
-  }
-  return next;
-}
-
 function latestClaimVersions(rows) {
   const latest = new Map();
   for (const row of rows) {
@@ -638,6 +602,7 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
       });
       const revocation = await tx.marketEvidenceRevocationEvent.findFirst({
         where: {
+          tenant,
           effectiveAt: { lte: clock },
           decision: { in: ['EVIDENCE_QUARANTINED', 'EVIDENCE_REVOKED'] },
           OR: [
@@ -1034,16 +999,40 @@ export async function revokeMarketEvidence(prisma, {
       const acquisitions = await tx.marketSourceAcquisitionEvent.findMany({
         where: { tenant, contentArtifactId: artifact.id },
         select: { id: true },
+        take: MAX_REVOCATION_LINEAGE + 1,
       });
+      if (acquisitions.length > MAX_REVOCATION_LINEAGE) throw new Error('CANA_REALITY_REVOCATION_LINEAGE_BUDGET_EXCEEDED');
+      const compilationAccess = await tx.marketCompilation.findFirst({
+        where: { tenant, contentArtifactId: artifact.id },
+        select: { id: true },
+      });
+      if (!compilationAccess && acquisitions.length === 0) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
       acquisitionIds.push(...acquisitions.map((entry) => entry.id));
     } else if (targetKind === 'SNAPSHOT') {
       const snapshot = await tx.marketSourceSnapshot.findUnique({ where: { id: targetId }, select: { id: true } });
       if (!snapshot) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
+      const acquisitions = await tx.marketSourceAcquisitionEvent.findMany({
+        where: { tenant, snapshotId: snapshot.id },
+        select: { id: true },
+        take: MAX_REVOCATION_LINEAGE + 1,
+      });
+      if (acquisitions.length > MAX_REVOCATION_LINEAGE) throw new Error('CANA_REALITY_REVOCATION_LINEAGE_BUDGET_EXCEEDED');
+      const compilationAccess = await tx.marketCompilation.findFirst({
+        where: { tenant, snapshotId: snapshot.id },
+        select: { id: true },
+      });
+      if (!compilationAccess && acquisitions.length === 0) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
+      acquisitionIds.push(...acquisitions.map((entry) => entry.id));
       snapshotId = snapshot.id;
       snapshotIds.push(snapshot.id);
     } else if (targetKind === 'OBSERVATION') {
       const observation = await tx.marketObservation.findUnique({ where: { id: targetId } });
       if (!observation) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
+      const compilationAccess = await tx.marketCompilation.findFirst({
+        where: { tenant, snapshotId: observation.snapshotId },
+        select: { id: true },
+      });
+      if (!compilationAccess) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
       observationIds.push(observation.id);
       snapshotId = observation.snapshotId;
     } else if (targetKind === 'PARSER_VERSION') {
@@ -1051,7 +1040,10 @@ export async function revokeMarketEvidence(prisma, {
       const acquisitions = await tx.marketSourceAcquisitionEvent.findMany({
         where: { tenant, parserVersion: targetId },
         select: { id: true, snapshotId: true },
+        take: MAX_REVOCATION_LINEAGE + 1,
       });
+      if (acquisitions.length > MAX_REVOCATION_LINEAGE) throw new Error('CANA_REALITY_REVOCATION_LINEAGE_BUDGET_EXCEEDED');
+      if (acquisitions.length === 0) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
       acquisitionIds.push(...acquisitions.map((entry) => entry.id));
       snapshotIds.push(...acquisitions.map((entry) => entry.snapshotId).filter(Boolean));
     } else {
@@ -1062,7 +1054,10 @@ export async function revokeMarketEvidence(prisma, {
           OR: [{ authorityPolicyVersion: targetId }, { freshnessPolicyVersion: targetId }],
         },
         select: { id: true, snapshotId: true },
+        take: MAX_REVOCATION_LINEAGE + 1,
       });
+      if (acquisitions.length > MAX_REVOCATION_LINEAGE) throw new Error('CANA_REALITY_REVOCATION_LINEAGE_BUDGET_EXCEEDED');
+      if (acquisitions.length === 0) throw new Error('CANA_REALITY_REVOCATION_TARGET_NOT_FOUND');
       acquisitionIds.push(...acquisitions.map((entry) => entry.id));
       snapshotIds.push(...acquisitions.map((entry) => entry.snapshotId).filter(Boolean));
     }
@@ -1116,12 +1111,42 @@ export async function revokeMarketEvidence(prisma, {
       },
       include: { resolution: true, evidence: true },
       orderBy: [{ claimKey: 'asc' }, { version: 'desc' }],
+      take: MAX_REVOCATION_LINEAGE + 1,
     });
+    if (affectedRows.length > MAX_REVOCATION_LINEAGE) {
+      throw new Error('CANA_REALITY_REVOCATION_LINEAGE_BUDGET_EXCEEDED');
+    }
     const affected = latestClaimVersions(affectedRows);
     const affectedClaimIds = [];
     const affectedRetailerIds = new Set();
+    const claimStates = [];
+    const claimEvidence = [];
+    const verificationEvents = [];
     for (const claim of affected) {
-      const next = await appendClaimState(tx, claim, { verification: 'REFUTED', decisionEligible: false });
+      const next = {
+        id: randomUUID(),
+        tenant: claim.tenant,
+        claimKey: claim.claimKey,
+        claimType: claim.claimType,
+        claimValue: claim.claimValue,
+        version: claim.version + 1,
+        resolutionId: claim.resolutionId,
+        snapshotId: claim.snapshotId,
+        compilationId: claim.compilationId,
+        supersedesClaimId: claim.id,
+        observedAt: claim.observedAt,
+        freshnessExpiresAt: claim.freshnessExpiresAt,
+        confidence: claim.confidence,
+        uncertaintyJson: claim.uncertaintyJson,
+        verification: 'REFUTED',
+        decisionEligible: false,
+      };
+      claimStates.push(next);
+      claimEvidence.push(...claim.evidence.map((evidence) => ({
+        claimId: next.id,
+        observationId: evidence.observationId,
+        role: evidence.role,
+      })));
       affectedClaimIds.push(claim.id, next.id);
       if (claim.resolution.retailerId) affectedRetailerIds.add(claim.resolution.retailerId);
       const evidenceDigest = canonicalDigest({
@@ -1131,7 +1156,7 @@ export async function revokeMarketEvidence(prisma, {
         decision: 'DENY',
         reason: 'EVIDENCE_REVOKED_REQUIRES_RECONSIDERATION',
       });
-      await tx.marketVerificationEvent.create({ data: {
+      verificationEvents.push({
         claimId: next.id,
         evidenceRevocationId: revocation.id,
         decision: 'DENY',
@@ -1140,8 +1165,11 @@ export async function revokeMarketEvidence(prisma, {
         evidenceDigest,
         asOf: clock,
         freshnessExpiresAt: clock,
-      } });
+      });
     }
+    if (claimStates.length > 0) await tx.marketClaim.createMany({ data: claimStates });
+    if (claimEvidence.length > 0) await tx.marketClaimEvidence.createMany({ data: claimEvidence });
+    if (verificationEvents.length > 0) await tx.marketVerificationEvent.createMany({ data: verificationEvents });
     if (affectedClaimIds.length > 0) {
       await tx.geoClaim.updateMany({
         where: { marketClaimId: { in: affectedClaimIds }, decisionEligible: true },
