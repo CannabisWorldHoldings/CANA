@@ -32,10 +32,12 @@ const retailers = loaded.records.map((record, index) => ({
   licenseNumber: record.ABCA_NUMBER,
 }));
 const compiled = compileRealitySnapshot({ snapshot, retailers });
+const identityContext = { retailers, aliases: [] };
 const decisions = compiled.claims.map((claim) => adjudicateMarketClaim({
   claim,
   snapshot,
   sourcePolicy: DC_ABCA_SOURCE,
+  identityContext,
   asOf,
 }));
 const admitted = decisions.filter((decision) => decision.decision_eligible);
@@ -44,12 +46,14 @@ const tampered = adjudicateMarketClaim({
   claim: compiled.claims[0],
   snapshot: { ...snapshot, sha256: '0'.repeat(64) },
   sourcePolicy: DC_ABCA_SOURCE,
+  identityContext,
   asOf,
 });
 const stale = adjudicateMarketClaim({
   claim: compiled.claims[0],
   snapshot,
   sourcePolicy: DC_ABCA_SOURCE,
+  identityContext,
   asOf: new Date('2026-08-10T00:00:00.000Z'),
 });
 const entityBenchmark = runEntityResolutionBenchmark({ records: loaded.records, retailers });

@@ -455,6 +455,115 @@ test('REALITY COMPILER: repeated court verification is an exact database no-op',
   );
 });
 
+test('REALITY COMPILER: forged identity resolution cannot verify or project onto a victim retailer', async () => {
+  const url = createDatabase('reality_forged_identity');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.createMany({ data: [
+    {
+      id: 'reality-right-retailer',
+      name: 'Capital City Care',
+      type: 'storefront',
+      address: '1115 U St NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.916804,
+      lng: -77.027099,
+      licenseNumber: 'ABCA-133578',
+    },
+    {
+      id: 'reality-victim-retailer',
+      name: 'Unrelated Victim',
+      type: 'storefront',
+      address: '200 Unrelated Ave NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.9,
+      lng: -77.01,
+      licenseNumber: 'VICTIM-0001',
+    },
+  ] });
+  const victimGeo = await p.geoEntity.create({
+    data: {
+      id: 'reality-victim-geo',
+      name: 'Unrelated Victim',
+      lat: 38.9,
+      lng: -77.01,
+      retailerId: 'reality-victim-retailer',
+      source: 'hostile-test',
+      observedAt: new Date('2026-06-05T00:00:00.000Z'),
+      verification: 'UNKNOWN',
+    },
+  });
+
+  await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: REALITY_FIXTURE,
+    tenant: 'evidence-seed.example',
+  });
+  const seedResolution = await p.marketEntityResolution.findFirstOrThrow({
+    where: { compilation: { tenant: 'evidence-seed.example' }, sourceRecordId: 'ABCA-133578' },
+    include: { snapshot: true },
+  });
+  const forgedCompilation = await p.marketCompilation.create({
+    data: { tenant: 'orderweeddc.com', snapshotId: seedResolution.snapshotId },
+  });
+  const forgedResolution = await p.marketEntityResolution.create({
+    data: {
+      snapshotId: seedResolution.snapshotId,
+      compilationId: forgedCompilation.id,
+      sourceRecordId: seedResolution.sourceRecordId,
+      sourceRecordSha256: seedResolution.sourceRecordSha256,
+      normalizedLicense: seedResolution.normalizedLicense,
+      normalizedName: seedResolution.normalizedName,
+      normalizedAddress: seedResolution.normalizedAddress,
+      status: 'MATCH',
+      reason: 'EXACT_LICENSE',
+      candidateIds: JSON.stringify(['reality-victim-retailer']),
+      normalizationVersion: seedResolution.normalizationVersion,
+      retailerId: 'reality-victim-retailer',
+      geoEntityId: victimGeo.id,
+    },
+  });
+  const observations = await p.marketObservation.findMany({
+    where: { snapshotId: seedResolution.snapshotId, sourceRecordId: seedResolution.sourceRecordId },
+  });
+  for (const observation of observations) {
+    const claim = await p.marketClaim.create({
+      data: {
+        tenant: 'orderweeddc.com',
+        claimKey: `reality-victim-retailer:${observation.fieldName}`,
+        claimType: observation.fieldName,
+        claimValue: observation.normalizedValue,
+        version: 1,
+        resolutionId: forgedResolution.id,
+        snapshotId: seedResolution.snapshotId,
+        compilationId: forgedCompilation.id,
+        observedAt: observation.observedAt,
+        freshnessExpiresAt: observation.freshnessExpiresAt,
+        confidence: observation.confidence,
+        uncertaintyJson: observation.uncertaintyJson,
+        verification: 'UNKNOWN',
+        decisionEligible: false,
+      },
+    });
+    await p.marketClaimEvidence.create({
+      data: { claimId: claim.id, observationId: observation.id, role: 'SUPPORTS' },
+    });
+  }
+
+  const verdict = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: new Date('2026-06-06T00:00:00.000Z'),
+  });
+  assert.equal(verdict.admitted_claims, 0);
+  assert.equal(verdict.public_cohorts, 0);
+  const victim = await p.retailer.findUniqueOrThrow({ where: { id: 'reality-victim-retailer' } });
+  assert.notEqual(victim.dataStatus, 'VERIFIED_CURRENT');
+  assert.equal(await p.geoClaim.count({
+    where: { geoEntityId: victimGeo.id, decisionEligible: true },
+  }), 0);
+});
+
 test('readiness is HONEST on a fresh postgres deploy: ready once migrated, and the WAL check is ABSENT', async () => {
   // The SQLite readiness lane (a persistent journal_mode=WAL pragma) is RETIRED
   // with the substrate: PostgreSQL has no journal_mode, so a WAL check on it

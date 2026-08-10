@@ -295,6 +295,7 @@ function courtInput(claim, snapshot) {
       claim_id: claim.id,
       tenant: claim.tenant,
       subject_id: claim.resolution.retailerId ?? claim.resolution.geoEntityId,
+      geo_entity_id: claim.resolution.geoEntityId ?? null,
       predicate: claim.claimType,
       value: claim.claimValue,
       source_id: snapshot.sourceKey,
@@ -303,6 +304,16 @@ function courtInput(claim, snapshot) {
       source_record_key: claim.resolution.sourceRecordId,
       source_record_sha256: claim.resolution.sourceRecordSha256,
       observation_ids: supportingEvidence.map((entry) => entry.observationId),
+      supporting_observations: supportingEvidence.map((entry) => ({
+        observation_id: entry.observationId,
+        source_id: snapshot.sourceKey,
+        snapshot_sha256: snapshot.payloadSha256,
+        source_record_key: entry.observation.sourceRecordId,
+        source_record_sha256: entry.observation.sourceRecordSha256,
+        predicate: entry.observation.fieldName,
+        value: entry.observation.normalizedValue,
+        observed_at: entry.observation.observedAt.toISOString(),
+      })),
       contradictory_observation_ids: claim.evidence
         .filter((entry) => entry.role === 'CONTRADICTS')
         .map((entry) => entry.observationId)
@@ -322,6 +333,25 @@ function courtInput(claim, snapshot) {
       completeness: snapshot.completeness,
     }),
   };
+}
+
+async function loadCourtIdentityContext(tx) {
+  const retailers = await tx.retailer.findMany({
+    select: { id: true, licenseNumber: true },
+  });
+  const geoEntities = await tx.geoEntity.findMany({
+    where: { retailerId: { in: retailers.map((retailer) => retailer.id) } },
+    select: { id: true, retailerId: true },
+  });
+  const geoByRetailer = new Map(geoEntities.map((entity) => [entity.retailerId, entity.id]));
+  for (const retailer of retailers) retailer.geoEntityId = geoByRetailer.get(retailer.id) ?? null;
+  const aliasRows = await tx.geoEntityAlias.findMany({
+    where: { namespace: 'dc_abca_license' },
+    select: { id: true, namespace: true, externalId: true, geoEntityId: true },
+  });
+  const retailerByGeo = new Map(geoEntities.map((entity) => [entity.id, entity.retailerId]));
+  const aliases = aliasRows.map((alias) => ({ ...alias, retailerId: retailerByGeo.get(alias.geoEntityId) ?? null }));
+  return { retailers, aliases };
 }
 
 async function copyClaimEvidence(tx, sourceClaim, targetClaimId) {
@@ -400,13 +430,14 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
       orderBy: [{ claimKey: 'asc' }, { version: 'desc' }],
     });
     const claims = latestClaimVersions(rows);
+    const identityContext = await loadCourtIdentityContext(tx);
     const adjudicated = [];
     let admitted = 0;
     let denied = 0;
     let eventsCreated = 0;
     for (const claim of claims) {
       const input = courtInput(claim, snapshot);
-      const decision = adjudicateMarketClaim({ ...input, sourcePolicy: DC_ABCA_SOURCE, asOf: clock });
+      const decision = adjudicateMarketClaim({ ...input, sourcePolicy: DC_ABCA_SOURCE, identityContext, asOf: clock });
       const verification = decision.decision_eligible ? 'VERIFIED' : decision.verification;
       const decisionEligible = decision.decision_eligible === true;
       let effective = claim;
@@ -417,6 +448,7 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         effectiveDecision = adjudicateMarketClaim({
           ...courtInput(effective, snapshot),
           sourcePolicy: DC_ABCA_SOURCE,
+          identityContext,
           asOf: clock,
         });
       }

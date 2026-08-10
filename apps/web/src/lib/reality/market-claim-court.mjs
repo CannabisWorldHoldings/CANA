@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { resolveAbcaEntity } from './entity-resolution.mjs';
 import { parseEvidencePayload } from './reality-compiler.mjs';
 
 export const MARKET_CLAIM_COURT_VERSION = 'cana-market-claim-court-v1';
@@ -57,7 +58,18 @@ function expectedValue(predicate, feature) {
   return undefined;
 }
 
-export function adjudicateMarketClaim({ claim, snapshot, sourcePolicy, asOf = new Date() }) {
+function observationSupportsClaim(claim, observation) {
+  return observation?.observation_id === claim.observation_ids[0]
+    && observation.source_id === claim.source_id
+    && observation.snapshot_sha256 === claim.snapshot_sha256
+    && observation.source_record_key === claim.source_record_key
+    && observation.source_record_sha256 === claim.source_record_sha256
+    && observation.predicate === claim.predicate
+    && observation.value === claim.value
+    && observation.observed_at === claim.observed_at;
+}
+
+export function adjudicateMarketClaim({ claim, snapshot, sourcePolicy, identityContext, asOf = new Date() }) {
   if (!claim || !snapshot || !sourcePolicy) return deny(claim, 'REFUTED', 'COURT_INPUT_INCOMPLETE');
   if (!Buffer.isBuffer(snapshot.payload_bytes) || snapshot.sha256 !== digest(snapshot.payload_bytes) || snapshot.byte_length !== snapshot.payload_bytes.length) {
     return deny(claim, 'REFUTED', 'SNAPSHOT_DIGEST_MISMATCH');
@@ -67,8 +79,18 @@ export function adjudicateMarketClaim({ claim, snapshot, sourcePolicy, asOf = ne
   }
   if (snapshot.completeness !== 'COMPLETE') return deny(claim, 'UNKNOWN', 'SNAPSHOT_NOT_COMPLETE');
   if (!sourcePolicy.authoritative_predicates.includes(claim.predicate)) return deny(claim, 'UNKNOWN', 'PREDICATE_OUTSIDE_SOURCE_AUTHORITY');
+  if (!Array.isArray(identityContext?.retailers) || !Array.isArray(identityContext?.aliases)) {
+    return deny(claim, 'REFUTED', 'COURT_IDENTITY_CONTEXT_INCOMPLETE');
+  }
   if (claim.resolution_status !== 'EXACT_MATCH' || !['EXACT_LICENSE', 'EXACT_ALIAS'].includes(claim.resolution_method)) {
     return deny(claim, 'UNKNOWN', 'IDENTITY_NOT_EXACTLY_RESOLVED');
+  }
+  if (!Array.isArray(claim.observation_ids)
+    || claim.observation_ids.length !== 1
+    || !Array.isArray(claim.supporting_observations)
+    || claim.supporting_observations.length !== 1
+    || !observationSupportsClaim(claim, claim.supporting_observations[0])) {
+    return deny(claim, 'REFUTED', 'CLAIM_EVIDENCE_LINK_MISMATCH');
   }
   const clock = asOf instanceof Date ? asOf : new Date(asOf);
   const fetchedAt = new Date(snapshot.fetched_at);
@@ -92,6 +114,17 @@ export function adjudicateMarketClaim({ claim, snapshot, sourcePolicy, asOf = ne
   if (matches.length !== 1) return deny(claim, 'REFUTED', 'SOURCE_RECORD_NOT_UNIQUE');
   const feature = matches[0];
   if (recordDigest(feature) !== claim.source_record_sha256) return deny(claim, 'REFUTED', 'SOURCE_RECORD_DIGEST_MISMATCH');
+  const resolution = resolveAbcaEntity({
+    record: { ...feature.attributes, geometry: feature.geometry ?? null },
+    retailers: identityContext.retailers,
+    aliases: identityContext.aliases,
+  });
+  if (resolution.status !== 'EXACT_MATCH'
+    || resolution.method !== claim.resolution_method
+    || resolution.retailer_id !== claim.subject_id
+    || (resolution.geo_entity_id ?? null) !== (claim.geo_entity_id ?? null)) {
+    return deny(claim, 'REFUTED', 'IDENTITY_RESOLUTION_MISMATCH');
+  }
   const expected = expectedValue(claim.predicate, feature);
   if (expected === undefined) return deny(claim, 'UNKNOWN', 'PREDICATE_OUTSIDE_SOURCE_AUTHORITY');
   if (expected === null || expected !== claim.value) return deny(claim, 'REFUTED', 'CLAIM_VALUE_NOT_SUPPORTED_BY_SOURCE');

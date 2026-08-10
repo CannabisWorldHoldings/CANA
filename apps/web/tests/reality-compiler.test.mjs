@@ -174,14 +174,16 @@ test('only the Verification Court admits supported current official claims', () 
     fetchedAt: FETCHED_AT,
     completeness: 'COMPLETE',
   });
+  const retailers = [{ id: 'retailer-1', licenseNumber: 'abra-123456' }];
   const compiled = reality.compileRealitySnapshot({
     snapshot,
-    retailers: [{ id: 'retailer-1', licenseNumber: 'abra-123456' }],
+    retailers,
   });
   const decisions = compiled.claims.map((claim) => court.adjudicateMarketClaim({
     claim,
     snapshot,
     sourcePolicy: reality.DC_ABCA_SOURCE,
+    identityContext: { retailers, aliases: [] },
     asOf: AS_OF,
   }));
 
@@ -203,35 +205,83 @@ test('tampered, stale, incomplete, or unsupported evidence fails closed', () => 
     fetchedAt: FETCHED_AT,
     completeness: 'COMPLETE',
   });
+  const retailers = [{ id: 'retailer-1', licenseNumber: 'ABRA-123456' }];
   const [claim] = reality.compileRealitySnapshot({
     snapshot,
-    retailers: [{ id: 'retailer-1', licenseNumber: 'ABRA-123456' }],
+    retailers,
   }).claims;
+  const identityContext = { retailers, aliases: [] };
 
   assert.equal(court.adjudicateMarketClaim({
     claim: { ...claim, predicate: 'hours' },
     snapshot,
     sourcePolicy: reality.DC_ABCA_SOURCE,
+    identityContext,
     asOf: AS_OF,
   }).decision_eligible, false);
   assert.equal(court.adjudicateMarketClaim({
     claim,
     snapshot: { ...snapshot, sha256: '0'.repeat(64) },
     sourcePolicy: reality.DC_ABCA_SOURCE,
+    identityContext,
     asOf: AS_OF,
   }).verification, 'REFUTED');
   assert.equal(court.adjudicateMarketClaim({
     claim,
     snapshot: { ...snapshot, completeness: 'UNKNOWN' },
     sourcePolicy: reality.DC_ABCA_SOURCE,
+    identityContext,
     asOf: AS_OF,
   }).decision_eligible, false);
   assert.equal(court.adjudicateMarketClaim({
     claim,
     snapshot,
     sourcePolicy: reality.DC_ABCA_SOURCE,
+    identityContext,
     asOf: new Date('2027-07-01T00:00:00.000Z'),
   }).verification, 'STALE');
+});
+
+test('court independently rejects forged subject resolution and observation linkage', () => {
+  const snapshot = reality.createEvidenceSnapshot({
+    sourceId: reality.DC_ABCA_SOURCE.source_id,
+    payloadBytes: payload(),
+    fetchedAt: FETCHED_AT,
+    completeness: 'COMPLETE',
+  });
+  const retailers = [{ id: 'retailer-1', licenseNumber: 'ABRA-123456' }];
+  const compiled = reality.compileRealitySnapshot({ snapshot, retailers });
+  const claim = compiled.claims.find((entry) => entry.predicate === 'license_number');
+  const observation = compiled.observations.find((entry) => entry.observation_id === claim.observation_ids[0]);
+  const courtClaim = {
+    ...claim,
+    geo_entity_id: null,
+    supporting_observations: [observation],
+  };
+  const input = {
+    snapshot,
+    sourcePolicy: reality.DC_ABCA_SOURCE,
+    identityContext: { retailers, aliases: [] },
+    asOf: AS_OF,
+  };
+
+  assert.equal(court.adjudicateMarketClaim({ claim: courtClaim, ...input }).decision, 'ALLOW');
+  const forgedSubject = court.adjudicateMarketClaim({
+    claim: { ...courtClaim, subject_id: 'victim-retailer' },
+    ...input,
+  });
+  assert.equal(forgedSubject.decision_eligible, false);
+  assert.equal(forgedSubject.reason, 'IDENTITY_RESOLUTION_MISMATCH');
+
+  const forgedEvidence = court.adjudicateMarketClaim({
+    claim: {
+      ...courtClaim,
+      supporting_observations: [{ ...observation, source_record_key: 'ABRA-FORGED' }],
+    },
+    ...input,
+  });
+  assert.equal(forgedEvidence.decision_eligible, false);
+  assert.equal(forgedEvidence.reason, 'CLAIM_EVIDENCE_LINK_MISMATCH');
 });
 
 test('changed claim values preserve every prior contradictory observation', () => {
