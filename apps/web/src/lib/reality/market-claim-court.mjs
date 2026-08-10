@@ -1,9 +1,98 @@
 import { createHash } from 'node:crypto';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { resolveAbcaEntity } from './entity-resolution.mjs';
 import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
 import { canonicalDigest, parseEvidencePayload } from './reality-compiler.mjs';
 
 export const MARKET_CLAIM_COURT_VERSION = 'cana-market-claim-court-v1';
+
+const EXECUTION_VERSION_FILES = Object.freeze({
+  adapterVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /adapterVersion:\s*'([^']+)'/]),
+  parserVersion: Object.freeze(['apps/web/src/lib/reality/official-source-snapshot.mjs', /export const OFFICIAL_SOURCE_SCHEMA_VERSION = '([^']+)'/]),
+  compilerVersion: Object.freeze(['apps/web/src/lib/reality/reality-compiler.mjs', /export const REALITY_COMPILER_VERSION = '([^']+)'/]),
+  entityResolverVersion: Object.freeze(['apps/web/src/lib/reality/entity-resolution.mjs', /export const ENTITY_NORMALIZATION_VERSION = '([^']+)'/]),
+  authorityPolicyVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /authorityPolicyVersion:\s*'([^']+)'/]),
+  freshnessPolicyVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /freshnessPolicyVersion:\s*'([^']+)'/]),
+  verificationCourtVersion: Object.freeze(['apps/web/src/lib/reality/market-claim-court.mjs', /export const MARKET_CLAIM_COURT_VERSION = '([^']+)'/]),
+});
+const executionProvenanceCache = new Map();
+
+function gitOutput(args) {
+  try {
+    return execFileSync('git', args, {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      maxBuffer: 512 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 2_000,
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function executionTuple(commit, tree) {
+  const key = `${commit}:${tree}`;
+  if (executionProvenanceCache.has(key)) return executionProvenanceCache.get(key);
+  const actualTree = gitOutput(['show', '-s', '--format=%T', commit]);
+  if (!actualTree) {
+    const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNKNOWN' });
+    executionProvenanceCache.set(key, result);
+    return result;
+  }
+  if (actualTree !== tree) {
+    const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_TREE_MISMATCH' });
+    executionProvenanceCache.set(key, result);
+    return result;
+  }
+  const ancestor = spawnSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], {
+    cwd: process.cwd(),
+    stdio: 'ignore',
+    timeout: 2_000,
+  });
+  if (ancestor.status !== 0) {
+    const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNADMITTED' });
+    executionProvenanceCache.set(key, result);
+    return result;
+  }
+  const versions = {};
+  for (const [name, [file, pattern]] of Object.entries(EXECUTION_VERSION_FILES)) {
+    const source = gitOutput(['show', `${commit}:${file}`]);
+    const match = source?.match(pattern);
+    if (!match?.[1]) {
+      const result = Object.freeze({ state: 'DENY', reason: 'VERSION_PROVENANCE_UNKNOWN' });
+      executionProvenanceCache.set(key, result);
+      return result;
+    }
+    versions[name] = match[1];
+  }
+  const result = Object.freeze({ state: 'ALLOW', tree, versions: Object.freeze(versions) });
+  executionProvenanceCache.set(key, result);
+  return result;
+}
+
+export function adjudicateExecutionProvenance(event) {
+  const commit = event?.repositoryCommitSha;
+  const tree = event?.repositoryTreeSha;
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '') || !/^[a-f0-9]{40}$/.test(tree ?? '')) {
+    return Object.freeze({ decision: 'DENY', reason: 'VERSION_PROVENANCE_INVALID' });
+  }
+  const admitted = executionTuple(commit, tree);
+  if (admitted.state !== 'ALLOW') {
+    return Object.freeze({ decision: 'DENY', reason: admitted.reason });
+  }
+  for (const [name, expected] of Object.entries(admitted.versions)) {
+    if (event?.[name] !== expected) {
+      return Object.freeze({ decision: 'DENY', reason: 'VERSION_TUPLE_MISMATCH' });
+    }
+  }
+  return Object.freeze({
+    decision: 'ALLOW',
+    reason: 'EXECUTION_PROVENANCE_PASSED',
+    repository_commit_sha: commit,
+    repository_tree_sha: tree,
+  });
+}
 
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
@@ -91,6 +180,10 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
   }
   if (event.verificationCourtVersion !== MARKET_CLAIM_COURT_VERSION) {
     return acquisitionDecision({ reason: 'ACQUISITION_COURT_VERSION_MISMATCH' });
+  }
+  const execution = adjudicateExecutionProvenance(event);
+  if (execution.decision !== 'ALLOW') {
+    return acquisitionDecision({ reason: `ACQUISITION_${execution.reason}` });
   }
   if (event.contentArtifactId !== artifact.id
     || event.snapshotId !== snapshot.id

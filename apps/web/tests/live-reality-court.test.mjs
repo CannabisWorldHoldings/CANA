@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { before, test } from 'node:test';
 
 import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from '../src/lib/reality/live-abca-adapter.mjs';
@@ -20,6 +21,8 @@ before(async () => {
 const ACQUIRED_AT = '2026-08-10T15:00:00.000Z';
 const AS_OF = new Date('2026-08-11T15:00:00.000Z');
 const COURT_VERSION = 'cana-market-claim-court-v1';
+const REPOSITORY_COMMIT_SHA = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const REPOSITORY_TREE_SHA = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
 
 function evidence(overrides = {}) {
   const snapshot = {
@@ -68,8 +71,8 @@ function evidence(overrides = {}) {
     authorityPolicyVersion: 'dc-abca-authority-v1',
     freshnessPolicyVersion: 'dc-abca-freshness-v1',
     verificationCourtVersion: COURT_VERSION,
-    repositoryCommitSha: 'a'.repeat(40),
-    repositoryTreeSha: 'b'.repeat(40),
+    repositoryCommitSha: REPOSITORY_COMMIT_SHA,
+    repositoryTreeSha: REPOSITORY_TREE_SHA,
     contentArtifactId: artifact.id,
     snapshotId: snapshot.id,
     errorCode: null,
@@ -178,6 +181,9 @@ test('failed, cross-tenant, drifted, partial, future, and digest-mismatched acqu
     [evidence({ event: { requestDigest: 'b'.repeat(64) } }), 'ACQUISITION_REQUEST_CONTRACT_MISMATCH'],
     [evidence({ event: { compilerVersion: null } }), 'ACQUISITION_VERSION_PROVENANCE_INVALID'],
     [evidence({ event: { repositoryTreeSha: null } }), 'ACQUISITION_VERSION_PROVENANCE_INVALID'],
+    [evidence({ event: { repositoryCommitSha: '0'.repeat(40) } }), 'ACQUISITION_REPOSITORY_COMMIT_UNKNOWN'],
+    [evidence({ event: { repositoryTreeSha: 'f'.repeat(40) } }), 'ACQUISITION_REPOSITORY_TREE_MISMATCH'],
+    [evidence({ event: { compilerVersion: 'cana-reality-compiler-v999' } }), 'ACQUISITION_VERSION_TUPLE_MISMATCH'],
     [evidence({ event: { verificationCourtVersion: 'forged-court-v9' } }), 'ACQUISITION_COURT_VERSION_MISMATCH'],
     [evidence({ artifact: { contentSha256: 'b'.repeat(64) } }), 'CONTENT_IDENTITY_MISMATCH'],
   ];
@@ -295,13 +301,18 @@ test('current truth requires a current acquisition-bound court event and exclude
     { id: 'event-b', claimId: 'claim-b', acquisitionEventId: 'acq-b', decision: 'ALLOW', evaluatorVersion: COURT_VERSION, asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
   ];
   const acquisitions = [
-    { id: 'acq-a', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-a', contentArtifactId: 'content-a', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'adapter-v1', parserVersion: 'parser-v1', compilerVersion: 'compiler-v1', entityResolverVersion: 'resolver-v1', authorityPolicyVersion: 'policy-v2', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
-    { id: 'acq-b', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-b', contentArtifactId: 'content-b', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'adapter-v1', parserVersion: 'parser-v1', compilerVersion: 'compiler-v1', entityResolverVersion: 'resolver-v1', authorityPolicyVersion: 'policy-v1', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
+    { id: 'acq-a', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-a', contentArtifactId: 'content-a', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'dc-abca-live-v1', parserVersion: 'cana-dc-abca-arcgis-snapshot-v1', compilerVersion: 'cana-reality-compiler-v1', entityResolverVersion: 'dc-abca-identity-v1', authorityPolicyVersion: 'dc-abca-authority-v1', freshnessPolicyVersion: 'dc-abca-freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: REPOSITORY_COMMIT_SHA, repositoryTreeSha: REPOSITORY_TREE_SHA },
+    { id: 'acq-b', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-b', contentArtifactId: 'content-b', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'dc-abca-live-v1', parserVersion: 'cana-dc-abca-arcgis-snapshot-v1', compilerVersion: 'cana-reality-compiler-v1', entityResolverVersion: 'dc-abca-identity-v1', authorityPolicyVersion: 'dc-abca-authority-v1', freshnessPolicyVersion: 'dc-abca-freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: REPOSITORY_COMMIT_SHA, repositoryTreeSha: REPOSITORY_TREE_SHA },
+  ];
+  const contentArtifacts = [
+    { id: 'content-a', snapshotId: 'snapshot-a', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, requestContractDigest: ABCA_LIVE_CONTRACT_DIGEST, contentSha256: 'a'.repeat(64) },
+    { id: 'content-b', snapshotId: 'snapshot-b', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, requestContractDigest: ABCA_LIVE_CONTRACT_DIGEST, contentSha256: 'b'.repeat(64) },
   ];
   const current = adapter.selectCurrentClaimDecisions({
     claims,
     verificationEvents: events,
     acquisitionEvents: acquisitions,
+    contentArtifacts,
     revocations: [{ decision: 'EVIDENCE_REVOKED', acquisitionEventId: 'acq-a', effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
@@ -311,15 +322,17 @@ test('current truth requires a current acquisition-bound court event and exclude
     claims,
     verificationEvents: events,
     acquisitionEvents: acquisitions,
-    revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: 'policy-v1', effectiveAt: AS_OF }],
+    contentArtifacts,
+    revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: 'dc-abca-authority-v1', effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
-  assert.deepEqual(policyRevoked.map((item) => item.claim_id), ['claim-a']);
+  assert.deepEqual(policyRevoked, []);
 
   const courtRevoked = adapter.selectCurrentClaimDecisions({
     claims,
     verificationEvents: events,
     acquisitionEvents: acquisitions,
+    contentArtifacts,
     revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: COURT_VERSION, effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
@@ -345,11 +358,29 @@ test('current truth requires a current acquisition-bound court event and exclude
       claims: [claims[0]],
       verificationEvents: [events[0]],
       acquisitionEvents: [{ ...acquisitions[0], ...hostile }],
+      contentArtifacts,
       revocations: [],
       asOf: new Date('2026-08-12T00:00:00.000Z'),
     });
     assert.deepEqual(rejected, []);
   }
+
+  assert.deepEqual(adapter.selectCurrentClaimDecisions({
+    claims: [claims[0]],
+    verificationEvents: [events[0]],
+    acquisitionEvents: [{ ...acquisitions[0], repositoryCommitSha: '0'.repeat(40) }],
+    contentArtifacts,
+    revocations: [],
+    asOf: new Date('2026-08-12T00:00:00.000Z'),
+  }), [], 'a nonexistent repository commit cannot authorize current truth');
+  assert.deepEqual(adapter.selectCurrentClaimDecisions({
+    claims: [claims[0]],
+    verificationEvents: [events[0]],
+    acquisitionEvents: [acquisitions[0]],
+    contentArtifacts: [],
+    revocations: [],
+    asOf: new Date('2026-08-12T00:00:00.000Z'),
+  }), [], 'current truth requires the immutable content artifact and snapshot binding');
 });
 
 test('source routing cannot create predicate authority or let reliability override prohibition', () => {

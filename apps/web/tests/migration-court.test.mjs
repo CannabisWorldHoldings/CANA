@@ -73,6 +73,9 @@ import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-ada
  */
 
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPOSITORY = path.resolve(WEB, '..', '..');
+const REPOSITORY_COMMIT_SHA = execFileSync('git', ['-C', REPOSITORY, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const REPOSITORY_TREE_SHA = execFileSync('git', ['-C', REPOSITORY, 'rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
 const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 const MIGRATIONS = path.join(WEB, 'prisma', 'migrations');
 const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
@@ -240,8 +243,8 @@ function liveRealityOptions(source, { attemptId, asOf }) {
     fetchImpl: source.fetchImpl,
     clock: () => new Date(tick += 1000),
     versions: {
-      repositoryCommitSha: 'e'.repeat(40),
-      repositoryTreeSha: 'f'.repeat(40),
+      repositoryCommitSha: REPOSITORY_COMMIT_SHA,
+      repositoryTreeSha: REPOSITORY_TREE_SHA,
       adapterVersion: 'dc-abca-live-v1',
       parserVersion: 'cana-dc-abca-arcgis-snapshot-v1',
       compilerVersion: 'cana-reality-compiler-v1',
@@ -651,10 +654,12 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   const persistedAcquisitions = await p.marketSourceAcquisitionEvent.findMany({
     where: { tenant: 'orderweeddc.com' },
   });
+  const persistedContentArtifacts = await p.marketSourceContentArtifact.findMany();
   assert.ok(selectCurrentClaimDecisions({
     claims: persistedClaims,
     verificationEvents: persistedEvents,
     acquisitionEvents: persistedAcquisitions,
+    contentArtifacts: persistedContentArtifacts,
     revocations: [],
     asOf: new Date('2026-08-20T14:15:00.000Z'),
   }).length >= 4, 'persisted acquisition and court lineage must support current truth');
@@ -706,6 +711,7 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
     claims: persistedClaims,
     verificationEvents: persistedEventsWithForgery,
     acquisitionEvents: persistedAcquisitionsWithForgery,
+    contentArtifacts: persistedContentArtifacts,
     revocations: [],
     asOf: new Date('2026-08-20T14:20:00.000Z'),
   }).some((claim) => claim.claim_id === forgedClaim.id), false,
@@ -754,6 +760,7 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
     claims: persistedClaims,
     verificationEvents: persistedEvents,
     acquisitionEvents: persistedAcquisitions,
+    contentArtifacts: persistedContentArtifacts,
     revocations: policyRevocations,
     asOf: new Date('2026-08-20T14:45:00.000Z'),
   }), [], 'revoked persisted court lineage must not remain current truth');
