@@ -562,6 +562,43 @@ async function loadCourtIdentityContext(tx, claims) {
   return { retailers, aliases };
 }
 
+async function appendClaimState(tx, claim, { verification, decisionEligible }) {
+  const latest = await tx.marketClaim.findFirst({
+    where: { tenant: claim.tenant, claimKey: claim.claimKey },
+    orderBy: { version: 'desc' },
+    select: { version: true },
+  });
+  const next = await tx.marketClaim.create({
+    data: {
+      tenant: claim.tenant,
+      claimKey: claim.claimKey,
+      claimType: claim.claimType,
+      claimValue: claim.claimValue,
+      version: (latest?.version ?? claim.version) + 1,
+      resolutionId: claim.resolutionId,
+      snapshotId: claim.snapshotId,
+      compilationId: claim.compilationId,
+      supersedesClaimId: claim.id,
+      observedAt: claim.observedAt,
+      freshnessExpiresAt: claim.freshnessExpiresAt,
+      confidence: claim.confidence,
+      uncertaintyJson: claim.uncertaintyJson,
+      verification,
+      decisionEligible,
+    },
+  });
+  if (claim.evidence.length > 0) {
+    await tx.marketClaimEvidence.createMany({
+      data: claim.evidence.map((evidence) => ({
+        claimId: next.id,
+        observationId: evidence.observationId,
+        role: evidence.role,
+      })),
+    });
+  }
+  return next;
+}
+
 function latestClaimVersions(rows) {
   const latest = new Map();
   for (const row of rows) {
