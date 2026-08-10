@@ -342,15 +342,13 @@ function exactRevision(metadata) {
   if (ABCA_FIELDS.some((field) => !fields.has(field))) fail('CANA_LIVE_REALITY_SCHEMA_CHANGED');
   if (
     !String(metadata.capabilities ?? '').split(',').map((value) => value.trim()).includes('Query')
-    || metadata.supportsPagination !== true
     || metadata.advancedQueryCapabilities?.supportsPagination !== true
     || metadata.advancedQueryCapabilities?.supportsOrderBy !== true
     || !Number.isInteger(metadata.maxRecordCount)
     || metadata.maxRecordCount < 1
   ) fail('CANA_LIVE_REALITY_SCHEMA_CHANGED');
   const revision = metadata.editingInfo?.lastEditDate;
-  if (!Number.isFinite(revision) || revision < 0) fail('CANA_LIVE_REALITY_REVISION_UNKNOWN');
-  return revision;
+  return Number.isFinite(revision) && revision >= 0 ? revision : null;
 }
 
 function exactCount(body, maximum) {
@@ -428,12 +426,12 @@ export async function captureAbcaReality({
     const recordsResponse = await read(urls.records);
     const features = recordsResponse.body?.features;
     if (recordsResponse.body?.error || !Array.isArray(features)) fail('CANA_LIVE_REALITY_RECORDS_INVALID');
-    if (recordsResponse.body.exceededTransferLimit !== false) fail('CANA_LIVE_REALITY_PARTIAL_REFUSED');
+    if (recordsResponse.body.exceededTransferLimit === true) fail('CANA_LIVE_REALITY_PARTIAL_REFUSED');
     if (features.length !== preCount) fail('CANA_LIVE_REALITY_RECORD_COUNT_MISMATCH');
     const fetchedAt = new Date(clock()).toISOString();
     await onStage('CAPTURED', {
       fetched_at: fetchedAt,
-      pre_revision: String(preRevision),
+      pre_revision: preRevision === null ? null : String(preRevision),
       pre_count: preCount,
       record_count: features.length,
       payload_bytes: totalBytes,
@@ -463,7 +461,8 @@ export async function captureAbcaReality({
     const capability = {
       schema_version: 'cana-live-reality-source-capability/v1',
       source_key: ABCA_LIVE_CONTRACT.sourceKey,
-      revision: String(preRevision),
+      revision: preRevision === null ? 'UNKNOWN' : String(preRevision),
+      revision_state: preRevision === null ? 'UNKNOWN' : 'OBSERVED',
       current_version: preMetadata.body.currentVersion,
       capabilities: preMetadata.body.capabilities,
       pagination: true,
@@ -479,8 +478,8 @@ export async function captureAbcaReality({
     };
     await onStage('POSTFLIGHT_VALIDATED', {
       fetched_at: fetchedAt,
-      pre_revision: String(preRevision),
-      post_revision: String(postRevision),
+      pre_revision: preRevision === null ? null : String(preRevision),
+      post_revision: postRevision === null ? null : String(postRevision),
       pre_count: preCount,
       post_count: postCount,
       payload_bytes: totalBytes,
@@ -496,9 +495,9 @@ export async function captureAbcaReality({
       manifest_bytes: artifacts.manifestBytes,
       manifest: artifacts.manifest,
       fetched_at: fetchedAt,
-      source_modified_at: new Date(preRevision).toISOString(),
-      pre_revision: String(preRevision),
-      post_revision: String(postRevision),
+      source_modified_at: preRevision === null ? null : new Date(preRevision).toISOString(),
+      pre_revision: preRevision === null ? null : String(preRevision),
+      post_revision: postRevision === null ? null : String(postRevision),
       pre_count: preCount,
       post_count: postCount,
       record_count: preCount,

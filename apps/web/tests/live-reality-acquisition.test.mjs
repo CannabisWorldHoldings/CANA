@@ -34,21 +34,25 @@ function record(objectId = 3275) {
   };
 }
 
-function metadata(revision = 1781114729000, fields = ABCA_FIELDS) {
-  return {
+function metadata(revision = 1781114729000, fields = ABCA_FIELDS, {
+  omitTopLevelPagination = false,
+  omitEditingInfo = false,
+} = {}) {
+  const value = {
     id: 31,
     name: 'Licensed Medical Cannabis Retailer',
     currentVersion: 11.5,
     maxRecordCount: 1000,
     capabilities: 'Map,Query,Data',
-    supportsPagination: true,
     advancedQueryCapabilities: {
       supportsPagination: true,
       supportsOrderBy: true,
     },
-    editingInfo: { lastEditDate: revision },
     fields: fields.map((name) => ({ name })),
   };
+  if (!omitTopLevelPagination) value.supportsPagination = true;
+  if (!omitEditingInfo) value.editingInfo = { lastEditDate: revision };
+  return value;
 }
 
 function scriptedSource({
@@ -59,15 +63,16 @@ function scriptedSource({
   features = [record()],
   exceededTransferLimit = false,
   fields = ABCA_FIELDS,
+  metadataOptions,
   failureAt = null,
 } = {}) {
   let call = 0;
   const calls = [];
   const bodies = [
-    metadata(preRevision, fields),
+    metadata(preRevision, fields, metadataOptions),
     { count: preCount },
-    { features, exceededTransferLimit },
-    metadata(postRevision, fields),
+    exceededTransferLimit === undefined ? { features } : { features, exceededTransferLimit },
+    metadata(postRevision, fields, metadataOptions),
     { count: postCount },
   ];
   return {
@@ -207,6 +212,25 @@ test('changed then unchanged acquisition keeps one content identity and two inde
   assert.equal(terminal[0].context.content_artifact_id, terminal[1].context.content_artifact_id);
   assert.notEqual(terminal[0].context.attempt_id, terminal[1].context.attempt_id);
   assert.equal(store.capabilities.length, 2);
+});
+
+test('current live metadata shape stays complete while unavailable source revision remains UNKNOWN', async () => {
+  const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
+  const store = new MemoryAcquisitionStore();
+  const source = scriptedSource({
+    metadataOptions: { omitTopLevelPagination: true, omitEditingInfo: true },
+    exceededTransferLimit: undefined,
+  });
+  const result = await acquireLiveMarketReality(store, acquisitionOptions(source));
+  assert.equal(result.state, 'COMPLETED');
+  assert.equal(result.outcome, 'SOURCE_CHANGED');
+  assert.equal(source.calls.length, 5);
+  const terminal = store.events.at(-1).context;
+  assert.equal(terminal.source_revision, 'UNKNOWN');
+  assert.equal(terminal.pre_revision, null);
+  assert.equal(terminal.post_revision, null);
+  assert.equal(store.capabilities[0].capabilities.revision, 'UNKNOWN');
+  assert.equal(store.capabilities[0].capabilities.revision_state, 'UNKNOWN');
 });
 
 test('revision drift and count drift fail closed before any content artifact exists', async () => {

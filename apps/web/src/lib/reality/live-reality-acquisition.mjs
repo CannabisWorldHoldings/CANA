@@ -432,7 +432,7 @@ function transactionStore(tx) {
             source_catalog_modified_date: null,
           }),
           fetchedAt: new Date(capture.fetched_at),
-          sourceModifiedAt: new Date(capture.source_modified_at),
+          sourceModifiedAt: capture.source_modified_at ? new Date(capture.source_modified_at) : null,
           payloadSha256: capture.content_sha256,
           payloadBytes: capture.snapshot_bytes.length,
           recordCount: capture.record_count,
