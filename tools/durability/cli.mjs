@@ -43,7 +43,7 @@ const PHASE_B_SLICE1_ASSIGNMENT_SHA256 =
   'a0fd370221ad37805e1bf29c2a1bb7024989aa6293a92a9eb1da18560eeda647';
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
 const PHASE_B_SLICE2_ASSIGNMENT_SHA256 =
-  '6dfc1ba30304af0adde06fa2a5c2a1ce2df40ba2cd4a19b752571c6730bbd252';
+  '14daa6d3d0a7a8d7e855775c83a9ccd67f35fc6f7162c4558c4d2634cb41b10f';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
   '001b2fd111a4f3ddc586f7433d6cb7ffc7e3b85774fe850777136a484e67bb3f';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
@@ -1302,12 +1302,11 @@ function prerequisites(source) {
     .filter(Boolean);
   const prohibited = changed.filter((file) => {
     if (!ownership.global_no_edit.includes(file)) return false;
-    const assignmentName = ownership.explicit_user_assignment[PR35_ASSIGNMENT]
-      .court_blob_sha256[file]
-      ? PR35_ASSIGNMENT
-      : PR29_ASSIGNMENT;
-    return !fs.existsSync(path.join(ROOT, file)) ||
-      !courtEditAdmitted(file, ownership, undefined, assignmentName);
+    if (!fs.existsSync(path.join(ROOT, file))) return true;
+    const digest = sha256File(path.join(ROOT, file));
+    return !Object.values(ownership.explicit_user_assignment).some(
+      (assignment) => assignment?.court_blob_sha256?.[file] === digest,
+    );
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const unowned = unownedPaths(changed, ownership);

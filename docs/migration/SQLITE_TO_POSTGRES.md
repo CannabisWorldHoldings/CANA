@@ -88,6 +88,7 @@ until an owner-authorized observation supplies a new receipt. Columns cleared, b
 | `MarketSourceSnapshot.queryParameters` / `.payloadJson` | `text` | unbounded (Phase B schema + disposable PostgreSQL proof; production unverified) |
 | `MarketObservation.rawValue` / `.normalizedValue` / `.uncertainty` | `text` | unbounded (Phase B schema + disposable PostgreSQL proof; production unverified) |
 | `MarketEntityResolution.candidateIds` / `MarketClaim.claimValue` / `.uncertainty` | `text` | unbounded (Phase B schema + disposable PostgreSQL proof; production unverified) |
+| `MarketSourceAcquisitionEvent.predicateScope` / `.errorDetail`, `MarketSourceCapabilityReceipt.capabilitiesJson` / `.limitsJson`, `MarketEvidenceRevocationEvent.cause` | `text` | unbounded (Slice 2 schema + disposable PostgreSQL proof; production unverified) |
 
 Re-run the evidence query any time with:
 
@@ -104,6 +105,17 @@ The tripwire stays armed for any FUTURE provider flip: a provider not in the cou
 reviewed set (`sqlite`, `postgresql`, `mysql`, `mariadb`) fails with
 "unexpected provider … — review column widths before proceeding", which is exactly how
 this migration re-armed the court from `sqlite` to `postgresql`.
+
+### Phase B Slice 2 additive upgrade
+
+`20260810200000_live_reality_acquisition` adds content identity, append-only
+acquisition/capability/circuit/revocation events, and optional acquisition links on
+compilation and verification records. It does not rewrite `MarketSourceSnapshot`
+bytes or any claim. Existing snapshots are backfilled to one content artifact and
+one historical `SOURCE_UNKNOWN` acquisition event using their original `fetchedAt`;
+later observations of identical bytes append new acquisition events against that
+same content artifact. The disposable migration court proves forward-from-empty,
+five-to-six upgrade preservation, and database-level update/delete refusal.
 
 ---
 

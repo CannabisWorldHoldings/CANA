@@ -68,6 +68,7 @@ const SECOND_MIGRATION_DOWN = path.join(MIGRATIONS, SECOND_MIGRATION, 'down.sql'
 const GEO_MIGRATION = '20260809100000_geo_kernel';
 const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
 const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
+const LIVE_REALITY_MIGRATION = '20260810200000_live_reality_acquisition';
 const REALITY_FIXTURE = path.join(
   WEB,
   'fixtures',
@@ -81,7 +82,8 @@ const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 /** The loopback PostgreSQL server every disposable database lives on. The
  *  `postgres` maintenance database is where CREATE/DROP DATABASE are issued —
  *  you cannot drop a database while connected to it. */
-const PG_HOST = 'postgresql://postgres@127.0.0.1:5432';
+const PG_HOST = process.env.CANA_MIGRATION_COURT_POSTGRES_ORIGIN
+  ?? 'postgresql://postgres@127.0.0.1:5432';
 const PG_ADMIN_URL = `${PG_HOST}/postgres`;
 
 function prismaCliPath() {
@@ -382,6 +384,75 @@ test('REALITY COMPILER: evidence records are present and append-only after migra
     /CANA_REALITY_APPEND_ONLY/,
   );
   assert.equal(await p.marketSourceSnapshot.count(), 1);
+});
+
+test('LIVE REALITY: one content identity supports distinct append-only acquisition events across upgrade', async () => {
+  const url = createDatabase('live_reality_identity');
+  const previous = stage('live-reality-previous', CANONICAL_MIGRATIONS.filter((name) => name !== LIVE_REALITY_MIGRATION));
+  deploy(url, previous.schema);
+  const p = await client(url);
+  const snapshot = await p.marketSourceSnapshot.create({
+    data: {
+      sourceKey: 'dcgis_abca_retailers_layer_31',
+      sourceUrl: 'https://maps2.dcgis.dc.gov/example',
+      queryParameters: '{"where":"1=1"}',
+      fetchedAt: new Date('2026-08-10T12:00:00.000Z'),
+      payloadSha256: 'a'.repeat(64),
+      payloadBytes: 2,
+      recordCount: 0,
+      schemaVersion: 'dc-abca-arcgis-v1',
+      payloadJson: '{}',
+      completeness: 'COMPLETE',
+    },
+  });
+
+  deploy(url);
+  const artifacts = await p.$queryRawUnsafe(
+    'SELECT "id", "sourceKey", "contentSha256" FROM "MarketSourceContentArtifact"',
+  );
+  const firstEvents = await p.$queryRawUnsafe(
+    'SELECT "id", "contentArtifactId", "snapshotId", "attemptId", "sequence", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "sequence"',
+  );
+  assert.equal(artifacts.length, 1, 'upgrade must create one immutable content identity');
+  assert.equal(artifacts[0].sourceKey, snapshot.sourceKey);
+  assert.equal(artifacts[0].contentSha256, snapshot.payloadSha256);
+  assert.equal(firstEvents.length, 1, 'upgrade must preserve the historical observation as one acquisition event');
+  assert.equal(firstEvents[0].contentArtifactId, artifacts[0].id);
+  assert.equal(firstEvents[0].snapshotId, snapshot.id);
+  assert.equal(firstEvents[0].fetchedAt.toISOString(), snapshot.fetchedAt.toISOString());
+
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketSourceAcquisitionEvent" (
+      "id", "sourceKey", "attemptId", "sequence", "state", "predicateScope",
+      "requestedAt", "fetchedAt", "sourceRevision", "revisionState", "requestDigest",
+      "completeness", "adapterVersion", "parserVersion", "repositoryCommitSha",
+      "contentArtifactId", "snapshotId", "priorEventHash", "eventHash"
+    ) VALUES (
+      'live-reality-acquisition-2', '${snapshot.sourceKey}', 'attempt-2026-08-17', 2,
+      'SOURCE_UNCHANGED', 'licensed_retailer_identity,status,address,coordinates',
+      TIMESTAMP '2026-08-17 12:00:00+00', TIMESTAMP '2026-08-17 12:00:01+00',
+      'UNKNOWN', 'UNKNOWN', '${'b'.repeat(64)}', 'COMPLETE',
+      'dc-abca-live-v1', 'dc-abca-arcgis-v1', 'VERSION_PROVENANCE_UNKNOWN',
+      '${artifacts[0].id}', '${snapshot.id}', '${'c'.repeat(64)}', '${'d'.repeat(64)}'
+    )
+  `);
+  const secondEvents = await p.$queryRawUnsafe(
+    'SELECT "id", "contentArtifactId", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "sequence"',
+  );
+  assert.equal(await p.$queryRawUnsafe('SELECT "id" FROM "MarketSourceContentArtifact"').then((rows) => rows.length), 1);
+  assert.equal(secondEvents.length, 2, 'identical bytes at a later time must remain a separate acquisition');
+  assert.equal(secondEvents[1].contentArtifactId, artifacts[0].id);
+  assert.notEqual(secondEvents[0].fetchedAt.toISOString(), secondEvents[1].fetchedAt.toISOString());
+
+  await assert.rejects(
+    p.$executeRawUnsafe(`UPDATE "MarketSourceContentArtifact" SET "payloadBytes" = 3 WHERE "id" = '${artifacts[0].id}'`),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe('DELETE FROM "MarketSourceAcquisitionEvent" WHERE "id" = \'live-reality-acquisition-2\''),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  assert.equal(await p.marketSourceSnapshot.count(), 1, 'upgrade and re-observation must preserve the legacy snapshot');
 });
 
 test('REALITY COMPILER: repeated court verification is an exact database no-op', async () => {
@@ -1370,6 +1441,6 @@ test('provider classification fails closed and the reviewed migration manifest e
   });
   assert.deepEqual(
     verified.migrations.map((entry) => entry.name),
-    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION],
+    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION, LIVE_REALITY_MIGRATION],
   );
 });

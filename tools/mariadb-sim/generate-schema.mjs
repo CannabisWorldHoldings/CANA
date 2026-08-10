@@ -27,6 +27,9 @@ const TEXT_FIELDS = new Map([
   ['MarketClaim', new Set(['claimValue', 'uncertaintyJson'])],
   ['MarketClaimContradiction', new Set(['earlierObservationIdsJson', 'laterObservationIdsJson'])],
   ['MarketVerificationEvent', new Set(['reason'])],
+  ['MarketSourceAcquisitionEvent', new Set(['predicateScope', 'errorDetail'])],
+  ['MarketSourceCapabilityReceipt', new Set(['capabilitiesJson', 'limitsJson'])],
+  ['MarketEvidenceRevocationEvent', new Set(['cause'])],
 ]);
 
 export function generateCandidate(source) {

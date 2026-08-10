@@ -268,7 +268,10 @@ test('PR #35 sovereign integration has exact ownership without neighboring autho
 test('PR #35 court admission is bound to the exact integrated bytes', () => {
   const manifest = ownership();
   for (const courtPath of Object.keys(pr35OwnershipAssignment(manifest).court_blob_sha256)) {
-    assert.equal(courtEditAdmitted(courtPath, manifest, undefined, 'pr35_sovereign_continuation_integration_2026_08_09'), true);
+    const reviewedBytes = execFileSync(
+      'git', ['show', `e3139d960b837a8ea7ef7f01acfab5111dd96cc7:${courtPath}`], { cwd: ROOT },
+    );
+    assert.equal(courtEditAdmitted(courtPath, manifest, reviewedBytes, 'pr35_sovereign_continuation_integration_2026_08_09'), true);
     assert.equal(courtEditAdmitted(courtPath, manifest, Buffer.from('tampered PR35 court'), 'pr35_sovereign_continuation_integration_2026_08_09'), false);
   }
 });
@@ -347,6 +350,19 @@ test('Phase B Slice 2 live reality paths have exact ownership without neighborin
   assert.deepEqual(
     unownedPaths(['apps/web/src/lib/reality/live-provider-neighbor.mjs'], manifest),
     ['apps/web/src/lib/reality/live-provider-neighbor.mjs'],
+  );
+});
+
+test('Phase B Slice 2 court admission is bound to the exact reviewed bytes', () => {
+  const manifest = ownership();
+  const courtPath = 'apps/web/tests/migration-court.test.mjs';
+  assert.equal(
+    courtEditAdmitted(courtPath, manifest, undefined, PHASE_B_SLICE2_ASSIGNMENT),
+    true,
+  );
+  assert.equal(
+    courtEditAdmitted(courtPath, manifest, Buffer.from('tampered Slice 2 court'), PHASE_B_SLICE2_ASSIGNMENT),
+    false,
   );
 });
 

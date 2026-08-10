@@ -714,10 +714,13 @@ model MarketSourceSnapshot {
   completeness     String    @default("UNKNOWN")
   createdAt        DateTime  @default(now())
 
-  observations MarketObservation[]
-  resolutions  MarketEntityResolution[]
-  claims       MarketClaim[]
-  compilations MarketCompilation[]
+  observations        MarketObservation[]
+  resolutions         MarketEntityResolution[]
+  claims              MarketClaim[]
+  compilations        MarketCompilation[]
+  contentArtifact     MarketSourceContentArtifact?
+  acquisitionEvents   MarketSourceAcquisitionEvent[]
+  evidenceRevocations MarketEvidenceRevocationEvent[]
 
   @@unique([sourceKey, payloadSha256])
   @@index([sourceKey, fetchedAt])
@@ -728,17 +731,20 @@ model MarketSourceSnapshot {
 /// tenant-scoped compilation. A shared snapshot never implies another tenant
 /// has compiled or accepted its claims.
 model MarketCompilation {
-  id         String   @id @default(uuid())
-  tenant     String
-  snapshotId String
-  createdAt  DateTime @default(now())
+  id                 String   @id @default(uuid())
+  tenant             String
+  snapshotId         String
+  acquisitionEventId String?
+  createdAt          DateTime @default(now())
 
-  snapshot    MarketSourceSnapshot     @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
-  resolutions MarketEntityResolution[]
-  claims      MarketClaim[]
+  snapshot         MarketSourceSnapshot          @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  acquisitionEvent MarketSourceAcquisitionEvent? @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
+  resolutions      MarketEntityResolution[]
+  claims           MarketClaim[]
 
   @@unique([tenant, snapshotId])
   @@index([snapshotId])
+  @@index([acquisitionEventId])
 }
 
 /// One normalized assertion extracted from an immutable source record. Raw
@@ -876,20 +882,192 @@ model MarketClaimEvidence {
 /// Append-only Verification Court outcome, including preservation of conflicts
 /// and explicit reasons for every eligibility decision.
 model MarketVerificationEvent {
-  id               String   @id @default(uuid())
-  claimId          String
-  decision         String
-  reason           String
-  evaluatorVersion String
-  evidenceDigest   String
-  asOf             DateTime
-  createdAt        DateTime @default(now())
+  id                   String   @id @default(uuid())
+  claimId              String
+  acquisitionEventId   String?
+  evidenceRevocationId String?
+  decision             String
+  reason               String
+  evaluatorVersion     String
+  evidenceDigest       String
+  asOf                 DateTime
+  createdAt            DateTime @default(now())
 
-  claim MarketClaim @relation(fields: [claimId], references: [id], onDelete: Restrict)
+  claim              MarketClaim                    @relation(fields: [claimId], references: [id], onDelete: Restrict)
+  acquisitionEvent   MarketSourceAcquisitionEvent?  @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
+  evidenceRevocation MarketEvidenceRevocationEvent? @relation(fields: [evidenceRevocationId], references: [id], onDelete: Restrict)
 
   @@unique([claimId, evidenceDigest])
   @@index([claimId, createdAt])
   @@index([decision, createdAt])
+  @@index([acquisitionEventId])
+  @@index([evidenceRevocationId])
+}
+
+// ============================================================================
+// LIVE REALITY ACQUISITION (Phase B Slice 2)
+//
+// Content identity answers "which exact bytes?" while acquisition identity
+// answers "which bounded observation attempt saw them, when, and with which
+// governed machinery?" One content artifact can therefore have many distinct
+// acquisition events without duplicating or mutating the raw snapshot bytes.
+// ============================================================================
+
+/// Immutable semantic identity for exact bytes already stored once in the
+/// linked MarketSourceSnapshot. This row deliberately does not duplicate the
+/// payloadJson blob.
+model MarketSourceContentArtifact {
+  id            String   @id @default(uuid())
+  snapshotId    String   @unique
+  sourceKey     String
+  contentSha256 String
+  payloadBytes  Int
+  createdAt     DateTime @default(now())
+
+  snapshot          MarketSourceSnapshot            @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  acquisitionEvents MarketSourceAcquisitionEvent[]
+  revocations       MarketEvidenceRevocationEvent[]
+
+  @@unique([sourceKey, contentSha256])
+  @@index([sourceKey, createdAt])
+}
+
+/// Append-only receipt for one bounded source observation. Failed and partial
+/// attempts remain auditable but never imply a verification verdict. Successful
+/// repeated observations may point to the same immutable content artifact.
+model MarketSourceAcquisitionEvent {
+  id                       String    @id @default(uuid())
+  sourceKey                String
+  attemptId                String
+  sequence                 Int
+  /// SOURCE_CHANGED | SOURCE_UNCHANGED | SOURCE_PARTIAL | SOURCE_FAILED | SOURCE_SCHEMA_CHANGED | SOURCE_UNKNOWN
+  state                    String
+  predicateScope           String
+  requestedAt              DateTime
+  fetchedAt                DateTime?
+  completedAt              DateTime?
+  sourceRevision           String
+  /// OBSERVED | UNKNOWN
+  revisionState            String    @default("UNKNOWN")
+  etag                     String?
+  lastModified             String?
+  httpStatus               Int?
+  responseContentType      String?
+  requestDigest            String
+  completeness             String    @default("UNKNOWN")
+  observedRecordCount      Int?
+  observedPayloadBytes     Int?
+  adapterVersion           String
+  adapterContractDigest    String?
+  parserVersion            String
+  compilerVersion          String?
+  entityResolverVersion    String?
+  authorityPolicyVersion   String?
+  freshnessPolicyVersion   String?
+  verificationCourtVersion String?
+  repositoryCommitSha      String
+  repositoryTreeSha        String?
+  triggerKind              String?
+  tenant                   String?
+  contentArtifactId        String?
+  snapshotId               String?
+  priorEventHash           String
+  eventHash                String
+  errorCode                String?
+  errorDetail              String?
+  createdAt                DateTime  @default(now())
+
+  contentArtifact    MarketSourceContentArtifact?    @relation(fields: [contentArtifactId], references: [id], onDelete: Restrict)
+  snapshot           MarketSourceSnapshot?           @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  capabilityReceipt  MarketSourceCapabilityReceipt?
+  compilations       MarketCompilation[]
+  verificationEvents MarketVerificationEvent[]
+  revocations        MarketEvidenceRevocationEvent[]
+
+  @@unique([sourceKey, attemptId])
+  @@unique([sourceKey, sequence])
+  @@unique([eventHash])
+  @@index([sourceKey, createdAt])
+  @@index([contentArtifactId])
+  @@index([snapshotId])
+  @@index([state, createdAt])
+  @@index([tenant, createdAt])
+}
+
+/// Immutable proof of the features and budgets the adapter actually observed.
+model MarketSourceCapabilityReceipt {
+  id                 String   @id @default(uuid())
+  acquisitionEventId String   @unique
+  sourceKey          String
+  observedAt         DateTime
+  capabilitiesJson   String
+  limitsJson         String
+  schemaDigest       String
+  receiptDigest      String   @unique
+  createdAt          DateTime @default(now())
+
+  acquisitionEvent MarketSourceAcquisitionEvent @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
+
+  @@index([sourceKey, observedAt])
+}
+
+/// Append-only state transition ledger for the source/work-class circuit.
+/// Current circuit state is the latest valid event; no mutable row can erase a
+/// prior failure, cooldown, probe, or recovery decision.
+model MarketSourceCircuitEvent {
+  id             String    @id @default(uuid())
+  sourceKey      String
+  workClass      String
+  tenant         String?
+  sequence       Int
+  /// HEALTHY | DEGRADED | OPEN_CIRCUIT | PROBE_ALLOWED
+  state          String
+  failureCount   Int
+  cooldownUntil  DateTime?
+  reason         String
+  priorEventHash String
+  eventHash      String    @unique
+  createdAt      DateTime  @default(now())
+
+  @@unique([sourceKey, workClass, tenant, sequence])
+  @@index([sourceKey, workClass, tenant, createdAt])
+  @@index([state, cooldownUntil])
+}
+
+/// Append-only epistemic recall event. Historical evidence is retained while
+/// quarantine/revocation can remove its ability to support future eligibility.
+model MarketEvidenceRevocationEvent {
+  id                 String   @id @default(uuid())
+  tenant             String?
+  targetKind         String
+  targetId           String
+  /// EVIDENCE_QUARANTINED | EVIDENCE_REVOKED | EVIDENCE_RESTORED
+  decision           String
+  cause              String
+  actorKind          String
+  effectiveAt        DateTime
+  contentArtifactId  String?
+  acquisitionEventId String?
+  snapshotId         String?
+  observationId      String?
+  parserVersion      String?
+  policyVersion      String?
+  priorEventHash     String
+  eventHash          String   @unique
+  createdAt          DateTime @default(now())
+
+  contentArtifact    MarketSourceContentArtifact?  @relation(fields: [contentArtifactId], references: [id], onDelete: Restrict)
+  acquisitionEvent   MarketSourceAcquisitionEvent? @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
+  snapshot           MarketSourceSnapshot?         @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  verificationEvents MarketVerificationEvent[]
+
+  @@unique([targetKind, targetId, eventHash])
+  @@index([tenant, targetKind, targetId, effectiveAt])
+  @@index([contentArtifactId])
+  @@index([acquisitionEventId])
+  @@index([snapshotId])
+  @@index([observationId])
+  @@index([parserVersion])
 }
 
 // ============================================================================
