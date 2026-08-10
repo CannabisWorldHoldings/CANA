@@ -365,10 +365,20 @@ test('source routing cannot create predicate authority or let reliability overri
     reliability_score: 1,
   };
   const official = { ...router.LIVE_SOURCE_REGISTRY[0], estimated_cost_cents: 0, reliability_score: 0.1 };
+  const forged = {
+    ...prohibited,
+    live_admitted: true,
+    authoritative_predicates: ['license_status', 'hours'],
+  };
   assert.equal(router.routeRealitySource({
-    predicate: 'license_status', candidates: [prohibited, official], maximumCostCents: 0,
+    predicate: 'license_status', candidates: [prohibited, forged, official], maximumCostCents: 0,
   }).selected_source, official.source_key);
   assert.equal(router.routeRealitySource({
     predicate: 'hours', candidates: [prohibited, official], maximumCostCents: 0,
+  }).state, 'UNKNOWN');
+  assert.equal(router.routeRealitySource({
+    predicate: 'license_status',
+    candidates: [{ ...official, source_id: 'forged-official-identity' }],
+    maximumCostCents: 0,
   }).state, 'UNKNOWN');
 });

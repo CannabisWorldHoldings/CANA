@@ -15,6 +15,26 @@ export const LIVE_SOURCE_REGISTRY = Object.freeze([
   }),
 ]);
 
+function admittedCandidate(candidate) {
+  const registered = LIVE_SOURCE_REGISTRY.find((source) => source.source_key === candidate?.source_key);
+  if (!registered
+    || candidate.source_id !== registered.source_id
+    || candidate.source_url !== registered.source_url
+    || candidate.source_class !== registered.source_class
+    || candidate.independence_group !== registered.independence_group
+    || candidate.live_admitted !== registered.live_admitted
+    || candidate.fixed_origin !== registered.fixed_origin
+    || JSON.stringify(candidate.authoritative_predicates) !== JSON.stringify(registered.authoritative_predicates)) {
+    return null;
+  }
+  return {
+    ...registered,
+    circuit_state: candidate.circuit_state,
+    estimated_cost_cents: candidate.estimated_cost_cents,
+    reliability_score: candidate.reliability_score,
+  };
+}
+
 export function routeRealitySource({ predicate, candidates = LIVE_SOURCE_REGISTRY, maximumCostCents = 0 }) {
   if (typeof predicate !== 'string' || predicate.length === 0
     || !Array.isArray(candidates)
@@ -22,8 +42,9 @@ export function routeRealitySource({ predicate, candidates = LIVE_SOURCE_REGISTR
     || maximumCostCents < 0) {
     throw new Error('CANA_REALITY_SOURCE_ROUTE_INPUT_INVALID');
   }
-  const eligible = candidates.filter((candidate) => (
-    candidate?.live_admitted === true
+  const eligible = candidates.map(admittedCandidate).filter((candidate) => (
+    candidate !== null
+    && candidate.live_admitted === true
     && candidate.fixed_origin === true
     && Array.isArray(candidate.authoritative_predicates)
     && candidate.authoritative_predicates.includes(predicate)
