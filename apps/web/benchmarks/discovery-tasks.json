@@ -382,8 +382,8 @@
       "coverage": ["service type"],
       "brandId": "benchmark-primary",
       "filters": {"serviceType": "delivery"},
-      "expectedRecordIds": ["entry-blue-delivery", "entry-solar-delivery", "entry-price-high", "entry-demo-topical"],
-      "truthBoundary": {"rule": "retailer service type remains tenant and evidence scoped", "mustExclude": []},
+      "expectedRecordIds": ["entry-blue-delivery", "entry-solar-delivery", "entry-price-high"],
+      "truthBoundary": {"rule": "retailer service type remains tenant, current-evidence, and non-demonstration scoped", "mustExclude": ["entry-demo-topical"]},
       "benchmarkOnly": true
     },
     {
@@ -402,8 +402,8 @@
       "coverage": ["demonstration-only"],
       "brandId": "benchmark-primary",
       "filters": {"evidence": "DEMONSTRATION_ONLY"},
-      "expectedRecordIds": ["entry-demo-topical"],
-      "truthBoundary": {"rule": "at least one chain record is explicitly demonstration data", "mustExclude": ["entry-blue-store"]},
+      "expectedRecordIds": [],
+      "truthBoundary": {"rule": "demonstration records are never public discovery truth", "mustExclude": ["entry-blue-store", "entry-demo-topical"]},
       "benchmarkOnly": true
     },
     {
@@ -412,8 +412,8 @@
       "coverage": ["reported stock"],
       "brandId": "benchmark-primary",
       "filters": {"stock": "IN_STOCK"},
-      "expectedRecordIds": ["entry-blue-store", "entry-blue-delivery", "entry-concentrate-store", "entry-price-low", "entry-price-high", "entry-demo-topical"],
-      "truthBoundary": {"rule": "reported stock is bounded by evidence visibility and is not a live inventory claim", "mustExclude": ["entry-solar-delivery", "entry-stale-beacon"]},
+      "expectedRecordIds": ["entry-blue-store", "entry-blue-delivery", "entry-concentrate-store", "entry-price-low", "entry-price-high"],
+      "truthBoundary": {"rule": "reported stock is bounded by current non-demonstration evidence visibility and is not a live inventory claim", "mustExclude": ["entry-solar-delivery", "entry-stale-beacon", "entry-demo-topical"]},
       "benchmarkOnly": true
     },
     {

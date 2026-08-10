@@ -5,6 +5,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { auditArtifactExclusions } from './artifact-exclusions.mjs';
 
+const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
+
 test('artifact exclusion audit accepts ordinary release files', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -45,4 +47,11 @@ test('artifact exclusion audit rejects embedded credential patterns', (t) => {
     result.credentialFindings.map(({ pattern }) => pattern).sort(),
     ['credential-bearing database URL'],
   );
+});
+
+test('release artifact excludes every legacy ABCA truth bypass', () => {
+  const copiedAppScripts = BUILDER.match(/fs\.mkdirSync\(path\.join\(artifactRoot, 'scripts'\)[\s\S]*?for \(const script of \[([\s\S]*?)\]\) \{/);
+  assert.ok(copiedAppScripts);
+  assert.doesNotMatch(copiedAppScripts[1], /scripts\/(?:etl-abca-retailers|ingest-abca-feed|seed-abca-retailers)\.mjs/);
+  assert.match(BUILDER, /no legacy ABCA import bypass shipped/);
 });

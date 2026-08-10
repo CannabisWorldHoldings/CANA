@@ -24,6 +24,10 @@ import {
 } from '../src/lib/db-config.mjs';
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
 import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
+import {
+  compileOfficialMarketSnapshot,
+  verifyOfficialMarketSnapshot,
+} from '../src/lib/reality/reality-repository.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -62,6 +66,14 @@ const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
 const SECOND_MIGRATION_DOWN = path.join(MIGRATIONS, SECOND_MIGRATION, 'down.sql');
 const GEO_MIGRATION = '20260809100000_geo_kernel';
 const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
+const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
+const REALITY_FIXTURE = path.join(
+  WEB,
+  'fixtures',
+  'reality',
+  'dc-abca-layer-31',
+  '2026-06-05',
+);
 const CANONICAL_MIGRATIONS = loadCanonicalMigrationManifest().migrations.map((entry) => entry.name);
 const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 
@@ -340,6 +352,107 @@ test('forward migration from EMPTY: deploy applies every migration and records i
   // The schema is genuinely usable, not merely recorded.
   await p.organization.create({ data: { name: 'smoke' } });
   assert.equal(await p.organization.count(), 1);
+});
+
+test('REALITY COMPILER: evidence records are present and append-only after migration', async () => {
+  const url = createDatabase('reality_compiler');
+  deploy(url);
+  const p = await client(url);
+  const snapshot = await p.marketSourceSnapshot.create({
+    data: {
+      sourceKey: 'dc_abca_retailers',
+      sourceUrl: 'https://maps2.dcgis.dc.gov/example',
+      queryParameters: '{}',
+      fetchedAt: new Date('2026-08-09T20:00:00Z'),
+      payloadSha256: 'a'.repeat(64),
+      payloadBytes: 2,
+      recordCount: 0,
+      schemaVersion: 'dc-abca-arcgis-v1',
+      payloadJson: '{}',
+      completeness: 'UNKNOWN',
+    },
+  });
+  await assert.rejects(
+    p.marketSourceSnapshot.update({ where: { id: snapshot.id }, data: { recordCount: 1 } }),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.marketSourceSnapshot.delete({ where: { id: snapshot.id } }),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  assert.equal(await p.marketSourceSnapshot.count(), 1);
+});
+
+test('REALITY COMPILER: repeated court verification is an exact database no-op', async () => {
+  const url = createDatabase('reality_idempotency');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.create({
+    data: {
+      id: 'reality-idempotency-retailer',
+      name: 'Capital City Care',
+      type: 'storefront',
+      address: '1115 U St NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.916804,
+      lng: -77.027099,
+      licenseNumber: 'ABCA-133578',
+    },
+  });
+
+  const compiled = await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: REALITY_FIXTURE,
+    tenant: 'orderweeddc.com',
+  });
+  assert.equal(compiled.state, 'COMPILED');
+  assert.ok(compiled.claims > 0);
+
+  const historicalClock = new Date('2026-06-06T00:00:00.000Z');
+  const firstHistorical = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: historicalClock,
+  });
+  assert.ok(firstHistorical.verification_events_created > 0);
+  const historicalCounts = {
+    claims: await p.marketClaim.count(),
+    events: await p.marketVerificationEvent.count(),
+  };
+  const secondHistorical = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: historicalClock,
+  });
+  assert.equal(secondHistorical.verification_events_created, 0);
+  assert.deepEqual(
+    {
+      claims: await p.marketClaim.count(),
+      events: await p.marketVerificationEvent.count(),
+    },
+    historicalCounts,
+  );
+
+  const currentClock = new Date('2026-08-10T00:00:00.000Z');
+  const firstCurrent = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: currentClock,
+  });
+  assert.ok(firstCurrent.verification_events_created > 0);
+  const currentCounts = {
+    claims: await p.marketClaim.count(),
+    events: await p.marketVerificationEvent.count(),
+  };
+  const secondCurrent = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: currentClock,
+  });
+  assert.equal(secondCurrent.verification_events_created, 0);
+  assert.deepEqual(
+    {
+      claims: await p.marketClaim.count(),
+      events: await p.marketVerificationEvent.count(),
+    },
+    currentCounts,
+  );
 });
 
 test('readiness is HONEST on a fresh postgres deploy: ready once migrated, and the WAL check is ABSENT', async () => {
@@ -1057,6 +1170,6 @@ test('provider classification fails closed and the reviewed migration manifest e
   });
   assert.deepEqual(
     verified.migrations.map((entry) => entry.name),
-    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION],
+    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION],
   );
 });

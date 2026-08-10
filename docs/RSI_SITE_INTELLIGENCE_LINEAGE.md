@@ -54,6 +54,12 @@ The feature cannot:
 - infer Search Console, analytics, rankings, conversions, or revenue;
 - represent local HTTP success as public HTTPS proof.
 
+## Phase B reality and reflection observations
+
+Phase B extends the read model with counts of immutable source snapshots, total/current/unknown market claims, resolution review states, and open/closed market gaps. It emits `REALITY_COMPILER_COVERAGE` and `MARKET_GAP_FEEDBACK_LOOP` observations from those persisted counts.
+
+These are observations only. Site Intelligence does not capture the official source, compile or verify claims, close opportunities, publish records, invoke a continuation tick, or promote cognition. Its reflection state remains `REFLECTION_ONLY` and `VALUE_NOT_ESTABLISHED`; a positive coverage delta is not demand, ranking, conversion, revenue, or causal proof.
+
 Search Console, external analytics, and public HTTPS crawl status remain
 explicit external reality gates until separately authorized integrations
 provide accepted evidence.

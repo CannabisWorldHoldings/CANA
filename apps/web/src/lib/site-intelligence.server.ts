@@ -71,6 +71,13 @@ export async function collectSiteIntelligenceSnapshot(
     articlesStale,
     leadsLast30Days,
     persistedSnapshots,
+    marketSourceSnapshots,
+    marketClaimsTotal,
+    marketClaimsEligible,
+    marketClaimsUnknown,
+    marketResolutionsReviewRequired,
+    marketGapsOpen,
+    marketGapsClosed,
   ] = await Promise.all([
     canonicalBrandPromise,
     prisma.brand.count(),
@@ -128,6 +135,18 @@ export async function collectSiteIntelligenceSnapshot(
       where: { createdAt: { gte: thirtyDaysAgo, lte: asOf } },
     }),
     prisma.siteIntelligenceSnapshot.count(),
+    prisma.marketSourceSnapshot.count(),
+    prisma.marketClaim.count(),
+    prisma.marketClaim.count({
+      where: {
+        decisionEligible: true,
+        verification: { in: ['SUPPORTED', 'VERIFIED'] },
+      },
+    }),
+    prisma.marketClaim.count({ where: { verification: 'UNKNOWN' } }),
+    prisma.marketEntityResolution.count({ where: { status: 'REVIEW_REQUIRED' } }),
+    prisma.opportunity.count({ where: { kind: 'MARKET_GAP', status: 'OPEN' } }),
+    prisma.opportunity.count({ where: { kind: 'MARKET_GAP', status: 'CLOSED' } }),
   ]);
 
   const canonicalSitemapRetailers = canonicalBrand
@@ -169,6 +188,13 @@ export async function collectSiteIntelligenceSnapshot(
       canonicalSitemapArticles,
       leadsLast30Days,
       persistedSnapshots,
+      marketSourceSnapshots,
+      marketClaimsTotal,
+      marketClaimsEligible,
+      marketClaimsUnknown,
+      marketResolutionsReviewRequired,
+      marketGapsOpen,
+      marketGapsClosed,
     },
     asOf,
   ) as unknown as SiteIntelligenceSnapshot;

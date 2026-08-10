@@ -11,7 +11,7 @@ export function currentPublicRecordWhere(asOf = new Date()) {
   return {
     isDemonstration: false,
     dataStatus: 'VERIFIED_CURRENT',
-    verifiedAt: { not: null },
+    verifiedAt: { not: null, lte: timestamp },
     freshnessExpiresAt: { gt: timestamp },
   };
 }

@@ -27,11 +27,13 @@ test('neighborhood candidates are tenant, evidence, ZIP, and coordinate bounded'
     lat: { gte: 38.8697, lte: 38.9497 },
     lng: { gte: -77.1154, lte: -77.0154 },
   });
-  assert.equal(where.OR[0].isDemonstration, true);
-  assert.deepEqual(where.OR[1].verifiedAt, {
+  assert.equal(where.isDemonstration, false);
+  assert.equal(where.dataStatus, 'VERIFIED_CURRENT');
+  assert.deepEqual(where.verifiedAt, {
     not: null,
     lte: AS_OF,
   });
+  assert.deepEqual(where.freshnessExpiresAt, { gt: AS_OF });
 });
 
 test('neighborhood candidate inputs reject malformed scope and geography', () => {

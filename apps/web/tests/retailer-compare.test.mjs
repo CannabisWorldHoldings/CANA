@@ -51,13 +51,22 @@ test('comparison query composes tenant and public evidence boundaries', () => {
 
   assert.deepEqual(where.id.in, ['retailer-one', 'retailer-two']);
   assert.equal(where.menus.some.brandMenus.some.brandId, 'brand-one');
-  assert.deepEqual(where.OR, [
-    { isDemonstration: true },
-    {
-      isDemonstration: false,
-      verifiedAt: { not: null, lte: AS_OF },
+  assert.deepEqual(where, {
+    id: { in: ['retailer-one', 'retailer-two'] },
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: { not: null, lte: AS_OF },
+    freshnessExpiresAt: { gt: AS_OF },
+    menus: {
+      some: {
+        brandMenus: {
+          some: {
+            brandId: 'brand-one',
+          },
+        },
+      },
     },
-  ]);
+  });
   assert.throws(
     () =>
       retailerCompareWhere({

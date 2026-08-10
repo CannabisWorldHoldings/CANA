@@ -1,6 +1,9 @@
 import { GENESIS_HASH, receiptHash } from './continuation-core.mjs';
 
 export async function inSerializableTransaction(prisma, operation, attempt = 0) {
+  // Prisma transaction clients cannot open nested transactions. Callers that
+  // already hold the serializable boundary may safely reuse this helper.
+  if (typeof prisma?.$transaction !== 'function') return operation(prisma);
   try {
     return await prisma.$transaction(operation, {
       isolationLevel: 'Serializable',
@@ -14,7 +17,94 @@ export async function inSerializableTransaction(prisma, operation, attempt = 0) 
   }
 }
 
+function parseJsonObject(value) {
+  try {
+    const parsed = JSON.parse(value ?? 'null');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve consumer authority exclusively from the durable receipt chain.
+ * Caller summaries are routing hints only: no field from them grants authority.
+ */
+export async function loadVerifiedFiredConsumerAuthority(prisma, {
+  receiptId,
+  tenant,
+  tickId,
+  consumer,
+  recheck,
+}) {
+  if (typeof receiptId !== 'string' || receiptId.length === 0) {
+    return { ok: false, reason: 'DURABLE_FIRED_RECEIPT_NOT_FOUND' };
+  }
+  const receipt = await prisma.continuationReceipt.findUnique({ where: { id: receiptId } });
+  if (!receipt || receipt.action !== 'FIRED' || typeof receipt.triggerId !== 'string') {
+    return { ok: false, reason: 'DURABLE_FIRED_RECEIPT_NOT_FOUND' };
+  }
+  if (receipt.tickId !== tickId) return { ok: false, reason: 'TICK_MISMATCH' };
+
+  const [trigger, mission, chain] = await Promise.all([
+    prisma.continuationTrigger.findUnique({ where: { id: receipt.triggerId } }),
+    prisma.continuationMission.findUnique({ where: { id: receipt.missionId } }),
+    verifyReceiptChain(prisma, receipt.missionId),
+  ]);
+  if (!chain.ok) return { ok: false, reason: 'RECEIPT_CHAIN_INVALID' };
+  if (
+    !trigger ||
+    !mission ||
+    trigger.id !== receipt.triggerId ||
+    trigger.missionId !== receipt.missionId ||
+    trigger.tenant !== tenant ||
+    mission.id !== receipt.missionId ||
+    mission.tenant !== tenant
+  ) {
+    return { ok: false, reason: 'TENANT_OR_IDENTITY_MISMATCH' };
+  }
+  if (trigger.status !== 'FIRED') return { ok: false, reason: 'TRIGGER_NOT_FIRED' };
+  if (trigger.authorityCeiling !== 'OBSERVE_ONLY') {
+    return { ok: false, reason: 'AUTHORITY_MISMATCH' };
+  }
+
+  const requirement = parseJsonObject(trigger.evidenceRequirements);
+  if (
+    !requirement ||
+    requirement.consumer !== consumer ||
+    requirement.recheck !== recheck ||
+    typeof requirement.opportunityId !== 'string' ||
+    requirement.opportunityId.length === 0
+  ) {
+    return { ok: false, reason: 'EXPECTED_CONSUMER_EVIDENCE_MISSING' };
+  }
+  const firedEvidence = parseJsonObject(receipt.evidence);
+  if (
+    !firedEvidence ||
+    firedEvidence.tenantId !== tenant ||
+    firedEvidence.authorityCeiling !== 'OBSERVE_ONLY' ||
+    firedEvidence.evidenceRequirements !== trigger.evidenceRequirements
+  ) {
+    return { ok: false, reason: 'FIRED_EVIDENCE_BINDING_MISMATCH' };
+  }
+  return { ok: true, receipt, trigger, mission, requirement };
+}
+
 async function appendReceiptInTransaction(prisma, body) {
+  const mission = await prisma.continuationMission.findUnique({
+    where: { id: body.missionId },
+    select: { id: true, tenant: true },
+  });
+  if (!mission) throw new Error('CANA_CONTINUATION_RECEIPT_MISSION_NOT_FOUND');
+  if (body.triggerId) {
+    const trigger = await prisma.continuationTrigger.findUnique({
+      where: { id: body.triggerId },
+      select: { missionId: true, tenant: true },
+    });
+    if (!trigger || trigger.missionId !== body.missionId || trigger.tenant !== mission.tenant) {
+      throw new Error('CANA_CONTINUATION_RECEIPT_TRIGGER_MISSION_MISMATCH');
+    }
+  }
   const head = await prisma.continuationReceipt.findFirst({
     where: { missionId: body.missionId },
     orderBy: { seq: 'desc' },

@@ -36,6 +36,85 @@ const OWNERSHIP_FILE = path.join(
   'CODEX_CHANGED_FILE_OWNERSHIP.json',
 );
 
+const PHASE_B_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
+const PHASE_B_EXPECTED_PATHS = Object.freeze([
+  '.github/workflows/cana-verify.yml',
+  '.omo/plans/cana-phase-b-reality-compiler.md',
+  'apps/web/benchmarks/discovery-tasks.json',
+  'apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/manifest.json',
+  'apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/snapshot.json',
+  'apps/web/prisma/migration-manifest.json',
+  'apps/web/prisma/migrations/20260810000000_market_reality_compiler/migration.sql',
+  'apps/web/prisma/schema.prisma',
+  'apps/web/scripts/capture-dc-abca-snapshot.mjs',
+  'apps/web/scripts/compile-market-reality.mjs',
+  'apps/web/scripts/continuation-tick.mjs',
+  'apps/web/scripts/etl-abca-retailers.mjs',
+  'apps/web/scripts/ingest-abca-feed.mjs',
+  'apps/web/scripts/replay-reality-benchmark.mjs',
+  'apps/web/scripts/seed-abca-retailers.mjs',
+  'apps/web/scripts/verify-market-reality.mjs',
+  'apps/web/src/lib/ask/market-gap-recheck.mjs',
+  'apps/web/src/lib/continuation/continuation-consumers.mjs',
+  'apps/web/src/lib/continuation/continuation-repository.mjs',
+  'apps/web/src/lib/continuation/continuation-selection.mjs',
+  'apps/web/src/lib/continuation/continuation-storage.mjs',
+  'apps/web/src/lib/data-status.mjs',
+  'apps/web/src/lib/directory-search.mjs',
+  'apps/web/src/lib/public-retailer.mjs',
+  'apps/web/src/lib/reality/entity-resolution.mjs',
+  'apps/web/src/lib/reality/market-claim-adapter.mjs',
+  'apps/web/src/lib/reality/market-claim-court.mjs',
+  'apps/web/src/lib/reality/official-source-snapshot.mjs',
+  'apps/web/src/lib/reality/reality-compiler.mjs',
+  'apps/web/src/lib/reality/reality-repository.mjs',
+  'apps/web/src/lib/seo-truth.mjs',
+  'apps/web/src/lib/site-intelligence.mjs',
+  'apps/web/src/lib/site-intelligence.server.ts',
+  'apps/web/tests/data-status.test.mjs',
+  'apps/web/tests/directory-search.test.mjs',
+  'apps/web/tests/entity-resolution-benchmark.test.mjs',
+  'apps/web/tests/ask-service-where.test.mjs',
+  'apps/web/tests/legacy-abca-etl.test.mjs',
+  'apps/web/tests/migration-court.test.mjs',
+  'apps/web/tests/neighborhood-search.test.mjs',
+  'apps/web/tests/product-benchmark.test.mjs',
+  'apps/web/tests/reality-cognitive-evolution.test.mjs',
+  'apps/web/tests/reality-compiler.test.mjs',
+  'apps/web/tests/reality-organism-loop.test.mjs',
+  'apps/web/tests/verification-laundering.test.mjs',
+  'apps/web/tests/product-discovery.test.mjs',
+  'apps/web/tests/public-retailer.test.mjs',
+  'apps/web/tests/retailer-compare.test.mjs',
+  'apps/web/tests/security-boundary.test.mjs',
+  'apps/web/tests/site-intelligence.test.mjs',
+  'apps/web/tests/tenant-retailer.test.mjs',
+  'deploy/namecheap/artifact-exclusions.test.mjs',
+  'deploy/namecheap/build-artifact.mjs',
+  'docs/RSI_SITE_INTELLIGENCE_LINEAGE.md',
+  'docs/capabilities/cana.ask-orderweeddc.contract.json',
+  'docs/capabilities/cana.continuation-kernel.contract.json',
+  'docs/evidence/phase-b/CLAIM_STATE_MACHINE.md',
+  'docs/evidence/phase-b/COGNITIVE_EVOLUTION_STATE.md',
+  'docs/evidence/phase-b/COGNITIVE_REFLECTION_RECEIPT.md',
+  'docs/evidence/phase-b/CURRENT_VERIFIED_STATE.md',
+  'docs/evidence/phase-b/EVIDENCE_LEDGER.md',
+  'docs/evidence/phase-b/PHASE_B_ARCHITECTURE.md',
+  'docs/evidence/phase-b/REALITY_BENCHMARK.json',
+  'docs/evidence/phase-b/SOURCE_AUTHORITY_MATRIX.md',
+  'docs/evidence/phase-b/TRUTH_WRITE_READ_MAP.md',
+  'docs/evidence/phase-b/VERIFICATION_LAUNDERING_COURT.md',
+  'docs/migration/SQLITE_TO_POSTGRES.md',
+  'docs/reality/PHASE_B_SLICE1_CONTRACT.md',
+  'tools/durability/cli.mjs',
+  'tools/durability/cli.test.mjs',
+  'tools/mariadb-sim/generate-schema.mjs',
+  'tools/mariadb-sim/schema.prisma',
+  'tools/reality/verify-evidence-packet.mjs',
+  'tools/reality/verify-evidence-packet.test.mjs',
+  'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+]);
+
 function cana(args, env = {}) {
   return spawnSync(path.join(ROOT, 'cana'), args, {
     cwd: ROOT,
@@ -136,6 +215,39 @@ test('PR #35 ownership and court metadata tampering fail closed', () => {
     () => validateOwnershipManifest(digest),
     /failed its owner-approval digest/,
   );
+});
+
+test('Phase B Reality Compiler paths have exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  const assignment = manifest.explicit_user_assignment[PHASE_B_ASSIGNMENT];
+  assert.ok(assignment, 'Phase B ownership assignment must exist before implementation');
+  assert.deepEqual(assignment.authorized_paths, [...PHASE_B_EXPECTED_PATHS]);
+  assert.equal(assignment.base_commit, '74dd042f572f64e1da3709f71e602a9c0cda1917');
+  assert.equal(assignment.base_tree, '4596741c54beca9d20ae417877854e7cc39e1ff3');
+  assert.ok(assignment.authorized_paths.every((entry) => !entry.includes('*')));
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/lib/reality-neighbor.mjs'], manifest),
+    ['apps/web/src/lib/reality-neighbor.mjs'],
+  );
+});
+
+test('Phase B ownership wildcard, base drift, authority broadening and digest tamper fail closed', () => {
+  for (const mutate of [
+    (value) => { value.authorized_paths[0] = 'apps/web/**'; },
+    (value) => { value.base_commit = '0'.repeat(40); },
+    (value) => { value.authorization_effect += ' deployment authority'; },
+    (value) => { value.approval_sha256 = '0'.repeat(64); },
+  ]) {
+    const manifest = ownership();
+    const assignment = manifest.explicit_user_assignment[PHASE_B_ASSIGNMENT];
+    assert.ok(assignment, 'Phase B ownership assignment must exist before tamper courts');
+    mutate(assignment);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /Phase B|owner-approval digest|changed-file ownership patterns/,
+    );
+  }
 });
 
 test('the six owner-approved Stage A paths have exact changed-file ownership', () => {

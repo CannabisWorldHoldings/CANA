@@ -66,13 +66,10 @@ test('verified search means non-demonstration evidence inside its freshness wind
   });
 
   assert.equal(where.type, 'storefront');
-  assert.deepEqual(where.OR, [
-    { isDemonstration: true },
-    {
-      isDemonstration: false,
-      verifiedAt: { not: null, lte: AS_OF },
-    },
-  ]);
+  assert.equal(where.isDemonstration, false);
+  assert.equal(where.dataStatus, 'VERIFIED_CURRENT');
+  assert.deepEqual(where.verifiedAt, { not: null, lte: AS_OF });
+  assert.deepEqual(where.freshnessExpiresAt, { gt: AS_OF });
   assert.equal(where.menus.some.brandMenus.some.brandId, 'brand-one');
   assert.equal(where.AND[0].OR[0].name.contains, 'Blue Dream');
   assert.equal(
@@ -82,7 +79,7 @@ test('verified search means non-demonstration evidence inside its freshness wind
   assert.deepEqual(where.AND[1], {
     isDemonstration: false,
     dataStatus: 'VERIFIED_CURRENT',
-    verifiedAt: { not: null },
+    verifiedAt: { not: null, lte: AS_OF },
     freshnessExpiresAt: { gt: AS_OF },
   });
 });
@@ -123,7 +120,7 @@ test('directory deal chips include only labeled demonstrations or current verifi
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: AS_OF },
         freshnessExpiresAt: { gt: AS_OF },
       },
     ],

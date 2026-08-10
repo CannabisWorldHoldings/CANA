@@ -118,47 +118,48 @@ model User {
 
 // Retailer (Dispensary, Delivery service, or Brand)
 model Retailer {
-  id                 String            @id @default(uuid())
+  id                 String                   @id @default(uuid())
   name               String
-  type               String            @default("delivery") // delivery, storefront, brand
+  type               String                   @default("delivery") // delivery, storefront, brand
   address            String
-  city               String            @default("Washington")
-  state              String            @default("DC")
+  city               String                   @default("Washington")
+  state              String                   @default("DC")
   zip                String?
   lat                Float
   lng                Float
   phone              String?
   website            String?
   email              String?
-  hours              String            @default("10:00 AM - 8:00 PM")
-  hoursSource        String            @default("Retailer Submitted")
-  isOpen             Boolean           @default(true)
-  licenseStatus      String            @default("PENDING") // VERIFIED, PENDING, EXPIRED, UNVERIFIED
-  licenseSource      String            @default("DC ABCA Registry")
-  licenseNumber      String?           @unique
+  hours              String                   @default("10:00 AM - 8:00 PM")
+  hoursSource        String                   @default("Retailer Submitted")
+  isOpen             Boolean                  @default(true)
+  licenseStatus      String                   @default("PENDING") // VERIFIED, PENDING, EXPIRED, UNVERIFIED
+  licenseSource      String                   @default("DC ABCA Registry")
+  licenseNumber      String?                  @unique
   lastLicenseCheck   DateTime?
   lastInfoCheck      DateTime?
   menuUpdatedAt      DateTime?
   dealUpdatedAt      DateTime?
-  isSponsored        Boolean           @default(false)
-  dataStatus         String            @default("AWAITING_VERIFICATION") // DEMONSTRATION_ONLY, AWAITING_VERIFICATION, VERIFIED_CURRENT, STALE, DISPUTED
-  dataSource         String            @default("Unspecified")
+  isSponsored        Boolean                  @default(false)
+  dataStatus         String                   @default("AWAITING_VERIFICATION") // DEMONSTRATION_ONLY, AWAITING_VERIFICATION, VERIFIED_CURRENT, STALE, DISPUTED
+  dataSource         String                   @default("Unspecified")
   sourceUrl          String?
   retrievedAt        DateTime?
   verifiedAt         DateTime?
   freshnessExpiresAt DateTime?
   confidence         Float?
   reviewedBy         String?
-  isDemonstration    Boolean           @default(false)
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  isDemonstration    Boolean                  @default(false)
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
   evidence           LicenseEvidence[]
   menus              MenuEntry[]
   deals              Deal[]
   leads              LeadEvent[]
   claims             ClaimRequest[]
   disputes           Dispute[]
-  managers           User[]            @relation("RetailerManagers")
+  managers           User[]                   @relation("RetailerManagers")
+  marketResolutions  MarketEntityResolution[]
 
   @@index([dataStatus, isDemonstration, freshnessExpiresAt])
   @@index([type])
@@ -482,7 +483,7 @@ model StagingABCARetailer {
   licenseNumber String   @unique
   address       String?
   status        String?
-  rawJson       String? @db.Text  // Store full CSV row as JSON string for review
+  rawJson       String? @db.Text // Store full CSV row as JSON string for review
   ingestedAt    DateTime @default(now())
 
   @@index([licenseNumber])
@@ -622,8 +623,9 @@ model GeoEntity {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  aliases GeoEntityAlias[]
-  claims  GeoClaim[]
+  aliases           GeoEntityAlias[]
+  claims            GeoClaim[]
+  marketResolutions MarketEntityResolution[]
 
   @@index([kind, verification])
   @@index([h3R9])
@@ -669,12 +671,224 @@ model GeoClaim {
   decisionEligible     Boolean   @default(false)
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+  /// Optional bridge to the evidence-constitutional claim that justified this
+  /// compatibility projection. Legacy GeoClaim rows remain valid without it.
+  marketClaimId        String?   @unique
+  /// Tenant authority that created this compatibility projection.
+  projectionTenant     String?
 
-  geoEntity GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
+  geoEntity   GeoEntity    @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
+  marketClaim MarketClaim? @relation(fields: [marketClaimId], references: [id], onDelete: Restrict)
 
   @@index([geoEntityId, claimType])
   @@index([verification, decisionEligible])
   @@index([freshnessExpiresAt])
+  @@index([projectionTenant, decisionEligible, freshnessExpiresAt], map: "GeoClaim_projectionTenant_eligibility_idx")
+}
+
+// ============================================================================
+// REALITY COMPILER — evidence constitution (Phase B Slice 1)
+//
+// These append-only records preserve source bytes, parsed observations,
+// deterministic identity decisions, versioned claims, and court events. The
+// existing GeoClaim table remains the public-map compatibility projection.
+// ============================================================================
+
+/// Immutable receipt for one exact official-source response. Runtime product
+/// paths never fetch this URL; an owner-run importer supplies the captured
+/// bytes and the compiler binds every downstream record to their SHA-256.
+model MarketSourceSnapshot {
+  id               String    @id @default(uuid())
+  sourceKey        String
+  sourceUrl        String
+  queryParameters  String @db.Text
+  fetchedAt        DateTime
+  sourceModifiedAt DateTime?
+  payloadSha256    String
+  payloadBytes     Int
+  recordCount      Int
+  schemaVersion    String
+  payloadJson      String @db.Text
+  /// COMPLETE | PARTIAL | UNKNOWN
+  completeness     String    @default("UNKNOWN")
+  createdAt        DateTime  @default(now())
+
+  observations MarketObservation[]
+  resolutions  MarketEntityResolution[]
+  claims       MarketClaim[]
+  compilations MarketCompilation[]
+
+  @@unique([sourceKey, payloadSha256])
+  @@index([sourceKey, fetchedAt])
+  @@index([sourceModifiedAt])
+}
+
+/// Idempotency boundary between a globally reusable immutable snapshot and a
+/// tenant-scoped compilation. A shared snapshot never implies another tenant
+/// has compiled or accepted its claims.
+model MarketCompilation {
+  id         String   @id @default(uuid())
+  tenant     String
+  snapshotId String
+  createdAt  DateTime @default(now())
+
+  snapshot    MarketSourceSnapshot     @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  resolutions MarketEntityResolution[]
+  claims      MarketClaim[]
+
+  @@unique([tenant, snapshotId])
+  @@index([snapshotId])
+}
+
+/// One normalized assertion extracted from an immutable source record. Raw
+/// record identity and hash are retained so normalization never erases origin.
+model MarketObservation {
+  id                 String    @id @default(uuid())
+  snapshotId         String
+  sourceRecordId     String
+  sourceRecordSha256 String
+  fieldName          String
+  rawValue           String? @db.Text
+  normalizedValue    String? @db.Text
+  observedAt         DateTime
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  uncertaintyJson    String? @db.Text   @map("uncertainty")
+  createdAt          DateTime  @default(now())
+
+  snapshot      MarketSourceSnapshot  @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  claimEvidence MarketClaimEvidence[]
+
+  @@unique([snapshotId, sourceRecordId, fieldName])
+  @@index([sourceRecordId, fieldName])
+  @@index([freshnessExpiresAt])
+}
+
+/// Deterministic identity-resolution decision. Ambiguity is preserved as a
+/// review state with candidate IDs; it is never converted to an automatic link.
+model MarketEntityResolution {
+  id                   String   @id @default(uuid())
+  snapshotId           String
+  compilationId        String
+  sourceRecordId       String
+  sourceRecordSha256   String
+  normalizedLicense    String?
+  normalizedName       String?
+  normalizedAddress    String?
+  /// MATCH | REVIEW_REQUIRED | UNMATCHED | MALFORMED
+  status               String
+  reason               String
+  candidateIds         String @db.Text
+  normalizationVersion String
+  retailerId           String?
+  geoEntityId          String?
+  createdAt            DateTime @default(now())
+
+  snapshot    MarketSourceSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  compilation MarketCompilation    @relation(fields: [compilationId], references: [id], onDelete: Restrict)
+  retailer    Retailer?            @relation(fields: [retailerId], references: [id], onDelete: Restrict)
+  geoEntity   GeoEntity?           @relation(fields: [geoEntityId], references: [id], onDelete: Restrict)
+  claims      MarketClaim[]
+
+  @@unique([compilationId, sourceRecordId])
+  @@index([snapshotId, sourceRecordId])
+  @@index([normalizedLicense])
+  @@index([status])
+  @@index([retailerId])
+  @@index([geoEntityId])
+}
+
+/// Versioned market claim. Contradictions create another record and court
+/// event; neither observations nor prior claim versions are overwritten.
+model MarketClaim {
+  id                 String    @id @default(uuid())
+  tenant             String
+  claimKey           String
+  claimType          String
+  claimValue         String @db.Text
+  version            Int
+  resolutionId       String
+  snapshotId         String
+  compilationId      String
+  supersedesClaimId  String?
+  observedAt         DateTime
+  freshnessExpiresAt DateTime?
+  confidence         Float?
+  uncertaintyJson    String? @db.Text   @map("uncertainty")
+  /// UNKNOWN | SUPPORTED | VERIFIED | CONTRADICTED | REFUTED | STALE
+  verification       String    @default("UNKNOWN")
+  decisionEligible   Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+
+  resolution            MarketEntityResolution     @relation(fields: [resolutionId], references: [id], onDelete: Restrict)
+  snapshot              MarketSourceSnapshot       @relation(fields: [snapshotId], references: [id], onDelete: Restrict)
+  compilation           MarketCompilation          @relation(fields: [compilationId], references: [id], onDelete: Restrict)
+  supersedes            MarketClaim?               @relation("MarketClaimVersions", fields: [supersedesClaimId], references: [id], onDelete: Restrict)
+  versions              MarketClaim[]              @relation("MarketClaimVersions")
+  evidence              MarketClaimEvidence[]
+  verificationEvents    MarketVerificationEvent[]
+  geoClaim              GeoClaim?
+  earlierContradictions MarketClaimContradiction[] @relation("EarlierContradictionClaim")
+  laterContradictions   MarketClaimContradiction[] @relation("LaterContradictionClaim")
+
+  @@unique([tenant, claimKey, version])
+  @@index([tenant, claimType, decisionEligible])
+  @@index([resolutionId, claimType])
+  @@index([freshnessExpiresAt])
+}
+
+/// Explicit append-only conflict between two claim versions. The exact
+/// observations on each side remain addressable even after either claim ages.
+model MarketClaimContradiction {
+  id                        String   @id @default(uuid())
+  tenant                    String
+  claimKey                  String
+  earlierClaimId            String
+  laterClaimId              String
+  earlierObservationIdsJson String @db.Text   @map("earlierObservationIds")
+  laterObservationIdsJson   String @db.Text   @map("laterObservationIds")
+  state                     String   @default("ACTIVE")
+  createdAt                 DateTime @default(now())
+
+  earlierClaim MarketClaim @relation("EarlierContradictionClaim", fields: [earlierClaimId], references: [id], onDelete: Restrict)
+  laterClaim   MarketClaim @relation("LaterContradictionClaim", fields: [laterClaimId], references: [id], onDelete: Restrict)
+
+  @@unique([earlierClaimId, laterClaimId])
+  @@index([tenant, claimKey, state])
+}
+
+/// Exact observation membership for a claim. This join is append-only in the
+/// database so a later compiler cannot delete inconvenient evidence.
+model MarketClaimEvidence {
+  claimId       String
+  observationId String
+  role          String
+  createdAt     DateTime @default(now())
+
+  claim       MarketClaim       @relation(fields: [claimId], references: [id], onDelete: Restrict)
+  observation MarketObservation @relation(fields: [observationId], references: [id], onDelete: Restrict)
+
+  @@id([claimId, observationId])
+  @@index([observationId])
+}
+
+/// Append-only Verification Court outcome, including preservation of conflicts
+/// and explicit reasons for every eligibility decision.
+model MarketVerificationEvent {
+  id               String   @id @default(uuid())
+  claimId          String
+  decision         String
+  reason           String @db.Text
+  evaluatorVersion String
+  evidenceDigest   String
+  asOf             DateTime
+  createdAt        DateTime @default(now())
+
+  claim MarketClaim @relation(fields: [claimId], references: [id], onDelete: Restrict)
+
+  @@unique([claimId, evidenceDigest])
+  @@index([claimId, createdAt])
+  @@index([decision, createdAt])
 }
 
 // ============================================================================
@@ -787,7 +1001,7 @@ model ContinuationReceipt {
   triggerId  String?
   /// The tick invocation that produced this receipt.
   tickId     String
-  /// FIRED | EXPIRED | REJECTED | APPROVED | RESCHEDULED | MISSION_COMPLETED | MISSION_ABANDONED
+  /// FIRED | EXPIRED | REJECTED | APPROVED | RESCHEDULED | REFLECTED | MISSION_COMPLETED | MISSION_ABANDONED
   action     String
   detail     String?
   /// JSON evidence payload bound at write time.
@@ -831,15 +1045,15 @@ model Opportunity {
   measurementPlan    String
   /// UNKNOWN | HYPOTHESIS | SUPPORTED | VERIFIED | CONTRADICTED | REFUTED | STALE
   verification       String   @default("UNKNOWN")
-  /// OPEN | UNDER_REVIEW | ACTIONED | DISMISSED | EXPIRED
+  /// OPEN | UNDER_REVIEW | ACTIONED | CLOSED | DISMISSED | EXPIRED
   status             String   @default("OPEN")
   followUpTriggerId  String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  @@unique([tenant, dedupeKey])
   @@index([tenant, status])
   @@index([kind, verification])
-  @@unique([tenant, dedupeKey])
 }
 
 /// Track A instrumentation: every real ask is a provenance-carrying signal.

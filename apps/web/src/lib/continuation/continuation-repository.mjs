@@ -178,7 +178,7 @@ export async function approveTrigger(prisma, { triggerId, approvedBy, tickId }) 
  * runtime may call it, at any frequency, from any machine.
  *
  * @param {import('@prisma/client').PrismaClient} prisma
- * @param {{ now?: Date, tickId?: string, events?: string[],
+ * @param {{ now?: Date, tickId?: string, tenant?: string, events?: string[],
  *           conditionResults?: Record<string, boolean>, limit?: number }} options
  */
 export async function runTick(prisma, options = {}) {
@@ -190,12 +190,14 @@ export async function runTick(prisma, options = {}) {
   const events = new Set(options.events ?? []);
   const conditionResults = new Map(Object.entries(options.conditionResults ?? {}));
   const limit = Math.min(Math.max(1, Number(options.limit) || 50), 500);
+  const tenant = typeof options.tenant === 'string' && options.tenant.length > 0 ? options.tenant : null;
 
   const candidates = await selectTickCandidates(prisma, {
     conditionResults,
     events,
     limit,
     now,
+    tenant,
   });
 
   // Resolve dependency satisfaction from durable state, not memory.
@@ -207,7 +209,11 @@ export async function runTick(prisma, options = {}) {
       ? []
       : (
           await prisma.continuationTrigger.findMany({
-            where: { id: { in: dependencyIds }, status: TRIGGER_STATES.FIRED },
+            where: {
+              id: { in: dependencyIds },
+              status: TRIGGER_STATES.FIRED,
+              ...(tenant ? { tenant } : {}),
+            },
             select: { id: true },
           })
         ).map((t) => t.id),
@@ -273,6 +279,8 @@ export async function runTick(prisma, options = {}) {
           triggerType: trigger.triggerType,
           reason: trigger.reason,
           authorityCeiling: trigger.authorityCeiling,
+          tenantId: trigger.tenant,
+          evidenceRequirements: trigger.evidenceRequirements ?? null,
           firedAt: now.toISOString(),
         }),
       }, { retryOnConflict: false }));
@@ -300,5 +308,5 @@ export async function runTick(prisma, options = {}) {
     }
   }
 
-  return { tickId, now: now.toISOString(), fired, expired, successors, waiting: waiting.length, receipts };
+  return { tickId, tenant, now: now.toISOString(), fired, expired, successors, waiting: waiting.length, receipts };
 }

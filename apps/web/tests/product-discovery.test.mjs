@@ -93,7 +93,7 @@ test('product discovery composes tenant, retailer, menu, product, and freshness 
       {
         isDemonstration: false,
         dataStatus: 'VERIFIED_CURRENT',
-        verifiedAt: { not: null },
+        verifiedAt: { not: null, lte: AS_OF },
         freshnessExpiresAt: { gt: AS_OF },
       },
     ],
@@ -112,13 +112,10 @@ test('product discovery composes tenant, retailer, menu, product, and freshness 
   assert.deepEqual(where.product.AND[2], { category: 'flower' });
   assert.deepEqual(where.product.AND[3], { strainType: 'hybrid' });
   assert.deepEqual(where.retailer.AND[0], {
-    OR: [
-      { isDemonstration: true },
-      {
-        isDemonstration: false,
-        verifiedAt: { not: null, lte: AS_OF },
-      },
-    ],
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: { not: null, lte: AS_OF },
+    freshnessExpiresAt: { gt: AS_OF },
   });
   assert.deepEqual(where.retailer.AND[1], where.AND[2]);
   assert.equal(where.retailer.type, 'storefront');

@@ -513,10 +513,95 @@
       "court_blob_sha256": {
         "apps/web/tests/column-width-cutover-court.test.mjs": "e06ac4a670893300c0912ee37327f6714caef81f9560d2a81149e697849a674c",
         "apps/web/tests/deployment-integrity.test.mjs": "1d40b447f7745fb4ab18fbd6591941dd91bad37728e1bb65015a9657c6017df2",
-        "apps/web/tests/migration-court.test.mjs": "074d612b43dc8f260385cbe5168eedbba87d51535ad510beddcd2ce66cee7d1b",
+        "apps/web/tests/migration-court.test.mjs": "f66c75ca1840fccd730e1c901da137e379f4013c41aa4a4868e75f09152f82a8",
         "apps/web/tests/release-gate.test.mjs": "7749c882c325de9ea248883ae9462d47681048a268c75187f7e62728b8c198f0"
       },
-      "approval_sha256": "6fb86759e1d80fa005075757d28d906bb5acad8d6716b0a13d38dbe65ef95a7a"
+      "approval_sha256": "07709f547f95f634e9810344b934f3874b8369562e7de2eba14e4ce22bf53f90"
+    },
+    "phase_b_reality_compiler_slice1_2026_08_09": {
+      "authorization": "CANA PHASE B OMEGA INFINITY REALITY COMPILER SLICE 1 EXECUTION",
+      "scope": "The 75 exact Phase B Reality Compiler implementation, fixture, migration, public-truth, continuation, Site Intelligence, evidence, workflow and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or cognitive-promotion authority.",
+      "authorization_effect": "Durability path ownership only; no live-source, provider, credential, paid-call, spending, publishing, deployment, production, external-effect, verification-bypass, self-promotion or cognitive-promotion authority.",
+      "base_commit": "74dd042f572f64e1da3709f71e602a9c0cda1917",
+      "base_tree": "4596741c54beca9d20ae417877854e7cc39e1ff3",
+      "authorized_paths": [
+        ".github/workflows/cana-verify.yml",
+        ".omo/plans/cana-phase-b-reality-compiler.md",
+        "apps/web/benchmarks/discovery-tasks.json",
+        "apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/manifest.json",
+        "apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/snapshot.json",
+        "apps/web/prisma/migration-manifest.json",
+        "apps/web/prisma/migrations/20260810000000_market_reality_compiler/migration.sql",
+        "apps/web/prisma/schema.prisma",
+        "apps/web/scripts/capture-dc-abca-snapshot.mjs",
+        "apps/web/scripts/compile-market-reality.mjs",
+        "apps/web/scripts/continuation-tick.mjs",
+        "apps/web/scripts/etl-abca-retailers.mjs",
+        "apps/web/scripts/ingest-abca-feed.mjs",
+        "apps/web/scripts/replay-reality-benchmark.mjs",
+        "apps/web/scripts/seed-abca-retailers.mjs",
+        "apps/web/scripts/verify-market-reality.mjs",
+        "apps/web/src/lib/ask/market-gap-recheck.mjs",
+        "apps/web/src/lib/continuation/continuation-consumers.mjs",
+        "apps/web/src/lib/continuation/continuation-repository.mjs",
+        "apps/web/src/lib/continuation/continuation-selection.mjs",
+        "apps/web/src/lib/continuation/continuation-storage.mjs",
+        "apps/web/src/lib/data-status.mjs",
+        "apps/web/src/lib/directory-search.mjs",
+        "apps/web/src/lib/public-retailer.mjs",
+        "apps/web/src/lib/reality/entity-resolution.mjs",
+        "apps/web/src/lib/reality/market-claim-adapter.mjs",
+        "apps/web/src/lib/reality/market-claim-court.mjs",
+        "apps/web/src/lib/reality/official-source-snapshot.mjs",
+        "apps/web/src/lib/reality/reality-compiler.mjs",
+        "apps/web/src/lib/reality/reality-repository.mjs",
+        "apps/web/src/lib/seo-truth.mjs",
+        "apps/web/src/lib/site-intelligence.mjs",
+        "apps/web/src/lib/site-intelligence.server.ts",
+        "apps/web/tests/data-status.test.mjs",
+        "apps/web/tests/directory-search.test.mjs",
+        "apps/web/tests/entity-resolution-benchmark.test.mjs",
+        "apps/web/tests/ask-service-where.test.mjs",
+        "apps/web/tests/legacy-abca-etl.test.mjs",
+        "apps/web/tests/migration-court.test.mjs",
+        "apps/web/tests/neighborhood-search.test.mjs",
+        "apps/web/tests/product-benchmark.test.mjs",
+        "apps/web/tests/reality-cognitive-evolution.test.mjs",
+        "apps/web/tests/reality-compiler.test.mjs",
+        "apps/web/tests/reality-organism-loop.test.mjs",
+        "apps/web/tests/verification-laundering.test.mjs",
+        "apps/web/tests/product-discovery.test.mjs",
+        "apps/web/tests/public-retailer.test.mjs",
+        "apps/web/tests/retailer-compare.test.mjs",
+        "apps/web/tests/security-boundary.test.mjs",
+        "apps/web/tests/site-intelligence.test.mjs",
+        "apps/web/tests/tenant-retailer.test.mjs",
+        "deploy/namecheap/artifact-exclusions.test.mjs",
+        "deploy/namecheap/build-artifact.mjs",
+        "docs/RSI_SITE_INTELLIGENCE_LINEAGE.md",
+        "docs/capabilities/cana.ask-orderweeddc.contract.json",
+        "docs/capabilities/cana.continuation-kernel.contract.json",
+        "docs/evidence/phase-b/CLAIM_STATE_MACHINE.md",
+        "docs/evidence/phase-b/COGNITIVE_EVOLUTION_STATE.md",
+        "docs/evidence/phase-b/COGNITIVE_REFLECTION_RECEIPT.md",
+        "docs/evidence/phase-b/CURRENT_VERIFIED_STATE.md",
+        "docs/evidence/phase-b/EVIDENCE_LEDGER.md",
+        "docs/evidence/phase-b/PHASE_B_ARCHITECTURE.md",
+        "docs/evidence/phase-b/REALITY_BENCHMARK.json",
+        "docs/evidence/phase-b/SOURCE_AUTHORITY_MATRIX.md",
+        "docs/evidence/phase-b/TRUTH_WRITE_READ_MAP.md",
+        "docs/evidence/phase-b/VERIFICATION_LAUNDERING_COURT.md",
+        "docs/migration/SQLITE_TO_POSTGRES.md",
+        "docs/reality/PHASE_B_SLICE1_CONTRACT.md",
+        "tools/durability/cli.mjs",
+        "tools/durability/cli.test.mjs",
+        "tools/mariadb-sim/generate-schema.mjs",
+        "tools/mariadb-sim/schema.prisma",
+        "tools/reality/verify-evidence-packet.mjs",
+        "tools/reality/verify-evidence-packet.test.mjs",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ],
+      "approval_sha256": "45175ee283ca762da883b49cde2296baeeb8a18851de829372a23eac080dcd77"
     }
   },
   "owned_create_paths": [
@@ -662,9 +747,50 @@
     ,"docs/capabilities/cana.provenance-court.contract.json"
     ,"tools/provenance-court/sabotage.test.mjs"
     ,"tools/provenance-court/verify-chain.mjs"
+    ,".omo/plans/cana-phase-b-reality-compiler.md"
+    ,"apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/manifest.json"
+    ,"apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/snapshot.json"
+    ,"apps/web/prisma/migrations/20260810000000_market_reality_compiler/migration.sql"
+    ,"apps/web/scripts/capture-dc-abca-snapshot.mjs"
+    ,"apps/web/scripts/compile-market-reality.mjs"
+    ,"apps/web/scripts/replay-reality-benchmark.mjs"
+    ,"apps/web/scripts/verify-market-reality.mjs"
+    ,"apps/web/src/lib/ask/market-gap-recheck.mjs"
+    ,"apps/web/src/lib/continuation/continuation-consumers.mjs"
+    ,"apps/web/src/lib/reality/entity-resolution.mjs"
+    ,"apps/web/src/lib/reality/market-claim-adapter.mjs"
+    ,"apps/web/src/lib/reality/market-claim-court.mjs"
+    ,"apps/web/src/lib/reality/official-source-snapshot.mjs"
+    ,"apps/web/src/lib/reality/reality-compiler.mjs"
+    ,"apps/web/src/lib/reality/reality-repository.mjs"
+    ,"apps/web/tests/entity-resolution-benchmark.test.mjs"
+    ,"apps/web/tests/reality-cognitive-evolution.test.mjs"
+    ,"apps/web/tests/reality-compiler.test.mjs"
+    ,"apps/web/tests/reality-organism-loop.test.mjs"
+    ,"apps/web/tests/verification-laundering.test.mjs"
+    ,"docs/evidence/phase-b/CLAIM_STATE_MACHINE.md"
+    ,"docs/evidence/phase-b/COGNITIVE_EVOLUTION_STATE.md"
+    ,"docs/evidence/phase-b/COGNITIVE_REFLECTION_RECEIPT.md"
+    ,"docs/evidence/phase-b/CURRENT_VERIFIED_STATE.md"
+    ,"docs/evidence/phase-b/EVIDENCE_LEDGER.md"
+    ,"docs/evidence/phase-b/PHASE_B_ARCHITECTURE.md"
+    ,"docs/evidence/phase-b/REALITY_BENCHMARK.json"
+    ,"docs/evidence/phase-b/SOURCE_AUTHORITY_MATRIX.md"
+    ,"docs/evidence/phase-b/TRUTH_WRITE_READ_MAP.md"
+    ,"docs/evidence/phase-b/VERIFICATION_LAUNDERING_COURT.md"
+    ,"docs/reality/PHASE_B_SLICE1_CONTRACT.md"
+    ,"tools/reality/verify-evidence-packet.mjs"
+    ,"tools/reality/verify-evidence-packet.test.mjs"
   ],
   "owned_modify_paths": [
+    "apps/web/benchmarks/discovery-tasks.json",
     "apps/web/src/lib/public-submission.mjs",
+    "apps/web/src/lib/data-status.mjs",
+    "apps/web/src/lib/seo-truth.mjs",
+    "apps/web/tests/data-status.test.mjs",
+    "apps/web/tests/legacy-abca-etl.test.mjs",
+    "apps/web/tests/neighborhood-search.test.mjs",
+    "apps/web/tests/security-boundary.test.mjs",
     "apps/web/tests/helpers/**",
     "apps/web/src/app/admin/site-intelligence/page.tsx",
     "apps/web/src/lib/site-intelligence.ts",
@@ -756,8 +882,19 @@
     ,"tools/mariadb-sim/schema.prisma"
     ,"tools/test-runner/container-verify.sh"
     ,"tools/test-runner/runner.mjs"
+    ,"apps/web/scripts/seed-abca-retailers.mjs"
+    ,"apps/web/src/lib/public-retailer.mjs"
+    ,"apps/web/src/lib/site-intelligence.mjs"
+    ,"apps/web/tests/directory-search.test.mjs"
+    ,"apps/web/tests/product-discovery.test.mjs"
+    ,"apps/web/tests/public-retailer.test.mjs"
+    ,"apps/web/tests/retailer-compare.test.mjs"
+    ,"apps/web/tests/tenant-retailer.test.mjs"
+    ,"deploy/namecheap/artifact-exclusions.test.mjs"
   ],
   "planned_candidate_files": [
+    "apps/web/benchmarks/discovery-tasks.json",
+    "apps/web/tests/ask-service-where.test.mjs",
     "cana",
     "docker-compose.mariadb.yml",
     "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
@@ -930,6 +1067,64 @@
     "deploy/namecheap/migrate.sh",
     "deploy/namecheap/worker.mjs",
     "package-lock.json"
+    ,".omo/plans/cana-phase-b-reality-compiler.md"
+    ,"apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/manifest.json"
+    ,"apps/web/fixtures/reality/dc-abca-layer-31/2026-06-05/snapshot.json"
+    ,"apps/web/prisma/migration-manifest.json"
+    ,"apps/web/prisma/migrations/20260810000000_market_reality_compiler/migration.sql"
+    ,"apps/web/scripts/capture-dc-abca-snapshot.mjs"
+    ,"apps/web/scripts/compile-market-reality.mjs"
+    ,"apps/web/scripts/continuation-tick.mjs"
+    ,"apps/web/scripts/replay-reality-benchmark.mjs"
+    ,"apps/web/scripts/seed-abca-retailers.mjs"
+    ,"apps/web/scripts/verify-market-reality.mjs"
+    ,"apps/web/src/lib/ask/ask-work.mjs"
+    ,"apps/web/src/lib/ask/market-gap-recheck.mjs"
+    ,"apps/web/src/lib/continuation/continuation-consumers.mjs"
+    ,"apps/web/src/lib/continuation/continuation-repository.mjs"
+    ,"apps/web/src/lib/continuation/continuation-selection.mjs"
+    ,"apps/web/src/lib/continuation/continuation-storage.mjs"
+    ,"apps/web/src/lib/data-status.mjs"
+    ,"apps/web/src/lib/seo-truth.mjs"
+    ,"apps/web/src/lib/public-retailer.mjs"
+    ,"apps/web/src/lib/reality/entity-resolution.mjs"
+    ,"apps/web/src/lib/reality/market-claim-adapter.mjs"
+    ,"apps/web/src/lib/reality/market-claim-court.mjs"
+    ,"apps/web/src/lib/reality/official-source-snapshot.mjs"
+    ,"apps/web/src/lib/reality/reality-compiler.mjs"
+    ,"apps/web/src/lib/reality/reality-repository.mjs"
+    ,"apps/web/src/lib/site-intelligence.mjs"
+    ,"apps/web/tests/entity-resolution-benchmark.test.mjs"
+    ,"apps/web/tests/data-status.test.mjs"
+    ,"apps/web/tests/legacy-abca-etl.test.mjs"
+    ,"apps/web/tests/neighborhood-search.test.mjs"
+    ,"apps/web/tests/reality-cognitive-evolution.test.mjs"
+    ,"apps/web/tests/reality-compiler.test.mjs"
+    ,"apps/web/tests/reality-organism-loop.test.mjs"
+    ,"apps/web/tests/verification-laundering.test.mjs"
+    ,"apps/web/tests/directory-search.test.mjs"
+    ,"apps/web/tests/product-discovery.test.mjs"
+    ,"apps/web/tests/public-retailer.test.mjs"
+    ,"apps/web/tests/retailer-compare.test.mjs"
+    ,"apps/web/tests/security-boundary.test.mjs"
+    ,"apps/web/tests/tenant-retailer.test.mjs"
+    ,"deploy/namecheap/artifact-exclusions.test.mjs"
+    ,"docs/capabilities/cana.ask-orderweeddc.contract.json"
+    ,"docs/capabilities/cana.continuation-kernel.contract.json"
+    ,"docs/evidence/phase-b/CLAIM_STATE_MACHINE.md"
+    ,"docs/evidence/phase-b/COGNITIVE_EVOLUTION_STATE.md"
+    ,"docs/evidence/phase-b/COGNITIVE_REFLECTION_RECEIPT.md"
+    ,"docs/evidence/phase-b/CURRENT_VERIFIED_STATE.md"
+    ,"docs/evidence/phase-b/EVIDENCE_LEDGER.md"
+    ,"docs/evidence/phase-b/PHASE_B_ARCHITECTURE.md"
+    ,"docs/evidence/phase-b/REALITY_BENCHMARK.json"
+    ,"docs/evidence/phase-b/SOURCE_AUTHORITY_MATRIX.md"
+    ,"docs/evidence/phase-b/TRUTH_WRITE_READ_MAP.md"
+    ,"docs/evidence/phase-b/VERIFICATION_LAUNDERING_COURT.md"
+    ,"docs/migration/SQLITE_TO_POSTGRES.md"
+    ,"docs/reality/PHASE_B_SLICE1_CONTRACT.md"
+    ,"tools/reality/verify-evidence-packet.mjs"
+    ,"tools/reality/verify-evidence-packet.test.mjs"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",

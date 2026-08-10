@@ -17,15 +17,18 @@
  */
 
 import { runTick } from '../src/lib/continuation/continuation-repository.mjs';
+import { consumeFiredContinuations } from '../src/lib/continuation/continuation-consumers.mjs';
 
 function parseArgs(argv) {
   const events = [];
   let limit = 50;
+  let tenant = null;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--event' && argv[i + 1]) events.push(argv[(i += 1)]);
     else if (argv[i] === '--limit' && argv[i + 1]) limit = Number(argv[(i += 1)]) || 50;
+    else if (argv[i] === '--tenant' && argv[i + 1]) tenant = argv[(i += 1)];
   }
-  return { events, limit };
+  return { events, limit, tenant };
 }
 
 async function main() {
@@ -33,13 +36,19 @@ async function main() {
     console.error(JSON.stringify({ event: 'continuation-tick-skipped', reason: 'DATABASE_URL not configured' }));
     return 2;
   }
-  const { events, limit } = parseArgs(process.argv.slice(2));
+  const { events, limit, tenant } = parseArgs(process.argv.slice(2));
+  if (!tenant) {
+    console.error(JSON.stringify({ event: 'continuation-tick-skipped', reason: '--tenant is required' }));
+    return 2;
+  }
   let prisma;
   try {
     const { PrismaClient } = await import('@prisma/client');
     prisma = new PrismaClient();
-    const summary = await runTick(prisma, { events, limit });
-    console.log(JSON.stringify({ event: 'continuation-tick', ...summary, receipts: summary.receipts.length }));
+    const now = new Date();
+    const summary = await runTick(prisma, { events, limit, tenant, now });
+    const consumers = await consumeFiredContinuations(prisma, { tickSummary: summary, tenant, now });
+    console.log(JSON.stringify({ event: 'continuation-tick', ...summary, receipts: summary.receipts.length, consumers }));
     return 0;
   } catch (error) {
     console.error(JSON.stringify({ event: 'continuation-tick-failed', error: String(error?.message ?? error).slice(0, 300) }));

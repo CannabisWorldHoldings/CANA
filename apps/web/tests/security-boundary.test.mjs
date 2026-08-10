@@ -161,7 +161,7 @@ test('SEO eligibility requires non-demo evidence inside its freshness window', (
   assert.deepEqual(currentPublicRecordWhere(AS_OF), {
     isDemonstration: false,
     dataStatus: 'VERIFIED_CURRENT',
-    verifiedAt: { not: null },
+    verifiedAt: { not: null, lte: AS_OF },
     freshnessExpiresAt: { gt: AS_OF },
   });
   assert.throws(() => currentPublicRecordWhere(new Date('invalid')));

@@ -15,13 +15,10 @@ const AS_OF = new Date('2026-07-17T20:00:00.000Z');
 test('tenant retailer predicate requires both the retailer ID and brand membership', () => {
   assert.deepEqual(tenantRetailerWhere('brand-one', 'retailer-one', AS_OF), {
     id: 'retailer-one',
-    OR: [
-      { isDemonstration: true },
-      {
-        isDemonstration: false,
-        verifiedAt: { not: null, lte: AS_OF },
-      },
-    ],
+    isDemonstration: false,
+    dataStatus: 'VERIFIED_CURRENT',
+    verifiedAt: { not: null, lte: AS_OF },
+    freshnessExpiresAt: { gt: AS_OF },
     menus: {
       some: {
         brandMenus: {

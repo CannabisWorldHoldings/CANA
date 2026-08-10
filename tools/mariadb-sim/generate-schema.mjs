@@ -21,6 +21,12 @@ const TEXT_FIELDS = new Map([
   ['ContinuationReceipt', new Set(['evidence'])],
   ['Opportunity', new Set(['evidence', 'observedState'])],
   ['AskIntentSignal', new Set(['intentIr', 'answerSummary'])],
+  ['MarketSourceSnapshot', new Set(['queryParameters', 'payloadJson'])],
+  ['MarketObservation', new Set(['rawValue', 'normalizedValue', 'uncertaintyJson'])],
+  ['MarketEntityResolution', new Set(['candidateIds'])],
+  ['MarketClaim', new Set(['claimValue', 'uncertaintyJson'])],
+  ['MarketClaimContradiction', new Set(['earlierObservationIdsJson', 'laterObservationIdsJson'])],
+  ['MarketVerificationEvent', new Set(['reason'])],
 ]);
 
 export function generateCandidate(source) {
@@ -31,11 +37,11 @@ export function generateCandidate(source) {
     if (line === '}') model = null;
     if (!model || !TEXT_FIELDS.has(model)) return line;
 
-    const fieldMatch = line.match(/^(\s+)(\w+)(\s+String\??)(\s*)(\/\/.*)?$/);
+    const fieldMatch = line.match(/^(\s+)(\w+)(\s+String\??)(.*)$/);
     if (!fieldMatch || !TEXT_FIELDS.get(model).has(fieldMatch[2])) return line;
-    const [, indent, field, type, spacing, comment = ''] = fieldMatch;
-    const suffix = comment ? ` ${comment}` : '';
-    return `${indent}${field}${type} @db.Text${spacing}${suffix}`.trimEnd();
+    const [, indent, field, type, suffix] = fieldMatch;
+    if (/@db\.(?:Text|MediumText|LongText)/.test(suffix)) return line;
+    return `${indent}${field}${type} @db.Text${suffix}`.trimEnd();
   }).join('\n');
 
   const provider = transformed
