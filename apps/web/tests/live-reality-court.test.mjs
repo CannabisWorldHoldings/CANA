@@ -143,6 +143,19 @@ test('UNKNOWN revision may be compiled as observation evidence but cannot revali
     },
     asOf: AS_OF,
   }).decision_eligible, false);
+
+  assert.equal(court.adjudicateAcquisitionEvidence({
+    ...evidence({ event: {
+      sourceRevision: 'UNKNOWN',
+      preSourceRevision: 'UNKNOWN',
+      postSourceRevision: 'UNKNOWN',
+      revisionState: 'OBSERVED',
+      outcome: 'SOURCE_CHANGED',
+    } }),
+    tenant: 'orderweeddc.com',
+    purpose: 'REVALIDATE',
+    asOf: AS_OF,
+  }).reason, 'ACQUISITION_REVISION_UNBOUND');
 });
 
 test('failed, cross-tenant, drifted, partial, future, and digest-mismatched acquisition evidence is denied', () => {

@@ -89,11 +89,11 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
   if ((preRevision ?? 'UNKNOWN') !== (postRevision ?? 'UNKNOWN')) {
     return acquisitionDecision({ reason: 'ACQUISITION_REVISION_DRIFT' });
   }
+  const exactRevisionToken = (value) => typeof value === 'string' && /^\d{1,20}$/.test(value);
   const revisionBound = event.revisionState === 'OBSERVED'
-    && preRevision !== null
-    && preRevision !== undefined
-    && postRevision !== null
-    && postRevision !== undefined;
+    && exactRevisionToken(preRevision)
+    && postRevision === preRevision
+    && event.sourceRevision === preRevision;
   if (purpose === 'REVALIDATE' && !revisionBound) {
     return acquisitionDecision({ reason: 'ACQUISITION_REVISION_UNBOUND' });
   }

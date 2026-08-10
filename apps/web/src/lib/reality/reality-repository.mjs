@@ -503,60 +503,63 @@ function courtInput(claim, snapshot, evidenceSnapshot = null) {
   };
 }
 
-async function loadCourtIdentityContext(tx) {
-  const retailers = await tx.retailer.findMany({
+async function loadCourtIdentityContext(tx, claims) {
+  if (claims.length === 0) return { retailers: [], aliases: [] };
+  const sourceLicenses = [...new Set(claims.map((claim) => claim.resolution.sourceRecordId))];
+  const resolvedRetailerIds = [...new Set(claims
+    .map((claim) => claim.resolution.retailerId)
+    .filter(Boolean))];
+  const resolvedGeoEntityIds = [...new Set(claims
+    .map((claim) => claim.resolution.geoEntityId)
+    .filter(Boolean))];
+  const aliasRows = await tx.geoEntityAlias.findMany({
+    where: { namespace: 'dc_abca_license', externalId: { in: sourceLicenses } },
+    select: { id: true, namespace: true, externalId: true, geoEntityId: true },
+    take: MAX_IDENTITY_CANDIDATES + 1,
+  });
+  if (aliasRows.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
+  const directRetailers = await tx.retailer.findMany({
+    where: {
+      OR: [
+        { id: { in: resolvedRetailerIds } },
+        ...sourceLicenses.map((licenseNumber) => ({
+          licenseNumber: { equals: licenseNumber, mode: 'insensitive' },
+        })),
+      ],
+    },
     select: { id: true, licenseNumber: true },
+    take: MAX_IDENTITY_CANDIDATES + 1,
   });
+  if (directRetailers.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
   const geoEntities = await tx.geoEntity.findMany({
-    where: { retailerId: { in: retailers.map((retailer) => retailer.id) } },
+    where: {
+      OR: [
+        { retailerId: { in: directRetailers.map((retailer) => retailer.id) } },
+        { id: { in: [...resolvedGeoEntityIds, ...aliasRows.map((alias) => alias.geoEntityId)] } },
+      ],
+    },
     select: { id: true, retailerId: true },
+    take: MAX_IDENTITY_CANDIDATES + 1,
   });
+  if (geoEntities.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
+  const directIds = new Set(directRetailers.map((retailer) => retailer.id));
+  const linkedRetailerIds = [...new Set(geoEntities
+    .map((entity) => entity.retailerId)
+    .filter((retailerId) => retailerId && !directIds.has(retailerId)))];
+  const linkedRetailers = linkedRetailerIds.length === 0 ? [] : await tx.retailer.findMany({
+    where: { id: { in: linkedRetailerIds } },
+    select: { id: true, licenseNumber: true },
+    take: MAX_IDENTITY_CANDIDATES + 1,
+  });
+  if (directRetailers.length + linkedRetailers.length > MAX_IDENTITY_CANDIDATES) {
+    throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
+  }
+  const retailers = [...directRetailers, ...linkedRetailers];
   const geoByRetailer = new Map(geoEntities.map((entity) => [entity.retailerId, entity.id]));
   for (const retailer of retailers) retailer.geoEntityId = geoByRetailer.get(retailer.id) ?? null;
-  const aliasRows = await tx.geoEntityAlias.findMany({
-    where: { namespace: 'dc_abca_license' },
-    select: { id: true, namespace: true, externalId: true, geoEntityId: true },
-  });
   const retailerByGeo = new Map(geoEntities.map((entity) => [entity.id, entity.retailerId]));
   const aliases = aliasRows.map((alias) => ({ ...alias, retailerId: retailerByGeo.get(alias.geoEntityId) ?? null }));
   return { retailers, aliases };
-}
-
-async function copyClaimEvidence(tx, sourceClaim, targetClaimId) {
-  for (const evidence of sourceClaim.evidence) {
-    await tx.marketClaimEvidence.create({
-      data: { claimId: targetClaimId, observationId: evidence.observationId, role: evidence.role },
-    });
-  }
-}
-
-async function appendClaimState(tx, claim, { verification, decisionEligible }) {
-  const latest = await tx.marketClaim.findFirst({
-    where: { tenant: claim.tenant, claimKey: claim.claimKey },
-    orderBy: { version: 'desc' },
-    select: { version: true },
-  });
-  const next = await tx.marketClaim.create({
-    data: {
-      tenant: claim.tenant,
-      claimKey: claim.claimKey,
-      claimType: claim.claimType,
-      claimValue: claim.claimValue,
-      version: (latest?.version ?? claim.version) + 1,
-      resolutionId: claim.resolutionId,
-      snapshotId: claim.snapshotId,
-      compilationId: claim.compilationId,
-      supersedesClaimId: claim.id,
-      observedAt: claim.observedAt,
-      freshnessExpiresAt: claim.freshnessExpiresAt,
-      confidence: claim.confidence,
-      uncertaintyJson: claim.uncertaintyJson,
-      verification,
-      decisionEligible,
-    },
-  });
-  await copyClaimEvidence(tx, claim, next.id);
-  return next;
 }
 
 function latestClaimVersions(rows) {
@@ -596,7 +599,7 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         purpose: 'REVALIDATE',
         asOf: clock,
       });
-      const revocations = await tx.marketEvidenceRevocationEvent.findMany({
+      const revocation = await tx.marketEvidenceRevocationEvent.findFirst({
         where: {
           effectiveAt: { lte: clock },
           decision: { in: ['EVIDENCE_QUARANTINED', 'EVIDENCE_REVOKED'] },
@@ -613,7 +616,7 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         },
         select: { id: true },
       });
-      if (revocations.length > 0) throw new Error('CANA_REALITY_EVIDENCE_REVOKED');
+      if (revocation) throw new Error('CANA_REALITY_EVIDENCE_REVOKED');
       liveLoaded = liveLoadedSnapshot(acquisition);
     }
     const compilation = await tx.marketCompilation.findFirst({
@@ -632,13 +635,24 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         evidence: { include: { observation: true } },
       },
       orderBy: [{ claimKey: 'asc' }, { version: 'desc' }],
+      take: MAX_RELEVANT_CLAIM_HISTORY + 1,
     });
+    if (rows.length > MAX_RELEVANT_CLAIM_HISTORY) {
+      throw new Error('CANA_REALITY_CLAIM_HISTORY_BUDGET_EXCEEDED');
+    }
     const claims = latestClaimVersions(rows);
-    const identityContext = await loadCourtIdentityContext(tx);
+    const identityContext = await loadCourtIdentityContext(tx, claims);
     const adjudicated = [];
+    const pendingClaimStates = [];
+    const pendingClaimEvidence = [];
+    const pendingVerificationEvents = [];
     let admitted = 0;
     let denied = 0;
-    let eventsCreated = 0;
+    const liveRecordByLicense = new Map((liveLoaded?.records ?? []).map((record) => [
+      String(record.ABCA_NUMBER ?? '').normalize('NFKC').trim().toUpperCase(),
+      record,
+    ]));
+    const currentEvidenceSnapshot = liveLoaded ? runtimeSnapshot(liveLoaded) : null;
     for (const claim of claims) {
       let effective = claim;
       let effectiveDecision;
@@ -654,10 +668,7 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
           asOf: claim.observedAt,
         });
         if (acquisitionCourt.zero_change && originalDecision.decision === 'ALLOW') {
-          const record = liveLoaded.records.find((entry) => (
-            String(entry.ABCA_NUMBER ?? '').normalize('NFKC').trim().toUpperCase()
-            === claim.resolution.sourceRecordId
-          ));
+          const record = liveRecordByLicense.get(claim.resolution.sourceRecordId);
           const licenseExpiration = typeof record?.EXPIRATION_DATE === 'number'
             ? new Date(record.EXPIRATION_DATE).toISOString()
             : null;
@@ -686,9 +697,8 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         } else if (acquisitionCourt.zero_change) {
           effectiveDecision = originalDecision;
         } else {
-          const currentSnapshot = runtimeSnapshot(liveLoaded);
           effectiveDecision = adjudicateMarketClaim({
-            ...courtInput(claim, snapshot, currentSnapshot),
+            ...courtInput(claim, snapshot, currentEvidenceSnapshot),
             sourcePolicy: DC_ABCA_SOURCE,
             identityContext,
             asOf: clock,
@@ -710,7 +720,30 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         const decisionEligible = decision.decision_eligible === true;
         effectiveDecision = decision;
         if (claim.verification !== verification || claim.decisionEligible !== decisionEligible) {
-          const next = await appendClaimState(tx, claim, { verification, decisionEligible });
+          const next = {
+            id: randomUUID(),
+            tenant: claim.tenant,
+            claimKey: claim.claimKey,
+            claimType: claim.claimType,
+            claimValue: claim.claimValue,
+            version: claim.version + 1,
+            resolutionId: claim.resolutionId,
+            snapshotId: claim.snapshotId,
+            compilationId: claim.compilationId,
+            supersedesClaimId: claim.id,
+            observedAt: claim.observedAt,
+            freshnessExpiresAt: claim.freshnessExpiresAt,
+            confidence: claim.confidence,
+            uncertaintyJson: claim.uncertaintyJson,
+            verification,
+            decisionEligible,
+          };
+          pendingClaimStates.push(next);
+          pendingClaimEvidence.push(...claim.evidence.map((evidence) => ({
+            claimId: next.id,
+            observationId: evidence.observationId,
+            role: evidence.role,
+          })));
           effective = { ...next, resolution: claim.resolution, evidence: claim.evidence };
           effectiveDecision = adjudicateMarketClaim({
             ...courtInput(effective, snapshot),
@@ -720,33 +753,44 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
           });
         }
       }
-      const existingEvent = await tx.marketVerificationEvent.findFirst({
-        where: {
-          claimId: effective.id,
-          evidenceDigest: effectiveDecision.evidence_digest,
-          acquisitionEventId: acquisition?.id ?? null,
-        },
-        select: { id: true },
+      pendingVerificationEvents.push({
+        claimId: effective.id,
+        decision: effectiveDecision.decision,
+        reason: effectiveDecision.reason,
+        evaluatorVersion: MARKET_CLAIM_COURT_VERSION,
+        evidenceDigest: effectiveDecision.evidence_digest,
+        asOf: clock,
+        acquisitionEventId: acquisition?.id ?? null,
+        freshnessExpiresAt: effective.freshnessExpiresAt,
       });
-      if (!existingEvent) {
-        await tx.marketVerificationEvent.create({
-          data: {
-            claimId: effective.id,
-            decision: effectiveDecision.decision,
-            reason: effectiveDecision.reason,
-            evaluatorVersion: MARKET_CLAIM_COURT_VERSION,
-            evidenceDigest: effectiveDecision.evidence_digest,
-            asOf: clock,
-            acquisitionEventId: acquisition?.id ?? null,
-            freshnessExpiresAt: effective.freshnessExpiresAt,
-          },
-        });
-        eventsCreated += 1;
-      }
       adjudicated.push(effective);
       if (effective.decisionEligible) admitted += 1;
       else denied += 1;
     }
+    if (pendingClaimStates.length > 0) await tx.marketClaim.createMany({ data: pendingClaimStates });
+    if (pendingClaimEvidence.length > 0) await tx.marketClaimEvidence.createMany({ data: pendingClaimEvidence });
+    const eventClaimIds = pendingVerificationEvents.map((event) => event.claimId);
+    const eventDigests = pendingVerificationEvents.map((event) => event.evidenceDigest);
+    const existingEvents = eventClaimIds.length === 0 ? [] : await tx.marketVerificationEvent.findMany({
+      where: {
+        claimId: { in: eventClaimIds },
+        evidenceDigest: { in: eventDigests },
+        acquisitionEventId: acquisition?.id ?? null,
+      },
+      select: { claimId: true, evidenceDigest: true },
+      take: MAX_RELEVANT_CLAIM_HISTORY + 1,
+    });
+    if (existingEvents.length > MAX_RELEVANT_CLAIM_HISTORY) {
+      throw new Error('CANA_REALITY_VERIFICATION_EVENT_BUDGET_EXCEEDED');
+    }
+    const existingEventKeys = new Set(existingEvents.map((event) => `${event.claimId}:${event.evidenceDigest}`));
+    const missingEvents = pendingVerificationEvents.filter((event) => (
+      !existingEventKeys.has(`${event.claimId}:${event.evidenceDigest}`)
+    ));
+    const createdEvents = missingEvents.length === 0
+      ? { count: 0 }
+      : await tx.marketVerificationEvent.createMany({ data: missingEvents, skipDuplicates: true });
+    const eventsCreated = createdEvents.count;
 
     const byResolution = new Map();
     for (const claim of adjudicated) {
