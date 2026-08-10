@@ -193,6 +193,27 @@ function acquisitionOptions(source, {
   };
 }
 
+test('acquisition refuses incomplete parser, compiler, resolver, and policy version provenance', async () => {
+  const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
+  for (const missing of [
+    'parserVersion',
+    'compilerVersion',
+    'entityResolverVersion',
+    'authorityPolicyVersion',
+    'freshnessPolicyVersion',
+    'verificationCourtVersion',
+  ]) {
+    const source = scriptedSource();
+    const options = acquisitionOptions(source, { attemptId: `missing-${missing}` });
+    delete options.versions[missing];
+    await assert.rejects(
+      acquireLiveMarketReality(new MemoryAcquisitionStore(), options),
+      /CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED/,
+    );
+    assert.equal(source.calls.length, 0);
+  }
+});
+
 test('changed then unchanged acquisition keeps one content identity and two independently timed attempts', async () => {
   const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
   const store = new MemoryAcquisitionStore();

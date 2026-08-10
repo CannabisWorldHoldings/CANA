@@ -1,4 +1,5 @@
 import { isEvidenceRevoked } from './evidence-revocation.mjs';
+import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
 
 const PUBLIC_FIELDS = Object.freeze([
   'license',
@@ -70,6 +71,47 @@ function known(decisions) {
   });
 }
 
+function field(row, camel, snake) {
+  return row?.[camel] ?? row?.[snake];
+}
+
+function admittedAcquisition(claim, event, acquisition, eventAsOf) {
+  const claimTenant = claim.tenant;
+  const claimSnapshotId = field(claim, 'snapshotId', 'snapshot_id');
+  const fetchedAt = new Date(field(acquisition, 'fetchedAt', 'fetched_at'));
+  const evaluatorVersion = field(event, 'evaluatorVersion', 'evaluator_version');
+  const courtVersion = field(acquisition, 'verificationCourtVersion', 'verification_court_version');
+  const outcome = acquisition?.outcome;
+  const revisionState = field(acquisition, 'revisionState', 'revision_state');
+  const lineageVersions = [
+    field(acquisition, 'parserVersion', 'parser_version'),
+    field(acquisition, 'authorityPolicyVersion', 'authority_policy_version'),
+    field(acquisition, 'freshnessPolicyVersion', 'freshness_policy_version'),
+    courtVersion,
+  ];
+  return typeof claimTenant === 'string'
+    && claimTenant.length > 0
+    && acquisition?.tenant === claimTenant
+    && acquisition?.state === 'COMPLETED'
+    && ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'].includes(outcome)
+    && acquisition?.completeness === 'COMPLETE'
+    && field(acquisition, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
+    && field(acquisition, 'requestDigest', 'request_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && field(acquisition, 'adapterContractDigest', 'adapter_contract_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && typeof claimSnapshotId === 'string'
+    && field(acquisition, 'snapshotId', 'snapshot_id') === claimSnapshotId
+    && typeof field(acquisition, 'contentArtifactId', 'content_artifact_id') === 'string'
+    && field(acquisition, 'contentArtifactId', 'content_artifact_id').length > 0
+    && Number.isFinite(fetchedAt.getTime())
+    && fetchedAt <= eventAsOf
+    && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryCommitSha', 'repository_commit_sha') ?? '')
+    && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryTreeSha', 'repository_tree_sha') ?? '')
+    && lineageVersions.every((value) => typeof value === 'string' && value.length > 0)
+    && evaluatorVersion === courtVersion
+    && ['OBSERVED', 'UNKNOWN'].includes(revisionState)
+    && (outcome !== 'SOURCE_UNCHANGED' || revisionState === 'OBSERVED');
+}
+
 export function selectCurrentClaimDecisions({
   claims = [],
   verificationEvents = [],
@@ -89,7 +131,12 @@ export function selectCurrentClaimDecisions({
       latestByClaim.set(event.claimId ?? event.claim_id, event);
     }
   }
-  const acquisitionById = new Map(acquisitionEvents.map((event) => [event.id, event]));
+  const duplicateAcquisitionIds = new Set();
+  const acquisitionById = new Map();
+  for (const acquisition of acquisitionEvents) {
+    if (acquisitionById.has(acquisition.id)) duplicateAcquisitionIds.add(acquisition.id);
+    else acquisitionById.set(acquisition.id, acquisition);
+  }
   const current = [];
   for (const claim of claims) {
     const event = latestByClaim.get(claim.id);
@@ -97,7 +144,9 @@ export function selectCurrentClaimDecisions({
     const acquisition = acquisitionById.get(acquisitionEventId);
     const eventAsOf = new Date(event?.asOf ?? event?.as_of);
     const expiry = new Date(event?.freshnessExpiresAt ?? event?.freshness_expires_at);
-    if (!acquisition) continue;
+    if (!acquisition
+      || duplicateAcquisitionIds.has(acquisitionEventId)
+      || !admittedAcquisition(claim, event, acquisition, eventAsOf)) continue;
     if (event.decision !== 'ALLOW'
       || !Number.isFinite(eventAsOf.getTime())
       || eventAsOf > clock
@@ -108,12 +157,12 @@ export function selectCurrentClaimDecisions({
       acquisitionEventId,
       snapshotId: claim.snapshotId ?? claim.snapshot_id,
       observationIds: claim.observationIds ?? claim.observation_ids ?? [],
-      parserVersion: acquisition.parserVersion ?? acquisition.parser_version,
+      parserVersion: field(acquisition, 'parserVersion', 'parser_version'),
       policyVersions: [
-        acquisition.authorityPolicyVersion ?? acquisition.authority_policy_version,
-        acquisition.freshnessPolicyVersion ?? acquisition.freshness_policy_version,
-        acquisition.verificationCourtVersion ?? acquisition.verification_court_version,
-        event.evaluatorVersion ?? event.evaluator_version,
+        field(acquisition, 'authorityPolicyVersion', 'authority_policy_version'),
+        field(acquisition, 'freshnessPolicyVersion', 'freshness_policy_version'),
+        field(acquisition, 'verificationCourtVersion', 'verification_court_version'),
+        field(event, 'evaluatorVersion', 'evaluator_version'),
       ].filter(Boolean),
       revocations,
       asOf: clock,
@@ -122,12 +171,12 @@ export function selectCurrentClaimDecisions({
       claim_id: claim.id,
       predicate: claim.claimType ?? claim.predicate,
       value: claim.claimValue ?? claim.value,
-      source_id: acquisition.sourceKey ?? acquisition.source_key ?? null,
+      source_id: field(acquisition, 'sourceKey', 'source_key'),
       observed_at: new Date(claim.observedAt ?? claim.observed_at).toISOString(),
       freshness_expires_at: expiry.toISOString(),
       verification: 'VERIFIED',
       decision_eligible: true,
-      court_version: event.evaluatorVersion ?? event.evaluator_version,
+      court_version: field(event, 'evaluatorVersion', 'evaluator_version'),
       acquisition_event_id: acquisitionEventId,
       verification_event_id: event.id,
     }));

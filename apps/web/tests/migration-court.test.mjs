@@ -659,6 +659,58 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
     asOf: new Date('2026-08-20T14:15:00.000Z'),
   }).length >= 4, 'persisted acquisition and court lineage must support current truth');
 
+  const forgedAcquisition = await p.marketSourceAcquisitionEvent.create({
+    data: {
+      sourceKey: 'attacker-source',
+      attemptId: 'cross-tenant-failed-acquisition',
+      sequence: 1,
+      state: 'FAILED',
+      outcome: 'SOURCE_FAILED',
+      predicateScope: 'licensed_retailer_identity,status,address,coordinates',
+      requestedAt: new Date('2026-08-20T14:16:00.000Z'),
+      eventAt: new Date('2026-08-20T14:16:01.000Z'),
+      sourceRevision: 'UNKNOWN',
+      revisionState: 'UNKNOWN',
+      requestDigest: '5'.repeat(64),
+      completeness: 'UNKNOWN',
+      adapterVersion: 'hostile-adapter-v1',
+      parserVersion: 'hostile-parser-v1',
+      authorityPolicyVersion: 'hostile-authority-v1',
+      freshnessPolicyVersion: 'hostile-freshness-v1',
+      verificationCourtVersion: 'cana-market-claim-court-v1',
+      repositoryCommitSha: '6'.repeat(40),
+      tenant: 'other.example',
+      priorEventHash: '7'.repeat(64),
+      eventHash: '8'.repeat(64),
+      errorCode: 'CANA_LIVE_REALITY_SOURCE_FAILED',
+    },
+  });
+  const forgedClaim = persistedClaims[0];
+  await p.marketVerificationEvent.create({
+    data: {
+      claimId: forgedClaim.id,
+      acquisitionEventId: forgedAcquisition.id,
+      decision: 'ALLOW',
+      reason: 'HOSTILE_FORGED_ALLOW',
+      evaluatorVersion: 'cana-market-claim-court-v1',
+      evidenceDigest: '9'.repeat(64),
+      asOf: new Date('2026-08-20T14:17:00.000Z'),
+      freshnessExpiresAt: new Date('2026-08-25T14:17:00.000Z'),
+    },
+  });
+  const persistedEventsWithForgery = await p.marketVerificationEvent.findMany({
+    where: { claimId: { in: persistedClaims.map((claim) => claim.id) } },
+  });
+  const persistedAcquisitionsWithForgery = await p.marketSourceAcquisitionEvent.findMany();
+  assert.equal(selectCurrentClaimDecisions({
+    claims: persistedClaims,
+    verificationEvents: persistedEventsWithForgery,
+    acquisitionEvents: persistedAcquisitionsWithForgery,
+    revocations: [],
+    asOf: new Date('2026-08-20T14:20:00.000Z'),
+  }).some((claim) => claim.claim_id === forgedClaim.id), false,
+  'a persisted failed, cross-tenant, wrong-source acquisition cannot authorize current truth');
+
   const policyRevoked = await revokeMarketEvidence(p, {
     tenant: 'orderweeddc.com',
     targetKind: 'POLICY_VERSION',

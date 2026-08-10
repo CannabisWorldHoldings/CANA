@@ -273,17 +273,17 @@ test('revocation blast radius is lineage-specific and cannot fabricate replaceme
 
 test('current truth requires a current acquisition-bound court event and excludes revoked lineage', () => {
   const claims = [
-    { id: 'claim-a', claimType: 'license_status', claimValue: 'ACTIVE', snapshotId: 'snapshot-a', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
-    { id: 'claim-b', claimType: 'regulated_address', claimValue: '100 Test St', snapshotId: 'snapshot-b', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
-    { id: 'laundered', claimType: 'hours', claimValue: '24/7', verification: 'VERIFIED', decisionEligible: true, observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'claim-a', tenant: 'orderweeddc.com', claimType: 'license_status', claimValue: 'ACTIVE', snapshotId: 'snapshot-a', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'claim-b', tenant: 'orderweeddc.com', claimType: 'regulated_address', claimValue: '100 Test St', snapshotId: 'snapshot-b', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'laundered', tenant: 'orderweeddc.com', claimType: 'hours', claimValue: '24/7', verification: 'VERIFIED', decisionEligible: true, observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
   ];
   const events = [
     { id: 'event-a', claimId: 'claim-a', acquisitionEventId: 'acq-a', decision: 'ALLOW', evaluatorVersion: 'court-v1', asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
     { id: 'event-b', claimId: 'claim-b', acquisitionEventId: 'acq-b', decision: 'ALLOW', evaluatorVersion: 'court-v1', asOf: AS_OF, freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
   ];
   const acquisitions = [
-    { id: 'acq-a', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, parserVersion: 'parser-v1', authorityPolicyVersion: 'policy-v2', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: 'court-v1' },
-    { id: 'acq-b', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, parserVersion: 'parser-v1', authorityPolicyVersion: 'policy-v1', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: 'court-v1' },
+    { id: 'acq-a', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-a', contentArtifactId: 'content-a', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', parserVersion: 'parser-v1', authorityPolicyVersion: 'policy-v2', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: 'court-v1', repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
+    { id: 'acq-b', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-b', contentArtifactId: 'content-b', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', parserVersion: 'parser-v1', authorityPolicyVersion: 'policy-v1', freshnessPolicyVersion: 'freshness-v1', verificationCourtVersion: 'court-v1', repositoryCommitSha: 'a'.repeat(40), repositoryTreeSha: 'b'.repeat(40) },
   ];
   const current = adapter.selectCurrentClaimDecisions({
     claims,
@@ -311,6 +311,29 @@ test('current truth requires a current acquisition-bound court event and exclude
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
   assert.deepEqual(courtRevoked, []);
+
+  const hostileAcquisitions = [
+    { tenant: 'other.example' },
+    { state: 'FAILED', outcome: 'SOURCE_FAILED' },
+    { sourceKey: 'attacker-source' },
+    { snapshotId: 'other-snapshot' },
+    { contentArtifactId: null },
+    { completeness: 'PARTIAL' },
+    { verificationCourtVersion: 'forged-court' },
+    { authorityPolicyVersion: null },
+    { outcome: 'SOURCE_UNCHANGED', revisionState: 'UNKNOWN' },
+    { fetchedAt: new Date('2026-08-12T01:00:00.000Z') },
+  ];
+  for (const hostile of hostileAcquisitions) {
+    const rejected = adapter.selectCurrentClaimDecisions({
+      claims: [claims[0]],
+      verificationEvents: [events[0]],
+      acquisitionEvents: [{ ...acquisitions[0], ...hostile }],
+      revocations: [],
+      asOf: new Date('2026-08-12T00:00:00.000Z'),
+    });
+    assert.deepEqual(rejected, []);
+  }
 });
 
 test('source routing cannot create predicate authority or let reliability override prohibition', () => {

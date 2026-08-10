@@ -60,7 +60,15 @@ function validateVersions(versions) {
   if (versions.repositoryTreeSha !== undefined && !/^[a-f0-9]{40}$/.test(versions.repositoryTreeSha)) {
     fail('CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED');
   }
-  for (const name of ['adapterVersion', 'parserVersion']) boundedIdentifier(versions[name], 'CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED');
+  for (const name of [
+    'adapterVersion',
+    'parserVersion',
+    'compilerVersion',
+    'entityResolverVersion',
+    'authorityPolicyVersion',
+    'freshnessPolicyVersion',
+    'verificationCourtVersion',
+  ]) boundedIdentifier(versions[name], 'CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED');
   return Object.freeze({ ...versions });
 }
 
