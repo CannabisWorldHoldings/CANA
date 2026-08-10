@@ -273,8 +273,8 @@ test('revocation blast radius is lineage-specific and cannot fabricate replaceme
 
 test('current truth requires a current acquisition-bound court event and excludes revoked lineage', () => {
   const claims = [
-    { id: 'claim-a', claimType: 'license_status', claimValue: 'ACTIVE', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
-    { id: 'claim-b', claimType: 'regulated_address', claimValue: '100 Test St', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'claim-a', claimType: 'license_status', claimValue: 'ACTIVE', authorityPolicyVersion: 'policy-v2', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
+    { id: 'claim-b', claimType: 'regulated_address', claimValue: '100 Test St', authorityPolicyVersion: 'policy-v1', observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
     { id: 'laundered', claimType: 'hours', claimValue: '24/7', verification: 'VERIFIED', decisionEligible: true, observedAt: new Date(ACQUIRED_AT), freshnessExpiresAt: new Date('2026-09-09T15:00:00.000Z') },
   ];
   const events = [
@@ -288,6 +288,14 @@ test('current truth requires a current acquisition-bound court event and exclude
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
   assert.deepEqual(current.map((item) => item.claim_id), ['claim-b']);
+
+  const policyRevoked = adapter.selectCurrentClaimDecisions({
+    claims,
+    verificationEvents: events,
+    revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: 'policy-v1', effectiveAt: AS_OF }],
+    asOf: new Date('2026-08-12T00:00:00.000Z'),
+  });
+  assert.deepEqual(policyRevoked.map((item) => item.claim_id), ['claim-a']);
 });
 
 test('source routing cannot create predicate authority or let reliability override prohibition', () => {

@@ -496,7 +496,7 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
     'SELECT "id", "sourceKey", "contentSha256" FROM "MarketSourceContentArtifact"',
   );
   const firstEvents = await p.$queryRawUnsafe(
-    'SELECT "id", "contentArtifactId", "snapshotId", "attemptId", "sequence", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "fetchedAt", "id"',
+    'SELECT "id", "sourceKey", "contentArtifactId", "snapshotId", "attemptId", "sequence", "fetchedAt", "eventHash" FROM "MarketSourceAcquisitionEvent" ORDER BY "fetchedAt", "id"',
   );
   assert.equal(artifacts.length, 1, 'upgrade must create one immutable content identity');
   assert.equal(artifacts[0].sourceKey, snapshot.sourceKey);
@@ -505,6 +505,11 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
   assert.equal(firstEvents[0].contentArtifactId, artifacts[0].id);
   assert.equal(firstEvents[0].snapshotId, snapshot.id);
   assert.equal(firstEvents[0].fetchedAt.toISOString(), snapshot.fetchedAt.toISOString());
+  assert.equal(
+    firstEvents[0].eventHash,
+    createHash('sha256').update(`${firstEvents[0].sourceKey}:${snapshot.id}`).digest('hex'),
+    'legacy acquisition backfill must use the same SHA-256 digest family as runtime event chains',
+  );
 
   await p.$executeRawUnsafe(`
     INSERT INTO "MarketSourceAcquisitionEvent" (
