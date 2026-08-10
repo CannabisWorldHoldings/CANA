@@ -600,7 +600,11 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
         purpose: 'REVALIDATE',
         asOf: clock,
       });
-      const policyVersions = [acquisition.authorityPolicyVersion, acquisition.freshnessPolicyVersion]
+      const policyVersions = [
+        acquisition.authorityPolicyVersion,
+        acquisition.freshnessPolicyVersion,
+        acquisition.verificationCourtVersion,
+      ]
         .filter((value) => typeof value === 'string' && value.length > 0);
       const revocation = await tx.marketEvidenceRevocationEvent.findFirst({
         where: {
@@ -1055,7 +1059,11 @@ export async function revokeMarketEvidence(prisma, {
       const acquisitions = await tx.marketSourceAcquisitionEvent.findMany({
         where: {
           tenant,
-          OR: [{ authorityPolicyVersion: targetId }, { freshnessPolicyVersion: targetId }],
+          OR: [
+            { authorityPolicyVersion: targetId },
+            { freshnessPolicyVersion: targetId },
+            { verificationCourtVersion: targetId },
+          ],
         },
         select: { id: true, snapshotId: true },
         take: MAX_REVOCATION_LINEAGE + 1,

@@ -40,6 +40,7 @@ import {
   acquireLiveMarketReality,
   createPrismaAcquisitionStore,
 } from '../src/lib/reality/live-reality-acquisition.mjs';
+import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -635,6 +636,58 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
       effectiveAt: new Date('2026-08-20T14:00:00.000Z'),
     }),
     /CANA_REALITY_REVOCATION_TARGET_NOT_FOUND/,
+  );
+
+  const persistedClaims = (await p.marketClaim.findMany({
+    where: { tenant: 'orderweeddc.com' },
+    include: { evidence: { select: { observationId: true } } },
+  })).map(({ evidence, ...claim }) => ({
+    ...claim,
+    observationIds: evidence.map((entry) => entry.observationId),
+  }));
+  const persistedEvents = await p.marketVerificationEvent.findMany({
+    where: { claimId: { in: persistedClaims.map((claim) => claim.id) } },
+  });
+  const persistedAcquisitions = await p.marketSourceAcquisitionEvent.findMany({
+    where: { tenant: 'orderweeddc.com' },
+  });
+  assert.ok(selectCurrentClaimDecisions({
+    claims: persistedClaims,
+    verificationEvents: persistedEvents,
+    acquisitionEvents: persistedAcquisitions,
+    revocations: [],
+    asOf: new Date('2026-08-20T14:15:00.000Z'),
+  }).length >= 4, 'persisted acquisition and court lineage must support current truth');
+
+  const policyRevoked = await revokeMarketEvidence(p, {
+    tenant: 'orderweeddc.com',
+    targetKind: 'POLICY_VERSION',
+    targetId: 'cana-market-claim-court-v1',
+    cause: 'court policy lineage withdrawn by integration court',
+    actorKind: 'TEST_COURT',
+    effectiveAt: new Date('2026-08-20T14:30:00.000Z'),
+  });
+  assert.equal(policyRevoked.state, 'REVOKED');
+  assert.ok(policyRevoked.affected_claims > 0);
+  assert.equal(policyRevoked.replacement_truth_created, 0);
+  assert.equal((await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } })).dataStatus, 'STALE');
+  const policyRevocations = await p.marketEvidenceRevocationEvent.findMany({
+    where: { tenant: 'orderweeddc.com', targetKind: 'POLICY_VERSION' },
+  });
+  assert.deepEqual(selectCurrentClaimDecisions({
+    claims: persistedClaims,
+    verificationEvents: persistedEvents,
+    acquisitionEvents: persistedAcquisitions,
+    revocations: policyRevocations,
+    asOf: new Date('2026-08-20T14:45:00.000Z'),
+  }), [], 'revoked persisted court lineage must not remain current truth');
+  await assert.rejects(
+    verifyLiveMarketAcquisition(p, {
+      tenant: 'orderweeddc.com',
+      acquisitionEventId: second.acquisition_event_id,
+      asOf: new Date('2026-08-20T14:45:00.000Z'),
+    }),
+    /CANA_REALITY_EVIDENCE_REVOKED/,
   );
 
   const revoked = await revokeMarketEvidence(p, {

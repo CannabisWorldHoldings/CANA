@@ -73,6 +73,7 @@ function known(decisions) {
 export function selectCurrentClaimDecisions({
   claims = [],
   verificationEvents = [],
+  acquisitionEvents = [],
   revocations = [],
   asOf = new Date(),
 }) {
@@ -88,12 +89,15 @@ export function selectCurrentClaimDecisions({
       latestByClaim.set(event.claimId ?? event.claim_id, event);
     }
   }
+  const acquisitionById = new Map(acquisitionEvents.map((event) => [event.id, event]));
   const current = [];
   for (const claim of claims) {
     const event = latestByClaim.get(claim.id);
+    const acquisitionEventId = event?.acquisitionEventId ?? event?.acquisition_event_id;
+    const acquisition = acquisitionById.get(acquisitionEventId);
     const eventAsOf = new Date(event?.asOf ?? event?.as_of);
     const expiry = new Date(event?.freshnessExpiresAt ?? event?.freshness_expires_at);
-    if (!event?.acquisitionEventId && !event?.acquisition_event_id) continue;
+    if (!acquisition) continue;
     if (event.decision !== 'ALLOW'
       || !Number.isFinite(eventAsOf.getTime())
       || eventAsOf > clock
@@ -101,14 +105,15 @@ export function selectCurrentClaimDecisions({
       || expiry <= clock) continue;
     if (isEvidenceRevoked({
       claimId: claim.id,
-      acquisitionEventId: event.acquisitionEventId ?? event.acquisition_event_id,
+      acquisitionEventId,
       snapshotId: claim.snapshotId ?? claim.snapshot_id,
       observationIds: claim.observationIds ?? claim.observation_ids ?? [],
-      parserVersion: claim.parserVersion ?? claim.parser_version,
+      parserVersion: acquisition.parserVersion ?? acquisition.parser_version,
       policyVersions: [
-        claim.policyVersion ?? claim.policy_version,
-        claim.authorityPolicyVersion ?? claim.authority_policy_version,
-        claim.freshnessPolicyVersion ?? claim.freshness_policy_version,
+        acquisition.authorityPolicyVersion ?? acquisition.authority_policy_version,
+        acquisition.freshnessPolicyVersion ?? acquisition.freshness_policy_version,
+        acquisition.verificationCourtVersion ?? acquisition.verification_court_version,
+        event.evaluatorVersion ?? event.evaluator_version,
       ].filter(Boolean),
       revocations,
       asOf: clock,
@@ -117,13 +122,13 @@ export function selectCurrentClaimDecisions({
       claim_id: claim.id,
       predicate: claim.claimType ?? claim.predicate,
       value: claim.claimValue ?? claim.value,
-      source_id: claim.sourceId ?? claim.source_id ?? null,
+      source_id: acquisition.sourceKey ?? acquisition.source_key ?? null,
       observed_at: new Date(claim.observedAt ?? claim.observed_at).toISOString(),
       freshness_expires_at: expiry.toISOString(),
       verification: 'VERIFIED',
       decision_eligible: true,
       court_version: event.evaluatorVersion ?? event.evaluator_version,
-      acquisition_event_id: event.acquisitionEventId ?? event.acquisition_event_id,
+      acquisition_event_id: acquisitionEventId,
       verification_event_id: event.id,
     }));
   }
