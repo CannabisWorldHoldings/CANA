@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cana:capability-contract:v1",
+  "title": "CanaCapabilityContract v1 (minimal slice)",
+  "description": "The minimal machine-readable capability contract (Workbench mandate, contract-shaped Track A scope). CANA owns this grammar; providers implement capabilities behind it. Deliberately small: fields are added by evidence of need, not invented ahead of use.",
+  "type": "object",
+  "required": ["id", "version", "description", "domain", "real_outcome", "authority_class", "reversibility", "canonical_actions", "evidence_hooks", "status"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^cana\\.[a-z0-9-]+$" },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "domain": { "type": "string" },
+    "real_outcome": { "type": "string", "description": "The real-world outcome this capability affects — not its implementation." },
+    "authority_class": { "enum": ["OBSERVE_ONLY", "PROPOSE_ONLY", "EFFECTFUL_WITH_APPROVAL"] },
+    "reversibility": { "type": "string" },
+    "canonical_actions": {
+      "type": "array",
+      "description": "One semantic action per behavior. Chat, palette, UI, automation and agent invocation must all resolve to these — one action, one home.",
+      "items": {
+        "type": "object",
+        "required": ["action_id", "description", "entry"],
+        "properties": {
+          "action_id": { "type": "string" },
+          "description": { "type": "string" },
+          "entry": { "type": "string", "description": "The single semantic implementation (route, script, or module export)." }
+        }
+      }
+    },
+    "evidence_hooks": { "type": "array", "items": { "type": "string" } },
+    "continuation_hooks": { "type": "array", "items": { "type": "string" }, "description": "Which continuation triggers this capability creates or consumes." },
+    "backend_adapters": { "type": "array", "items": { "type": "string" } },
+    "status": { "enum": ["DESIGN_ONLY", "PACKAGED", "STRUCTURALLY_VALIDATED", "INSTALLED", "EXECUTED", "INDEPENDENTLY_VERIFIED", "PRODUCTION_BOUND"] }
+  }
+}

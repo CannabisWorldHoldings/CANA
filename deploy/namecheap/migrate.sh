@@ -34,9 +34,19 @@ fi
 
 MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
 SCHEMA_PATH="$SCHEMA_DIR/$SCHEMA"
+MIGRATION_MANIFEST="$SCHEMA_DIR/prisma/migration-manifest.json"
+MIGRATION_MANIFEST_VERIFIER="$SCHEMA_DIR/prisma/migration-manifest.mjs"
 : "${DATABASE_URL:?HARD STOP: DATABASE_URL is required}"
 : "${DIRECT_URL:?HARD STOP: DIRECT_URL is required}"
 : "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"
+
+[ -f "$MIGRATION_MANIFEST" ] && [ ! -L "$MIGRATION_MANIFEST" ] &&
+  [ -f "$MIGRATION_MANIFEST_VERIFIER" ] && [ ! -L "$MIGRATION_MANIFEST_VERIFIER" ] || {
+  echo "HARD STOP: canonical migration manifest and verifier must be regular files"; exit 2;
+}
+MIGRATION_MANIFEST_PROOF="$(node "$MIGRATION_MANIFEST_VERIFIER" "$MIGRATIONS_DIR" "$MIGRATION_MANIFEST")" || {
+  echo "HARD STOP: committed migrations do not match the reviewed canonical manifest"; exit 2;
+}
 
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
@@ -111,7 +121,7 @@ else
 fi
 
 echo "schema:      $SCHEMA_PATH"
-echo "migrations:  $MIGRATIONS_DIR ($(ls "$MIGRATIONS_DIR" | wc -l | tr -d ' ') entries)"
+echo "migrations:  $MIGRATION_MANIFEST_PROOF"
 if command -v sha256sum >/dev/null 2>&1; then
   BACKUP_RECEIPT_SHA=$(sha256sum "$CANA_PRE_MIGRATION_BACKUP_RECEIPT" | cut -d' ' -f1)
 elif command -v shasum >/dev/null 2>&1; then

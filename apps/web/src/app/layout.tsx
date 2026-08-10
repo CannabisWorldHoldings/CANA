@@ -3,6 +3,22 @@ import {
   PUBLIC_PRODUCT_DESCRIPTION,
   PUBLIC_PRODUCT_NAME,
 } from '@/lib/product-brand';
+import { resolveReleaseIdentity } from './api/release/release-identity.mjs';
+
+/**
+ * TREATMENT IDENTITY ON THE RENDERED SURFACE (provenance court, Track B).
+ * The deployed SHA — resolved from the same build-time artifact as
+ * /api/release, never from git or env — is stamped into every rendered page
+ * so an EXTERNAL observer can verify that the surface it received was
+ * rendered by the release it was told about. Absence is a state: when the
+ * identity is missing/invalid the meta tag is omitted entirely, and the
+ * provenance court reads that omission as RED. Never fabricated.
+ */
+function releaseShaMeta() {
+  const identity = resolveReleaseIdentity({});
+  if (identity.state !== 'RELEASE_SHA_PRESENT' || !identity.gitSha) return null;
+  return <meta name="cana-release-sha" content={identity.gitSha} />;
+}
 
 export const metadata = {
   title: PUBLIC_PRODUCT_NAME,
@@ -31,6 +47,7 @@ export default function RootLayout({
       <body className="bg-brand-background text-brand-text min-h-screen flex flex-col font-sans antialiased">
         {/* React 19 hoists these into <head>. Fonts are self-hosted latin
             subsets so the strict CSP holds and builds stay deterministic. */}
+        {releaseShaMeta()}
         <link
           rel="preload"
           href="/fonts/geist-latin.woff2"

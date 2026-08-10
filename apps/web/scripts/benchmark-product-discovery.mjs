@@ -202,10 +202,10 @@ function isolatedPrismaSchema(value) {
   // requires the prisma-client-js provider; it substitutes its own
   // isolated generator block regardless of those extra directives.
   const generatorPattern =
-    /generator client \{\s*provider = "prisma-client-js"[\s\S]*?\n\}/;
+    /generator client \{\s*provider\s*=\s*"prisma-client-js"[\s\S]*?\n\}/;
   if (
     !generatorPattern.test(source) ||
-    !/provider = "prisma-client-js"/.test(source)
+    !/provider\s*=\s*"prisma-client-js"/.test(source)
   ) {
     throw new TypeError('The Prisma client generator contract has changed.');
   }

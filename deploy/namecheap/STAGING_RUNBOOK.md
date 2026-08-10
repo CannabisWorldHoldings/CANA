@@ -73,9 +73,15 @@ Do NOT click "Run NPM Install" — dependencies are pre-bundled.
 ## 3. Upload + verify + deploy the artifact
 
 ```
-cd ~/uploads && sha256sum -c orderweeddc-<shortsha>.tar.gz.sha256
-OWD_APP_HOME=$HOME/apps/orderweeddc-staging sh ~/uploads/deploy.sh orderweeddc-<shortsha>.tar.gz
+cd ~/uploads && sha256sum -c orderweeddc-<full-40-char-sha>.tar.gz.sha256
+OWD_APP_HOME=$HOME/apps/orderweeddc-staging sh ~/uploads/deploy.sh \
+  orderweeddc-<full-40-char-sha>.tar.gz <trusted-64-hex-sha256-from-build-receipt>
 ```
+
+Upload `verify-owner-artifact-input.sh` beside `deploy.sh`. The deploy entrypoint
+refuses if that verifier is absent or if the independently trusted digest,
+archive structure, full-SHA release identity, receipt, or isolated-runtime proof
+does not match.
 
 ## 4. Create the EMPTY provider database
 

@@ -66,6 +66,16 @@ const API_ROUTES = [
   { path: '/api/v1/retailers', method: 'GET', truthBearing: true },
   { path: '/api/v1/deals', method: 'GET', truthBearing: true },
   { path: '/api/v1/products', method: 'GET', truthBearing: true },
+  // ASK compiles language into an intent IR, but may only answer from the same
+  // VERIFIED_CURRENT market records as the public list surfaces. Its candidate
+  // array therefore belongs under the same demonstration-data and no-store
+  // courts. The query is part of a valid request and is also used when probing
+  // unknown tenants so input validation cannot mask the tenant boundary.
+  {
+    path: '/api/v1/ask', method: 'GET', truthBearing: true,
+    query: '?q=weed%20near%20me',
+    records: (b) => b.answer?.candidates,
+  },
   { path: '/api/v1/attribution', method: 'POST', truthBearing: true, body: { retailer_id: 'x', action_kind: 'PHONE_CLICK' } },
   // Registered at integration, on the lanes' own reports. G10 exists precisely to
   // catch a route that ships ungoverned, and it DID catch both of these — the
@@ -171,7 +181,7 @@ test('G3: every authenticated surface refuses anonymous access without leaking',
 test('G4: every API route refuses an unknown tenant', async () => {
   for (const route of API_ROUTES) {
     if (route.path === '/api/health') continue; // infrastructure, deliberately host-agnostic
-    const r = await req(route.method, route.path, {
+    const r = await req(route.method, `${route.path}${route.query ?? ''}`, {
       host: 'not-a-configured-host.localhost', body: route.body ?? null,
     });
     assert.equal(r.status, 421, `${route.path} answered ${r.status} for an unknown tenant`);

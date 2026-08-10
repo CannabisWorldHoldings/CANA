@@ -46,6 +46,10 @@ import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
 import { selectTestPrismaEngine } from './select-test-engine.mjs';
 import { startDisposablePostgres, stopDisposablePostgres } from '../../tools/postgres-sim/runtime.mjs';
+import {
+  loadCanonicalMigrationManifest,
+  validateCanonicalMigrationUniverse,
+} from '../../apps/web/prisma/migration-manifest.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const webRoot = path.join(repoRoot, 'apps/web');
@@ -376,7 +380,7 @@ const releaseRepro = assertReleaseReproducible({
   allowDirty: process.env.ALLOW_DIRTY === '1',
 });
 
-const artifactName = `orderweeddc-${shortSha}`;
+const artifactName = `orderweeddc-${gitSha}`;
 const distRoot = path.join(repoRoot, 'dist/namecheap');
 const artifactRoot = path.join(distRoot, artifactName);
 
@@ -473,9 +477,19 @@ fs.copyFileSync(
 // them (apps/web/prisma/migrations/**). This builder never authors or edits
 // a migration — absence simply means migrate.sh hard-stops on the server.
 const migrationsDir = path.join(webRoot, 'prisma/migrations');
-if (fs.existsSync(migrationsDir)) {
-  copyDir(migrationsDir, path.join(artifactRoot, 'prisma/migrations'));
-}
+const migrationManifestPath = path.join(webRoot, 'prisma/migration-manifest.json');
+const migrationVerifierPath = path.join(webRoot, 'prisma/migration-manifest.mjs');
+const migrationUniverse = validateCanonicalMigrationUniverse({
+  migrationsDir,
+  manifest: loadCanonicalMigrationManifest(migrationManifestPath),
+});
+copyDir(migrationsDir, path.join(artifactRoot, 'prisma/migrations'));
+fs.copyFileSync(migrationManifestPath, path.join(artifactRoot, 'prisma/migration-manifest.json'));
+fs.copyFileSync(migrationVerifierPath, path.join(artifactRoot, 'prisma/migration-manifest.mjs'));
+validateCanonicalMigrationUniverse({
+  migrationsDir: path.join(artifactRoot, 'prisma/migrations'),
+  manifest: loadCanonicalMigrationManifest(path.join(artifactRoot, 'prisma/migration-manifest.json')),
+});
 fs.mkdirSync(path.join(artifactRoot, 'docs/competitive'), { recursive: true });
 fs.copyFileSync(
   path.join(repoRoot, 'docs/competitive/dc-merchant-universe.json'),
@@ -625,6 +639,7 @@ function writeReceipt(extra = {}) {
       canonicalProvider: 'postgresql',
       directUrlRequired: true,
       sqliteRole: 'pre-cutover-rollback-snapshot-only',
+      migrationUniverse,
     },
     checks,
     ...extra,
@@ -877,10 +892,10 @@ async function isolatedRuntimeTest() {
   fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
   fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
   run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz`,
+    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
   );
   run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz`,
+    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
   );
   run(
     `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`,

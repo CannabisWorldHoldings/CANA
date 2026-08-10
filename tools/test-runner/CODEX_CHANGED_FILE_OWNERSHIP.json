@@ -451,6 +451,72 @@
         "apps/web/tests/release-gate.test.mjs": "5498f770ac91f6647c3bed26386999b75d2ee0b01ce0612a5e87ab5dbd5d7dac"
       },
       "approval_sha256": "5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2"
+    },
+    "pr35_sovereign_continuation_integration_2026_08_09": {
+      "authorization": "CANA Ω∞ — CODEX SOVEREIGN INTEGRATION & CONTINUATION MISSION",
+      "scope": "The fifty-two exact PR #35 continuation, ASK, provenance, migration-integration, portability, deployment-proof, workflow, court, benchmark-integration, documentation and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or self-promotion authority.",
+      "authorization_effect": "Durability path ownership and exact reviewed-court-blob admission only; no runtime execution, provider, credential, paid-call, deployment, production, external-effect, verification-bypass or self-promotion authority.",
+      "authorized_paths": [
+        ".github/workflows/cana-verify.yml",
+        "apps/web/prisma/migration-manifest.json",
+        "apps/web/prisma/migration-manifest.mjs",
+        "apps/web/prisma/migrations/20260809170000_continuation_kernel/migration.sql",
+        "apps/web/prisma/schema.prisma",
+        "apps/web/scripts/benchmark-product-discovery.mjs",
+        "apps/web/scripts/continuation-tick.mjs",
+        "apps/web/src/app/api/v1/ask/route.ts",
+        "apps/web/src/app/layout.tsx",
+        "apps/web/src/lib/ask/ask-work.mjs",
+        "apps/web/src/lib/ask/ask-service.mjs",
+        "apps/web/src/lib/ask/intent-ir.mjs",
+        "apps/web/src/lib/continuation/continuation-core.mjs",
+        "apps/web/src/lib/continuation/continuation-repository.mjs",
+        "apps/web/src/lib/continuation/continuation-selection.mjs",
+        "apps/web/src/lib/continuation/continuation-storage.mjs",
+        "apps/web/src/lib/db-config.mjs",
+        "apps/web/src/lib/public-submission.mjs",
+        "apps/web/tests/ask-intent-ir.test.mjs",
+        "apps/web/tests/ask-service-where.test.mjs",
+        "apps/web/tests/column-width-cutover-court.test.mjs",
+        "apps/web/tests/continuation-core.test.mjs",
+        "apps/web/tests/continuation-court.test.mjs",
+        "apps/web/tests/deployment-integrity.test.mjs",
+        "apps/web/tests/migration-court.test.mjs",
+        "apps/web/tests/migration-manifest.test.mjs",
+        "apps/web/tests/release-gate.test.mjs",
+        "deploy/namecheap/MANIFEST.json",
+        "deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md",
+        "deploy/namecheap/STAGING_RUNBOOK.md",
+        "deploy/namecheap/build-artifact.mjs",
+        "deploy/namecheap/deploy.sh",
+        "deploy/namecheap/migrate.sh",
+        "deploy/namecheap/verify-and-deploy.sh",
+        "deploy/namecheap/verify-owner-artifact-input.sh",
+        "deploy/namecheap/worker.mjs",
+        "docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json",
+        "docs/capabilities/cana.ask-orderweeddc.contract.json",
+        "docs/capabilities/cana.continuation-kernel.contract.json",
+        "docs/capabilities/cana.provenance-court.contract.json",
+        "docs/migration/SQLITE_TO_POSTGRES.md",
+        "tools/cpanel-sim/real-prisma-proof.sh",
+        "tools/cpanel-sim/run.mjs",
+        "tools/durability/cli.mjs",
+        "tools/durability/cli.test.mjs",
+        "tools/mariadb-sim/generate-schema.mjs",
+        "tools/mariadb-sim/run.mjs",
+        "tools/mariadb-sim/run.test.mjs",
+        "tools/mariadb-sim/schema.prisma",
+        "tools/provenance-court/sabotage.test.mjs",
+        "tools/provenance-court/verify-chain.mjs",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ],
+      "court_blob_sha256": {
+        "apps/web/tests/column-width-cutover-court.test.mjs": "e06ac4a670893300c0912ee37327f6714caef81f9560d2a81149e697849a674c",
+        "apps/web/tests/deployment-integrity.test.mjs": "1d40b447f7745fb4ab18fbd6591941dd91bad37728e1bb65015a9657c6017df2",
+        "apps/web/tests/migration-court.test.mjs": "074d612b43dc8f260385cbe5168eedbba87d51535ad510beddcd2ce66cee7d1b",
+        "apps/web/tests/release-gate.test.mjs": "7749c882c325de9ea248883ae9462d47681048a268c75187f7e62728b8c198f0"
+      },
+      "approval_sha256": "6fb86759e1d80fa005075757d28d906bb5acad8d6716b0a13d38dbe65ef95a7a"
     }
   },
   "owned_create_paths": [
@@ -573,8 +639,32 @@
     ,"tools/postgres-sim/Dockerfile"
     ,"tools/postgres-sim/runtime.mjs"
     ,"tools/test-runner/Dockerfile"
+    ,"apps/web/prisma/migration-manifest.json"
+    ,"apps/web/prisma/migration-manifest.mjs"
+    ,"apps/web/prisma/migrations/20260809170000_continuation_kernel/migration.sql"
+    ,"apps/web/scripts/continuation-tick.mjs"
+    ,"apps/web/src/app/api/v1/ask/route.ts"
+    ,"apps/web/src/lib/ask/ask-work.mjs"
+    ,"apps/web/src/lib/ask/ask-service.mjs"
+    ,"apps/web/src/lib/ask/intent-ir.mjs"
+    ,"apps/web/src/lib/continuation/continuation-core.mjs"
+    ,"apps/web/src/lib/continuation/continuation-repository.mjs"
+    ,"apps/web/src/lib/continuation/continuation-selection.mjs"
+    ,"apps/web/src/lib/continuation/continuation-storage.mjs"
+    ,"apps/web/tests/ask-intent-ir.test.mjs"
+    ,"apps/web/tests/ask-service-where.test.mjs"
+    ,"apps/web/tests/continuation-core.test.mjs"
+    ,"apps/web/tests/continuation-court.test.mjs"
+    ,"apps/web/tests/migration-manifest.test.mjs"
+    ,"docs/capabilities/CANA_CAPABILITY_CONTRACT.schema.json"
+    ,"docs/capabilities/cana.ask-orderweeddc.contract.json"
+    ,"docs/capabilities/cana.continuation-kernel.contract.json"
+    ,"docs/capabilities/cana.provenance-court.contract.json"
+    ,"tools/provenance-court/sabotage.test.mjs"
+    ,"tools/provenance-court/verify-chain.mjs"
   ],
   "owned_modify_paths": [
+    "apps/web/src/lib/public-submission.mjs",
     "apps/web/tests/helpers/**",
     "apps/web/src/app/admin/site-intelligence/page.tsx",
     "apps/web/src/lib/site-intelligence.ts",
@@ -849,7 +939,8 @@
     "apps/web/src/lib/growth-os.mjs",
     "apps/web/src/lib/evidence-spill.mjs",
     "apps/web/tests/release-gate.test.mjs",
-    "apps/web/tests/column-width-cutover-court.test.mjs"
+    "apps/web/tests/column-width-cutover-court.test.mjs",
+    "apps/web/tests/deployment-integrity.test.mjs"
     ,"apps/web/prisma/migrations/20260726000100_ledger_recorded_at_index/down.sql"
     ,"apps/web/tests/migration-court.test.mjs"
   ],

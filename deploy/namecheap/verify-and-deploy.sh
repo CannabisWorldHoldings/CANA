@@ -31,12 +31,11 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 phase() { printf '\n=== %s ===\n' "$1"; }
 fail() { echo "GATE FAILED: $1"; exit 1; }
 
-case "$FILE" in
-  orderweeddc-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].tar.gz)
-    ARTIFACT_ROOT_NAME=${FILE%.tar.gz}
-    ;;
-  *) fail "artifact filename must be orderweeddc-<7 lowercase hex>.tar.gz" ;;
-esac
+printf '%s\n' "$FILE" | grep -Eq '^orderweeddc-[0-9a-f]{40}\.tar\.gz$' ||
+  fail "artifact filename must be orderweeddc-<full-40-char-sha>.tar.gz"
+printf '%s\n' "$EXPECTED_SHA" | grep -Eq '^[0-9a-f]{64}$' ||
+  fail "expected SHA-256 must be exactly 64 lowercase hex characters"
+ARTIFACT_ROOT_NAME=${FILE%.tar.gz}
 
 phase "GATE 1: download + checksum"
 mkdir -p "$UPLOADS"

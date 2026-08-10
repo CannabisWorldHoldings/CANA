@@ -38,7 +38,7 @@ Upload both maintained verifier files to `~/uploads` before running the gate:
 - `verify-owner-artifact-input.sh`
 
 ```
-sh ~/uploads/verify-and-deploy.sh <https-artifact-url> orderweeddc-<shortsha>.tar.gz <expected-tarball-sha256>
+sh ~/uploads/verify-and-deploy.sh <https-artifact-url> orderweeddc-<full-40-char-sha>.tar.gz <expected-tarball-sha256>
 ```
 
 The verifier fails closed when its adjacent structural helper is absent. It snapshots

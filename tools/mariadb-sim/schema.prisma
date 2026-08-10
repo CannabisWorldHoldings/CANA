@@ -60,14 +60,14 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   // postgresqlExtensions lets Prisma manage PostGIS declaratively rather than
   // relying on an out-of-band CREATE EXTENSION that migrations cannot see.
   // native: local dev/test/build machines. rhel-openssl-*: CloudLinux
   // (RHEL-family) shared hosting used by the Namecheap production target, which
   // now opens an outbound TLS connection to managed PostgreSQL instead of
   // reading a local database file.
-  binaryTargets = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
+  binaryTargets   = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
 }
 
 // Parent Holdings Organization
@@ -543,18 +543,18 @@ model DemandCreditEntry {
   /// before either wrote. Only the database can decide this, and only with a
   /// uniqueness constraint. An application-level guard cannot be made correct here
   /// no matter how carefully it is written.
-  eventIdentity        String?
+  eventIdentity String?
 
   /// GRADED CONSUMER EVIDENCE. REQUEST_RECEIVED means only that a request arrived;
   /// it must never contribute to a merchant value figure. The grade is STORED
   /// rather than recomputed so a later report cannot quietly re-grade history.
-  proofState           String?
-  valueEligible        Boolean   @default(false)
+  proofState       String?
+  valueEligible    Boolean @default(false)
   /// Nonce of the interaction token, retained ONLY to refuse a replay. Not the
   /// token, and not a user identifier.
-  interactionNonce     String?
+  interactionNonce String?
   /// Where the consumer was handed off to, when a handoff was verified.
-  destination          String?
+  destination      String?
 
   @@unique([merchantId, seq])
   /// The constraint that actually enforces idempotency. Scoped to the merchant so a
@@ -571,6 +571,7 @@ model DemandCreditEntry {
   /// migration, so forward migration is exercised rather than asserted.
   @@index([merchantId, recordedAt])
 }
+
 // ============================================================================
 // CANA GEO KERNEL — minimum primitives (Slice 1a)
 //
@@ -581,8 +582,10 @@ model DemandCreditEntry {
 //  3. Every entity is temporal (validFrom/validUntil) and carries provenance.
 //
 // Deliberately NOT built yet (later slices, see docs/geo/ROADMAP.md):
-//  GeoCell state, feature store, routing cache, isochrones, opportunity and
-//  simulation tables. Interfaces exist; tables are not invented ahead of use.
+//  GeoCell state, feature store, routing cache, isochrones, simulation
+//  tables. Interfaces exist; tables are not invented ahead of use.
+//  (The Opportunity table originally deferred here landed 2026-08-09 with
+//  the continuation kernel — its first real use, Track A ask slice.)
 // ============================================================================
 
 /// Canonical geographic entity. The CANA-owned identity for any place.
@@ -592,19 +595,19 @@ model DemandCreditEntry {
 /// kept as a portable, ORM-readable mirror and are the source for `geom`.
 model GeoEntity {
   /// CANA_LOCATION_ID — sovereign identifier. Never a provider ID.
-  id           String    @id @default(uuid())
-  kind         String    @default("business") // business, neighborhood, jurisdiction, service_area, poi
-  name         String
+  id         String                                @id @default(uuid())
+  kind       String                                @default("business") // business, neighborhood, jurisdiction, service_area, poi
+  name       String
   /// Portable coordinate mirror. Canonical geometry lives in `geom`.
-  lat          Float
-  lng          Float
+  lat        Float
+  lng        Float
   /// PostGIS point, SRID 4326. Maintained from lat/lng by trigger-free
   /// explicit sync in the geo helpers so the two can never silently diverge.
-  geom         Unsupported("geometry")?
+  geom       Unsupported("geometry")?
   /// H3 index (resolution 9) for aggregation and privacy coarsening.
-  h3R9         String?
+  h3R9       String?
   /// Optional link back to the operational record this entity represents.
-  retailerId   String?   @unique
+  retailerId String?                               @unique
 
   // -- provenance / temporality (Omega-6) --
   source       String    @default("UNKNOWN")
@@ -616,11 +619,11 @@ model GeoEntity {
   /// UNKNOWN | HYPOTHESIS | SUPPORTED | VERIFIED | CONTRADICTED | STALE
   verification String    @default("UNKNOWN")
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  aliases      GeoEntityAlias[]
-  claims       GeoClaim[]
+  aliases GeoEntityAlias[]
+  claims  GeoClaim[]
 
   @@index([kind, verification])
   @@index([h3R9])
@@ -630,16 +633,16 @@ model GeoEntity {
 /// External references to a canonical entity. Evidence and join keys only —
 /// an alias never confers truth. Overture GERS, OSM, and provider IDs land here.
 model GeoEntityAlias {
-  id           String    @id @default(uuid())
-  geoEntityId  String
+  id          String    @id @default(uuid())
+  geoEntityId String
   /// overture_gers | osm | provider:<name> | partner:<system>
-  namespace    String
-  externalId   String
-  observedAt   DateTime?
-  confidence   Float?
-  createdAt    DateTime  @default(now())
+  namespace   String
+  externalId  String
+  observedAt  DateTime?
+  confidence  Float?
+  createdAt   DateTime  @default(now())
 
-  geoEntity    GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
+  geoEntity GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
 
   @@unique([namespace, externalId])
   @@index([geoEntityId])
@@ -667,9 +670,191 @@ model GeoClaim {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  geoEntity            GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
+  geoEntity GeoEntity @relation(fields: [geoEntityId], references: [id], onDelete: Cascade)
 
   @@index([geoEntityId, claimType])
   @@index([verification, decisionEligible])
   @@index([freshnessExpiresAt])
+}
+
+// ============================================================================
+// SOVEREIGN CONTINUATION KERNEL (Slice 1) — owner mandate 2026-08-09.
+//
+// CANA itself must remember what must happen later. These tables are the
+// durable, database-owned continuation state: a conversation ending, a model
+// failing, or a machine restarting must not erase a future mission. External
+// runtimes (cPanel cron via deploy/namecheap/worker.mjs, Hyperagent, Temporal,
+// a laptop) may WAKE this state by invoking the tick; none of them own it.
+//
+// Design laws enforced by src/lib/continuation/*:
+//  1. Every trigger binds purpose (reason), stop condition, budget ceiling,
+//     authority ceiling and expiry — specs missing any of these are REJECTED.
+//  2. A mission can never raise its own authority ceiling; child continuations
+//     inherit a ceiling no higher than their creator's.
+//  3. OBSERVE_ONLY work may auto-fire; EFFECTFUL work is born PENDING_APPROVAL
+//     and only an explicit approval arms it.
+//  4. Firing is exactly-once under concurrent ticks (conditional-claim UPDATE,
+//     same adjudication pattern as DemandCreditEntry's unique constraint).
+//  5. Receipts are append-only and hash-chained per mission (same pattern as
+//     the demand-credit ledger) so continuation history is tamper-evident.
+//
+// Precedent followed: like DemandCreditEntry, these models use plain string
+// refs (no cross-model @relation) so their DDL stands alone on bare
+// PostgreSQL — the kernel must not acquire a PostGIS dependency.
+// ============================================================================
+
+/// A durable unit of intent: what CANA is doing, waiting for, or must do later.
+model ContinuationMission {
+  id                   String    @id @default(uuid())
+  tenant               String
+  /// Why this mission exists — human-legible, required.
+  purpose              String
+  /// Provenance of creation: OWNER_REQUEST | TRACK_A_ASK | TRACK_B_PROVENANCE | SELF_GENERATED:<system>
+  createdFrom          String
+  /// PROPOSED | ACTIVE | WAITING | COMPLETED | ABANDONED | EXPIRED
+  status               String    @default("ACTIVE")
+  /// OBSERVE_ONLY | PROPOSE_ONLY | EFFECTFUL_WITH_APPROVAL — never self-raised.
+  authorityCeiling     String
+  /// Hard spend ceiling for everything this mission wakes. Cents.
+  budgetCentsMax       Int
+  spentCents           Int       @default(0)
+  /// Explicit condition under which this mission stops existing. Required.
+  stopCondition        String
+  expiresAt            DateTime?
+  /// Opaque refs into canonical state; JSON strings, validated by app code.
+  stateRef             String?
+  executionGenomeRef   String?
+  evidenceRequirements String?
+  latestReceiptId      String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([tenant, status])
+  @@index([status, expiresAt])
+}
+
+/// A durable reason to wake a mission later. NOT a cron row: firing resolves
+/// through mission semantics (verified state -> authority -> evidence -> receipt).
+model ContinuationTrigger {
+  id                   String    @id @default(uuid())
+  missionId            String
+  tenant               String
+  /// SCHEDULED | EVENT | CONDITION_WATCH | DEPENDENCY | FOLLOW_UP | REVALIDATION | LEARNING
+  triggerType          String
+  /// Why this trigger exists — required, human-legible.
+  reason               String
+  /// What created it (owner intent, Track A opportunity, Track B receipt, self-generated system).
+  createdFrom          String
+  /// PENDING_APPROVAL | ARMED | FIRED | EXPIRED | CANCELLED | REJECTED
+  status               String    @default("ARMED")
+  /// SCHEDULED / FOLLOW_UP / REVALIDATION / LEARNING: earliest firing time.
+  nextEligibleAt       DateTime?
+  /// EVENT: the event key that fires it (e.g. "pr.merged:CannabisWorldHoldings/CANA#29").
+  eventKey             String?
+  /// CONDITION_WATCH: opaque condition ref resolved by a registered evaluator.
+  conditionRef         String?
+  /// DEPENDENCY: fires only after this trigger has FIRED.
+  dependsOnTriggerId   String?
+  /// OBSERVE_ONLY | PROPOSE_ONLY | EFFECTFUL_WITH_APPROVAL — <= mission ceiling.
+  authorityCeiling     String
+  budgetCentsMax       Int
+  /// Explicit stop condition. Required — no unbounded recurring work.
+  stopCondition        String
+  evidenceRequirements String?
+  /// JSON: { kind: "RESCHEDULE", intervalMs, remaining } — bounded recurrence.
+  continuationPolicy   String?
+  retryPolicy          String?
+  /// Hard expiry. Required. An expired trigger NEVER fires.
+  expiresAt            DateTime
+  firedAt              DateTime?
+  latestReceiptId      String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([status, nextEligibleAt])
+  @@index([status, eventKey])
+  @@index([missionId])
+  @@index([tenant, status])
+}
+
+/// Append-only, hash-chained record of what the continuation kernel actually
+/// did. The receipt IS the truth of firing; status fields are projections.
+model ContinuationReceipt {
+  /// Monotonic position in the per-mission chain.
+  seq        Int
+  id         String   @id @default(uuid())
+  missionId  String
+  triggerId  String?
+  /// The tick invocation that produced this receipt.
+  tickId     String
+  /// FIRED | EXPIRED | REJECTED | APPROVED | RESCHEDULED | MISSION_COMPLETED | MISSION_ABANDONED
+  action     String
+  detail     String?
+  /// JSON evidence payload bound at write time.
+  evidence   String? @db.Text
+  /// Chain integrity (pattern: DemandCreditEntry).
+  prevHash   String
+  entryHash  String   @unique
+  recordedAt DateTime @default(now())
+
+  /// One trigger-scoped receipt per (trigger, tick, action).
+  @@unique([triggerId, tickId, action])
+  @@unique([missionId, seq])
+  @@index([missionId, recordedAt])
+}
+
+/// Track A: a merchant-actionable opportunity derived from the same evidence
+/// that answered a customer intent. Claims about value default to UNKNOWN.
+model Opportunity {
+  id                 String   @id @default(uuid())
+  tenant             String
+  /// Stable tenant-scoped semantic identity; never raw customer language.
+  dedupeKey          String
+  /// MARKET_GAP | MERCHANT_GAP | ... (kind vocabulary grows by evidence, not invention)
+  kind               String
+  /// Plain string ref, no FK (a gap opportunity may reference no retailer).
+  retailerId         String?
+  /// JSON: the evidence refs that justify this opportunity. Required.
+  evidence           String @db.Text
+  /// JSON: what was actually observed (query, filters, counts, timestamps).
+  observedState      String @db.Text
+  /// What the customer/market signal was.
+  signal             String
+  hypothesizedValue  String?
+  confidence         Float?
+  recommendedAction  String
+  /// Authority required to act on it — acting is NEVER automatic.
+  requiredAuthority  String
+  estimatedCostCents Int?
+  risk               String?
+  rollback           String?
+  measurementPlan    String
+  /// UNKNOWN | HYPOTHESIS | SUPPORTED | VERIFIED | CONTRADICTED | REFUTED | STALE
+  verification       String   @default("UNKNOWN")
+  /// OPEN | UNDER_REVIEW | ACTIONED | DISMISSED | EXPIRED
+  status             String   @default("OPEN")
+  followUpTriggerId  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([tenant, status])
+  @@index([kind, verification])
+  @@unique([tenant, dedupeKey])
+}
+
+/// Track A instrumentation: every real ask is a provenance-carrying signal.
+model AskIntentSignal {
+  id             String   @id @default(uuid())
+  tenant         String
+  /// SHA-256 identity of the minimized intent; raw customer language is not persisted.
+  rawQuery       String
+  /// JSON minimized Intent IR including explicit unknown dimensions, without raw text.
+  intentIr       String @db.Text
+  /// JSON answer summary: candidate count, unknowns surfaced, zero-state flag.
+  answerSummary  String @db.Text
+  candidateCount Int
+  opportunityId  String?
+  createdAt      DateTime @default(now())
+
+  @@index([tenant, createdAt])
 }

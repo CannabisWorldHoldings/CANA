@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { startDisposablePostgres, stopDisposablePostgres } from '../postgres-sim/runtime.mjs';
 import { sha256Bytes, sha256File, writeReceipt } from '../test-runner/receipt.mjs';
+import { loadCanonicalMigrationManifest } from '../../apps/web/prisma/migration-manifest.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TEMPLATES = path.join(ROOT, 'tools', 'cpanel-sim', 'templates');
@@ -16,6 +17,7 @@ const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
 const APPROVED_IMAGE =
   'node@sha256:80fc934952c8f1b2b4d39907af7211f8a9fff1a4c2cf673fb49099292c251cec';
 const IMAGE = process.env.CANA_CPANEL_IMAGE ?? APPROVED_IMAGE;
+const CANONICAL_MIGRATIONS = loadCanonicalMigrationManifest().migrations;
 const NAMECHEAP_SCRIPTS = [
   'app.js',
   'deploy.sh',
@@ -388,7 +390,9 @@ function releaseIdentity(commit, artifact) {
     environment: 'CPANEL_SIMULATION',
     claim: 'Local cPanel-like staging simulation only. This is not a live deployment.',
     gitSha: commit,
+    shortSha: commit.slice(0, 7),
     artifact,
+    bundler: 'webpack',
     createdAt: new Date().toISOString(),
   };
 }
@@ -426,6 +430,8 @@ function createNamecheapArtifact(root, name, commit) {
   fs.mkdirSync(release, { recursive: true });
   fs.mkdirSync(uploads, { recursive: true });
   fs.cpSync(TEMPLATES, release, { recursive: true });
+  fs.mkdirSync(path.join(release, '.next'), { recursive: true });
+  fs.writeFileSync(path.join(release, '.next', 'BUILD_ID'), `${commit}\n`);
   const scriptHashes = copyNamecheapScripts(release);
   fs.copyFileSync(path.join(TEMPLATES, 'passenger-server.cjs'), path.join(release, 'server.js'));
   fs.cpSync(path.join(ROOT, 'apps', 'web', 'prisma'), path.join(release, 'prisma'), {
@@ -438,14 +444,36 @@ function createNamecheapArtifact(root, name, commit) {
     `${JSON.stringify({
       artifact: name,
       gitSha: commit,
+      bundler: 'webpack',
+      unresolvedExternalScan: { unresolved: [] },
+      isolatedRuntimeTest: { passed: true },
       builtAt: identity.createdAt,
       environment: 'CPANEL_SIMULATION',
     }, null, 2)}\n`,
   );
   const tarName = `${name}.tar.gz`;
   const tarFile = path.join(uploads, tarName);
-  command('tar', ['-czf', tarFile, '-C', buildRoot, name]);
-  return { tarName, tarFile, scriptHashes };
+  const tarVersion = command('tar', ['--version']).stdout;
+  const tarArgs = ['--no-xattrs'];
+  if (/bsdtar/i.test(tarVersion)) tarArgs.push('--no-mac-metadata');
+  tarArgs.push(
+    '--exclude=._*',
+    '--exclude=.DS_Store',
+    '--exclude=__MACOSX',
+    '-czf',
+    tarFile,
+    '-C',
+    buildRoot,
+    name,
+  );
+  command('tar', tarArgs, {
+    env: {
+      ...process.env,
+      COPYFILE_DISABLE: '1',
+      COPY_EXTENDED_ATTRIBUTES_DISABLE: '1',
+    },
+  });
+  return { tarName, tarFile, tarSha256: sha256File(tarFile), scriptHashes };
 }
 
 function makeImmutable(directory) {
@@ -596,8 +624,8 @@ async function exerciseExistingNamecheapScripts({
 }) {
   const accountHome = path.join(root, 'account-home');
   const appHome = path.join(accountHome, 'apps', 'orderweeddc-staging');
-  const oldName = `orderweeddc-${BASE.slice(0, 12)}`;
-  const newName = `orderweeddc-${source.commit.slice(0, 12)}`;
+  const oldName = `orderweeddc-${BASE}`;
+  const newName = `orderweeddc-${source.commit}`;
   const oldArtifact = createNamecheapArtifact(root, oldName, BASE);
   const newArtifact = createNamecheapArtifact(root, newName, source.commit);
   const database = path.join(directories.data, 'simulation-control.db');
@@ -616,7 +644,11 @@ async function exerciseExistingNamecheapScripts({
   let passenger = null;
   try {
     for (const artifact of [oldArtifact, newArtifact]) {
-      const deployed = command('sh', [path.join(NAMECHEAP, 'deploy.sh'), artifact.tarName], {
+      const deployed = command('sh', [
+        path.join(NAMECHEAP, 'deploy.sh'),
+        artifact.tarName,
+        artifact.tarSha256,
+      ], {
         env: baseEnvironment,
       });
       executed.push({
@@ -741,7 +773,11 @@ async function exerciseExistingNamecheapScripts({
     await stopWeb(passenger);
     passenger = null;
 
-    const redeploy = command('sh', [path.join(NAMECHEAP, 'deploy.sh'), newArtifact.tarName], {
+    const redeploy = command('sh', [
+      path.join(NAMECHEAP, 'deploy.sh'),
+      newArtifact.tarName,
+      newArtifact.tarSha256,
+    ], {
       env: baseEnvironment,
     });
     executed.push({
@@ -1002,7 +1038,8 @@ export async function runCpanelSimulation({ repoRoot }) {
       checks,
       'existing migration script with real Prisma CLI',
       realPrismaProof.proof.prismaVersion === '6.19.3' &&
-        realPrismaProof.proof.migrationsApplied === 3 &&
+        realPrismaProof.proof.migrationsApplied === CANONICAL_MIGRATIONS.length &&
+        JSON.stringify(realPrismaProof.proof.migrationUniverse) === JSON.stringify(CANONICAL_MIGRATIONS) &&
         realPrismaProof.proof.coreTables === 2 &&
         /^3\./.test(realPrismaProof.proof.postgis) &&
         realPrismaProof.proof.h3 === '4.2.3' &&
@@ -1016,7 +1053,7 @@ export async function runCpanelSimulation({ repoRoot }) {
         realPrismaProof.dependencyFetch.prismaEnginePrefetch === '6.19.3' &&
         realPrismaProof.dependencyFetch.prismaClientEnginePrefetched === true &&
         realPrismaProof.executionNetwork === 'internal-only-disposable-postgresql',
-      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and all three PostgreSQL migrations after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
+      `migrate.sh ran Prisma ${realPrismaProof.proof.prismaVersion} and the exact ${CANONICAL_MIGRATIONS.length}-migration reviewed PostgreSQL universe after manifest-only, ignore-scripts fetch plus explicit engine prefetch; proof network ${realPrismaProof.executionNetwork}`,
     );
     check(
       checks,

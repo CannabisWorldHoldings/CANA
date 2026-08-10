@@ -95,6 +95,44 @@ function releaseLock() {
 }
 
 const JOBS = {
+  /**
+   * Wake the sovereign continuation kernel (apps/web/scripts/continuation-tick.mjs).
+   *
+   * The database owns every future mission/trigger/receipt; this cron tick
+   * merely evaluates durable state against the clock. Losing this host, this
+   * cron, or this process erases nothing — any other runtime can run the same
+   * tick against the same database, and concurrent ticks are exactly-once by
+   * conditional claim. Configuration follows the WORKER_HEALTH_URL pattern:
+   * WORKER_TICK_SCRIPT points at the tick entry (cron does not inherit the
+   * app's env), DATABASE_URL must be present. Absent config is a skipped
+   * state with a reason — never a silent success.
+   */
+  async 'continuation-tick'() {
+    const configuredScript = process.env.WORKER_TICK_SCRIPT;
+    if (!configuredScript) {
+      return { skipped: true, reason: 'WORKER_TICK_SCRIPT not configured' };
+    }
+    const script = path.resolve(configuredScript);
+    if (!process.env.DATABASE_URL) {
+      return { skipped: true, reason: 'DATABASE_URL not configured' };
+    }
+    if (!fs.existsSync(script)) {
+      return { skipped: true, reason: `tick script not found: ${script}` };
+    }
+    const { execFileSync } = await import('node:child_process');
+    try {
+      const stdout = execFileSync(process.execPath, [script], {
+        cwd: path.dirname(script),
+        timeout: 120_000,
+        encoding: 'utf8',
+      });
+      const lastLine = stdout.trim().split('\n').at(-1) ?? '';
+      return { ok: true, summary: lastLine.slice(0, 500) };
+    } catch (error) {
+      return { ok: false, error: String(error?.message ?? error).slice(0, 300) };
+    }
+  },
+
   /** Refuse to forge a managed-database backup receipt from the web host. */
   async backup() {
     throw new Error(

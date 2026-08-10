@@ -67,9 +67,12 @@ not by presence of a widening annotation, and it now proscribes anyone adding an
 `@db.VarChar(n)`/`@db.Char(n)` to these columns — that, and only that, would reintroduce
 truncation under PostgreSQL.
 
-**Verified 2026-08-09 against the live `cana_app` database** (`information_schema.columns`):
-every column in the court's `LONG_FORM_COLUMNS` list is `data_type = text`,
-`character_maximum_length = NULL` (i.e. unbounded). Columns cleared, by name:
+The #29 evidence record reports a 2026-08-09 `information_schema.columns` check
+against `cana_app` for the columns that existed at that reviewed head. That historical
+observation does not establish production state for columns introduced later. The
+current schema contract and disposable PostgreSQL migration court prove every listed
+column maps to `text` with no declared character bound; production remains unverified
+until an owner-authorized observation supplies a new receipt. Columns cleared, by name:
 
 | Table.Column | PostgreSQL type | max length |
 |---|---|---|
@@ -81,6 +84,7 @@ every column in the court's `LONG_FORM_COLUMNS` list is `data_type = text`,
 | `LicenseEvidence.notes` | `text` | unbounded |
 | `Brand.description` / `Product.description` / `Deal.description` | `text` | unbounded |
 | `StagingABCARetailer.rawJson` / `LoyaltyTransaction.description` | `text` | unbounded (where the model is present) |
+| `ContinuationReceipt.evidence` / `Opportunity.evidence` | `text` | unbounded (schema + disposable PostgreSQL proof; production unverified) |
 
 Re-run the evidence query any time with:
 
