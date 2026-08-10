@@ -620,6 +620,18 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   assert.equal(await p.marketSourceContentArtifact.count(), 1);
   assert.equal(await p.marketClaim.count(), claimCount);
 
+  await assert.rejects(
+    revokeMarketEvidence(p, {
+      tenant: 'unrelated-tenant.example',
+      targetKind: 'CONTENT_ARTIFACT',
+      targetId: first.content_artifact_id,
+      cause: 'cross-tenant revocation must not poison shared evidence',
+      actorKind: 'HOSTILE_TEST',
+      effectiveAt: new Date('2026-08-20T14:00:00.000Z'),
+    }),
+    /CANA_REALITY_REVOCATION_TARGET_NOT_FOUND/,
+  );
+
   const revoked = await revokeMarketEvidence(p, {
     tenant: 'orderweeddc.com',
     targetKind: 'CONTENT_ARTIFACT',
