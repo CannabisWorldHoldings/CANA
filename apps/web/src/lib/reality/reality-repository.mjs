@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   MARKET_CLAIM_COURT_VERSION,
   adjudicateAcquisitionEvidence,
@@ -20,6 +22,9 @@ import {
 } from './reality-compiler.mjs';
 
 export const PUBLIC_REALITY_PROJECTION_TENANT = 'orderweeddc.com';
+
+const MAX_IDENTITY_CANDIDATES = 5_000;
+const MAX_RELEVANT_CLAIM_HISTORY = 20_000;
 
 const TENANT_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/;
 
@@ -206,20 +211,49 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
       acquisitionEventId: acquisition?.id ?? null,
     } });
 
-    const retailers = await tx.retailer.findMany({
-      where: { licenseNumber: { not: null } },
+    const sourceLicenses = [...new Set(parsed.records.map((entry) => entry.normalized_license))];
+    const aliasRows = await tx.geoEntityAlias.findMany({
+      where: { namespace: 'dc_abca_license', externalId: { in: sourceLicenses } },
+      select: { id: true, namespace: true, externalId: true, geoEntityId: true },
+      take: MAX_IDENTITY_CANDIDATES + 1,
+    });
+    if (aliasRows.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
+    const directRetailers = await tx.retailer.findMany({
+      where: {
+        OR: sourceLicenses.map((licenseNumber) => ({
+          licenseNumber: { equals: licenseNumber, mode: 'insensitive' },
+        })),
+      },
       select: { id: true, licenseNumber: true, name: true },
+      take: MAX_IDENTITY_CANDIDATES + 1,
     });
+    if (directRetailers.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
     const geoEntities = await tx.geoEntity.findMany({
-      where: { retailerId: { in: retailers.map((retailer) => retailer.id) } },
+      where: {
+        OR: [
+          { retailerId: { in: directRetailers.map((retailer) => retailer.id) } },
+          { id: { in: aliasRows.map((alias) => alias.geoEntityId) } },
+        ],
+      },
       select: { id: true, retailerId: true },
+      take: MAX_IDENTITY_CANDIDATES + 1,
     });
+    if (geoEntities.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
+    const directIds = new Set(directRetailers.map((retailer) => retailer.id));
+    const linkedRetailerIds = [...new Set(geoEntities
+      .map((entity) => entity.retailerId)
+      .filter((retailerId) => retailerId && !directIds.has(retailerId)))];
+    const linkedRetailers = linkedRetailerIds.length === 0 ? [] : await tx.retailer.findMany({
+      where: { id: { in: linkedRetailerIds } },
+      select: { id: true, licenseNumber: true, name: true },
+      take: MAX_IDENTITY_CANDIDATES + 1,
+    });
+    if (directRetailers.length + linkedRetailers.length > MAX_IDENTITY_CANDIDATES) {
+      throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
+    }
+    const retailers = [...directRetailers, ...linkedRetailers];
     const geoByRetailer = new Map(geoEntities.map((entity) => [entity.retailerId, entity.id]));
     for (const retailer of retailers) retailer.geoEntityId = geoByRetailer.get(retailer.id) ?? null;
-    const aliasRows = await tx.geoEntityAlias.findMany({
-      where: { namespace: 'dc_abca_license' },
-      select: { id: true, namespace: true, externalId: true, geoEntityId: true },
-    });
     const retailerByGeo = new Map(geoEntities.map((entity) => [entity.id, entity.retailerId]));
     const aliases = aliasRows.map((alias) => ({ ...alias, retailerId: retailerByGeo.get(alias.geoEntityId) ?? null }));
 
@@ -239,59 +273,87 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
     }
 
     const compiled = compileRealitySnapshot({ snapshot, tenant, retailers, aliases });
+    await tx.marketObservation.createMany({
+      data: compiled.observations.map((item) => ({
+        snapshotId: snapshotRow.id,
+        sourceRecordId: item.source_record_key,
+        sourceRecordSha256: item.source_record_sha256,
+        fieldName: item.predicate,
+        rawValue: serialized(item.raw_value),
+        normalizedValue: serialized(item.value),
+        observedAt: new Date(item.observed_at),
+        freshnessExpiresAt: new Date(new Date(item.observed_at).getTime() + DC_ABCA_SOURCE.max_age_ms),
+        confidence: 1,
+        uncertaintyJson: null,
+      })),
+      skipDuplicates: true,
+    });
+    const storedObservations = await tx.marketObservation.findMany({
+      where: { snapshotId: snapshotRow.id },
+      select: { id: true, sourceRecordId: true, fieldName: true },
+    });
+    const storedObservationByKey = new Map(storedObservations.map((row) => [
+      `${row.sourceRecordId}:${row.fieldName}`,
+      row.id,
+    ]));
     const observationRows = new Map();
     for (const item of compiled.observations) {
-      let row = await tx.marketObservation.findUnique({
-        where: { snapshotId_sourceRecordId_fieldName: { snapshotId: snapshotRow.id, sourceRecordId: item.source_record_key, fieldName: item.predicate } },
-      });
-      if (!row) {
-        row = await tx.marketObservation.create({ data: {
-          snapshotId: snapshotRow.id,
-          sourceRecordId: item.source_record_key,
-          sourceRecordSha256: item.source_record_sha256,
-          fieldName: item.predicate,
-          rawValue: serialized(item.raw_value),
-          normalizedValue: serialized(item.value),
-          observedAt: new Date(item.observed_at),
-          freshnessExpiresAt: new Date(new Date(item.observed_at).getTime() + DC_ABCA_SOURCE.max_age_ms),
-          confidence: 1,
-          uncertaintyJson: null,
-        } });
-      }
-      observationRows.set(item.observation_id, row.id);
+      const storedId = storedObservationByKey.get(`${item.source_record_key}:${item.predicate}`);
+      if (!storedId) throw new Error('CANA_REALITY_OBSERVATION_BINDING_MISSING');
+      observationRows.set(item.observation_id, storedId);
     }
 
-    const resolutionRows = new Map();
-    for (const item of compiled.resolutions) {
+    const resolutionData = compiled.resolutions.map((item) => {
       const record = parsed.records.find((entry) => entry.record_hash === item.source_record_sha256);
       const retailer = retailers.find((entry) => entry.id === item.retailer_id);
-      const row = await tx.marketEntityResolution.create({ data: {
-          snapshotId: snapshotRow.id,
-          compilationId: compilation.id,
-          sourceRecordId: record.normalized_license,
-          sourceRecordSha256: record.record_hash,
-          normalizedLicense: record.normalized_license,
-          normalizedName: String(record.record.FACILITY_NAME ?? record.record.TRADE_NAME ?? '').trim() || null,
-          normalizedAddress: String(record.record.ADDRESS ?? '').trim() || null,
-          status: item.status === 'EXACT_MATCH' ? 'MATCH' : item.status,
-          reason: item.method,
-          candidateIds: JSON.stringify(item.candidate_ids),
-          normalizationVersion: item.normalization_version,
-          retailerId: item.retailer_id ?? null,
-          geoEntityId: retailer?.geoEntityId ?? item.geo_entity_id ?? null,
-        } });
-      resolutionRows.set(record.normalized_license, row.id);
+      return {
+        snapshotId: snapshotRow.id,
+        compilationId: compilation.id,
+        sourceRecordId: record.normalized_license,
+        sourceRecordSha256: record.record_hash,
+        normalizedLicense: record.normalized_license,
+        normalizedName: String(record.record.FACILITY_NAME ?? record.record.TRADE_NAME ?? '').trim() || null,
+        normalizedAddress: String(record.record.ADDRESS ?? '').trim() || null,
+        status: item.status === 'EXACT_MATCH' ? 'MATCH' : item.status,
+        reason: item.method,
+        candidateIds: JSON.stringify(item.candidate_ids),
+        normalizationVersion: item.normalization_version,
+        retailerId: item.retailer_id ?? null,
+        geoEntityId: retailer?.geoEntityId ?? item.geo_entity_id ?? null,
+      };
+    });
+    await tx.marketEntityResolution.createMany({ data: resolutionData });
+    const storedResolutions = await tx.marketEntityResolution.findMany({
+      where: { compilationId: compilation.id },
+      select: { id: true, sourceRecordId: true },
+    });
+    const resolutionRows = new Map();
+    for (const row of storedResolutions) {
+      resolutionRows.set(row.sourceRecordId, row.id);
     }
 
-    let claims = 0;
-    let contradictions = 0;
+    const claimKeys = compiled.claims.map((item) => `${item.subject_id}:${item.predicate}`);
+    const priorClaimRows = claimKeys.length === 0 ? [] : await tx.marketClaim.findMany({
+      where: { tenant, claimKey: { in: claimKeys } },
+      orderBy: [{ claimKey: 'asc' }, { version: 'desc' }],
+      include: { evidence: true },
+      take: MAX_RELEVANT_CLAIM_HISTORY + 1,
+    });
+    if (priorClaimRows.length > MAX_RELEVANT_CLAIM_HISTORY) {
+      throw new Error('CANA_REALITY_CLAIM_HISTORY_BUDGET_EXCEEDED');
+    }
+    const priorClaimsByKey = new Map();
+    for (const prior of priorClaimRows) {
+      const entries = priorClaimsByKey.get(prior.claimKey) ?? [];
+      entries.push(prior);
+      priorClaimsByKey.set(prior.claimKey, entries);
+    }
+    const newClaims = [];
+    const newEvidence = [];
+    const newContradictions = [];
     for (const item of compiled.claims) {
       const claimKey = `${item.subject_id}:${item.predicate}`;
-      const priorClaims = await tx.marketClaim.findMany({
-        where: { tenant, claimKey },
-        orderBy: { version: 'desc' },
-        include: { evidence: true },
-      });
+      const priorClaims = priorClaimsByKey.get(claimKey) ?? [];
       const prior = priorClaims[0] ?? null;
       const conflictingObservationIds = contradictoryObservationIds(
         { claimKey, claimValue: serialized(item.value) },
@@ -301,8 +363,8 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
           observationIds: entry.evidence.filter((evidence) => evidence.role === 'SUPPORTS').map((evidence) => evidence.observationId),
         })),
       );
-      const claim = await tx.marketClaim.create({
-        data: {
+      const claim = {
+          id: randomUUID(),
           tenant,
           claimKey,
           claimType: item.predicate,
@@ -318,12 +380,10 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
           uncertaintyJson: item.uncertainty,
           verification: conflictingObservationIds.length > 0 ? 'CONTRADICTED' : 'UNKNOWN',
           decisionEligible: false,
-        },
-      });
+      };
+      newClaims.push(claim);
       for (const observationId of item.observation_ids) {
-        await tx.marketClaimEvidence.create({
-          data: { claimId: claim.id, observationId: observationRows.get(observationId), role: 'SUPPORTS' },
-        });
+        newEvidence.push({ claimId: claim.id, observationId: observationRows.get(observationId), role: 'SUPPORTS' });
       }
       const conflictingPrior = priorClaims.find((entry) => entry.claimValue !== serialized(item.value));
       if (conflictingPrior && conflictingObservationIds.length > 0) {
@@ -332,8 +392,7 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
           if (!storedId) throw new Error('CANA_REALITY_OBSERVATION_BINDING_MISSING');
           return storedId;
         });
-        await tx.marketClaimContradiction.create({
-          data: {
+        newContradictions.push({
             tenant,
             claimKey,
             earlierClaimId: conflictingPrior.id,
@@ -341,27 +400,27 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
             earlierObservationIdsJson: JSON.stringify(conflictingObservationIds),
             laterObservationIdsJson: JSON.stringify(laterObservationIds),
             state: 'ACTIVE',
-          },
         });
         for (const observationId of conflictingObservationIds) {
-          await tx.marketClaimEvidence.create({ data: { claimId: claim.id, observationId, role: 'CONTRADICTS' } });
+          newEvidence.push({ claimId: claim.id, observationId, role: 'CONTRADICTS' });
         }
-        contradictions += 1;
       }
-      claims += 1;
     }
+    if (newClaims.length > 0) await tx.marketClaim.createMany({ data: newClaims });
+    if (newEvidence.length > 0) await tx.marketClaimEvidence.createMany({ data: newEvidence });
+    if (newContradictions.length > 0) await tx.marketClaimContradiction.createMany({ data: newContradictions });
     return Object.freeze({
       state: 'COMPILED',
       snapshot_id: snapshotRow.id,
       source_records: loaded.record_count,
       observations: compiled.observations.length,
       resolutions: compiled.resolutions.length,
-      claims,
+      claims: newClaims.length,
       compilation_id: compilation.id,
       acquisition_event_id: acquisition?.id ?? null,
       content_artifact_id: acquisition?.contentArtifactId ?? null,
       provisional_retailers: 0,
-      contradictions,
+      contradictions: newContradictions.length,
       verification_events: 0,
       public_eligible_claims: 0,
     });

@@ -8,6 +8,7 @@ import {
 } from './live-abca-adapter.mjs';
 import {
   GENESIS_EVENT_DIGEST,
+  classifyAcquisitionTerminal,
   createAcquisitionState,
   transitionAcquisition,
 } from './acquisition-state-machine.mjs';
@@ -88,6 +89,19 @@ function circuitCooldown(event) {
   return value ? new Date(value) : null;
 }
 
+function retryAfter(error, at) {
+  const observedAt = new Date(at);
+  if (!Number.isFinite(observedAt.getTime())) return null;
+  if (Number.isFinite(error?.retryAfterMs)) {
+    return new Date(observedAt.getTime() + error.retryAfterMs).toISOString();
+  }
+  const exact = new Date(error?.retryAfterAt);
+  if (Number.isFinite(exact.getTime()) && exact > observedAt) {
+    return new Date(Math.min(exact.getTime(), observedAt.getTime() + 24 * 60 * 60 * 1000)).toISOString();
+  }
+  return null;
+}
+
 function createCircuitEvent(previous, { state, failureCount, cooldownUntil, reason, at }) {
   const unsigned = {
     schema_version: 'cana-live-reality-circuit-event/v1',
@@ -122,7 +136,17 @@ function outcomeForFailure(code) {
   return 'SOURCE_FAILED';
 }
 
-function eventContext({ event, tenant, requestedAt, versions, detail = {}, outcome = null, persisted = null, errorCode = null }) {
+function eventContext({
+  event,
+  tenant,
+  requestedAt,
+  versions,
+  detail = {},
+  outcome = null,
+  persisted = null,
+  errorCode = null,
+  disposition = null,
+}) {
   return Object.freeze({
     state: event.state,
     outcome,
@@ -154,10 +178,22 @@ function eventContext({ event, tenant, requestedAt, versions, detail = {}, outco
     prior_event_digest: event.prior_event_digest,
     event_digest: event.event_digest,
     error_code: errorCode,
+    disposition,
+    retry_after: detail.retry_after ?? null,
   });
 }
 
-function failureReceipt({ attemptId, tenant, requestedAt, event, errorCode, outcome, circuit }) {
+function failureReceipt({
+  attemptId,
+  tenant,
+  requestedAt,
+  event,
+  errorCode,
+  outcome,
+  circuit,
+  disposition,
+  retryAfterAt,
+}) {
   return Object.freeze({
     schema_version: 'cana-live-reality-acquisition-receipt/v1',
     state: 'FAILED',
@@ -168,6 +204,8 @@ function failureReceipt({ attemptId, tenant, requestedAt, event, errorCode, outc
     requested_at: requestedAt,
     completed_at: event.at,
     error_code: errorCode,
+    ...disposition,
+    retry_after: retryAfterAt,
     terminal_event_digest: event.event_digest,
     circuit_state: circuitState(circuit),
     content_artifacts_created: 0,
@@ -223,6 +261,7 @@ export async function acquireLiveMarketReality(store, {
         persisted,
         outcome: extra.outcome ?? null,
         errorCode: extra.errorCode ?? null,
+        disposition: extra.disposition ?? null,
       });
       const row = await tx.appendAcquisitionEvent({ event, context });
       return { event, row };
@@ -264,6 +303,8 @@ export async function acquireLiveMarketReality(store, {
       else await move('REVALIDATION_PENDING', { content_sha256: capture.content_sha256 });
 
       const outcome = changed ? 'SOURCE_CHANGED' : 'SOURCE_UNCHANGED';
+      const revisionBound = capture.pre_revision !== null && capture.post_revision !== null;
+      const disposition = classifyAcquisitionTerminal({ outcome, revisionBound });
       const terminal = await move('COMPLETED', {
         content_sha256: capture.content_sha256,
         pre_revision: capture.pre_revision,
@@ -273,7 +314,7 @@ export async function acquireLiveMarketReality(store, {
         record_count: capture.record_count,
         fetched_at: capture.fetched_at,
         payload_bytes: capture.wire_bytes,
-      }, { outcome });
+      }, { outcome, disposition });
       const capabilityUnsigned = {
         schema_version: 'cana-live-reality-capability-receipt/v1',
         acquisition_event_id: terminal.row.id,
@@ -303,6 +344,8 @@ export async function acquireLiveMarketReality(store, {
         requested_at: requestedAt,
         acquired_at: capture.fetched_at,
         completed_at: terminal.event.at,
+        ...disposition,
+        revision_bound: revisionBound,
         acquisition_event_id: terminal.row.id,
         content_artifact_id: persisted.contentArtifactId,
         snapshot_id: persisted.snapshotId,
@@ -318,20 +361,28 @@ export async function acquireLiveMarketReality(store, {
       });
     } catch (error) {
       const errorCode = typeof error?.code === 'string' ? error.code : 'CANA_LIVE_REALITY_UNEXPECTED_FAILURE';
+      const disposition = classifyAcquisitionTerminal({ errorCode });
+      const rateLimitRetryAt = errorCode === 'CANA_LIVE_REALITY_RATE_LIMITED'
+        ? retryAfter(error, state.events.at(-1).at)
+        : null;
       if (!['COMPLETED', 'FAILED'].includes(state.state)) {
-        await move('FAILED', { error_code: errorCode }, {
+        await move('FAILED', { error_code: errorCode, retry_after: rateLimitRetryAt, ...disposition }, {
           outcome: outcomeForFailure(errorCode),
           errorCode,
+          disposition,
         });
       }
       if (sourceFailure(errorCode)) {
         const failures = circuitFailures(latestCircuit) + 1;
-        const open = failures >= CIRCUIT_FAILURE_THRESHOLD;
+        const open = errorCode === 'CANA_LIVE_REALITY_RATE_LIMITED' || failures >= CIRCUIT_FAILURE_THRESHOLD;
         const at = state.events.at(-1).at;
+        const cooldownUntil = open
+          ? rateLimitRetryAt ?? new Date(new Date(at).getTime() + CIRCUIT_COOLDOWN_MS).toISOString()
+          : null;
         const circuitEvent = createCircuitEvent(latestCircuit, {
           state: open ? 'OPEN_CIRCUIT' : 'DEGRADED',
           failureCount: failures,
-          cooldownUntil: open ? new Date(new Date(at).getTime() + CIRCUIT_COOLDOWN_MS).toISOString() : null,
+          cooldownUntil,
           reason: errorCode,
           at,
         });
@@ -345,6 +396,8 @@ export async function acquireLiveMarketReality(store, {
         errorCode,
         outcome: outcomeForFailure(errorCode),
         circuit: latestCircuit,
+        disposition,
+        retryAfterAt: rateLimitRetryAt,
       });
     }
   });
@@ -395,7 +448,10 @@ function prismaEventData(event, context) {
     priorEventHash: context.prior_event_digest,
     eventHash: context.event_digest,
     errorCode: context.error_code,
-    errorDetail: null,
+    errorDetail: context.disposition ? JSON.stringify({
+      disposition: context.disposition,
+      retry_after: context.retry_after,
+    }) : null,
   };
 }
 

@@ -89,6 +89,14 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
   if ((preRevision ?? 'UNKNOWN') !== (postRevision ?? 'UNKNOWN')) {
     return acquisitionDecision({ reason: 'ACQUISITION_REVISION_DRIFT' });
   }
+  const revisionBound = event.revisionState === 'OBSERVED'
+    && preRevision !== null
+    && preRevision !== undefined
+    && postRevision !== null
+    && postRevision !== undefined;
+  if (purpose === 'REVALIDATE' && !revisionBound) {
+    return acquisitionDecision({ reason: 'ACQUISITION_REVISION_UNBOUND' });
+  }
   if (!Number.isInteger(event.preObservedRecordCount)
     || !Number.isInteger(event.postObservedRecordCount)
     || event.preObservedRecordCount !== event.postObservedRecordCount) {
@@ -115,6 +123,7 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
     content_sha256: artifact.contentSha256,
     acquired_at: acquiredAt.toISOString(),
     zero_change: event.outcome === 'SOURCE_UNCHANGED',
+    revision_bound: revisionBound,
   });
 }
 

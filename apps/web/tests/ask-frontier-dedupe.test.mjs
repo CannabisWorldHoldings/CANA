@@ -87,6 +87,25 @@ test('demand priority is transparent, bounded, and cannot assert economic value'
   assert.ok(repeated.score <= 10_000);
 });
 
+test('10,000 equivalent demand signals collapse to one bounded work identity and capped priority', () => {
+  const gap = frontier();
+  const keys = new Set(Array.from({ length: 10_000 }, () => frontierOpportunityKey({
+    tenant: 'orderweeddc.com',
+    kind: 'MARKET_GAP',
+    frontier: gap,
+  })));
+  assert.equal(keys.size, 1);
+  const priority = computeDemandPriority({
+    admittedSignalCount: 10_000,
+    uniqueDemandCount: 10_000,
+    blockingPredicates: CORE,
+  });
+  assert.equal(priority.components.admitted_signal_count, 100);
+  assert.equal(priority.components.unique_demand_count, 100);
+  assert.equal(priority.hypothesized_value, null);
+  assert.ok(priority.score <= 10_000);
+});
+
 test('count alone, partial coverage, and a wrong frontier cannot close work', () => {
   const gap = frontier();
   const requirement = frontierWorkRequirements({ opportunityId: 'opportunity-1', frontier: gap });

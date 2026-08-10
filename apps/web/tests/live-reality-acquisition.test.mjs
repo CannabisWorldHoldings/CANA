@@ -65,6 +65,8 @@ function scriptedSource({
   fields = ABCA_FIELDS,
   metadataOptions,
   failureAt = null,
+  failureStatus = 500,
+  retryAfter = null,
 } = {}) {
   let call = 0;
   const calls = [];
@@ -84,8 +86,11 @@ function scriptedSource({
       call += 1;
       if (failureAt === index) {
         return new Response('source incident body must not persist', {
-          status: 500,
-          headers: { 'content-type': 'text/plain' },
+          status: failureStatus,
+          headers: {
+            'content-type': 'text/plain',
+            ...(retryAfter === null ? {} : { 'retry-after': retryAfter }),
+          },
         });
       }
       return new Response(JSON.stringify(bodies[index]), {
@@ -104,6 +109,7 @@ class MemoryAcquisitionStore {
   constructor() {
     this.events = [];
     this.contents = new Map();
+    this.captures = [];
     this.capabilities = [];
     this.circuits = new Map();
     this.locks = [];
@@ -130,6 +136,7 @@ class MemoryAcquisitionStore {
   }
 
   async persistContent({ capture }) {
+    this.captures.push(capture);
     const existing = this.contents.get(capture.content_sha256);
     if (existing) return { ...existing, created: false };
     const row = {
@@ -193,6 +200,10 @@ test('changed then unchanged acquisition keeps one content identity and two inde
   const first = await acquireLiveMarketReality(store, acquisitionOptions(firstSource));
   assert.equal(first.state, 'COMPLETED');
   assert.equal(first.outcome, 'SOURCE_CHANGED');
+  assert.equal(first.terminal_result, 'SUCCESS_CHANGED');
+  assert.equal(first.may_compile, true);
+  assert.equal(first.may_revalidate, true);
+  assert.equal(first.may_mutate_truth, false);
   assert.equal(first.content_artifacts_created, 1);
   assert.equal(firstSource.calls.length, 5);
 
@@ -203,6 +214,9 @@ test('changed then unchanged acquisition keeps one content identity and two inde
   }));
   assert.equal(second.state, 'COMPLETED');
   assert.equal(second.outcome, 'SOURCE_UNCHANGED');
+  assert.equal(second.terminal_result, 'SUCCESS_UNCHANGED');
+  assert.equal(second.may_compile, false);
+  assert.equal(second.may_revalidate, true);
   assert.equal(second.content_artifacts_created, 0);
   assert.equal(store.contents.size, 1);
   assert.equal(first.content_artifact_id, second.content_artifact_id);
@@ -224,6 +238,9 @@ test('current live metadata shape stays complete while unavailable source revisi
   const result = await acquireLiveMarketReality(store, acquisitionOptions(source));
   assert.equal(result.state, 'COMPLETED');
   assert.equal(result.outcome, 'SOURCE_CHANGED');
+  assert.equal(result.revision_bound, false);
+  assert.equal(result.may_compile, true);
+  assert.equal(result.may_revalidate, false);
   assert.equal(source.calls.length, 5);
   const terminal = store.events.at(-1).context;
   assert.equal(terminal.source_revision, 'UNKNOWN');
@@ -231,6 +248,8 @@ test('current live metadata shape stays complete while unavailable source revisi
   assert.equal(terminal.post_revision, null);
   assert.equal(store.capabilities[0].capabilities.revision, 'UNKNOWN');
   assert.equal(store.capabilities[0].capabilities.revision_state, 'UNKNOWN');
+  assert.equal(store.captures[0].source_modified_at, null);
+  assert.equal(store.captures[0].manifest.source_modified_at, null);
 });
 
 test('revision drift and count drift fail closed before any content artifact exists', async () => {
@@ -243,6 +262,10 @@ test('revision drift and count drift fail closed before any content artifact exi
     const result = await acquireLiveMarketReality(store, acquisitionOptions(source));
     assert.equal(result.state, 'FAILED');
     assert.equal(result.error_code, code);
+    assert.equal(result.may_compile, false);
+    assert.equal(result.may_revalidate, false);
+    assert.equal(result.may_create_negative_evidence, false);
+    assert.equal(result.may_mutate_truth, false);
     assert.equal(store.contents.size, 0);
     assert.equal(store.capabilities.length, 0);
     assert.equal(store.events.at(-1).context.state, 'FAILED');
@@ -288,6 +311,8 @@ test('source outage never mutates content and opens a tenant-scoped circuit afte
     totalFetches += source.calls.length;
     assert.equal(result.state, 'FAILED');
     assert.equal(result.error_code, 'CANA_LIVE_REALITY_HTTP_ERROR');
+    assert.equal(result.terminal_result, 'HTTP_FAILURE');
+    assert.equal(result.may_retry, true);
   }
   assert.equal(totalFetches, 3);
   assert.equal(store.contents.size, 0);
@@ -309,6 +334,21 @@ test('source outage never mutates content and opens a tenant-scoped circuit afte
   assert.equal(tenantB.state, 'COMPLETED');
   assert.equal(tenantB.outcome, 'SOURCE_CHANGED');
   assert.equal(tenantBSource.calls.length, 5);
+});
+
+test('rate limiting immediately opens a bounded tenant circuit and records Retry-After', async () => {
+  const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
+  const store = new MemoryAcquisitionStore();
+  const source = scriptedSource({ failureAt: 0, failureStatus: 429, retryAfter: '120' });
+  const result = await acquireLiveMarketReality(store, acquisitionOptions(source));
+  assert.equal(result.state, 'FAILED');
+  assert.equal(result.terminal_result, 'RATE_LIMITED');
+  assert.equal(result.circuit_state, 'OPEN_CIRCUIT');
+  assert.equal(result.retry_after, '2026-08-10T15:02:02.000Z');
+  assert.equal(result.may_retry, true);
+  assert.equal(result.may_compile, false);
+  assert.equal(result.may_mutate_truth, false);
+  assert.equal(store.contents.size, 0);
 });
 
 test('cooldown probe success closes the circuit without manufacturing verification', async () => {

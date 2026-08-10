@@ -63,6 +63,19 @@ function fail(code, detail) {
   throw error;
 }
 
+function failRateLimited(response) {
+  const error = new Error('CANA_LIVE_REALITY_RATE_LIMITED');
+  error.code = 'CANA_LIVE_REALITY_RATE_LIMITED';
+  const retryAfter = String(response.headers.get('retry-after') ?? '').trim();
+  if (/^\d{1,6}$/.test(retryAfter)) {
+    error.retryAfterMs = Math.min(Number(retryAfter) * 1000, 24 * 60 * 60 * 1000);
+  } else {
+    const retryAt = new Date(retryAfter);
+    if (Number.isFinite(retryAt.getTime())) error.retryAfterAt = retryAt.toISOString();
+  }
+  throw error;
+}
+
 function isTruthyMarker(value) {
   return value !== undefined && value !== null && String(value).trim() !== '';
 }
@@ -188,6 +201,7 @@ export async function readBoundedJsonResponse(response, {
 } = {}) {
   if (!response || typeof response.status !== 'number' || !response.headers) fail('CANA_LIVE_REALITY_RESPONSE_INVALID');
   if (response.status >= 300 && response.status <= 399) fail('CANA_LIVE_REALITY_REDIRECT_REFUSED');
+  if (response.status === 429) failRateLimited(response);
   if (response.status < 200 || response.status > 299) fail('CANA_LIVE_REALITY_HTTP_ERROR', String(response.status));
   const contentType = String(response.headers.get('content-type') ?? '').split(';', 1)[0].trim().toLowerCase();
   if (!JSON_CONTENT_TYPES.includes(contentType)) fail('CANA_LIVE_REALITY_CONTENT_TYPE_REFUSED');
@@ -448,7 +462,7 @@ export async function captureAbcaReality({
       metadataBytes: preMetadata.bytes,
       pageParts: [{ offset: 0, bytes: recordsResponse.bytes }],
       fetchedAt,
-      sourceModifiedAt: new Date(preRevision).toISOString(),
+      sourceModifiedAt: preRevision === null ? null : new Date(preRevision).toISOString(),
       sourceCatalogModifiedDate: null,
       provenanceMode: 'LIVE',
     });

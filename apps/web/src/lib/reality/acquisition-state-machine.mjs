@@ -16,6 +16,68 @@ export const ACQUISITION_TRANSITIONS = Object.freeze({
   FAILED: Object.freeze([]),
 });
 
+function disposition(terminalResult, {
+  mayRetry = false,
+  mayCompile = false,
+  mayRevalidate = false,
+} = {}) {
+  return Object.freeze({
+    terminal_result: terminalResult,
+    may_retry: mayRetry,
+    may_fallback: false,
+    may_compile: mayCompile,
+    may_revalidate: mayRevalidate,
+    may_create_negative_evidence: false,
+    may_mutate_truth: false,
+  });
+}
+
+export const ACQUISITION_TERMINAL_RESULTS = Object.freeze({
+  SUCCESS_CHANGED: disposition('SUCCESS_CHANGED', { mayCompile: true, mayRevalidate: true }),
+  SUCCESS_UNCHANGED: disposition('SUCCESS_UNCHANGED', { mayRevalidate: true }),
+  SOURCE_OUTAGE: disposition('SOURCE_OUTAGE', { mayRetry: true }),
+  RATE_LIMITED: disposition('RATE_LIMITED', { mayRetry: true }),
+  HTTP_FAILURE: disposition('HTTP_FAILURE', { mayRetry: true }),
+  TIMEOUT: disposition('TIMEOUT', { mayRetry: true }),
+  SCHEMA_DRIFT: disposition('SCHEMA_DRIFT'),
+  CAPABILITY_CHANGED: disposition('CAPABILITY_CHANGED'),
+  PARTIAL: disposition('PARTIAL'),
+  REVISION_UNBOUND: disposition('REVISION_UNBOUND'),
+  CONTENT_TYPE_REFUSED: disposition('CONTENT_TYPE_REFUSED'),
+  PAYLOAD_LIMIT_EXCEEDED: disposition('PAYLOAD_LIMIT_EXCEEDED'),
+  POLICY_REFUSED: disposition('POLICY_REFUSED'),
+  CANCELLED: disposition('CANCELLED', { mayRetry: true }),
+});
+
+export function classifyAcquisitionTerminal({ outcome = null, errorCode = null, revisionBound = true } = {}) {
+  if (outcome === 'SOURCE_CHANGED') {
+    return revisionBound
+      ? ACQUISITION_TERMINAL_RESULTS.SUCCESS_CHANGED
+      : disposition('SUCCESS_CHANGED', { mayCompile: true });
+  }
+  if (outcome === 'SOURCE_UNCHANGED') {
+    return revisionBound
+      ? ACQUISITION_TERMINAL_RESULTS.SUCCESS_UNCHANGED
+      : disposition('SUCCESS_UNCHANGED');
+  }
+  if (errorCode === 'CANA_LIVE_REALITY_RATE_LIMITED') return ACQUISITION_TERMINAL_RESULTS.RATE_LIMITED;
+  if (/CONNECT_TIMEOUT|RESPONSE_TIMEOUT|RUN_TIMEOUT/.test(errorCode ?? '')) {
+    return ACQUISITION_TERMINAL_RESULTS.TIMEOUT;
+  }
+  if (/NETWORK_ERROR|DNS_FAILED/.test(errorCode ?? '')) return ACQUISITION_TERMINAL_RESULTS.SOURCE_OUTAGE;
+  if (errorCode === 'CANA_LIVE_REALITY_HTTP_ERROR') return ACQUISITION_TERMINAL_RESULTS.HTTP_FAILURE;
+  if (/CONTENT_TYPE/.test(errorCode ?? '')) return ACQUISITION_TERMINAL_RESULTS.CONTENT_TYPE_REFUSED;
+  if (/OVERSIZE/.test(errorCode ?? '')) return ACQUISITION_TERMINAL_RESULTS.PAYLOAD_LIMIT_EXCEEDED;
+  if (/REVISION/.test(errorCode ?? '')) return ACQUISITION_TERMINAL_RESULTS.REVISION_UNBOUND;
+  if (/PARTIAL|COUNT|RECORDS_INVALID|RECORD_COUNT/.test(errorCode ?? '')) {
+    return ACQUISITION_TERMINAL_RESULTS.PARTIAL;
+  }
+  if (/SCHEMA|JSON_INVALID/.test(errorCode ?? '')) return ACQUISITION_TERMINAL_RESULTS.SCHEMA_DRIFT;
+  if (/CAPABILITY/.test(errorCode ?? '')) return ACQUISITION_TERMINAL_RESULTS.CAPABILITY_CHANGED;
+  if (errorCode === 'CANA_LIVE_REALITY_UNEXPECTED_FAILURE') return ACQUISITION_TERMINAL_RESULTS.CANCELLED;
+  return ACQUISITION_TERMINAL_RESULTS.POLICY_REFUSED;
+}
+
 function fail(code) {
   const error = new Error(code);
   error.code = code;

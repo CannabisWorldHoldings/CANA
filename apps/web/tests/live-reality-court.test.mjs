@@ -54,6 +54,7 @@ function evidence(overrides = {}) {
     sourceRevision: '1781114729000',
     preSourceRevision: '1781114729000',
     postSourceRevision: '1781114729000',
+    revisionState: 'OBSERVED',
     observedRecordCount: 1,
     preObservedRecordCount: 1,
     postObservedRecordCount: 1,
@@ -94,6 +95,54 @@ test('unchanged acquisition is valid only for revalidation and binds exact sourc
     purpose: 'COMPILE',
     asOf: AS_OF,
   }).decision, 'ALLOW');
+});
+
+test('UNKNOWN revision may be compiled as observation evidence but cannot revalidate freshness', () => {
+  const unknownRevision = evidence({
+    event: {
+      sourceRevision: 'UNKNOWN',
+      preSourceRevision: null,
+      postSourceRevision: null,
+      revisionState: 'UNKNOWN',
+      outcome: 'SOURCE_CHANGED',
+    },
+  });
+  const compile = court.adjudicateAcquisitionEvidence({
+    ...unknownRevision,
+    tenant: 'orderweeddc.com',
+    purpose: 'COMPILE',
+    asOf: AS_OF,
+  });
+  assert.equal(compile.decision, 'ALLOW');
+  assert.equal(compile.revision_bound, false);
+  assert.equal(court.adjudicateAcquisitionEvidence({
+    ...unknownRevision,
+    tenant: 'orderweeddc.com',
+    purpose: 'REVALIDATE',
+    asOf: AS_OF,
+  }).reason, 'ACQUISITION_REVISION_UNBOUND');
+
+  const unknownUnchanged = court.adjudicateAcquisitionEvidence({
+    ...evidence({ event: {
+      sourceRevision: 'UNKNOWN',
+      preSourceRevision: null,
+      postSourceRevision: null,
+      revisionState: 'UNKNOWN',
+    } }),
+    tenant: 'orderweeddc.com',
+    purpose: 'REVALIDATE',
+    asOf: AS_OF,
+  });
+  assert.equal(unknownUnchanged.reason, 'ACQUISITION_REVISION_UNBOUND');
+  assert.equal(court.adjudicateZeroChangeReattestation({
+    acquisition: unknownUnchanged,
+    predicate: 'license_status',
+    sourcePolicy: {
+      max_age_ms: 30 * 24 * 60 * 60 * 1000,
+      authoritative_predicates: ['license_status'],
+    },
+    asOf: AS_OF,
+  }).decision_eligible, false);
 });
 
 test('failed, cross-tenant, drifted, partial, future, and digest-mismatched acquisition evidence is denied', () => {

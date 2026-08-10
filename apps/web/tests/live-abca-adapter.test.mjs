@@ -160,6 +160,60 @@ test('state machine transition table is exhaustive and failure is reachable from
   }
 });
 
+test('every acquisition terminal result has an explicit fail-closed disposition', async () => {
+  const {
+    ACQUISITION_TERMINAL_RESULTS,
+    classifyAcquisitionTerminal,
+  } = await import(STATE_MODULE);
+  assert.deepEqual(Object.keys(ACQUISITION_TERMINAL_RESULTS), [
+    'SUCCESS_CHANGED',
+    'SUCCESS_UNCHANGED',
+    'SOURCE_OUTAGE',
+    'RATE_LIMITED',
+    'HTTP_FAILURE',
+    'TIMEOUT',
+    'SCHEMA_DRIFT',
+    'CAPABILITY_CHANGED',
+    'PARTIAL',
+    'REVISION_UNBOUND',
+    'CONTENT_TYPE_REFUSED',
+    'PAYLOAD_LIMIT_EXCEEDED',
+    'POLICY_REFUSED',
+    'CANCELLED',
+  ]);
+  for (const [terminalResult, disposition] of Object.entries(ACQUISITION_TERMINAL_RESULTS)) {
+    assert.equal(disposition.terminal_result, terminalResult);
+    assert.deepEqual(Object.keys(disposition).sort(), [
+      'may_compile',
+      'may_create_negative_evidence',
+      'may_fallback',
+      'may_mutate_truth',
+      'may_retry',
+      'may_revalidate',
+      'terminal_result',
+    ]);
+    assert.equal(disposition.may_fallback, false);
+    assert.equal(disposition.may_create_negative_evidence, false);
+    assert.equal(disposition.may_mutate_truth, false);
+  }
+  assert.equal(classifyAcquisitionTerminal({ outcome: 'SOURCE_CHANGED' }).terminal_result, 'SUCCESS_CHANGED');
+  assert.equal(classifyAcquisitionTerminal({ outcome: 'SOURCE_UNCHANGED' }).terminal_result, 'SUCCESS_UNCHANGED');
+  assert.equal(classifyAcquisitionTerminal({ outcome: 'SOURCE_CHANGED', revisionBound: false }).may_compile, true);
+  assert.equal(classifyAcquisitionTerminal({ outcome: 'SOURCE_CHANGED', revisionBound: false }).may_revalidate, false);
+  assert.equal(classifyAcquisitionTerminal({ outcome: 'SOURCE_UNCHANGED', revisionBound: false }).may_revalidate, false);
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_RATE_LIMITED' }).terminal_result, 'RATE_LIMITED');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_HTTP_ERROR' }).terminal_result, 'HTTP_FAILURE');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_RESPONSE_TIMEOUT' }).terminal_result, 'TIMEOUT');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_SCHEMA_CHANGED' }).terminal_result, 'SCHEMA_DRIFT');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_REVISION_DRIFT' }).terminal_result, 'REVISION_UNBOUND');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_PARTIAL_REFUSED' }).terminal_result, 'PARTIAL');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_CONTENT_TYPE_REFUSED' }).terminal_result, 'CONTENT_TYPE_REFUSED');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_RESPONSE_OVERSIZE' }).terminal_result, 'PAYLOAD_LIMIT_EXCEEDED');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_AUTHORITY_REQUIRED' }).terminal_result, 'POLICY_REFUSED');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_NETWORK_ERROR' }).terminal_result, 'SOURCE_OUTAGE');
+  assert.equal(classifyAcquisitionTerminal({ errorCode: 'CANA_LIVE_REALITY_UNEXPECTED_FAILURE' }).terminal_result, 'CANCELLED');
+});
+
 test('fixed ABCA contract has no caller-controlled URL, fields, or query surface', async () => {
   const {
     ABCA_LIVE_CONTRACT,
@@ -338,6 +392,10 @@ test('redirect, non-JSON, HTTP error, oversize, and timeout responses fail close
   await assert.rejects(
     readBoundedJsonResponse(new Response('top-secret-body', { status: 500, headers: { 'content-type': 'application\/json' } })),
     (error) => error.code === 'CANA_LIVE_REALITY_HTTP_ERROR' && !error.message.includes('top-secret-body'),
+  );
+  await assert.rejects(
+    readBoundedJsonResponse(new Response('', { status: 429, headers: { 'retry-after': '120' } })),
+    (error) => error.code === 'CANA_LIVE_REALITY_RATE_LIMITED' && error.retryAfterMs === 120_000,
   );
   await assert.rejects(
     readBoundedJsonResponse(new Response('{}', {
