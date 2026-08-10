@@ -57,7 +57,7 @@ function boundedIdentifier(value, code) {
 function validateVersions(versions) {
   if (!versions || typeof versions !== 'object' || Array.isArray(versions)) fail('CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED');
   if (!/^[a-f0-9]{40}$/.test(versions.repositoryCommitSha ?? '')) fail('CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED');
-  if (versions.repositoryTreeSha !== undefined && !/^[a-f0-9]{40}$/.test(versions.repositoryTreeSha)) {
+  if (!/^[a-f0-9]{40}$/.test(versions.repositoryTreeSha ?? '')) {
     fail('CANA_LIVE_REALITY_VERSION_PROVENANCE_REQUIRED');
   }
   for (const name of [

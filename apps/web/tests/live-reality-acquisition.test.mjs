@@ -196,6 +196,7 @@ function acquisitionOptions(source, {
 test('acquisition refuses incomplete parser, compiler, resolver, and policy version provenance', async () => {
   const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
   for (const missing of [
+    'repositoryTreeSha',
     'parserVersion',
     'compilerVersion',
     'entityResolverVersion',
