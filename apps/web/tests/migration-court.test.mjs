@@ -25,10 +25,20 @@ import {
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
 import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
 import {
+  compileLiveMarketAcquisition,
   compileOfficialMarketSnapshot,
+  revokeMarketEvidence,
+  verifyLiveMarketAcquisition,
   verifyOfficialMarketSnapshot,
 } from '../src/lib/reality/reality-repository.mjs';
-import { buildSnapshotArtifacts } from '../src/lib/reality/official-source-snapshot.mjs';
+import {
+  ABCA_FIELDS,
+  buildSnapshotArtifacts,
+} from '../src/lib/reality/official-source-snapshot.mjs';
+import {
+  acquireLiveMarketReality,
+  createPrismaAcquisitionStore,
+} from '../src/lib/reality/live-reality-acquisition.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -165,6 +175,80 @@ async function client(url) {
   const c = new PrismaClient({ datasources: { db: { url } } });
   clients.push(c);
   return c;
+}
+
+function liveRealitySource({ fail = false } = {}) {
+  let call = 0;
+  const record = {
+    attributes: {
+      OBJECTID: 4101,
+      GLOBALID: '{11111111-2222-3333-4444-555555555555}',
+      ABCA_NUMBER: 'ABRA-123456',
+      FACILITY_NAME: 'Live Court Cannabis',
+      FACILITY_TYPE: 'Retailer',
+      LICENSE_TYPE: 'Medical Cannabis Retailer',
+      EXPIRATION_DATE: Date.parse('2027-12-31T00:00:00.000Z'),
+      ADDRESS: '100 Live Court St NW',
+      LATITUDE: 38.9,
+      LONGITDUE: -77.03,
+      TRADE_NAME: 'Live Court Cannabis',
+      ENTITY_NAME: 'Live Court Cannabis LLC',
+      STATUS: 'Active',
+      ISSUE_DATE: Date.parse('2025-07-17T00:00:00.000Z'),
+      EDITED: 1780587905000,
+      WARD: 2,
+      ENDORSEMENTS: null,
+    },
+    geometry: { x: -77.03, y: 38.9 },
+  };
+  const metadata = {
+    id: 31,
+    name: 'Licensed Medical Cannabis Retailer',
+    currentVersion: 11.5,
+    maxRecordCount: 1000,
+    capabilities: 'Map,Query,Data',
+    supportsPagination: true,
+    advancedQueryCapabilities: { supportsPagination: true, supportsOrderBy: true },
+    editingInfo: { lastEditDate: 1781114729000 },
+    fields: ABCA_FIELDS.map((name) => ({ name })),
+  };
+  const bodies = [metadata, { count: 1 }, { features: [record], exceededTransferLimit: false }, metadata, { count: 1 }];
+  return {
+    lookup: async () => [{ address: '23.48.99.80', family: 4 }],
+    fetchImpl: async () => {
+      const index = call;
+      call += 1;
+      if (fail) return new Response('incident body', { status: 500, headers: { 'content-type': 'text/plain' } });
+      return new Response(JSON.stringify(bodies[index]), {
+        status: 200,
+        headers: { 'content-type': 'text/plain; charset=UTF-8', etag: `"live-${index}"` },
+      });
+    },
+  };
+}
+
+function liveRealityOptions(source, { attemptId, asOf }) {
+  let tick = Date.parse(asOf);
+  return {
+    tenant: 'orderweeddc.com',
+    attemptId,
+    asOf,
+    env: { CANA_LIVE_REALITY_NETWORK: '1' },
+    lookup: source.lookup,
+    fetchImpl: source.fetchImpl,
+    clock: () => new Date(tick += 1000),
+    versions: {
+      repositoryCommitSha: 'e'.repeat(40),
+      repositoryTreeSha: 'f'.repeat(40),
+      adapterVersion: 'dc-abca-live-v1',
+      parserVersion: 'cana-dc-abca-arcgis-snapshot-v1',
+      compilerVersion: 'cana-reality-compiler-v1',
+      entityResolverVersion: 'dc-abca-identity-v1',
+      authorityPolicyVersion: 'dc-abca-authority-v1',
+      freshnessPolicyVersion: 'dc-abca-freshness-v1',
+      verificationCourtVersion: 'cana-market-claim-court-v1',
+    },
+  };
 }
 
 /** Run `ensureDatabaseMigrated`/`withMigrationLock` with DIRECT_URL pinned to
@@ -453,6 +537,102 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
     /CANA_REALITY_APPEND_ONLY/,
   );
   assert.equal(await p.marketSourceSnapshot.count(), 1, 'upgrade and re-observation must preserve the legacy snapshot');
+});
+
+test('LIVE REALITY: changed compilation and unchanged revalidation are acquisition-bound and outage-safe', async () => {
+  const url = createDatabase('live_reality_court');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.create({ data: {
+    id: 'live-reality-retailer',
+    name: 'Live Court Cannabis',
+    type: 'storefront',
+    address: '100 Live Court St NW',
+    city: 'Washington',
+    state: 'DC',
+    lat: 38.9,
+    lng: -77.03,
+    licenseNumber: 'ABRA-123456',
+  } });
+  const store = createPrismaAcquisitionStore(p);
+  const firstSource = liveRealitySource();
+  const first = await acquireLiveMarketReality(store, liveRealityOptions(firstSource, {
+    attemptId: 'live-court-first',
+    asOf: '2026-08-10T15:00:00.000Z',
+  }));
+  assert.equal(first.state, 'COMPLETED');
+  assert.equal(first.outcome, 'SOURCE_CHANGED');
+  const compiled = await compileLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: first.acquisition_event_id,
+  });
+  assert.equal(compiled.state, 'COMPILED');
+  assert.equal(compiled.acquisition_event_id, first.acquisition_event_id);
+  const claimCount = await p.marketClaim.count();
+  assert.ok(claimCount > 0);
+  assert.equal(await p.marketClaim.count({ where: { decisionEligible: true } }), 0);
+
+  const firstCourt = await verifyLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: first.acquisition_event_id,
+    asOf: new Date('2026-08-11T15:00:00.000Z'),
+  });
+  assert.ok(firstCourt.admitted_claims >= 4);
+  assert.equal(firstCourt.public_cohorts, 1);
+  assert.equal(await p.marketClaim.count(), claimCount, 'live court must not mutate immutable claims');
+  const firstEventCount = await p.marketVerificationEvent.count();
+  assert.ok(firstEventCount > 0);
+
+  const secondSource = liveRealitySource();
+  const second = await acquireLiveMarketReality(store, liveRealityOptions(secondSource, {
+    attemptId: 'live-court-second',
+    asOf: '2026-08-17T15:00:00.000Z',
+  }));
+  assert.equal(second.outcome, 'SOURCE_UNCHANGED');
+  assert.equal(second.content_artifact_id, first.content_artifact_id);
+  assert.equal(await p.marketSourceContentArtifact.count(), 1);
+  const secondCourt = await verifyLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: second.acquisition_event_id,
+    asOf: new Date('2026-08-18T15:00:00.000Z'),
+  });
+  assert.ok(secondCourt.verification_events_created > 0);
+  assert.equal(await p.marketClaim.count(), claimCount);
+  assert.equal(await p.marketVerificationEvent.count(), firstEventCount + secondCourt.verification_events_created);
+  const repeatedCourt = await verifyLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: second.acquisition_event_id,
+    asOf: new Date('2026-08-18T15:00:00.000Z'),
+  });
+  assert.equal(repeatedCourt.verification_events_created, 0);
+
+  const beforeOutage = await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } });
+  const outageSource = liveRealitySource({ fail: true });
+  const outage = await acquireLiveMarketReality(store, liveRealityOptions(outageSource, {
+    attemptId: 'live-court-outage',
+    asOf: '2026-08-19T15:00:00.000Z',
+  }));
+  assert.equal(outage.state, 'FAILED');
+  const afterOutage = await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } });
+  assert.equal(afterOutage.dataStatus, beforeOutage.dataStatus);
+  assert.equal(afterOutage.verifiedAt.toISOString(), beforeOutage.verifiedAt.toISOString());
+  assert.equal(await p.marketSourceContentArtifact.count(), 1);
+  assert.equal(await p.marketClaim.count(), claimCount);
+
+  const revoked = await revokeMarketEvidence(p, {
+    tenant: 'orderweeddc.com',
+    targetKind: 'CONTENT_ARTIFACT',
+    targetId: first.content_artifact_id,
+    cause: 'hostile court proves append-only epistemic recall',
+    actorKind: 'TEST_COURT',
+    effectiveAt: new Date('2026-08-20T15:00:00.000Z'),
+  });
+  assert.equal(revoked.state, 'REVOKED');
+  assert.ok(revoked.affected_claims > 0);
+  assert.equal(revoked.replacement_truth_created, 0);
+  assert.ok(await p.marketClaim.count() > claimCount);
+  assert.equal((await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } })).dataStatus, 'STALE');
+  assert.equal(await p.marketSourceContentArtifact.count(), 1, 'revocation preserves immutable content history');
 });
 
 test('REALITY COMPILER: repeated court verification is an exact database no-op', async () => {

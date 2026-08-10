@@ -1,3 +1,5 @@
+import { isEvidenceRevoked } from './evidence-revocation.mjs';
+
 const PUBLIC_FIELDS = Object.freeze([
   'license',
   'name',
@@ -66,6 +68,61 @@ function known(decisions) {
       court_version: decision.court_version ?? null,
     }))),
   });
+}
+
+export function selectCurrentClaimDecisions({
+  claims = [],
+  verificationEvents = [],
+  revocations = [],
+  asOf = new Date(),
+}) {
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(clock.getTime())) throw new Error('CANA_MARKET_TRUTH_AS_OF_INVALID');
+  const latestByClaim = new Map();
+  for (const event of [...verificationEvents].sort((left, right) => {
+    const leftTime = new Date(left.asOf ?? left.as_of).getTime();
+    const rightTime = new Date(right.asOf ?? right.as_of).getTime();
+    return rightTime - leftTime || String(right.id).localeCompare(String(left.id));
+  })) {
+    if (!latestByClaim.has(event.claimId ?? event.claim_id)) {
+      latestByClaim.set(event.claimId ?? event.claim_id, event);
+    }
+  }
+  const current = [];
+  for (const claim of claims) {
+    const event = latestByClaim.get(claim.id);
+    const eventAsOf = new Date(event?.asOf ?? event?.as_of);
+    const expiry = new Date(event?.freshnessExpiresAt ?? event?.freshness_expires_at);
+    if (!event?.acquisitionEventId && !event?.acquisition_event_id) continue;
+    if (event.decision !== 'ALLOW'
+      || !Number.isFinite(eventAsOf.getTime())
+      || eventAsOf > clock
+      || !Number.isFinite(expiry.getTime())
+      || expiry <= clock) continue;
+    if (isEvidenceRevoked({
+      claimId: claim.id,
+      acquisitionEventId: event.acquisitionEventId ?? event.acquisition_event_id,
+      snapshotId: claim.snapshotId ?? claim.snapshot_id,
+      observationIds: claim.observationIds ?? claim.observation_ids ?? [],
+      parserVersion: claim.parserVersion ?? claim.parser_version,
+      revocations,
+      asOf: clock,
+    })) continue;
+    current.push(Object.freeze({
+      claim_id: claim.id,
+      predicate: claim.claimType ?? claim.predicate,
+      value: claim.claimValue ?? claim.value,
+      source_id: claim.sourceId ?? claim.source_id ?? null,
+      observed_at: new Date(claim.observedAt ?? claim.observed_at).toISOString(),
+      freshness_expires_at: expiry.toISOString(),
+      verification: 'VERIFIED',
+      decision_eligible: true,
+      court_version: event.evaluatorVersion ?? event.evaluator_version,
+      acquisition_event_id: event.acquisitionEventId ?? event.acquisition_event_id,
+      verification_event_id: event.id,
+    }));
+  }
+  return Object.freeze(current.sort((left, right) => left.claim_id.localeCompare(right.claim_id)));
 }
 
 export function compileRetailerTruth({ retailer, claimDecisions = [], asOf = new Date() }) {

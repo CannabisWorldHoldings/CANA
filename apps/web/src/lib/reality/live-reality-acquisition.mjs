@@ -303,6 +303,7 @@ export async function acquireLiveMarketReality(store, {
         requested_at: requestedAt,
         acquired_at: capture.fetched_at,
         completed_at: terminal.event.at,
+        acquisition_event_id: terminal.row.id,
         content_artifact_id: persisted.contentArtifactId,
         snapshot_id: persisted.snapshotId,
         content_sha256: capture.content_sha256,
@@ -426,6 +427,7 @@ function transactionStore(tx) {
           queryParameters: JSON.stringify({
             contract_digest: capture.request_digest,
             query: capture.manifest.query,
+            manifest_base64: capture.manifest_bytes.toString('base64'),
             provenance_mode: 'LIVE',
             source_catalog_modified_date: null,
           }),

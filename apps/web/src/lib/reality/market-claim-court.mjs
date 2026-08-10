@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { resolveAbcaEntity } from './entity-resolution.mjs';
+import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
 import { canonicalDigest, parseEvidencePayload } from './reality-compiler.mjs';
 
 export const MARKET_CLAIM_COURT_VERSION = 'cana-market-claim-court-v1';
@@ -38,6 +39,131 @@ function outcome(claim, values) {
 
 function deny(claim, verification, reason, decision = 'DENY') {
   return outcome(claim, { decision, verification, decision_eligible: false, reason });
+}
+
+function acquisitionDecision(values) {
+  return Object.freeze({
+    decision: 'DENY',
+    decision_eligible: false,
+    ...values,
+  });
+}
+
+export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenant, purpose, asOf }) {
+  if (!event || !artifact || !snapshot) return acquisitionDecision({ reason: 'ACQUISITION_EVIDENCE_INCOMPLETE' });
+  if (!['COMPILE', 'REVALIDATE'].includes(purpose)) return acquisitionDecision({ reason: 'ACQUISITION_PURPOSE_INVALID' });
+  if (event.state !== 'COMPLETED' || event.errorCode) return acquisitionDecision({ reason: 'ACQUISITION_NOT_SUCCESSFUL' });
+  if (event.tenant !== tenant) return acquisitionDecision({ reason: 'ACQUISITION_TENANT_MISMATCH' });
+  if (event.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
+    || artifact.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
+    || snapshot.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
+    || artifact.sourceUrl !== ABCA_LIVE_CONTRACT.layerUrl
+    || snapshot.sourceUrl !== ABCA_LIVE_CONTRACT.layerUrl) {
+    return acquisitionDecision({ reason: 'ACQUISITION_SOURCE_MISMATCH' });
+  }
+  const allowedOutcomes = purpose === 'COMPILE' ? ['SOURCE_CHANGED'] : ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'];
+  if (!allowedOutcomes.includes(event.outcome)) {
+    return acquisitionDecision({ reason: purpose === 'COMPILE'
+      ? 'ACQUISITION_OUTCOME_NOT_COMPILABLE'
+      : 'ACQUISITION_OUTCOME_NOT_REVALIDATABLE' });
+  }
+  if (event.completeness !== 'COMPLETE' || snapshot.completeness !== 'COMPLETE') {
+    return acquisitionDecision({ reason: 'ACQUISITION_NOT_COMPLETE' });
+  }
+  if (event.requestDigest !== ABCA_LIVE_CONTRACT_DIGEST
+    || event.adapterContractDigest !== ABCA_LIVE_CONTRACT_DIGEST
+    || artifact.requestContractDigest !== ABCA_LIVE_CONTRACT_DIGEST) {
+    return acquisitionDecision({ reason: 'ACQUISITION_REQUEST_CONTRACT_MISMATCH' });
+  }
+  if (event.contentArtifactId !== artifact.id
+    || event.snapshotId !== snapshot.id
+    || artifact.snapshotId !== snapshot.id
+    || artifact.contentSha256 !== snapshot.payloadSha256
+    || artifact.payloadBytes !== snapshot.payloadBytes
+    || artifact.recordCount !== snapshot.recordCount
+    || artifact.schemaVersion !== snapshot.schemaVersion) {
+    return acquisitionDecision({ reason: 'CONTENT_IDENTITY_MISMATCH' });
+  }
+  const preRevision = event.preSourceRevision;
+  const postRevision = event.postSourceRevision;
+  if ((preRevision ?? 'UNKNOWN') !== (postRevision ?? 'UNKNOWN')) {
+    return acquisitionDecision({ reason: 'ACQUISITION_REVISION_DRIFT' });
+  }
+  if (!Number.isInteger(event.preObservedRecordCount)
+    || !Number.isInteger(event.postObservedRecordCount)
+    || event.preObservedRecordCount !== event.postObservedRecordCount) {
+    return acquisitionDecision({ reason: 'ACQUISITION_COUNT_DRIFT' });
+  }
+  if (event.observedRecordCount !== event.preObservedRecordCount
+    || snapshot.recordCount !== event.preObservedRecordCount) {
+    return acquisitionDecision({ reason: 'ACQUISITION_RECORD_COUNT_MISMATCH' });
+  }
+  const acquiredAt = new Date(event.fetchedAt);
+  const completedAt = new Date(event.completedAt);
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (![acquiredAt, completedAt, clock].every((date) => Number.isFinite(date.getTime())) || completedAt < acquiredAt) {
+    return acquisitionDecision({ reason: 'ACQUISITION_TIME_INVALID' });
+  }
+  if (clock < acquiredAt) return acquisitionDecision({ reason: 'ACQUISITION_FROM_FUTURE' });
+  return acquisitionDecision({
+    decision: 'ALLOW',
+    decision_eligible: false,
+    reason: 'ACQUISITION_EVIDENCE_COURT_PASSED',
+    acquisition_id: event.id,
+    content_artifact_id: artifact.id,
+    snapshot_id: snapshot.id,
+    content_sha256: artifact.contentSha256,
+    acquired_at: acquiredAt.toISOString(),
+    zero_change: event.outcome === 'SOURCE_UNCHANGED',
+  });
+}
+
+export function adjudicateZeroChangeReattestation({
+  acquisition,
+  predicate,
+  sourcePolicy,
+  licenseExpiration = null,
+  asOf,
+}) {
+  const denied = (reason, verification = 'UNKNOWN', decision = 'DENY') => Object.freeze({
+    decision,
+    verification,
+    decision_eligible: false,
+    freshness_expires_at: null,
+    reason,
+  });
+  if (acquisition?.decision !== 'ALLOW' || acquisition.zero_change !== true) {
+    return denied('ZERO_CHANGE_ACQUISITION_NOT_ADMITTED');
+  }
+  if (!Array.isArray(sourcePolicy?.authoritative_predicates)
+    || !sourcePolicy.authoritative_predicates.includes(predicate)) {
+    return denied('PREDICATE_OUTSIDE_SOURCE_AUTHORITY');
+  }
+  if (!Number.isFinite(sourcePolicy.max_age_ms) || sourcePolicy.max_age_ms <= 0) {
+    return denied('FRESHNESS_POLICY_INVALID', 'REFUTED');
+  }
+  const acquiredAt = new Date(acquisition.acquired_at);
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(acquiredAt.getTime()) || !Number.isFinite(clock.getTime()) || clock < acquiredAt) {
+    return denied('REVALIDATION_TIME_INVALID', 'REFUTED');
+  }
+  let expiryMs = acquiredAt.getTime() + sourcePolicy.max_age_ms;
+  if (licenseExpiration !== null) {
+    const licenseExpiry = new Date(licenseExpiration);
+    if (!Number.isFinite(licenseExpiry.getTime())) return denied('LICENSE_EXPIRATION_INVALID', 'REFUTED');
+    expiryMs = Math.min(expiryMs, licenseExpiry.getTime());
+  }
+  const freshnessExpiresAt = new Date(expiryMs);
+  if (clock >= freshnessExpiresAt) {
+    return denied('REATTESTED_FRESHNESS_EXPIRED', 'STALE', 'MARK_STALE');
+  }
+  return Object.freeze({
+    decision: 'ALLOW',
+    verification: 'VERIFIED',
+    decision_eligible: true,
+    freshness_expires_at: freshnessExpiresAt.toISOString(),
+    reason: 'ZERO_CHANGE_REATTESTATION_PASSED',
+  });
 }
 
 function recordDigest(feature) {
