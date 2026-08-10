@@ -327,27 +327,33 @@ export async function recordAskWork(
         continuationArmed,
       };
     });
-  try {
-    return await persist(true);
-  } catch (error) {
-    let failure = error;
-    if (error?.code === 'PUBLIC_SUBMISSION_DUPLICATE') {
-      // The failed serializable transaction has already rolled back. Reuse the
-      // existing pseudonymous reservation while retaining this ask as a new
-      // demand signal; the frontier lock still deduplicates all durable work.
-      try {
-        return await persist(false);
-      } catch (retryError) {
-        failure = retryError;
+  let reserveSubmission = true;
+  let failure = null;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      return await persist(reserveSubmission);
+    } catch (error) {
+      failure = error;
+      if (error?.code === 'PUBLIC_SUBMISSION_DUPLICATE') {
+        // The failed serializable transaction has already rolled back. Reuse
+        // the existing pseudonymous reservation while retaining this ask as a
+        // new signal; the frontier lock still deduplicates all durable work.
+        reserveSubmission = false;
+        continue;
       }
+      if (error?.code === 'P2034') {
+        await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 5));
+        continue;
+      }
+      break;
     }
-    const code = publicSubmissionErrorCode(failure);
-    if (code === 'duplicate') {
-      return { state: 'DUPLICATE', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
-    }
-    if (code === 'rate') {
-      return { state: 'RATE_LIMITED', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
-    }
-    return { state: 'FAILED', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
   }
+  const code = publicSubmissionErrorCode(failure);
+  if (code === 'duplicate') {
+    return { state: 'DUPLICATE', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
+  }
+  if (code === 'rate') {
+    return { state: 'RATE_LIMITED', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
+  }
+  return { state: 'FAILED', opportunity: null, signalRecorded: false, opportunityRecorded: false, continuationArmed: false };
 }
