@@ -37,6 +37,9 @@ const OWNERSHIP_FILE = path.join(
 );
 
 const PHASE_B_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
+const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
+const PHASE_B_SLICE2_BASE = 'e3139d960b837a8ea7ef7f01acfab5111dd96cc7';
+const PHASE_B_SLICE2_TREE = '5b6c4b85d613d1de71879bc7e27b63cb96ba7405';
 const PHASE_B_EXPECTED_PATHS = Object.freeze([
   '.github/workflows/cana-verify.yml',
   '.omo/plans/cana-phase-b-reality-compiler.md',
@@ -113,6 +116,85 @@ const PHASE_B_EXPECTED_PATHS = Object.freeze([
   'tools/mariadb-sim/schema.prisma',
   'tools/reality/verify-evidence-packet.mjs',
   'tools/reality/verify-evidence-packet.test.mjs',
+  'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+]);
+
+const PHASE_B_SLICE2_EXPECTED_PATHS = Object.freeze([
+  '.github/workflows/cana-verify.yml',
+  '.omo/plans/cana-phase-b-slice2-live-reality.md',
+  'apps/web/prisma/migration-manifest.json',
+  'apps/web/prisma/migrations/20260810200000_live_reality_acquisition/migration.sql',
+  'apps/web/prisma/schema.prisma',
+  'apps/web/scripts/acquire-live-market-reality.mjs',
+  'apps/web/scripts/replay-live-reality-benchmark.mjs',
+  'apps/web/src/lib/ask/answerability-frontier.mjs',
+  'apps/web/src/lib/ask/ask-service.mjs',
+  'apps/web/src/lib/ask/ask-work.mjs',
+  'apps/web/src/lib/ask/market-gap-recheck.mjs',
+  'apps/web/src/lib/continuation/continuation-consumers.mjs',
+  'apps/web/src/lib/reality/acquisition-state-machine.mjs',
+  'apps/web/src/lib/reality/evidence-revocation.mjs',
+  'apps/web/src/lib/reality/freshness-debt.mjs',
+  'apps/web/src/lib/reality/live-abca-adapter.mjs',
+  'apps/web/src/lib/reality/live-reality-acquisition.mjs',
+  'apps/web/src/lib/reality/market-claim-adapter.mjs',
+  'apps/web/src/lib/reality/market-claim-court.mjs',
+  'apps/web/src/lib/reality/official-source-snapshot.mjs',
+  'apps/web/src/lib/reality/reality-compiler.mjs',
+  'apps/web/src/lib/reality/reality-repository.mjs',
+  'apps/web/src/lib/reality/source-portfolio-router.mjs',
+  'apps/web/tests/answerability-frontier.test.mjs',
+  'apps/web/tests/ask-frontier-dedupe.test.mjs',
+  'apps/web/tests/ask-service-where.test.mjs',
+  'apps/web/tests/live-abca-adapter.test.mjs',
+  'apps/web/tests/live-reality-acquisition.test.mjs',
+  'apps/web/tests/live-reality-court.test.mjs',
+  'apps/web/tests/migration-court.test.mjs',
+  'apps/web/tests/migration-manifest.test.mjs',
+  'apps/web/tests/reality-cognitive-evolution.test.mjs',
+  'apps/web/tests/reality-compiler.test.mjs',
+  'apps/web/tests/reality-organism-loop.test.mjs',
+  'apps/web/tests/security-boundary.test.mjs',
+  'apps/web/tests/verification-laundering.test.mjs',
+  'deploy/namecheap/artifact-exclusions.test.mjs',
+  'deploy/namecheap/build-artifact.mjs',
+  'docs/evidence/phase-b-slice2/ACQUISITION_STATE_MACHINE.md',
+  'docs/evidence/phase-b-slice2/ACQUISITION_WRITE_READ_MAP.md',
+  'docs/evidence/phase-b-slice2/ADVERSARIAL_COURT_RESULTS.md',
+  'docs/evidence/phase-b-slice2/ANSWERABILITY_FRONTIER.json',
+  'docs/evidence/phase-b-slice2/BLAST_RADIUS_REPORT.json',
+  'docs/evidence/phase-b-slice2/CIRCUIT_BREAKER_STATE.json',
+  'docs/evidence/phase-b-slice2/COGNITIVE_EVOLUTION_STATE.md',
+  'docs/evidence/phase-b-slice2/COGNITIVE_REFLECTION_RECEIPT.md',
+  'docs/evidence/phase-b-slice2/CONTENT_ACQUISITION_IDENTITY.md',
+  'docs/evidence/phase-b-slice2/CURRENT_VERIFIED_STATE.md',
+  'docs/evidence/phase-b-slice2/EVIDENCE_REVOCATION_POLICY.md',
+  'docs/evidence/phase-b-slice2/EXECUTION_PROVENANCE.md',
+  'docs/evidence/phase-b-slice2/FRESHNESS_POLICY_MAP.md',
+  'docs/evidence/phase-b-slice2/LIVE_PROVENANCE_POLICY.md',
+  'docs/evidence/phase-b-slice2/LIVE_SOURCE_REGISTRY.md',
+  'docs/evidence/phase-b-slice2/PRODUCTION_SHADOW_READINESS.md',
+  'docs/evidence/phase-b-slice2/REALITY_ACQUISITION_BENCHMARK.json',
+  'docs/evidence/phase-b-slice2/REVALIDATION_LEDGER.md',
+  'docs/evidence/phase-b-slice2/SLICE2_ARCHITECTURE.md',
+  'docs/evidence/phase-b-slice2/SOURCE_CAPABILITY_RECEIPT.json',
+  'docs/evidence/phase-b-slice2/SOURCE_LIFECYCLE.md',
+  'docs/evidence/phase-b-slice2/SOURCE_PORTFOLIO_MATRIX.md',
+  'docs/evidence/phase-b-slice2/SOURCE_RELIABILITY_STATE.json',
+  'docs/evidence/phase-b-slice2/TEMPORAL_INTEGRITY.md',
+  'docs/migration/SQLITE_TO_POSTGRES.md',
+  'docs/reality/PHASE_B_SLICE2_LIVE_ACQUISITION.md',
+  'tools/cpanel-sim/run.mjs',
+  'tools/durability/cli.mjs',
+  'tools/durability/cli.test.mjs',
+  'tools/mariadb-sim/generate-schema.mjs',
+  'tools/mariadb-sim/run.mjs',
+  'tools/mariadb-sim/run.test.mjs',
+  'tools/mariadb-sim/schema.prisma',
+  'tools/reality/verify-evidence-packet.mjs',
+  'tools/reality/verify-evidence-packet.test.mjs',
+  'tools/reality/verify-slice2-evidence-packet.mjs',
+  'tools/reality/verify-slice2-evidence-packet.test.mjs',
   'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
 ]);
 
@@ -247,6 +329,41 @@ test('Phase B ownership wildcard, base drift, authority broadening and digest ta
     assert.throws(
       () => validateOwnershipManifest(manifest),
       /Phase B|owner-approval digest|changed-file ownership patterns/,
+    );
+  }
+});
+
+test('Phase B Slice 2 live reality paths have exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  const assignment = manifest.explicit_user_assignment[PHASE_B_SLICE2_ASSIGNMENT];
+  assert.ok(assignment, 'Phase B Slice 2 ownership assignment must exist before implementation');
+  assert.deepEqual(assignment.authorized_paths, [...PHASE_B_SLICE2_EXPECTED_PATHS]);
+  assert.equal(assignment.base_commit, PHASE_B_SLICE2_BASE);
+  assert.equal(assignment.base_tree, PHASE_B_SLICE2_TREE);
+  assert.equal(new Set(assignment.authorized_paths).size, assignment.authorized_paths.length);
+  assert.deepEqual(assignment.authorized_paths, [...assignment.authorized_paths].sort());
+  assert.ok(assignment.authorized_paths.every((entry) => !entry.includes('*')));
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/lib/reality/live-provider-neighbor.mjs'], manifest),
+    ['apps/web/src/lib/reality/live-provider-neighbor.mjs'],
+  );
+});
+
+test('Phase B Slice 2 wildcard, base drift, authority broadening and digest tamper fail closed', () => {
+  for (const mutate of [
+    (value) => { value.authorized_paths[0] = 'apps/web/**'; },
+    (value) => { value.base_commit = '0'.repeat(40); },
+    (value) => { value.authorization_effect += ' production mutation authority'; },
+    (value) => { value.approval_sha256 = '0'.repeat(64); },
+  ]) {
+    const manifest = ownership();
+    const assignment = manifest.explicit_user_assignment[PHASE_B_SLICE2_ASSIGNMENT];
+    assert.ok(assignment, 'Phase B Slice 2 ownership assignment must exist before tamper courts');
+    mutate(assignment);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /Phase B Slice 2|owner-approval digest|changed-file ownership patterns/,
     );
   }
 });
