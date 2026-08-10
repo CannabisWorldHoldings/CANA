@@ -241,10 +241,24 @@ export async function readBoundedJsonResponse(response, {
   return Object.freeze({ bytes, body: Object.freeze(body), metadata: responseMetadata(response, contentType) });
 }
 
+export function createPinnedLookup(address) {
+  const family = isIP(address ?? '');
+  if (!family || !validateResolvedAddresses([address]).includes(address)) {
+    fail('CANA_LIVE_REALITY_DNS_INVALID');
+  }
+  return (hostname, options, callback) => {
+    if (hostname !== ABCA_LIVE_CONTRACT.hostname) {
+      callback(Object.assign(new Error('CANA_LIVE_REALITY_FIXED_CONTRACT'), { code: 'CANA_LIVE_REALITY_FIXED_CONTRACT' }));
+      return;
+    }
+    if (options?.all === true) callback(null, [{ address, family }]);
+    else callback(null, address, family);
+  };
+}
+
 function pinnedHttpsResponse(url, { addresses, signal }) {
   return new Promise((resolve, reject) => {
     const address = addresses[0];
-    const family = isIP(address);
     let settled = false;
     const rejectStable = (code) => {
       if (settled) return;
@@ -258,13 +272,7 @@ function pinnedHttpsResponse(url, { addresses, signal }) {
       agent: false,
       servername: ABCA_LIVE_CONTRACT.hostname,
       headers: { accept: 'application/json' },
-      lookup(hostname, _options, callback) {
-        if (hostname !== ABCA_LIVE_CONTRACT.hostname) {
-          callback(Object.assign(new Error('CANA_LIVE_REALITY_FIXED_CONTRACT'), { code: 'CANA_LIVE_REALITY_FIXED_CONTRACT' }));
-          return;
-        }
-        callback(null, address, family);
-      },
+      lookup: createPinnedLookup(address),
     }, (response) => {
       if (settled) {
         response.destroy();

@@ -278,6 +278,35 @@ test('fixed transport requires validated DNS and refuses redirects without follo
   assert.equal(response.status, 302);
 });
 
+test('pinned DNS lookup honors both scalar and Node 24 all-address callback contracts', async () => {
+  const { createPinnedLookup } = await import(ADAPTER_MODULE);
+  assert.equal(typeof createPinnedLookup, 'function');
+  const lookup = createPinnedLookup('23.48.99.80');
+  await new Promise((resolve, reject) => {
+    lookup('maps2.dcgis.dc.gov', { all: true }, (error, addresses) => {
+      try {
+        assert.ifError(error);
+        assert.deepEqual(addresses, [{ address: '23.48.99.80', family: 4 }]);
+        resolve();
+      } catch (assertionError) {
+        reject(assertionError);
+      }
+    });
+  });
+  await new Promise((resolve, reject) => {
+    lookup('maps2.dcgis.dc.gov', { all: false }, (error, address, family) => {
+      try {
+        assert.ifError(error);
+        assert.equal(address, '23.48.99.80');
+        assert.equal(family, 4);
+        resolve();
+      } catch (assertionError) {
+        reject(assertionError);
+      }
+    });
+  });
+});
+
 test('bounded response accepts one small JSON response and records observed metadata', async () => {
   const { readBoundedJsonResponse } = await import(ADAPTER_MODULE);
   const response = new Response(JSON.stringify({ count: 74 }), {
