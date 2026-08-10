@@ -8,5 +8,7 @@
   "cooldown_ms": 600000,
   "states": ["HEALTHY", "DEGRADED", "OPEN_CIRCUIT", "PROBE_ALLOWED"],
   "demand_bypass_allowed": false,
-  "truth_mutations_on_failure": 0
+  "truth_mutations_on_failure": 0,
+  "live_terminal_state": "HEALTHY",
+  "live_failure_events_before_success": 2
 }
