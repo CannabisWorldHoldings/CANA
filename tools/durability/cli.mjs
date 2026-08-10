@@ -45,7 +45,7 @@ const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
 const PHASE_B_SLICE2_ASSIGNMENT_SHA256 =
   '72a4d2d011f472e014138eea7a63d957ef589ec5fcfb96248d9d6f029404e686';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '47ea4ac7485f5334527d99f7f3cad87ba3851fe3945fc9d3744181392bdac9ec';
+  '001b2fd111a4f3ddc586f7433d6cb7ffc7e3b85774fe850777136a484e67bb3f';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
