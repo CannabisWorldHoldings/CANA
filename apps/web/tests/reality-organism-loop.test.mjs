@@ -4,11 +4,13 @@ import { GENESIS_HASH, receiptHash } from '../src/lib/continuation/continuation-
 
 let reality;
 let marketGap;
+let continuationConsumers;
 
 before(async () => {
   try {
     reality = await import('../src/lib/reality/reality-compiler.mjs');
     marketGap = await import('../src/lib/ask/market-gap-recheck.mjs');
+    continuationConsumers = await import('../src/lib/continuation/continuation-consumers.mjs');
   } catch (error) {
     assert.fail(`Reality organism loop is not implemented: ${error.message}`);
   }
@@ -20,6 +22,7 @@ async function marketGapHarness({
   triggerStatus = 'FIRED',
   opportunityTriggerId = 'trigger-1',
   tamperReceipt = false,
+  defer = false,
 } = {}) {
   const now = new Date('2026-08-10T04:00:00.000Z');
   const updates = [];
@@ -77,7 +80,16 @@ async function marketGapHarness({
       dimensions: { location: { status: 'KNOWN', value: 'Dupont Circle' } },
     } }),
   };
+  let brandFailuresRemaining = 0;
   const tx = {
+    $queryRaw: async () => {
+      const reflected = receipts.some((entry) => (
+        entry.triggerId === firedReceipt.triggerId
+        && entry.tickId === firedReceipt.tickId
+        && entry.action === 'REFLECTED'
+      ));
+      return reflected ? [] : [{ id: firedReceipt.id, tickId: firedReceipt.tickId }];
+    },
     opportunity: {
       findFirst: async ({ where }) => where.id === opportunity.id && where.tenant === opportunity.tenant ? opportunity : null,
       updateMany: async (args) => {
@@ -115,16 +127,36 @@ async function marketGapHarness({
         return receipt;
       },
     },
-    brand: { findUnique: async () => ({ id: 'brand-1' }) },
+    brand: {
+      findUnique: async () => {
+        if (brandFailuresRemaining > 0) {
+          brandFailuresRemaining -= 1;
+          throw Object.assign(new Error('injected consumer failure'), { code: 'INJECTED_CONSUMER_FAILURE' });
+        }
+        return { id: 'brand-1' };
+      },
+    },
     retailer: { findMany: async () => [retailer] },
   };
+  const harness = {
+    tx,
+    updates,
+    receipts,
+    opportunity,
+    firedReceipt,
+    tickId,
+    tenant,
+    now,
+    failNextConsumer() { brandFailuresRemaining += 1; },
+  };
+  if (defer) return harness;
   const result = await marketGap.recheckMarketGap(tx, {
     tenant,
     receiptId: firedReceipt.id,
     tickId,
     now,
   });
-  return { result, updates, receipts, opportunity };
+  return { ...harness, result };
 }
 
 test('registered MARKET_GAP consumer closes tenant-scoped work only from a durable FIRED receipt', async () => {
@@ -149,6 +181,37 @@ test('forged, cross-tenant, wrong-tick, non-fired, tampered, and mismatched cont
     assert.equal(opportunity.status, 'OPEN', label);
     assert.equal(updates.some(([kind]) => kind === 'opportunity'), false, label);
   }
+});
+
+test('a failed MARKET_GAP consumer is durably retried without re-firing the trigger', async () => {
+  const harness = await marketGapHarness({ defer: true });
+  harness.failNextConsumer();
+  const failed = await continuationConsumers.consumeFiredContinuations(harness.tx, {
+    tickSummary: { tickId: harness.tickId, receipts: [harness.firedReceipt] },
+    tenant: harness.tenant,
+    now: harness.now,
+  });
+  assert.equal(failed.failures, 1);
+  assert.equal(failed.outcomes[0].state, 'RETRY_PENDING');
+  assert.equal(harness.opportunity.status, 'OPEN');
+  assert.equal(harness.receipts.filter((entry) => entry.action === 'CONSUMER_FAILED').length, 1);
+
+  const recovered = await continuationConsumers.consumeFiredContinuations(harness.tx, {
+    tickSummary: { tickId: 'tick-after-restart', receipts: [] },
+    tenant: harness.tenant,
+    now: new Date(harness.now.getTime() + 1_000),
+  });
+  assert.equal(recovered.failures, 0);
+  assert.equal(recovered.outcomes[0].state, 'CLOSED');
+  assert.equal(harness.opportunity.status, 'CLOSED');
+  assert.equal(harness.receipts.filter((entry) => entry.action === 'REFLECTED').length, 1);
+
+  const settled = await continuationConsumers.consumeFiredContinuations(harness.tx, {
+    tickSummary: { tickId: 'tick-settled', receipts: [] },
+    tenant: harness.tenant,
+    now: new Date(harness.now.getTime() + 2_000),
+  });
+  assert.equal(settled.processed, 0);
 });
 
 test('ASK gap closes only after governed evidence improves public answerability', () => {

@@ -109,3 +109,52 @@ export async function recheckMarketGap(prisma, {
     return Object.freeze({ state, verified_candidate_count: answer.verified_candidate_count, receipt_id: receipt.id });
   });
 }
+
+export async function recordMarketGapRecheckFailure(prisma, {
+  tenant,
+  receiptId,
+  tickId,
+  now = new Date(),
+  error,
+}) {
+  if (!(now instanceof Date) || !Number.isFinite(now.getTime())) throw new Error('CANA_ASK_GAP_CLOCK_INVALID');
+  return inSerializableTransaction(prisma, async (tx) => {
+    const authority = await loadVerifiedFiredConsumerAuthority(tx, {
+      receiptId,
+      tenant,
+      tickId,
+      consumer: 'ask_market_gap_recheck',
+      recheck: 'verified_candidate_count',
+    });
+    if (!authority.ok) return Object.freeze({ state: 'REFUSED', reason: authority.reason });
+    const reflected = await tx.continuationReceipt.findFirst({
+      where: { triggerId: authority.trigger.id, tickId: authority.receipt.tickId, action: 'REFLECTED' },
+      select: { id: true },
+    });
+    if (reflected) return Object.freeze({ state: 'DUPLICATE', receipt_id: reflected.id });
+    const priorFailure = await tx.continuationReceipt.findFirst({
+      where: { triggerId: authority.trigger.id, tickId: authority.receipt.tickId, action: 'CONSUMER_FAILED' },
+      select: { id: true },
+    });
+    if (priorFailure) return Object.freeze({ state: 'RETRY_PENDING', receipt_id: priorFailure.id });
+    const errorCode = typeof error?.code === 'string' && /^[A-Z0-9_]{1,80}$/.test(error.code)
+      ? error.code
+      : 'CONSUMER_EXECUTION_FAILED';
+    const receipt = await appendReceipt(tx, {
+      missionId: authority.mission.id,
+      triggerId: authority.trigger.id,
+      tickId: authority.receipt.tickId,
+      action: 'CONSUMER_FAILED',
+      detail: 'MARKET_GAP consumer failed; durable retry remains pending',
+      evidence: JSON.stringify({
+        consumer: 'ask_market_gap_recheck',
+        opportunity_id: authority.requirement.opportunityId,
+        tenant,
+        error_code: errorCode,
+        failed_at: now.toISOString(),
+        retry_state: 'PENDING',
+      }),
+    }, { retryOnConflict: false });
+    return Object.freeze({ state: 'RETRY_PENDING', receipt_id: receipt.id });
+  });
+}

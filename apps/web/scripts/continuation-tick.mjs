@@ -49,7 +49,7 @@ async function main() {
     const summary = await runTick(prisma, { events, limit, tenant, now });
     const consumers = await consumeFiredContinuations(prisma, { tickSummary: summary, tenant, now });
     console.log(JSON.stringify({ event: 'continuation-tick', ...summary, receipts: summary.receipts.length, consumers }));
-    return 0;
+    return consumers.failures > 0 ? 3 : 0;
   } catch (error) {
     console.error(JSON.stringify({ event: 'continuation-tick-failed', error: String(error?.message ?? error).slice(0, 300) }));
     return 3;

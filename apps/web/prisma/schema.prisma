@@ -1002,7 +1002,7 @@ model ContinuationReceipt {
   triggerId  String?
   /// The tick invocation that produced this receipt.
   tickId     String
-  /// FIRED | EXPIRED | REJECTED | APPROVED | RESCHEDULED | REFLECTED | MISSION_COMPLETED | MISSION_ABANDONED
+  /// FIRED | EXPIRED | REJECTED | APPROVED | RESCHEDULED | REFLECTED | CONSUMER_FAILED | MISSION_COMPLETED | MISSION_ABANDONED
   action     String
   detail     String?
   /// JSON evidence payload bound at write time.

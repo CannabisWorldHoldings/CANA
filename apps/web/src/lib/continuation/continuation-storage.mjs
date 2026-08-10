@@ -90,6 +90,49 @@ export async function loadVerifiedFiredConsumerAuthority(prisma, {
   return { ok: true, receipt, trigger, mission, requirement };
 }
 
+/**
+ * Find durable FIRED receipts whose registered consumer has not yet written a
+ * REFLECTED receipt. This is the retry queue: a process may die after firing,
+ * and a later tick can resume the consumer without re-firing the trigger.
+ */
+export async function loadPendingFiredConsumerReceipts(prisma, {
+  tenant,
+  consumer,
+  limit = 50,
+}) {
+  if (typeof tenant !== 'string' || tenant.length === 0) {
+    throw new Error('CANA_CONTINUATION_CONSUMER_TENANT_REQUIRED');
+  }
+  if (consumer !== 'ask_market_gap_recheck') {
+    throw new Error('CANA_CONTINUATION_CONSUMER_NOT_REGISTERED');
+  }
+  const boundedLimit = Math.min(Math.max(1, Number(limit) || 50), 500);
+  const routingHint = `%\"consumer\":\"${consumer}\"%`;
+  const rows = await prisma.$queryRaw`
+    SELECT fired."id", fired."tickId"
+    FROM "ContinuationReceipt" AS fired
+    INNER JOIN "ContinuationTrigger" AS trigger
+      ON trigger."id" = fired."triggerId"
+    INNER JOIN "ContinuationMission" AS mission
+      ON mission."id" = fired."missionId"
+    WHERE fired."action" = 'FIRED'
+      AND trigger."tenant" = ${tenant}
+      AND mission."tenant" = ${tenant}
+      AND trigger."status" = 'FIRED'
+      AND trigger."evidenceRequirements" LIKE ${routingHint}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM "ContinuationReceipt" AS reflected
+        WHERE reflected."triggerId" = fired."triggerId"
+          AND reflected."tickId" = fired."tickId"
+          AND reflected."action" = 'REFLECTED'
+      )
+    ORDER BY fired."recordedAt" ASC, fired."id" ASC
+    LIMIT ${boundedLimit}
+  `;
+  return Object.freeze(rows.map((row) => Object.freeze({ id: row.id, tickId: row.tickId })));
+}
+
 async function appendReceiptInTransaction(prisma, body) {
   const mission = await prisma.continuationMission.findUnique({
     where: { id: body.missionId },
