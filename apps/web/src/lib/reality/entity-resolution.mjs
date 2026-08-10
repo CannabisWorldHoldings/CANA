@@ -122,8 +122,14 @@ export function normalizeCoordinates(record) {
     return Object.freeze({ state: 'UNKNOWN', reason: 'OUTSIDE_DC_BOUNDS' });
   }
   const geometry = record?.geometry;
-  if (geometry && (Math.abs(Number(geometry.y) - lat) > 0.0001 || Math.abs(Number(geometry.x) - lng) > 0.0001)) {
-    return Object.freeze({ state: 'UNKNOWN', reason: 'ATTRIBUTE_GEOMETRY_CONFLICT' });
+  if (geometry) {
+    const geoLat = strictFiniteNumber(geometry.y);
+    const geoLng = strictFiniteNumber(geometry.x);
+    if (geoLat === null || geoLng === null
+      || Math.abs(geoLat - lat) > 0.0001
+      || Math.abs(geoLng - lng) > 0.0001) {
+      return Object.freeze({ state: 'UNKNOWN', reason: 'ATTRIBUTE_GEOMETRY_CONFLICT' });
+    }
   }
   return Object.freeze({ state: 'KNOWN', lat, lng });
 }

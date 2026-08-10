@@ -5,6 +5,7 @@ import {
   ABCA_FIELDS,
   ABCA_LAYER_URL,
   ABCA_QUERY_URL,
+  assertVersionBoundCapturePage,
   buildSnapshotArtifacts,
 } from '../src/lib/reality/official-source-snapshot.mjs';
 
@@ -65,8 +66,12 @@ async function main() {
     const page = await fetchBytes(queryUrl);
     if (!Array.isArray(page.body.features)) fail('CANA_OFFICIAL_SOURCE_ARCGIS_ERROR', `features at ${offset}`);
     pageParts.push({ offset, bytes: page.bytes });
-    if (page.body.exceededTransferLimit !== true && page.body.features.length < pageSize) break;
-    if (page.body.features.length === 0) fail('CANA_OFFICIAL_SOURCE_PAGINATION_INVALID', `empty continuation at ${offset}`);
+    assertVersionBoundCapturePage({
+      exceededTransferLimit: page.body.exceededTransferLimit,
+      featureCount: page.body.features.length,
+      pageSize,
+    });
+    break;
   }
 
   const sourceModifiedAt = Number.isFinite(metadataPart.body?.editingInfo?.lastEditDate)

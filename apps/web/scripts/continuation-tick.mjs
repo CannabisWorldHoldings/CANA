@@ -5,7 +5,7 @@
  * ANY runtime may invoke this (cPanel cron via deploy/namecheap/worker.mjs,
  * Hyperagent, Temporal, GitHub Actions, an operator's laptop):
  *
- *   node apps/web/scripts/continuation-tick.mjs [--event <key>]... [--limit N]
+ *   CANA_CONTINUATION_TENANT=orderweeddc.com node apps/web/scripts/continuation-tick.mjs [--event <key>]... [--limit N]
  *
  * The invoker owns NOTHING. The database owns the triggers, the missions and
  * the receipts; this process merely asks the kernel to evaluate durable state
@@ -22,7 +22,7 @@ import { consumeFiredContinuations } from '../src/lib/continuation/continuation-
 function parseArgs(argv) {
   const events = [];
   let limit = 50;
-  let tenant = null;
+  let tenant = process.env.CANA_CONTINUATION_TENANT ?? null;
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--event' && argv[i + 1]) events.push(argv[(i += 1)]);
     else if (argv[i] === '--limit' && argv[i + 1]) limit = Number(argv[(i += 1)]) || 50;
@@ -38,7 +38,7 @@ async function main() {
   }
   const { events, limit, tenant } = parseArgs(process.argv.slice(2));
   if (!tenant) {
-    console.error(JSON.stringify({ event: 'continuation-tick-skipped', reason: '--tenant is required' }));
+    console.error(JSON.stringify({ event: 'continuation-tick-skipped', reason: '--tenant or CANA_CONTINUATION_TENANT is required' }));
     return 2;
   }
   let prisma;

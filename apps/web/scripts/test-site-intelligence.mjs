@@ -56,6 +56,26 @@ try {
       canonicalSitemapArticles: 0,
       leadsLast30Days: 0,
       persistedSnapshots: before.snapshots,
+      marketSourceSnapshots: await prisma.marketSourceSnapshot.count(),
+      marketClaimsTotal: await prisma.marketClaim.count(),
+      marketClaimsEligible: await prisma.marketClaim.count({
+        where: {
+          decisionEligible: true,
+          verification: { in: ['SUPPORTED', 'VERIFIED'] },
+        },
+      }),
+      marketClaimsUnknown: await prisma.marketClaim.count({
+        where: { verification: 'UNKNOWN' },
+      }),
+      marketResolutionsReviewRequired: await prisma.marketEntityResolution.count({
+        where: { status: 'REVIEW_REQUIRED' },
+      }),
+      marketGapsOpen: await prisma.opportunity.count({
+        where: { kind: 'MARKET_GAP', status: 'OPEN' },
+      }),
+      marketGapsClosed: await prisma.opportunity.count({
+        where: { kind: 'MARKET_GAP', status: 'CLOSED' },
+      }),
     },
     new Date('2026-07-17T12:00:00.000Z'),
   );

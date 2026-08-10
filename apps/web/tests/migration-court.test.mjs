@@ -28,6 +28,7 @@ import {
   compileOfficialMarketSnapshot,
   verifyOfficialMarketSnapshot,
 } from '../src/lib/reality/reality-repository.mjs';
+import { buildSnapshotArtifacts } from '../src/lib/reality/official-source-snapshot.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -561,6 +562,96 @@ test('REALITY COMPILER: forged identity resolution cannot verify or project onto
   assert.notEqual(victim.dataStatus, 'VERIFIED_CURRENT');
   assert.equal(await p.geoClaim.count({
     where: { geoEntityId: victimGeo.id, decisionEligible: true },
+  }), 0);
+});
+
+test('REALITY COMPILER: contradiction lineage uses stored observation IDs and demotes older court projections', async () => {
+  const url = createDatabase('reality_contradiction_lineage');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.create({
+    data: {
+      id: 'reality-contradiction-retailer',
+      name: 'Capital City Care',
+      type: 'storefront',
+      address: '1115 U St NW',
+      city: 'Washington',
+      state: 'DC',
+      lat: 38.916804,
+      lng: -77.027099,
+      licenseNumber: 'ABCA-133578',
+    },
+  });
+  const geo = await p.geoEntity.create({
+    data: {
+      id: 'reality-contradiction-geo',
+      name: 'Capital City Care',
+      lat: 38.916804,
+      lng: -77.027099,
+      retailerId: 'reality-contradiction-retailer',
+      source: 'hostile-test',
+      observedAt: new Date('2026-06-05T00:00:00.000Z'),
+      verification: 'UNKNOWN',
+    },
+  });
+
+  await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: REALITY_FIXTURE,
+    tenant: 'orderweeddc.com',
+  });
+  const admitted = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: new Date('2026-06-06T00:00:00.000Z'),
+  });
+  assert.equal(admitted.public_cohorts, 1);
+  await p.retailer.update({
+    where: { id: 'reality-contradiction-retailer' },
+    data: { reviewedBy: 'older-court-version' },
+  });
+
+  const originalEnvelope = JSON.parse(fs.readFileSync(path.join(REALITY_FIXTURE, 'snapshot.json'), 'utf8'));
+  const metadataBytes = Buffer.from(originalEnvelope.metadata_base64, 'base64');
+  const firstPage = JSON.parse(Buffer.from(originalEnvelope.pages[0].response_base64, 'base64').toString('utf8'));
+  const target = firstPage.features.find((feature) => feature.attributes.ABCA_NUMBER === 'ABCA-133578');
+  assert.ok(target, 'the hostile fixture must contain the exact licensed retailer');
+  target.attributes.STATUS = 'Inactive';
+  const pageBytes = Buffer.from(JSON.stringify(firstPage));
+  const changed = buildSnapshotArtifacts({
+    metadataBytes,
+    pageParts: [{ offset: 0, bytes: pageBytes }],
+    fetchedAt: new Date('2026-06-07T00:00:00.000Z'),
+  });
+  const changedDirectory = path.join(BASE, 'reality-contradiction-fixture');
+  fs.mkdirSync(changedDirectory);
+  fs.writeFileSync(path.join(changedDirectory, 'snapshot.json'), changed.snapshotBytes);
+  fs.writeFileSync(path.join(changedDirectory, 'manifest.json'), changed.manifestBytes);
+
+  const second = await compileOfficialMarketSnapshot(p, {
+    snapshotDirectory: changedDirectory,
+    tenant: 'orderweeddc.com',
+  });
+  assert.ok(second.contradictions > 0);
+  const rows = await p.marketClaimContradiction.findMany({
+    where: { tenant: 'orderweeddc.com' },
+  });
+  assert.ok(rows.length > 0);
+  const storedObservationIds = new Set((await p.marketObservation.findMany({ select: { id: true } })).map(({ id }) => id));
+  for (const row of rows) {
+    const earlier = JSON.parse(row.earlierObservationIdsJson);
+    const later = JSON.parse(row.laterObservationIdsJson);
+    assert.equal(earlier.length > 0 && earlier.every((id) => storedObservationIds.has(id)), true);
+    assert.equal(later.length > 0 && later.every((id) => storedObservationIds.has(id)), true);
+  }
+
+  const denied = await verifyOfficialMarketSnapshot(p, {
+    tenant: 'orderweeddc.com',
+    asOf: new Date('2026-06-08T00:00:00.000Z'),
+  });
+  assert.equal(denied.public_cohorts, 0);
+  const retailer = await p.retailer.findUniqueOrThrow({ where: { id: 'reality-contradiction-retailer' } });
+  assert.equal(retailer.dataStatus, 'DISPUTED');
+  assert.equal(await p.geoClaim.count({
+    where: { geoEntityId: geo.id, decisionEligible: true },
   }), 0);
 });
 

@@ -37,12 +37,12 @@ const PR29_ASSIGNMENT_SHA256 =
   '5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2';
 const PR35_ASSIGNMENT = 'pr35_sovereign_continuation_integration_2026_08_09';
 const PR35_ASSIGNMENT_SHA256 =
-  'ee11c6f8f9508225f603fdc89b97c25d28a6458f5b17b9459592d91f9adbbac5';
+  'fe136ee049b98b8711edbb3c7214ed6474a5d880c07496ecf4761f7cfd6a1a2c';
 const PHASE_B_SLICE1_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
 const PHASE_B_SLICE1_ASSIGNMENT_SHA256 =
-  '45175ee283ca762da883b49cde2296baeeb8a18851de829372a23eac080dcd77';
+  'a0fd370221ad37805e1bf29c2a1bb7024989aa6293a92a9eb1da18560eeda647';
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'd9359e4531a25e3cdc16068df1567322640b9915a753d8315a652cd070f48df0';
+  '7db0325a9de542d2bd4067f3fff4001be95deec7470ce5a1e74026fb921e89ac';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -152,6 +152,7 @@ export const PHASE_B_SLICE1_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/scripts/ingest-abca-feed.mjs',
   'apps/web/scripts/replay-reality-benchmark.mjs',
   'apps/web/scripts/seed-abca-retailers.mjs',
+  'apps/web/scripts/test-site-intelligence.mjs',
   'apps/web/scripts/verify-market-reality.mjs',
   'apps/web/src/lib/ask/market-gap-recheck.mjs',
   'apps/web/src/lib/continuation/continuation-consumers.mjs',

@@ -47,11 +47,18 @@ function eligible(decision, asOf) {
 }
 
 function known(decisions) {
-  const values = Object.fromEntries(decisions.map((decision) => [decision.predicate, decision.value]));
+  const newestByPredicate = [];
+  const predicates = new Set();
+  for (const decision of decisions) {
+    if (predicates.has(decision.predicate)) continue;
+    predicates.add(decision.predicate);
+    newestByPredicate.push(decision);
+  }
+  const values = Object.fromEntries(newestByPredicate.map((decision) => [decision.predicate, decision.value]));
   return Object.freeze({
     state: 'KNOWN',
-    value: decisions.length === 1 ? decisions[0].value : Object.freeze(values),
-    provenance: Object.freeze(decisions.map((decision) => Object.freeze({
+    value: newestByPredicate.length === 1 ? newestByPredicate[0].value : Object.freeze(values),
+    provenance: Object.freeze(newestByPredicate.map((decision) => Object.freeze({
       source_id: decision.source_id,
       observed_at: decision.observed_at,
       freshness_expires_at: decision.freshness_expires_at,

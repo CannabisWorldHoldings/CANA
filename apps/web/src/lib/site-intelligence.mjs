@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-export const SITE_INTELLIGENCE_SCHEMA_VERSION = 1;
+export const SITE_INTELLIGENCE_SCHEMA_VERSION = 2;
 export const MAX_SITE_INTELLIGENCE_SNAPSHOTS = 100;
 
 export const SITE_ROUTE_INVENTORY = Object.freeze([

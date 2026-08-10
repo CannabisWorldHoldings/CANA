@@ -1,10 +1,15 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
 import { before, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { GENESIS_HASH, receiptHash } from '../src/lib/continuation/continuation-core.mjs';
 
 let reality;
 let marketGap;
 let continuationConsumers;
+
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 before(async () => {
   try {
@@ -165,6 +170,19 @@ test('registered MARKET_GAP consumer closes tenant-scoped work only from a durab
   assert.equal(result.verified_candidate_count, 1);
   assert.equal(updates.some(([kind, args]) => kind === 'opportunity' && args.data.status === 'CLOSED'), true);
   assert.equal(updates.some(([kind, args]) => kind === 'mission-many' && args.where.tenant === 'orderweeddc.com'), true);
+});
+
+test('scheduled continuation tick accepts an explicit tenant from inherited environment', () => {
+  const result = spawnSync(process.execPath, [path.join(WEB, 'scripts', 'continuation-tick.mjs')], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    env: {
+      ...process.env,
+      DATABASE_URL: 'postgresql://invalid:invalid@127.0.0.1:1/invalid?connect_timeout=1',
+      CANA_CONTINUATION_TENANT: 'orderweeddc.com',
+    },
+  });
+  assert.doesNotMatch(`${result.stdout}${result.stderr}`, /--tenant is required/);
 });
 
 test('forged, cross-tenant, wrong-tick, non-fired, tampered, and mismatched continuation authority fails closed', async () => {

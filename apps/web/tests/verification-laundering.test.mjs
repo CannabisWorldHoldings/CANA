@@ -61,6 +61,21 @@ test('stale and contradicted claims are UNKNOWN at the projection boundary', () 
   assert.equal(projection.hours.state, 'UNKNOWN');
 });
 
+test('newest eligible duplicate predicate wins in public projection and provenance', () => {
+  const projection = adapter.compileRetailerTruth({
+    retailer: { id: 'r-1' },
+    claimDecisions: [
+      { ...current, predicate: 'license_status', value: 'ACTIVE', observed_at: '2026-06-05T12:00:00.000Z' },
+      { ...current, predicate: 'license_status', value: 'SUSPENDED', observed_at: '2026-06-06T11:00:00.000Z' },
+    ],
+    asOf: AS_OF,
+  });
+  assert.equal(projection.license.state, 'KNOWN');
+  assert.equal(projection.license.value, 'SUSPENDED');
+  assert.equal(projection.license.provenance.length, 1);
+  assert.equal(projection.license.provenance[0].observed_at, '2026-06-06T11:00:00.000Z');
+});
+
 test('incomplete snapshots and source outages never become negative truth', () => {
   for (const completeness of ['UNKNOWN', 'PARTIAL', 'SOURCE_OUTAGE', 'PARSER_FAILED']) {
     const result = adapter.compileAbsenceClaim({

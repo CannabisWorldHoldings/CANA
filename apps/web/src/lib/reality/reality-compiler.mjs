@@ -23,16 +23,16 @@ function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
-function canonicalDigest(value) {
-  return digest(Buffer.from(JSON.stringify(value)));
-}
-
 function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
   if (value && typeof value === 'object') {
     return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
   }
   return JSON.stringify(value);
+}
+
+export function canonicalDigest(value) {
+  return digest(Buffer.from(canonicalJson(value)));
 }
 
 function validInstant(value, label) {
@@ -117,9 +117,9 @@ function normalizedStatus(value) {
 }
 
 function expiration(value) {
-  const number = Number(value);
-  const date = new Date(number);
-  return Number.isFinite(number) && Number.isFinite(date.getTime()) ? date.toISOString() : null;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
 
 function observation({ snapshot, recordKey, recordHash, predicate, rawValue, value }) {
@@ -317,12 +317,13 @@ export function reflectVerificationEpisode(episode) {
   ) {
     throw new Error('CANA_COGNITIVE_REFLECTION_EPISODE_INVALID');
   }
+  const observedResult = structuredClone(episode.observed_result);
   const body = {
     schema_version: 'cana-cognitive-reflection-v1',
     episode_id: episode.episode_id,
     source_snapshot_sha256: episode.source_snapshot_sha256,
     belief_before: episode.belief_before,
-    observed_result: episode.observed_result,
+    observed_result: observedResult,
     bottleneck: episode.bottleneck,
     causal_mechanism: episode.causal_mechanism,
     state: 'REFLECTION_ONLY',
@@ -338,9 +339,14 @@ export function reflectVerificationEpisode(episode) {
       'LATER_RETRIEVAL',
     ],
   };
-  return Object.freeze({
+  return deepFreeze({
     ...body,
-    promotion_evidence_required: Object.freeze(body.promotion_evidence_required),
     receipt_sha256: digest(Buffer.from(canonicalJson(body))),
   });
+}
+
+function deepFreeze(value) {
+  if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+  for (const child of Object.values(value)) deepFreeze(child);
+  return Object.freeze(value);
 }

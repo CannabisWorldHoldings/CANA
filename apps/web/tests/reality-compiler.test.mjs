@@ -62,6 +62,22 @@ test('official snapshot digest tampering and CI network capture fail closed', ()
   }
 });
 
+test('live capture refuses an unversioned multi-page continuation', () => {
+  assert.throws(
+    () => officialSource.assertVersionBoundCapturePage({
+      exceededTransferLimit: true,
+      featureCount: 500,
+      pageSize: 500,
+    }),
+    /CANA_OFFICIAL_SOURCE_UNVERSIONED_MULTIPAGE_REFUSED/,
+  );
+  assert.doesNotThrow(() => officialSource.assertVersionBoundCapturePage({
+    exceededTransferLimit: false,
+    featureCount: 74,
+    pageSize: 500,
+  }));
+});
+
 const FETCHED_AT = '2026-06-05T12:00:00.000Z';
 const AS_OF = new Date('2026-06-06T12:00:00.000Z');
 
@@ -165,6 +181,48 @@ test('parser output remains UNKNOWN and cannot make itself decision eligible', (
     assert.equal(observation.decision_eligible, false);
     assert.equal('verified' in observation, false);
   }
+});
+
+test('malformed geometry and absent expiration stay UNKNOWN without epoch coercion', () => {
+  const malformedPayload = JSON.parse(payload({ EXPIRATION_DATE: null }).toString('utf8'));
+  malformedPayload.features[0].geometry.y = 'not-a-coordinate';
+  const snapshot = reality.createEvidenceSnapshot({
+    sourceId: reality.DC_ABCA_SOURCE.source_id,
+    payloadBytes: Buffer.from(JSON.stringify(malformedPayload)),
+    fetchedAt: FETCHED_AT,
+    completeness: 'COMPLETE',
+  });
+  const parsed = reality.parseAbcaSnapshot(snapshot);
+
+  assert.equal(parsed.observations.some((entry) => entry.predicate === 'located_at'), false);
+  assert.equal(parsed.observations.some((entry) => entry.predicate === 'license_expiration'), false);
+  assert.equal(parsed.invalid_observations.some((entry) => entry.reason === 'ATTRIBUTE_GEOMETRY_CONFLICT'), true);
+  assert.equal(parsed.invalid_observations.some((entry) => entry.predicate === 'license_expiration'), true);
+  const compiled = reality.compileRealitySnapshot({
+    snapshot,
+    retailers: [{ id: 'retailer-1', licenseNumber: 'ABRA-123456' }],
+  });
+  assert.equal(compiled.claims.every((claim) => claim.freshness_expires_at === '2026-07-05T12:00:00.000Z'), true);
+});
+
+test('semantic source-record digests are canonical across object key ordering', () => {
+  const firstPayload = JSON.parse(payload().toString('utf8'));
+  const firstAttributes = firstPayload.features[0].attributes;
+  const secondPayload = structuredClone(firstPayload);
+  secondPayload.features[0].attributes = Object.fromEntries(Object.entries(firstAttributes).reverse());
+  const first = reality.createEvidenceSnapshot({
+    sourceId: reality.DC_ABCA_SOURCE.source_id,
+    payloadBytes: Buffer.from(JSON.stringify(firstPayload)),
+    fetchedAt: FETCHED_AT,
+    completeness: 'COMPLETE',
+  });
+  const second = reality.createEvidenceSnapshot({
+    sourceId: reality.DC_ABCA_SOURCE.source_id,
+    payloadBytes: Buffer.from(JSON.stringify(secondPayload)),
+    fetchedAt: FETCHED_AT,
+    completeness: 'COMPLETE',
+  });
+  assert.equal(reality.parseAbcaSnapshot(first).records[0].record_hash, reality.parseAbcaSnapshot(second).records[0].record_hash);
 });
 
 test('only the Verification Court admits supported current official claims', () => {
@@ -282,6 +340,35 @@ test('court independently rejects forged subject resolution and observation link
   });
   assert.equal(forgedEvidence.decision_eligible, false);
   assert.equal(forgedEvidence.reason, 'CLAIM_EVIDENCE_LINK_MISMATCH');
+
+  const forgedFreshness = court.adjudicateMarketClaim({
+    claim: { ...courtClaim, freshness_expires_at: '2027-06-05T00:00:00.000Z' },
+    ...input,
+    asOf: new Date('2026-07-20T00:00:00.000Z'),
+  });
+  assert.equal(forgedFreshness.decision_eligible, false);
+  assert.equal(forgedFreshness.reason, 'FRESHNESS_BINDING_MISMATCH');
+
+  const forgedObservedAt = court.adjudicateMarketClaim({
+    claim: {
+      ...courtClaim,
+      observed_at: '2026-06-06T12:00:00.000Z',
+      supporting_observations: [{ ...observation, observed_at: '2026-06-06T12:00:00.000Z' }],
+    },
+    ...input,
+  });
+  assert.equal(forgedObservedAt.decision_eligible, false);
+  assert.equal(forgedObservedAt.reason, 'OBSERVATION_TIME_BINDING_MISMATCH');
+
+  const firstDenied = court.adjudicateMarketClaim({
+    claim: { ...courtClaim, value: 'FORGED-A' },
+    ...input,
+  });
+  const secondDenied = court.adjudicateMarketClaim({
+    claim: { ...courtClaim, value: 'FORGED-B' },
+    ...input,
+  });
+  assert.notEqual(firstDenied.evidence_digest, secondDenied.evidence_digest);
 });
 
 test('changed claim values preserve every prior contradictory observation', () => {

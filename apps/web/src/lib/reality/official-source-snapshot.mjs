@@ -37,6 +37,15 @@ export function sha256(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
+export function assertVersionBoundCapturePage({ exceededTransferLimit, featureCount, pageSize }) {
+  if (!Number.isInteger(featureCount) || featureCount < 0 || !Number.isInteger(pageSize) || pageSize < 1) {
+    fail('CANA_OFFICIAL_SOURCE_PAGINATION_INVALID', 'invalid capture page shape');
+  }
+  if (exceededTransferLimit === true || exceededTransferLimit !== false && featureCount >= pageSize) {
+    fail('CANA_OFFICIAL_SOURCE_UNVERSIONED_MULTIPAGE_REFUSED', 'layer 31 exposes no revision-bound pagination');
+  }
+}
+
 function parseJson(bytes, code) {
   try {
     return JSON.parse(bytes.toString('utf8'));

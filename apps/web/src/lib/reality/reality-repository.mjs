@@ -240,6 +240,11 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
       }
       const conflictingPrior = priorClaims.find((entry) => entry.claimValue !== serialized(item.value));
       if (conflictingPrior && conflictingObservationIds.length > 0) {
+        const laterObservationIds = item.observation_ids.map((observationId) => {
+          const storedId = observationRows.get(observationId);
+          if (!storedId) throw new Error('CANA_REALITY_OBSERVATION_BINDING_MISSING');
+          return storedId;
+        });
         await tx.marketClaimContradiction.create({
           data: {
             tenant,
@@ -247,7 +252,7 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
             earlierClaimId: conflictingPrior.id,
             laterClaimId: claim.id,
             earlierObservationIdsJson: JSON.stringify(conflictingObservationIds),
-            laterObservationIdsJson: JSON.stringify(item.observation_ids),
+            laterObservationIdsJson: JSON.stringify(laterObservationIds),
             state: 'ACTIVE',
           },
         });
@@ -329,7 +334,7 @@ function courtInput(claim, snapshot) {
     snapshot: createEvidenceSnapshot({
       sourceId: snapshot.sourceKey,
       payloadBytes: Buffer.from(snapshot.payloadJson),
-      fetchedAt: claim.observedAt,
+      fetchedAt: snapshot.fetchedAt,
       completeness: snapshot.completeness,
     }),
   };
@@ -500,7 +505,6 @@ async function verifyOfficialMarketSnapshotTransaction(prisma, {
             where: {
               id: resolution.retailerId,
               dataSource: DC_ABCA_SOURCE.source_id,
-              reviewedBy: MARKET_CLAIM_COURT_VERSION,
             },
             data: { dataStatus: state.dataStatus },
           });

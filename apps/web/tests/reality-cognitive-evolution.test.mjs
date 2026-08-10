@@ -41,6 +41,10 @@ test('reflection is hash-bound, bounded, and never self-promotes', () => {
     'INDEPENDENT_VERIFICATION',
     'LATER_RETRIEVAL',
   ]);
+  assert.equal(Object.isFrozen(first.observed_result), true);
+  episode.observed_result.false_automatic_links = 7;
+  assert.equal(first.observed_result.false_automatic_links, 0);
+  episode.observed_result.false_automatic_links = 0;
 });
 
 test('changed evidence changes the receipt and unsupported promotion is refused', () => {

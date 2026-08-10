@@ -53,6 +53,7 @@ const PHASE_B_EXPECTED_PATHS = Object.freeze([
   'apps/web/scripts/ingest-abca-feed.mjs',
   'apps/web/scripts/replay-reality-benchmark.mjs',
   'apps/web/scripts/seed-abca-retailers.mjs',
+  'apps/web/scripts/test-site-intelligence.mjs',
   'apps/web/scripts/verify-market-reality.mjs',
   'apps/web/src/lib/ask/market-gap-recheck.mjs',
   'apps/web/src/lib/continuation/continuation-consumers.mjs',

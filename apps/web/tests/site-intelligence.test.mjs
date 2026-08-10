@@ -8,6 +8,7 @@ import {
   MAX_SITE_INTELLIGENCE_SNAPSHOTS,
   persistSiteIntelligenceSnapshot,
   SITE_ROUTE_INVENTORY,
+  SITE_INTELLIGENCE_SCHEMA_VERSION,
 } from '../src/lib/site-intelligence.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -49,6 +50,7 @@ function baseMetrics(overrides = {}) {
 }
 
 test('Site Brain produces deterministic local findings with explicit external gates', () => {
+  assert.equal(SITE_INTELLIGENCE_SCHEMA_VERSION, 2);
   const first = buildSiteIntelligenceSnapshot(
     baseMetrics(),
     new Date('2026-07-17T12:00:00.000Z'),

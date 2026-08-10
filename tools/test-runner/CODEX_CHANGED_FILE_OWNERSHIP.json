@@ -513,14 +513,14 @@
       "court_blob_sha256": {
         "apps/web/tests/column-width-cutover-court.test.mjs": "e06ac4a670893300c0912ee37327f6714caef81f9560d2a81149e697849a674c",
         "apps/web/tests/deployment-integrity.test.mjs": "1d40b447f7745fb4ab18fbd6591941dd91bad37728e1bb65015a9657c6017df2",
-        "apps/web/tests/migration-court.test.mjs": "eb0bf2f921f27d5c59061e1418813d7918e946a19f9967b26f4c9b5c0409bf84",
+        "apps/web/tests/migration-court.test.mjs": "603a8f7d3a51f0c3e28cbef41d0c0144673ebc9394a375e711ef0b4b9c9f451c",
         "apps/web/tests/release-gate.test.mjs": "7749c882c325de9ea248883ae9462d47681048a268c75187f7e62728b8c198f0"
       },
-      "approval_sha256": "ee11c6f8f9508225f603fdc89b97c25d28a6458f5b17b9459592d91f9adbbac5"
+      "approval_sha256": "fe136ee049b98b8711edbb3c7214ed6474a5d880c07496ecf4761f7cfd6a1a2c"
     },
     "phase_b_reality_compiler_slice1_2026_08_09": {
       "authorization": "CANA PHASE B OMEGA INFINITY REALITY COMPILER SLICE 1 EXECUTION",
-      "scope": "The 75 exact Phase B Reality Compiler implementation, fixture, migration, public-truth, continuation, Site Intelligence, evidence, workflow and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or cognitive-promotion authority.",
+      "scope": "The 76 exact Phase B Reality Compiler implementation, fixture, migration, public-truth, continuation, Site Intelligence, evidence, workflow and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or cognitive-promotion authority.",
       "authorization_effect": "Durability path ownership only; no live-source, provider, credential, paid-call, spending, publishing, deployment, production, external-effect, verification-bypass, self-promotion or cognitive-promotion authority.",
       "base_commit": "74dd042f572f64e1da3709f71e602a9c0cda1917",
       "base_tree": "4596741c54beca9d20ae417877854e7cc39e1ff3",
@@ -540,6 +540,7 @@
         "apps/web/scripts/ingest-abca-feed.mjs",
         "apps/web/scripts/replay-reality-benchmark.mjs",
         "apps/web/scripts/seed-abca-retailers.mjs",
+        "apps/web/scripts/test-site-intelligence.mjs",
         "apps/web/scripts/verify-market-reality.mjs",
         "apps/web/src/lib/ask/market-gap-recheck.mjs",
         "apps/web/src/lib/continuation/continuation-consumers.mjs",
@@ -601,7 +602,7 @@
         "tools/reality/verify-evidence-packet.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
-      "approval_sha256": "45175ee283ca762da883b49cde2296baeeb8a18851de829372a23eac080dcd77"
+      "approval_sha256": "a0fd370221ad37805e1bf29c2a1bb7024989aa6293a92a9eb1da18560eeda647"
     }
   },
   "owned_create_paths": [
@@ -845,6 +846,7 @@
     "apps/web/scripts/etl-abca-retailers.mjs",
     "apps/web/scripts/ingest-abca-feed.mjs",
     "apps/web/scripts/test-public-submission.mjs",
+    "apps/web/scripts/test-site-intelligence.mjs",
     "apps/web/src/app/[domain]/education/page.tsx",
     "apps/web/src/app/admin/page.tsx",
     "apps/web/src/components/retailer-map-loader.tsx",
@@ -1078,6 +1080,7 @@
     ,"apps/web/scripts/replay-reality-benchmark.mjs"
     ,"apps/web/scripts/seed-abca-retailers.mjs"
     ,"apps/web/scripts/verify-market-reality.mjs"
+    ,"apps/web/scripts/test-site-intelligence.mjs"
     ,"apps/web/src/lib/ask/ask-work.mjs"
     ,"apps/web/src/lib/ask/market-gap-recheck.mjs"
     ,"apps/web/src/lib/continuation/continuation-consumers.mjs"
