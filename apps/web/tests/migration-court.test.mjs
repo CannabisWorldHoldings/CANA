@@ -590,6 +590,22 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   assert.ok(firstCourt.admitted_claims >= 4);
   assert.equal(firstCourt.public_cohorts, 1);
   assert.equal(await p.marketClaim.count(), claimCount, 'live court must not mutate immutable claims');
+  const offlineClaim = await p.marketClaim.findFirstOrThrow({ where: { tenant: 'orderweeddc.com' } });
+  const offlineEvidenceDigest = 'e'.repeat(64);
+  const offlineEvent = {
+    claimId: offlineClaim.id,
+    decision: 'DENY',
+    reason: 'OFFLINE_UNIQUENESS_COURT',
+    evaluatorVersion: 'cana-market-claim-court-v1',
+    evidenceDigest: offlineEvidenceDigest,
+    asOf: new Date('2026-08-11T15:01:00.000Z'),
+  };
+  await p.marketVerificationEvent.create({ data: offlineEvent });
+  await assert.rejects(
+    p.marketVerificationEvent.create({ data: offlineEvent }),
+    /unique constraint/i,
+    'NULL acquisition lineage must not bypass verification-event idempotency',
+  );
   const firstEventCount = await p.marketVerificationEvent.count();
   assert.ok(firstEventCount > 0);
 

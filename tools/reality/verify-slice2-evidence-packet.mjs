@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
+const OWNERSHIP_PATH = 'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json';
 const SLICE2_MIGRATIONS = Object.freeze([
   '20260726000000_baseline',
   '20260726000100_ledger_recorded_at_index',
@@ -220,6 +221,7 @@ export function verifySlice2EvidencePacket({ repositoryRoot, packetDirectory, ex
     identity.schema_version !== 'cana.phase-b-slice2.identity/v1'
     || identity.clean !== true
     || !candidate
+    || !base
     || identity.candidate?.commit !== candidate.commit
     || identity.candidate?.tree !== candidate.tree
     || manifest.base_commit !== base?.commit
@@ -262,6 +264,7 @@ export function verifySlice2EvidencePacket({ repositoryRoot, packetDirectory, ex
   ) fail('CANA_SLICE2_PACKET_REFLECTION_INVALID');
 
   const scope = jsonFile(packet, 'scope-diff.json');
+  if (scope.ownership_path !== OWNERSHIP_PATH) fail('CANA_SLICE2_PACKET_SCOPE_INVALID');
   const ownershipBytes = committedBytes(root, candidate.commit, scope.ownership_path);
   const ownership = JSON.parse(ownershipBytes);
   const assignment = ownership.explicit_user_assignment?.[SLICE2_ASSIGNMENT];

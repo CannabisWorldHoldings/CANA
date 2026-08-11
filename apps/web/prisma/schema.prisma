@@ -901,6 +901,8 @@ model MarketVerificationEvent {
   acquisitionEvent   MarketSourceAcquisitionEvent?  @relation(fields: [acquisitionEventId], references: [id], onDelete: Restrict)
   evidenceRevocation MarketEvidenceRevocationEvent? @relation(fields: [evidenceRevocationId], references: [id], onDelete: Restrict)
 
+  /// Canonical PostgreSQL DDL also enforces claim/evidence uniqueness when
+  /// acquisitionEventId is NULL through MarketVerificationEvent_offline_evidence_key.
   @@unique([claimId, evidenceDigest, acquisitionEventId])
   @@index([claimId, createdAt])
   @@index([decision, createdAt])

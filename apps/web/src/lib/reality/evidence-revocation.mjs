@@ -92,7 +92,10 @@ export function isEvidenceRevoked({
   const clock = asOf instanceof Date ? asOf : new Date(asOf);
   if (!Number.isFinite(clock.getTime()) || !Array.isArray(revocations)) return true;
   const applicable = revocations
-    .filter((event) => new Date(event.effectiveAt ?? event.effective_at) <= clock)
+    .filter((event) => {
+      const effectiveAt = new Date(event.effectiveAt ?? event.effective_at);
+      return !Number.isFinite(effectiveAt.getTime()) || effectiveAt <= clock;
+    })
     .filter((event) => {
       const kind = event.targetKind ?? event.target_kind;
       const target = event.targetId ?? event.target_id;
@@ -106,8 +109,13 @@ export function isEvidenceRevoked({
           && event.acquisitionEventId === acquisitionEventId
         || typeof snapshotId === 'string' && snapshotId.length > 0
           && event.snapshotId === snapshotId;
-    })
-    .sort((left, right) => new Date(right.effectiveAt ?? right.effective_at) - new Date(left.effectiveAt ?? left.effective_at));
+    });
+  if (applicable.some((event) => !Number.isFinite(
+    new Date(event.effectiveAt ?? event.effective_at).getTime(),
+  ))) return true;
+  applicable.sort((left, right) => (
+    new Date(right.effectiveAt ?? right.effective_at) - new Date(left.effectiveAt ?? left.effective_at)
+  ));
   if (applicable.length === 0) return false;
   return (applicable[0].decision ?? '') !== 'EVIDENCE_RESTORED';
 }

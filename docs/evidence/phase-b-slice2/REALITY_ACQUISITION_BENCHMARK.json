@@ -31,8 +31,8 @@
     "continuation_tick_truth_mutations": 0
   },
   "answerability": {
-    "before_frontier_key": "sha256:a8d762da9c8c4440831156e8d6369811895ce4a58f163cebd161780a00dfadcf",
-    "after_frontier_key": "sha256:759737da1d0c5e5e9bb54a644a1e0530bef265fbbf218ef80025988ecdf20d65",
+    "before_frontier_key": "sha256:2cf85c49a8449bbd52010763f041528ac2c3bc3326506a6c75bbdbd4fa63a30b",
+    "after_frontier_key": "sha256:2cf85c49a8449bbd52010763f041528ac2c3bc3326506a6c75bbdbd4fa63a30b",
     "gaps_closed": 1,
     "gaps_retained": 1,
     "verification_opportunities_created": 1,

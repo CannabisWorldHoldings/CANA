@@ -406,6 +406,23 @@ test('current truth requires a current acquisition-bound court event and exclude
   });
   assert.deepEqual(current.map((item) => item.claim_id), ['claim-b']);
 
+  for (const effectiveAt of [undefined, 'not-a-date']) {
+    const malformedRevocation = adapter.selectCurrentClaimDecisions({
+      claims,
+      verificationEvents: events,
+      acquisitionEvents: acquisitions,
+      contentArtifacts,
+      sourceSnapshots,
+      revocations: [{ decision: 'EVIDENCE_RESTORED', acquisitionEventId: 'acq-a', effectiveAt }],
+      asOf: new Date('2026-08-12T00:00:00.000Z'),
+    });
+    assert.deepEqual(
+      malformedRevocation.map((item) => item.claim_id),
+      ['claim-b'],
+      'a malformed revocation time must fail closed instead of preserving eligible evidence',
+    );
+  }
+
   const policyRevoked = adapter.selectCurrentClaimDecisions({
     claims,
     verificationEvents: events,

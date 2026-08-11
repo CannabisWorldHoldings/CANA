@@ -36,9 +36,7 @@ function executionTuple(commit, tree) {
   if (executionProvenanceCache.has(key)) return executionProvenanceCache.get(key);
   const actualTree = gitOutput(['rev-parse', `${commit}^{tree}`]);
   if (!actualTree) {
-    const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNKNOWN' });
-    executionProvenanceCache.set(key, result);
-    return result;
+    return Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNKNOWN' });
   }
   if (actualTree !== tree) {
     const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_TREE_MISMATCH' });
@@ -63,9 +61,7 @@ function executionTuple(commit, tree) {
     const source = gitOutput(['show', `${commit}:${file}`]);
     const match = source?.match(pattern);
     if (!match?.[1]) {
-      const result = Object.freeze({ state: 'DENY', reason: 'VERSION_PROVENANCE_UNKNOWN' });
-      executionProvenanceCache.set(key, result);
-      return result;
+      return Object.freeze({ state: 'DENY', reason: 'VERSION_PROVENANCE_UNKNOWN' });
     }
     versions[name] = match[1];
   }

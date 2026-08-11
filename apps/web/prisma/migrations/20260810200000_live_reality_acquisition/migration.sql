@@ -192,6 +192,7 @@ CREATE INDEX "MarketCompilation_contentArtifactId_idx" ON "MarketCompilation"("c
 CREATE INDEX "MarketVerificationEvent_acquisitionEventId_idx" ON "MarketVerificationEvent"("acquisitionEventId");
 CREATE INDEX "MarketVerificationEvent_evidenceRevocationId_idx" ON "MarketVerificationEvent"("evidenceRevocationId");
 CREATE UNIQUE INDEX "MarketVerificationEvent_claimId_evidenceDigest_acquisitionEventId_key" ON "MarketVerificationEvent"("claimId", "evidenceDigest", "acquisitionEventId");
+CREATE UNIQUE INDEX "MarketVerificationEvent_offline_evidence_key" ON "MarketVerificationEvent"("claimId", "evidenceDigest") WHERE "acquisitionEventId" IS NULL;
 
 ALTER TABLE "MarketSourceContentArtifact" ADD CONSTRAINT "MarketSourceContentArtifact_snapshotId_fkey" FOREIGN KEY ("snapshotId") REFERENCES "MarketSourceSnapshot"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "MarketSourceAcquisitionEvent" ADD CONSTRAINT "MarketSourceAcquisitionEvent_contentArtifactId_fkey" FOREIGN KEY ("contentArtifactId") REFERENCES "MarketSourceContentArtifact"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -175,6 +175,13 @@ export function buildAnswerabilityFrontier({
     schema_version: ANSWERABILITY_FRONTIER_VERSION,
     coverage,
   });
+  const frontierKey = digest({
+    schema_version: ANSWERABILITY_FRONTIER_VERSION,
+    evidence_gate_version: ANSWERABILITY_EVIDENCE_GATE_VERSION,
+    tenant: canonicalTenantValue,
+    intent_scope: intentScope,
+    required_predicates: requiredPredicates,
+  });
   const frontierBody = {
     schema_version: ANSWERABILITY_FRONTIER_VERSION,
     evidence_gate_version: ANSWERABILITY_EVIDENCE_GATE_VERSION,
@@ -195,7 +202,7 @@ export function buildAnswerabilityFrontier({
   };
   return Object.freeze({
     ...frontierBody,
-    frontier_key: digest(frontierBody),
+    frontier_key: frontierKey,
   });
 }
 

@@ -49,9 +49,14 @@ function frontier({ tenant = 'orderweeddc.com', claims = [] } = {}) {
 
 test('equivalent gap frontiers share one tenant-scoped opportunity identity', () => {
   const gap = frontier();
+  const changedEvidence = frontier({ claims: [current('retailer-1', 'license_number')] });
   const key = frontierOpportunityKey({ tenant: 'orderweeddc.com', kind: 'MARKET_GAP', frontier: gap });
   assert.match(key, /^sha256:[a-f0-9]{64}$/);
   assert.equal(key, frontierOpportunityKey({ tenant: 'orderweeddc.com', kind: 'MARKET_GAP', frontier: gap }));
+  assert.equal(key, frontierOpportunityKey({
+    tenant: 'orderweeddc.com', kind: 'MARKET_GAP', frontier: changedEvidence,
+  }));
+  assert.notEqual(gap.evidence_digest, changedEvidence.evidence_digest);
   assert.notEqual(key, frontierOpportunityKey({ tenant: 'example.com', kind: 'MARKET_GAP', frontier: frontier({ tenant: 'example.com' }) }));
 });
 

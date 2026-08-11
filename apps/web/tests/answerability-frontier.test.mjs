@@ -72,11 +72,19 @@ test('canonical frontier ignores raw query, compile time, matched token, and evi
 
 test('equivalent intent has a tenant-scoped canonical frontier key', () => {
   const base = buildAnswerabilityFrontier({ tenant: 'orderweeddc.com', intent: intent(), asOf: NOW });
+  const changedEvidence = buildAnswerabilityFrontier({
+    tenant: 'orderweeddc.com',
+    intent: intent(),
+    claimDecisions: [current('retailer-1', 'license_number')],
+    asOf: NOW,
+  });
   const otherTenant = buildAnswerabilityFrontier({ tenant: 'example.com', intent: intent(), asOf: NOW });
   const otherScope = buildAnswerabilityFrontier({
     tenant: 'orderweeddc.com', intent: intent({ location: 'navy yard' }), asOf: NOW,
   });
   assert.match(base.frontier_key, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(base.frontier_key, changedEvidence.frontier_key);
+  assert.notEqual(base.evidence_digest, changedEvidence.evidence_digest);
   assert.notEqual(base.frontier_key, otherTenant.frontier_key);
   assert.notEqual(base.frontier_key, otherScope.frontier_key);
 });

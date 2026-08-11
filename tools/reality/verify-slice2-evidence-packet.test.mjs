@@ -317,7 +317,9 @@ test('identity, ownership, artifact, receipt, hosted, and external-effect tamper
   const candidate = makeCandidate();
   const cases = [
     ['identity.json', (value) => { value.candidate.commit = 'f'.repeat(40); }, 'CANA_SLICE2_PACKET_GIT_IDENTITY_INVALID'],
+    ['identity.json', (value) => { delete value.base; }, 'CANA_SLICE2_PACKET_GIT_IDENTITY_INVALID'],
     ['scope-diff.json', (value) => { value.changed_paths = []; }, 'CANA_SLICE2_PACKET_SCOPE_INVALID'],
+    ['scope-diff.json', (value) => { value.ownership_path = 'artifact-bindings.json'; }, 'CANA_SLICE2_PACKET_SCOPE_INVALID'],
     ['artifact-bindings.json', (value) => { value.artifacts[0].sha256 = '0'.repeat(64); }, 'CANA_SLICE2_PACKET_ARTIFACT_BINDING_INVALID'],
     ['receipts/focused.json', (value) => { value.status = 'FAIL'; }, 'CANA_SLICE2_PACKET_RECEIPT_INVALID'],
     ['hosted-runs.json', (value) => { value.required_run_ids = []; }, 'CANA_SLICE2_PACKET_HOSTED_RUNS_INVALID'],

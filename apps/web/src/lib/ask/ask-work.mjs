@@ -297,14 +297,6 @@ export async function recordAskWork(
         await tx.opportunity.update({
           where: { id: opportunity.id },
           data: {
-            evidence: JSON.stringify({
-              intent_ir: persistedIntent,
-              zero_result_reason: answer.zero_result_reason,
-              verified_candidate_count: answer.verified_candidate_count,
-              unsupported_known_dimensions: answer.unsupported_known_dimensions,
-              answerability_frontier: frontier,
-              observed_at: now.toISOString(),
-            }),
             observedState: JSON.stringify({
               frontier_key: frontier.frontier_key,
               evidence_digest: frontier.evidence_digest,
