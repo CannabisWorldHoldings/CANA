@@ -37,6 +37,7 @@
 import { execFileSync, execSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -276,6 +277,55 @@ function copyDir(from, to) {
   fs.cpSync(from, to, { recursive: true });
 }
 
+function installedPackageRoot(packageName, requiringDirectory = repoRoot) {
+  const packageSegments = packageName.split('/');
+  let directory = requiringDirectory;
+  while (directory.startsWith(repoRoot)) {
+    const candidate = path.join(directory, 'node_modules', ...packageSegments);
+    if (fs.existsSync(path.join(candidate, 'package.json'))) return candidate;
+    if (directory === repoRoot) break;
+    directory = path.dirname(directory);
+  }
+  throw new Error(`Artifact build cannot resolve the installed package ${packageName}`);
+}
+
+function copyInstalledPackageClosure(packageName, copied = new Set(), requiringDirectory) {
+  const packageRoot = installedPackageRoot(packageName, requiringDirectory);
+  if (copied.has(packageRoot)) return copied;
+  copied.add(packageRoot);
+  const relativeRoot = path.relative(path.join(repoRoot, 'node_modules'), packageRoot);
+  copyDir(packageRoot, path.join(artifactRoot, 'node_modules', relativeRoot));
+  const metadata = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
+  for (const dependency of Object.keys(metadata.dependencies ?? {})) {
+    copyInstalledPackageClosure(dependency, copied, packageRoot);
+  }
+  return copied;
+}
+
+function databaseDataSha256(postgres) {
+  const dump = execFile(
+    'docker',
+    [
+      'exec', postgres.name, 'pg_dump', '-U', 'postgres', '-d', 'cana_verify',
+      '--data-only', '--no-owner', '--no-privileges', '--inserts',
+    ],
+    { maxBuffer: 64 * 1024 * 1024 },
+  );
+  return createHash('sha256').update(dump).digest('hex');
+}
+
+async function availableLoopbackPort() {
+  const server = net.createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  if (!address || typeof address === 'string') throw new Error('Loopback port allocation failed');
+  return address.port;
+}
+
 const operationalScripts = Object.freeze([
   'deploy.sh',
   'restart.sh',
@@ -507,6 +557,9 @@ const migrationUniverse = validateCanonicalMigrationUniverse({
 copyDir(migrationsDir, path.join(artifactRoot, 'prisma/migrations'));
 fs.copyFileSync(migrationManifestPath, path.join(artifactRoot, 'prisma/migration-manifest.json'));
 fs.copyFileSync(migrationVerifierPath, path.join(artifactRoot, 'prisma/migration-manifest.mjs'));
+const packagedMigrationPackages = [...copyInstalledPackageClosure('prisma')]
+  .map((packageRoot) => path.relative(path.join(repoRoot, 'node_modules'), packageRoot))
+  .sort();
 validateCanonicalMigrationUniverse({
   migrationsDir: path.join(artifactRoot, 'prisma/migrations'),
   manifest: loadCanonicalMigrationManifest(path.join(artifactRoot, 'prisma/migration-manifest.json')),
@@ -550,6 +603,9 @@ checks['artwork restored'] = fs.existsSync(
 );
 checks['@prisma/client package present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/@prisma/client/package.json'),
+);
+checks['artifact-local prisma migration CLI present'] = fs.existsSync(
+  path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
 );
 checks['.prisma/client generated dir present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/.prisma/client'),
@@ -676,6 +732,7 @@ function writeReceipt(extra = {}) {
         cleanup: buildDatabaseCleanup,
       },
       migrationUniverse,
+      packagedMigrationPackages,
     },
     checks,
     ...extra,
@@ -740,12 +797,17 @@ async function isolatedRuntimeTest() {
   let primaryError;
   let cleanupOk = false;
   try {
-  run('npx --no-install prisma migrate deploy --schema prisma/schema.prisma', {
-    cwd: webRoot,
+  const disposableBackupReceipt = path.join(isoRoot, 'disposable-backup-receipt.json');
+  fs.writeFileSync(disposableBackupReceipt, JSON.stringify({ scope: 'isolated-build-court' }));
+  run('sh migrate.sh', {
+    cwd: appRoot,
     env: {
-      ...process.env,
+      PATH: process.env.PATH,
       DATABASE_URL: postgres.databaseUrl,
       DIRECT_URL: postgres.databaseUrl,
+      CANA_PRE_MIGRATION_BACKUP_RECEIPT: disposableBackupReceipt,
+      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
+      PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
     },
   });
   run(`${JSON.stringify(process.execPath)} scripts/init-production-db.mjs`, {
@@ -780,9 +842,11 @@ async function isolatedRuntimeTest() {
       inspect.counts?.demonstrationRetailers === 0,
     JSON.stringify(inspect.counts),
   );
+  const initializedDatabaseSha256 = databaseDataSha256(postgres);
+  results.productionBootstrapDataSha256 = initializedDatabaseSha256;
 
   // Start app.js with a minimal, NODE_PATH-free environment.
-  const port = 3260;
+  const port = await availableLoopbackPort();
   const serverEnv = {
     PATH: process.env.PATH,
     HOME: isoRoot,
@@ -795,13 +859,33 @@ async function isolatedRuntimeTest() {
     // supply the machine-native engine so the isolated app starts on macOS too.
     PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
   };
-  const startServer = () =>
-    spawn(process.execPath, ['app.js'], {
+  let serverLog = '';
+  const startServer = () => {
+    const server = spawn(process.execPath, ['app.js'], {
       cwd: appRoot,
       env: serverEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
     });
+    server.stdout.on('data', (data) => { serverLog += data; });
+    server.stderr.on('data', (data) => { serverLog += data; });
+    return server;
+  };
+  const waitForServer = async (server) => {
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      if (server.exitCode !== null) {
+        throw new Error(`Isolated app exited before readiness with code ${server.exitCode}`);
+      }
+      try {
+        const release = JSON.parse(capture(
+          `curl -fsS -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/release`,
+        ));
+        if (release.status === 'RELEASE_SHA_PRESENT' && release.gitSha === gitSha) return;
+      } catch {}
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error('Isolated app did not become ready within the bounded startup court');
+  };
   const forgedIdentityChild = spawn(process.execPath, ['app.js'], {
     cwd: appRoot,
     env: {
@@ -832,10 +916,7 @@ async function isolatedRuntimeTest() {
       !forgedIdentityLog.includes(postgres.databaseUrl),
   );
   let child = startServer();
-  let serverLog = '';
-  child.stdout.on('data', (d) => (serverLog += d));
-  child.stderr.on('data', (d) => (serverLog += d));
-  await new Promise((resolve) => setTimeout(resolve, 6000));
+  await waitForServer(child);
 
   try {
     const health = capture(
@@ -910,7 +991,7 @@ async function isolatedRuntimeTest() {
     child.kill('SIGTERM');
     await new Promise((resolve) => setTimeout(resolve, 1500));
     child = startServer();
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await waitForServer(child);
     const health2 = JSON.parse(
       capture(`curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/health`),
     );
@@ -925,11 +1006,15 @@ async function isolatedRuntimeTest() {
         },
       }),
     );
+    const restartedDatabaseSha256 = databaseDataSha256(postgres);
+    const databaseUnchanged = initializedDatabaseSha256 === restartedDatabaseSha256;
     results.restart = {
       status: health2.status,
       health: health2.services?.database?.details,
       counts: inspectAfterRestart.counts,
-      marketWrites: 0,
+      databaseDataBeforeSha256: initializedDatabaseSha256,
+      databaseDataAfterSha256: restartedDatabaseSha256,
+      marketWrites: databaseUnchanged ? 0 : null,
     };
     record(
       'restart persistence: canonical brand, empty market, zero demo',
@@ -941,6 +1026,11 @@ async function isolatedRuntimeTest() {
         inspectAfterRestart.counts?.retailers === 0 &&
         inspectAfterRestart.counts?.demonstrationRetailers === 0,
       JSON.stringify(inspectAfterRestart.counts),
+    );
+    record(
+      'health and restart leave the complete PostgreSQL data state unchanged',
+      databaseUnchanged,
+      `${initializedDatabaseSha256} -> ${restartedDatabaseSha256}`,
     );
   } finally {
     try {
@@ -956,79 +1046,41 @@ async function isolatedRuntimeTest() {
   );
   results.artifactExclusionAudit = exclusionAudit;
 
-  // deploy.sh correctly refuses the preliminary artifact because its receipt
-  // still says the isolated runtime test is pending. Build an internal-only
-  // court archive after the runtime gates pass so the real deploy/rollback
-  // helpers can exercise their production receipt acceptance unchanged. The
-  // release staging tree is restored to its pending receipt until rollback
-  // integrity completes and the final receipt is written below.
-  const receiptPath = path.join(artifactRoot, 'receipt.json');
-  const pendingReceipt = fs.readFileSync(receiptPath);
-  const deployCourtTar = path.join(isoRoot, `${artifactName}.deploy-court.tar.gz`);
-  try {
-    writeReceipt({
-      isolatedRuntimeTest: {
-        passed: true,
-        isolationDir: results.isolationDir,
-        nodeUsed: process.version,
-        productionBootstrap: results.productionBootstrap,
-        health: results.health,
-        restart: results.restart,
-        steps: Object.fromEntries(
-          Object.entries(results.steps).map(([key, value]) => [key, value.ok]),
-        ),
-      },
-    });
-    createCleanTar(deployCourtTar, distRoot, artifactName);
-  } finally {
-    fs.writeFileSync(receiptPath, pendingReceipt);
-  }
-
-  const databaseStateBefore = JSON.stringify(inspect.counts);
+  const databaseStateBefore = databaseDataSha256(postgres);
   const fakeHome = path.join(isoRoot, 'rollback-home');
-  fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
-  fs.copyFileSync(deployCourtTar, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
-  const deployCourtSha256 = sha256File(deployCourtTar);
-  run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${deployCourtSha256}`,
-  );
-  run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${deployCourtSha256}`,
-  );
-  run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`,
-  );
-  const inspectAfter = JSON.parse(
-    capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
-      cwd: webRoot,
-      env: {
-        PATH: process.env.PATH,
-        DATABASE_URL: postgres.databaseUrl,
-        DIRECT_URL: postgres.databaseUrl,
-        PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
-      },
-    }),
-  );
+  const appHome = path.join(fakeHome, 'apps/orderweeddc');
+  for (const release of ['current', 'previous']) {
+    const releaseRoot = path.join(appHome, release);
+    fs.mkdirSync(releaseRoot, { recursive: true });
+    fs.writeFileSync(path.join(releaseRoot, 'server.js'), '');
+    fs.copyFileSync(path.join(appRoot, 'receipt.json'), path.join(releaseRoot, 'receipt.json'));
+  }
+  run(`OWD_APP_HOME=${JSON.stringify(appHome)} sh ${JSON.stringify(path.join(appRoot, 'rollback.sh'))}`);
+  const databaseStateAfter = databaseDataSha256(postgres);
   record(
     'code rollback leaves canonical database state unchanged',
-    databaseStateBefore === JSON.stringify(inspectAfter.counts),
-    databaseStateBefore,
+    databaseStateBefore === databaseStateAfter,
+    `${databaseStateBefore} -> ${databaseStateAfter}`,
   );
   results.rollback = {
-    databaseUnchanged: databaseStateBefore === JSON.stringify(inspectAfter.counts),
-    counts: inspectAfter.counts,
+    databaseUnchanged: databaseStateBefore === databaseStateAfter,
+    databaseDataBeforeSha256: databaseStateBefore,
+    databaseDataAfterSha256: databaseStateAfter,
   };
+  results.databaseDataSha256 = databaseStateAfter;
 
   results.serverLogTail = serverLog.slice(-400);
   } catch (error) {
     primaryError = error;
-  } finally {
+  }
+  if (primaryError) {
     cleanupOk = stopDisposablePostgres(postgres);
+    if (!cleanupOk) {
+      primaryError.message += '; disposable PostgreSQL cleanup also failed';
+    }
+    throw primaryError;
   }
-  if (primaryError) throw primaryError;
-  if (!cleanupOk) {
-    throw new Error('Isolated runtime test failed to remove its disposable PostgreSQL container');
-  }
+  results.postgres = postgres;
   return results;
 }
 
@@ -1043,6 +1095,7 @@ writeReceipt({
     isolationDir: isolatedResults.isolationDir,
     nodeUsed: process.version,
     productionBootstrap: isolatedResults.productionBootstrap,
+    productionBootstrapDataSha256: isolatedResults.productionBootstrapDataSha256,
     health: isolatedResults.health,
     restart: isolatedResults.restart,
     rollback: isolatedResults.rollback,
@@ -1051,9 +1104,38 @@ writeReceipt({
     ),
   },
 });
-tarPath = packageTar();
-const tarSha256 = sha256File(tarPath);
-fs.writeFileSync(`${tarPath}.sha256`, `${tarSha256}  ${artifactName}.tar.gz\n`);
+let tarSha256;
+let finalError;
+let finalCleanup = false;
+try {
+  tarPath = packageTar();
+  const fakeHome = path.join(isolatedResults.isolationDir, 'delivery-home');
+  fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
+  fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
+  tarSha256 = sha256File(tarPath);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    run(
+      `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${tarSha256}`,
+    );
+  }
+  run(`HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`);
+  const deliveryDatabaseSha256 = databaseDataSha256(isolatedResults.postgres);
+  if (deliveryDatabaseSha256 !== isolatedResults.databaseDataSha256) {
+    throw new Error('Final artifact deploy/rollback court changed the disposable PostgreSQL data state');
+  }
+  console.log(`  PASS  final deploy/rollback court leaves PostgreSQL unchanged — ${deliveryDatabaseSha256}`);
+  fs.writeFileSync(`${tarPath}.sha256`, `${tarSha256}  ${artifactName}.tar.gz\n`);
+} catch (error) {
+  finalError = error;
+} finally {
+  finalCleanup = stopDisposablePostgres(isolatedResults.postgres);
+}
+if (finalError || !finalCleanup) {
+  fs.rmSync(tarPath, { force: true });
+  fs.rmSync(`${tarPath}.sha256`, { force: true });
+  if (finalError) throw finalError;
+  throw new Error('Artifact court failed to remove its disposable PostgreSQL container');
+}
 
 console.log(`\nArtifact ready: ${tarPath}`);
 console.log(`sha256: ${tarSha256}`);

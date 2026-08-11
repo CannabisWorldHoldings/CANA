@@ -7,7 +7,7 @@ standalone artifact and run it under Phusion Passenger.
 
 - **Production commit:** see `receipt.json` inside each artifact (`gitSha`).
 - **Deploy branch:** `deploy/namecheap-production`
-- **Artifact:** `dist/namecheap/orderweeddc-<shortsha>.tar.gz` (+ `.sha256`)
+- **Artifact:** `dist/namecheap/orderweeddc-<full-40-char-sha>.tar.gz` (+ `.sha256`)
 
 ---
 
@@ -22,7 +22,7 @@ Evidence table: `deploy/namecheap/FEASIBILITY.md`.
 | Passenger startup file | `app.js` + `tmp/restart.txt` | ✅ provided |
 | Port handling | Passenger reverse-binds the socket; app calls `.listen()` once | ✅ standalone `server.js` complies |
 | Memory | 2 GB PMEM, 40 procs | ⚠️ build OFF-server (we do) |
-| Database | SQLite on persistent `/home` filesystem | ✅ survives restarts/deploys (kept outside release dir) |
+| Database | Owner-provisioned managed PostgreSQL/PostGIS | ✅ required canonical architecture; credentials and migration remain owner-gated |
 | Prisma engine | CloudLinux = RHEL 8/9 → openssl 1.1.x/3.0.x | ✅ both `binaryTargets` bundled |
 | SSL | free automatic AutoSSL/SSL-proxy | ✅ apex + www |
 | Cron | ≥5-min interval, ≤5 jobs | ✅ sufficient |
@@ -63,42 +63,36 @@ cd ~ && sh /home/$USER/uploads/probe.sh
 ```
 (Upload `deploy/namecheap/probe.sh` to `~/uploads/` first via File Manager.)
 
-**2.2 — Create the persistent data directory (outside every release):**
-```
-mkdir -p ~/orderweeddc-data
-```
-
-**2.3 — Upload the artifact** `orderweeddc-<shortsha>.tar.gz` to `~/uploads/`
+**2.2 — Upload the artifact** `orderweeddc-<full-40-char-sha>.tar.gz` to `~/uploads/`
 (File Manager → Upload), then verify its checksum:
 ```
-cd ~/uploads && sha256sum -c orderweeddc-<shortsha>.tar.gz.sha256
+cd ~/uploads && sha256sum -c orderweeddc-<full-40-char-sha>.tar.gz.sha256
 ```
 
-**2.4 — Deploy (swaps release, keeps rollback):**
+**2.3 — Deploy code only (swaps release, keeps rollback):**
 ```
-sh ~/uploads/deploy.sh orderweeddc-<shortsha>.tar.gz
+sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-64-hex-sha256>
 ```
-(Upload `deploy/namecheap/deploy.sh`, `rollback.sh`, `restart.sh` to `~/uploads/` once.)
+(Upload the same-commit `deploy.sh` and `verify-owner-artifact-input.sh` beside the artifact.)
 
-**2.5 — Bootstrap the database (safe + repeatable):**
+**2.4 — Initialize an empty owner-provisioned PostgreSQL database:**
 ```
-cd ~/apps/orderweeddc/current && sh bootstrap-production-db.sh
+cd ~/apps/orderweeddc/current
+CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh
+node scripts/init-production-db.mjs
+node scripts/db-inspect.mjs
 ```
-The bootstrap script (shipped inside the artifact) installs the build-verified
-schema-template database ONLY when `prod.db` is absent, zero-byte, or provably
-schema-empty; any existing nonempty database is backed up with a timestamp and
-NEVER overwritten (hard-stop if its schema is unrecognized). It then runs the
-idempotent canonical-brand init and the real ABCA retailer seed
-(`AWAITING_VERIFICATION`, zero demo data) and prints a JSON verification
-receipt. Rerunning it is safe.
+This step requires separate owner authorization and a verified provider backup
+receipt. The initializer creates one canonical organization and brand, zero
+retailers, and zero demonstration rows. It does not import ABCA data.
 
-**2.6 — Point cPanel at the app & restart:** in Setup Node.js App, confirm the
+**2.5 — Point cPanel at the app & restart:** in Setup Node.js App, confirm the
 env vars (§3), then **Restart**. Or from Terminal:
 ```
 sh ~/apps/orderweeddc/restart.sh
 ```
 
-**2.7 — Verify (see §5).**
+**2.6 — Verify (see §5).**
 
 ---
 
@@ -109,7 +103,8 @@ Set in **Setup Node.js App → Environment variables**. Template:
 
 | Variable | Value | Source |
 |---|---|---|
-| `DATABASE_URL` | `file:/home/<cpanel-user>/orderweeddc-data/prod.db` | you (path only, not a secret) |
+| `DATABASE_URL` | owner-provisioned pooled PostgreSQL URL with strict TLS | owner/provider |
+| `DIRECT_URL` | owner-provisioned direct PostgreSQL URL with strict TLS | owner/provider |
 | `NODE_ENV` | `production` | fixed |
 | `CANA_ALLOWED_HOSTS` | *(optional)* extra hostnames, comma-separated | you |
 | `PRISMA_QUERY_ENGINE_LIBRARY` | `/home/<cpanel-user>/apps/orderweeddc/current/node_modules/.prisma/client/libquery_engine-rhel-openssl-1.1.x.so.node` | fixed path (CageFS hides os-release, so Prisma's auto-detection guesses debian; newer artifacts also self-set this in app.js) |
@@ -125,8 +120,9 @@ operator-side ad-creative tooling, per-run, and never stored on the server.
 
 ```
 git pull
-SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 node deploy/namecheap/build-artifact.mjs
-# → dist/namecheap/orderweeddc-<shortsha>.tar.gz  (+ .sha256, + receipt.json)
+CANA_VERIFIED_NODE=$HOME/.nvm/versions/node/v20.20.2/bin/node \
+  SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs
+# → dist/namecheap/orderweeddc-<full-40-char-sha>.tar.gz (+ .sha256)
 ```
 The builder is **webpack-only** (`next build --webpack` — Turbopack standalone
 is banned for this target; see `deploy/namecheap/PRODUCTION_RELEASE_GATES.md`),
@@ -173,9 +169,9 @@ noindex, full security-header set present, no secrets in the artifact.
 ```
 sh ~/apps/orderweeddc/rollback.sh      # swaps current <- previous, restarts
 ```
-The database is never touched by deploy or rollback (it lives in
-`~/orderweeddc-data/`, outside every release directory). The broken release is
-preserved as `~/apps/orderweeddc/broken-<timestamp>` for diagnosis.
+The managed PostgreSQL database is never touched by deploy or rollback. The
+broken release is preserved as `~/apps/orderweeddc/broken-<timestamp>` for
+diagnosis.
 
 **Auto-revert trigger:** if `curl -s https://orderweeddc.com/api/health` returns
 non-200 or `"status":"UNHEALTHY"` after a deploy, run rollback immediately.

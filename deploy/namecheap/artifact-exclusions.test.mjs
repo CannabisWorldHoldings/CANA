@@ -72,6 +72,21 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
     /src\/lib\/db-config\.mjs/,
     'the packaged read-only database inspector must retain its configuration dependency',
   );
+  assert.match(
+    BUILDER,
+    /copyInstalledPackageClosure\('prisma'\)/,
+    'the release must carry its lockfile-installed migration CLI closure',
+  );
+  assert.match(
+    BUILDER,
+    /run\('sh migrate\.sh',[\s\S]*?cwd: appRoot/,
+    'the isolated court must execute the extracted release migration entrypoint',
+  );
+  assert.doesNotMatch(BUILDER, /npx --no-install prisma migrate deploy/);
+  assert.doesNotMatch(BUILDER, /\.deploy-court\.tar\.gz/);
+  assert.match(BUILDER, /databaseDataSha256\(postgres\)/);
+  assert.match(BUILDER, /marketWrites: databaseUnchanged \? 0 : null/);
+  assert.doesNotMatch(BUILDER, /const port = 3260/);
   assert.doesNotMatch(
     BUILDER,
     /(?:retailers|totalRetailers)\s*===\s*74|74 records after restart/,

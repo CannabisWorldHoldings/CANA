@@ -102,21 +102,16 @@ if [ ! -d "$MIGRATIONS_DIR" ] || [ -z "$(ls -A "$MIGRATIONS_DIR" 2>/dev/null)" ]
 fi
 
 # --- Tooling gate: prisma CLI must be available ------------------------------
-# The standalone artifact ships RUNTIME node_modules; the prisma CLI is a dev
-# tool. Preference order: local bin (repo checkout), then npx (registry access
-# required — flagged, because shared-host installs are the documented weak
-# point; see CAPABILITIES.md section 10).
-if [ -x "$SCHEMA_DIR/node_modules/.bin/prisma" ]; then
-  PRISMA="$SCHEMA_DIR/node_modules/.bin/prisma"
+# Release artifacts ship the exact lockfile-installed Prisma CLI closure and
+# invoke it directly. Registry fallback is deliberately forbidden.
+if [ -f "$SCHEMA_DIR/node_modules/prisma/build/index.js" ]; then
+  set -- node "$SCHEMA_DIR/node_modules/prisma/build/index.js"
+elif [ -x "$SCHEMA_DIR/node_modules/.bin/prisma" ]; then
+  set -- "$SCHEMA_DIR/node_modules/.bin/prisma"
 elif [ -x "$SCHEMA_DIR/../../node_modules/.bin/prisma" ]; then
-  PRISMA="$SCHEMA_DIR/../../node_modules/.bin/prisma"
-elif command -v npx >/dev/null 2>&1; then
-  PRISMA="npx prisma"
-  echo "NOTE: using 'npx prisma' — requires registry access; on the shared host"
-  echo "prefer running migrations from a machine with the repo checkout, or ship"
-  echo "the CLI explicitly. Recorded as an owner-visible operational caveat."
+  set -- "$SCHEMA_DIR/../../node_modules/.bin/prisma"
 else
-  echo "HARD STOP: no prisma CLI available (node_modules/.bin/prisma or npx)."
+  echo "HARD STOP: no packaged or repository-local prisma CLI available."
   exit 3
 fi
 
@@ -134,7 +129,7 @@ echo "direct:      configured (URL redacted)"
 echo "backup receipt sha256: $BACKUP_RECEIPT_SHA"
 
 # --- Apply committed migrations ----------------------------------------------
-DATABASE_URL="$DATABASE_URL" DIRECT_URL="$DIRECT_URL" $PRISMA migrate deploy --schema "$SCHEMA_PATH" \
+DATABASE_URL="$DATABASE_URL" DIRECT_URL="$DIRECT_URL" "$@" migrate deploy --schema "$SCHEMA_PATH" \
   || { echo "MIGRATION FAILED — provider backup receipt remains: $BACKUP_RECEIPT_SHA"; exit 4; }
 
 echo "MIGRATIONS APPLIED. Record the commit, migration output, and backup-receipt"

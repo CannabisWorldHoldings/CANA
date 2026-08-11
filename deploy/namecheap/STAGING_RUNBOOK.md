@@ -94,11 +94,15 @@ save its non-secret receipt. Provider choice and credentials remain owner-gated.
 ```
 cd ~/apps/orderweeddc-staging/current
 CANA_PRE_MIGRATION_BACKUP_RECEIPT=<receipt-path> sh migrate.sh
+node scripts/init-production-db.mjs
+node scripts/db-inspect.mjs
 ```
 
 `migrate.sh` applies `prisma/migrations/**` exactly as committed by the
 migration lane and HARD-STOPS if none are shipped (that is the correct
 behavior until that lane lands — record the stop in the log, not a workaround).
+The production initializer then creates only the canonical organization and
+brand. The inspector must report zero retailers and zero demonstration rows.
 
 ## 6. Restart, then prove readiness
 

@@ -21,7 +21,8 @@
       "server.js", "app.js", ".next/static", "public", "node_modules (runtime, incl. .prisma rhel engine)",
       "release.json", "receipt.json", "prisma/schema.prisma", "prisma/migration-manifest.json", "prisma/migration-manifest.mjs",
       "migrate.sh", "restart.sh", "rollback.sh", "healthcheck.sh", "readycheck.sh",
-      "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs"
+      "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs",
+      "scripts/init-production-db.mjs", "src/lib/db-config.mjs", "node_modules/prisma/build/index.js"
     ],
     "conditional": [
       "prisma/migrations/** — shipped only when the exact reviewed names and migration.sql SHA-256 digests match prisma/migration-manifest.json; never authored by the builder"
@@ -30,7 +31,7 @@
   "commands": {
     "build": "node deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
     "deploy": "Upload deploy.sh plus verify-owner-artifact-input.sh, then run: sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-tarball-sha256>. The script snapshots and enforces checksum, archive structure, full-SHA release identity, receipt, and isolated-runtime proof before swapping code. verify-and-deploy.sh remains the gated download + deploy path.",
-    "initializeDatabase": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (empty owner-provisioned PostgreSQL only; never creates migrations)",
+    "initializeDatabase": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh && node scripts/init-production-db.mjs   (empty owner-provisioned PostgreSQL only; creates one canonical brand and zero retailers)",
     "migrate": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires DATABASE_URL + DIRECT_URL and committed migrations)",
     "restart": "sh <app-home>/restart.sh   (touch tmp/restart.txt — Passenger rolling restart)",
     "rollback": "sh <app-home>/rollback.sh   (code-only swap to previous; database never touched)",

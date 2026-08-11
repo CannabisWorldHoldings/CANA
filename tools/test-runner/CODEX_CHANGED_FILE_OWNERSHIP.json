@@ -1026,6 +1026,7 @@
     ,"apps/web/tests/retailer-compare.test.mjs"
     ,"apps/web/tests/tenant-retailer.test.mjs"
     ,"deploy/namecheap/artifact-exclusions.test.mjs"
+    ,"NAMECHEAP_CPANEL_DEPLOYMENT.md"
   ],
   "planned_candidate_files": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -1212,6 +1213,7 @@
     ,"apps/web/scripts/continuation-tick.mjs"
     ,"apps/web/scripts/replay-reality-benchmark.mjs"
     ,"apps/web/scripts/init-production-db.mjs"
+    ,"NAMECHEAP_CPANEL_DEPLOYMENT.md"
     ,"apps/web/scripts/seed-abca-retailers.mjs"
     ,"apps/web/scripts/verify-market-reality.mjs"
     ,"apps/web/scripts/test-site-intelligence.mjs"
