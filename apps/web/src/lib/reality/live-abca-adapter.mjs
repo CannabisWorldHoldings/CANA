@@ -138,12 +138,13 @@ export function assertLiveAcquisitionAuthority({ env = process.env, request } = 
 function publicIpv4(address) {
   const octets = address.split('.').map(Number);
   if (octets.length !== 4 || octets.some((value) => !Number.isInteger(value) || value < 0 || value > 255)) return false;
-  const [a, b] = octets;
+  const [a, b, c] = octets;
   if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
   if (a === 100 && b >= 64 && b <= 127) return false;
   if (a === 169 && b === 254) return false;
   if (a === 172 && b >= 16 && b <= 31) return false;
   if (a === 192 && (b === 0 || b === 168)) return false;
+  if (a === 192 && b === 88 && c === 99) return false;
   if (a === 198 && (b === 18 || b === 19 || b === 51)) return false;
   if (a === 203 && b === 0) return false;
   return true;
@@ -186,8 +187,11 @@ function publicIpv6(address) {
   if ((first & 0xffc0) === 0xfec0) return false;
   if (first === 0x0064 && words[1] === 0xff9b && (words[2] === 0 || words[2] === 1)) return false;
   if (first === 0x0100 && words.slice(1, 4).every((word) => word === 0)) return false;
+  if ((first & 0xe000) !== 0x2000) return false;
+  if (first === 0x2001 && (words[1] & 0xfe00) === 0) return false;
   if (first === 0x2001 && words[1] === 0x0db8) return false;
   if (first === 0x2002) return false;
+  if (first === 0x3fff && (words[1] & 0xf000) === 0) return false;
   return true;
 }
 

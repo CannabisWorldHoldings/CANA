@@ -282,7 +282,8 @@ test('SSRF validation accepts only public DNS answers and rejects rebinding cand
   assert.deepEqual(validateResolvedAddresses([
     { address: '23.48.99.80', family: 4 },
     { address: '2600:1408:ec00:36::1736:7f24', family: 6 },
-  ]), ['23.48.99.80', '2600:1408:ec00:36::1736:7f24']);
+    { address: '2001:4860:4860::8888', family: 6 },
+  ]), ['23.48.99.80', '2600:1408:ec00:36::1736:7f24', '2001:4860:4860::8888']);
   for (const address of [
     '0.0.0.0',
     '10.0.0.1',
@@ -290,6 +291,7 @@ test('SSRF validation accepts only public DNS answers and rejects rebinding cand
     '127.0.0.1',
     '169.254.1.1',
     '172.16.0.1',
+    '192.88.99.1',
     '192.168.1.1',
     '224.0.0.1',
     '::',
@@ -307,8 +309,14 @@ test('SSRF validation accepts only public DNS answers and rejects rebinding cand
     'ff02::1',
     'ff02:0:0:0:0:0:0:1',
     '64:ff9b::7f00:1',
+    '2001:0000::1',
+    '2001:0010::1',
+    '2001:0020::1',
+    '2001:0030::1',
     '2001:0db8:0:0:0:0:0:1',
     '2002:7f00:1::1',
+    '3fff::1',
+    '5f00::1',
   ]) {
     assert.throws(
       () => validateResolvedAddresses([{ address }]),
