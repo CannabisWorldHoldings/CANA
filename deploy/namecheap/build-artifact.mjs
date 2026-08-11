@@ -42,7 +42,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { auditArtifactExclusions } from './artifact-exclusions.mjs';
+import {
+  auditArtifactExclusions,
+  PINNED_ARTIFACT_EXECUTABLE_SHA256,
+} from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
 import { selectTestPrismaEngine } from './select-test-engine.mjs';
@@ -610,6 +613,12 @@ for (const packageRoot of packagedMigrationPackages) {
 const packagedPrismaCliSha256 = sha256File(
   path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
 );
+if (
+  packagedPrismaCliSha256 !==
+  PINNED_ARTIFACT_EXECUTABLE_SHA256['node_modules/prisma/build/index.js']
+) {
+  throw new Error('The packaged Prisma CLI does not match the reviewed dependency bytes');
+}
 const packagedSchemaEngines = Object.fromEntries(
   PACKAGED_MIGRATION_BINARY_TARGETS.map((binaryTarget) => {
     const relativePath = `node_modules/@prisma/engines/schema-engine-${binaryTarget}`;
@@ -1135,11 +1144,7 @@ async function isolatedRuntimeTest() {
     } catch {}
   }
 
-  const exclusionAudit = auditArtifactExclusions(appRoot, {
-    trustedCredentialLiteralSha256: {
-      'node_modules/prisma/build/index.js': packagedPrismaCliSha256,
-    },
-  });
+  const exclusionAudit = auditArtifactExclusions(appRoot);
   record(
     'no forbidden secret files or credential patterns in artifact',
     exclusionAudit.passed,

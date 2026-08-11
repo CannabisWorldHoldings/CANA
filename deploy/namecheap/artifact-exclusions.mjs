@@ -20,6 +20,11 @@ const CREDENTIAL_PATTERNS = [
   ],
 ];
 
+export const PINNED_ARTIFACT_EXECUTABLE_SHA256 = Object.freeze({
+  'node_modules/prisma/build/index.js':
+    'c2a77456b70e8ba1e640e122824ed694433828a7c0d76ff3db7fc376b4b0e1a0',
+});
+
 function walkFiles(directory, output = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const target = path.join(directory, entry.name);
@@ -29,7 +34,7 @@ function walkFiles(directory, output = []) {
   return output;
 }
 
-export function auditArtifactExclusions(artifactRoot, { trustedCredentialLiteralSha256 = {} } = {}) {
+export function auditArtifactExclusions(artifactRoot) {
   const files = walkFiles(artifactRoot);
   const forbiddenFiles = files
     .filter((file) => FORBIDDEN_FILE_PATTERNS.some((pattern) => pattern.test(path.basename(file))))
@@ -40,7 +45,7 @@ export function auditArtifactExclusions(artifactRoot, { trustedCredentialLiteral
     const contents = fs.readFileSync(file);
     if (contents.includes(0)) continue;
     const relativePath = path.relative(artifactRoot, file);
-    const trustedSha256 = trustedCredentialLiteralSha256[relativePath];
+    const trustedSha256 = PINNED_ARTIFACT_EXECUTABLE_SHA256[relativePath];
     if (
       typeof trustedSha256 === 'string' &&
       createHash('sha256').update(contents).digest('hex') === trustedSha256

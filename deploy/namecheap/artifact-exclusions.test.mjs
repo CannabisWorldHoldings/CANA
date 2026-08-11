@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { auditArtifactExclusions } from './artifact-exclusions.mjs';
+import {
+  auditArtifactExclusions,
+  PINNED_ARTIFACT_EXECUTABLE_SHA256,
+} from './artifact-exclusions.mjs';
 
 const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
 
@@ -60,7 +62,7 @@ test('artifact exclusion audit distinguishes executable secret modules from secr
   assert.deepEqual(result.forbiddenFiles, ['secret.json']);
 });
 
-test('artifact exclusion audit accepts only an exact hash-bound dependency literal', (t) => {
+test('artifact exclusion audit cannot be given a caller-controlled dependency exemption', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const relativePath = 'node_modules/prisma/build/index.js';
@@ -69,17 +71,20 @@ test('artifact exclusion audit accepts only an exact hash-bound dependency liter
   const source = 'const fixture = "postgresql://user:placeholder@localhost/example"';
   fs.writeFileSync(target, source);
 
-  assert.equal(auditArtifactExclusions(root).passed, false);
-  assert.equal(auditArtifactExclusions(root, {
+  const result = auditArtifactExclusions(root, {
     trustedCredentialLiteralSha256: {
-      [relativePath]: '0'.repeat(64),
+      [relativePath]: PINNED_ARTIFACT_EXECUTABLE_SHA256[relativePath],
     },
-  }).passed, false);
-  assert.equal(auditArtifactExclusions(root, {
-    trustedCredentialLiteralSha256: {
-      [relativePath]: createHash('sha256').update(source).digest('hex'),
-    },
-  }).passed, true);
+  });
+  assert.equal(result.passed, false);
+  assert.deepEqual(result.credentialFindings, [{
+    file: relativePath,
+    pattern: 'credential-bearing database URL',
+  }]);
+  assert.equal(
+    PINNED_ARTIFACT_EXECUTABLE_SHA256[relativePath],
+    'c2a77456b70e8ba1e640e122824ed694433828a7c0d76ff3db7fc376b4b0e1a0',
+  );
 });
 
 test('release artifact excludes every legacy ABCA truth bypass', () => {
@@ -110,6 +115,8 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
     /copyInstalledPackageClosure\('prisma'\)/,
     'the release must carry its lockfile-installed migration CLI closure',
   );
+  assert.match(BUILDER, /packagedPrismaCliSha256 !==[\s\S]*?PINNED_ARTIFACT_EXECUTABLE_SHA256/);
+  assert.doesNotMatch(BUILDER, /trustedCredentialLiteralSha256:[\s\S]*?packagedPrismaCliSha256/);
   assert.match(BUILDER, /PRISMA_CLI_BINARY_TARGETS: PACKAGED_MIGRATION_BINARY_TARGETS\.join\(','\)/);
   assert.match(BUILDER, /'linux-arm64-openssl-3\.0\.x'/);
   assert.match(BUILDER, /'rhel-openssl-3\.0\.x'/);
