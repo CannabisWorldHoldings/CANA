@@ -192,6 +192,10 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
     'utf8',
   );
   const stagingRunbook = fs.readFileSync(new URL('./STAGING_RUNBOOK.md', import.meta.url), 'utf8');
+  const cutoverRunbook = fs.readFileSync(
+    new URL('./PRODUCTION_CUTOVER_RUNBOOK.md', import.meta.url),
+    'utf8',
+  );
   const manifest = JSON.parse(fs.readFileSync(new URL('./MANIFEST.json', import.meta.url), 'utf8'));
 
   assert.match(
@@ -216,6 +220,24 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
     assert.match(runbook, /sh migrate\.sh --initialize/);
   }
   assert.match(manifest.commands.initializeDatabase, /sh migrate\.sh --initialize/);
+  assert.equal(
+    (cutoverRunbook.match(/trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM/g) ?? [])
+      .length,
+    2,
+    'production deploy and migration commands each clean up Terminal database secrets',
+  );
+  assert.match(cutoverRunbook, /read -r -s -p 'PRODUCTION DATABASE_URL: '/);
+  assert.match(cutoverRunbook, /read -r -s -p 'PRODUCTION DIRECT_URL: '/);
+  assert.match(cutoverRunbook, /cPanel Terminal does not inherit Setup Node\.js App variables/);
+  assert.match(
+    cutoverRunbook,
+    /prove the previous release is compatible with the\s+current PostgreSQL schema/,
+  );
+  assert.match(cutoverRunbook, /do not\s+run the code-only rollback/);
+  assert.match(
+    cutoverRunbook,
+    /Restoring the verified provider backup is a\s+separate owner-authorized database operation/,
+  );
 });
 
 test('integrated migration mode cannot initialize after a migration precondition failure', (t) => {
