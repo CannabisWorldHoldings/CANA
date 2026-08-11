@@ -110,15 +110,22 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
     /copyInstalledPackageClosure\('prisma'\)/,
     'the release must carry its lockfile-installed migration CLI closure',
   );
+  assert.match(BUILDER, /PRISMA_CLI_BINARY_TARGETS: PACKAGED_MIGRATION_BINARY_TARGETS\.join\(','\)/);
+  assert.match(BUILDER, /'linux-arm64-openssl-3\.0\.x'/);
+  assert.match(BUILDER, /'rhel-openssl-1\.1\.x'/);
+  assert.match(BUILDER, /packagedSchemaEngines/);
   assert.match(
     BUILDER,
     /run\('sh migrate\.sh',[\s\S]*?cwd: appRoot/,
     'the isolated court must execute the extracted release migration entrypoint',
   );
+  assert.match(BUILDER, /OWD_NODE: process\.execPath/);
   assert.doesNotMatch(BUILDER, /npx --no-install prisma migrate deploy/);
   assert.doesNotMatch(BUILDER, /\.deploy-court\.tar\.gz/);
   assert.match(BUILDER, /databaseDataSha256\(postgres\)/);
-  assert.match(BUILDER, /marketWrites: databaseUnchanged \? 0 : null/);
+  assert.match(BUILDER, /databaseWriteCounters\(postgres\)/);
+  assert.match(BUILDER, /marketWrites === 0/);
+  assert.doesNotMatch(BUILDER, /marketWrites: databaseUnchanged \? 0 : null/);
   assert.match(
     BUILDER,
     /try \{\s*writeReceipt\(\{[\s\S]*?finally \{\s*finalCleanup = stopDisposablePostgres\(isolatedResults\.postgres\)/,

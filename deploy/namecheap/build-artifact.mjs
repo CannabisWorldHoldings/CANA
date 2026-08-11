@@ -123,6 +123,10 @@ if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
 // accepts only the explicitly vetted absolute executable and this process verifies that
 // exact real path before running any build command.
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
+const PACKAGED_MIGRATION_BINARY_TARGETS = Object.freeze([
+  'linux-arm64-openssl-3.0.x',
+  'rhel-openssl-1.1.x',
+]);
 const artifactToolVerification = [
   '--verify-operational-scripts',
   '--verify-clean-packaging',
@@ -318,6 +322,33 @@ function databaseDataSha256(postgres) {
   return createHash('sha256').update(canonicalDump).digest('hex');
 }
 
+function databaseWriteCounters(postgres) {
+  const output = execFile(
+    'docker',
+    [
+      'exec', postgres.name, 'psql', '-U', 'postgres', '-d', 'cana_verify',
+      '--tuples-only', '--no-align', '--field-separator', '|', '--command',
+      'SELECT COALESCE(SUM(n_tup_ins), 0)::bigint, '
+        + 'COALESCE(SUM(n_tup_upd), 0)::bigint, '
+        + 'COALESCE(SUM(n_tup_del), 0)::bigint FROM pg_stat_user_tables',
+    ],
+  );
+  const values = output.split('|').map((value) => Number(value));
+  if (
+    values.length !== 3
+    || values.some((value) => !Number.isSafeInteger(value) || value < 0)
+  ) {
+    throw new Error('Disposable PostgreSQL returned invalid audited write counters');
+  }
+  const [inserted, updated, deleted] = values;
+  return {
+    inserted,
+    updated,
+    deleted,
+    total: inserted + updated + deleted,
+  };
+}
+
 async function availableLoopbackPort() {
   const server = net.createServer();
   await new Promise((resolve, reject) => {
@@ -443,7 +474,12 @@ fs.rmSync(path.join(webRoot, '.next'), { recursive: true, force: true });
 fs.mkdirSync(artifactRoot, { recursive: true });
 
 if (process.env.CLEAN_INSTALL === '1') {
-  run('npm ci', { cwd: repoRoot });
+  run('npm ci', {
+    cwd: repoRoot,
+    env: releaseChildEnvironment({
+      PRISMA_CLI_BINARY_TARGETS: PACKAGED_MIGRATION_BINARY_TARGETS.join(','),
+    }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -573,6 +609,17 @@ for (const packageRoot of packagedMigrationPackages) {
 const packagedPrismaCliSha256 = sha256File(
   path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
 );
+const packagedSchemaEngines = Object.fromEntries(
+  PACKAGED_MIGRATION_BINARY_TARGETS.map((binaryTarget) => {
+    const relativePath = `node_modules/@prisma/engines/schema-engine-${binaryTarget}`;
+    const target = path.join(artifactRoot, relativePath);
+    assertExists(target, `artifact-local Prisma schema engine for ${binaryTarget}`);
+    return [binaryTarget, {
+      relativePath,
+      sha256: sha256File(target),
+    }];
+  }),
+);
 validateCanonicalMigrationUniverse({
   migrationsDir: path.join(artifactRoot, 'prisma/migrations'),
   manifest: loadCanonicalMigrationManifest(path.join(artifactRoot, 'prisma/migration-manifest.json')),
@@ -620,6 +667,11 @@ checks['@prisma/client package present'] = fs.existsSync(
 checks['artifact-local prisma migration CLI present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
 );
+for (const [binaryTarget, engine] of Object.entries(packagedSchemaEngines)) {
+  checks[`artifact-local ${binaryTarget} schema engine present`] = fs.existsSync(
+    path.join(artifactRoot, engine.relativePath),
+  );
+}
 checks['.prisma/client generated dir present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/.prisma/client'),
 );
@@ -747,6 +799,7 @@ function writeReceipt(extra = {}) {
       migrationUniverse,
       packagedMigrationPackages,
       packagedPrismaCliSha256,
+      packagedSchemaEngines,
     },
     checks,
     ...extra,
@@ -817,6 +870,7 @@ async function isolatedRuntimeTest() {
     cwd: appRoot,
     env: {
       PATH: process.env.PATH,
+      OWD_NODE: process.execPath,
       DATABASE_URL: postgres.databaseUrl,
       DIRECT_URL: postgres.databaseUrl,
       CANA_PRE_MIGRATION_BACKUP_RECEIPT: disposableBackupReceipt,
@@ -857,6 +911,7 @@ async function isolatedRuntimeTest() {
     JSON.stringify(inspect.counts),
   );
   const initializedDatabaseSha256 = databaseDataSha256(postgres);
+  const runtimeWriteCountersBefore = databaseWriteCounters(postgres);
   results.productionBootstrapDataSha256 = initializedDatabaseSha256;
 
   // Start app.js with a minimal, NODE_PATH-free environment.
@@ -884,6 +939,23 @@ async function isolatedRuntimeTest() {
     server.stdout.on('data', (data) => { serverLog += data; });
     server.stderr.on('data', (data) => { serverLog += data; });
     return server;
+  };
+  const stopServer = async (server) => {
+    if (!server || server.exitCode !== null) return;
+    await new Promise((resolve, reject) => {
+      const forceTimer = setTimeout(() => {
+        if (server.exitCode === null) server.kill('SIGKILL');
+      }, 5_000);
+      server.once('error', (error) => {
+        clearTimeout(forceTimer);
+        reject(error);
+      });
+      server.once('exit', () => {
+        clearTimeout(forceTimer);
+        resolve();
+      });
+      server.kill('SIGTERM');
+    });
   };
   const waitForServer = async (server) => {
     for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -1002,8 +1074,7 @@ async function isolatedRuntimeTest() {
     }
 
     // Restart persistence.
-    child.kill('SIGTERM');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await stopServer(child);
     child = startServer();
     await waitForServer(child);
     const health2 = JSON.parse(
@@ -1020,6 +1091,10 @@ async function isolatedRuntimeTest() {
         },
       }),
     );
+    await stopServer(child);
+    child = null;
+    const runtimeWriteCountersAfter = databaseWriteCounters(postgres);
+    const marketWrites = runtimeWriteCountersAfter.total - runtimeWriteCountersBefore.total;
     const restartedDatabaseSha256 = databaseDataSha256(postgres);
     const databaseUnchanged = initializedDatabaseSha256 === restartedDatabaseSha256;
     results.restart = {
@@ -1028,7 +1103,9 @@ async function isolatedRuntimeTest() {
       counts: inspectAfterRestart.counts,
       databaseDataBeforeSha256: initializedDatabaseSha256,
       databaseDataAfterSha256: restartedDatabaseSha256,
-      marketWrites: databaseUnchanged ? 0 : null,
+      auditedWriteCountersBefore: runtimeWriteCountersBefore,
+      auditedWriteCountersAfter: runtimeWriteCountersAfter,
+      marketWrites,
     };
     record(
       'restart persistence: canonical brand, empty market, zero demo',
@@ -1042,13 +1119,18 @@ async function isolatedRuntimeTest() {
       JSON.stringify(inspectAfterRestart.counts),
     );
     record(
+      'runtime and restart perform zero audited PostgreSQL writes',
+      marketWrites === 0,
+      `${runtimeWriteCountersBefore.total} -> ${runtimeWriteCountersAfter.total}`,
+    );
+    record(
       'health and restart leave the complete PostgreSQL data state unchanged',
       databaseUnchanged,
       `${initializedDatabaseSha256} -> ${restartedDatabaseSha256}`,
     );
   } finally {
     try {
-      child.kill('SIGTERM');
+      await stopServer(child);
     } catch {}
   }
 

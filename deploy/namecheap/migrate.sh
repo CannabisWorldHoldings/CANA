@@ -36,6 +36,15 @@ MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
 SCHEMA_PATH="$SCHEMA_DIR/$SCHEMA"
 MIGRATION_MANIFEST="$SCHEMA_DIR/prisma/migration-manifest.json"
 MIGRATION_MANIFEST_VERIFIER="$SCHEMA_DIR/prisma/migration-manifest.mjs"
+if [ -n "${OWD_NODE-}" ]; then
+  NODE_BIN="$OWD_NODE"
+elif [ -x /opt/alt/alt-nodejs20/root/usr/bin/node ]; then
+  NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
+else
+  NODE_BIN="$(command -v node || true)"
+fi
+case "$NODE_BIN" in /*) ;; *) echo "HARD STOP: OWD_NODE must resolve to an absolute executable"; exit 3;; esac
+[ -x "$NODE_BIN" ] || { echo "HARD STOP: OWD_NODE is not executable"; exit 3; }
 : "${DATABASE_URL:?HARD STOP: DATABASE_URL is required}"
 : "${DIRECT_URL:?HARD STOP: DIRECT_URL is required}"
 : "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"
@@ -44,13 +53,13 @@ MIGRATION_MANIFEST_VERIFIER="$SCHEMA_DIR/prisma/migration-manifest.mjs"
   [ -f "$MIGRATION_MANIFEST_VERIFIER" ] && [ ! -L "$MIGRATION_MANIFEST_VERIFIER" ] || {
   echo "HARD STOP: canonical migration manifest and verifier must be regular files"; exit 2;
 }
-MIGRATION_MANIFEST_PROOF="$(node "$MIGRATION_MANIFEST_VERIFIER" "$MIGRATIONS_DIR" "$MIGRATION_MANIFEST")" || {
+MIGRATION_MANIFEST_PROOF="$("$NODE_BIN" "$MIGRATION_MANIFEST_VERIFIER" "$MIGRATIONS_DIR" "$MIGRATION_MANIFEST")" || {
   echo "HARD STOP: committed migrations do not match the reviewed canonical manifest"; exit 2;
 }
 
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
-CANA_SCHEMA_DIR="$SCHEMA_DIR" node <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS or match the connected disposable PostgreSQL identity"; exit 5; }
+CANA_SCHEMA_DIR="$SCHEMA_DIR" "$NODE_BIN" <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS or match the connected disposable PostgreSQL identity"; exit 5; }
 const path = require('node:path');
 const { createRequire } = require('node:module');
 const names = ['DATABASE_URL', 'DIRECT_URL'];
@@ -105,7 +114,7 @@ fi
 # Release artifacts ship the exact lockfile-installed Prisma CLI closure and
 # invoke it directly. Registry fallback is deliberately forbidden.
 if [ -f "$SCHEMA_DIR/node_modules/prisma/build/index.js" ]; then
-  set -- node "$SCHEMA_DIR/node_modules/prisma/build/index.js"
+  set -- "$NODE_BIN" "$SCHEMA_DIR/node_modules/prisma/build/index.js"
 elif [ -x "$SCHEMA_DIR/node_modules/.bin/prisma" ]; then
   set -- "$SCHEMA_DIR/node_modules/.bin/prisma"
 elif [ -x "$SCHEMA_DIR/../../node_modules/.bin/prisma" ]; then
