@@ -564,6 +564,15 @@ fs.copyFileSync(migrationVerifierPath, path.join(artifactRoot, 'prisma/migration
 const packagedMigrationPackages = [...copyInstalledPackageClosure('prisma')]
   .map((packageRoot) => path.relative(path.join(repoRoot, 'node_modules'), packageRoot))
   .sort();
+for (const packageRoot of packagedMigrationPackages) {
+  const destination = path.join(artifactRoot, 'node_modules', packageRoot);
+  for (const file of walkFiles(destination)) {
+    if (/^readme.*\.md$/i.test(path.basename(file))) fs.rmSync(file);
+  }
+}
+const packagedPrismaCliSha256 = sha256File(
+  path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
+);
 validateCanonicalMigrationUniverse({
   migrationsDir: path.join(artifactRoot, 'prisma/migrations'),
   manifest: loadCanonicalMigrationManifest(path.join(artifactRoot, 'prisma/migration-manifest.json')),
@@ -737,6 +746,7 @@ function writeReceipt(extra = {}) {
       },
       migrationUniverse,
       packagedMigrationPackages,
+      packagedPrismaCliSha256,
     },
     checks,
     ...extra,
@@ -1042,7 +1052,11 @@ async function isolatedRuntimeTest() {
     } catch {}
   }
 
-  const exclusionAudit = auditArtifactExclusions(appRoot);
+  const exclusionAudit = auditArtifactExclusions(appRoot, {
+    trustedCredentialLiteralSha256: {
+      'node_modules/prisma/build/index.js': packagedPrismaCliSha256,
+    },
+  });
   record(
     'no forbidden secret files or credential patterns in artifact',
     exclusionAudit.passed,

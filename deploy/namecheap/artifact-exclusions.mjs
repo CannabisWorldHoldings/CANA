@@ -1,9 +1,10 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const FORBIDDEN_FILE_PATTERNS = [
   /^\.env(?:\.|$)/i,
-  /^\.?(?:credentials?|secrets?)(?:\.[^.]+)?$/i,
+  /^\.?(?:credentials?|secrets?)(?:\.(?:env|json|txt|ya?ml))?$/i,
   /\.(?:key|pem|p12|pfx)$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/i,
 ];
@@ -28,7 +29,7 @@ function walkFiles(directory, output = []) {
   return output;
 }
 
-export function auditArtifactExclusions(artifactRoot) {
+export function auditArtifactExclusions(artifactRoot, { trustedCredentialLiteralSha256 = {} } = {}) {
   const files = walkFiles(artifactRoot);
   const forbiddenFiles = files
     .filter((file) => FORBIDDEN_FILE_PATTERNS.some((pattern) => pattern.test(path.basename(file))))
@@ -38,6 +39,12 @@ export function auditArtifactExclusions(artifactRoot) {
   for (const file of files) {
     const contents = fs.readFileSync(file);
     if (contents.includes(0)) continue;
+    const relativePath = path.relative(artifactRoot, file);
+    const trustedSha256 = trustedCredentialLiteralSha256[relativePath];
+    if (
+      typeof trustedSha256 === 'string' &&
+      createHash('sha256').update(contents).digest('hex') === trustedSha256
+    ) continue;
     const text = contents.toString('utf8');
     for (const [label, pattern] of CREDENTIAL_PATTERNS) {
       if (pattern.test(text)) {

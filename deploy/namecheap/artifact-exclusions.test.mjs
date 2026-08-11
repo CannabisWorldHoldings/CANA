@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -47,6 +48,38 @@ test('artifact exclusion audit rejects embedded credential patterns', (t) => {
     result.credentialFindings.map(({ pattern }) => pattern).sort(),
     ['credential-bearing database URL'],
   );
+});
+
+test('artifact exclusion audit distinguishes executable secret modules from secret material', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(root, 'Secret.js'), 'export const Secret = Object.freeze({})');
+  fs.writeFileSync(path.join(root, 'secret.json'), '{}');
+
+  const result = auditArtifactExclusions(root);
+  assert.deepEqual(result.forbiddenFiles, ['secret.json']);
+});
+
+test('artifact exclusion audit accepts only an exact hash-bound dependency literal', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const relativePath = 'node_modules/prisma/build/index.js';
+  const target = path.join(root, relativePath);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  const source = 'const fixture = "postgresql://user:placeholder@localhost/example"';
+  fs.writeFileSync(target, source);
+
+  assert.equal(auditArtifactExclusions(root).passed, false);
+  assert.equal(auditArtifactExclusions(root, {
+    trustedCredentialLiteralSha256: {
+      [relativePath]: '0'.repeat(64),
+    },
+  }).passed, false);
+  assert.equal(auditArtifactExclusions(root, {
+    trustedCredentialLiteralSha256: {
+      [relativePath]: createHash('sha256').update(source).digest('hex'),
+    },
+  }).passed, true);
 });
 
 test('release artifact excludes every legacy ABCA truth bypass', () => {
