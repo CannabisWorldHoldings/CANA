@@ -112,6 +112,7 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
   );
   assert.match(BUILDER, /PRISMA_CLI_BINARY_TARGETS: PACKAGED_MIGRATION_BINARY_TARGETS\.join\(','\)/);
   assert.match(BUILDER, /'linux-arm64-openssl-3\.0\.x'/);
+  assert.match(BUILDER, /'rhel-openssl-3\.0\.x'/);
   assert.match(BUILDER, /'rhel-openssl-1\.1\.x'/);
   assert.match(BUILDER, /packagedSchemaEngines/);
   assert.match(

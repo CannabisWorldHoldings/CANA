@@ -125,6 +125,7 @@ if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
 const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
 const PACKAGED_MIGRATION_BINARY_TARGETS = Object.freeze([
   'linux-arm64-openssl-3.0.x',
+  'rhel-openssl-3.0.x',
   'rhel-openssl-1.1.x',
 ]);
 const artifactToolVerification = [
