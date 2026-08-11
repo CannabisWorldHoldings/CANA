@@ -305,14 +305,19 @@ test('current truth requires a current acquisition-bound court event and exclude
     { id: 'acq-b', tenant: 'orderweeddc.com', state: 'COMPLETED', outcome: 'SOURCE_CHANGED', completeness: 'COMPLETE', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, requestDigest: ABCA_LIVE_CONTRACT_DIGEST, adapterContractDigest: ABCA_LIVE_CONTRACT_DIGEST, snapshotId: 'snapshot-b', contentArtifactId: 'content-b', fetchedAt: new Date(ACQUIRED_AT), revisionState: 'UNKNOWN', adapterVersion: 'dc-abca-live-v1', parserVersion: 'cana-dc-abca-arcgis-snapshot-v1', compilerVersion: 'cana-reality-compiler-v1', entityResolverVersion: 'dc-abca-identity-v1', authorityPolicyVersion: 'dc-abca-authority-v1', freshnessPolicyVersion: 'dc-abca-freshness-v1', verificationCourtVersion: COURT_VERSION, repositoryCommitSha: REPOSITORY_COMMIT_SHA, repositoryTreeSha: REPOSITORY_TREE_SHA },
   ];
   const contentArtifacts = [
-    { id: 'content-a', snapshotId: 'snapshot-a', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, requestContractDigest: ABCA_LIVE_CONTRACT_DIGEST, contentSha256: 'a'.repeat(64) },
-    { id: 'content-b', snapshotId: 'snapshot-b', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, requestContractDigest: ABCA_LIVE_CONTRACT_DIGEST, contentSha256: 'b'.repeat(64) },
+    { id: 'content-a', snapshotId: 'snapshot-a', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, requestContractDigest: ABCA_LIVE_CONTRACT_DIGEST, contentSha256: 'a'.repeat(64), payloadBytes: 100, recordCount: 1, schemaVersion: 'cana-dc-abca-arcgis-snapshot-v1' },
+    { id: 'content-b', snapshotId: 'snapshot-b', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, requestContractDigest: ABCA_LIVE_CONTRACT_DIGEST, contentSha256: 'b'.repeat(64), payloadBytes: 200, recordCount: 2, schemaVersion: 'cana-dc-abca-arcgis-snapshot-v1' },
+  ];
+  const sourceSnapshots = [
+    { id: 'snapshot-a', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, payloadSha256: 'a'.repeat(64), payloadBytes: 100, recordCount: 1, schemaVersion: 'cana-dc-abca-arcgis-snapshot-v1', completeness: 'COMPLETE' },
+    { id: 'snapshot-b', sourceKey: ABCA_LIVE_CONTRACT.sourceKey, sourceUrl: ABCA_LIVE_CONTRACT.layerUrl, payloadSha256: 'b'.repeat(64), payloadBytes: 200, recordCount: 2, schemaVersion: 'cana-dc-abca-arcgis-snapshot-v1', completeness: 'COMPLETE' },
   ];
   const current = adapter.selectCurrentClaimDecisions({
     claims,
     verificationEvents: events,
     acquisitionEvents: acquisitions,
     contentArtifacts,
+    sourceSnapshots,
     revocations: [{ decision: 'EVIDENCE_REVOKED', acquisitionEventId: 'acq-a', effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
@@ -323,6 +328,7 @@ test('current truth requires a current acquisition-bound court event and exclude
     verificationEvents: events,
     acquisitionEvents: acquisitions,
     contentArtifacts,
+    sourceSnapshots,
     revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: 'dc-abca-authority-v1', effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
@@ -333,6 +339,7 @@ test('current truth requires a current acquisition-bound court event and exclude
     verificationEvents: events,
     acquisitionEvents: acquisitions,
     contentArtifacts,
+    sourceSnapshots,
     revocations: [{ decision: 'EVIDENCE_REVOKED', targetKind: 'POLICY_VERSION', targetId: COURT_VERSION, effectiveAt: AS_OF }],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   });
@@ -359,6 +366,7 @@ test('current truth requires a current acquisition-bound court event and exclude
       verificationEvents: [events[0]],
       acquisitionEvents: [{ ...acquisitions[0], ...hostile }],
       contentArtifacts,
+      sourceSnapshots,
       revocations: [],
       asOf: new Date('2026-08-12T00:00:00.000Z'),
     });
@@ -370,6 +378,7 @@ test('current truth requires a current acquisition-bound court event and exclude
     verificationEvents: [events[0]],
     acquisitionEvents: [{ ...acquisitions[0], repositoryCommitSha: '0'.repeat(40) }],
     contentArtifacts,
+    sourceSnapshots,
     revocations: [],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   }), [], 'a nonexistent repository commit cannot authorize current truth');
@@ -378,9 +387,27 @@ test('current truth requires a current acquisition-bound court event and exclude
     verificationEvents: [events[0]],
     acquisitionEvents: [acquisitions[0]],
     contentArtifacts: [],
+    sourceSnapshots,
     revocations: [],
     asOf: new Date('2026-08-12T00:00:00.000Z'),
   }), [], 'current truth requires the immutable content artifact and snapshot binding');
+  for (const [artifactOverride, snapshotOverride] of [
+    [{ contentSha256: 'f'.repeat(64) }, {}],
+    [{ payloadBytes: 101 }, {}],
+    [{ recordCount: 2 }, {}],
+    [{ schemaVersion: 'forged-schema-v9' }, {}],
+    [{}, { completeness: 'PARTIAL' }],
+  ]) {
+    assert.deepEqual(adapter.selectCurrentClaimDecisions({
+      claims: [claims[0]],
+      verificationEvents: [events[0]],
+      acquisitionEvents: [acquisitions[0]],
+      contentArtifacts: [{ ...contentArtifacts[0], ...artifactOverride }],
+      sourceSnapshots: [{ ...sourceSnapshots[0], ...snapshotOverride }],
+      revocations: [],
+      asOf: new Date('2026-08-12T00:00:00.000Z'),
+    }), [], 'current truth requires exact immutable snapshot bytes and schema binding');
+  }
 });
 
 test('source routing cannot create predicate authority or let reliability override prohibition', () => {

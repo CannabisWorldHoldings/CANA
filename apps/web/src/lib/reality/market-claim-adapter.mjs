@@ -76,7 +76,7 @@ function field(row, camel, snake) {
   return row?.[camel] ?? row?.[snake];
 }
 
-function admittedAcquisition(claim, event, acquisition, artifact, eventAsOf) {
+function admittedAcquisition(claim, event, acquisition, artifact, snapshot, eventAsOf) {
   const claimTenant = claim.tenant;
   const claimSnapshotId = field(claim, 'snapshotId', 'snapshot_id');
   const acquisitionSnapshotId = field(acquisition, 'snapshotId', 'snapshot_id');
@@ -110,10 +110,18 @@ function admittedAcquisition(claim, event, acquisition, artifact, eventAsOf) {
     && contentArtifactId.length > 0
     && artifact?.id === contentArtifactId
     && field(artifact, 'snapshotId', 'snapshot_id') === claimSnapshotId
+    && snapshot?.id === claimSnapshotId
     && field(artifact, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
+    && field(snapshot, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
     && field(artifact, 'sourceUrl', 'source_url') === ABCA_LIVE_CONTRACT.layerUrl
+    && field(snapshot, 'sourceUrl', 'source_url') === ABCA_LIVE_CONTRACT.layerUrl
     && field(artifact, 'requestContractDigest', 'request_contract_digest') === ABCA_LIVE_CONTRACT_DIGEST
-    && /^[a-f0-9]{64}$/.test(field(artifact, 'contentSha256', 'content_sha256') ?? '')
+    && field(artifact, 'contentSha256', 'content_sha256') === field(snapshot, 'payloadSha256', 'payload_sha256')
+    && field(artifact, 'payloadBytes', 'payload_bytes') === field(snapshot, 'payloadBytes', 'payload_bytes')
+    && field(artifact, 'recordCount', 'record_count') === field(snapshot, 'recordCount', 'record_count')
+    && field(artifact, 'schemaVersion', 'schema_version') === field(snapshot, 'schemaVersion', 'schema_version')
+    && field(snapshot, 'completeness', 'completeness') === 'COMPLETE'
+    && /^[a-f0-9]{64}$/.test(field(snapshot, 'payloadSha256', 'payload_sha256') ?? '')
     && Number.isFinite(fetchedAt.getTime())
     && fetchedAt <= eventAsOf
     && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryCommitSha', 'repository_commit_sha') ?? '')
@@ -131,6 +139,7 @@ export function selectCurrentClaimDecisions({
   verificationEvents = [],
   acquisitionEvents = [],
   contentArtifacts = [],
+  sourceSnapshots = [],
   revocations = [],
   asOf = new Date(),
 }) {
@@ -158,6 +167,12 @@ export function selectCurrentClaimDecisions({
     if (artifactById.has(artifact.id)) duplicateArtifactIds.add(artifact.id);
     else artifactById.set(artifact.id, artifact);
   }
+  const duplicateSnapshotIds = new Set();
+  const snapshotById = new Map();
+  for (const snapshot of sourceSnapshots) {
+    if (snapshotById.has(snapshot.id)) duplicateSnapshotIds.add(snapshot.id);
+    else snapshotById.set(snapshot.id, snapshot);
+  }
   const current = [];
   for (const claim of claims) {
     const event = latestByClaim.get(claim.id);
@@ -165,12 +180,15 @@ export function selectCurrentClaimDecisions({
     const acquisition = acquisitionById.get(acquisitionEventId);
     const contentArtifactId = field(acquisition, 'contentArtifactId', 'content_artifact_id');
     const artifact = artifactById.get(contentArtifactId);
+    const snapshotId = field(acquisition, 'snapshotId', 'snapshot_id');
+    const snapshot = snapshotById.get(snapshotId);
     const eventAsOf = new Date(event?.asOf ?? event?.as_of);
     const expiry = new Date(event?.freshnessExpiresAt ?? event?.freshness_expires_at);
     if (!acquisition
       || duplicateAcquisitionIds.has(acquisitionEventId)
       || duplicateArtifactIds.has(contentArtifactId)
-      || !admittedAcquisition(claim, event, acquisition, artifact, eventAsOf)) continue;
+      || duplicateSnapshotIds.has(snapshotId)
+      || !admittedAcquisition(claim, event, acquisition, artifact, snapshot, eventAsOf)) continue;
     if (event.decision !== 'ALLOW'
       || !Number.isFinite(eventAsOf.getTime())
       || eventAsOf > clock

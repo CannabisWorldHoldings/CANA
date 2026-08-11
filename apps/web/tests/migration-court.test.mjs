@@ -655,11 +655,15 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
     where: { tenant: 'orderweeddc.com' },
   });
   const persistedContentArtifacts = await p.marketSourceContentArtifact.findMany();
+  const persistedSourceSnapshots = await p.marketSourceSnapshot.findMany({
+    where: { id: { in: persistedContentArtifacts.map((artifact) => artifact.snapshotId) } },
+  });
   assert.ok(selectCurrentClaimDecisions({
     claims: persistedClaims,
     verificationEvents: persistedEvents,
     acquisitionEvents: persistedAcquisitions,
     contentArtifacts: persistedContentArtifacts,
+    sourceSnapshots: persistedSourceSnapshots,
     revocations: [],
     asOf: new Date('2026-08-20T14:15:00.000Z'),
   }).length >= 4, 'persisted acquisition and court lineage must support current truth');
@@ -712,6 +716,7 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
     verificationEvents: persistedEventsWithForgery,
     acquisitionEvents: persistedAcquisitionsWithForgery,
     contentArtifacts: persistedContentArtifacts,
+    sourceSnapshots: persistedSourceSnapshots,
     revocations: [],
     asOf: new Date('2026-08-20T14:20:00.000Z'),
   }).some((claim) => claim.claim_id === forgedClaim.id), false,
@@ -761,6 +766,7 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
     verificationEvents: persistedEvents,
     acquisitionEvents: persistedAcquisitions,
     contentArtifacts: persistedContentArtifacts,
+    sourceSnapshots: persistedSourceSnapshots,
     revocations: policyRevocations,
     asOf: new Date('2026-08-20T14:45:00.000Z'),
   }), [], 'revoked persisted court lineage must not remain current truth');
