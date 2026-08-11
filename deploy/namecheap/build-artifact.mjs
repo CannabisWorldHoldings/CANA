@@ -403,13 +403,30 @@ run('npx prisma generate', {
     DIRECT_URL: 'postgresql://postgres@127.0.0.1:5432/cana_build_only',
   }),
 });
-run('npx next build --webpack', {
-  cwd: webRoot,
-  env: releaseChildEnvironment({
-    NEXT_OUTPUT: 'standalone',
-    NODE_ENV: 'production',
-  }),
+const buildPostgres = startDisposablePostgres({
+  label: 'artifact-build',
+  publishLoopback: true,
 });
+let buildError;
+let buildDatabaseCleanup = false;
+try {
+  run('npx next build --webpack', {
+    cwd: webRoot,
+    env: releaseChildEnvironment({
+      CANA_BUILD_DATABASE_URL: buildPostgres.databaseUrl,
+      NEXT_OUTPUT: 'standalone',
+      NODE_ENV: 'production',
+    }),
+  });
+} catch (error) {
+  buildError = error;
+} finally {
+  buildDatabaseCleanup = stopDisposablePostgres(buildPostgres);
+}
+if (buildError) throw buildError;
+if (!buildDatabaseCleanup) {
+  throw new Error('Artifact build failed to remove its disposable build PostgreSQL container');
+}
 
 // ---------------------------------------------------------------------------
 // Phase 3 — assemble
@@ -648,6 +665,11 @@ function writeReceipt(extra = {}) {
       canonicalProvider: 'postgresql',
       directUrlRequired: true,
       sqliteRole: 'pre-cutover-rollback-snapshot-only',
+      buildDatabase: {
+        builderOwned: true,
+        loopbackOnly: true,
+        cleanup: buildDatabaseCleanup,
+      },
       migrationUniverse,
     },
     checks,
@@ -721,19 +743,19 @@ async function isolatedRuntimeTest() {
       DIRECT_URL: postgres.databaseUrl,
     },
   });
-  run('node prisma/seed.mjs', {
-    cwd: webRoot,
+  run(`${JSON.stringify(process.execPath)} scripts/init-production-db.mjs`, {
+    cwd: appRoot,
     env: {
-      ...process.env,
-      NODE_ENV: 'development',
+      PATH: process.env.PATH,
+      NODE_ENV: 'production',
       DATABASE_URL: postgres.databaseUrl,
       DIRECT_URL: postgres.databaseUrl,
-      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
+      PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
     },
   });
   const inspect = JSON.parse(
     capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
-      cwd: webRoot,
+      cwd: appRoot,
       env: {
         PATH: process.env.PATH,
         DATABASE_URL: postgres.databaseUrl,
@@ -742,10 +764,14 @@ async function isolatedRuntimeTest() {
       },
     }),
   );
+  results.productionBootstrap = inspect.counts;
   record(
-    'migrations + disposable seed: canonical brand + 74 retailers, zero demo',
-    inspect.counts?.canonicalBrands === 1 &&
-      inspect.counts?.retailers === 74 &&
+    'migrations + production bootstrap: canonical brand, empty market, zero demo',
+    inspect.counts?.organizations === 1 &&
+      inspect.counts?.brands === 1 &&
+      inspect.counts?.canonicalBrands === 1 &&
+      inspect.counts?.retailers === 0 &&
+      inspect.counts?.awaitingVerification === 0 &&
       inspect.counts?.demonstrationRetailers === 0,
     JSON.stringify(inspect.counts),
   );
@@ -811,11 +837,16 @@ async function isolatedRuntimeTest() {
       `curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/health`,
     );
     const healthJson = JSON.parse(health);
+    results.health = {
+      status: healthJson.status,
+      ...healthJson.services?.database?.details,
+    };
     record(
       '/api/health HEALTHY with real counts (Host: orderweeddc.com)',
       healthJson.status === 'HEALTHY' &&
         healthJson.services?.database?.details?.brandCount === 1 &&
-        healthJson.services?.database?.details?.totalRetailers === 74,
+        healthJson.services?.database?.details?.totalRetailers === 0 &&
+        healthJson.services?.database?.details?.verifiedRetailers === 0,
       JSON.stringify(healthJson.services?.database?.details),
     );
     // Release identity endpoint: the deployed runtime must name the exact
@@ -878,9 +909,33 @@ async function isolatedRuntimeTest() {
     const health2 = JSON.parse(
       capture(`curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/health`),
     );
+    const inspectAfterRestart = JSON.parse(
+      capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
+        cwd: appRoot,
+        env: {
+          PATH: process.env.PATH,
+          DATABASE_URL: postgres.databaseUrl,
+          DIRECT_URL: postgres.databaseUrl,
+          PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+        },
+      }),
+    );
+    results.restart = {
+      status: health2.status,
+      health: health2.services?.database?.details,
+      counts: inspectAfterRestart.counts,
+      marketWrites: 0,
+    };
     record(
-      'restart persistence: 74 records after restart',
-      health2.services?.database?.details?.totalRetailers === 74,
+      'restart persistence: canonical brand, empty market, zero demo',
+      health2.status === 'HEALTHY' &&
+        health2.services?.database?.details?.brandCount === 1 &&
+        health2.services?.database?.details?.totalRetailers === 0 &&
+        health2.services?.database?.details?.verifiedRetailers === 0 &&
+        inspectAfterRestart.counts?.canonicalBrands === 1 &&
+        inspectAfterRestart.counts?.retailers === 0 &&
+        inspectAfterRestart.counts?.demonstrationRetailers === 0,
+      JSON.stringify(inspectAfterRestart.counts),
     );
   } finally {
     try {
@@ -925,6 +980,10 @@ async function isolatedRuntimeTest() {
     databaseStateBefore === JSON.stringify(inspectAfter.counts),
     databaseStateBefore,
   );
+  results.rollback = {
+    databaseUnchanged: databaseStateBefore === JSON.stringify(inspectAfter.counts),
+    counts: inspectAfter.counts,
+  };
 
   results.serverLogTail = serverLog.slice(-400);
   } catch (error) {
@@ -949,6 +1008,10 @@ writeReceipt({
     passed: true,
     isolationDir: isolatedResults.isolationDir,
     nodeUsed: process.version,
+    productionBootstrap: isolatedResults.productionBootstrap,
+    health: isolatedResults.health,
+    restart: isolatedResults.restart,
+    rollback: isolatedResults.rollback,
     steps: Object.fromEntries(
       Object.entries(isolatedResults.steps).map(([k, v]) => [k, v.ok]),
     ),

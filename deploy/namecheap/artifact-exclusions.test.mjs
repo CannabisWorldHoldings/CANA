@@ -56,6 +56,27 @@ test('release artifact excludes every legacy ABCA truth bypass', () => {
   assert.match(BUILDER, /no legacy ABCA import bypass shipped/);
 });
 
+test('production artifact bootstrap stays demo-free and market-count agnostic', () => {
+  assert.doesNotMatch(
+    BUILDER,
+    /run\('node prisma\/seed\.mjs'/,
+    'production artifact isolation must not invoke the demonstration seed',
+  );
+  assert.match(
+    BUILDER,
+    /scripts\/init-production-db\.mjs[\s\S]*?cwd: appRoot/,
+    'the isolated release must execute its packaged production initializer',
+  );
+  assert.doesNotMatch(
+    BUILDER,
+    /(?:retailers|totalRetailers)\s*===\s*74|74 records after restart/,
+    'release correctness must not depend on a mutable live-market cohort count',
+  );
+  assert.match(BUILDER, /inspect\.counts\?\.retailers === 0/);
+  assert.match(BUILDER, /inspect\.counts\?\.demonstrationRetailers === 0/);
+  assert.match(BUILDER, /inspect\.counts\?\.awaitingVerification === 0/);
+});
+
 test('release builder keeps live acquisition tooling outside its shipped inventory', (t) => {
   assert.match(BUILDER, /no live acquisition tooling shipped/);
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-live-reality-build-audit-'));
