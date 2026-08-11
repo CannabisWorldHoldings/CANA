@@ -67,6 +67,11 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
     /scripts\/init-production-db\.mjs[\s\S]*?cwd: appRoot/,
     'the isolated release must execute its packaged production initializer',
   );
+  assert.match(
+    BUILDER,
+    /src\/lib\/db-config\.mjs/,
+    'the packaged read-only database inspector must retain its configuration dependency',
+  );
   assert.doesNotMatch(
     BUILDER,
     /(?:retailers|totalRetailers)\s*===\s*74|74 records after restart/,

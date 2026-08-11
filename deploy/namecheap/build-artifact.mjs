@@ -483,6 +483,11 @@ for (const script of [
 ]) {
   fs.copyFileSync(path.join(webRoot, script), path.join(artifactRoot, script));
 }
+fs.mkdirSync(path.join(artifactRoot, 'src/lib'), { recursive: true });
+fs.copyFileSync(
+  path.join(webRoot, 'src/lib/db-config.mjs'),
+  path.join(artifactRoot, 'src/lib/db-config.mjs'),
+);
 copyOperationalScripts(artifactRoot);
 fs.mkdirSync(path.join(artifactRoot, 'prisma'), { recursive: true });
 fs.copyFileSync(
