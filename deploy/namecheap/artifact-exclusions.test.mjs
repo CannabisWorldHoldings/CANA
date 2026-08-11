@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   auditArtifactExclusions,
   PINNED_ARTIFACT_EXECUTABLE_SHA256,
 } from './artifact-exclusions.mjs';
 
 const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
+const BUILDER_PATH = fileURLToPath(new URL('./build-artifact.mjs', import.meta.url));
 
 test('artifact exclusion audit accepts ordinary release files', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
@@ -148,6 +151,59 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
   assert.match(BUILDER, /inspect\.counts\?\.retailers === 0/);
   assert.match(BUILDER, /inspect\.counts\?\.demonstrationRetailers === 0/);
   assert.match(BUILDER, /inspect\.counts\?\.awaitingVerification === 0/);
+});
+
+test('artifact package closure cannot escape the top-level node_modules tree', () => {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-package-path-court-'));
+  try {
+    const nodeModulesRoot = path.join(courtRoot, 'repo', 'node_modules');
+    const nestedPackage = path.join(nodeModulesRoot, 'dependency', 'node_modules', 'nested');
+    const workspacePackage = path.join(courtRoot, 'repo', 'apps', 'web', 'node_modules', 'nested');
+    fs.mkdirSync(nestedPackage, { recursive: true });
+    fs.mkdirSync(workspacePackage, { recursive: true });
+    const environment = { ...process.env, CANA_VERIFIED_NODE: process.execPath };
+    const verify = (candidate) => JSON.parse(execFileSync(
+      BUILDER_PATH,
+      ['--verify-package-path-policy', nodeModulesRoot, candidate],
+      { encoding: 'utf8', env: environment },
+    ));
+
+    assert.equal(
+      verify(nestedPackage).relativePath,
+      path.join('dependency', 'node_modules', 'nested'),
+    );
+    assert.equal(verify(workspacePackage).relativePath, null);
+  } finally {
+    fs.rmSync(courtRoot, { recursive: true, force: true });
+  }
+});
+
+test('owner-facing cPanel commands use the vetted Node launch paths', () => {
+  const productionRunbook = fs.readFileSync(
+    new URL('../../NAMECHEAP_CPANEL_DEPLOYMENT.md', import.meta.url),
+    'utf8',
+  );
+  const stagingRunbook = fs.readFileSync(new URL('./STAGING_RUNBOOK.md', import.meta.url), 'utf8');
+  const manifest = JSON.parse(fs.readFileSync(new URL('./MANIFEST.json', import.meta.url), 'utf8'));
+
+  assert.match(
+    stagingRunbook,
+    /CANA_VERIFIED_NODE="\$HOME\/\.nvm\/versions\/node\/v20\.20\.2\/bin\/node"/,
+  );
+  for (const document of [
+    productionRunbook,
+    stagingRunbook,
+    manifest.commands.initializeDatabase,
+  ]) {
+    assert.doesNotMatch(
+      document,
+      /(?:^|\n|&&\s+)node scripts\/(?:init-production-db|db-inspect)\.mjs/,
+    );
+  }
+  assert.match(
+    manifest.commands.initializeDatabase,
+    /\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node scripts\/init-production-db\.mjs/,
+  );
 });
 
 test('release builder keeps live acquisition tooling outside its shipped inventory', (t) => {
