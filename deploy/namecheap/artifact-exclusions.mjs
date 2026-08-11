@@ -4,10 +4,13 @@ import path from 'node:path';
 
 const FORBIDDEN_FILE_PATTERNS = [
   /^\.env(?:\.|$)/i,
-  /^\.?(?:credentials?|secrets?)(?:\.(?:env|json|txt|ya?ml))?$/i,
+  /^\.?(?:credentials?|secrets?)(?:\.[^.]+)?$/i,
   /\.(?:key|pem|p12|pfx)$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/i,
 ];
+
+const REVIEWED_EFFECT_SECRET_MODULE =
+  /^node_modules\/effect\/(?:dist\/(?:cjs|esm|dts)|src)\/(?:internal\/)?secret(?:\.d)?\.(?:js|ts)(?:\.map)?$/i;
 
 const CREDENTIAL_PATTERNS = [
   ['private key', /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],
@@ -37,7 +40,11 @@ function walkFiles(directory, output = []) {
 export function auditArtifactExclusions(artifactRoot) {
   const files = walkFiles(artifactRoot);
   const forbiddenFiles = files
-    .filter((file) => FORBIDDEN_FILE_PATTERNS.some((pattern) => pattern.test(path.basename(file))))
+    .filter((file) => {
+      const relativePath = path.relative(artifactRoot, file);
+      return FORBIDDEN_FILE_PATTERNS.some((pattern) => pattern.test(path.basename(file)))
+        && !REVIEWED_EFFECT_SECRET_MODULE.test(relativePath);
+    })
     .map((file) => path.relative(artifactRoot, file));
   const credentialFindings = [];
 

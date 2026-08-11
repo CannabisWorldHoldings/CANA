@@ -64,11 +64,14 @@ test('artifact exclusion audit rejects embedded credential patterns', (t) => {
 test('artifact exclusion audit distinguishes executable secret modules from secret material', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  fs.writeFileSync(path.join(root, 'Secret.js'), 'export const Secret = Object.freeze({})');
+  const reviewedModule = path.join(root, 'node_modules/effect/dist/esm/Secret.js');
+  fs.mkdirSync(path.dirname(reviewedModule), { recursive: true });
+  fs.writeFileSync(reviewedModule, 'export const Secret = Object.freeze({})');
+  fs.writeFileSync(path.join(root, 'secrets.js'), 'export const password = "arbitrary"');
   fs.writeFileSync(path.join(root, 'secret.json'), '{}');
 
   const result = auditArtifactExclusions(root);
-  assert.deepEqual(result.forbiddenFiles, ['secret.json']);
+  assert.deepEqual(result.forbiddenFiles.sort(), ['secret.json', 'secrets.js']);
 });
 
 test('artifact exclusion audit cannot be given a caller-controlled dependency exemption', (t) => {
@@ -290,6 +293,7 @@ test('production deployment and migration refuse caller-selected Node executable
   const commonEnv = {
     ...process.env,
     OWD_NODE: fakeNode,
+    CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '',
     DATABASE_URL: 'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict',
     DIRECT_URL: 'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict',
   };
