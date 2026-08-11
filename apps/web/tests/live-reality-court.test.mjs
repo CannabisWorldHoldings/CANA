@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { before, test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 
 import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from '../src/lib/reality/live-abca-adapter.mjs';
 
@@ -21,8 +25,15 @@ before(async () => {
 const ACQUIRED_AT = '2026-08-10T15:00:00.000Z';
 const AS_OF = new Date('2026-08-11T15:00:00.000Z');
 const COURT_VERSION = 'cana-market-claim-court-v1';
+const REPOSITORY = execFileSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
 const REPOSITORY_COMMIT_SHA = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const REPOSITORY_TREE_SHA = execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
+
+function writeVersionFixture(root, relative, contents) {
+  const target = path.join(root, relative);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, contents);
+}
 
 function evidence(overrides = {}) {
   const snapshot = {
@@ -201,6 +212,78 @@ test('failed, cross-tenant, drifted, partial, future, and digest-mismatched acqu
     purpose: 'REVALIDATE',
     asOf: new Date('2026-08-10T14:59:59.999Z'),
   }).reason, 'ACQUISITION_FROM_FUTURE');
+});
+
+test('execution provenance admits an exact depth-one merge checkout without reading absent parents', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-shallow-merge-court-'));
+  const source = path.join(root, 'source');
+  const shallow = path.join(root, 'shallow');
+  const bundle = path.join(root, 'source.bundle');
+  const bundled = path.join(root, 'bundled');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  execFileSync('git', ['init', '--quiet', source]);
+  execFileSync('git', ['-C', source, 'config', 'user.name', 'CANA Court']);
+  execFileSync('git', ['-C', source, 'config', 'user.email', 'court@example.invalid']);
+  writeVersionFixture(source, 'apps/web/scripts/acquire-live-market-reality.mjs', [
+    "adapterVersion: 'dc-abca-live-v1'",
+    "authorityPolicyVersion: 'dc-abca-authority-v1'",
+    "freshnessPolicyVersion: 'dc-abca-freshness-v1'",
+  ].join('\n'));
+  writeVersionFixture(source, 'apps/web/src/lib/reality/official-source-snapshot.mjs',
+    "export const OFFICIAL_SOURCE_SCHEMA_VERSION = 'cana-dc-abca-arcgis-snapshot-v1';\n");
+  writeVersionFixture(source, 'apps/web/src/lib/reality/reality-compiler.mjs',
+    "export const REALITY_COMPILER_VERSION = 'cana-reality-compiler-v1';\n");
+  writeVersionFixture(source, 'apps/web/src/lib/reality/entity-resolution.mjs',
+    "export const ENTITY_NORMALIZATION_VERSION = 'dc-abca-identity-v1';\n");
+  writeVersionFixture(source, 'apps/web/src/lib/reality/market-claim-court.mjs',
+    "export const MARKET_CLAIM_COURT_VERSION = 'cana-market-claim-court-v1';\n");
+  execFileSync('git', ['-C', source, 'add', '.']);
+  execFileSync('git', ['-C', source, 'commit', '--quiet', '-m', 'fixture parent']);
+  const firstParent = execFileSync('git', ['-C', source, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  writeVersionFixture(source, 'fixture-second-parent', 'bounded merge fixture\n');
+  execFileSync('git', ['-C', source, 'add', '.']);
+  execFileSync('git', ['-C', source, 'commit', '--quiet', '-m', 'fixture second parent']);
+  const secondParent = execFileSync('git', ['-C', source, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  const tree = execFileSync('git', ['-C', source, 'rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
+  const merge = execFileSync(
+    'git',
+    ['-C', source, 'commit-tree', tree, '-p', secondParent, '-p', firstParent],
+    { encoding: 'utf8', input: 'synthetic pull request merge\n' },
+  ).trim();
+  execFileSync('git', ['-C', source, 'update-ref', 'refs/heads/synthetic', merge]);
+  execFileSync('git', ['clone', '--quiet', '--depth=1', '--branch', 'synthetic', pathToFileURL(source).href, shallow]);
+  execFileSync('git', ['-C', shallow, 'bundle', 'create', bundle, 'HEAD']);
+  execFileSync('git', ['clone', '--quiet', bundle, bundled]);
+  execFileSync('git', ['-C', bundled, 'checkout', '--quiet', merge]);
+
+  const legacyProbe = spawnSync('git', ['show', '-s', '--format=%T', merge], {
+    cwd: bundled,
+    encoding: 'utf8',
+  });
+  assert.notEqual(legacyProbe.status, 0, 'fixture must reproduce the missing-parent git show failure');
+  const moduleUrl = pathToFileURL(path.join(REPOSITORY, 'apps/web/src/lib/reality/market-claim-court.mjs')).href;
+  const child = execFileSync('node', ['--input-type=module', '--eval', `
+    import { adjudicateExecutionProvenance } from ${JSON.stringify(moduleUrl)};
+    const result = adjudicateExecutionProvenance({
+      repositoryCommitSha: ${JSON.stringify(merge)},
+      repositoryTreeSha: ${JSON.stringify(tree)},
+      adapterVersion: 'dc-abca-live-v1',
+      parserVersion: 'cana-dc-abca-arcgis-snapshot-v1',
+      compilerVersion: 'cana-reality-compiler-v1',
+      entityResolverVersion: 'dc-abca-identity-v1',
+      authorityPolicyVersion: 'dc-abca-authority-v1',
+      freshnessPolicyVersion: 'dc-abca-freshness-v1',
+      verificationCourtVersion: 'cana-market-claim-court-v1',
+    });
+    process.stdout.write(JSON.stringify(result));
+  `], { cwd: bundled, encoding: 'utf8' });
+  assert.deepEqual(JSON.parse(child), {
+    decision: 'ALLOW',
+    reason: 'EXECUTION_PROVENANCE_PASSED',
+    repository_commit_sha: merge,
+    repository_tree_sha: tree,
+  });
 });
 
 test('freshness re-attestation is acquired-time bounded, license bounded, and predicate authoritative', () => {

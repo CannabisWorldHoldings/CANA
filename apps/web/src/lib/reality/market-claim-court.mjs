@@ -34,7 +34,7 @@ function gitOutput(args) {
 function executionTuple(commit, tree) {
   const key = `${commit}:${tree}`;
   if (executionProvenanceCache.has(key)) return executionProvenanceCache.get(key);
-  const actualTree = gitOutput(['show', '-s', '--format=%T', commit]);
+  const actualTree = gitOutput(['rev-parse', `${commit}^{tree}`]);
   if (!actualTree) {
     const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNKNOWN' });
     executionProvenanceCache.set(key, result);
@@ -45,11 +45,14 @@ function executionTuple(commit, tree) {
     executionProvenanceCache.set(key, result);
     return result;
   }
-  const ancestor = spawnSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], {
-    cwd: process.cwd(),
-    stdio: 'ignore',
-    timeout: 2_000,
-  });
+  const head = gitOutput(['rev-parse', 'HEAD']);
+  const ancestor = commit === head
+    ? { status: 0 }
+    : spawnSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], {
+        cwd: process.cwd(),
+        stdio: 'ignore',
+        timeout: 2_000,
+      });
   if (ancestor.status !== 0) {
     const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNADMITTED' });
     executionProvenanceCache.set(key, result);
