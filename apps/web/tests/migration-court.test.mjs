@@ -24,11 +24,23 @@ import {
 } from '../src/lib/db-config.mjs';
 import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-safety.mjs';
 import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
+import { buildAnswerabilityFrontier } from '../src/lib/ask/answerability-frontier.mjs';
 import {
+  compileLiveMarketAcquisition,
   compileOfficialMarketSnapshot,
+  revokeMarketEvidence,
+  verifyLiveMarketAcquisition,
   verifyOfficialMarketSnapshot,
 } from '../src/lib/reality/reality-repository.mjs';
-import { buildSnapshotArtifacts } from '../src/lib/reality/official-source-snapshot.mjs';
+import {
+  ABCA_FIELDS,
+  buildSnapshotArtifacts,
+} from '../src/lib/reality/official-source-snapshot.mjs';
+import {
+  acquireLiveMarketReality,
+  createPrismaAcquisitionStore,
+} from '../src/lib/reality/live-reality-acquisition.mjs';
+import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -61,6 +73,9 @@ import { buildSnapshotArtifacts } from '../src/lib/reality/official-source-snaps
  */
 
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPOSITORY = path.resolve(WEB, '..', '..');
+const REPOSITORY_COMMIT_SHA = execFileSync('git', ['-C', REPOSITORY, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+const REPOSITORY_TREE_SHA = execFileSync('git', ['-C', REPOSITORY, 'rev-parse', 'HEAD^{tree}'], { encoding: 'utf8' }).trim();
 const SCHEMA = path.join(WEB, 'prisma', 'schema.prisma');
 const MIGRATIONS = path.join(WEB, 'prisma', 'migrations');
 const SECOND_MIGRATION = '20260726000100_ledger_recorded_at_index';
@@ -68,6 +83,7 @@ const SECOND_MIGRATION_DOWN = path.join(MIGRATIONS, SECOND_MIGRATION, 'down.sql'
 const GEO_MIGRATION = '20260809100000_geo_kernel';
 const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
 const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
+const LIVE_REALITY_MIGRATION = '20260810200000_live_reality_acquisition';
 const REALITY_FIXTURE = path.join(
   WEB,
   'fixtures',
@@ -81,7 +97,8 @@ const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 /** The loopback PostgreSQL server every disposable database lives on. The
  *  `postgres` maintenance database is where CREATE/DROP DATABASE are issued —
  *  you cannot drop a database while connected to it. */
-const PG_HOST = 'postgresql://postgres@127.0.0.1:5432';
+const PG_HOST = process.env.CANA_MIGRATION_COURT_POSTGRES_ORIGIN
+  ?? 'postgresql://postgres@127.0.0.1:5432';
 const PG_ADMIN_URL = `${PG_HOST}/postgres`;
 
 function prismaCliPath() {
@@ -163,6 +180,80 @@ async function client(url) {
   const c = new PrismaClient({ datasources: { db: { url } } });
   clients.push(c);
   return c;
+}
+
+function liveRealitySource({ fail = false } = {}) {
+  let call = 0;
+  const record = {
+    attributes: {
+      OBJECTID: 4101,
+      GLOBALID: '{11111111-2222-3333-4444-555555555555}',
+      ABCA_NUMBER: 'ABRA-123456',
+      FACILITY_NAME: 'Live Court Cannabis',
+      FACILITY_TYPE: 'Retailer',
+      LICENSE_TYPE: 'Medical Cannabis Retailer',
+      EXPIRATION_DATE: Date.parse('2027-12-31T00:00:00.000Z'),
+      ADDRESS: '100 Live Court St NW',
+      LATITUDE: 38.9,
+      LONGITDUE: -77.03,
+      TRADE_NAME: 'Live Court Cannabis',
+      ENTITY_NAME: 'Live Court Cannabis LLC',
+      STATUS: 'Active',
+      ISSUE_DATE: Date.parse('2025-07-17T00:00:00.000Z'),
+      EDITED: 1780587905000,
+      WARD: 2,
+      ENDORSEMENTS: null,
+    },
+    geometry: { x: -77.03, y: 38.9 },
+  };
+  const metadata = {
+    id: 31,
+    name: 'Licensed Medical Cannabis Retailer',
+    currentVersion: 11.5,
+    maxRecordCount: 1000,
+    capabilities: 'Map,Query,Data',
+    supportsPagination: true,
+    advancedQueryCapabilities: { supportsPagination: true, supportsOrderBy: true },
+    editingInfo: { lastEditDate: 1781114729000 },
+    fields: ABCA_FIELDS.map((name) => ({ name })),
+  };
+  const bodies = [metadata, { count: 1 }, { features: [record], exceededTransferLimit: false }, metadata, { count: 1 }];
+  return {
+    lookup: async () => [{ address: '23.48.99.80', family: 4 }],
+    fetchImpl: async () => {
+      const index = call;
+      call += 1;
+      if (fail) return new Response('incident body', { status: 500, headers: { 'content-type': 'text/plain' } });
+      return new Response(JSON.stringify(bodies[index]), {
+        status: 200,
+        headers: { 'content-type': 'text/plain; charset=UTF-8', etag: `"live-${index}"` },
+      });
+    },
+  };
+}
+
+function liveRealityOptions(source, { attemptId, asOf }) {
+  let tick = Date.parse(asOf);
+  return {
+    tenant: 'orderweeddc.com',
+    attemptId,
+    asOf,
+    env: { CANA_LIVE_REALITY_NETWORK: '1' },
+    lookup: source.lookup,
+    fetchImpl: source.fetchImpl,
+    clock: () => new Date(tick += 1000),
+    versions: {
+      repositoryCommitSha: REPOSITORY_COMMIT_SHA,
+      repositoryTreeSha: REPOSITORY_TREE_SHA,
+      adapterVersion: 'dc-abca-live-v1',
+      parserVersion: 'cana-dc-abca-arcgis-snapshot-v1',
+      compilerVersion: 'cana-reality-compiler-v1',
+      entityResolverVersion: 'dc-abca-identity-v1',
+      authorityPolicyVersion: 'dc-abca-authority-v1',
+      freshnessPolicyVersion: 'dc-abca-freshness-v1',
+      verificationCourtVersion: 'cana-market-claim-court-v1',
+    },
+  };
 }
 
 /** Run `ensureDatabaseMigrated`/`withMigrationLock` with DIRECT_URL pinned to
@@ -382,6 +473,394 @@ test('REALITY COMPILER: evidence records are present and append-only after migra
     /CANA_REALITY_APPEND_ONLY/,
   );
   assert.equal(await p.marketSourceSnapshot.count(), 1);
+});
+
+test('LIVE REALITY: one content identity supports distinct append-only acquisition events across upgrade', async () => {
+  const url = createDatabase('live_reality_identity');
+  const previous = stage('live-reality-previous', CANONICAL_MIGRATIONS.filter((name) => name !== LIVE_REALITY_MIGRATION));
+  deploy(url, previous.schema);
+  const p = await client(url);
+  const snapshot = await p.marketSourceSnapshot.create({
+    data: {
+      sourceKey: 'dcgis_abca_retailers_layer_31',
+      sourceUrl: 'https://maps2.dcgis.dc.gov/example',
+      queryParameters: '{"where":"1=1"}',
+      fetchedAt: new Date('2026-08-10T12:00:00.000Z'),
+      payloadSha256: 'a'.repeat(64),
+      payloadBytes: 2,
+      recordCount: 0,
+      schemaVersion: 'dc-abca-arcgis-v1',
+      payloadJson: '{}',
+      completeness: 'COMPLETE',
+    },
+  });
+  await p.$executeRawUnsafe(
+    `INSERT INTO "MarketCompilation" ("id", "tenant", "snapshotId")
+     VALUES ('legacy-live-compilation', 'orderweeddc.com', '${snapshot.id}')`,
+  );
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketEntityResolution" (
+      "id", "snapshotId", "compilationId", "sourceRecordId", "sourceRecordSha256",
+      "status", "reason", "candidateIds", "normalizationVersion"
+    ) VALUES (
+      'legacy-live-resolution', '${snapshot.id}', 'legacy-live-compilation',
+      'legacy-live-record', '${'b'.repeat(64)}', 'UNMATCHED', 'legacy court fixture',
+      '[]', 'dc-abca-exact-v1'
+    )
+  `);
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketClaim" (
+      "id", "tenant", "claimKey", "claimType", "claimValue", "version",
+      "resolutionId", "snapshotId", "compilationId", "observedAt",
+      "freshnessExpiresAt", "verification", "decisionEligible"
+    ) VALUES (
+      'legacy-live-claim', 'orderweeddc.com', 'legacy-live-claim-key',
+      'operating_status', 'UNKNOWN', 1, 'legacy-live-resolution', '${snapshot.id}',
+      'legacy-live-compilation', TIMESTAMP '2026-08-10 12:00:00+00',
+      TIMESTAMP '2026-08-11 12:00:00+00', 'UNKNOWN', false
+    )
+  `);
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketVerificationEvent" (
+      "id", "claimId", "decision", "reason", "evaluatorVersion", "evidenceDigest", "asOf"
+    ) VALUES (
+      'legacy-live-verification', 'legacy-live-claim', 'DENY', 'legacy court fixture',
+      'cana-market-claim-court-v1', '${'c'.repeat(64)}', TIMESTAMP '2026-08-10 13:00:00+00'
+    )
+  `);
+
+  deploy(url);
+  const artifacts = await p.$queryRawUnsafe(
+    'SELECT "id", "sourceKey", "contentSha256" FROM "MarketSourceContentArtifact"',
+  );
+  const firstEvents = await p.$queryRawUnsafe(
+    'SELECT "id", "sourceKey", "contentArtifactId", "snapshotId", "attemptId", "sequence", "fetchedAt", "eventHash" FROM "MarketSourceAcquisitionEvent" ORDER BY "fetchedAt", "id"',
+  );
+  assert.equal(artifacts.length, 1, 'upgrade must create one immutable content identity');
+  assert.equal(artifacts[0].sourceKey, snapshot.sourceKey);
+  assert.equal(artifacts[0].contentSha256, snapshot.payloadSha256);
+  assert.equal(firstEvents.length, 1, 'upgrade must preserve the historical observation as one acquisition event');
+  assert.equal(firstEvents[0].contentArtifactId, artifacts[0].id);
+  assert.equal(firstEvents[0].snapshotId, snapshot.id);
+  assert.equal(firstEvents[0].fetchedAt.toISOString(), snapshot.fetchedAt.toISOString());
+  const [legacyCompilation] = await p.$queryRawUnsafe(
+    'SELECT "contentArtifactId", "acquisitionEventId" FROM "MarketCompilation" WHERE "id" = \'legacy-live-compilation\'',
+  );
+  const [legacyVerification] = await p.$queryRawUnsafe(
+    'SELECT "acquisitionEventId", "freshnessExpiresAt" FROM "MarketVerificationEvent" WHERE "id" = \'legacy-live-verification\'',
+  );
+  assert.equal(legacyCompilation.contentArtifactId, artifacts[0].id);
+  assert.equal(legacyCompilation.acquisitionEventId, firstEvents[0].id);
+  assert.equal(legacyVerification.acquisitionEventId, firstEvents[0].id);
+  assert.equal(legacyVerification.freshnessExpiresAt.toISOString(), '2026-08-11T12:00:00.000Z');
+  assert.equal(
+    firstEvents[0].eventHash,
+    createHash('sha256').update(`${firstEvents[0].sourceKey}:${snapshot.id}`).digest('hex'),
+    'legacy acquisition backfill must use the same SHA-256 digest family as runtime event chains',
+  );
+
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketSourceAcquisitionEvent" (
+      "id", "sourceKey", "attemptId", "sequence", "state", "outcome", "predicateScope",
+      "requestedAt", "eventAt", "fetchedAt", "sourceRevision", "revisionState", "requestDigest",
+      "completeness", "adapterVersion", "parserVersion", "repositoryCommitSha",
+      "contentArtifactId", "snapshotId", "priorEventHash", "eventHash"
+    ) VALUES (
+      'live-reality-acquisition-2', '${snapshot.sourceKey}', 'attempt-2026-08-17', 1,
+      'COMPLETED', 'SOURCE_UNCHANGED', 'licensed_retailer_identity,status,address,coordinates',
+      TIMESTAMP '2026-08-17 12:00:00+00', TIMESTAMP '2026-08-17 12:00:01+00', TIMESTAMP '2026-08-17 12:00:01+00',
+      'UNKNOWN', 'UNKNOWN', '${'b'.repeat(64)}', 'COMPLETE',
+      'dc-abca-live-v1', 'dc-abca-arcgis-v1', 'VERSION_PROVENANCE_UNKNOWN',
+      '${artifacts[0].id}', '${snapshot.id}', '${'c'.repeat(64)}', '${'d'.repeat(64)}'
+    )
+  `);
+  const secondEvents = await p.$queryRawUnsafe(
+    'SELECT "id", "contentArtifactId", "fetchedAt" FROM "MarketSourceAcquisitionEvent" ORDER BY "fetchedAt", "id"',
+  );
+  assert.equal(await p.$queryRawUnsafe('SELECT "id" FROM "MarketSourceContentArtifact"').then((rows) => rows.length), 1);
+  assert.equal(secondEvents.length, 2, 'identical bytes at a later time must remain a separate acquisition');
+  assert.equal(secondEvents[1].contentArtifactId, artifacts[0].id);
+  assert.notEqual(secondEvents[0].fetchedAt.toISOString(), secondEvents[1].fetchedAt.toISOString());
+
+  await assert.rejects(
+    p.$executeRawUnsafe(`UPDATE "MarketSourceContentArtifact" SET "payloadBytes" = 3 WHERE "id" = '${artifacts[0].id}'`),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe('DELETE FROM "MarketSourceAcquisitionEvent" WHERE "id" = \'live-reality-acquisition-2\''),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe('UPDATE "MarketCompilation" SET "tenant" = \'attacker.example\' WHERE "id" = \'legacy-live-compilation\''),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe('UPDATE "MarketVerificationEvent" SET "reason" = \'tampered\' WHERE "id" = \'legacy-live-verification\''),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  assert.equal(await p.marketSourceSnapshot.count(), 1, 'upgrade and re-observation must preserve the legacy snapshot');
+});
+
+test('LIVE REALITY: changed compilation and unchanged revalidation are acquisition-bound and outage-safe', async () => {
+  const url = createDatabase('live_reality_court');
+  deploy(url);
+  const p = await client(url);
+  await p.retailer.create({ data: {
+    id: 'live-reality-retailer',
+    name: 'Live Court Cannabis',
+    type: 'storefront',
+    address: '100 Live Court St NW',
+    city: 'Washington',
+    state: 'DC',
+    lat: 38.9,
+    lng: -77.03,
+    licenseNumber: 'ABRA-123456',
+  } });
+  const store = createPrismaAcquisitionStore(p);
+  const firstSource = liveRealitySource();
+  const first = await acquireLiveMarketReality(store, liveRealityOptions(firstSource, {
+    attemptId: 'live-court-first',
+    asOf: '2026-08-10T15:00:00.000Z',
+  }));
+  assert.equal(first.state, 'COMPLETED');
+  assert.equal(first.outcome, 'SOURCE_CHANGED');
+  const compiled = await compileLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: first.acquisition_event_id,
+  });
+  assert.equal(compiled.state, 'COMPILED');
+  assert.equal(compiled.acquisition_event_id, first.acquisition_event_id);
+  const claimCount = await p.marketClaim.count();
+  assert.ok(claimCount > 0);
+  assert.equal(await p.marketClaim.count({ where: { decisionEligible: true } }), 0);
+
+  const firstCourt = await verifyLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: first.acquisition_event_id,
+    asOf: new Date('2026-08-11T15:00:00.000Z'),
+  });
+  assert.ok(firstCourt.admitted_claims >= 4);
+  assert.equal(firstCourt.public_cohorts, 1);
+  assert.equal(await p.marketClaim.count(), claimCount, 'live court must not mutate immutable claims');
+  const offlineClaim = await p.marketClaim.findFirstOrThrow({ where: { tenant: 'orderweeddc.com' } });
+  const offlineEvidenceDigest = 'e'.repeat(64);
+  const offlineEvent = {
+    claimId: offlineClaim.id,
+    decision: 'DENY',
+    reason: 'OFFLINE_UNIQUENESS_COURT',
+    evaluatorVersion: 'cana-market-claim-court-v1',
+    evidenceDigest: offlineEvidenceDigest,
+    asOf: new Date('2026-08-11T15:01:00.000Z'),
+  };
+  await p.marketVerificationEvent.create({ data: offlineEvent });
+  await assert.rejects(
+    p.marketVerificationEvent.create({ data: offlineEvent }),
+    /unique constraint/i,
+    'NULL acquisition lineage must not bypass verification-event idempotency',
+  );
+  const firstEventCount = await p.marketVerificationEvent.count();
+  assert.ok(firstEventCount > 0);
+
+  const secondSource = liveRealitySource();
+  const second = await acquireLiveMarketReality(store, liveRealityOptions(secondSource, {
+    attemptId: 'live-court-second',
+    asOf: '2026-08-17T15:00:00.000Z',
+  }));
+  assert.equal(second.outcome, 'SOURCE_UNCHANGED');
+  assert.equal(second.content_artifact_id, first.content_artifact_id);
+  assert.equal(await p.marketSourceContentArtifact.count(), 1);
+  const secondCourt = await verifyLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: second.acquisition_event_id,
+    asOf: new Date('2026-08-18T15:00:00.000Z'),
+  });
+  assert.ok(secondCourt.verification_events_created > 0);
+  assert.equal(await p.marketClaim.count(), claimCount);
+  assert.equal(await p.marketVerificationEvent.count(), firstEventCount + secondCourt.verification_events_created);
+  const repeatedCourt = await verifyLiveMarketAcquisition(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: second.acquisition_event_id,
+    asOf: new Date('2026-08-18T15:00:00.000Z'),
+  });
+  assert.equal(repeatedCourt.verification_events_created, 0);
+
+  const beforeOutage = await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } });
+  const outageSource = liveRealitySource({ fail: true });
+  const outage = await acquireLiveMarketReality(store, liveRealityOptions(outageSource, {
+    attemptId: 'live-court-outage',
+    asOf: '2026-08-19T15:00:00.000Z',
+  }));
+  assert.equal(outage.state, 'FAILED');
+  const afterOutage = await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } });
+  assert.equal(afterOutage.dataStatus, beforeOutage.dataStatus);
+  assert.equal(afterOutage.verifiedAt.toISOString(), beforeOutage.verifiedAt.toISOString());
+  assert.equal(await p.marketSourceContentArtifact.count(), 1);
+  assert.equal(await p.marketClaim.count(), claimCount);
+
+  await assert.rejects(
+    revokeMarketEvidence(p, {
+      tenant: 'unrelated-tenant.example',
+      targetKind: 'CONTENT_ARTIFACT',
+      targetId: first.content_artifact_id,
+      cause: 'cross-tenant revocation must not poison shared evidence',
+      actorKind: 'HOSTILE_TEST',
+      effectiveAt: new Date('2026-08-20T14:00:00.000Z'),
+    }),
+    /CANA_REALITY_REVOCATION_TARGET_NOT_FOUND/,
+  );
+
+  const persistedClaims = (await p.marketClaim.findMany({
+    where: { tenant: 'orderweeddc.com' },
+    include: { evidence: { select: { observationId: true } } },
+  })).map(({ evidence, ...claim }) => ({
+    ...claim,
+    observationIds: evidence.map((entry) => entry.observationId),
+  }));
+  const persistedEvents = await p.marketVerificationEvent.findMany({
+    where: { claimId: { in: persistedClaims.map((claim) => claim.id) } },
+  });
+  const persistedAcquisitions = await p.marketSourceAcquisitionEvent.findMany({
+    where: { tenant: 'orderweeddc.com' },
+  });
+  const persistedContentArtifacts = await p.marketSourceContentArtifact.findMany();
+  const persistedSourceSnapshots = await p.marketSourceSnapshot.findMany({
+    where: { id: { in: persistedContentArtifacts.map((artifact) => artifact.snapshotId) } },
+  });
+  assert.ok(selectCurrentClaimDecisions({
+    claims: persistedClaims,
+    verificationEvents: persistedEvents,
+    acquisitionEvents: persistedAcquisitions,
+    contentArtifacts: persistedContentArtifacts,
+    sourceSnapshots: persistedSourceSnapshots,
+    revocations: [],
+    asOf: new Date('2026-08-20T14:15:00.000Z'),
+  }).length >= 4, 'persisted acquisition and court lineage must support current truth');
+
+  const forgedAcquisition = await p.marketSourceAcquisitionEvent.create({
+    data: {
+      sourceKey: 'attacker-source',
+      attemptId: 'cross-tenant-failed-acquisition',
+      sequence: 1,
+      state: 'FAILED',
+      outcome: 'SOURCE_FAILED',
+      predicateScope: 'licensed_retailer_identity,status,address,coordinates',
+      requestedAt: new Date('2026-08-20T14:16:00.000Z'),
+      eventAt: new Date('2026-08-20T14:16:01.000Z'),
+      sourceRevision: 'UNKNOWN',
+      revisionState: 'UNKNOWN',
+      requestDigest: '5'.repeat(64),
+      completeness: 'UNKNOWN',
+      adapterVersion: 'hostile-adapter-v1',
+      parserVersion: 'hostile-parser-v1',
+      authorityPolicyVersion: 'hostile-authority-v1',
+      freshnessPolicyVersion: 'hostile-freshness-v1',
+      verificationCourtVersion: 'cana-market-claim-court-v1',
+      repositoryCommitSha: '6'.repeat(40),
+      tenant: 'other.example',
+      priorEventHash: '7'.repeat(64),
+      eventHash: '8'.repeat(64),
+      errorCode: 'CANA_LIVE_REALITY_SOURCE_FAILED',
+    },
+  });
+  const forgedClaim = persistedClaims[0];
+  await p.marketVerificationEvent.create({
+    data: {
+      claimId: forgedClaim.id,
+      acquisitionEventId: forgedAcquisition.id,
+      decision: 'ALLOW',
+      reason: 'HOSTILE_FORGED_ALLOW',
+      evaluatorVersion: 'cana-market-claim-court-v1',
+      evidenceDigest: '9'.repeat(64),
+      asOf: new Date('2026-08-20T14:17:00.000Z'),
+      freshnessExpiresAt: new Date('2026-08-25T14:17:00.000Z'),
+    },
+  });
+  const persistedEventsWithForgery = await p.marketVerificationEvent.findMany({
+    where: { claimId: { in: persistedClaims.map((claim) => claim.id) } },
+  });
+  const persistedAcquisitionsWithForgery = await p.marketSourceAcquisitionEvent.findMany();
+  assert.equal(selectCurrentClaimDecisions({
+    claims: persistedClaims,
+    verificationEvents: persistedEventsWithForgery,
+    acquisitionEvents: persistedAcquisitionsWithForgery,
+    contentArtifacts: persistedContentArtifacts,
+    sourceSnapshots: persistedSourceSnapshots,
+    revocations: [],
+    asOf: new Date('2026-08-20T14:20:00.000Z'),
+  }).some((claim) => claim.claim_id === forgedClaim.id), false,
+  'a persisted failed, cross-tenant, wrong-source acquisition cannot authorize current truth');
+
+  const persistedSecondAcquisition = await p.marketSourceAcquisitionEvent.findUnique({
+    where: { id: second.acquisition_event_id },
+  });
+  const mismatchedCourtAcquisition = await p.marketSourceAcquisitionEvent.create({
+    data: {
+      ...persistedSecondAcquisition,
+      id: undefined,
+      createdAt: undefined,
+      attemptId: 'live-court-version-mismatch',
+      sequence: 1,
+      verificationCourtVersion: 'forged-court-v9',
+      priorEventHash: 'a'.repeat(64),
+      eventHash: 'b'.repeat(64),
+    },
+  });
+  await assert.rejects(
+    verifyLiveMarketAcquisition(p, {
+      tenant: 'orderweeddc.com',
+      acquisitionEventId: mismatchedCourtAcquisition.id,
+      asOf: new Date('2026-08-20T14:25:00.000Z'),
+    }),
+    /CANA_REALITY_ACQUISITION_COURT_VERSION_MISMATCH/,
+  );
+
+  const policyRevoked = await revokeMarketEvidence(p, {
+    tenant: 'orderweeddc.com',
+    targetKind: 'POLICY_VERSION',
+    targetId: 'cana-market-claim-court-v1',
+    cause: 'court policy lineage withdrawn by integration court',
+    actorKind: 'TEST_COURT',
+    effectiveAt: new Date('2026-08-20T14:30:00.000Z'),
+  });
+  assert.equal(policyRevoked.state, 'REVOKED');
+  assert.ok(policyRevoked.affected_claims > 0);
+  assert.equal(policyRevoked.replacement_truth_created, 0);
+  assert.equal((await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } })).dataStatus, 'STALE');
+  const policyRevocations = await p.marketEvidenceRevocationEvent.findMany({
+    where: { tenant: 'orderweeddc.com', targetKind: 'POLICY_VERSION' },
+  });
+  assert.deepEqual(selectCurrentClaimDecisions({
+    claims: persistedClaims,
+    verificationEvents: persistedEvents,
+    acquisitionEvents: persistedAcquisitions,
+    contentArtifacts: persistedContentArtifacts,
+    sourceSnapshots: persistedSourceSnapshots,
+    revocations: policyRevocations,
+    asOf: new Date('2026-08-20T14:45:00.000Z'),
+  }), [], 'revoked persisted court lineage must not remain current truth');
+  await assert.rejects(
+    verifyLiveMarketAcquisition(p, {
+      tenant: 'orderweeddc.com',
+      acquisitionEventId: second.acquisition_event_id,
+      asOf: new Date('2026-08-20T14:45:00.000Z'),
+    }),
+    /CANA_REALITY_EVIDENCE_REVOKED/,
+  );
+
+  const revoked = await revokeMarketEvidence(p, {
+    tenant: 'orderweeddc.com',
+    targetKind: 'CONTENT_ARTIFACT',
+    targetId: first.content_artifact_id,
+    cause: 'hostile court proves append-only epistemic recall',
+    actorKind: 'TEST_COURT',
+    effectiveAt: new Date('2026-08-20T15:00:00.000Z'),
+  });
+  assert.equal(revoked.state, 'REVOKED');
+  assert.ok(revoked.affected_claims > 0);
+  assert.equal(revoked.replacement_truth_created, 0);
+  assert.ok(await p.marketClaim.count() > claimCount);
+  assert.equal((await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } })).dataStatus, 'STALE');
+  assert.equal(await p.marketSourceContentArtifact.count(), 1, 'revocation preserves immutable content history');
 });
 
 test('REALITY COMPILER: repeated court verification is an exact database no-op', async () => {
@@ -1118,11 +1597,15 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     unknown_dimensions: [],
     dimensions: { location: { status: 'KNOWN', value: 'dupont circle' } },
   };
+  const answerabilityFrontier = buildAnswerabilityFrontier({
+    tenant: 'orderweeddc.localhost', intent, claimDecisions: [], asOf: now,
+  });
   const answer = {
     verified_candidate_count: 0,
     zero_verified_result: true,
     zero_result_reason: 'NO_VERIFIED_CURRENT_MATCH',
     unsupported_known_dimensions: [],
+    answerability_frontier: answerabilityFrontier,
     opportunitySpec: {
       tenant: 'orderweeddc.localhost',
       kind: 'MARKET_GAP',
@@ -1161,10 +1644,13 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
   assert.doesNotMatch(storedSignal.intentIr, /flower in dupont/);
   assert.doesNotMatch(storedOpportunity.signal, /flower in dupont/);
   assert.doesNotMatch(storedOpportunity.evidence, /flower in dupont/);
+  assert.equal(JSON.parse(storedOpportunity.evidence).answerability_frontier.frontier_key, answerabilityFrontier.frontier_key);
+  assert.equal(JSON.parse(storedOpportunity.observedState).demand_priority.components.admitted_signal_count, 1);
 
   const duplicate = await recordAskWork(p, input);
-  assert.equal(duplicate.state, 'DUPLICATE');
-  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 1 });
+  assert.equal(duplicate.state, 'RECORDED');
+  assert.equal(duplicate.opportunity.id, first.opportunity.id);
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
 
   const semanticReplay = await recordAskWork(p, {
     ...input,
@@ -1173,7 +1659,12 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
   });
   assert.equal(semanticReplay.state, 'RECORDED');
   assert.equal(semanticReplay.opportunity.id, first.opportunity.id);
-  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
+  assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 3 });
+  assert.equal(
+    JSON.parse((await p.opportunity.findUnique({ where: { id: first.opportunity.id } })).observedState)
+      .demand_priority.components.admitted_signal_count,
+    3,
+  );
 
   await p.$executeRawUnsafe(`
     CREATE OR REPLACE FUNCTION refuse_ask_signal() RETURNS trigger AS $$
@@ -1205,11 +1696,88 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
       },
     });
     assert.equal(failed.state, 'FAILED');
-    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 2 });
+    assert.deepEqual(await counts(), { reservations: 1, opportunities: 1, missions: 1, triggers: 1, signals: 3 });
   } finally {
     await p.$executeRawUnsafe('DROP TRIGGER IF EXISTS ask_signal_failure ON "AskIntentSignal";');
     await p.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_ask_signal();');
   }
+
+  await p.askIntentSignal.createMany({
+    data: Array.from({ length: 97 }, () => ({
+      tenant: storedSignal.tenant,
+      rawQuery: storedSignal.rawQuery,
+      intentIr: storedSignal.intentIr,
+      answerSummary: storedSignal.answerSummary,
+      candidateCount: storedSignal.candidateCount,
+      opportunityId: first.opportunity.id,
+    })),
+  });
+  assert.equal(await p.askIntentSignal.count(), 100);
+  const boundedDuplicate = await recordAskWork(p, input);
+  assert.equal(boundedDuplicate.state, 'RATE_LIMITED');
+  assert.equal(boundedDuplicate.signalRecorded, false);
+  assert.equal(await p.askIntentSignal.count(), 100, 'duplicate demand storage must remain bounded');
+});
+
+test('ASK FRONTIER: ten concurrent equivalent demands create ten signals and one durable work unit', async () => {
+  const url = createDatabase('ask_frontier_concurrent');
+  deploy(url);
+  const p = await client(url);
+  const now = new Date('2026-08-10T12:00:00.000Z');
+  const intent = {
+    raw_query: 'licensed retailer in dupont',
+    unknown_dimensions: ['category', 'price_max_usd', 'fulfillment', 'open_now'],
+    dimensions: { location: { status: 'KNOWN', value: 'dupont circle' } },
+  };
+  const answerabilityFrontier = buildAnswerabilityFrontier({
+    tenant: 'orderweeddc.localhost', intent, claimDecisions: [], asOf: now,
+  });
+  const answer = {
+    verified_candidate_count: 0,
+    zero_verified_result: true,
+    zero_result_reason: 'NO_VERIFIED_CURRENT_MATCH',
+    unsupported_known_dimensions: [],
+    answerability_frontier: answerabilityFrontier,
+    opportunitySpec: {
+      tenant: 'orderweeddc.localhost',
+      kind: 'MARKET_GAP',
+      retailerId: null,
+      evidence: '{}',
+      observedState: '{}',
+      signal: 'MINIMIZED_INTENT_IR',
+      hypothesizedValue: null,
+      confidence: null,
+      recommendedAction: 'Verify current source-authoritative evidence.',
+      requiredAuthority: 'PROPOSE_ONLY',
+      risk: 'LOW — proposal only',
+      rollback: 'Dismiss the opportunity',
+      measurementPlan: 'Close only when the exact frontier is answerable.',
+    },
+  };
+  const results = await Promise.all(Array.from({ length: 10 }, () => recordAskWork(p, {
+    answer,
+    domain: 'orderweeddc.localhost',
+    intent,
+    now,
+  })));
+  assert.equal(results.filter((result) => result.state === 'RECORDED').length, 10);
+  assert.equal(results.filter((result) => result.state === 'DUPLICATE').length, 0);
+  assert.equal(await p.publicSubmissionEvent.count(), 1);
+  assert.equal(await p.askIntentSignal.count(), 10, 'each admitted ask remains countable demand evidence');
+  assert.equal(await p.opportunity.count(), 1);
+  assert.equal(await p.continuationMission.count(), 1);
+  assert.equal(await p.continuationTrigger.count(), 1);
+  const trigger = await p.continuationTrigger.findFirst();
+  const requirement = JSON.parse(trigger.evidenceRequirements);
+  assert.equal(requirement.frontierKey, answerabilityFrontier.frontier_key);
+  assert.equal(requirement.frontierEvidenceDigest, answerabilityFrontier.evidence_digest);
+  assert.equal(requirement.loopMode, 'REFLECTION_ONLY');
+  assert.equal(trigger.authorityCeiling, 'OBSERVE_ONLY');
+  assert.equal(
+    JSON.parse((await p.opportunity.findFirst()).observedState)
+      .demand_priority.components.admitted_signal_count,
+    10,
+  );
 });
 
 test('RESTORE: a logical pre-migration backup is a working database with a verifying chain', async () => {
@@ -1370,6 +1938,6 @@ test('provider classification fails closed and the reviewed migration manifest e
   });
   assert.deepEqual(
     verified.migrations.map((entry) => entry.name),
-    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION],
+    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION, LIVE_REALITY_MIGRATION],
   );
 });

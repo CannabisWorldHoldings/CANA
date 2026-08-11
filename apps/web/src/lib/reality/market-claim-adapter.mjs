@@ -1,3 +1,7 @@
+import { isEvidenceRevoked } from './evidence-revocation.mjs';
+import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
+import { adjudicateExecutionProvenance, MARKET_CLAIM_COURT_VERSION } from './market-claim-court.mjs';
+
 const PUBLIC_FIELDS = Object.freeze([
   'license',
   'name',
@@ -66,6 +70,160 @@ function known(decisions) {
       court_version: decision.court_version ?? null,
     }))),
   });
+}
+
+function field(row, camel, snake) {
+  return row?.[camel] ?? row?.[snake];
+}
+
+function admittedAcquisition(claim, event, acquisition, artifact, snapshot, eventAsOf) {
+  const claimTenant = claim.tenant;
+  const claimSnapshotId = field(claim, 'snapshotId', 'snapshot_id');
+  const acquisitionSnapshotId = field(acquisition, 'snapshotId', 'snapshot_id');
+  const contentArtifactId = field(acquisition, 'contentArtifactId', 'content_artifact_id');
+  const fetchedAt = new Date(field(acquisition, 'fetchedAt', 'fetched_at'));
+  const evaluatorVersion = field(event, 'evaluatorVersion', 'evaluator_version');
+  const courtVersion = field(acquisition, 'verificationCourtVersion', 'verification_court_version');
+  const outcome = acquisition?.outcome;
+  const revisionState = field(acquisition, 'revisionState', 'revision_state');
+  const lineageVersions = [
+    field(acquisition, 'adapterVersion', 'adapter_version'),
+    field(acquisition, 'parserVersion', 'parser_version'),
+    field(acquisition, 'compilerVersion', 'compiler_version'),
+    field(acquisition, 'entityResolverVersion', 'entity_resolver_version'),
+    field(acquisition, 'authorityPolicyVersion', 'authority_policy_version'),
+    field(acquisition, 'freshnessPolicyVersion', 'freshness_policy_version'),
+    courtVersion,
+  ];
+  return typeof claimTenant === 'string'
+    && claimTenant.length > 0
+    && acquisition?.tenant === claimTenant
+    && acquisition?.state === 'COMPLETED'
+    && ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'].includes(outcome)
+    && acquisition?.completeness === 'COMPLETE'
+    && field(acquisition, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
+    && field(acquisition, 'requestDigest', 'request_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && field(acquisition, 'adapterContractDigest', 'adapter_contract_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && typeof claimSnapshotId === 'string'
+    && acquisitionSnapshotId === claimSnapshotId
+    && typeof contentArtifactId === 'string'
+    && contentArtifactId.length > 0
+    && artifact?.id === contentArtifactId
+    && field(artifact, 'snapshotId', 'snapshot_id') === claimSnapshotId
+    && snapshot?.id === claimSnapshotId
+    && field(artifact, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
+    && field(snapshot, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
+    && field(artifact, 'sourceUrl', 'source_url') === ABCA_LIVE_CONTRACT.layerUrl
+    && field(snapshot, 'sourceUrl', 'source_url') === ABCA_LIVE_CONTRACT.layerUrl
+    && field(artifact, 'requestContractDigest', 'request_contract_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && field(artifact, 'contentSha256', 'content_sha256') === field(snapshot, 'payloadSha256', 'payload_sha256')
+    && field(artifact, 'payloadBytes', 'payload_bytes') === field(snapshot, 'payloadBytes', 'payload_bytes')
+    && field(artifact, 'recordCount', 'record_count') === field(snapshot, 'recordCount', 'record_count')
+    && field(artifact, 'schemaVersion', 'schema_version') === field(snapshot, 'schemaVersion', 'schema_version')
+    && field(snapshot, 'completeness', 'completeness') === 'COMPLETE'
+    && /^[a-f0-9]{64}$/.test(field(snapshot, 'payloadSha256', 'payload_sha256') ?? '')
+    && Number.isFinite(fetchedAt.getTime())
+    && fetchedAt <= eventAsOf
+    && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryCommitSha', 'repository_commit_sha') ?? '')
+    && /^[a-f0-9]{40}$/.test(field(acquisition, 'repositoryTreeSha', 'repository_tree_sha') ?? '')
+    && lineageVersions.every((value) => typeof value === 'string' && value.length > 0)
+    && courtVersion === MARKET_CLAIM_COURT_VERSION
+    && evaluatorVersion === courtVersion
+    && adjudicateExecutionProvenance(acquisition).decision === 'ALLOW'
+    && ['OBSERVED', 'UNKNOWN'].includes(revisionState)
+    && (outcome !== 'SOURCE_UNCHANGED' || revisionState === 'OBSERVED');
+}
+
+export function selectCurrentClaimDecisions({
+  claims = [],
+  verificationEvents = [],
+  acquisitionEvents = [],
+  contentArtifacts = [],
+  sourceSnapshots = [],
+  revocations = [],
+  asOf = new Date(),
+}) {
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(clock.getTime())) throw new Error('CANA_MARKET_TRUTH_AS_OF_INVALID');
+  const latestByClaim = new Map();
+  for (const event of [...verificationEvents].sort((left, right) => {
+    const leftTime = new Date(left.asOf ?? left.as_of).getTime();
+    const rightTime = new Date(right.asOf ?? right.as_of).getTime();
+    return rightTime - leftTime || String(right.id).localeCompare(String(left.id));
+  })) {
+    if (!latestByClaim.has(event.claimId ?? event.claim_id)) {
+      latestByClaim.set(event.claimId ?? event.claim_id, event);
+    }
+  }
+  const duplicateAcquisitionIds = new Set();
+  const acquisitionById = new Map();
+  for (const acquisition of acquisitionEvents) {
+    if (acquisitionById.has(acquisition.id)) duplicateAcquisitionIds.add(acquisition.id);
+    else acquisitionById.set(acquisition.id, acquisition);
+  }
+  const duplicateArtifactIds = new Set();
+  const artifactById = new Map();
+  for (const artifact of contentArtifacts) {
+    if (artifactById.has(artifact.id)) duplicateArtifactIds.add(artifact.id);
+    else artifactById.set(artifact.id, artifact);
+  }
+  const duplicateSnapshotIds = new Set();
+  const snapshotById = new Map();
+  for (const snapshot of sourceSnapshots) {
+    if (snapshotById.has(snapshot.id)) duplicateSnapshotIds.add(snapshot.id);
+    else snapshotById.set(snapshot.id, snapshot);
+  }
+  const current = [];
+  for (const claim of claims) {
+    const event = latestByClaim.get(claim.id);
+    const acquisitionEventId = event?.acquisitionEventId ?? event?.acquisition_event_id;
+    const acquisition = acquisitionById.get(acquisitionEventId);
+    const contentArtifactId = field(acquisition, 'contentArtifactId', 'content_artifact_id');
+    const artifact = artifactById.get(contentArtifactId);
+    const snapshotId = field(acquisition, 'snapshotId', 'snapshot_id');
+    const snapshot = snapshotById.get(snapshotId);
+    const eventAsOf = new Date(event?.asOf ?? event?.as_of);
+    const expiry = new Date(event?.freshnessExpiresAt ?? event?.freshness_expires_at);
+    if (!acquisition
+      || duplicateAcquisitionIds.has(acquisitionEventId)
+      || duplicateArtifactIds.has(contentArtifactId)
+      || duplicateSnapshotIds.has(snapshotId)
+      || !admittedAcquisition(claim, event, acquisition, artifact, snapshot, eventAsOf)) continue;
+    if (event.decision !== 'ALLOW'
+      || !Number.isFinite(eventAsOf.getTime())
+      || eventAsOf > clock
+      || !Number.isFinite(expiry.getTime())
+      || expiry <= clock) continue;
+    if (isEvidenceRevoked({
+      claimId: claim.id,
+      acquisitionEventId,
+      snapshotId: claim.snapshotId ?? claim.snapshot_id,
+      observationIds: claim.observationIds ?? claim.observation_ids ?? [],
+      parserVersion: field(acquisition, 'parserVersion', 'parser_version'),
+      policyVersions: [
+        field(acquisition, 'authorityPolicyVersion', 'authority_policy_version'),
+        field(acquisition, 'freshnessPolicyVersion', 'freshness_policy_version'),
+        field(acquisition, 'verificationCourtVersion', 'verification_court_version'),
+        field(event, 'evaluatorVersion', 'evaluator_version'),
+      ].filter(Boolean),
+      revocations,
+      asOf: clock,
+    })) continue;
+    current.push(Object.freeze({
+      claim_id: claim.id,
+      predicate: claim.claimType ?? claim.predicate,
+      value: claim.claimValue ?? claim.value,
+      source_id: field(acquisition, 'sourceKey', 'source_key'),
+      observed_at: new Date(claim.observedAt ?? claim.observed_at).toISOString(),
+      freshness_expires_at: expiry.toISOString(),
+      verification: 'VERIFIED',
+      decision_eligible: true,
+      court_version: field(event, 'evaluatorVersion', 'evaluator_version'),
+      acquisition_event_id: acquisitionEventId,
+      verification_event_id: event.id,
+    }));
+  }
+  return Object.freeze(current.sort((left, right) => left.claim_id.localeCompare(right.claim_id)));
 }
 
 export function compileRetailerTruth({ retailer, claimDecisions = [], asOf = new Date() }) {

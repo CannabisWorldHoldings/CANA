@@ -1,0 +1,83 @@
+{
+  "schema_version": "cana-live-reality-benchmark/v1",
+  "mode": "OFFLINE_SCRIPTED_REPLAY",
+  "source": {
+    "source_id": "dcgis:abca:licensed-medical-cannabis-retailers:layer-31",
+    "source_key": "dcgis_abca_retailers_layer_31",
+    "fixed_url": "https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Health_WebMercator/MapServer/31",
+    "live_network_calls": 0,
+    "scripted_http_reads": 16
+  },
+  "acquisition": {
+    "attempts": 4,
+    "completed": 2,
+    "failed": 2,
+    "changed": 1,
+    "unchanged": 1,
+    "revision_drift_denied": 1,
+    "outage_denied": 1,
+    "unique_content_artifacts": 1,
+    "acquisition_receipts": 4,
+    "repeated_identical_content_acquisitions": 1,
+    "duplicate_content_artifacts": 0,
+    "source_capability_receipts": 2
+  },
+  "revalidation": {
+    "zero_change_receipts": 1,
+    "verification_events_appended": 0,
+    "claims_mutated": 0,
+    "stale_claims": 1,
+    "revalidation_missions_created": 0,
+    "revalidation_work_specs_created": 1,
+    "revalidation_work_truth_mutations": 0,
+    "continuation_tick_truth_mutations": 0
+  },
+  "answerability": {
+    "before_frontier_key": "sha256:2cf85c49a8449bbd52010763f041528ac2c3bc3326506a6c75bbdbd4fa63a30b",
+    "after_frontier_key": "sha256:2cf85c49a8449bbd52010763f041528ac2c3bc3326506a6c75bbdbd4fa63a30b",
+    "gaps_closed": 1,
+    "gaps_retained": 1,
+    "verification_opportunities_created": 0,
+    "verification_opportunities_identified": 1,
+    "duplicate_opportunities": 0,
+    "demand_priority": {
+      "score": 563,
+      "components": {
+        "admitted_signal_count": 9,
+        "unique_demand_count": 1,
+        "blocking_predicate_count": 4,
+        "freshness_urgency": 0,
+        "contradiction_severity": 0,
+        "decision_criticality": 5
+      },
+      "hypothesized_value": null
+    }
+  },
+  "safety": {
+    "false_sovereign_identity_links": 0,
+    "unsupported_decision_eligible_claims": 0,
+    "source_failure_demotions": 0,
+    "provenance_violations": 0,
+    "replacement_truth_from_revocation": 0
+  },
+  "cognitive_evolution": {
+    "state": "REFLECTION_ONLY",
+    "value_state": "VALUE_NOT_ESTABLISHED",
+    "cognitive_mutations_promoted": 0,
+    "next_action": "OWNER_REVIEW",
+    "receipt_sha256": "2c0cdb2c5c3eb227ed2bc4913f3676abf3247cee3b7eb92f12937dc3108cd488",
+    "repeated_bottleneck": "ACQUISITION_IDENTITY_AND_REVALIDATION_BOUNDARY",
+    "challenger_specified": true,
+    "challenger_tested": false
+  },
+  "effects": {
+    "network_live_source_calls": 0,
+    "provider_calls": 0,
+    "paid_calls": 0,
+    "spend_cents": 0,
+    "publish_actions": 0,
+    "production_mutations": 0,
+    "deployments": 0,
+    "cognitive_promotions": 0
+  }
+}

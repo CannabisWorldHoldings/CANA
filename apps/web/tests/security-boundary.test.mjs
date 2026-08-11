@@ -205,6 +205,20 @@ test('structured data serialization neutralizes script termination payloads', ()
   assert.match(serialized, /A\\u0026B/);
 });
 
+test('live ABCA acquisition remains a fixed owner-opted maintenance boundary', () => {
+  const adapterSource = fs.readFileSync(
+    path.join(webRoot, 'src/lib/reality/live-abca-adapter.mjs'),
+    'utf8',
+  );
+  assert.match(adapterSource, /CANA_LIVE_REALITY_NETWORK/);
+  assert.match(adapterSource, /maps2\.dcgis\.dc\.gov/);
+  assert.match(adapterSource, /redirect:\s*'manual'/);
+  assert.match(adapterSource, /MAX_RESPONSE_BYTES\s*=\s*2\s*\*\s*1024\s*\*\s*1024/);
+  assert.match(adapterSource, /MAX_RUN_BYTES\s*=\s*4\s*\*\s*1024\s*\*\s*1024/);
+  assert.doesNotMatch(adapterSource, /process\.env\.(?:SOURCE_URL|ABCA_URL|FETCH_URL)/);
+  assert.doesNotMatch(adapterSource, /redirect:\s*'follow'/);
+});
+
 test('www.orderweeddc.com is an allowed host that permanently redirects to the apex', () => {
   // Parse: www must be inside the host allowlist (otherwise it would 421).
   assert.deepEqual(parseAllowedRequestHost('www.orderweeddc.com'), {

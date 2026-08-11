@@ -108,3 +108,47 @@ test('unknown location yields an honest zero without inventing nearby supply or 
   assert.equal(answer.zero_result_reason, 'REQUIRED_INTENT_DIMENSION_UNKNOWN');
   assert.equal(answer.opportunitySpec, null, 'missing customer context is not fabricated into a market gap');
 });
+
+test('ASK returns only a subject-complete current Answerability Frontier', async () => {
+  const prisma = {
+    retailer: {
+      async findMany() {
+        return [{
+          id: 'retailer-1',
+          name: 'Evidence Retailer',
+          type: 'MEDICAL',
+          address: '100 Truth Ave NW',
+          city: 'Dupont Circle',
+          state: 'DC',
+          zip: '20036',
+          lat: 38.91,
+          lng: -77.04,
+          phone: null,
+          website: null,
+          hours: null,
+          hoursSource: null,
+          licenseStatus: 'ACTIVE',
+          dataStatus: 'VERIFIED_CURRENT',
+          dataSource: 'DC_ABCA',
+          sourceUrl: 'https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Health_WebMercator/MapServer/31',
+          retrievedAt: new Date('2026-08-09T00:00:00.000Z'),
+          verifiedAt: new Date('2026-08-09T00:00:00.000Z'),
+          freshnessExpiresAt: new Date('2026-09-09T00:00:00.000Z'),
+          confidence: 1,
+          isDemonstration: false,
+        }];
+      },
+    },
+  };
+  const answer = await answerIntent(prisma, {
+    intent: compileIntent('dispensary in dupont', { now: NOW }),
+    brandId: BRAND,
+    tenantDomain: 'orderweeddc.com',
+    now: NOW,
+  });
+  assert.equal(answer.verified_candidate_count, 1);
+  assert.equal(answer.answerability_frontier.answerable, true);
+  assert.equal(answer.answerability_frontier.answerable_subject_ref, 'retailer-1');
+  assert.deepEqual(answer.answerability_frontier.blocking_predicates, []);
+  assert.equal(answer.opportunitySpec, null);
+});

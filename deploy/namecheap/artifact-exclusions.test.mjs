@@ -55,3 +55,16 @@ test('release artifact excludes every legacy ABCA truth bypass', () => {
   assert.doesNotMatch(copiedAppScripts[1], /scripts\/(?:etl-abca-retailers|ingest-abca-feed|seed-abca-retailers)\.mjs/);
   assert.match(BUILDER, /no legacy ABCA import bypass shipped/);
 });
+
+test('release builder keeps live acquisition tooling outside its shipped inventory', (t) => {
+  assert.match(BUILDER, /no live acquisition tooling shipped/);
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-live-reality-build-audit-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const result = auditArtifactExclusions(root);
+  assert.equal(result.passed, true);
+  for (const relativePath of [
+    'scripts/acquire-live-market-reality.mjs',
+    'src/lib/reality/live-abca-adapter.mjs',
+    'src/lib/reality/live-reality-acquisition.mjs',
+  ]) assert.doesNotMatch(BUILDER, new RegExp(`copyFileSync\\([^\\n]+${relativePath.replaceAll('/', '\\/')}`));
+});

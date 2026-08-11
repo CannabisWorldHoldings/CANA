@@ -1,8 +1,97 @@
 import { createHash } from 'node:crypto';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { resolveAbcaEntity } from './entity-resolution.mjs';
+import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
 import { canonicalDigest, parseEvidencePayload } from './reality-compiler.mjs';
 
 export const MARKET_CLAIM_COURT_VERSION = 'cana-market-claim-court-v1';
+
+const EXECUTION_VERSION_FILES = Object.freeze({
+  adapterVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /adapterVersion:\s*'([^']+)'/]),
+  parserVersion: Object.freeze(['apps/web/src/lib/reality/official-source-snapshot.mjs', /export const OFFICIAL_SOURCE_SCHEMA_VERSION = '([^']+)'/]),
+  compilerVersion: Object.freeze(['apps/web/src/lib/reality/reality-compiler.mjs', /export const REALITY_COMPILER_VERSION = '([^']+)'/]),
+  entityResolverVersion: Object.freeze(['apps/web/src/lib/reality/entity-resolution.mjs', /export const ENTITY_NORMALIZATION_VERSION = '([^']+)'/]),
+  authorityPolicyVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /authorityPolicyVersion:\s*'([^']+)'/]),
+  freshnessPolicyVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /freshnessPolicyVersion:\s*'([^']+)'/]),
+  verificationCourtVersion: Object.freeze(['apps/web/src/lib/reality/market-claim-court.mjs', /export const MARKET_CLAIM_COURT_VERSION = '([^']+)'/]),
+});
+const executionProvenanceCache = new Map();
+
+function gitOutput(args) {
+  try {
+    return execFileSync('git', args, {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      maxBuffer: 512 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 2_000,
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function executionTuple(commit, tree) {
+  const key = `${commit}:${tree}`;
+  if (executionProvenanceCache.has(key)) return executionProvenanceCache.get(key);
+  const actualTree = gitOutput(['rev-parse', `${commit}^{tree}`]);
+  if (!actualTree) {
+    return Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNKNOWN' });
+  }
+  if (actualTree !== tree) {
+    const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_TREE_MISMATCH' });
+    executionProvenanceCache.set(key, result);
+    return result;
+  }
+  const head = gitOutput(['rev-parse', 'HEAD']);
+  const ancestor = commit === head
+    ? { status: 0 }
+    : spawnSync('git', ['merge-base', '--is-ancestor', commit, 'HEAD'], {
+        cwd: process.cwd(),
+        stdio: 'ignore',
+        timeout: 2_000,
+      });
+  if (ancestor.status !== 0) {
+    const result = Object.freeze({ state: 'DENY', reason: 'REPOSITORY_COMMIT_UNADMITTED' });
+    executionProvenanceCache.set(key, result);
+    return result;
+  }
+  const versions = {};
+  for (const [name, [file, pattern]] of Object.entries(EXECUTION_VERSION_FILES)) {
+    const source = gitOutput(['show', `${commit}:${file}`]);
+    const match = source?.match(pattern);
+    if (!match?.[1]) {
+      return Object.freeze({ state: 'DENY', reason: 'VERSION_PROVENANCE_UNKNOWN' });
+    }
+    versions[name] = match[1];
+  }
+  const result = Object.freeze({ state: 'ALLOW', tree, versions: Object.freeze(versions) });
+  executionProvenanceCache.set(key, result);
+  return result;
+}
+
+export function adjudicateExecutionProvenance(event) {
+  const commit = event?.repositoryCommitSha;
+  const tree = event?.repositoryTreeSha;
+  if (!/^[a-f0-9]{40}$/.test(commit ?? '') || !/^[a-f0-9]{40}$/.test(tree ?? '')) {
+    return Object.freeze({ decision: 'DENY', reason: 'VERSION_PROVENANCE_INVALID' });
+  }
+  const admitted = executionTuple(commit, tree);
+  if (admitted.state !== 'ALLOW') {
+    return Object.freeze({ decision: 'DENY', reason: admitted.reason });
+  }
+  for (const [name, expected] of Object.entries(admitted.versions)) {
+    if (event?.[name] !== expected) {
+      return Object.freeze({ decision: 'DENY', reason: 'VERSION_TUPLE_MISMATCH' });
+    }
+  }
+  return Object.freeze({
+    decision: 'ALLOW',
+    reason: 'EXECUTION_PROVENANCE_PASSED',
+    repository_commit_sha: commit,
+    repository_tree_sha: tree,
+  });
+}
 
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
@@ -38,6 +127,161 @@ function outcome(claim, values) {
 
 function deny(claim, verification, reason, decision = 'DENY') {
   return outcome(claim, { decision, verification, decision_eligible: false, reason });
+}
+
+function acquisitionDecision(values) {
+  return Object.freeze({
+    decision: 'DENY',
+    decision_eligible: false,
+    ...values,
+  });
+}
+
+export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenant, purpose, asOf }) {
+  if (!event || !artifact || !snapshot) return acquisitionDecision({ reason: 'ACQUISITION_EVIDENCE_INCOMPLETE' });
+  if (!['COMPILE', 'REVALIDATE'].includes(purpose)) return acquisitionDecision({ reason: 'ACQUISITION_PURPOSE_INVALID' });
+  if (event.state !== 'COMPLETED' || event.errorCode) return acquisitionDecision({ reason: 'ACQUISITION_NOT_SUCCESSFUL' });
+  if (event.tenant !== tenant) return acquisitionDecision({ reason: 'ACQUISITION_TENANT_MISMATCH' });
+  if (event.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
+    || artifact.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
+    || snapshot.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
+    || artifact.sourceUrl !== ABCA_LIVE_CONTRACT.layerUrl
+    || snapshot.sourceUrl !== ABCA_LIVE_CONTRACT.layerUrl) {
+    return acquisitionDecision({ reason: 'ACQUISITION_SOURCE_MISMATCH' });
+  }
+  const allowedOutcomes = purpose === 'COMPILE' ? ['SOURCE_CHANGED'] : ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'];
+  if (!allowedOutcomes.includes(event.outcome)) {
+    return acquisitionDecision({ reason: purpose === 'COMPILE'
+      ? 'ACQUISITION_OUTCOME_NOT_COMPILABLE'
+      : 'ACQUISITION_OUTCOME_NOT_REVALIDATABLE' });
+  }
+  if (event.completeness !== 'COMPLETE' || snapshot.completeness !== 'COMPLETE') {
+    return acquisitionDecision({ reason: 'ACQUISITION_NOT_COMPLETE' });
+  }
+  if (event.requestDigest !== ABCA_LIVE_CONTRACT_DIGEST
+    || event.adapterContractDigest !== ABCA_LIVE_CONTRACT_DIGEST
+    || artifact.requestContractDigest !== ABCA_LIVE_CONTRACT_DIGEST) {
+    return acquisitionDecision({ reason: 'ACQUISITION_REQUEST_CONTRACT_MISMATCH' });
+  }
+  const versionLineage = [
+    event.adapterVersion,
+    event.parserVersion,
+    event.compilerVersion,
+    event.entityResolverVersion,
+    event.authorityPolicyVersion,
+    event.freshnessPolicyVersion,
+    event.verificationCourtVersion,
+  ];
+  if (!versionLineage.every((value) => typeof value === 'string' && value.length > 0)
+    || !/^[a-f0-9]{40}$/.test(event.repositoryCommitSha ?? '')
+    || !/^[a-f0-9]{40}$/.test(event.repositoryTreeSha ?? '')) {
+    return acquisitionDecision({ reason: 'ACQUISITION_VERSION_PROVENANCE_INVALID' });
+  }
+  if (event.verificationCourtVersion !== MARKET_CLAIM_COURT_VERSION) {
+    return acquisitionDecision({ reason: 'ACQUISITION_COURT_VERSION_MISMATCH' });
+  }
+  const execution = adjudicateExecutionProvenance(event);
+  if (execution.decision !== 'ALLOW') {
+    return acquisitionDecision({ reason: `ACQUISITION_${execution.reason}` });
+  }
+  if (event.contentArtifactId !== artifact.id
+    || event.snapshotId !== snapshot.id
+    || artifact.snapshotId !== snapshot.id
+    || artifact.contentSha256 !== snapshot.payloadSha256
+    || artifact.payloadBytes !== snapshot.payloadBytes
+    || artifact.recordCount !== snapshot.recordCount
+    || artifact.schemaVersion !== snapshot.schemaVersion) {
+    return acquisitionDecision({ reason: 'CONTENT_IDENTITY_MISMATCH' });
+  }
+  const preRevision = event.preSourceRevision;
+  const postRevision = event.postSourceRevision;
+  if ((preRevision ?? 'UNKNOWN') !== (postRevision ?? 'UNKNOWN')) {
+    return acquisitionDecision({ reason: 'ACQUISITION_REVISION_DRIFT' });
+  }
+  const exactRevisionToken = (value) => typeof value === 'string' && /^\d{1,20}$/.test(value);
+  const revisionBound = event.revisionState === 'OBSERVED'
+    && exactRevisionToken(preRevision)
+    && postRevision === preRevision
+    && event.sourceRevision === preRevision;
+  if (purpose === 'REVALIDATE' && !revisionBound) {
+    return acquisitionDecision({ reason: 'ACQUISITION_REVISION_UNBOUND' });
+  }
+  if (!Number.isInteger(event.preObservedRecordCount)
+    || !Number.isInteger(event.postObservedRecordCount)
+    || event.preObservedRecordCount !== event.postObservedRecordCount) {
+    return acquisitionDecision({ reason: 'ACQUISITION_COUNT_DRIFT' });
+  }
+  if (event.observedRecordCount !== event.preObservedRecordCount
+    || snapshot.recordCount !== event.preObservedRecordCount) {
+    return acquisitionDecision({ reason: 'ACQUISITION_RECORD_COUNT_MISMATCH' });
+  }
+  const acquiredAt = new Date(event.fetchedAt);
+  const completedAt = new Date(event.completedAt);
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (![acquiredAt, completedAt, clock].every((date) => Number.isFinite(date.getTime())) || completedAt < acquiredAt) {
+    return acquisitionDecision({ reason: 'ACQUISITION_TIME_INVALID' });
+  }
+  if (clock < acquiredAt) return acquisitionDecision({ reason: 'ACQUISITION_FROM_FUTURE' });
+  return acquisitionDecision({
+    decision: 'ALLOW',
+    decision_eligible: false,
+    reason: 'ACQUISITION_EVIDENCE_COURT_PASSED',
+    acquisition_id: event.id,
+    content_artifact_id: artifact.id,
+    snapshot_id: snapshot.id,
+    content_sha256: artifact.contentSha256,
+    acquired_at: acquiredAt.toISOString(),
+    zero_change: event.outcome === 'SOURCE_UNCHANGED',
+    revision_bound: revisionBound,
+  });
+}
+
+export function adjudicateZeroChangeReattestation({
+  acquisition,
+  predicate,
+  sourcePolicy,
+  licenseExpiration = null,
+  asOf,
+}) {
+  const denied = (reason, verification = 'UNKNOWN', decision = 'DENY') => Object.freeze({
+    decision,
+    verification,
+    decision_eligible: false,
+    freshness_expires_at: null,
+    reason,
+  });
+  if (acquisition?.decision !== 'ALLOW' || acquisition.zero_change !== true) {
+    return denied('ZERO_CHANGE_ACQUISITION_NOT_ADMITTED');
+  }
+  if (!Array.isArray(sourcePolicy?.authoritative_predicates)
+    || !sourcePolicy.authoritative_predicates.includes(predicate)) {
+    return denied('PREDICATE_OUTSIDE_SOURCE_AUTHORITY');
+  }
+  if (!Number.isFinite(sourcePolicy.max_age_ms) || sourcePolicy.max_age_ms <= 0) {
+    return denied('FRESHNESS_POLICY_INVALID', 'REFUTED');
+  }
+  const acquiredAt = new Date(acquisition.acquired_at);
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(acquiredAt.getTime()) || !Number.isFinite(clock.getTime()) || clock < acquiredAt) {
+    return denied('REVALIDATION_TIME_INVALID', 'REFUTED');
+  }
+  let expiryMs = acquiredAt.getTime() + sourcePolicy.max_age_ms;
+  if (licenseExpiration !== null) {
+    const licenseExpiry = new Date(licenseExpiration);
+    if (!Number.isFinite(licenseExpiry.getTime())) return denied('LICENSE_EXPIRATION_INVALID', 'REFUTED');
+    expiryMs = Math.min(expiryMs, licenseExpiry.getTime());
+  }
+  const freshnessExpiresAt = new Date(expiryMs);
+  if (clock >= freshnessExpiresAt) {
+    return denied('REATTESTED_FRESHNESS_EXPIRED', 'STALE', 'MARK_STALE');
+  }
+  return Object.freeze({
+    decision: 'ALLOW',
+    verification: 'VERIFIED',
+    decision_eligible: true,
+    freshness_expires_at: freshnessExpiresAt.toISOString(),
+    reason: 'ZERO_CHANGE_REATTESTATION_PASSED',
+  });
 }
 
 function recordDigest(feature) {

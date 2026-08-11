@@ -21,6 +21,10 @@
     {
       "name": "20260810000000_market_reality_compiler",
       "sha256": "b22adb329a829ba350097042b0272d38fbdabbd130587dabfab63f50d0c53062"
+    },
+    {
+      "name": "20260810200000_live_reality_acquisition",
+      "sha256": "bdc41027d78bc2b42f56dcbb2586becd9e0e6e1c9e3493e2eb3f2c85d552d545"
     }
   ]
 }

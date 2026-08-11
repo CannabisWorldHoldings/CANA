@@ -25,7 +25,7 @@ export const ABCA_FIELDS = Object.freeze([
   'ENDORSEMENTS',
 ]);
 
-const SCHEMA_VERSION = 'cana-dc-abca-arcgis-snapshot-v1';
+export const OFFICIAL_SOURCE_SCHEMA_VERSION = 'cana-dc-abca-arcgis-snapshot-v1';
 
 function fail(code, detail) {
   const error = new Error(`${code}: ${detail}`);
@@ -101,8 +101,15 @@ export function loadOfficialSourceSnapshot(directory) {
   if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) fail('CANA_OFFICIAL_SOURCE_PATH_INVALID', root);
   const manifestBytes = readFileSync(exactFile(root, 'manifest.json'));
   const snapshotBytes = readFileSync(exactFile(root, 'snapshot.json'));
+  return validateOfficialSourceSnapshotBytes({ manifestBytes, snapshotBytes });
+}
+
+export function validateOfficialSourceSnapshotBytes({ manifestBytes, snapshotBytes }) {
+  if (!Buffer.isBuffer(manifestBytes) || !Buffer.isBuffer(snapshotBytes)) {
+    fail('CANA_OFFICIAL_SOURCE_CAPTURE_INVALID', 'manifest and snapshot bytes are required');
+  }
   const manifest = parseJson(manifestBytes, 'CANA_OFFICIAL_SOURCE_MANIFEST_INVALID');
-  if (manifest.schema_version !== SCHEMA_VERSION || manifest.source_id !== ABCA_SOURCE_ID) {
+  if (manifest.schema_version !== OFFICIAL_SOURCE_SCHEMA_VERSION || manifest.source_id !== ABCA_SOURCE_ID) {
     fail('CANA_OFFICIAL_SOURCE_CONTRACT_MISMATCH', 'schema or source id');
   }
   if (manifest.snapshot_byte_length !== snapshotBytes.length || manifest.snapshot_sha256 !== sha256(snapshotBytes)) {
@@ -112,7 +119,7 @@ export function loadOfficialSourceSnapshot(directory) {
     fail('CANA_OFFICIAL_SOURCE_FIELDS_MISMATCH', 'outFields');
   }
   const envelope = parseJson(snapshotBytes, 'CANA_OFFICIAL_SOURCE_SNAPSHOT_INVALID');
-  if (envelope.schema_version !== SCHEMA_VERSION || envelope.source_id !== ABCA_SOURCE_ID) {
+  if (envelope.schema_version !== OFFICIAL_SOURCE_SCHEMA_VERSION || envelope.source_id !== ABCA_SOURCE_ID) {
     fail('CANA_OFFICIAL_SOURCE_CONTRACT_MISMATCH', 'snapshot envelope');
   }
   if (!Array.isArray(envelope.pages) || envelope.pages.length === 0 || envelope.pages.length !== manifest.pages.length) {
@@ -168,9 +175,22 @@ export function loadOfficialSourceSnapshot(directory) {
   });
 }
 
-export function buildSnapshotArtifacts({ metadataBytes, pageParts, fetchedAt, sourceModifiedAt = null }) {
+export function buildSnapshotArtifacts({
+  metadataBytes,
+  pageParts,
+  fetchedAt,
+  sourceModifiedAt = null,
+  sourceCatalogModifiedDate = '2026-06-05',
+  provenanceMode = 'FIXTURE',
+}) {
   if (!Buffer.isBuffer(metadataBytes) || !Array.isArray(pageParts) || pageParts.length === 0) {
     fail('CANA_OFFICIAL_SOURCE_CAPTURE_INVALID', 'metadata and pages are required');
+  }
+  if (!['FIXTURE', 'LIVE'].includes(provenanceMode)) {
+    fail('CANA_OFFICIAL_SOURCE_CAPTURE_INVALID', 'provenance mode');
+  }
+  if (provenanceMode === 'LIVE' && sourceCatalogModifiedDate !== null) {
+    fail('CANA_LIVE_REALITY_FIXTURE_METADATA_REFUSED', 'live catalog metadata must be observed or UNKNOWN');
   }
   const metadata = parseJson(metadataBytes, 'CANA_OFFICIAL_SOURCE_ARCGIS_ERROR');
   if (metadata.error || metadata.id !== 31) fail('CANA_OFFICIAL_SOURCE_ARCGIS_ERROR', 'metadata');
@@ -179,7 +199,7 @@ export function buildSnapshotArtifacts({ metadataBytes, pageParts, fetchedAt, so
     response_base64: bytes.toString('base64'),
   }));
   const envelope = {
-    schema_version: SCHEMA_VERSION,
+    schema_version: OFFICIAL_SOURCE_SCHEMA_VERSION,
     source_id: ABCA_SOURCE_ID,
     metadata_base64: metadataBytes.toString('base64'),
     pages,
@@ -191,7 +211,7 @@ export function buildSnapshotArtifacts({ metadataBytes, pageParts, fetchedAt, so
     return { offset, record_count: page.features.length, byte_length: bytes.length, sha256: sha256(bytes) };
   });
   const manifest = {
-    schema_version: SCHEMA_VERSION,
+    schema_version: OFFICIAL_SOURCE_SCHEMA_VERSION,
     source_id: ABCA_SOURCE_ID,
     endpoint: ABCA_LAYER_URL,
     query_endpoint: ABCA_QUERY_URL,
@@ -204,7 +224,8 @@ export function buildSnapshotArtifacts({ metadataBytes, pageParts, fetchedAt, so
     },
     fields: [...ABCA_FIELDS],
     fetched_at: new Date(fetchedAt).toISOString(),
-    source_catalog_modified_date: '2026-06-05',
+    provenance_mode: provenanceMode,
+    source_catalog_modified_date: sourceCatalogModifiedDate,
     source_modified_at: sourceModifiedAt,
     metadata: { byte_length: metadataBytes.length, sha256: sha256(metadataBytes) },
     pages: inventory,

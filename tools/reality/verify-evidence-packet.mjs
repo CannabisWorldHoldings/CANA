@@ -29,6 +29,13 @@ const ZERO_EFFECTS = Object.freeze([
   'cognitive_promotions',
 ]);
 const PHASE_B_MIGRATION = '20260810000000_market_reality_compiler';
+const PHASE_B_MIGRATION_PREFIX = Object.freeze([
+  '20260726000000_baseline',
+  '20260726000100_ledger_recorded_at_index',
+  '20260809100000_geo_kernel',
+  '20260809170000_continuation_kernel',
+  PHASE_B_MIGRATION,
+]);
 const REQUIRED_HOSTED_RUNS = Object.freeze([
   'candidate-unit',
   'focused-verifier',
@@ -122,7 +129,10 @@ export function verifyPhaseBMigrationManifest({ repositoryRoot, commit } = {}) {
   if (JSON.stringify(names) !== JSON.stringify([...names].sort()) || JSON.stringify(names) !== JSON.stringify(diskNames)) {
     fail('CANA_PHASE_B_MIGRATION_UNIVERSE_MISMATCH');
   }
-  if (names.length !== 5 || names[4] !== PHASE_B_MIGRATION) fail('CANA_PHASE_B_MIGRATION_UNIVERSE_MISMATCH');
+  if (
+    names.length < PHASE_B_MIGRATION_PREFIX.length
+    || JSON.stringify(names.slice(0, PHASE_B_MIGRATION_PREFIX.length)) !== JSON.stringify(PHASE_B_MIGRATION_PREFIX)
+  ) fail('CANA_PHASE_B_MIGRATION_UNIVERSE_MISMATCH');
   for (const entry of manifest.migrations) {
     if (!/^[a-f0-9]{64}$/.test(entry.sha256 ?? '')) fail('CANA_PHASE_B_MIGRATION_MANIFEST_INVALID');
     const bytes = committedBytes(root, candidate, `apps/web/prisma/migrations/${entry.name}/migration.sql`);

@@ -1,0 +1,21 @@
+{
+  "schema_version": "cana-source-reliability-state/v1",
+  "mode": "OFFLINE_SCRIPTED_REPLAY",
+  "source_key": "dcgis_abca_retailers_layer_31",
+  "attempts": 4,
+  "complete": 2,
+  "revision_drift_denied": 1,
+  "outage_denied": 1,
+  "reliability_estimate": "NOT_ESTABLISHED",
+  "live_observation": {
+    "completed_acquisitions": 1,
+    "failed_pre_content_attempts": 2,
+    "complete_record_count": 74,
+    "terminal_circuit_state": "HEALTHY",
+    "source_revision_state": "UNKNOWN",
+    "content_artifacts": 1,
+    "public_truth_mutations": 0
+  },
+  "routing_authority_created": false,
+  "economic_value": null
+}

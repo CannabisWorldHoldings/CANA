@@ -37,6 +37,9 @@ test('the MariaDB candidate is provider-specific and annotates every approved lo
     ['ContinuationReceipt', ['evidence']],
     ['Opportunity', ['evidence', 'observedState']],
     ['AskIntentSignal', ['intentIr', 'answerSummary']],
+    ['MarketSourceAcquisitionEvent', ['predicateScope', 'errorDetail']],
+    ['MarketSourceCapabilityReceipt', ['capabilitiesJson', 'limitsJson']],
+    ['MarketEvidenceRevocationEvent', ['cause']],
   ]);
   for (const [model, fields] of jsonFields) {
     const block = schema.match(new RegExp(`model ${model} \\{([\\s\\S]*?)\\n\\}`))?.[1] ?? '';

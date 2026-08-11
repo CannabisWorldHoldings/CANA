@@ -22,6 +22,10 @@
 
 import { currentPublicRecordWhere } from '../seo-truth.mjs';
 import { isPubliclyVerified } from '../data-status.mjs';
+import {
+  buildAnswerabilityFrontier,
+  projectionClaimDecisions,
+} from './answerability-frontier.mjs';
 import { persistenceSafeIntent } from './intent-ir.mjs';
 
 const MAX_CANDIDATES = 10;
@@ -58,6 +62,12 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
   const location = dimensions.location;
   const unsupportedKnownDimensions = ['category', 'price_max_usd', 'fulfillment', 'open_now']
     .filter((name) => dimensions[name]?.status === 'KNOWN');
+  const emptyFrontier = buildAnswerabilityFrontier({
+    tenant: tenantDomain,
+    intent,
+    claimDecisions: [],
+    asOf: now,
+  });
 
   if (location?.status !== 'KNOWN') {
     return {
@@ -66,6 +76,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
       zero_verified_result: true,
       zero_result_reason: 'REQUIRED_INTENT_DIMENSION_UNKNOWN',
       unsupported_known_dimensions: unsupportedKnownDimensions,
+      answerability_frontier: emptyFrontier,
       opportunitySpec: null,
     };
   }
@@ -77,6 +88,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
       zero_verified_result: true,
       zero_result_reason: 'UNSUPPORTED_VERIFIED_DIMENSION',
       unsupported_known_dimensions: unsupportedKnownDimensions,
+      answerability_frontier: emptyFrontier,
       opportunitySpec: {
         tenant: tenantDomain,
         kind: 'CAPABILITY_GAP',
@@ -86,6 +98,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
           intent_ir: persistedIntent,
           decision_eligible: false,
           unsupported_known_dimensions: unsupportedKnownDimensions,
+          answerability_frontier: emptyFrontier,
           observed_at: now.toISOString(),
         }),
         observedState: JSON.stringify({
@@ -127,7 +140,19 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
   const iso = (v) => (v instanceof Date ? v.toISOString() : v ?? null);
 
   // Belt and braces: the same post-query publication gate as the UI/API.
-  const candidates = rows.filter((r) => isPubliclyVerified(r, now)).map((r) => ({
+  const eligibleRows = rows.filter((row) => isPubliclyVerified(row, now));
+  const frontier = buildAnswerabilityFrontier({
+    tenant: tenantDomain,
+    intent,
+    claimDecisions: projectionClaimDecisions(eligibleRows, emptyFrontier.required_predicates),
+    asOf: now,
+  });
+  const candidates = eligibleRows
+    .filter((row) => frontier.subject_coverage.some((subject) => (
+      subject.subject_ref === row.id
+      && subject.current_predicates.length === frontier.required_predicates.length
+    )))
+    .map((r) => ({
     id: r.id,
     name: r.name,
     type: r.type,
@@ -158,6 +183,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
       signal: 'MINIMIZED_INTENT_IR',
       evidence: JSON.stringify({
         intent_ir: persistedIntent,
+        answerability_frontier: frontier,
         query_gate: 'currentPublicRecordWhere + isPubliclyVerified',
         verified_candidates: 0,
         observed_at: now.toISOString(),
@@ -187,6 +213,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
     zero_verified_result: candidates.length === 0,
     zero_result_reason: candidates.length === 0 ? 'NO_VERIFIED_CURRENT_MATCH' : null,
     unsupported_known_dimensions: [],
+    answerability_frontier: frontier,
     opportunitySpec,
   };
 }

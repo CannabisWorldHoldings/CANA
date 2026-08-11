@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import { before, test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 let reality;
+const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 before(async () => {
   try {
@@ -58,4 +63,46 @@ test('changed evidence changes the receipt and unsupported promotion is refused'
     () => reality.reflectVerificationEpisode({ ...episode, promote: true }),
     /COGNITIVE_PROMOTION_REQUIRES_COMPARABLE_PROOF/,
   );
+});
+
+test('Slice 2 acquisition reflection is deterministic, committed, zero-effect, and REFLECTION_ONLY', () => {
+  const script = path.join(WEB, 'scripts', 'replay-live-reality-benchmark.mjs');
+  const result = spawnSync(process.execPath, [script], {
+    cwd: path.resolve(WEB, '..', '..'),
+    encoding: 'utf8',
+    timeout: 30_000,
+    env: { ...process.env, COGNITIVE_PROMOTIONS: '0' },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const observed = JSON.parse(result.stdout);
+  const committed = JSON.parse(fs.readFileSync(
+    path.join(WEB, '..', '..', 'docs', 'evidence', 'phase-b-slice2', 'REALITY_ACQUISITION_BENCHMARK.json'),
+    'utf8',
+  ));
+  assert.deepEqual(observed, committed);
+  assert.equal(observed.cognitive_evolution.state, 'REFLECTION_ONLY');
+  assert.equal(observed.cognitive_evolution.value_state, 'VALUE_NOT_ESTABLISHED');
+  assert.equal(observed.cognitive_evolution.cognitive_mutations_promoted, 0);
+  assert.equal(observed.cognitive_evolution.next_action, 'OWNER_REVIEW');
+  assert.deepEqual(observed.effects, {
+    network_live_source_calls: 0,
+    provider_calls: 0,
+    paid_calls: 0,
+    spend_cents: 0,
+    publish_actions: 0,
+    production_mutations: 0,
+    deployments: 0,
+    cognitive_promotions: 0,
+  });
+});
+
+test('Slice 2 benchmark refuses any cognitive promotion configuration', () => {
+  const result = spawnSync(process.execPath, [path.join(WEB, 'scripts', 'replay-live-reality-benchmark.mjs')], {
+    cwd: path.resolve(WEB, '..', '..'),
+    encoding: 'utf8',
+    timeout: 30_000,
+    env: { ...process.env, COGNITIVE_PROMOTIONS: '1' },
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /CANA_SLICE2_COGNITIVE_PROMOTIONS_REFUSED/);
 });

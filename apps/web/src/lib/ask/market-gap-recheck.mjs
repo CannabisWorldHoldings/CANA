@@ -9,10 +9,59 @@ function parseEvidence(value) {
   try {
     const parsed = JSON.parse(value);
     if (!parsed?.intent_ir || typeof parsed.intent_ir !== 'object') throw new Error('intent_ir missing');
+    if (!parsed?.answerability_frontier || typeof parsed.answerability_frontier !== 'object') {
+      throw new Error('answerability_frontier missing');
+    }
     return parsed;
   } catch (error) {
     throw new Error(`CANA_ASK_GAP_EVIDENCE_INVALID: ${error.message}`);
   }
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).sort().map((key) => (
+      `${JSON.stringify(key)}:${canonicalJson(value[key])}`
+    )).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+export function adjudicateFrontierRecheck({
+  storedFrontier,
+  requirement,
+  currentFrontier,
+  verifiedCandidateCount,
+}) {
+  const bindingMatches = requirement?.consumer === 'ask_market_gap_recheck'
+    && requirement?.recheck === 'answerability_frontier'
+    && requirement?.loopMode === 'REFLECTION_ONLY'
+    && requirement?.tenant === storedFrontier?.tenant
+    && requirement?.frontierKey === storedFrontier?.frontier_key
+    && requirement?.frontierEvidenceDigest === storedFrontier?.evidence_digest
+    && canonicalJson(requirement?.intentScope) === canonicalJson(storedFrontier?.intent_scope)
+    && canonicalJson(requirement?.requiredPredicates) === canonicalJson(storedFrontier?.required_predicates);
+  if (!bindingMatches) return Object.freeze({ decision: 'REFUSED', reason: 'FRONTIER_BINDING_MISMATCH' });
+  if (
+    currentFrontier?.tenant !== storedFrontier.tenant
+    || canonicalJson(currentFrontier?.intent_scope) !== canonicalJson(storedFrontier.intent_scope)
+    || canonicalJson(currentFrontier?.required_predicates) !== canonicalJson(storedFrontier.required_predicates)
+  ) {
+    return Object.freeze({ decision: 'REFUSED', reason: 'FRONTIER_SCOPE_MISMATCH' });
+  }
+  if (
+    currentFrontier?.answerable === true
+    && typeof currentFrontier.answerable_subject_ref === 'string'
+    && currentFrontier.answerable_subject_ref.length > 0
+    && Array.isArray(currentFrontier.blocking_predicates)
+    && currentFrontier.blocking_predicates.length === 0
+    && Number.isInteger(verifiedCandidateCount)
+    && verifiedCandidateCount > 0
+  ) {
+    return Object.freeze({ decision: 'CLOSE', reason: 'EXACT_FRONTIER_ANSWERABLE' });
+  }
+  return Object.freeze({ decision: 'PERSISTENT', reason: 'FRONTIER_NOT_ANSWERABLE' });
 }
 
 export async function recheckMarketGap(prisma, {
@@ -28,7 +77,7 @@ export async function recheckMarketGap(prisma, {
       tenant,
       tickId,
       consumer: 'ask_market_gap_recheck',
-      recheck: 'verified_candidate_count',
+      recheck: 'answerability_frontier',
     });
     if (!authority.ok) return Object.freeze({ state: 'REFUSED', reason: authority.reason });
     const { mission, trigger, requirement } = authority;
@@ -64,7 +113,16 @@ export async function recheckMarketGap(prisma, {
       tenantDomain: tenant,
       now,
     });
-    const closed = answer.verified_candidate_count > 0;
+    const frontierDecision = adjudicateFrontierRecheck({
+      storedFrontier: evidence.answerability_frontier,
+      requirement,
+      currentFrontier: answer.answerability_frontier,
+      verifiedCandidateCount: answer.verified_candidate_count,
+    });
+    if (frontierDecision.decision === 'REFUSED') {
+      return Object.freeze({ state: 'REFUSED', reason: frontierDecision.reason });
+    }
+    const closed = frontierDecision.decision === 'CLOSE';
     let state = 'PERSISTENT';
     if (closed) {
       const claimed = await tx.opportunity.updateMany({
@@ -76,6 +134,10 @@ export async function recheckMarketGap(prisma, {
             verified_candidate_count: answer.verified_candidate_count,
             closed_at: now.toISOString(),
             query_gate: 'currentPublicRecordWhere + isPubliclyVerified',
+            frontier_key: answer.answerability_frontier.frontier_key,
+            evidence_digest: answer.answerability_frontier.evidence_digest,
+            required_predicates: answer.answerability_frontier.required_predicates,
+            blocking_predicates: answer.answerability_frontier.blocking_predicates,
           }),
         },
       });
@@ -102,6 +164,10 @@ export async function recheckMarketGap(prisma, {
         opportunity_id: requirement.opportunityId,
         tenant,
         verified_candidate_count: answer.verified_candidate_count,
+        frontier_key: answer.answerability_frontier.frontier_key,
+        frontier_evidence_digest: answer.answerability_frontier.evidence_digest,
+        blocking_predicates: answer.answerability_frontier.blocking_predicates,
+        frontier_decision: frontierDecision.decision,
         state,
         observed_at: now.toISOString(),
       }),
@@ -124,7 +190,7 @@ export async function recordMarketGapRecheckFailure(prisma, {
       tenant,
       tickId,
       consumer: 'ask_market_gap_recheck',
-      recheck: 'verified_candidate_count',
+      recheck: 'answerability_frontier',
     });
     if (!authority.ok) return Object.freeze({ state: 'REFUSED', reason: authority.reason });
     const reflected = await tx.continuationReceipt.findFirst({
