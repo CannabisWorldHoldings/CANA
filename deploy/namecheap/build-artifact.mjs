@@ -311,7 +311,11 @@ function databaseDataSha256(postgres) {
     ],
     { maxBuffer: 64 * 1024 * 1024 },
   );
-  return createHash('sha256').update(dump).digest('hex');
+  const canonicalDump = dump
+    .split('\n')
+    .filter((line) => !/^\\(?:un)?restrict /.test(line))
+    .join('\n');
+  return createHash('sha256').update(canonicalDump).digest('hex');
 }
 
 async function availableLoopbackPort() {
