@@ -221,6 +221,8 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
     VERIFY_AND_DEPLOY,
     /NODE_BIN=\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node/,
   );
+  assert.match(VERIFY_AND_DEPLOY, /OWD_NODE cannot override the vetted cPanel runtime/);
+  assert.match(MIGRATE, /OWD_NODE override is permitted only for a disposable database court/);
   assert.match(VERIFY_AND_DEPLOY, /"\$NODE_BIN" <<'NODE'/);
   assert.doesNotMatch(VERIFY_AND_DEPLOY, /(?:^|\n)node <<'NODE'/);
   for (const runbook of [productionRunbook, stagingRunbook]) {
@@ -276,6 +278,54 @@ test('integrated migration mode cannot initialize after a migration precondition
   });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /CANA_PRE_MIGRATION_BACKUP_RECEIPT is required/);
+  assert.equal(fs.existsSync(marker), false);
+});
+
+test('production deployment and migration refuse caller-selected Node executables', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-node-pin-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const marker = path.join(root, 'called');
+  const fakeNode = path.join(root, 'node');
+  fs.writeFileSync(fakeNode, `#!/bin/sh\n: > ${JSON.stringify(marker)}\nexit 0\n`, { mode: 0o700 });
+  const commonEnv = {
+    ...process.env,
+    OWD_NODE: fakeNode,
+    DATABASE_URL: 'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict',
+    DIRECT_URL: 'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict',
+  };
+  const deploy = spawnSync(
+    'sh',
+    [
+      fileURLToPath(new URL('./verify-and-deploy.sh', import.meta.url)),
+      'https://example.invalid/release.tar.gz',
+      `orderweeddc-${'a'.repeat(40)}.tar.gz`,
+      'b'.repeat(64),
+    ],
+    { env: commonEnv, encoding: 'utf8' },
+  );
+  const migrate = spawnSync('sh', [fileURLToPath(new URL('./migrate.sh', import.meta.url))], {
+    env: {
+      ...commonEnv,
+      CANA_PRE_MIGRATION_BACKUP_RECEIPT: path.join(root, 'backup-receipt.json'),
+    },
+    encoding: 'utf8',
+  });
+  assert.notEqual(deploy.status, 0);
+  assert.match(`${deploy.stdout}${deploy.stderr}`, /OWD_NODE cannot override/);
+  assert.notEqual(migrate.status, 0);
+  assert.match(`${migrate.stdout}${migrate.stderr}`, /OWD_NODE override is permitted only/);
+  assert.equal(fs.existsSync(marker), false);
+
+  const forgedCourt = spawnSync('sh', [fileURLToPath(new URL('./migrate.sh', import.meta.url))], {
+    env: {
+      ...commonEnv,
+      CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: '9999999999999999999',
+      CANA_PRE_MIGRATION_BACKUP_RECEIPT: path.join(root, 'backup-receipt.json'),
+    },
+    encoding: 'utf8',
+  });
+  assert.notEqual(forgedCourt.status, 0);
+  assert.match(`${forgedCourt.stdout}${forgedCourt.stderr}`, /requires one identical loopback URL/);
   assert.equal(fs.existsSync(marker), false);
 });
 

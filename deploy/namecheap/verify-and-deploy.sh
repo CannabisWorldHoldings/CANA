@@ -27,16 +27,6 @@ UPLOADS="$HOME/uploads"
 DOMAIN="orderweeddc.com"
 ORIGIN_IP="${OWD_ORIGIN_IP:-127.0.0.1}"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-if [ -n "${OWD_NODE-}" ]; then
-  NODE_BIN="$OWD_NODE"
-elif [ -x /opt/alt/alt-nodejs20/root/usr/bin/node ]; then
-  NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
-else
-  NODE_BIN="$(command -v node || true)"
-fi
-[ -n "$NODE_BIN" ] || { echo "GATE FAILED: no Node executable found; set OWD_NODE to an absolute path"; exit 1; }
-case "$NODE_BIN" in /*) ;; *) echo "GATE FAILED: Node executable must resolve to an absolute path"; exit 1;; esac
-[ -x "$NODE_BIN" ] || { echo "GATE FAILED: resolved Node executable is not executable"; exit 1; }
 
 phase() { printf '\n=== %s ===\n' "$1"; }
 fail() { echo "GATE FAILED: $1"; exit 1; }
@@ -46,6 +36,9 @@ printf '%s\n' "$FILE" | grep -Eq '^orderweeddc-[0-9a-f]{40}\.tar\.gz$' ||
 printf '%s\n' "$EXPECTED_SHA" | grep -Eq '^[0-9a-f]{64}$' ||
   fail "expected SHA-256 must be exactly 64 lowercase hex characters"
 ARTIFACT_ROOT_NAME=${FILE%.tar.gz}
+[ -z "${OWD_NODE-}" ] || fail "OWD_NODE cannot override the vetted cPanel runtime"
+NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
+[ -x "$NODE_BIN" ] || fail "vetted cPanel Node executable is unavailable"
 
 phase "GATE 1: download + checksum"
 mkdir -p "$UPLOADS"

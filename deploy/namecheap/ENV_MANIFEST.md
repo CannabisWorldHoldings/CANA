@@ -37,7 +37,7 @@ receipts), no = non-secret configuration.
 | `OWD_APP_HOME` | App home override (default `$HOME/apps/orderweeddc`). Set for STAGING side-by-side installs (e.g. `$HOME/apps/orderweeddc-staging`) | `deploy.sh`, `rollback.sh`, `restart.sh`, `verify-and-deploy.sh`, `readycheck.sh` | no |
 | `CANA_PRE_MIGRATION_BACKUP_RECEIPT` | Path to a nonempty provider/operator backup receipt required before `migrate deploy` | `migrate.sh` | no |
 | `OWD_BACKUP_DIR` | Worker audit-log destination; not a managed-database backup destination | `worker.mjs` | no |
-| `OWD_NODE` | Absolute node binary (default CloudLinux selector path) | `migrate.sh`, cron lines | no |
+| `OWD_NODE` | Absolute node binary used only by the repository's disposable database court; production migration and deploy paths refuse overrides and require the CloudLinux Node 20 selector | `migrate.sh` local court | no |
 | `OWD_ORIGIN_IP` | Origin IP for `--resolve` health checks while public DNS lags | `verify-and-deploy.sh`, `healthcheck.sh`, `smoke-test.sh` | no |
 | `OWD_BASE_URL` | Base URL under test (e.g. `https://staging.example.com`). Refuses to default to production in staging tooling | `healthcheck.sh`, `readycheck.sh`, `smoke-test.sh` | no |
 | `OWD_EXPECTED_SHA` | The 40-hex SHA the deployment MUST be running; readiness fails on mismatch | `readycheck.sh`, `smoke-test.sh` | no |

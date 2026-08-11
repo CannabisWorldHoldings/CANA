@@ -42,19 +42,34 @@ MIGRATIONS_DIR="$SCHEMA_DIR/prisma/migrations"
 SCHEMA_PATH="$SCHEMA_DIR/$SCHEMA"
 MIGRATION_MANIFEST="$SCHEMA_DIR/prisma/migration-manifest.json"
 MIGRATION_MANIFEST_VERIFIER="$SCHEMA_DIR/prisma/migration-manifest.mjs"
-if [ -n "${OWD_NODE-}" ]; then
-  NODE_BIN="$OWD_NODE"
-elif [ -x /opt/alt/alt-nodejs20/root/usr/bin/node ]; then
-  NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
-else
-  NODE_BIN="$(command -v node || true)"
-fi
-[ -n "$NODE_BIN" ] || { echo "HARD STOP: no Node executable found; set OWD_NODE to an absolute path"; exit 3; }
-case "$NODE_BIN" in /*) ;; *) echo "HARD STOP: Node executable must resolve to an absolute path"; exit 3;; esac
-[ -x "$NODE_BIN" ] || { echo "HARD STOP: resolved Node executable is not executable"; exit 3; }
 : "${DATABASE_URL:?HARD STOP: DATABASE_URL is required}"
 : "${DIRECT_URL:?HARD STOP: DIRECT_URL is required}"
 : "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"
+case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
+case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
+if [ -n "${CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER-}" ]; then
+  [ "$DATABASE_URL" = "$DIRECT_URL" ] || {
+    echo "HARD STOP: disposable database court requires one identical loopback URL"; exit 5;
+  }
+  case "$DATABASE_URL" in
+    postgres://*@127.0.0.1:*/*|postgresql://*@127.0.0.1:*/*|postgres://*@localhost:*/*|postgresql://*@localhost:*/*|*'@[::1]:'*) ;;
+    *) echo "HARD STOP: disposable database court requires one identical loopback URL"; exit 5;;
+  esac
+  NODE_BIN="${OWD_NODE:-$(command -v node || true)}"
+else
+  for DATABASE_CONNECTION_URL in "$DATABASE_URL" "$DIRECT_URL"; do
+    DATABASE_QUERY="&${DATABASE_CONNECTION_URL#*\?}&"
+    case "$DATABASE_QUERY" in *'&sslmode=require&'*) ;; *) echo "HARD STOP: database URLs must enforce strict TLS"; exit 5;; esac
+    case "$DATABASE_QUERY" in *'&sslaccept=strict&'*) ;; *) echo "HARD STOP: database URLs must enforce strict TLS"; exit 5;; esac
+  done
+  [ -z "${OWD_NODE-}" ] || {
+    echo "HARD STOP: OWD_NODE override is permitted only for a disposable database court"; exit 3;
+  }
+  NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
+fi
+[ -n "$NODE_BIN" ] || { echo "HARD STOP: no Node executable found for the disposable database court"; exit 3; }
+case "$NODE_BIN" in /*) ;; *) echo "HARD STOP: Node executable must resolve to an absolute path"; exit 3;; esac
+[ -x "$NODE_BIN" ] || { echo "HARD STOP: resolved Node executable is not executable"; exit 3; }
 
 [ -f "$MIGRATION_MANIFEST" ] && [ ! -L "$MIGRATION_MANIFEST" ] &&
   [ -f "$MIGRATION_MANIFEST_VERIFIER" ] && [ ! -L "$MIGRATION_MANIFEST_VERIFIER" ] || {
@@ -64,8 +79,6 @@ MIGRATION_MANIFEST_PROOF="$("$NODE_BIN" "$MIGRATION_MANIFEST_VERIFIER" "$MIGRATI
   echo "HARD STOP: committed migrations do not match the reviewed canonical manifest"; exit 2;
 }
 
-case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
-case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
 CANA_SCHEMA_DIR="$SCHEMA_DIR" "$NODE_BIN" <<'NODE' || { echo "HARD STOP: database URLs must enforce strict TLS or match the connected disposable PostgreSQL identity"; exit 5; }
 const path = require('node:path');
 const { createRequire } = require('node:module');
