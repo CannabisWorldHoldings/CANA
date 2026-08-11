@@ -956,15 +956,44 @@ async function isolatedRuntimeTest() {
   );
   results.artifactExclusionAudit = exclusionAudit;
 
+  // deploy.sh correctly refuses the preliminary artifact because its receipt
+  // still says the isolated runtime test is pending. Build an internal-only
+  // court archive after the runtime gates pass so the real deploy/rollback
+  // helpers can exercise their production receipt acceptance unchanged. The
+  // release staging tree is restored to its pending receipt until rollback
+  // integrity completes and the final receipt is written below.
+  const receiptPath = path.join(artifactRoot, 'receipt.json');
+  const pendingReceipt = fs.readFileSync(receiptPath);
+  const deployCourtTar = path.join(isoRoot, `${artifactName}.deploy-court.tar.gz`);
+  try {
+    writeReceipt({
+      isolatedRuntimeTest: {
+        passed: true,
+        isolationDir: results.isolationDir,
+        nodeUsed: process.version,
+        productionBootstrap: results.productionBootstrap,
+        health: results.health,
+        restart: results.restart,
+        steps: Object.fromEntries(
+          Object.entries(results.steps).map(([key, value]) => [key, value.ok]),
+        ),
+      },
+    });
+    createCleanTar(deployCourtTar, distRoot, artifactName);
+  } finally {
+    fs.writeFileSync(receiptPath, pendingReceipt);
+  }
+
   const databaseStateBefore = JSON.stringify(inspect.counts);
   const fakeHome = path.join(isoRoot, 'rollback-home');
   fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
-  fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
+  fs.copyFileSync(deployCourtTar, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
+  const deployCourtSha256 = sha256File(deployCourtTar);
   run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
+    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${deployCourtSha256}`,
   );
   run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
+    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${deployCourtSha256}`,
   );
   run(
     `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`,
