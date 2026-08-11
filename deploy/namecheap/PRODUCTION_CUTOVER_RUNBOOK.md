@@ -37,8 +37,15 @@ Upload both maintained verifier files to `~/uploads` before running the gate:
 - `verify-and-deploy.sh`
 - `verify-owner-artifact-input.sh`
 
-```
-sh ~/uploads/verify-and-deploy.sh <https-artifact-url> orderweeddc-<full-40-char-sha>.tar.gz <expected-tarball-sha256>
+```sh
+(
+  set -eu
+  trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM
+  IFS= read -r -s -p 'PRODUCTION DATABASE_URL: ' DATABASE_URL; printf '\n'
+  IFS= read -r -s -p 'PRODUCTION DIRECT_URL: ' DIRECT_URL; printf '\n'
+  export DATABASE_URL DIRECT_URL
+  sh ~/uploads/verify-and-deploy.sh <https-artifact-url> orderweeddc-<full-40-char-sha>.tar.gz <expected-tarball-sha256>
+)
 ```
 
 The verifier fails closed when its adjacent structural helper is absent. It snapshots
@@ -48,12 +55,22 @@ enforces: checksum, receipt and release identity acceptance, PostgreSQL URL
 configuration without printing values, origin health with bounded retries, automatic code rollback on
 failure, and separates ORIGIN health from PUBLIC-DNS health
 (`ORIGIN_HEALTHY_PUBLIC_DNS_PENDING` is a real state — never conflate).
+The cPanel Terminal does not inherit Setup Node.js App variables. Enter the
+owner-supplied production URLs only at the hidden prompts; the cleanup trap
+removes them on success, failure, or interruption.
 
 ## 3. Migrations (ONLY when this release ships approved migrations)
 
-```
-CANA_PRE_MIGRATION_BACKUP_RECEIPT=~/cutover-logs/provider-backup-before.json \
-  sh ~/apps/orderweeddc/current/migrate.sh
+```sh
+(
+  set -eu
+  trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM
+  IFS= read -r -s -p 'PRODUCTION DATABASE_URL: ' DATABASE_URL; printf '\n'
+  IFS= read -r -s -p 'PRODUCTION DIRECT_URL: ' DIRECT_URL; printf '\n'
+  export DATABASE_URL DIRECT_URL
+  CANA_PRE_MIGRATION_BACKUP_RECEIPT=~/cutover-logs/provider-backup-before.json \
+    sh ~/apps/orderweeddc/current/migrate.sh
+)
 ```
 
 Database laws apply: the backup receipt, exact release SHA, and migration
@@ -83,7 +100,13 @@ Trigger on ANY of: readiness failure; `/api/health` non-200 or UNHEALTHY;
 `/api/release` serving the WRONG SHA; unexpected database mutation attributable
 to the release procedure; error spike in `stderr.log`.
 
-```
+Before a code rollback, prove the previous release is compatible with the
+current PostgreSQL schema. If a forward migration made it incompatible, do not
+run the code-only rollback. Restoring the verified provider backup is a
+separate owner-authorized database operation; never improvise a down migration.
+
+```sh
+# Run only after schema compatibility with <previous-sha> is proven.
 sh ~/apps/orderweeddc/rollback.sh     # code-only; database untouched; broken release preserved
 OWD_EXPECTED_SHA=<previous-sha> sh ~/apps/orderweeddc/current/readycheck.sh https://orderweeddc.com
 ```

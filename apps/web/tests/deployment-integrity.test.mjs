@@ -503,6 +503,22 @@ test('canonical deployment verifier snapshots before structural inspection and e
   assert.match(runbook, /verify-owner-artifact-input\.sh/);
 });
 
+test('production cutover keeps database URLs scoped and forbids schema-incompatible code rollback', () => {
+  const runbook = read('deploy/namecheap/PRODUCTION_CUTOVER_RUNBOOK.md');
+  const cleanupTraps = runbook.match(
+    /trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM/g,
+  ) ?? [];
+
+  assert.equal(cleanupTraps.length, 2, 'deploy and migration each require secret cleanup');
+  assert.match(runbook, /read -r -s -p 'PRODUCTION DATABASE_URL: '/);
+  assert.match(runbook, /read -r -s -p 'PRODUCTION DIRECT_URL: '/);
+  assert.match(runbook, /export DATABASE_URL DIRECT_URL/);
+  assert.match(runbook, /cPanel Terminal does not inherit Setup Node\.js App variables/);
+  assert.match(runbook, /prove the previous release is compatible with the\s+current PostgreSQL schema/);
+  assert.match(runbook, /do not\s+run the code-only rollback/);
+  assert.match(runbook, /Restoring the verified provider backup is a\s+separate owner-authorized database operation/);
+});
+
 test('maintenance health job exits nonzero when the probe is unhealthy', (t) => {
   const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-worker-health-'));
   t.after(() => fs.rmSync(backupDir, { recursive: true, force: true }));
