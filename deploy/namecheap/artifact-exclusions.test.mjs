@@ -230,14 +230,15 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
     assert.match(runbook, /sh migrate\.sh --initialize/);
   }
   assert.match(manifest.commands.initializeDatabase, /sh migrate\.sh --initialize/);
-  assert.equal(
-    (cutoverRunbook.match(/trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM/g) ?? [])
-      .length,
-    2,
-    'production deploy and migration commands each clean up Terminal database secrets',
-  );
-  assert.match(cutoverRunbook, /read -r -s -p 'PRODUCTION DATABASE_URL: '/);
-  assert.match(cutoverRunbook, /read -r -s -p 'PRODUCTION DIRECT_URL: '/);
+  const productionDeploySection = cutoverRunbook.match(/## 2\.[\s\S]*?(?=\n## 3\.)/)?.[0];
+  const productionMigrationSection = cutoverRunbook.match(/## 3\.[\s\S]*?(?=\n## 4\.)/)?.[0];
+  for (const section of [productionDeploySection, productionMigrationSection]) {
+    assert.ok(section, 'production deploy and migration sections must exist');
+    assert.match(section, /trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM/);
+    assert.match(section, /read -r -s -p 'PRODUCTION DATABASE_URL: '/);
+    assert.match(section, /read -r -s -p 'PRODUCTION DIRECT_URL: '/);
+    assert.match(section, /export DATABASE_URL DIRECT_URL/);
+  }
   assert.match(cutoverRunbook, /cPanel Terminal does not inherit Setup Node\.js App variables/);
   assert.match(
     cutoverRunbook,
