@@ -134,10 +134,8 @@ fi
 # invoke it directly. Registry fallback is deliberately forbidden.
 if [ -f "$SCHEMA_DIR/node_modules/prisma/build/index.js" ]; then
   set -- "$NODE_BIN" "$SCHEMA_DIR/node_modules/prisma/build/index.js"
-elif [ -x "$SCHEMA_DIR/node_modules/.bin/prisma" ]; then
-  set -- "$SCHEMA_DIR/node_modules/.bin/prisma"
-elif [ -x "$SCHEMA_DIR/../../node_modules/.bin/prisma" ]; then
-  set -- "$SCHEMA_DIR/../../node_modules/.bin/prisma"
+elif [ -f "$SCHEMA_DIR/../../node_modules/prisma/build/index.js" ]; then
+  set -- "$NODE_BIN" "$SCHEMA_DIR/../../node_modules/prisma/build/index.js"
 else
   echo "HARD STOP: no packaged or repository-local prisma CLI available."
   exit 3

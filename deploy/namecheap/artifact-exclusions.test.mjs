@@ -138,6 +138,11 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
     /NODE_ENV=production "\$NODE_BIN" "\$SCHEMA_DIR\/scripts\/init-production-db\.mjs"/,
     'integrated migration mode must execute the packaged production initializer',
   );
+  assert.doesNotMatch(
+    MIGRATE,
+    /node_modules\/\.bin\/prisma/,
+    'every Prisma entrypoint must run through the vetted Node binary',
+  );
   assert.match(
     BUILDER,
     /src\/lib\/db-config\.mjs/,
@@ -351,6 +356,7 @@ test('production deployment and migration refuse caller-selected Node executable
     ],
     { env: commonEnv, encoding: 'utf8' },
   );
+  const deployOutput = `${deploy.stdout}${deploy.stderr}`;
   const migrate = spawnSync('sh', [fileURLToPath(new URL('./migrate.sh', import.meta.url))], {
     env: {
       ...commonEnv,
@@ -358,10 +364,13 @@ test('production deployment and migration refuse caller-selected Node executable
     },
     encoding: 'utf8',
   });
+  const migrateOutput = `${migrate.stdout}${migrate.stderr}`;
   assert.notEqual(deploy.status, 0);
-  assert.match(`${deploy.stdout}${deploy.stderr}`, /OWD_NODE cannot override/);
+  assert.match(deployOutput, /OWD_NODE cannot override/);
+  assert.equal(deployOutput.includes(commonEnv.DATABASE_URL), false);
   assert.notEqual(migrate.status, 0);
-  assert.match(`${migrate.stdout}${migrate.stderr}`, /OWD_NODE override is permitted only/);
+  assert.match(migrateOutput, /OWD_NODE override is permitted only/);
+  assert.equal(migrateOutput.includes(commonEnv.DATABASE_URL), false);
   assert.equal(fs.existsSync(marker), false);
 
   const forgedCourt = spawnSync('sh', [fileURLToPath(new URL('./migrate.sh', import.meta.url))], {
