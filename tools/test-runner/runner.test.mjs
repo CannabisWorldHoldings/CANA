@@ -36,6 +36,7 @@ function cana(...args) {
 function assertNoContinueOnError(workflow, job) {
   assert.doesNotMatch(workflow, /continue-on-error/);
   assert.doesNotMatch(workflow, /^\s*(?:\?\s*)?"[^"\n]*\\[^"\n]*"\s*(?::|$)/m);
+  assert.doesNotMatch(workflow, /(?:^|[\s:[{,])[&*][a-z0-9_-]+(?=\s|$|[,}\]])/im);
   assert.doesNotMatch(job, /\\/);
   assert.doesNotMatch(job, /^\s*<<\s*:/m);
 }
@@ -120,6 +121,10 @@ test('the focused CI envelope exceeds the complete bounded path plus its safety 
     assert.throws(() => assertNoContinueOnError(hostileWorkflow, focusedJob));
   }
   assert.throws(() => assertNoContinueOnError(workflow, `${focusedJob}\n    <<: *defaults\n`));
+  assert.throws(() => assertNoContinueOnError(
+    `${workflow}\nshared-key: &fail-soft "continue\\u002don\\u002derror"\n`,
+    `${focusedJob}\n    *fail-soft: true\n`,
+  ));
 });
 
 test('receipts bind to the active session and cannot override envelope fields', async () => {
