@@ -119,6 +119,11 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
   assert.doesNotMatch(BUILDER, /\.deploy-court\.tar\.gz/);
   assert.match(BUILDER, /databaseDataSha256\(postgres\)/);
   assert.match(BUILDER, /marketWrites: databaseUnchanged \? 0 : null/);
+  assert.match(
+    BUILDER,
+    /try \{\s*writeReceipt\(\{[\s\S]*?finally \{\s*finalCleanup = stopDisposablePostgres\(isolatedResults\.postgres\)/,
+    'final receipt and packaging failures must remain inside the PostgreSQL cleanup guard',
+  );
   assert.doesNotMatch(BUILDER, /const port = 3260/);
   assert.doesNotMatch(
     BUILDER,

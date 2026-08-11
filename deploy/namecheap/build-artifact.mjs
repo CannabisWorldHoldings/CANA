@@ -1107,25 +1107,25 @@ const isolatedResults = await isolatedRuntimeTest();
 // ---------------------------------------------------------------------------
 // Phase 6 — final receipt (with isolated results) + final package
 // ---------------------------------------------------------------------------
-writeReceipt({
-  isolatedRuntimeTest: {
-    passed: true,
-    isolationDir: isolatedResults.isolationDir,
-    nodeUsed: process.version,
-    productionBootstrap: isolatedResults.productionBootstrap,
-    productionBootstrapDataSha256: isolatedResults.productionBootstrapDataSha256,
-    health: isolatedResults.health,
-    restart: isolatedResults.restart,
-    rollback: isolatedResults.rollback,
-    steps: Object.fromEntries(
-      Object.entries(isolatedResults.steps).map(([k, v]) => [k, v.ok]),
-    ),
-  },
-});
 let tarSha256;
 let finalError;
 let finalCleanup = false;
 try {
+  writeReceipt({
+    isolatedRuntimeTest: {
+      passed: true,
+      isolationDir: isolatedResults.isolationDir,
+      nodeUsed: process.version,
+      productionBootstrap: isolatedResults.productionBootstrap,
+      productionBootstrapDataSha256: isolatedResults.productionBootstrapDataSha256,
+      health: isolatedResults.health,
+      restart: isolatedResults.restart,
+      rollback: isolatedResults.rollback,
+      steps: Object.fromEntries(
+        Object.entries(isolatedResults.steps).map(([k, v]) => [k, v.ok]),
+      ),
+    },
+  });
   tarPath = packageTar();
   const fakeHome = path.join(isolatedResults.isolationDir, 'delivery-home');
   fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
