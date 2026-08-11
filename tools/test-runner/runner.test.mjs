@@ -33,6 +33,10 @@ function cana(...args) {
   });
 }
 
+function assertNoContinueOnError(job) {
+  assert.doesNotMatch(job, /continue-on-error/);
+}
+
 test('the root dispatcher refuses an unknown verification profile', () => {
   const result = cana('verify', 'not-a-profile');
   assert.equal(result.status, 2);
@@ -102,7 +106,10 @@ test('the focused CI envelope exceeds the complete bounded path plus its safety 
     `focused outer timeout ${outerMinutes}m must exceed ${boundedInnerMinutes}m of bounded inner work plus ${operationalMarginMinutes}m margin`,
   );
   assert.match(focusedJob, /- run:\s*\.\/cana verify focused\s*(?:\n|$)/);
-  assert.doesNotMatch(focusedJob, /continue-on-error\s*:/);
+  assertNoContinueOnError(focusedJob);
+  for (const key of ['continue-on-error', '"continue-on-error"', "'continue-on-error'"]) {
+    assert.throws(() => assertNoContinueOnError(`${focusedJob}\n    ${key}: false\n`));
+  }
 });
 
 test('receipts bind to the active session and cannot override envelope fields', async () => {
