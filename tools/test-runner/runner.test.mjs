@@ -16,6 +16,9 @@ import { sha256File } from './receipt.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const WEB = path.join(ROOT, 'apps', 'web');
 const MIGRATION_COURT = path.join(WEB, 'tests', 'migration-court.test.mjs');
+const VERIFY_WORKFLOW = path.join(ROOT, '.github', 'workflows', 'cana-verify.yml');
+const RUNNER = path.join(ROOT, 'tools', 'test-runner', 'runner.mjs');
+const POSTGRES_RUNTIME = path.join(ROOT, 'tools', 'postgres-sim', 'runtime.mjs');
 
 function cana(...args) {
   const env = {
@@ -34,6 +37,45 @@ test('the root dispatcher refuses an unknown verification profile', () => {
   const result = cana('verify', 'not-a-profile');
   assert.equal(result.status, 2);
   assert.match(result.stderr, /unknown verification profile/i);
+});
+
+test('the focused CI envelope exceeds every bounded inner stage plus its safety margin', () => {
+  const workflow = fs.readFileSync(VERIFY_WORKFLOW, 'utf8');
+  const runner = fs.readFileSync(RUNNER, 'utf8');
+  const postgresRuntime = fs.readFileSync(POSTGRES_RUNTIME, 'utf8');
+  const focusedJob = workflow.match(
+    /\n  focused-verifier:\n(?<body>[\s\S]*?)(?=\n  [a-z][a-z0-9-]*:\n)/,
+  )?.groups?.body;
+  assert.ok(focusedJob, 'focused-verifier job must remain present');
+
+  const outerMinutes = Number(focusedJob.match(/timeout-minutes:\s*(\d+)/)?.[1]);
+  const verifierImageMinutes = Number(
+    runner.match(/\['build', '--tag',[\s\S]*?timeout:\s*(\d+)\s*\*\s*60_000/)?.[1],
+  );
+  const focusedExecutionMinutes = Number(
+    runner.match(/focused:\s*(\d+)\s*\*\s*60_000/)?.[1],
+  );
+  const postgresImageMinutes = Number(
+    postgresRuntime.match(/\['build', '--tag',[\s\S]*?timeout:\s*(\d+)\s*\*\s*60_000/)?.[1],
+  );
+  const operationalMarginMinutes = 10;
+
+  for (const [label, value] of Object.entries({
+    outerMinutes,
+    verifierImageMinutes,
+    focusedExecutionMinutes,
+    postgresImageMinutes,
+  })) {
+    assert.ok(Number.isInteger(value) && value > 0, `${label} must be a positive minute budget`);
+  }
+  const boundedInnerMinutes =
+    verifierImageMinutes + postgresImageMinutes + focusedExecutionMinutes;
+  assert.ok(
+    outerMinutes > boundedInnerMinutes + operationalMarginMinutes,
+    `focused outer timeout ${outerMinutes}m must exceed ${boundedInnerMinutes}m of bounded inner work plus ${operationalMarginMinutes}m margin`,
+  );
+  assert.match(focusedJob, /- run:\s*\.\/cana verify focused\s*(?:\n|$)/);
+  assert.doesNotMatch(focusedJob, /continue-on-error:\s*true/);
 });
 
 test('receipts bind to the active session and cannot override envelope fields', async () => {
