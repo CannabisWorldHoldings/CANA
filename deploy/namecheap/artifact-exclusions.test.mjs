@@ -329,7 +329,7 @@ test('production deployment and migration refuse caller-selected Node executable
     encoding: 'utf8',
   });
   assert.notEqual(forgedCourt.status, 0);
-  assert.match(`${forgedCourt.stdout}${forgedCourt.stderr}`, /requires one identical loopback URL/);
+  assert.match(`${forgedCourt.stdout}${forgedCourt.stderr}`, /OWD_NODE override is permitted only/);
   assert.equal(fs.existsSync(marker), false);
 });
 

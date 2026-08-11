@@ -47,14 +47,13 @@ MIGRATION_MANIFEST_VERIFIER="$SCHEMA_DIR/prisma/migration-manifest.mjs"
 : "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DATABASE_URL must be PostgreSQL"; exit 5;; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) echo "HARD STOP: DIRECT_URL must be PostgreSQL"; exit 5;; esac
-if [ -n "${CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER-}" ]; then
-  [ "$DATABASE_URL" = "$DIRECT_URL" ] || {
-    echo "HARD STOP: disposable database court requires one identical loopback URL"; exit 5;
-  }
+DISPOSABLE_DATABASE_COURT=0
+if [ -n "${CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER-}" ] && [ "$DATABASE_URL" = "$DIRECT_URL" ]; then
   case "$DATABASE_URL" in
-    postgres://*@127.0.0.1:*/*|postgresql://*@127.0.0.1:*/*|postgres://*@localhost:*/*|postgresql://*@localhost:*/*|*'@[::1]:'*) ;;
-    *) echo "HARD STOP: disposable database court requires one identical loopback URL"; exit 5;;
+    postgres://*@127.0.0.1:*/*|postgresql://*@127.0.0.1:*/*|postgres://*@localhost:*/*|postgresql://*@localhost:*/*|*'@[::1]:'*) DISPOSABLE_DATABASE_COURT=1 ;;
   esac
+fi
+if [ "$DISPOSABLE_DATABASE_COURT" -eq 1 ]; then
   NODE_BIN="${OWD_NODE:-$(command -v node || true)}"
 else
   for DATABASE_CONNECTION_URL in "$DATABASE_URL" "$DIRECT_URL"; do
