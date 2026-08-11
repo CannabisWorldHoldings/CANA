@@ -50,7 +50,6 @@ export function auditArtifactExclusions(artifactRoot) {
 
   for (const file of files) {
     const contents = fs.readFileSync(file);
-    if (contents.includes(0)) continue;
     const relativePath = path.relative(artifactRoot, file);
     const trustedSha256 = PINNED_ARTIFACT_EXECUTABLE_SHA256[relativePath];
     if (

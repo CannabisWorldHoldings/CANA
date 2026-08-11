@@ -57,9 +57,19 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const webRoot = path.join(repoRoot, 'apps/web');
+const trustedToolPath = [
+  path.dirname(process.execPath),
+  '/opt/homebrew/bin',
+  '/usr/local/bin',
+  '/usr/bin',
+  '/bin',
+  '/usr/sbin',
+  '/sbin',
+].join(path.delimiter);
 
 function buildChildEnvironment(baseEnvironment = process.env) {
   const environment = createReleaseChildEnvironment({ baseEnvironment });
+  environment.PATH = trustedToolPath;
   delete environment.NODE_OPTIONS;
   delete environment.NODE_PATH;
   return environment;
@@ -441,7 +451,7 @@ if (process.argv[2] === '--verify-clean-packaging') {
   fs.writeFileSync(path.join(artifactRoot, '__MACOSX', 'resource-fork'), 'fork\n');
 
   const packagingAudit = createCleanTar(tarPath, courtRoot, artifactName);
-  const members = execFileSync('tar', ['-tzf', tarPath], { encoding: 'utf8' });
+  const members = execFile('tar', ['-tzf', tarPath]);
   let provenanceHeaderRejected = false;
   try {
     assertNoMacOsExtendedHeaders([
@@ -685,6 +695,9 @@ if (process.env.SERVER_OPENSSL === '1.1') {
   }
 }
 
+const artifactSourceMaps = walkFiles(artifactRoot).filter((file) => file.endsWith('.map'));
+for (const file of artifactSourceMaps) fs.rmSync(file);
+
 // ---------------------------------------------------------------------------
 // Phase 4 — hard-stop verification (incl. unresolved-external scan)
 // ---------------------------------------------------------------------------
@@ -735,6 +748,8 @@ checks['no live acquisition tooling shipped'] = [
   'src/lib/reality/live-abca-adapter.mjs',
   'src/lib/reality/live-reality-acquisition.mjs',
 ].every((file) => !fs.existsSync(path.join(artifactRoot, file)));
+checks[`no source maps shipped (${artifactSourceMaps.length} removed)`] =
+  walkFiles(artifactRoot).every((file) => !file.endsWith('.map'));
 checks['release.json present with full 40-hex gitSha'] =
   fs.existsSync(path.join(artifactRoot, 'release.json')) &&
   /^[0-9a-f]{40}$/.test(releaseIdentity.gitSha) &&

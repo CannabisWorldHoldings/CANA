@@ -61,6 +61,24 @@ test('artifact exclusion audit rejects embedded credential patterns', (t) => {
   );
 });
 
+test('artifact exclusion audit scans credential text embedded in binary files', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const token = `ghp_${'A'.repeat(36)}`;
+  fs.writeFileSync(
+    path.join(root, 'opaque.bin'),
+    Buffer.concat([Buffer.from([0]), Buffer.from(token)]),
+  );
+
+  const result = auditArtifactExclusions(root);
+  assert.equal(result.passed, false);
+  assert.deepEqual(result.credentialFindings, [{
+    file: 'opaque.bin',
+    pattern: 'GitHub token',
+  }]);
+  assert.doesNotMatch(JSON.stringify(result), new RegExp(token));
+});
+
 test('artifact exclusion audit distinguishes executable secret modules from secret material', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-audit-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -143,6 +161,7 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
   assert.match(BUILDER, /OWD_NODE: process\.execPath/);
   assert.doesNotMatch(BUILDER, /npx --no-install prisma migrate deploy/);
   assert.doesNotMatch(BUILDER, /\.deploy-court\.tar\.gz/);
+  assert.match(BUILDER, /artifactSourceMaps[\s\S]*?no source maps shipped/);
   assert.match(BUILDER, /databaseDataSha256\(postgres\)/);
   assert.match(BUILDER, /databaseWriteCounters\(postgres\)/);
   assert.match(BUILDER, /marketWrites === 0/);
@@ -191,6 +210,29 @@ test('artifact package closure cannot escape the top-level node_modules tree', (
   } finally {
     fs.rmSync(courtRoot, { recursive: true, force: true });
   }
+});
+
+test('release builder ignores caller PATH when selecting security-critical tools', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-builder-path-court-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const marker = path.join(root, 'forged-tar-ran');
+  const fakeTar = path.join(root, 'tar');
+  fs.writeFileSync(
+    fakeTar,
+    `#!/bin/sh\n: > ${JSON.stringify(marker)}\nexit 99\n`,
+    { mode: 0o700 },
+  );
+
+  const result = spawnSync(BUILDER_PATH, ['--verify-clean-packaging'], {
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      CANA_VERIFIED_NODE: process.execPath,
+      PATH: `${root}${path.delimiter}${process.env.PATH ?? ''}`,
+    },
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.equal(fs.existsSync(marker), false);
 });
 
 test('owner-facing cPanel commands use the vetted Node launch paths', () => {
