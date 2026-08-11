@@ -92,15 +92,16 @@ save its non-secret receipt. Provider choice and credentials remain owner-gated.
 
 ## 5. Apply migrations (BY CONVENTION — migration lane's work)
 
-```
+```sh
 cd ~/apps/orderweeddc-staging/current
-IFS= read -r -s -p 'STAGING DATABASE_URL: ' DATABASE_URL; printf '\n'
-IFS= read -r -s -p 'STAGING DIRECT_URL: ' DIRECT_URL; printf '\n'
-export DATABASE_URL DIRECT_URL
-CANA_PRE_MIGRATION_BACKUP_RECEIPT=<receipt-path> sh migrate.sh
-/opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs
-/opt/alt/alt-nodejs20/root/usr/bin/node scripts/db-inspect.mjs
-unset DATABASE_URL DIRECT_URL
+(
+  set -eu
+  trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM
+  IFS= read -r -s -p 'STAGING DATABASE_URL: ' DATABASE_URL; printf '\n'
+  IFS= read -r -s -p 'STAGING DIRECT_URL: ' DIRECT_URL; printf '\n'
+  export DATABASE_URL DIRECT_URL
+  CANA_PRE_MIGRATION_BACKUP_RECEIPT=<receipt-path> sh migrate.sh --initialize
+)
 ```
 
 `migrate.sh` applies `prisma/migrations/**` exactly as committed by the

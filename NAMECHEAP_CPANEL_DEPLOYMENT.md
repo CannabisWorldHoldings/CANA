@@ -76,15 +76,16 @@ sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-64-hex-sha
 (Upload the same-commit `deploy.sh` and `verify-owner-artifact-input.sh` beside the artifact.)
 
 **2.4 — Initialize an empty owner-provisioned PostgreSQL database:**
-```
+```sh
 cd ~/apps/orderweeddc/current
-IFS= read -r -s -p 'DATABASE_URL: ' DATABASE_URL; printf '\n'
-IFS= read -r -s -p 'DIRECT_URL: ' DIRECT_URL; printf '\n'
-export DATABASE_URL DIRECT_URL
-CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh
-/opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs
-/opt/alt/alt-nodejs20/root/usr/bin/node scripts/db-inspect.mjs
-unset DATABASE_URL DIRECT_URL
+(
+  set -eu
+  trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM
+  IFS= read -r -s -p 'DATABASE_URL: ' DATABASE_URL; printf '\n'
+  IFS= read -r -s -p 'DIRECT_URL: ' DIRECT_URL; printf '\n'
+  export DATABASE_URL DIRECT_URL
+  CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh --initialize
+)
 ```
 This step requires separate owner authorization and a verified provider backup
 receipt. The initializer creates one canonical organization and brand, zero
@@ -125,8 +126,12 @@ operator-side ad-creative tooling, per-run, and never stored on the server.
 
 ## 4. Build a new artifact (off-server, on your machine or CI)
 
-```
-git pull
+```sh
+git fetch origin
+APPROVED_SHA=<approved-full-40-character-sha>
+git checkout --detach "$APPROVED_SHA"
+test "$(git rev-parse HEAD)" = "$APPROVED_SHA"
+test -z "$(git status --porcelain)"
 CANA_VERIFIED_NODE=$HOME/.nvm/versions/node/v20.20.2/bin/node \
   SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs
 # → dist/namecheap/orderweeddc-<full-40-char-sha>.tar.gz (+ .sha256)
@@ -176,9 +181,14 @@ noindex, full security-header set present, no secrets in the artifact.
 ```
 sh ~/apps/orderweeddc/rollback.sh      # swaps current <- previous, restarts
 ```
-The managed PostgreSQL database is never touched by deploy or rollback. The
-broken release is preserved as `~/apps/orderweeddc/broken-<timestamp>` for
-diagnosis.
+`deploy.sh` and `rollback.sh` are code-only swaps and never touch managed
+PostgreSQL. `migrate.sh` does change the schema. After a forward migration,
+rollback only to code proven compatible with that schema. If compatibility is
+not established, restore the verified provider backup into a separate database,
+validate it, and switch the application URLs only under separate owner
+authorization; never improvise a down migration against the current database.
+The broken code release is preserved as
+`~/apps/orderweeddc/broken-<timestamp>` for diagnosis.
 
 **Auto-revert trigger:** if `curl -s https://orderweeddc.com/api/health` returns
 non-200 or `"status":"UNHEALTHY"` after a deploy, run rollback immediately.

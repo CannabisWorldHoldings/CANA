@@ -903,7 +903,7 @@ async function isolatedRuntimeTest() {
   try {
   const disposableBackupReceipt = path.join(isoRoot, 'disposable-backup-receipt.json');
   fs.writeFileSync(disposableBackupReceipt, JSON.stringify({ scope: 'isolated-build-court' }));
-  run('sh migrate.sh', {
+  run('sh migrate.sh --initialize', {
     cwd: appRoot,
     env: {
       PATH: process.env.PATH,
@@ -912,16 +912,6 @@ async function isolatedRuntimeTest() {
       DIRECT_URL: postgres.databaseUrl,
       CANA_PRE_MIGRATION_BACKUP_RECEIPT: disposableBackupReceipt,
       CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
-      PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
-    },
-  });
-  run(`${JSON.stringify(process.execPath)} scripts/init-production-db.mjs`, {
-    cwd: appRoot,
-    env: {
-      PATH: process.env.PATH,
-      NODE_ENV: 'production',
-      DATABASE_URL: postgres.databaseUrl,
-      DIRECT_URL: postgres.databaseUrl,
       PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
     },
   });
@@ -1251,7 +1241,7 @@ try {
       `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${tarSha256}`,
     );
   }
-  run(`HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`);
+  run(`HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(fakeHome, 'apps/orderweeddc/rollback.sh'))}`);
   const deliveryDatabaseSha256 = databaseDataSha256(isolatedResults.postgres);
   if (deliveryDatabaseSha256 !== isolatedResults.databaseDataSha256) {
     throw new Error('Final artifact deploy/rollback court changed the disposable PostgreSQL data state');

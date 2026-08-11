@@ -19,6 +19,12 @@
 #
 set -eu
 
+MODE="${1-}"
+case "$MODE" in
+  ""|--initialize) ;;
+  *) echo "HARD STOP: unsupported migration mode: $MODE"; exit 2;;
+esac
+
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # Resolve context: release root (schema at prisma/schema.prisma next to this
 # script) or repo root (schema at apps/web/prisma/schema.prisma).
@@ -141,6 +147,11 @@ echo "backup receipt sha256: $BACKUP_RECEIPT_SHA"
 # --- Apply committed migrations ----------------------------------------------
 DATABASE_URL="$DATABASE_URL" DIRECT_URL="$DIRECT_URL" "$@" migrate deploy --schema "$SCHEMA_PATH" \
   || { echo "MIGRATION FAILED — provider backup receipt remains: $BACKUP_RECEIPT_SHA"; exit 4; }
+
+if [ "$MODE" = "--initialize" ]; then
+  NODE_ENV=production "$NODE_BIN" "$SCHEMA_DIR/scripts/init-production-db.mjs"
+  "$NODE_BIN" "$SCHEMA_DIR/scripts/db-inspect.mjs"
+fi
 
 echo "MIGRATIONS APPLIED. Record the commit, migration output, and backup-receipt"
 echo "hash in the deployment log. This command never creates migrations."

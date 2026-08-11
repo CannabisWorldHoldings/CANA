@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,6 +12,7 @@ import {
 } from './artifact-exclusions.mjs';
 
 const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
+const MIGRATE = fs.readFileSync(new URL('./migrate.sh', import.meta.url), 'utf8');
 const BUILDER_PATH = fileURLToPath(new URL('./build-artifact.mjs', import.meta.url));
 
 test('artifact exclusion audit accepts ordinary release files', (t) => {
@@ -73,10 +75,11 @@ test('artifact exclusion audit cannot be given a caller-controlled dependency ex
   fs.mkdirSync(path.dirname(target), { recursive: true });
   const source = 'const fixture = "postgresql://user:placeholder@localhost/example"';
   fs.writeFileSync(target, source);
+  const fixtureSha256 = createHash('sha256').update(source).digest('hex');
 
   const result = auditArtifactExclusions(root, {
     trustedCredentialLiteralSha256: {
-      [relativePath]: PINNED_ARTIFACT_EXECUTABLE_SHA256[relativePath],
+      [relativePath]: fixtureSha256,
     },
   });
   assert.equal(result.passed, false);
@@ -104,9 +107,9 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
     'production artifact isolation must not invoke the demonstration seed',
   );
   assert.match(
-    BUILDER,
-    /scripts\/init-production-db\.mjs[\s\S]*?cwd: appRoot/,
-    'the isolated release must execute its packaged production initializer',
+    MIGRATE,
+    /NODE_ENV=production "\$NODE_BIN" "\$SCHEMA_DIR\/scripts\/init-production-db\.mjs"/,
+    'integrated migration mode must execute the packaged production initializer',
   );
   assert.match(
     BUILDER,
@@ -127,7 +130,7 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
   assert.match(BUILDER, /packagedSchemaEngines/);
   assert.match(
     BUILDER,
-    /run\('sh migrate\.sh',[\s\S]*?cwd: appRoot/,
+    /run\('sh migrate\.sh --initialize',[\s\S]*?cwd: appRoot/,
     'the isolated court must execute the extracted release migration entrypoint',
   );
   assert.match(BUILDER, /OWD_NODE: process\.execPath/);
@@ -202,19 +205,45 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
   ]) {
     assert.doesNotMatch(
       document,
-      /(?:^|\n|&&\s+)node scripts\/(?:init-production-db|db-inspect)\.mjs/,
+      /(?:^|[\s;&|(])node\s+scripts\/(?:init-production-db|db-inspect)\.mjs/,
     );
   }
-  assert.match(
-    manifest.commands.initializeDatabase,
-    /\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node scripts\/init-production-db\.mjs/,
-  );
+  assert.match(MIGRATE, /NODE_BIN=\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node/);
   for (const runbook of [productionRunbook, stagingRunbook]) {
+    assert.match(runbook, /trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM/);
     assert.match(runbook, /read -r -s -p '[^']*DATABASE_URL:/);
     assert.match(runbook, /export DATABASE_URL DIRECT_URL/);
-    assert.match(runbook, /unset DATABASE_URL DIRECT_URL/);
+    assert.match(runbook, /sh migrate\.sh --initialize/);
   }
-  assert.match(manifest.commands.migrate, /secret-safe interactive DATABASE_URL \+ DIRECT_URL export/);
+  assert.match(manifest.commands.initializeDatabase, /sh migrate\.sh --initialize/);
+});
+
+test('integrated migration mode cannot initialize after a migration precondition failure', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-migrate-chain-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.copyFileSync(new URL('./migrate.sh', import.meta.url), path.join(root, 'migrate.sh'));
+  fs.mkdirSync(path.join(root, 'prisma'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'prisma/schema.prisma'), 'datasource db { provider = "postgresql" url = env("DATABASE_URL") }');
+  const marker = path.join(root, 'initializer-ran');
+  fs.writeFileSync(
+    path.join(root, 'scripts/init-production-db.mjs'),
+    `import fs from 'node:fs'; fs.writeFileSync(${JSON.stringify(marker)}, 'bad');`,
+  );
+
+  const result = spawnSync('sh', [path.join(root, 'migrate.sh'), '--initialize'], {
+    cwd: root,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      OWD_NODE: process.execPath,
+      DATABASE_URL: 'postgresql://127.0.0.1/example',
+      DIRECT_URL: 'postgresql://127.0.0.1/example',
+    },
+  });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /CANA_PRE_MIGRATION_BACKUP_RECEIPT is required/);
+  assert.equal(fs.existsSync(marker), false);
 });
 
 test('release builder keeps live acquisition tooling outside its shipped inventory', (t) => {
