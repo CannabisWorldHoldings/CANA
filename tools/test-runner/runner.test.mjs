@@ -33,8 +33,11 @@ function cana(...args) {
   });
 }
 
-function assertNoContinueOnError(job) {
-  assert.doesNotMatch(job, /continue-on-error/);
+function assertNoContinueOnError(workflow, job) {
+  assert.doesNotMatch(workflow, /continue-on-error/);
+  assert.doesNotMatch(workflow, /^\s*(?:\?\s*)?"[^"\n]*\\[^"\n]*"\s*(?::|$)/m);
+  assert.doesNotMatch(job, /\\/);
+  assert.doesNotMatch(job, /^\s*<<\s*:/m);
 }
 
 test('the root dispatcher refuses an unknown verification profile', () => {
@@ -106,10 +109,17 @@ test('the focused CI envelope exceeds the complete bounded path plus its safety 
     `focused outer timeout ${outerMinutes}m must exceed ${boundedInnerMinutes}m of bounded inner work plus ${operationalMarginMinutes}m margin`,
   );
   assert.match(focusedJob, /- run:\s*\.\/cana verify focused\s*(?:\n|$)/);
-  assertNoContinueOnError(focusedJob);
-  for (const key of ['continue-on-error', '"continue-on-error"', "'continue-on-error'"]) {
-    assert.throws(() => assertNoContinueOnError(`${focusedJob}\n    ${key}: false\n`));
+  assertNoContinueOnError(workflow, focusedJob);
+  for (const key of [
+    'continue-on-error',
+    '"continue-on-error"',
+    "'continue-on-error'",
+    '"continue\\u002don\\u002derror"',
+  ]) {
+    const hostileWorkflow = `${workflow}\n${key}: false\n`;
+    assert.throws(() => assertNoContinueOnError(hostileWorkflow, focusedJob));
   }
+  assert.throws(() => assertNoContinueOnError(workflow, `${focusedJob}\n    <<: *defaults\n`));
 });
 
 test('receipts bind to the active session and cannot override envelope fields', async () => {
