@@ -126,6 +126,8 @@ test('release artifact excludes every legacy ABCA truth bypass', () => {
 });
 
 test('production artifact bootstrap stays demo-free and market-count agnostic', () => {
+  assert.match(BUILDER, /const REQUIRED_NODE = 'v20\.20\.2';/);
+  assert.doesNotMatch(BUILDER, /process\.env\.(?:REQUIRED_NODE|ALLOW_NODE_MISMATCH)/);
   assert.doesNotMatch(
     BUILDER,
     /run\('node prisma\/seed\.mjs'/,
