@@ -39,7 +39,7 @@ test('the root dispatcher refuses an unknown verification profile', () => {
   assert.match(result.stderr, /unknown verification profile/i);
 });
 
-test('the focused CI envelope exceeds every bounded inner stage plus its safety margin', () => {
+test('the focused CI envelope exceeds the complete bounded path plus its safety margin', () => {
   const workflow = fs.readFileSync(VERIFY_WORKFLOW, 'utf8');
   const runner = fs.readFileSync(RUNNER, 'utf8');
   const postgresRuntime = fs.readFileSync(POSTGRES_RUNTIME, 'utf8');
@@ -58,6 +58,15 @@ test('the focused CI envelope exceeds every bounded inner stage plus its safety 
   const postgresImageMinutes = Number(
     postgresRuntime.match(/\['build', '--tag',[\s\S]*?timeout:\s*(\d+)\s*\*\s*60_000/)?.[1],
   );
+  const runnerDefaultMinutes = Number(
+    runner.match(/timeout\s*=\s*(\d+)\s*_000/)?.[1],
+  ) / 60;
+  const postgresDefaultMinutes = Number(
+    postgresRuntime.match(/timeout\s*=\s*(\d+)\s*_000/)?.[1],
+  ) / 60;
+  const postgresHealthAttempts = Number(
+    postgresRuntime.match(/for \(let attempt = 0; attempt < (\d+);/)?.[1],
+  );
   const operationalMarginMinutes = 10;
 
   for (const [label, value] of Object.entries({
@@ -65,17 +74,35 @@ test('the focused CI envelope exceeds every bounded inner stage plus its safety 
     verifierImageMinutes,
     focusedExecutionMinutes,
     postgresImageMinutes,
+    runnerDefaultMinutes,
+    postgresDefaultMinutes,
+    postgresHealthAttempts,
   })) {
     assert.ok(Number.isInteger(value) && value > 0, `${label} must be a positive minute budget`);
   }
-  const boundedInnerMinutes =
-    verifierImageMinutes + postgresImageMinutes + focusedExecutionMinutes;
+  const boundedStageMinutes = {
+    repositoryIdentity: 4 * runnerDefaultMinutes,
+    verifierImage: 0.5 + 0.5 + verifierImageMinutes + runnerDefaultMinutes,
+    worktreeAndSabotage: 3 * runnerDefaultMinutes,
+    sourceBundle: 2,
+    postgresImage: 0.5 + postgresImageMinutes + postgresDefaultMinutes,
+    postgresCreateReadinessAndProbes:
+      0.5 + 0.5 + (postgresHealthAttempts * 6 / 60) + 0.5 + 0.5,
+    verifierCreateAndTransfer: runnerDefaultMinutes + 2,
+    focusedExecution: focusedExecutionMinutes,
+    verifierCleanup: 0.5 + 0.5,
+    postgresCleanup: 2 * postgresDefaultMinutes,
+    finalCleanupAndInspection: 0.5 + runnerDefaultMinutes + runnerDefaultMinutes,
+  };
+  const boundedInnerMinutes = Object.values(boundedStageMinutes)
+    .reduce((total, minutes) => total + minutes, 0);
+  assert.equal(boundedInnerMinutes, 70);
   assert.ok(
     outerMinutes > boundedInnerMinutes + operationalMarginMinutes,
     `focused outer timeout ${outerMinutes}m must exceed ${boundedInnerMinutes}m of bounded inner work plus ${operationalMarginMinutes}m margin`,
   );
   assert.match(focusedJob, /- run:\s*\.\/cana verify focused\s*(?:\n|$)/);
-  assert.doesNotMatch(focusedJob, /continue-on-error:\s*true/);
+  assert.doesNotMatch(focusedJob, /continue-on-error\s*:/);
 });
 
 test('receipts bind to the active session and cannot override envelope fields', async () => {
