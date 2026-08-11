@@ -134,6 +134,7 @@ const PACKAGED_MIGRATION_BINARY_TARGETS = Object.freeze([
 const artifactToolVerification = [
   '--verify-operational-scripts',
   '--verify-clean-packaging',
+  '--verify-package-path-policy',
 ].includes(process.argv[2]);
 if (
   !artifactToolVerification
@@ -285,10 +286,20 @@ function copyDir(from, to) {
   fs.cpSync(from, to, { recursive: true });
 }
 
+function containedRelativePath(root, candidate) {
+  const relative = path.relative(root, candidate);
+  if (
+    path.isAbsolute(relative)
+    || relative === '..'
+    || relative.startsWith(`..${path.sep}`)
+  ) return null;
+  return relative;
+}
+
 function installedPackageRoot(packageName, requiringDirectory = repoRoot) {
   const packageSegments = packageName.split('/');
   let directory = requiringDirectory;
-  while (directory.startsWith(repoRoot)) {
+  while (containedRelativePath(repoRoot, directory) !== null) {
     const candidate = path.join(directory, 'node_modules', ...packageSegments);
     if (fs.existsSync(path.join(candidate, 'package.json'))) return candidate;
     if (directory === repoRoot) break;
@@ -301,13 +312,29 @@ function copyInstalledPackageClosure(packageName, copied = new Set(), requiringD
   const packageRoot = installedPackageRoot(packageName, requiringDirectory);
   if (copied.has(packageRoot)) return copied;
   copied.add(packageRoot);
-  const relativeRoot = path.relative(path.join(repoRoot, 'node_modules'), packageRoot);
+  const relativeRoot = containedRelativePath(path.join(repoRoot, 'node_modules'), packageRoot);
+  if (!relativeRoot) {
+    throw new Error(
+      `Artifact build resolved ${packageName} outside the top-level node_modules`,
+    );
+  }
   copyDir(packageRoot, path.join(artifactRoot, 'node_modules', relativeRoot));
   const metadata = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
   for (const dependency of Object.keys(metadata.dependencies ?? {})) {
     copyInstalledPackageClosure(dependency, copied, packageRoot);
   }
   return copied;
+}
+
+if (process.argv[2] === '--verify-package-path-policy') {
+  const root = path.resolve(process.argv[3] ?? '.');
+  const candidate = path.resolve(process.argv[4] ?? '.');
+  process.stdout.write(`${JSON.stringify({
+    root,
+    candidate,
+    relativePath: containedRelativePath(root, candidate),
+  })}\n`);
+  process.exit(0);
 }
 
 function databaseDataSha256(postgres) {

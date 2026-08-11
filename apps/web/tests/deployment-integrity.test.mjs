@@ -132,6 +132,8 @@ function runOwnerArtifactCourt(fixture) {
 
 test('command-path consistency: runbook, deploy output, and verifier agree on wrapper paths', () => {
   const runbook = read('NAMECHEAP_CPANEL_DEPLOYMENT.md');
+  const stagingRunbook = read('deploy/namecheap/STAGING_RUNBOOK.md');
+  const manifest = JSON.parse(read('deploy/namecheap/MANIFEST.json'));
   const deployScript = read('deploy/namecheap/deploy.sh');
   const verifier = read('deploy/namecheap/verify-and-deploy.sh');
 
@@ -152,6 +154,39 @@ test('command-path consistency: runbook, deploy output, and verifier agree on wr
 
   // The stale, contradictory path variant must not reappear in owner docs.
   assert.doesNotMatch(runbook, /apps\/orderweeddc\/current\/restart\.sh/);
+
+  // Off-server builds use the vetted Node 20 launcher, and cPanel commands use
+  // the account's absolute Node selector rather than relying on Terminal PATH.
+  assert.match(stagingRunbook, /CANA_VERIFIED_NODE="\$HOME\/\.nvm\/versions\/node\/v20\.20\.2\/bin\/node"/);
+  for (const document of [runbook, stagingRunbook, manifest.commands.initializeDatabase]) {
+    assert.doesNotMatch(document, /(?:^|\n|&&\s+)node scripts\/(?:init-production-db|db-inspect)\.mjs/);
+  }
+  assert.match(manifest.commands.initializeDatabase, /\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node scripts\/init-production-db\.mjs/);
+});
+
+test('artifact package closure cannot escape the top-level node_modules tree', () => {
+  const courtRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-package-path-court-'));
+  try {
+    const nodeModulesRoot = path.join(courtRoot, 'repo', 'node_modules');
+    const nestedPackage = path.join(nodeModulesRoot, 'dependency', 'node_modules', 'nested');
+    const workspacePackage = path.join(courtRoot, 'repo', 'apps', 'web', 'node_modules', 'nested');
+    fs.mkdirSync(nestedPackage, { recursive: true });
+    fs.mkdirSync(workspacePackage, { recursive: true });
+    const environment = { ...process.env, CANA_VERIFIED_NODE: process.execPath };
+    const verify = (candidate) => JSON.parse(execFileSync(
+      path.join(repoRoot, 'deploy/namecheap/build-artifact.mjs'),
+      ['--verify-package-path-policy', nodeModulesRoot, candidate],
+      { cwd: repoRoot, encoding: 'utf8', env: environment },
+    ));
+
+    assert.equal(
+      verify(nestedPackage).relativePath,
+      path.join('dependency', 'node_modules', 'nested'),
+    );
+    assert.equal(verify(workspacePackage).relativePath, null);
+  } finally {
+    fs.rmSync(courtRoot, { recursive: true, force: true });
+  }
 });
 
 test('artifact operations emit deploy, restart, and rollback scripts byte-for-byte', () => {

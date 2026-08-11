@@ -43,8 +43,9 @@ elif [ -x /opt/alt/alt-nodejs20/root/usr/bin/node ]; then
 else
   NODE_BIN="$(command -v node || true)"
 fi
-case "$NODE_BIN" in /*) ;; *) echo "HARD STOP: OWD_NODE must resolve to an absolute executable"; exit 3;; esac
-[ -x "$NODE_BIN" ] || { echo "HARD STOP: OWD_NODE is not executable"; exit 3; }
+[ -n "$NODE_BIN" ] || { echo "HARD STOP: no Node executable found; set OWD_NODE to an absolute path"; exit 3; }
+case "$NODE_BIN" in /*) ;; *) echo "HARD STOP: Node executable must resolve to an absolute path"; exit 3;; esac
+[ -x "$NODE_BIN" ] || { echo "HARD STOP: resolved Node executable is not executable"; exit 3; }
 : "${DATABASE_URL:?HARD STOP: DATABASE_URL is required}"
 : "${DIRECT_URL:?HARD STOP: DIRECT_URL is required}"
 : "${CANA_PRE_MIGRATION_BACKUP_RECEIPT:?HARD STOP: CANA_PRE_MIGRATION_BACKUP_RECEIPT is required}"

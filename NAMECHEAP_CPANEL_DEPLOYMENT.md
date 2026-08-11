@@ -79,8 +79,8 @@ sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-64-hex-sha
 ```
 cd ~/apps/orderweeddc/current
 CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh
-node scripts/init-production-db.mjs
-node scripts/db-inspect.mjs
+/opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs
+/opt/alt/alt-nodejs20/root/usr/bin/node scripts/db-inspect.mjs
 ```
 This step requires separate owner authorization and a verified provider backup
 receipt. The initializer creates one canonical organization and brand, zero

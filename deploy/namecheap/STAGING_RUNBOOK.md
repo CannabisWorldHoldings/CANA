@@ -28,8 +28,9 @@ must identify only the owner-provisioned staging database.
       pointed at the account, SSL issued (AutoSSL run or wait; see
       CAPABILITIES.md §6 — issuance timing is UNVERIFIED).
 - [ ] OWNER: cPanel Terminal access.
-- [ ] Artifact built off-server on the release commit:
-      `node deploy/namecheap/build-artifact.mjs` → tarball + `.sha256`
+- [ ] Artifact built off-server on the release commit with the vetted runtime:
+      `CANA_VERIFIED_NODE="$HOME/.nvm/versions/node/v20.20.2/bin/node" SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs`
+      → tarball + `.sha256`
       (the builder's receipt must show `isolatedRuntimeTest.passed: true`).
 - [ ] Release SHA recorded: `EXPECTED_SHA=$(git rev-parse HEAD)` on the
       release branch — you will pin readiness against it.
@@ -94,8 +95,8 @@ save its non-secret receipt. Provider choice and credentials remain owner-gated.
 ```
 cd ~/apps/orderweeddc-staging/current
 CANA_PRE_MIGRATION_BACKUP_RECEIPT=<receipt-path> sh migrate.sh
-node scripts/init-production-db.mjs
-node scripts/db-inspect.mjs
+/opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs
+/opt/alt/alt-nodejs20/root/usr/bin/node scripts/db-inspect.mjs
 ```
 
 `migrate.sh` applies `prisma/migrations/**` exactly as committed by the
@@ -128,7 +129,7 @@ claim about production. That sentence is load-bearing; do not edit it out.
 
 ```
 cd ~/apps/orderweeddc-staging/current
-WORKER_HEALTH_URL=https://<staging-subdomain>/api/health node worker.mjs --once health
+WORKER_HEALTH_URL=https://<staging-subdomain>/api/health /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health
 ```
 
 Then install the cron line (cPanel → Cron Jobs; ≥ 5-minute granularity,
@@ -138,7 +139,7 @@ absolute selector node path — cron does not inherit the app env):
 */5 * * * * mkdir -p $HOME/orderweeddc-staging-backups && cd $HOME/apps/orderweeddc-staging/current && OWD_BACKUP_DIR=$HOME/orderweeddc-staging-backups WORKER_HEALTH_URL=https://<staging-subdomain>/api/health /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> $HOME/orderweeddc-staging-backups/cron.out 2>&1
 ```
 
-Graceful-shutdown proof: start `node worker.mjs --loop --interval-ms 10000`,
+Graceful-shutdown proof: start `/opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --loop --interval-ms 10000`,
 send SIGTERM, confirm the log ends with `worker-shutdown","graceful":true`
 and the lock dir is gone.
 
