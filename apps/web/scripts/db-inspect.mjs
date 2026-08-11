@@ -4,7 +4,7 @@
  * evidence, whether a database is schema-empty, healthy, or unknown.
  *
  * Usage:
- *   DATABASE_URL=postgresql://user:pass@host/db node scripts/db-inspect.mjs
+ *   DATABASE_URL=postgresql://USER@HOST:5432/DATABASE node scripts/db-inspect.mjs
  *   ... --assert-core   exit 2 unless Organization+Brand tables exist
  *
  * Engine-portable: detects PostgreSQL vs SQLite from DATABASE_URL and uses
