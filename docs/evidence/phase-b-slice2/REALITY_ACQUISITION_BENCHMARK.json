@@ -24,10 +24,12 @@
   },
   "revalidation": {
     "zero_change_receipts": 1,
-    "verification_events_appended": 1,
+    "verification_events_appended": 0,
     "claims_mutated": 0,
     "stale_claims": 1,
-    "revalidation_missions_created": 1,
+    "revalidation_missions_created": 0,
+    "revalidation_work_specs_created": 1,
+    "revalidation_work_truth_mutations": 0,
     "continuation_tick_truth_mutations": 0
   },
   "answerability": {
@@ -35,7 +37,8 @@
     "after_frontier_key": "sha256:2cf85c49a8449bbd52010763f041528ac2c3bc3326506a6c75bbdbd4fa63a30b",
     "gaps_closed": 1,
     "gaps_retained": 1,
-    "verification_opportunities_created": 1,
+    "verification_opportunities_created": 0,
+    "verification_opportunities_identified": 1,
     "duplicate_opportunities": 0,
     "demand_priority": {
       "score": 563,

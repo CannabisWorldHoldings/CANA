@@ -1649,6 +1649,22 @@ test('ASK WORK: one observation is atomic, deduplicated and leaves no partial st
     await p.$executeRawUnsafe('DROP TRIGGER IF EXISTS ask_signal_failure ON "AskIntentSignal";');
     await p.$executeRawUnsafe('DROP FUNCTION IF EXISTS refuse_ask_signal();');
   }
+
+  await p.askIntentSignal.createMany({
+    data: Array.from({ length: 97 }, () => ({
+      tenant: storedSignal.tenant,
+      rawQuery: storedSignal.rawQuery,
+      intentIr: storedSignal.intentIr,
+      answerSummary: storedSignal.answerSummary,
+      candidateCount: storedSignal.candidateCount,
+      opportunityId: first.opportunity.id,
+    })),
+  });
+  assert.equal(await p.askIntentSignal.count(), 100);
+  const boundedDuplicate = await recordAskWork(p, input);
+  assert.equal(boundedDuplicate.state, 'RATE_LIMITED');
+  assert.equal(boundedDuplicate.signalRecorded, false);
+  assert.equal(await p.askIntentSignal.count(), 100, 'duplicate demand storage must remain bounded');
 });
 
 test('ASK FRONTIER: ten concurrent equivalent demands create ten signals and one durable work unit', async () => {

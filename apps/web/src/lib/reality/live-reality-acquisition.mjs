@@ -368,6 +368,11 @@ export async function acquireLiveMarketReality(store, {
         external_effects: 0,
       });
     } catch (error) {
+      if (state.state === 'COMPLETED') {
+        const persistenceError = new Error('CANA_LIVE_REALITY_COMPLETION_PERSISTENCE_FAILED');
+        persistenceError.code = 'CANA_LIVE_REALITY_COMPLETION_PERSISTENCE_FAILED';
+        throw persistenceError;
+      }
       const errorCode = typeof error?.code === 'string' ? error.code : 'CANA_LIVE_REALITY_UNEXPECTED_FAILURE';
       const disposition = classifyAcquisitionTerminal({ errorCode });
       const rateLimitRetryAt = errorCode === 'CANA_LIVE_REALITY_RATE_LIMITED'
@@ -468,7 +473,7 @@ function transactionStore(tx) {
     async latestContent({ sourceKey, tenant }) {
       const event = await tx.marketSourceAcquisitionEvent.findFirst({
         where: { sourceKey, tenant, state: 'COMPLETED', contentArtifactId: { not: null } },
-        orderBy: [{ eventAt: 'desc' }, { sequence: 'desc' }],
+        orderBy: [{ eventAt: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
         select: { contentArtifactId: true, snapshotId: true, contentArtifact: { select: { contentSha256: true } } },
       });
       return event ? {

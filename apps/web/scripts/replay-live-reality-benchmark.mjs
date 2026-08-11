@@ -243,9 +243,13 @@ const freshness = computeFreshnessDebt({
 const work = createRevalidationWorkSpec(freshness.items[0], {
   now: new Date('2026-08-10T15:10:00.000Z'),
 });
+const acquisitionReceipts = [changed, unchanged, drift, outage];
+const completedReceipts = acquisitionReceipts.filter((receipt) => receipt.state === 'COMPLETED');
+const failedReceipts = acquisitionReceipts.filter((receipt) => receipt.state === 'FAILED');
+const completedContentHashes = new Set(completedReceipts.map((receipt) => receipt.content_sha256));
 
 const observedResult = {
-  acquisitions: 4,
+  acquisitions: acquisitionReceipts.length,
   changed: Number(changed.outcome === 'SOURCE_CHANGED'),
   unchanged: Number(unchanged.outcome === 'SOURCE_UNCHANGED'),
   revision_drift_denied: Number(drift.error_code === 'CANA_LIVE_REALITY_REVISION_DRIFT'),
@@ -275,25 +279,27 @@ const benchmark = {
     scripted_http_reads: changedSource.calls.length + unchangedSource.calls.length + driftSource.calls.length + outageSource.calls.length,
   },
   acquisition: {
-    attempts: 4,
-    completed: 2,
-    failed: 2,
+    attempts: acquisitionReceipts.length,
+    completed: completedReceipts.length,
+    failed: failedReceipts.length,
     changed: observedResult.changed,
     unchanged: observedResult.unchanged,
     revision_drift_denied: observedResult.revision_drift_denied,
     outage_denied: observedResult.outage_denied,
     unique_content_artifacts: store.contents.size,
-    acquisition_receipts: 4,
-    repeated_identical_content_acquisitions: 1,
-    duplicate_content_artifacts: 0,
+    acquisition_receipts: acquisitionReceipts.length,
+    repeated_identical_content_acquisitions: completedReceipts.length - completedContentHashes.size,
+    duplicate_content_artifacts: Math.max(0, store.contents.size - completedContentHashes.size),
     source_capability_receipts: store.capabilities.length,
   },
   revalidation: {
-    zero_change_receipts: 1,
-    verification_events_appended: 1,
+    zero_change_receipts: completedReceipts.filter((receipt) => receipt.outcome === 'SOURCE_UNCHANGED').length,
+    verification_events_appended: 0,
     claims_mutated: 0,
     stale_claims: freshness.stale_claims,
-    revalidation_missions_created: Number(work.truth_mutations === 0),
+    revalidation_missions_created: 0,
+    revalidation_work_specs_created: Number(Boolean(work.mission && work.trigger)),
+    revalidation_work_truth_mutations: work.truth_mutations,
     continuation_tick_truth_mutations: 0,
   },
   answerability: {
@@ -301,7 +307,8 @@ const benchmark = {
     after_frontier_key: afterFrontier.frontier_key,
     gaps_closed: Number(afterFrontier.answerable),
     gaps_retained: Number(!beforeFrontier.answerable),
-    verification_opportunities_created: 1,
+    verification_opportunities_created: 0,
+    verification_opportunities_identified: freshness.items.length,
     duplicate_opportunities: 0,
     demand_priority: demandPriority,
   },

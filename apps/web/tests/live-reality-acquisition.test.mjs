@@ -55,19 +55,22 @@ function metadata(revision = 1781114729000, fields = ABCA_FIELDS, {
   return value;
 }
 
-function scriptedSource({
-  preRevision = 1781114729000,
-  postRevision = preRevision,
-  preCount = 1,
-  postCount = preCount,
-  features = [record()],
-  exceededTransferLimit = false,
-  fields = ABCA_FIELDS,
-  metadataOptions,
-  failureAt = null,
-  failureStatus = 500,
-  retryAfter = null,
-} = {}) {
+function scriptedSource(options = {}) {
+  const {
+    preRevision = 1781114729000,
+    postRevision = preRevision,
+    preCount = 1,
+    postCount = preCount,
+    features = [record()],
+    fields = ABCA_FIELDS,
+    metadataOptions,
+    failureAt = null,
+    failureStatus = 500,
+    retryAfter = null,
+  } = options;
+  const exceededTransferLimit = Object.hasOwn(options, 'exceededTransferLimit')
+    ? options.exceededTransferLimit
+    : false;
   let call = 0;
   const calls = [];
   const bodies = [
@@ -393,4 +396,47 @@ test('cooldown probe success closes the circuit without manufacturing verificati
   assert.equal(recovered.verification_events_created, 0);
   assert.equal(recovered.public_truth_mutations, 0);
   assert.equal(digest(JSON.stringify([...store.contents.keys()])), digest(JSON.stringify([recovered.content_sha256])));
+});
+
+test('post-completion auxiliary failure aborts instead of returning a contradictory receipt', async () => {
+  const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
+  const store = new MemoryAcquisitionStore();
+  store.appendCapabilityReceipt = async () => {
+    throw new Error('database detail must not become a completed acquisition');
+  };
+  await assert.rejects(
+    acquireLiveMarketReality(store, acquisitionOptions(scriptedSource())),
+    { code: 'CANA_LIVE_REALITY_COMPLETION_PERSISTENCE_FAILED' },
+  );
+});
+
+test('Prisma latest-content selection has a stable global tie-break', async () => {
+  const { createPrismaAcquisitionStore } = await import(ACQUISITION_MODULE);
+  let query = null;
+  const tx = {
+    $queryRawUnsafe: async () => [],
+    marketSourceAcquisitionEvent: {
+      findFirst: async (options) => {
+        query = options;
+        return null;
+      },
+    },
+  };
+  const prisma = {
+    $transaction: async (operation) => operation(tx),
+  };
+  const store = createPrismaAcquisitionStore(prisma);
+  await store.runExclusive({
+    sourceKey: 'dcgis_abca_retailers_layer_31',
+    tenant: 'orderweeddc.com',
+    workClass: 'LIVE_REALITY_ACQUISITION',
+  }, (transaction) => transaction.latestContent({
+    sourceKey: 'dcgis_abca_retailers_layer_31',
+    tenant: 'orderweeddc.com',
+  }));
+  assert.deepEqual(query.orderBy, [
+    { eventAt: 'desc' },
+    { createdAt: 'desc' },
+    { id: 'desc' },
+  ]);
 });

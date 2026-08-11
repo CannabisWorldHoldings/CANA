@@ -85,10 +85,13 @@ main()
     if (result.state !== 'COMPLETED') process.exitCode = 1;
   })
   .catch((error) => {
+    const candidateCode = String(error?.code ?? error?.message ?? '');
     console.error(JSON.stringify({
       schema_version: 'cana-live-reality-acquisition-receipt/v1',
       state: 'REFUSED',
-      error_code: error?.code ?? String(error?.message ?? error).slice(0, 160),
+      error_code: /^CANA_[A-Z0-9_]+$/.test(candidateCode)
+        ? candidateCode
+        : 'CANA_LIVE_REALITY_UNEXPECTED_FAILURE',
       external_effects: 0,
       production_mutations: 0,
     }));

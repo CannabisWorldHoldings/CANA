@@ -9,6 +9,7 @@ import {
 } from '../public-submission.mjs';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_SIGNALS_PER_CANONICAL_INTENT = 100;
 
 export function askPersistenceScope(domain) {
   const labels = typeof domain === 'string' ? domain.split('.') : [];
@@ -177,6 +178,23 @@ export async function recordAskWork(
         });
       }
 
+      await tx.$queryRawUnsafe(
+        'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result',
+        `ask-signal:${domain}:${intentDigest}`,
+      );
+      const admittedSignalCountBefore = await tx.askIntentSignal.count({
+        where: { tenant: domain, rawQuery: intentDigest },
+      });
+      if (admittedSignalCountBefore >= MAX_SIGNALS_PER_CANONICAL_INTENT) {
+        return {
+          state: 'RATE_LIMITED',
+          opportunity: null,
+          signalRecorded: false,
+          opportunityRecorded: false,
+          continuationArmed: false,
+        };
+      }
+
       let opportunity = null;
       let continuationArmed = false;
       if (answer.opportunitySpec) {
@@ -280,9 +298,7 @@ export async function recordAskWork(
       });
 
       if (opportunity) {
-        const admittedSignalCount = await tx.askIntentSignal.count({
-          where: { tenant: domain, opportunityId: opportunity.id },
-        });
+        const admittedSignalCount = admittedSignalCountBefore + 1;
         const frontier = answer.answerability_frontier;
         const demandPriority = computeDemandPriority({
           admittedSignalCount,
