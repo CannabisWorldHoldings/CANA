@@ -36,6 +36,9 @@ printf '%s\n' "$FILE" | grep -Eq '^orderweeddc-[0-9a-f]{40}\.tar\.gz$' ||
 printf '%s\n' "$EXPECTED_SHA" | grep -Eq '^[0-9a-f]{64}$' ||
   fail "expected SHA-256 must be exactly 64 lowercase hex characters"
 ARTIFACT_ROOT_NAME=${FILE%.tar.gz}
+[ -z "${OWD_NODE-}" ] || fail "OWD_NODE cannot override the vetted cPanel runtime"
+NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
+[ -x "$NODE_BIN" ] || fail "vetted cPanel Node executable is unavailable"
 
 phase "GATE 1: download + checksum"
 mkdir -p "$UPLOADS"
@@ -75,7 +78,7 @@ phase "GATE 3: canonical database configuration"
 : "${DIRECT_URL:?GATE FAILED: DIRECT_URL is required}"
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) fail "DATABASE_URL must be PostgreSQL";; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) fail "DIRECT_URL must be PostgreSQL";; esac
-node <<'NODE' || fail "database URLs must enforce strict TLS certificate validation"
+"$NODE_BIN" <<'NODE' || fail "database URLs must enforce strict TLS certificate validation"
 for (const name of ['DATABASE_URL', 'DIRECT_URL']) {
   const url = new URL(process.env[name]);
   if (

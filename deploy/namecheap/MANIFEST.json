@@ -21,23 +21,24 @@
       "server.js", "app.js", ".next/static", "public", "node_modules (runtime, incl. .prisma rhel engine)",
       "release.json", "receipt.json", "prisma/schema.prisma", "prisma/migration-manifest.json", "prisma/migration-manifest.mjs",
       "migrate.sh", "restart.sh", "rollback.sh", "healthcheck.sh", "readycheck.sh",
-      "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs"
+      "smoke-test.sh", "worker.mjs", "restore-backup.sh", "scripts/db-inspect.mjs",
+      "scripts/init-production-db.mjs", "src/lib/db-config.mjs", "node_modules/prisma/build/index.js"
     ],
     "conditional": [
       "prisma/migrations/** — shipped only when the exact reviewed names and migration.sql SHA-256 digests match prisma/migration-manifest.json; never authored by the builder"
     ]
   },
   "commands": {
-    "build": "node deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
+    "build": "CANA_VERIFIED_NODE=\"$HOME/.nvm/versions/node/v20.20.2/bin/node\" SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
     "deploy": "Upload deploy.sh plus verify-owner-artifact-input.sh, then run: sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-tarball-sha256>. The script snapshots and enforces checksum, archive structure, full-SHA release identity, receipt, and isolated-runtime proof before swapping code. verify-and-deploy.sh remains the gated download + deploy path.",
-    "initializeDatabase": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (empty owner-provisioned PostgreSQL only; never creates migrations)",
-    "migrate": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires DATABASE_URL + DIRECT_URL and committed migrations)",
+    "initializeDatabase": "Inside the cleanup-guarded secret-safe subshell from the deployment runbook: CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh --initialize   (migrate must succeed before demo-free initialization and inspection; creates one canonical brand and zero retailers)",
+    "migrate": "After secret-safe interactive DATABASE_URL + DIRECT_URL export per the deployment runbook: CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires committed migrations)",
     "restart": "sh <app-home>/restart.sh   (touch tmp/restart.txt — Passenger rolling restart)",
     "rollback": "sh <app-home>/rollback.sh   (code-only swap to previous; database never touched)",
     "healthCheck": "sh healthcheck.sh <base-url>   (liveness: 200 + HEALTHY)",
     "readinessCheck": "OWD_EXPECTED_SHA=<sha> sh readycheck.sh <base-url>   (health + provenance + SHA equality + render)",
     "smokeTest": "sh smoke-test.sh <base-url>   (full read-only battery; writes an environment-labelled receipt)",
-    "workerOnce": "node worker.mjs --once health   (cron tick: independent health job; mkdir lock; SIGTERM-graceful)",
+    "workerOnce": "/opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health   (cron tick: independent health job; mkdir lock; SIGTERM-graceful)",
     "workerCron": "*/5 * * * * mkdir -p ~/orderweeddc-backups && cd <app-home>/current && OWD_BACKUP_DIR=~/orderweeddc-backups WORKER_HEALTH_URL=<owner-url> /opt/alt/alt-nodejs20/root/usr/bin/node worker.mjs --once health >> ~/orderweeddc-backups/cron.out 2>&1",
     "restoreBackup": "Provider/operator procedure; the shipped worker refuses to fabricate a local-file managed-PostgreSQL backup"
   },

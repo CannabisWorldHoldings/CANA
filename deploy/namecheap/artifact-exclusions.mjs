@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -7,6 +8,9 @@ const FORBIDDEN_FILE_PATTERNS = [
   /\.(?:key|pem|p12|pfx)$/i,
   /^id_(?:rsa|dsa|ecdsa|ed25519)$/i,
 ];
+
+const REVIEWED_EFFECT_SECRET_MODULE =
+  /^node_modules\/effect\/(?:dist\/(?:cjs|esm|dts)|src)\/(?:internal\/)?secret(?:\.d)?\.(?:js|ts)(?:\.map)?$/i;
 
 const CREDENTIAL_PATTERNS = [
   ['private key', /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],
@@ -18,6 +22,11 @@ const CREDENTIAL_PATTERNS = [
     /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?):\/\/[^/\s:@]+:[^@\s/]+@/i,
   ],
 ];
+
+export const PINNED_ARTIFACT_EXECUTABLE_SHA256 = Object.freeze({
+  'node_modules/prisma/build/index.js':
+    'c2a77456b70e8ba1e640e122824ed694433828a7c0d76ff3db7fc376b4b0e1a0',
+});
 
 function walkFiles(directory, output = []) {
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
@@ -31,13 +40,22 @@ function walkFiles(directory, output = []) {
 export function auditArtifactExclusions(artifactRoot) {
   const files = walkFiles(artifactRoot);
   const forbiddenFiles = files
-    .filter((file) => FORBIDDEN_FILE_PATTERNS.some((pattern) => pattern.test(path.basename(file))))
+    .filter((file) => {
+      const relativePath = path.relative(artifactRoot, file);
+      return FORBIDDEN_FILE_PATTERNS.some((pattern) => pattern.test(path.basename(file)))
+        && !REVIEWED_EFFECT_SECRET_MODULE.test(relativePath);
+    })
     .map((file) => path.relative(artifactRoot, file));
   const credentialFindings = [];
 
   for (const file of files) {
     const contents = fs.readFileSync(file);
-    if (contents.includes(0)) continue;
+    const relativePath = path.relative(artifactRoot, file);
+    const trustedSha256 = PINNED_ARTIFACT_EXECUTABLE_SHA256[relativePath];
+    if (
+      typeof trustedSha256 === 'string' &&
+      createHash('sha256').update(contents).digest('hex') === trustedSha256
+    ) continue;
     const text = contents.toString('utf8');
     for (const [label, pattern] of CREDENTIAL_PATTERNS) {
       if (pattern.test(text)) {

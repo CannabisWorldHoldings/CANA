@@ -37,11 +37,15 @@
 import { execFileSync, execSync, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { auditArtifactExclusions } from './artifact-exclusions.mjs';
+import {
+  auditArtifactExclusions,
+  PINNED_ARTIFACT_EXECUTABLE_SHA256,
+} from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
 import { selectTestPrismaEngine } from './select-test-engine.mjs';
@@ -53,9 +57,19 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const webRoot = path.join(repoRoot, 'apps/web');
+const trustedToolPath = [
+  path.dirname(process.execPath),
+  '/opt/homebrew/bin',
+  '/usr/local/bin',
+  '/usr/bin',
+  '/bin',
+  '/usr/sbin',
+  '/sbin',
+].join(path.delimiter);
 
 function buildChildEnvironment(baseEnvironment = process.env) {
   const environment = createReleaseChildEnvironment({ baseEnvironment });
+  environment.PATH = trustedToolPath;
   delete environment.NODE_OPTIONS;
   delete environment.NODE_PATH;
   return environment;
@@ -121,20 +135,24 @@ if (fs.realpathSync(process.execPath) !== verifiedNodeExecutable) {
 // launcher resolving an ambient `node` invalidates the isolation proof. The prelude above
 // accepts only the explicitly vetted absolute executable and this process verifies that
 // exact real path before running any build command.
-const REQUIRED_NODE = process.env.REQUIRED_NODE || 'v20.20.2';
+const REQUIRED_NODE = 'v20.20.2';
+const PACKAGED_MIGRATION_BINARY_TARGETS = Object.freeze([
+  'linux-arm64-openssl-3.0.x',
+  'rhel-openssl-3.0.x',
+  'rhel-openssl-1.1.x',
+]);
 const artifactToolVerification = [
   '--verify-operational-scripts',
   '--verify-clean-packaging',
+  '--verify-package-path-policy',
 ].includes(process.argv[2]);
 if (
   !artifactToolVerification
   && process.version !== REQUIRED_NODE
-  && process.env.ALLOW_NODE_MISMATCH !== '1'
 ) {
   throw new Error(
     `Build requires Node ${REQUIRED_NODE} but is running ${process.version} at ${process.execPath}. ` +
-    `Invoke the exact binary ($HOME/.nvm/versions/node/${REQUIRED_NODE}/bin/node), ` +
-    `or set ALLOW_NODE_MISMATCH=1 to override (never for a release build).`,
+    `Invoke the exact binary ($HOME/.nvm/versions/node/${REQUIRED_NODE}/bin/node).`,
   );
 }
 
@@ -276,6 +294,112 @@ function copyDir(from, to) {
   fs.cpSync(from, to, { recursive: true });
 }
 
+function containedRelativePath(root, candidate) {
+  const relative = path.relative(fs.realpathSync(root), fs.realpathSync(candidate));
+  if (
+    path.isAbsolute(relative)
+    || relative === '..'
+    || relative.startsWith(`..${path.sep}`)
+  ) return null;
+  return relative;
+}
+
+function installedPackageRoot(packageName, requiringDirectory = repoRoot) {
+  const packageSegments = packageName.split('/');
+  let directory = requiringDirectory;
+  while (containedRelativePath(repoRoot, directory) !== null) {
+    const candidate = path.join(directory, 'node_modules', ...packageSegments);
+    if (fs.existsSync(path.join(candidate, 'package.json'))) return candidate;
+    if (directory === repoRoot) break;
+    directory = path.dirname(directory);
+  }
+  throw new Error(`Artifact build cannot resolve the installed package ${packageName}`);
+}
+
+function copyInstalledPackageClosure(packageName, copied = new Set(), requiringDirectory) {
+  const packageRoot = installedPackageRoot(packageName, requiringDirectory);
+  if (copied.has(packageRoot)) return copied;
+  copied.add(packageRoot);
+  const relativeRoot = containedRelativePath(path.join(repoRoot, 'node_modules'), packageRoot);
+  if (!relativeRoot) {
+    throw new Error(
+      `Artifact build resolved ${packageName} outside the top-level node_modules`,
+    );
+  }
+  copyDir(packageRoot, path.join(artifactRoot, 'node_modules', relativeRoot));
+  const metadata = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'));
+  for (const dependency of Object.keys(metadata.dependencies ?? {})) {
+    copyInstalledPackageClosure(dependency, copied, packageRoot);
+  }
+  return copied;
+}
+
+if (process.argv[2] === '--verify-package-path-policy') {
+  const root = path.resolve(process.argv[3] ?? '.');
+  const candidate = path.resolve(process.argv[4] ?? '.');
+  process.stdout.write(`${JSON.stringify({
+    root,
+    candidate,
+    relativePath: containedRelativePath(root, candidate),
+  })}\n`);
+  process.exit(0);
+}
+
+function databaseDataSha256(postgres) {
+  const dump = execFile(
+    'docker',
+    [
+      'exec', postgres.name, 'pg_dump', '-U', 'postgres', '-d', 'cana_verify',
+      '--data-only', '--no-owner', '--no-privileges', '--inserts',
+    ],
+    { maxBuffer: 64 * 1024 * 1024 },
+  );
+  const canonicalDump = dump
+    .split('\n')
+    .filter((line) => !/^\\(?:un)?restrict /.test(line))
+    .join('\n');
+  return createHash('sha256').update(canonicalDump).digest('hex');
+}
+
+function databaseWriteCounters(postgres) {
+  const output = execFile(
+    'docker',
+    [
+      'exec', postgres.name, 'psql', '-U', 'postgres', '-d', 'cana_verify',
+      '--tuples-only', '--no-align', '--field-separator', '|', '--command',
+      'SELECT COALESCE(SUM(n_tup_ins), 0)::bigint, '
+        + 'COALESCE(SUM(n_tup_upd), 0)::bigint, '
+        + 'COALESCE(SUM(n_tup_del), 0)::bigint FROM pg_stat_user_tables',
+    ],
+  );
+  const values = output.split('|').map((value) => Number(value));
+  if (
+    values.length !== 3
+    || values.some((value) => !Number.isSafeInteger(value) || value < 0)
+  ) {
+    throw new Error('Disposable PostgreSQL returned invalid audited write counters');
+  }
+  const [inserted, updated, deleted] = values;
+  return {
+    inserted,
+    updated,
+    deleted,
+    total: inserted + updated + deleted,
+  };
+}
+
+async function availableLoopbackPort() {
+  const server = net.createServer();
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  if (!address || typeof address === 'string') throw new Error('Loopback port allocation failed');
+  return address.port;
+}
+
 const operationalScripts = Object.freeze([
   'deploy.sh',
   'restart.sh',
@@ -325,7 +449,7 @@ if (process.argv[2] === '--verify-clean-packaging') {
   fs.writeFileSync(path.join(artifactRoot, '__MACOSX', 'resource-fork'), 'fork\n');
 
   const packagingAudit = createCleanTar(tarPath, courtRoot, artifactName);
-  const members = execFileSync('tar', ['-tzf', tarPath], { encoding: 'utf8' });
+  const members = execFile('tar', ['-tzf', tarPath]);
   let provenanceHeaderRejected = false;
   try {
     assertNoMacOsExtendedHeaders([
@@ -389,7 +513,12 @@ fs.rmSync(path.join(webRoot, '.next'), { recursive: true, force: true });
 fs.mkdirSync(artifactRoot, { recursive: true });
 
 if (process.env.CLEAN_INSTALL === '1') {
-  run('npm ci', { cwd: repoRoot });
+  run('npm ci', {
+    cwd: repoRoot,
+    env: releaseChildEnvironment({
+      PRISMA_CLI_BINARY_TARGETS: PACKAGED_MIGRATION_BINARY_TARGETS.join(','),
+    }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -403,13 +532,30 @@ run('npx prisma generate', {
     DIRECT_URL: 'postgresql://postgres@127.0.0.1:5432/cana_build_only',
   }),
 });
-run('npx next build --webpack', {
-  cwd: webRoot,
-  env: releaseChildEnvironment({
-    NEXT_OUTPUT: 'standalone',
-    NODE_ENV: 'production',
-  }),
+const buildPostgres = startDisposablePostgres({
+  label: 'artifact-build',
+  publishLoopback: true,
 });
+let buildError;
+let buildDatabaseCleanup = false;
+try {
+  run('npx next build --webpack', {
+    cwd: webRoot,
+    env: releaseChildEnvironment({
+      CANA_BUILD_DATABASE_URL: buildPostgres.databaseUrl,
+      NEXT_OUTPUT: 'standalone',
+      NODE_ENV: 'production',
+    }),
+  });
+} catch (error) {
+  buildError = error;
+} finally {
+  buildDatabaseCleanup = stopDisposablePostgres(buildPostgres);
+}
+if (buildError) throw buildError;
+if (!buildDatabaseCleanup) {
+  throw new Error('Artifact build failed to remove its disposable build PostgreSQL container');
+}
 
 // ---------------------------------------------------------------------------
 // Phase 3 — assemble
@@ -466,6 +612,11 @@ for (const script of [
 ]) {
   fs.copyFileSync(path.join(webRoot, script), path.join(artifactRoot, script));
 }
+fs.mkdirSync(path.join(artifactRoot, 'src/lib'), { recursive: true });
+fs.copyFileSync(
+  path.join(webRoot, 'src/lib/db-config.mjs'),
+  path.join(artifactRoot, 'src/lib/db-config.mjs'),
+);
 copyOperationalScripts(artifactRoot);
 fs.mkdirSync(path.join(artifactRoot, 'prisma'), { recursive: true });
 fs.copyFileSync(
@@ -485,6 +636,35 @@ const migrationUniverse = validateCanonicalMigrationUniverse({
 copyDir(migrationsDir, path.join(artifactRoot, 'prisma/migrations'));
 fs.copyFileSync(migrationManifestPath, path.join(artifactRoot, 'prisma/migration-manifest.json'));
 fs.copyFileSync(migrationVerifierPath, path.join(artifactRoot, 'prisma/migration-manifest.mjs'));
+const packagedMigrationPackages = [...copyInstalledPackageClosure('prisma')]
+  .map((packageRoot) => path.relative(path.join(repoRoot, 'node_modules'), packageRoot))
+  .sort();
+for (const packageRoot of packagedMigrationPackages) {
+  const destination = path.join(artifactRoot, 'node_modules', packageRoot);
+  for (const file of walkFiles(destination)) {
+    if (/^readme.*\.md$/i.test(path.basename(file))) fs.rmSync(file);
+  }
+}
+const packagedPrismaCliSha256 = sha256File(
+  path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
+);
+if (
+  packagedPrismaCliSha256 !==
+  PINNED_ARTIFACT_EXECUTABLE_SHA256['node_modules/prisma/build/index.js']
+) {
+  throw new Error('The packaged Prisma CLI does not match the reviewed dependency bytes');
+}
+const packagedSchemaEngines = Object.fromEntries(
+  PACKAGED_MIGRATION_BINARY_TARGETS.map((binaryTarget) => {
+    const relativePath = `node_modules/@prisma/engines/schema-engine-${binaryTarget}`;
+    const target = path.join(artifactRoot, relativePath);
+    assertExists(target, `artifact-local Prisma schema engine for ${binaryTarget}`);
+    return [binaryTarget, {
+      relativePath,
+      sha256: sha256File(target),
+    }];
+  }),
+);
 validateCanonicalMigrationUniverse({
   migrationsDir: path.join(artifactRoot, 'prisma/migrations'),
   manifest: loadCanonicalMigrationManifest(path.join(artifactRoot, 'prisma/migration-manifest.json')),
@@ -513,6 +693,9 @@ if (process.env.SERVER_OPENSSL === '1.1') {
   }
 }
 
+const artifactSourceMaps = walkFiles(artifactRoot).filter((file) => file.endsWith('.map'));
+for (const file of artifactSourceMaps) fs.rmSync(file);
+
 // ---------------------------------------------------------------------------
 // Phase 4 — hard-stop verification (incl. unresolved-external scan)
 // ---------------------------------------------------------------------------
@@ -529,6 +712,14 @@ checks['artwork restored'] = fs.existsSync(
 checks['@prisma/client package present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/@prisma/client/package.json'),
 );
+checks['artifact-local prisma migration CLI present'] = fs.existsSync(
+  path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
+);
+for (const [binaryTarget, engine] of Object.entries(packagedSchemaEngines)) {
+  checks[`artifact-local ${binaryTarget} schema engine present`] = fs.existsSync(
+    path.join(artifactRoot, engine.relativePath),
+  );
+}
 checks['.prisma/client generated dir present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/.prisma/client'),
 );
@@ -555,6 +746,8 @@ checks['no live acquisition tooling shipped'] = [
   'src/lib/reality/live-abca-adapter.mjs',
   'src/lib/reality/live-reality-acquisition.mjs',
 ].every((file) => !fs.existsSync(path.join(artifactRoot, file)));
+checks[`no source maps shipped (${artifactSourceMaps.length} removed)`] =
+  walkFiles(artifactRoot).every((file) => !file.endsWith('.map'));
 checks['release.json present with full 40-hex gitSha'] =
   fs.existsSync(path.join(artifactRoot, 'release.json')) &&
   /^[0-9a-f]{40}$/.test(releaseIdentity.gitSha) &&
@@ -648,7 +841,15 @@ function writeReceipt(extra = {}) {
       canonicalProvider: 'postgresql',
       directUrlRequired: true,
       sqliteRole: 'pre-cutover-rollback-snapshot-only',
+      buildDatabase: {
+        builderOwned: true,
+        loopbackOnly: true,
+        cleanup: buildDatabaseCleanup,
+      },
       migrationUniverse,
+      packagedMigrationPackages,
+      packagedPrismaCliSha256,
+      packagedSchemaEngines,
     },
     checks,
     ...extra,
@@ -713,27 +914,23 @@ async function isolatedRuntimeTest() {
   let primaryError;
   let cleanupOk = false;
   try {
-  run('npx --no-install prisma migrate deploy --schema prisma/schema.prisma', {
-    cwd: webRoot,
+  const disposableBackupReceipt = path.join(isoRoot, 'disposable-backup-receipt.json');
+  fs.writeFileSync(disposableBackupReceipt, JSON.stringify({ scope: 'isolated-build-court' }));
+  run('sh migrate.sh --initialize', {
+    cwd: appRoot,
     env: {
-      ...process.env,
+      PATH: process.env.PATH,
+      OWD_NODE: process.execPath,
       DATABASE_URL: postgres.databaseUrl,
       DIRECT_URL: postgres.databaseUrl,
-    },
-  });
-  run('node prisma/seed.mjs', {
-    cwd: webRoot,
-    env: {
-      ...process.env,
-      NODE_ENV: 'development',
-      DATABASE_URL: postgres.databaseUrl,
-      DIRECT_URL: postgres.databaseUrl,
+      CANA_PRE_MIGRATION_BACKUP_RECEIPT: disposableBackupReceipt,
       CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
+      PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
     },
   });
   const inspect = JSON.parse(
     capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
-      cwd: webRoot,
+      cwd: appRoot,
       env: {
         PATH: process.env.PATH,
         DATABASE_URL: postgres.databaseUrl,
@@ -742,16 +939,23 @@ async function isolatedRuntimeTest() {
       },
     }),
   );
+  results.productionBootstrap = inspect.counts;
   record(
-    'migrations + disposable seed: canonical brand + 74 retailers, zero demo',
-    inspect.counts?.canonicalBrands === 1 &&
-      inspect.counts?.retailers === 74 &&
+    'migrations + production bootstrap: canonical brand, empty market, zero demo',
+    inspect.counts?.organizations === 1 &&
+      inspect.counts?.brands === 1 &&
+      inspect.counts?.canonicalBrands === 1 &&
+      inspect.counts?.retailers === 0 &&
+      inspect.counts?.awaitingVerification === 0 &&
       inspect.counts?.demonstrationRetailers === 0,
     JSON.stringify(inspect.counts),
   );
+  const initializedDatabaseSha256 = databaseDataSha256(postgres);
+  const runtimeWriteCountersBefore = databaseWriteCounters(postgres);
+  results.productionBootstrapDataSha256 = initializedDatabaseSha256;
 
   // Start app.js with a minimal, NODE_PATH-free environment.
-  const port = 3260;
+  const port = await availableLoopbackPort();
   const serverEnv = {
     PATH: process.env.PATH,
     HOME: isoRoot,
@@ -764,13 +968,50 @@ async function isolatedRuntimeTest() {
     // supply the machine-native engine so the isolated app starts on macOS too.
     PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
   };
-  const startServer = () =>
-    spawn(process.execPath, ['app.js'], {
+  let serverLog = '';
+  const startServer = () => {
+    const server = spawn(process.execPath, ['app.js'], {
       cwd: appRoot,
       env: serverEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: false,
     });
+    server.stdout.on('data', (data) => { serverLog += data; });
+    server.stderr.on('data', (data) => { serverLog += data; });
+    return server;
+  };
+  const stopServer = async (server) => {
+    if (!server || server.exitCode !== null) return;
+    await new Promise((resolve, reject) => {
+      const forceTimer = setTimeout(() => {
+        if (server.exitCode === null) server.kill('SIGKILL');
+      }, 5_000);
+      server.once('error', (error) => {
+        clearTimeout(forceTimer);
+        reject(error);
+      });
+      server.once('exit', () => {
+        clearTimeout(forceTimer);
+        resolve();
+      });
+      server.kill('SIGTERM');
+    });
+  };
+  const waitForServer = async (server) => {
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      if (server.exitCode !== null) {
+        throw new Error(`Isolated app exited before readiness with code ${server.exitCode}`);
+      }
+      try {
+        const release = JSON.parse(capture(
+          `curl -fsS -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/release`,
+        ));
+        if (release.status === 'RELEASE_SHA_PRESENT' && release.gitSha === gitSha) return;
+      } catch {}
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+    throw new Error('Isolated app did not become ready within the bounded startup court');
+  };
   const forgedIdentityChild = spawn(process.execPath, ['app.js'], {
     cwd: appRoot,
     env: {
@@ -801,21 +1042,23 @@ async function isolatedRuntimeTest() {
       !forgedIdentityLog.includes(postgres.databaseUrl),
   );
   let child = startServer();
-  let serverLog = '';
-  child.stdout.on('data', (d) => (serverLog += d));
-  child.stderr.on('data', (d) => (serverLog += d));
-  await new Promise((resolve) => setTimeout(resolve, 6000));
+  await waitForServer(child);
 
   try {
     const health = capture(
       `curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/health`,
     );
     const healthJson = JSON.parse(health);
+    results.health = {
+      status: healthJson.status,
+      ...healthJson.services?.database?.details,
+    };
     record(
       '/api/health HEALTHY with real counts (Host: orderweeddc.com)',
       healthJson.status === 'HEALTHY' &&
         healthJson.services?.database?.details?.brandCount === 1 &&
-        healthJson.services?.database?.details?.totalRetailers === 74,
+        healthJson.services?.database?.details?.totalRetailers === 0 &&
+        healthJson.services?.database?.details?.verifiedRetailers === 0,
       JSON.stringify(healthJson.services?.database?.details),
     );
     // Release identity endpoint: the deployed runtime must name the exact
@@ -871,20 +1114,63 @@ async function isolatedRuntimeTest() {
     }
 
     // Restart persistence.
-    child.kill('SIGTERM');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await stopServer(child);
     child = startServer();
-    await new Promise((resolve) => setTimeout(resolve, 6000));
+    await waitForServer(child);
     const health2 = JSON.parse(
       capture(`curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/health`),
     );
+    const inspectAfterRestart = JSON.parse(
+      capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
+        cwd: appRoot,
+        env: {
+          PATH: process.env.PATH,
+          DATABASE_URL: postgres.databaseUrl,
+          DIRECT_URL: postgres.databaseUrl,
+          PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+        },
+      }),
+    );
+    await stopServer(child);
+    child = null;
+    const runtimeWriteCountersAfter = databaseWriteCounters(postgres);
+    const marketWrites = runtimeWriteCountersAfter.total - runtimeWriteCountersBefore.total;
+    const restartedDatabaseSha256 = databaseDataSha256(postgres);
+    const databaseUnchanged = initializedDatabaseSha256 === restartedDatabaseSha256;
+    results.restart = {
+      status: health2.status,
+      health: health2.services?.database?.details,
+      counts: inspectAfterRestart.counts,
+      databaseDataBeforeSha256: initializedDatabaseSha256,
+      databaseDataAfterSha256: restartedDatabaseSha256,
+      auditedWriteCountersBefore: runtimeWriteCountersBefore,
+      auditedWriteCountersAfter: runtimeWriteCountersAfter,
+      marketWrites,
+    };
     record(
-      'restart persistence: 74 records after restart',
-      health2.services?.database?.details?.totalRetailers === 74,
+      'restart persistence: canonical brand, empty market, zero demo',
+      health2.status === 'HEALTHY' &&
+        health2.services?.database?.details?.brandCount === 1 &&
+        health2.services?.database?.details?.totalRetailers === 0 &&
+        health2.services?.database?.details?.verifiedRetailers === 0 &&
+        inspectAfterRestart.counts?.canonicalBrands === 1 &&
+        inspectAfterRestart.counts?.retailers === 0 &&
+        inspectAfterRestart.counts?.demonstrationRetailers === 0,
+      JSON.stringify(inspectAfterRestart.counts),
+    );
+    record(
+      'runtime and restart perform zero audited PostgreSQL writes',
+      marketWrites === 0,
+      `${runtimeWriteCountersBefore.total} -> ${runtimeWriteCountersAfter.total}`,
+    );
+    record(
+      'health and restart leave the complete PostgreSQL data state unchanged',
+      databaseUnchanged,
+      `${initializedDatabaseSha256} -> ${restartedDatabaseSha256}`,
     );
   } finally {
     try {
-      child.kill('SIGTERM');
+      await stopServer(child);
     } catch {}
   }
 
@@ -896,46 +1182,41 @@ async function isolatedRuntimeTest() {
   );
   results.artifactExclusionAudit = exclusionAudit;
 
-  const databaseStateBefore = JSON.stringify(inspect.counts);
+  const databaseStateBefore = databaseDataSha256(postgres);
   const fakeHome = path.join(isoRoot, 'rollback-home');
-  fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
-  fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
-  run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
-  );
-  run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${sha256File(tarPath)}`,
-  );
-  run(
-    `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/rollback.sh'))}`,
-  );
-  const inspectAfter = JSON.parse(
-    capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
-      cwd: webRoot,
-      env: {
-        PATH: process.env.PATH,
-        DATABASE_URL: postgres.databaseUrl,
-        DIRECT_URL: postgres.databaseUrl,
-        PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
-      },
-    }),
-  );
+  const appHome = path.join(fakeHome, 'apps/orderweeddc');
+  for (const release of ['current', 'previous']) {
+    const releaseRoot = path.join(appHome, release);
+    fs.mkdirSync(releaseRoot, { recursive: true });
+    fs.writeFileSync(path.join(releaseRoot, 'server.js'), '');
+    fs.copyFileSync(path.join(appRoot, 'receipt.json'), path.join(releaseRoot, 'receipt.json'));
+  }
+  run(`OWD_APP_HOME=${JSON.stringify(appHome)} sh ${JSON.stringify(path.join(appRoot, 'rollback.sh'))}`);
+  const databaseStateAfter = databaseDataSha256(postgres);
   record(
     'code rollback leaves canonical database state unchanged',
-    databaseStateBefore === JSON.stringify(inspectAfter.counts),
-    databaseStateBefore,
+    databaseStateBefore === databaseStateAfter,
+    `${databaseStateBefore} -> ${databaseStateAfter}`,
   );
+  results.rollback = {
+    databaseUnchanged: databaseStateBefore === databaseStateAfter,
+    databaseDataBeforeSha256: databaseStateBefore,
+    databaseDataAfterSha256: databaseStateAfter,
+  };
+  results.databaseDataSha256 = databaseStateAfter;
 
   results.serverLogTail = serverLog.slice(-400);
   } catch (error) {
     primaryError = error;
-  } finally {
+  }
+  if (primaryError) {
     cleanupOk = stopDisposablePostgres(postgres);
+    if (!cleanupOk) {
+      primaryError.message += '; disposable PostgreSQL cleanup also failed';
+    }
+    throw primaryError;
   }
-  if (primaryError) throw primaryError;
-  if (!cleanupOk) {
-    throw new Error('Isolated runtime test failed to remove its disposable PostgreSQL container');
-  }
+  results.postgres = postgres;
   return results;
 }
 
@@ -944,19 +1225,53 @@ const isolatedResults = await isolatedRuntimeTest();
 // ---------------------------------------------------------------------------
 // Phase 6 — final receipt (with isolated results) + final package
 // ---------------------------------------------------------------------------
-writeReceipt({
-  isolatedRuntimeTest: {
-    passed: true,
-    isolationDir: isolatedResults.isolationDir,
-    nodeUsed: process.version,
-    steps: Object.fromEntries(
-      Object.entries(isolatedResults.steps).map(([k, v]) => [k, v.ok]),
-    ),
-  },
-});
-tarPath = packageTar();
-const tarSha256 = sha256File(tarPath);
-fs.writeFileSync(`${tarPath}.sha256`, `${tarSha256}  ${artifactName}.tar.gz\n`);
+let tarSha256;
+let finalError;
+let finalCleanup = false;
+try {
+  writeReceipt({
+    isolatedRuntimeTest: {
+      passed: true,
+      isolationDir: isolatedResults.isolationDir,
+      nodeUsed: process.version,
+      productionBootstrap: isolatedResults.productionBootstrap,
+      productionBootstrapDataSha256: isolatedResults.productionBootstrapDataSha256,
+      health: isolatedResults.health,
+      restart: isolatedResults.restart,
+      rollback: isolatedResults.rollback,
+      steps: Object.fromEntries(
+        Object.entries(isolatedResults.steps).map(([k, v]) => [k, v.ok]),
+      ),
+    },
+  });
+  tarPath = packageTar();
+  const fakeHome = path.join(isolatedResults.isolationDir, 'delivery-home');
+  fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
+  fs.copyFileSync(tarPath, path.join(fakeHome, 'uploads', `${artifactName}.tar.gz`));
+  tarSha256 = sha256File(tarPath);
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    run(
+      `HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(repoRoot, 'deploy/namecheap/deploy.sh'))} ${artifactName}.tar.gz ${tarSha256}`,
+    );
+  }
+  run(`HOME=${JSON.stringify(fakeHome)} sh ${JSON.stringify(path.join(fakeHome, 'apps/orderweeddc/rollback.sh'))}`);
+  const deliveryDatabaseSha256 = databaseDataSha256(isolatedResults.postgres);
+  if (deliveryDatabaseSha256 !== isolatedResults.databaseDataSha256) {
+    throw new Error('Final artifact deploy/rollback court changed the disposable PostgreSQL data state');
+  }
+  console.log(`  PASS  final deploy/rollback court leaves PostgreSQL unchanged — ${deliveryDatabaseSha256}`);
+  fs.writeFileSync(`${tarPath}.sha256`, `${tarSha256}  ${artifactName}.tar.gz\n`);
+} catch (error) {
+  finalError = error;
+} finally {
+  finalCleanup = stopDisposablePostgres(isolatedResults.postgres);
+}
+if (finalError || !finalCleanup) {
+  fs.rmSync(tarPath, { force: true });
+  fs.rmSync(`${tarPath}.sha256`, { force: true });
+  if (finalError) throw finalError;
+  throw new Error('Artifact court failed to remove its disposable PostgreSQL container');
+}
 
 console.log(`\nArtifact ready: ${tarPath}`);
 console.log(`sha256: ${tarSha256}`);

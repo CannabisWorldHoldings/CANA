@@ -1016,6 +1016,7 @@
     ,"tools/mariadb-sim/schema.prisma"
     ,"tools/test-runner/container-verify.sh"
     ,"tools/test-runner/runner.mjs"
+    ,"apps/web/scripts/init-production-db.mjs"
     ,"apps/web/scripts/seed-abca-retailers.mjs"
     ,"apps/web/src/lib/public-retailer.mjs"
     ,"apps/web/src/lib/site-intelligence.mjs"
@@ -1025,6 +1026,8 @@
     ,"apps/web/tests/retailer-compare.test.mjs"
     ,"apps/web/tests/tenant-retailer.test.mjs"
     ,"deploy/namecheap/artifact-exclusions.test.mjs"
+    ,"NAMECHEAP_CPANEL_DEPLOYMENT.md"
+    ,"deploy/namecheap/artifact-exclusions.mjs"
   ],
   "planned_candidate_files": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -1210,6 +1213,9 @@
     ,"apps/web/scripts/compile-market-reality.mjs"
     ,"apps/web/scripts/continuation-tick.mjs"
     ,"apps/web/scripts/replay-reality-benchmark.mjs"
+    ,"apps/web/scripts/init-production-db.mjs"
+    ,"NAMECHEAP_CPANEL_DEPLOYMENT.md"
+    ,"deploy/namecheap/artifact-exclusions.mjs"
     ,"apps/web/scripts/seed-abca-retailers.mjs"
     ,"apps/web/scripts/verify-market-reality.mjs"
     ,"apps/web/scripts/test-site-intelligence.mjs"

@@ -27,14 +27,18 @@ approvals.
 
 6. **Extraction outside the repository** — brand-new temp directory with no
    parent `node_modules` anywhere above it; `NODE_PATH` not inherited.
-7. **Disposable canonical database** — all migrations run against disposable
-   PostgreSQL with `DATABASE_URL` and `DIRECT_URL` bound to that same instance;
-   must yield exactly `canonicalBrands:1, retailers:74, demonstrationRetailers:0`.
+7. **Disposable canonical database** — all migrations and the packaged
+   production initializer run against disposable PostgreSQL with `DATABASE_URL`
+   and `DIRECT_URL` bound to that same instance; must yield exactly
+   `organizations:1, canonicalBrands:1, retailers:0,
+   demonstrationRetailers:0, awaitingVerification:0`. Mutable market evidence
+   is never a release-build invariant.
 8. **Runtime matrix** from the extracted `app.js` only:
-   `/api/health` 200+HEALTHY (brandCount 1, totalRetailers 74) · homepage,
-   pricing, robots.txt, sitemap.xml, llms.txt all 200 · www→apex 308 ·
-   unknown host 421 · tenant spoof 404.
-9. **Restart persistence** — kill + restart, records intact.
+   `/api/health` 200+HEALTHY (brandCount 1, totalRetailers 0,
+   verifiedRetailers 0) · homepage, pricing, robots.txt, sitemap.xml, llms.txt
+   all 200 · www→apex 308 · unknown host 421 · tenant spoof 404.
+9. **Restart persistence** — kill + restart; the canonical brand remains and
+   the market remains empty and demonstration-free with zero bootstrap writes.
 10. **Rollback integrity** — deploy→deploy→rollback executes no database
     command and leaves the measured canonical database state unchanged.
 11. **Secret scan** — zero findings inside the extracted artifact.

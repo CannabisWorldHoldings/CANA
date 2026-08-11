@@ -9,14 +9,12 @@
  *      TENANT_ALIASES in src/lib/tenant-host.mjs).
  *
  * It NEVER creates demonstration retailers, products, menus, reviews, or
- * prices. Real retailer records come exclusively from the ABCA registry
- * pipeline (scripts/seed-abca-retailers.mjs), which labels every row
- * AWAITING_VERIFICATION with its public source. Run this first, then:
- *
- *   node scripts/seed-abca-retailers.mjs            # real 74-retailer ingest
+ * prices. Market records are admitted separately through the canonical
+ * Reality Compiler, sovereign identity resolution, and Verification Court.
+ * This initializer does not infer or materialize a live-market cohort.
  *
  * Usage:
- *   DATABASE_URL=file:/home/USER/orderweeddc-data/prod.db \
+ *   DATABASE_URL=postgresql://USER@HOST:5432/DATABASE \
  *     node scripts/init-production-db.mjs [--dry-run]
  */
 import { PrismaClient } from '@prisma/client';
@@ -30,7 +28,7 @@ const dryRun = process.argv.includes('--dry-run');
 async function main() {
   if (!process.env.DATABASE_URL) {
     throw new Error(
-      'DATABASE_URL is required (e.g. file:/home/USER/orderweeddc-data/prod.db). Refusing to guess a database location.',
+      'DATABASE_URL is required. Refusing to guess a PostgreSQL database location.',
     );
   }
   const prisma = new PrismaClient();
@@ -77,9 +75,7 @@ async function main() {
     console.log(
       `Created organization "${organization.name}" and canonical brand "${brand.name}" (domain ${brand.domain}).`,
     );
-    console.log(
-      'Next: node scripts/seed-abca-retailers.mjs  # ingest the 74 licensed DC retailers (AWAITING_VERIFICATION)',
-    );
+    console.log('Market truth remains empty until separately admitted by the Reality Compiler.');
   } finally {
     await prisma.$disconnect();
   }
