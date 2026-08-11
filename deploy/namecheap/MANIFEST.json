@@ -31,8 +31,8 @@
   "commands": {
     "build": "CANA_VERIFIED_NODE=\"$HOME/.nvm/versions/node/v20.20.2/bin/node\" SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs   (repo root, off-server)",
     "deploy": "Upload deploy.sh plus verify-owner-artifact-input.sh, then run: sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-tarball-sha256>. The script snapshots and enforces checksum, archive structure, full-SHA release identity, receipt, and isolated-runtime proof before swapping code. verify-and-deploy.sh remains the gated download + deploy path.",
-    "initializeDatabase": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh && /opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs   (empty owner-provisioned PostgreSQL only; creates one canonical brand and zero retailers)",
-    "migrate": "CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires DATABASE_URL + DIRECT_URL and committed migrations)",
+    "initializeDatabase": "After secret-safe interactive DATABASE_URL + DIRECT_URL export per the deployment runbook: CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh && /opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs   (empty owner-provisioned PostgreSQL only; creates one canonical brand and zero retailers)",
+    "migrate": "After secret-safe interactive DATABASE_URL + DIRECT_URL export per the deployment runbook: CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh   (requires committed migrations)",
     "restart": "sh <app-home>/restart.sh   (touch tmp/restart.txt — Passenger rolling restart)",
     "rollback": "sh <app-home>/rollback.sh   (code-only swap to previous; database never touched)",
     "healthCheck": "sh healthcheck.sh <base-url>   (liveness: 200 + HEALTHY)",

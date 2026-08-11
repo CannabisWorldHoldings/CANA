@@ -209,6 +209,12 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
     manifest.commands.initializeDatabase,
     /\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node scripts\/init-production-db\.mjs/,
   );
+  for (const runbook of [productionRunbook, stagingRunbook]) {
+    assert.match(runbook, /read -r -s -p '[^']*DATABASE_URL:/);
+    assert.match(runbook, /export DATABASE_URL DIRECT_URL/);
+    assert.match(runbook, /unset DATABASE_URL DIRECT_URL/);
+  }
+  assert.match(manifest.commands.migrate, /secret-safe interactive DATABASE_URL \+ DIRECT_URL export/);
 });
 
 test('release builder keeps live acquisition tooling outside its shipped inventory', (t) => {

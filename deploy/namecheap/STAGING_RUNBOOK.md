@@ -94,9 +94,13 @@ save its non-secret receipt. Provider choice and credentials remain owner-gated.
 
 ```
 cd ~/apps/orderweeddc-staging/current
+IFS= read -r -s -p 'STAGING DATABASE_URL: ' DATABASE_URL; printf '\n'
+IFS= read -r -s -p 'STAGING DIRECT_URL: ' DIRECT_URL; printf '\n'
+export DATABASE_URL DIRECT_URL
 CANA_PRE_MIGRATION_BACKUP_RECEIPT=<receipt-path> sh migrate.sh
 /opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs
 /opt/alt/alt-nodejs20/root/usr/bin/node scripts/db-inspect.mjs
+unset DATABASE_URL DIRECT_URL
 ```
 
 `migrate.sh` applies `prisma/migrations/**` exactly as committed by the
@@ -104,6 +108,9 @@ migration lane and HARD-STOPS if none are shipped (that is the correct
 behavior until that lane lands — record the stop in the log, not a workaround).
 The production initializer then creates only the canonical organization and
 brand. The inspector must report zero retailers and zero demonstration rows.
+The cPanel Terminal does not inherit the Node application's environment. Enter
+the same owner-supplied staging-only URLs at the hidden prompts; they are not
+echoed or stored in shell history. Never enter production URLs in this lane.
 
 ## 6. Restart, then prove readiness
 

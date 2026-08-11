@@ -78,13 +78,20 @@ sh ~/uploads/deploy.sh orderweeddc-<full-40-char-sha>.tar.gz <trusted-64-hex-sha
 **2.4 — Initialize an empty owner-provisioned PostgreSQL database:**
 ```
 cd ~/apps/orderweeddc/current
+IFS= read -r -s -p 'DATABASE_URL: ' DATABASE_URL; printf '\n'
+IFS= read -r -s -p 'DIRECT_URL: ' DIRECT_URL; printf '\n'
+export DATABASE_URL DIRECT_URL
 CANA_PRE_MIGRATION_BACKUP_RECEIPT=<provider-receipt> sh migrate.sh
 /opt/alt/alt-nodejs20/root/usr/bin/node scripts/init-production-db.mjs
 /opt/alt/alt-nodejs20/root/usr/bin/node scripts/db-inspect.mjs
+unset DATABASE_URL DIRECT_URL
 ```
 This step requires separate owner authorization and a verified provider backup
 receipt. The initializer creates one canonical organization and brand, zero
-retailers, and zero demonstration rows. It does not import ABCA data.
+retailers, and zero demonstration rows. It does not import ABCA data. The
+Terminal does not inherit Setup Node.js App variables, so enter the same two
+owner-supplied URLs at the hidden prompts; they are not echoed or placed in
+shell history.
 
 **2.5 — Point cPanel at the app & restart:** in Setup Node.js App, confirm the
 env vars (§3), then **Restart**. Or from Terminal:
