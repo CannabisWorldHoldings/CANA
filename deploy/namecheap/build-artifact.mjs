@@ -287,7 +287,7 @@ function copyDir(from, to) {
 }
 
 function containedRelativePath(root, candidate) {
-  const relative = path.relative(root, candidate);
+  const relative = path.relative(fs.realpathSync(root), fs.realpathSync(candidate));
   if (
     path.isAbsolute(relative)
     || relative === '..'

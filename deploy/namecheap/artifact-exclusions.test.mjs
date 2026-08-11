@@ -159,8 +159,12 @@ test('artifact package closure cannot escape the top-level node_modules tree', (
     const nodeModulesRoot = path.join(courtRoot, 'repo', 'node_modules');
     const nestedPackage = path.join(nodeModulesRoot, 'dependency', 'node_modules', 'nested');
     const workspacePackage = path.join(courtRoot, 'repo', 'apps', 'web', 'node_modules', 'nested');
+    const outsidePackage = path.join(courtRoot, 'outside', 'package');
+    const symlinkPackage = path.join(nodeModulesRoot, 'symlink-escape');
     fs.mkdirSync(nestedPackage, { recursive: true });
     fs.mkdirSync(workspacePackage, { recursive: true });
+    fs.mkdirSync(outsidePackage, { recursive: true });
+    fs.symlinkSync(outsidePackage, symlinkPackage, 'dir');
     const environment = { ...process.env, CANA_VERIFIED_NODE: process.execPath };
     const verify = (candidate) => JSON.parse(execFileSync(
       BUILDER_PATH,
@@ -173,6 +177,7 @@ test('artifact package closure cannot escape the top-level node_modules tree', (
       path.join('dependency', 'node_modules', 'nested'),
     );
     assert.equal(verify(workspacePackage).relativePath, null);
+    assert.equal(verify(symlinkPackage).relativePath, null);
   } finally {
     fs.rmSync(courtRoot, { recursive: true, force: true });
   }
