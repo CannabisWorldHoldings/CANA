@@ -43,7 +43,27 @@ const PHASE_B_SLICE1_ASSIGNMENT_SHA256 =
   'a0fd370221ad37805e1bf29c2a1bb7024989aa6293a92a9eb1da18560eeda647';
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
 const PHASE_B_SLICE2_ASSIGNMENT_SHA256 =
-  '4b40484817dcfd161b60c6f288ed96bd1a8a128d3b6ef34be15e6b68e2f177a0';
+  '93a98630b1b46199fdc678bd591d1bd1c35fb1f4c0abbc02dc2fca20e05d6869';
+const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
+  'root_dispatcher',
+  'reason',
+  'technical_stewardship_2026_07_27',
+  'technical_promotion_2026_07_27',
+  STAGE_A_ASSIGNMENT,
+  PR2_ASSIGNMENT,
+  MISSION1_ASSIGNMENT,
+  MISSION2_ASSIGNMENT,
+  MISSION3_M001_ASSIGNMENT,
+  PR29_ASSIGNMENT,
+  PR35_ASSIGNMENT,
+  PHASE_B_SLICE1_ASSIGNMENT,
+  PHASE_B_SLICE2_ASSIGNMENT,
+]);
+const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
+  PR29_ASSIGNMENT,
+  PR35_ASSIGNMENT,
+  PHASE_B_SLICE2_ASSIGNMENT,
+]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
   '001b2fd111a4f3ddc586f7433d6cb7ffc7e3b85774fe850777136a484e67bb3f';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
@@ -462,6 +482,9 @@ export function validateOwnershipManifest(ownership) {
     !Array.isArray(ownership.planned_candidate_files)
   ) {
     refusal('ownership manifest is malformed');
+  }
+  if (!exactKeys(ownership.explicit_user_assignment, OWNERSHIP_ASSIGNMENT_KEYS)) {
+    refusal('ownership manifest has unknown or missing assignments');
   }
 
   const assignment = ownership.explicit_user_assignment[STAGE_A_ASSIGNMENT];
@@ -1304,8 +1327,9 @@ function prerequisites(source) {
     if (!ownership.global_no_edit.includes(file)) return false;
     if (!fs.existsSync(path.join(ROOT, file))) return true;
     const digest = sha256File(path.join(ROOT, file));
-    return !Object.values(ownership.explicit_user_assignment).some(
-      (assignment) => assignment?.court_blob_sha256?.[file] === digest,
+    return !COURT_ADMITTING_ASSIGNMENTS.some(
+      (assignmentName) => ownership.explicit_user_assignment[assignmentName]
+        ?.court_blob_sha256?.[file] === digest,
     );
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);

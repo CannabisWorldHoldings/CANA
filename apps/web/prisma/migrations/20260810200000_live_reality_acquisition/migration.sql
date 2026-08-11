@@ -275,6 +275,9 @@ SELECT
     ordered."fetchedAt"
 FROM ordered;
 
+DROP TRIGGER "MarketCompilation_append_only" ON "MarketCompilation";
+DROP TRIGGER "MarketVerificationEvent_append_only" ON "MarketVerificationEvent";
+
 UPDATE "MarketCompilation"
 SET
     "contentArtifactId" = 'content:legacy:' || "snapshotId",
@@ -286,6 +289,9 @@ SET
     "freshnessExpiresAt" = claim."freshnessExpiresAt"
 FROM "MarketClaim" claim
 WHERE event."claimId" = claim."id";
+
+CREATE TRIGGER "MarketCompilation_append_only" BEFORE UPDATE OR DELETE ON "MarketCompilation" FOR EACH ROW EXECUTE FUNCTION cana_reality_append_only();
+CREATE TRIGGER "MarketVerificationEvent_append_only" BEFORE UPDATE OR DELETE ON "MarketVerificationEvent" FOR EACH ROW EXECUTE FUNCTION cana_reality_append_only();
 
 CREATE TRIGGER "MarketSourceContentArtifact_append_only" BEFORE UPDATE OR DELETE ON "MarketSourceContentArtifact" FOR EACH ROW EXECUTE FUNCTION cana_reality_append_only();
 CREATE TRIGGER "MarketSourceAcquisitionEvent_append_only" BEFORE UPDATE OR DELETE ON "MarketSourceAcquisitionEvent" FOR EACH ROW EXECUTE FUNCTION cana_reality_append_only();

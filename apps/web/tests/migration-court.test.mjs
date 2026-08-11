@@ -494,6 +494,40 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
       completeness: 'COMPLETE',
     },
   });
+  await p.$executeRawUnsafe(
+    `INSERT INTO "MarketCompilation" ("id", "tenant", "snapshotId")
+     VALUES ('legacy-live-compilation', 'orderweeddc.com', '${snapshot.id}')`,
+  );
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketEntityResolution" (
+      "id", "snapshotId", "compilationId", "sourceRecordId", "sourceRecordSha256",
+      "status", "reason", "candidateIds", "normalizationVersion"
+    ) VALUES (
+      'legacy-live-resolution', '${snapshot.id}', 'legacy-live-compilation',
+      'legacy-live-record', '${'b'.repeat(64)}', 'UNMATCHED', 'legacy court fixture',
+      '[]', 'dc-abca-exact-v1'
+    )
+  `);
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketClaim" (
+      "id", "tenant", "claimKey", "claimType", "claimValue", "version",
+      "resolutionId", "snapshotId", "compilationId", "observedAt",
+      "freshnessExpiresAt", "verification", "decisionEligible"
+    ) VALUES (
+      'legacy-live-claim', 'orderweeddc.com', 'legacy-live-claim-key',
+      'operating_status', 'UNKNOWN', 1, 'legacy-live-resolution', '${snapshot.id}',
+      'legacy-live-compilation', TIMESTAMP '2026-08-10 12:00:00+00',
+      TIMESTAMP '2026-08-11 12:00:00+00', 'UNKNOWN', false
+    )
+  `);
+  await p.$executeRawUnsafe(`
+    INSERT INTO "MarketVerificationEvent" (
+      "id", "claimId", "decision", "reason", "evaluatorVersion", "evidenceDigest", "asOf"
+    ) VALUES (
+      'legacy-live-verification', 'legacy-live-claim', 'DENY', 'legacy court fixture',
+      'cana-market-claim-court-v1', '${'c'.repeat(64)}', TIMESTAMP '2026-08-10 13:00:00+00'
+    )
+  `);
 
   deploy(url);
   const artifacts = await p.$queryRawUnsafe(
@@ -509,6 +543,16 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
   assert.equal(firstEvents[0].contentArtifactId, artifacts[0].id);
   assert.equal(firstEvents[0].snapshotId, snapshot.id);
   assert.equal(firstEvents[0].fetchedAt.toISOString(), snapshot.fetchedAt.toISOString());
+  const [legacyCompilation] = await p.$queryRawUnsafe(
+    'SELECT "contentArtifactId", "acquisitionEventId" FROM "MarketCompilation" WHERE "id" = \'legacy-live-compilation\'',
+  );
+  const [legacyVerification] = await p.$queryRawUnsafe(
+    'SELECT "acquisitionEventId", "freshnessExpiresAt" FROM "MarketVerificationEvent" WHERE "id" = \'legacy-live-verification\'',
+  );
+  assert.equal(legacyCompilation.contentArtifactId, artifacts[0].id);
+  assert.equal(legacyCompilation.acquisitionEventId, firstEvents[0].id);
+  assert.equal(legacyVerification.acquisitionEventId, firstEvents[0].id);
+  assert.equal(legacyVerification.freshnessExpiresAt.toISOString(), '2026-08-11T12:00:00.000Z');
   assert.equal(
     firstEvents[0].eventHash,
     createHash('sha256').update(`${firstEvents[0].sourceKey}:${snapshot.id}`).digest('hex'),
@@ -544,6 +588,14 @@ test('LIVE REALITY: one content identity supports distinct append-only acquisiti
   );
   await assert.rejects(
     p.$executeRawUnsafe('DELETE FROM "MarketSourceAcquisitionEvent" WHERE "id" = \'live-reality-acquisition-2\''),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe('UPDATE "MarketCompilation" SET "tenant" = \'attacker.example\' WHERE "id" = \'legacy-live-compilation\''),
+    /CANA_REALITY_APPEND_ONLY/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe('UPDATE "MarketVerificationEvent" SET "reason" = \'tampered\' WHERE "id" = \'legacy-live-verification\''),
     /CANA_REALITY_APPEND_ONLY/,
   );
   assert.equal(await p.marketSourceSnapshot.count(), 1, 'upgrade and re-observation must preserve the legacy snapshot');

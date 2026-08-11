@@ -252,6 +252,19 @@ test('PR #29 ownership and court metadata tampering fail closed', () => {
   );
 });
 
+test('ownership manifest rejects an injected assignment that self-attests court bytes', () => {
+  const manifest = ownership();
+  manifest.explicit_user_assignment.attacker_injected_assignment = {
+    court_blob_sha256: {
+      'apps/web/tests/migration-court.test.mjs': '0'.repeat(64),
+    },
+  };
+  assert.throws(
+    () => validateOwnershipManifest(manifest),
+    /unknown or missing assignments/,
+  );
+});
+
 test('PR #35 sovereign integration has exact ownership without neighboring authority', () => {
   const manifest = ownership();
   const assignment = pr35OwnershipAssignment(manifest);
