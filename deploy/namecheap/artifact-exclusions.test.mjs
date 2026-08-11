@@ -13,6 +13,10 @@ import {
 
 const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
 const MIGRATE = fs.readFileSync(new URL('./migrate.sh', import.meta.url), 'utf8');
+const VERIFY_AND_DEPLOY = fs.readFileSync(
+  new URL('./verify-and-deploy.sh', import.meta.url),
+  'utf8',
+);
 const BUILDER_PATH = fileURLToPath(new URL('./build-artifact.mjs', import.meta.url));
 
 test('artifact exclusion audit accepts ordinary release files', (t) => {
@@ -213,6 +217,12 @@ test('owner-facing cPanel commands use the vetted Node launch paths', () => {
     );
   }
   assert.match(MIGRATE, /NODE_BIN=\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node/);
+  assert.match(
+    VERIFY_AND_DEPLOY,
+    /NODE_BIN=\/opt\/alt\/alt-nodejs20\/root\/usr\/bin\/node/,
+  );
+  assert.match(VERIFY_AND_DEPLOY, /"\$NODE_BIN" <<'NODE'/);
+  assert.doesNotMatch(VERIFY_AND_DEPLOY, /(?:^|\n)node <<'NODE'/);
   for (const runbook of [productionRunbook, stagingRunbook]) {
     assert.match(runbook, /trap 'unset DATABASE_URL DIRECT_URL' EXIT HUP INT TERM/);
     assert.match(runbook, /read -r -s -p '[^']*DATABASE_URL:/);

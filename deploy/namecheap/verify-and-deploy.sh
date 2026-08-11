@@ -27,6 +27,16 @@ UPLOADS="$HOME/uploads"
 DOMAIN="orderweeddc.com"
 ORIGIN_IP="${OWD_ORIGIN_IP:-127.0.0.1}"
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -n "${OWD_NODE-}" ]; then
+  NODE_BIN="$OWD_NODE"
+elif [ -x /opt/alt/alt-nodejs20/root/usr/bin/node ]; then
+  NODE_BIN=/opt/alt/alt-nodejs20/root/usr/bin/node
+else
+  NODE_BIN="$(command -v node || true)"
+fi
+[ -n "$NODE_BIN" ] || { echo "GATE FAILED: no Node executable found; set OWD_NODE to an absolute path"; exit 1; }
+case "$NODE_BIN" in /*) ;; *) echo "GATE FAILED: Node executable must resolve to an absolute path"; exit 1;; esac
+[ -x "$NODE_BIN" ] || { echo "GATE FAILED: resolved Node executable is not executable"; exit 1; }
 
 phase() { printf '\n=== %s ===\n' "$1"; }
 fail() { echo "GATE FAILED: $1"; exit 1; }
@@ -75,7 +85,7 @@ phase "GATE 3: canonical database configuration"
 : "${DIRECT_URL:?GATE FAILED: DIRECT_URL is required}"
 case "$DATABASE_URL" in postgres://*|postgresql://*) ;; *) fail "DATABASE_URL must be PostgreSQL";; esac
 case "$DIRECT_URL" in postgres://*|postgresql://*) ;; *) fail "DIRECT_URL must be PostgreSQL";; esac
-node <<'NODE' || fail "database URLs must enforce strict TLS certificate validation"
+"$NODE_BIN" <<'NODE' || fail "database URLs must enforce strict TLS certificate validation"
 for (const name of ['DATABASE_URL', 'DIRECT_URL']) {
   const url = new URL(process.env[name]);
   if (
