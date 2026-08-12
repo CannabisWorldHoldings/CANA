@@ -123,8 +123,11 @@ export function proxy(request: NextRequest) {
   }
 
   if (!isExplicitRequestHost(host)) {
-    url.pathname = `/orderweeddc.localhost${url.pathname}`;
-    return NextResponse.rewrite(url);
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('host', 'orderweeddc.com');
+    return NextResponse.next({
+      request: { headers: requestHeaders },
+    });
   }
 
   return NextResponse.next();

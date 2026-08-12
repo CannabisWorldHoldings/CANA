@@ -48,6 +48,18 @@ test('request host policy accepts exact platform hosts and rejects authority tri
     },
   );
   assert.equal(isExplicitRequestHost('custom.example'), false);
+  assert.deepEqual(
+    parseAllowedRequestHost(
+      'staging.orderweeddc.com',
+      'staging.orderweeddc.com',
+    ),
+    {
+      hostname: 'staging.orderweeddc.com',
+      port: '',
+      authority: 'staging.orderweeddc.com',
+    },
+  );
+  assert.equal(parseAllowedRequestHost('staging.orderweeddc.com', ''), null);
 
   for (const authority of [
     null,
@@ -140,7 +152,6 @@ test('host validation runs before infrastructure and privileged route bypasses',
   );
   assert.ok(hostValidation >= 0);
   assert.ok(routeBypass > hostValidation);
-  assert.match(proxySource, /isExplicitRequestHost\(requestHost\.hostname\)/);
   assert.match(proxySource, /status:\s*421/);
   assert.match(proxySource, /X-Robots-Tag/);
   assert.match(proxySource, /noindex, nofollow, noarchive/);
@@ -155,6 +166,42 @@ test('host validation runs before infrastructure and privileged route bypasses',
     proxySource,
     /\/\(\(\?!_next\/static\|_next\/image\|assets\|favicon\.ico\)\.\*\)/,
   );
+});
+
+test('configured staging hosts normalize upstream Host before relative tenant routing', () => {
+  const proxySource = fs.readFileSync(
+    path.join(webRoot, 'src/proxy.ts'),
+    'utf8',
+  );
+  const adminGate = proxySource.indexOf("url.pathname.startsWith('/admin')");
+  const districtGate = proxySource.indexOf("host === 'districtweed.com'");
+  const weedDmvGate = proxySource.indexOf("host === 'weeddmv.com'");
+  const passthrough = proxySource.indexOf("url.pathname.startsWith('/api')");
+  const configuredHostRouting = proxySource.indexOf(
+    'if (!isExplicitRequestHost(host))',
+  );
+
+  assert.ok(adminGate >= 0);
+  assert.ok(districtGate >= 0);
+  assert.ok(weedDmvGate > districtGate);
+  assert.ok(passthrough > weedDmvGate);
+  assert.ok(configuredHostRouting > adminGate);
+  assert.ok(configuredHostRouting > passthrough);
+  assert.match(proxySource, /Access Gated/);
+  assert.match(proxySource, /Access Isolated/);
+  assert.match(proxySource, /isStaticAssetPath\(url\.pathname\)/);
+  assert.match(proxySource, /isCanonicalPlatformHostname\(host\)/);
+  assert.match(proxySource, /new Headers\(request\.headers\)/);
+  assert.match(
+    proxySource,
+    /requestHeaders\.set\('host', 'orderweeddc\.com'\)/,
+  );
+  assert.match(
+    proxySource,
+    /NextResponse\.next\(\{\s*request: \{ headers: requestHeaders \},\s*\}\)/,
+  );
+  assert.doesNotMatch(proxySource, /url\.pathname\s*=\s*`\/orderweeddc\.localhost/);
+  assert.doesNotMatch(proxySource, /NextResponse\.rewrite/);
 });
 
 test('SEO eligibility requires non-demo evidence inside its freshness window', () => {
