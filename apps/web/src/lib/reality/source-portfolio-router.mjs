@@ -1,5 +1,6 @@
 import { ABCA_LIVE_CONTRACT } from './live-abca-adapter.mjs';
-import { DC_ABCA_SOURCE } from './reality-compiler.mjs';
+import { VA_CCA_LIVE_CONTRACT } from './live-va-cca-adapter.mjs';
+import { DC_ABCA_SOURCE, VA_CCA_SOURCE } from './reality-compiler.mjs';
 
 export const LIVE_SOURCE_REGISTRY = Object.freeze([
   Object.freeze({
@@ -9,6 +10,17 @@ export const LIVE_SOURCE_REGISTRY = Object.freeze([
     source_class: DC_ABCA_SOURCE.authority_class,
     independence_group: 'dc-abca-dcgis-layer-31',
     authoritative_predicates: DC_ABCA_SOURCE.authoritative_predicates,
+    live_admitted: true,
+    credential_mode: 'PUBLIC_NONE',
+    fixed_origin: true,
+  }),
+  Object.freeze({
+    source_key: VA_CCA_LIVE_CONTRACT.sourceKey,
+    source_id: VA_CCA_LIVE_CONTRACT.sourceId,
+    source_url: VA_CCA_LIVE_CONTRACT.pageUrl,
+    source_class: VA_CCA_SOURCE.authority_class,
+    independence_group: 'va-cca-registry-pages',
+    authoritative_predicates: VA_CCA_SOURCE.authoritative_predicates,
     live_admitted: true,
     credential_mode: 'PUBLIC_NONE',
     fixed_origin: true,

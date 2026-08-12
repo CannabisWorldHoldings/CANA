@@ -18,6 +18,23 @@ export const DC_ABCA_SOURCE = Object.freeze({
     'operating_status',
   ]),
 });
+// VA CCA registry pages publish facility identity/contact data but NO license
+// numbers — license predicates are deliberately absent from this source's
+// authority (the UNKNOWN law: the source cannot authorize what it does not
+// publish). Registered by Transfer Test #1 (docs/markets/VIRGINIA_PRE_ENTRY.md).
+export const VA_CCA_SOURCE = Object.freeze({
+  source_id: 'va-cca-dispensaries',
+  source_url: 'https://www.cca.virginia.gov/medicalcannabis/dispensaries',
+  authority_class: 'VA_CCA_LICENSED_MEDICAL_DISPENSARY_REGISTRY',
+  source_catalog_modified_date: '2026-08-12',
+  max_age_ms: OFFICIAL_MARKET_TTL_MS,
+  authoritative_predicates: Object.freeze([
+    'facility_name',
+    'regulated_address',
+    'phone',
+    'website',
+  ]),
+});
 
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');

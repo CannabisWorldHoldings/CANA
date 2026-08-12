@@ -913,7 +913,24 @@
     ,"docs/evidence/phase-b-slice2/TEMPORAL_INTEGRITY.md"
     ,"docs/reality/PHASE_B_SLICE2_LIVE_ACQUISITION.md"
     ,"tools/reality/verify-slice2-evidence-packet.mjs"
-    ,"tools/reality/verify-slice2-evidence-packet.test.mjs"
+    ,"tools/reality/verify-slice2-evidence-packet.test.mjs",
+    "apps/web/src/lib/markets/va/va-cca-registry-parser.mjs",
+    "apps/web/src/lib/markets/va/va-claims.mjs",
+    "apps/web/src/lib/markets/va/va-market-registry.mjs",
+    "apps/web/src/lib/markets/va/va-watch-evidence.mjs",
+    "apps/web/tests/fixtures/va-cca/dispensaries.html",
+    "apps/web/tests/fixtures/va-cca/processors.html",
+    "apps/web/tests/va-cca-registry-parser.test.mjs",
+    "apps/web/tests/va-claims.test.mjs",
+    "apps/web/tests/va-market-registry.test.mjs",
+    "apps/web/tests/va-watch-evidence.test.mjs",
+    "docs/markets/VIRGINIA_PRE_ENTRY.md",
+    "apps/web/src/lib/reality/live-va-cca-adapter.mjs",
+    "apps/web/src/lib/reality/market-contract-registry.mjs",
+    "apps/web/tests/live-va-cca-adapter.test.mjs",
+    "apps/web/tests/market-contract-registry.test.mjs",
+    "apps/web/scripts/acquire-va-market-reality.mjs",
+    "apps/web/tests/va-verified-world-state.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
