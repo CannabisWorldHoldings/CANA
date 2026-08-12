@@ -84,13 +84,35 @@ metrics and only the first is achieved.
 | New failure modes discovered | CCA processor accordion publishes no street addresses → identity law correctly refuses to fabricate processor claims (0 claims formed — honest) |
 | Architectural changes required in core | none yet — slice 2 stayed in the VA namespace; core generalization is a separate courted lane |
 
-## SLICE 2b (next) — live-lane wiring (core-lane ownership required)
+## SLICE 2b (this branch) — the market-contract seam, LANDED
 
-1. Generalize `market-claim-adapter.mjs` lineage validation from the hardcoded ABCA
-   contract to a market-contract registry (core file — separate courted change).
-2. `live-va-cca-adapter.mjs`: bounded HTML acquisition with the same authority laws
-   (fixed origin, pinned lookup, byte/time bounds, acquisition state machine).
-3. Register `VA_CCA_SOURCE` in `reality-compiler.mjs` + append the frozen entry to
-   `LIVE_SOURCE_REGISTRY` in `source-portfolio-router.mjs` (distinct independence group).
-4. Verification court run → first VERIFIED VA world state → telemetry row filled.
+The generalization failure found in slice 2 is now closed:
 
+| Change | File |
+|---|---|
+| NEW market-contract registry (source_key → admitted contract; unregistered → null = refusal) | `src/lib/reality/market-contract-registry.mjs` |
+| `admittedAcquisition` lineage validation generalized from hardcoded ABCA constants to registry lookup — ABCA behavior byte-identical, unregistered sources rejected exactly as before | `src/lib/reality/market-claim-adapter.mjs` |
+| NEW bounded VA CCA live adapter: fixed origin, operator opt-in env grant, pinned lookup, byte/time bounds, double-fetch content-stability proof (HTML sources have no revision API), extraction via the slice-1 parser | `src/lib/reality/live-va-cca-adapter.mjs` |
+| `VA_CCA_SOURCE` registered (authoritative predicates: facility_name, regulated_address, phone, website — NO license predicates: the source cannot authorize what it does not publish) | `src/lib/reality/reality-compiler.mjs` |
+| VA entry appended to `LIVE_SOURCE_REGISTRY` (independence group `va-cca-registry-pages`; ABCA entry untouched at index 0) | `src/lib/reality/source-portfolio-router.mjs` |
+
+**Local equivalence court (51/51):** ABCA `selectCurrentClaimDecisions` happy path
+preserved; all 15 hostile acquisition mutations still rejected; a VA source key with
+an ABCA digest rejects (contracts do not cross); router refuses forged identity;
+`routeRealitySource('license_number')` against the VA source returns UNKNOWN.
+
+**Known boundary for slice 2c (the verification run):** `adjudicateExecutionProvenance`
+validates acquisition version strings against repo files at the pinned commit
+(`apps/web/scripts/acquire-live-market-reality.mjs` carries the DC version tuple).
+A real VA acquisition run needs a VA acquisition script/lane carrying VA version
+strings (`va-cca-live-v1`, VA policy versions) plus court version-tuple admission —
+that is the step that converts VA extracted coverage into VERIFIED world state.
+
+## Transfer telemetry v2 (slice 2b delta)
+
+| Metric | Value |
+|---|---|
+| Core files modified for market #2 | 3 (claim-adapter seam, router entry, compiler source) — all additive/behavior-preserving on market #1 |
+| NEW code for the seam | 1 registry module (~50 LOC) + 1 VA adapter (~230 LOC) + 2 test files |
+| Market #3 cost projection (MD) | contract + adapter + registry entry + source entry — the seam now exists; no core validation change should be needed (falsifiable next transfer test) |
+| Time to verified VA world state | STILL NOT ACHIEVED — requires slice 2c (VA acquisition lane + provenance admission + court run) |

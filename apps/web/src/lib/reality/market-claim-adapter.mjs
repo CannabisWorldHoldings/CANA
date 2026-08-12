@@ -1,5 +1,5 @@
 import { isEvidenceRevoked } from './evidence-revocation.mjs';
-import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
+import { marketContractForSourceKey } from './market-contract-registry.mjs';
 import { adjudicateExecutionProvenance, MARKET_CLAIM_COURT_VERSION } from './market-claim-court.mjs';
 
 const PUBLIC_FIELDS = Object.freeze([
@@ -95,15 +95,21 @@ function admittedAcquisition(claim, event, acquisition, artifact, snapshot, even
     field(acquisition, 'freshnessPolicyVersion', 'freshness_policy_version'),
     courtVersion,
   ];
-  return typeof claimTenant === 'string'
+  // Lineage validation is keyed by the acquisition's source contract. Only
+  // contracts admitted in the market-contract registry may bind claims to
+  // acquisitions; an unregistered source key rejects exactly as the previous
+  // hardcoded ABCA comparison rejected foreign sources.
+  const contract = marketContractForSourceKey(field(acquisition, 'sourceKey', 'source_key'));
+  return contract !== null
+    && typeof claimTenant === 'string'
     && claimTenant.length > 0
     && acquisition?.tenant === claimTenant
     && acquisition?.state === 'COMPLETED'
     && ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'].includes(outcome)
     && acquisition?.completeness === 'COMPLETE'
-    && field(acquisition, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
-    && field(acquisition, 'requestDigest', 'request_digest') === ABCA_LIVE_CONTRACT_DIGEST
-    && field(acquisition, 'adapterContractDigest', 'adapter_contract_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && field(acquisition, 'sourceKey', 'source_key') === contract.source_key
+    && field(acquisition, 'requestDigest', 'request_digest') === contract.contract_digest
+    && field(acquisition, 'adapterContractDigest', 'adapter_contract_digest') === contract.contract_digest
     && typeof claimSnapshotId === 'string'
     && acquisitionSnapshotId === claimSnapshotId
     && typeof contentArtifactId === 'string'
@@ -111,11 +117,11 @@ function admittedAcquisition(claim, event, acquisition, artifact, snapshot, even
     && artifact?.id === contentArtifactId
     && field(artifact, 'snapshotId', 'snapshot_id') === claimSnapshotId
     && snapshot?.id === claimSnapshotId
-    && field(artifact, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
-    && field(snapshot, 'sourceKey', 'source_key') === ABCA_LIVE_CONTRACT.sourceKey
-    && field(artifact, 'sourceUrl', 'source_url') === ABCA_LIVE_CONTRACT.layerUrl
-    && field(snapshot, 'sourceUrl', 'source_url') === ABCA_LIVE_CONTRACT.layerUrl
-    && field(artifact, 'requestContractDigest', 'request_contract_digest') === ABCA_LIVE_CONTRACT_DIGEST
+    && field(artifact, 'sourceKey', 'source_key') === contract.source_key
+    && field(snapshot, 'sourceKey', 'source_key') === contract.source_key
+    && field(artifact, 'sourceUrl', 'source_url') === contract.source_url
+    && field(snapshot, 'sourceUrl', 'source_url') === contract.source_url
+    && field(artifact, 'requestContractDigest', 'request_contract_digest') === contract.contract_digest
     && field(artifact, 'contentSha256', 'content_sha256') === field(snapshot, 'payloadSha256', 'payload_sha256')
     && field(artifact, 'payloadBytes', 'payload_bytes') === field(snapshot, 'payloadBytes', 'payload_bytes')
     && field(artifact, 'recordCount', 'record_count') === field(snapshot, 'recordCount', 'record_count')
