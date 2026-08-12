@@ -938,7 +938,10 @@
     "apps/web/src/lib/reality/live-md-mca-adapter.mjs",
     "apps/web/tests/fixtures/md-mca/dispensaries.html",
     "apps/web/tests/md-verified-world-state.test.mjs",
-    "docs/markets/MARYLAND_TRANSFER.md"
+    "docs/markets/MARYLAND_TRANSFER.md",
+    "apps/web/src/lib/markets/market-claims.mjs",
+    "apps/web/src/lib/reality/bounded-html-acquisition.mjs",
+    "docs/markets/MARKET_CORE_GENERALIZATION.md"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
