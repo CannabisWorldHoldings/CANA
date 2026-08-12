@@ -65,7 +65,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '21058eac45ad6b85d2296a6288045fb3ae27b5f3bff8e558473217ada0fd7f1d';
+  '8dbca9513fd70857d59e503d63f2279fd684c91ecdd1ae81b881a02fbce4b93d';
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
