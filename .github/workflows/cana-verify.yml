@@ -27,7 +27,7 @@ jobs:
           node-version: 24.14.1
           package-manager-cache: false
       - name: Run candidate units and evaluator sabotage certification
-        run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs tools/mission-2/mission-2.test.mjs tools/growth-foundry/m001/claim-graph.test.mjs tools/provenance-court/sabotage.test.mjs tools/reality/verify-evidence-packet.test.mjs tools/reality/verify-slice2-evidence-packet.test.mjs apps/web/tests/migration-manifest.test.mjs apps/web/tests/live-abca-adapter.test.mjs apps/web/tests/live-reality-acquisition.test.mjs apps/web/tests/live-reality-court.test.mjs apps/web/tests/answerability-frontier.test.mjs apps/web/tests/ask-frontier-dedupe.test.mjs apps/web/tests/reality-cognitive-evolution.test.mjs
+        run: node --test tools/test-runner/runner.test.mjs tools/mariadb-sim/run.test.mjs tools/durability/cli.test.mjs tools/cpanel-sim/run.test.mjs tools/github-import/prepare.test.mjs tools/mission-2/mission-2.test.mjs tools/growth-foundry/m001/claim-graph.test.mjs tools/provenance-court/sabotage.test.mjs tools/reality/verify-evidence-packet.test.mjs tools/reality/verify-slice2-evidence-packet.test.mjs apps/web/tests/migration-manifest.test.mjs apps/web/tests/live-abca-adapter.test.mjs apps/web/tests/live-reality-acquisition.test.mjs apps/web/tests/live-reality-court.test.mjs apps/web/tests/answerability-frontier.test.mjs apps/web/tests/ask-frontier-dedupe.test.mjs apps/web/tests/reality-cognitive-evolution.test.mjs apps/web/tests/security-boundary.test.mjs apps/web/tests/tenant-rewrite.test.mjs
 
   focused-verifier:
     runs-on: ubuntu-latest
