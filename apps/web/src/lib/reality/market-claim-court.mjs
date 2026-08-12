@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { resolveAbcaEntity } from './entity-resolution.mjs';
 import { VA_CCA_LIVE_CONTRACT } from './live-va-cca-adapter.mjs';
+import { MD_MCA_LIVE_CONTRACT } from './live-md-mca-adapter.mjs';
 import { marketContractForSourceKey } from './market-contract-registry.mjs';
 import { canonicalDigest, parseEvidencePayload } from './reality-compiler.mjs';
 
@@ -28,12 +29,24 @@ const VA_EXECUTION_VERSION_FILES = Object.freeze({
   freshnessPolicyVersion: Object.freeze(['apps/web/scripts/acquire-va-market-reality.mjs', /freshnessPolicyVersion:\s*'([^']+)'/]),
   verificationCourtVersion: Object.freeze(['apps/web/src/lib/reality/market-claim-court.mjs', /export const MARKET_CLAIM_COURT_VERSION = '([^']+)'/]),
 });
+const MD_EXECUTION_VERSION_FILES = Object.freeze({
+  adapterVersion: Object.freeze(['apps/web/scripts/acquire-md-market-reality.mjs', /adapterVersion:\s*'([^']+)'/]),
+  parserVersion: Object.freeze(['apps/web/src/lib/reality/live-md-mca-adapter.mjs', /schemaVersion:\s*'([^']+)'/]),
+  compilerVersion: Object.freeze(['apps/web/src/lib/markets/md/md-claims.mjs', /export const MD_CLAIMS_SCHEMA_VERSION = '([^']+)'/]),
+  entityResolverVersion: Object.freeze(['apps/web/src/lib/markets/md/md-claims.mjs', /export const MD_ENTITY_NORMALIZATION_VERSION = '([^']+)'/]),
+  authorityPolicyVersion: Object.freeze(['apps/web/scripts/acquire-md-market-reality.mjs', /authorityPolicyVersion:\s*'([^']+)'/]),
+  freshnessPolicyVersion: Object.freeze(['apps/web/scripts/acquire-md-market-reality.mjs', /freshnessPolicyVersion:\s*'([^']+)'/]),
+  verificationCourtVersion: Object.freeze(['apps/web/src/lib/reality/market-claim-court.mjs', /export const MARKET_CLAIM_COURT_VERSION = '([^']+)'/]),
+});
 const EXECUTION_VERSION_MAPS = Object.freeze({
   'dc-abca': EXECUTION_VERSION_FILES,
   'va-cca': VA_EXECUTION_VERSION_FILES,
+  'md-mca': MD_EXECUTION_VERSION_FILES,
 });
 function executionVersionMapId(sourceKey) {
-  return sourceKey === VA_CCA_LIVE_CONTRACT.sourceKey ? 'va-cca' : 'dc-abca';
+  if (sourceKey === VA_CCA_LIVE_CONTRACT.sourceKey) return 'va-cca';
+  if (sourceKey === MD_MCA_LIVE_CONTRACT.sourceKey) return 'md-mca';
+  return 'dc-abca';
 }
 const executionProvenanceCache = new Map();
 

@@ -13,6 +13,10 @@ import {
   VA_CCA_LIVE_CONTRACT,
   VA_CCA_LIVE_CONTRACT_DIGEST,
 } from '../src/lib/reality/live-va-cca-adapter.mjs';
+import {
+  MD_MCA_LIVE_CONTRACT,
+  MD_MCA_LIVE_CONTRACT_DIGEST,
+} from '../src/lib/reality/live-md-mca-adapter.mjs';
 
 function canonicalJson(value) {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -26,10 +30,10 @@ function canonicalJson(value) {
 }
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 
-test('registry admits exactly the two adapter-defined market contracts', () => {
-  assert.equal(MARKET_CONTRACT_REGISTRY.length, 2);
+test('registry admits exactly the three adapter-defined market contracts', () => {
+  assert.equal(MARKET_CONTRACT_REGISTRY.length, 3);
   const markets = MARKET_CONTRACT_REGISTRY.map((entry) => entry.market_id).sort();
-  assert.deepEqual(markets, ['US-DC', 'US-VA']);
+  assert.deepEqual(markets, ['US-DC', 'US-MD', 'US-VA']);
   const keys = MARKET_CONTRACT_REGISTRY.map((entry) => entry.source_key);
   assert.equal(new Set(keys).size, keys.length, 'source keys are unique');
 });
@@ -41,6 +45,9 @@ test('every registry digest is the canonical digest of its frozen contract', () 
   const va = marketContractForSourceKey(VA_CCA_LIVE_CONTRACT.sourceKey);
   assert.equal(va.contract_digest, VA_CCA_LIVE_CONTRACT_DIGEST);
   assert.equal(va.contract_digest, sha256(canonicalJson(VA_CCA_LIVE_CONTRACT)));
+  const md = marketContractForSourceKey(MD_MCA_LIVE_CONTRACT.sourceKey);
+  assert.equal(md.contract_digest, MD_MCA_LIVE_CONTRACT_DIGEST);
+  assert.equal(md.contract_digest, sha256(canonicalJson(MD_MCA_LIVE_CONTRACT)));
 });
 
 test('registry lookups preserve exact ABCA identity (backward compatibility law)', () => {

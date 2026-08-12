@@ -35,6 +35,21 @@ export const VA_CCA_SOURCE = Object.freeze({
     'website',
   ]),
 });
+// MD MCA registry page also publishes no license numbers — same authority
+// bounds as Virginia's registry source (Transfer Test #2).
+export const MD_MCA_SOURCE = Object.freeze({
+  source_id: 'md-mca-dispensaries',
+  source_url: 'https://cannabis.maryland.gov/Pages/Dispensaries.aspx',
+  authority_class: 'MD_MCA_LICENSED_DISPENSARY_REGISTRY',
+  source_catalog_modified_date: '2026-08-12',
+  max_age_ms: OFFICIAL_MARKET_TTL_MS,
+  authoritative_predicates: Object.freeze([
+    'facility_name',
+    'regulated_address',
+    'phone',
+    'website',
+  ]),
+});
 
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');

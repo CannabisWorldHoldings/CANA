@@ -930,7 +930,15 @@
     "apps/web/tests/live-va-cca-adapter.test.mjs",
     "apps/web/tests/market-contract-registry.test.mjs",
     "apps/web/scripts/acquire-va-market-reality.mjs",
-    "apps/web/tests/va-verified-world-state.test.mjs"
+    "apps/web/tests/va-verified-world-state.test.mjs",
+    "apps/web/scripts/acquire-md-market-reality.mjs",
+    "apps/web/src/lib/markets/md/md-claims.mjs",
+    "apps/web/src/lib/markets/md/md-market-registry.mjs",
+    "apps/web/src/lib/markets/md/md-mca-registry-parser.mjs",
+    "apps/web/src/lib/reality/live-md-mca-adapter.mjs",
+    "apps/web/tests/fixtures/md-mca/dispensaries.html",
+    "apps/web/tests/md-verified-world-state.test.mjs",
+    "docs/markets/MARYLAND_TRANSFER.md"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",

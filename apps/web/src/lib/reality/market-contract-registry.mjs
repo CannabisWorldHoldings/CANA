@@ -18,6 +18,7 @@
 
 import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
 import { VA_CCA_LIVE_CONTRACT, VA_CCA_LIVE_CONTRACT_DIGEST } from './live-va-cca-adapter.mjs';
+import { MD_MCA_LIVE_CONTRACT, MD_MCA_LIVE_CONTRACT_DIGEST } from './live-md-mca-adapter.mjs';
 
 export const MARKET_CONTRACT_REGISTRY = Object.freeze([
   Object.freeze({
@@ -33,6 +34,13 @@ export const MARKET_CONTRACT_REGISTRY = Object.freeze([
     source_id: VA_CCA_LIVE_CONTRACT.sourceId,
     source_url: VA_CCA_LIVE_CONTRACT.pageUrl,
     contract_digest: VA_CCA_LIVE_CONTRACT_DIGEST,
+  }),
+  Object.freeze({
+    market_id: 'US-MD',
+    source_key: MD_MCA_LIVE_CONTRACT.sourceKey,
+    source_id: MD_MCA_LIVE_CONTRACT.sourceId,
+    source_url: MD_MCA_LIVE_CONTRACT.pageUrl,
+    contract_digest: MD_MCA_LIVE_CONTRACT_DIGEST,
   }),
 ]);
 
