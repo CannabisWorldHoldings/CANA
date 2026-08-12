@@ -44,7 +44,7 @@ export function proxy(request: NextRequest) {
   const hostnameHeader = request.headers.get('host');
 
   const requestHost = parseAllowedRequestHost(hostnameHeader);
-  if (!requestHost || !isExplicitRequestHost(requestHost.hostname)) {
+  if (!requestHost) {
     return new NextResponse('The requested host is not configured.', {
       status: 421,
       headers: {
@@ -120,6 +120,11 @@ export function proxy(request: NextRequest) {
       ? `http://orderweeddc.localhost${port ? `:${port}` : ''}`
       : 'https://orderweeddc.com';
     return NextResponse.redirect(new URL(`${targetBase}${redirectPath}`));
+  }
+
+  if (!isExplicitRequestHost(host)) {
+    url.pathname = `/orderweeddc.localhost${url.pathname}`;
+    return NextResponse.rewrite(url);
   }
 
   return NextResponse.next();
