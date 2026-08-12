@@ -945,7 +945,9 @@
     "apps/web/src/lib/reality/acquire-market-reality.mjs",
     "apps/web/src/lib/reality/market-acquisition-lanes.mjs",
     "apps/web/tests/tri-market-durable-store.test.mjs",
-    "docs/markets/TRI_MARKET_DURABLE_REALITY.md"
+    "docs/markets/TRI_MARKET_DURABLE_REALITY.md",
+    "apps/web/scripts/cutover-preflight.mjs",
+    "apps/web/tests/tri-market-postgres-court.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",

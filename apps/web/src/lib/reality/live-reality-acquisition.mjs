@@ -580,7 +580,7 @@ export function createPrismaAcquisitionStore(prisma) {
           `${scope.sourceKey}:${scope.workClass}`,
         );
         return work(transactionStore(tx));
-      }, { isolationLevel: 'Serializable', timeout: 60_000 });
+      }, { isolationLevel: 'ReadCommitted', timeout: 60_000 });
     },
   });
 }
