@@ -928,7 +928,9 @@
     "apps/web/src/lib/reality/live-va-cca-adapter.mjs",
     "apps/web/src/lib/reality/market-contract-registry.mjs",
     "apps/web/tests/live-va-cca-adapter.test.mjs",
-    "apps/web/tests/market-contract-registry.test.mjs"
+    "apps/web/tests/market-contract-registry.test.mjs",
+    "apps/web/scripts/acquire-va-market-reality.mjs",
+    "apps/web/tests/va-verified-world-state.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",

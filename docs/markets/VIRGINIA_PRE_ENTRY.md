@@ -116,3 +116,33 @@ that is the step that converts VA extracted coverage into VERIFIED world state.
 | NEW code for the seam | 1 registry module (~50 LOC) + 1 VA adapter (~230 LOC) + 2 test files |
 | Market #3 cost projection (MD) | contract + adapter + registry entry + source entry — the seam now exists; no core validation change should be needed (falsifiable next transfer test) |
 | Time to verified VA world state | STILL NOT ACHIEVED — requires slice 2c (VA acquisition lane + provenance admission + court run) |
+
+## SLICE 2c (this branch) — VA acquisition lane + THE FIRST VERIFIED VIRGINIA WORLD STATE
+
+| Change | File |
+|---|---|
+| VA acquisition lane script — canonical carrier of the VA execution version tuple (va-cca-live-v1, va-cca-authority-v1, va-cca-freshness-v1); operator-opted, clean-head-gated, read-only, emits an immutable receipt | `apps/web/scripts/acquire-va-market-reality.mjs` |
+| Execution provenance generalized to per-source version-tuple maps dispatched by sourceKey (DC map is the default — events without sourceKey and all DC events behave identically; cache keyed by map+commit+tree) | `src/lib/reality/market-claim-court.mjs` |
+| `adjudicateAcquisitionEvidence` source/digest checks generalized to the market-contract registry (same rejection reasons preserved) | `src/lib/reality/market-claim-court.mjs` |
+| End-to-end court: fixture acquisition → claims → evidence rows → VA version-tuple admission from repo files at HEAD → `selectCurrentClaimDecisions` → **VERIFIED, decision-eligible VA claim decisions** | `apps/web/tests/va-verified-world-state.test.mjs` |
+
+**Court results (57/57 locally):** VA tuple admitted from repo files; **DC tuple on a VA
+event → VERSION_TUPLE_MISMATCH (tuples do not cross markets)**; VERIFIED VA decisions
+carry the VA source and court version; forged digest → ACQUISITION_REQUEST_CONTRACT_MISMATCH;
+foreign source → ACQUISITION_SOURCE_MISMATCH; VA REVALIDATE stays refused without a bound
+revision (HTML sources publish none — honest limit, content-hash revalidation is a future
+lane); all DC equivalence and hostile-mutation courts unchanged.
+
+**What remains for LIVE verified VA state in production:** an operator-run
+`acquire-va-market-reality.mjs` against the live CCA page (env grant) + durable-store
+persistence (the Prisma acquisition store generalization) + the real verification-event
+write path. The court machinery is proven; the remaining work is plumbing, not law.
+
+## Transfer telemetry v3 (slice 2c delta)
+
+| Metric | Value |
+|---|---|
+| TIME TO VERIFIED WORLD STATE (court-proven, fixture evidence) | ACHIEVED 2026-08-12 — same-day as first extraction |
+| TIME TO VERIFIED WORLD STATE (live production) | pending operator acquisition run + durable-store lane |
+| Core court changes for market #2 | 1 file (market-claim-court.mjs), both changes behavior-preserving on market #1 (equivalence courts green) |
+| The compiler claim now falsifiable | market #3 needs: contract + adapter + registry entry + source entry + version-tuple map entry + lane script — zero core validation changes expected |

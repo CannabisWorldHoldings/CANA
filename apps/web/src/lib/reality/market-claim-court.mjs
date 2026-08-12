@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { resolveAbcaEntity } from './entity-resolution.mjs';
-import { ABCA_LIVE_CONTRACT, ABCA_LIVE_CONTRACT_DIGEST } from './live-abca-adapter.mjs';
+import { VA_CCA_LIVE_CONTRACT } from './live-va-cca-adapter.mjs';
+import { marketContractForSourceKey } from './market-contract-registry.mjs';
 import { canonicalDigest, parseEvidencePayload } from './reality-compiler.mjs';
 
 export const MARKET_CLAIM_COURT_VERSION = 'cana-market-claim-court-v1';
@@ -15,6 +16,25 @@ const EXECUTION_VERSION_FILES = Object.freeze({
   freshnessPolicyVersion: Object.freeze(['apps/web/scripts/acquire-live-market-reality.mjs', /freshnessPolicyVersion:\s*'([^']+)'/]),
   verificationCourtVersion: Object.freeze(['apps/web/src/lib/reality/market-claim-court.mjs', /export const MARKET_CLAIM_COURT_VERSION = '([^']+)'/]),
 });
+// Virginia's execution version tuple lives in the VA acquisition lane files.
+// Dispatch is by the acquisition's sourceKey; events without a sourceKey (and
+// all DC events) keep the exact original DC map — behavior unchanged.
+const VA_EXECUTION_VERSION_FILES = Object.freeze({
+  adapterVersion: Object.freeze(['apps/web/scripts/acquire-va-market-reality.mjs', /adapterVersion:\s*'([^']+)'/]),
+  parserVersion: Object.freeze(['apps/web/src/lib/reality/live-va-cca-adapter.mjs', /schemaVersion:\s*'([^']+)'/]),
+  compilerVersion: Object.freeze(['apps/web/src/lib/markets/va/va-claims.mjs', /export const VA_CLAIMS_SCHEMA_VERSION = '([^']+)'/]),
+  entityResolverVersion: Object.freeze(['apps/web/src/lib/markets/va/va-claims.mjs', /export const VA_ENTITY_NORMALIZATION_VERSION = '([^']+)'/]),
+  authorityPolicyVersion: Object.freeze(['apps/web/scripts/acquire-va-market-reality.mjs', /authorityPolicyVersion:\s*'([^']+)'/]),
+  freshnessPolicyVersion: Object.freeze(['apps/web/scripts/acquire-va-market-reality.mjs', /freshnessPolicyVersion:\s*'([^']+)'/]),
+  verificationCourtVersion: Object.freeze(['apps/web/src/lib/reality/market-claim-court.mjs', /export const MARKET_CLAIM_COURT_VERSION = '([^']+)'/]),
+});
+const EXECUTION_VERSION_MAPS = Object.freeze({
+  'dc-abca': EXECUTION_VERSION_FILES,
+  'va-cca': VA_EXECUTION_VERSION_FILES,
+});
+function executionVersionMapId(sourceKey) {
+  return sourceKey === VA_CCA_LIVE_CONTRACT.sourceKey ? 'va-cca' : 'dc-abca';
+}
 const executionProvenanceCache = new Map();
 
 function gitOutput(args) {
@@ -31,8 +51,8 @@ function gitOutput(args) {
   }
 }
 
-function executionTuple(commit, tree) {
-  const key = `${commit}:${tree}`;
+function executionTuple(commit, tree, mapId = 'dc-abca') {
+  const key = `${mapId}:${commit}:${tree}`;
   if (executionProvenanceCache.has(key)) return executionProvenanceCache.get(key);
   const actualTree = gitOutput(['rev-parse', `${commit}^{tree}`]);
   if (!actualTree) {
@@ -57,7 +77,7 @@ function executionTuple(commit, tree) {
     return result;
   }
   const versions = {};
-  for (const [name, [file, pattern]] of Object.entries(EXECUTION_VERSION_FILES)) {
+  for (const [name, [file, pattern]] of Object.entries(EXECUTION_VERSION_MAPS[mapId])) {
     const source = gitOutput(['show', `${commit}:${file}`]);
     const match = source?.match(pattern);
     if (!match?.[1]) {
@@ -76,7 +96,7 @@ export function adjudicateExecutionProvenance(event) {
   if (!/^[a-f0-9]{40}$/.test(commit ?? '') || !/^[a-f0-9]{40}$/.test(tree ?? '')) {
     return Object.freeze({ decision: 'DENY', reason: 'VERSION_PROVENANCE_INVALID' });
   }
-  const admitted = executionTuple(commit, tree);
+  const admitted = executionTuple(commit, tree, executionVersionMapId(event?.sourceKey));
   if (admitted.state !== 'ALLOW') {
     return Object.freeze({ decision: 'DENY', reason: admitted.reason });
   }
@@ -142,11 +162,12 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
   if (!['COMPILE', 'REVALIDATE'].includes(purpose)) return acquisitionDecision({ reason: 'ACQUISITION_PURPOSE_INVALID' });
   if (event.state !== 'COMPLETED' || event.errorCode) return acquisitionDecision({ reason: 'ACQUISITION_NOT_SUCCESSFUL' });
   if (event.tenant !== tenant) return acquisitionDecision({ reason: 'ACQUISITION_TENANT_MISMATCH' });
-  if (event.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
-    || artifact.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
-    || snapshot.sourceKey !== ABCA_LIVE_CONTRACT.sourceKey
-    || artifact.sourceUrl !== ABCA_LIVE_CONTRACT.layerUrl
-    || snapshot.sourceUrl !== ABCA_LIVE_CONTRACT.layerUrl) {
+  const sourceContract = marketContractForSourceKey(event.sourceKey);
+  if (sourceContract === null
+    || artifact.sourceKey !== sourceContract.source_key
+    || snapshot.sourceKey !== sourceContract.source_key
+    || artifact.sourceUrl !== sourceContract.source_url
+    || snapshot.sourceUrl !== sourceContract.source_url) {
     return acquisitionDecision({ reason: 'ACQUISITION_SOURCE_MISMATCH' });
   }
   const allowedOutcomes = purpose === 'COMPILE' ? ['SOURCE_CHANGED'] : ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'];
@@ -158,9 +179,9 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
   if (event.completeness !== 'COMPLETE' || snapshot.completeness !== 'COMPLETE') {
     return acquisitionDecision({ reason: 'ACQUISITION_NOT_COMPLETE' });
   }
-  if (event.requestDigest !== ABCA_LIVE_CONTRACT_DIGEST
-    || event.adapterContractDigest !== ABCA_LIVE_CONTRACT_DIGEST
-    || artifact.requestContractDigest !== ABCA_LIVE_CONTRACT_DIGEST) {
+  if (event.requestDigest !== sourceContract.contract_digest
+    || event.adapterContractDigest !== sourceContract.contract_digest
+    || artifact.requestContractDigest !== sourceContract.contract_digest) {
     return acquisitionDecision({ reason: 'ACQUISITION_REQUEST_CONTRACT_MISMATCH' });
   }
   const versionLineage = [
