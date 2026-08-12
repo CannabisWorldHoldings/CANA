@@ -16,7 +16,6 @@ import {
 const CIRCUIT_WORK_CLASS = 'LIVE_ACQUISITION';
 const CIRCUIT_FAILURE_THRESHOLD = 3;
 const CIRCUIT_COOLDOWN_MS = 10 * 60 * 1000;
-const SERIALIZABLE_TRANSACTION_ATTEMPTS = 3;
 const PREDICATE_SCOPE = 'licensed_retailer_identity,status,address,coordinates';
 const TENANT_PATTERN = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)(?:\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?))*$/;
 
@@ -575,20 +574,13 @@ export function createPrismaAcquisitionStore(prisma) {
   if (!prisma || typeof prisma.$transaction !== 'function') fail('CANA_LIVE_REALITY_STORE_INVALID');
   return Object.freeze({
     async runExclusive(scope, work) {
-      for (let attempt = 1; attempt <= SERIALIZABLE_TRANSACTION_ATTEMPTS; attempt += 1) {
-        try {
-          return await prisma.$transaction(async (tx) => {
-            await tx.$queryRawUnsafe(
-              'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result',
-              `${scope.sourceKey}:${scope.workClass}`,
-            );
-            return work(transactionStore(tx));
-          }, { isolationLevel: 'Serializable', timeout: 60_000 });
-        } catch (error) {
-          if (error?.code !== 'P2034' || attempt === SERIALIZABLE_TRANSACTION_ATTEMPTS) throw error;
-        }
-      }
-      throw new Error('CANA_REALITY_SERIALIZABLE_RETRY_EXHAUSTED');
+      return prisma.$transaction(async (tx) => {
+        await tx.$queryRawUnsafe(
+          'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result',
+          `${scope.sourceKey}:${scope.workClass}`,
+        );
+        return work(transactionStore(tx));
+      }, { isolationLevel: 'ReadCommitted', timeout: 60_000 });
     },
   });
 }

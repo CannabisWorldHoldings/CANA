@@ -9,7 +9,12 @@
 import { execFileSync } from 'node:child_process';
 
 const checks = [];
-const check = (id, ok, detail) => { checks.push({ id, ok: Boolean(ok), detail }); return Boolean(ok); };
+const check = (id, ok, detail) => {
+  const passed = Boolean(ok);
+  checks.push({ id, status: passed ? 'PASS' : 'FAIL', ok: passed, detail });
+  return passed;
+};
+const markUnverified = (id, detail) => checks.push({ id, status: 'UNVERIFIED', ok: null, detail });
 const DB_PROBE_IDS = [
   'db.reachable',
   'db.extension.postgis',
@@ -92,7 +97,7 @@ if (prisma && checks.every((c) => c.id.startsWith('db.') ? c.ok : true)) {
   }
 }
 for (const id of DB_PROBE_IDS) {
-  if (!checks.some((c) => c.id === id)) check(id, false, dbProbeRefusal);
+  if (!checks.some((c) => c.id === id)) markUnverified(id, dbProbeRefusal);
 }
 if (prisma) await prisma.$disconnect().catch(() => {});
 
@@ -110,8 +115,9 @@ check('data.backup.receipt.present', Boolean(backupReceipt), backupReceipt
   ? 'non-empty value present — presence only; provider/operator verification and authorization remain external'
   : 'CANA_PRE_MIGRATION_BACKUP_RECEIPT not set — required before migrate.sh');
 
-const refusals = checks.filter((c) => !c.ok);
-const verdict = refusals.length === 0 ? 'CUTOVER_READY' : 'CUTOVER_REFUSED';
+const refusals = checks.filter((c) => c.status === 'FAIL');
+const unverified = checks.filter((c) => c.status === 'UNVERIFIED');
+const verdict = refusals.length === 0 && unverified.length === 0 ? 'CUTOVER_READY' : 'CUTOVER_REFUSED';
 console.log(JSON.stringify({
   schema_version: 'cana-cutover-preflight/v1',
   verdict,
@@ -119,6 +125,7 @@ console.log(JSON.stringify({
   repository_head: head,
   checks,
   refusal_reasons: refusals.map((c) => c.id),
+  unverified_reasons: unverified.map((c) => c.id),
   mutations: 0,
 }, null, 2));
 process.exitCode = verdict === 'CUTOVER_READY' ? 0 : 1;
