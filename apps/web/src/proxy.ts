@@ -5,10 +5,7 @@ import {
   parseAllowedRequestHost,
 } from '@/lib/host-policy.mjs';
 import { isCanonicalPlatformHostname } from '@/lib/tenant-host.mjs';
-import {
-  isExplicitRequestHost,
-  tenantRedirectPath,
-} from '@/lib/tenant-rewrite.mjs';
+import { tenantRedirectPath } from '@/lib/tenant-rewrite.mjs';
 
 const NON_INDEXABLE_RESPONSE_HEADERS = {
   'Cache-Control': 'no-store',
@@ -44,7 +41,7 @@ export function proxy(request: NextRequest) {
   const hostnameHeader = request.headers.get('host');
 
   const requestHost = parseAllowedRequestHost(hostnameHeader);
-  if (!requestHost || !isExplicitRequestHost(requestHost.hostname)) {
+  if (!requestHost) {
     return new NextResponse('The requested host is not configured.', {
       status: 421,
       headers: {

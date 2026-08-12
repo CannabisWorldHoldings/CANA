@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  CONFIGURED_TENANT_HOST_PATTERN,
   isExplicitRequestHost,
   TENANT_HOST_ROUTES,
   tenantRedirectPath,
@@ -9,7 +10,7 @@ import {
 
 test('every tenant rewrite is host-bound and uses a relative internal destination', () => {
   const rules = tenantRewriteRules();
-  assert.equal(rules.length, TENANT_HOST_ROUTES.length * 2);
+  assert.equal(rules.length, (TENANT_HOST_ROUTES.length + 1) * 2);
 
   for (const rule of rules) {
     assert.deepEqual(rule.has, [
@@ -19,6 +20,36 @@ test('every tenant rewrite is host-bound and uses a relative internal destinatio
     assert.doesNotMatch(rule.destination, /:\/\//);
     assert.doesNotMatch(rule.destination, /(?:127\.0\.0\.1|\[?::1\]?|localhost):\d+/);
   }
+});
+
+test('validated configured hosts fall through to the canonical tenant without changing authority', () => {
+  const rules = tenantRewriteRules();
+  const configuredRules = rules.filter(
+    (rule) => rule.has[0].value === CONFIGURED_TENANT_HOST_PATTERN,
+  );
+  assert.equal(configuredRules.length, 2);
+  assert.equal(configuredRules[0].source, '/');
+  assert.equal(configuredRules[0].destination, '/orderweeddc.localhost');
+  assert.equal(configuredRules[1].source, '/:path*');
+  assert.equal(
+    configuredRules[1].destination,
+    '/orderweeddc.localhost/:path*',
+  );
+
+  const matcher = new RegExp(`^${CONFIGURED_TENANT_HOST_PATTERN}$`);
+  assert.equal(matcher.test('staging.orderweeddc.com'), true);
+  assert.equal(matcher.test('custom.example'), true);
+  for (const malformed of [
+    '',
+    'attacker.example:443',
+    'orderweeddc.com@attacker.example',
+    'orderweeddc.com/attacker',
+  ]) {
+    assert.equal(matcher.test(malformed), false, malformed);
+  }
+
+  const firstConfiguredRule = rules.indexOf(configuredRules[0]);
+  assert.equal(firstConfiguredRule, TENANT_HOST_ROUTES.length * 2);
 });
 
 test('canonical public and local hosts route to the same tenant root without a trailing slash', () => {
