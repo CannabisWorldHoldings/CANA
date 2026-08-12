@@ -1,9 +1,9 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "AS_OF": "2026-08-12T16:26:57Z",
+  "AS_OF": "2026-08-12T18:04:49Z",
   "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
-  "CANONICAL_MAIN": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+  "CANONICAL_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
   "POLICY": "NO_VERIFIED_WORK_MAY_DISAPPEAR_SILENTLY",
   "ALLOWED_DISPOSITIONS": [
     "CANONICAL",
@@ -302,16 +302,16 @@
       "ORIGINAL_PURPOSE": "Persist D.C., Virginia and Maryland through one acquisition state machine and one durable reality repository.",
       "CURRENT_EQUIVALENT": "market-acquisition-lanes.mjs, acquire-market-reality.mjs, reality-repository.mjs and tri-market-durable-store.test.mjs",
       "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
-      "OWNER_DECISION": "CANONICAL_AFTER_PR44; PR45_REAL_POSTGRES_COURT_PENDING_OWNER_MERGE",
+      "OWNER_DECISION": "CANONICAL_AFTER_PR45_NORMAL_MERGE_AND_EXACT_MAIN_HOSTED_COURTS",
       "TARGET_CANONICAL_SEAM": "Existing multi-market acquisition and repository modules",
       "DEPENDENCIES": [
-        "PR #45 real PostgreSQL/Prisma court",
+        "PR #45 real PostgreSQL/Prisma court merged at c436e3742929af71ee6cd45acc47fb2cabd55fef",
         "PostGIS and H3 availability"
       ],
       "PROOF": [
         {
-          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
-          "EVIDENCE": "PR #44 merged one lane-parametric durable multi-market store into canonical main.",
+          "REF": "c436e3742929af71ee6cd45acc47fb2cabd55fef:apps/web/tests/tri-market-postgres-court.test.mjs",
+          "EVIDENCE": "PR #45 normally merged the real PostgreSQL/Prisma tri-market persistence, concurrency, rollback and isolation court; exact-main hosted run 31625316460 passed all six lanes.",
           "STATE": "VERIFIED_IMPLEMENTED"
         }
       ],

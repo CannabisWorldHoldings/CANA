@@ -1,10 +1,10 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "REPORT_AS_OF": "2026-08-12T16:26:57Z",
+  "REPORT_AS_OF": "2026-08-12T18:04:49Z",
   "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
-  "CURRENT_MAIN": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
-  "CURRENT_MAIN_TREE": "c2af4b4628e3224c2e3b765799b3bd2797343676",
+  "CURRENT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+  "CURRENT_MAIN_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
   "CURRENT_PRODUCTION_SHA": "b993a2d5252380472b20ab4565ce07da9df1e61d",
   "CURRENT_PRODUCTION_STATE": {
     "EVIDENCE_STATE": "VERIFIED_CURRENT",
@@ -14,12 +14,12 @@
     "DATABASE_STATUS": "UP",
     "RELEASE_HTTP_STATUS": 200,
     "BUILT_AT": "2026-08-12T12:11:32.201Z",
-    "RELATIONSHIP_TO_MAIN": "ANCESTOR_11_COMMITS_BEHIND_NOT_DIVERGENT",
+    "RELATIONSHIP_TO_MAIN": "ANCESTOR_15_COMMITS_BEHIND_NOT_DIVERGENT",
     "PROOF": [
       "GET https://orderweeddc.com/ at 2026-08-12T16:26:55Z",
       "GET https://orderweeddc.com/api/health at 2026-08-12T16:26:56Z",
       "GET https://orderweeddc.com/api/release at 2026-08-12T16:26:57Z",
-      "GitHub compare b993a2d5252380472b20ab4565ce07da9df1e61d...eee23d6973a5b3b7678e256de9b5ceb5f294e4a3"
+      "GitHub compare b993a2d5252380472b20ab4565ce07da9df1e61d...c436e3742929af71ee6cd45acc47fb2cabd55fef"
     ]
   },
   "CURRENT_PRODUCTION_DATABASE_IDENTITY": {
@@ -46,13 +46,19 @@
     }
   },
   "PR45_BASE": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
-  "PR45_HEAD": "56f6040c542ac809229587a002609bb9b6528be6",
-  "PR45_TREE": "0115a7c16116de19af82d1655c8b6566f97b9e98",
-  "PR45_STATE": "OPEN_DRAFT_MERGEABLE_CLEAN",
-  "PR45_MERGED": false,
+  "PR45_HEAD": "0de5f8b4d8e47735576c3f73ce99e9ecaf026e93",
+  "PR45_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
+  "PR45_STATE": "MERGED_NORMAL_HISTORY_PRESERVED",
+  "PR45_MERGED": true,
+  "PR45_MERGE_COMMIT": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+  "PR45_MERGE_PARENTS": [
+    "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+    "0de5f8b4d8e47735576c3f73ce99e9ecaf026e93"
+  ],
+  "PR45_REVIEWED_HEAD_IN_MAIN_ANCESTRY": true,
   "PR45_HOSTED_CI": {
-    "RUN_ID": 31614869730,
-    "EXACT_HEAD": "56f6040c542ac809229587a002609bb9b6528be6",
+    "RUN_ID": 31624478534,
+    "EXACT_HEAD": "0de5f8b4d8e47735576c3f73ce99e9ecaf026e93",
     "CONCLUSION": "SUCCESS",
     "REQUIRED_CHECKS": [
       "candidate-unit",
@@ -78,19 +84,33 @@
     }
   },
   "PR45_REVIEW_STATE": {
-    "SUBMITTED_REVIEWS": 0,
+    "SUBMITTED_REVIEWS": 14,
     "REVIEW_DECISION": "NONE",
     "CODERABBIT_CHECK": "SUCCESS",
-    "CODERABBIT_REVIEW": "SKIPPED_BECAUSE_DRAFT"
+    "CODERABBIT_REVIEW": "SUBSTANTIVE_REVIEW_COMPLETE",
+    "UNRESOLVED_THREADS": 0
   },
   "PR45_READY_FOR_OWNER_MERGE": true,
-  "PR45_OPERATIONAL_GATE": "DRAFT_AND_REVIEW_SKIPPED",
+  "PR45_OPERATIONAL_GATE": "CANONICALIZED",
   "PR45_VERDICT": {
-    "LITERAL_PROMPT_PREDICATE": "READY_FOR_OWNER_MERGE",
-    "OPERATIONAL_STATE": "OWNER_MUST_MARK_READY_AND_OBTAIN_REQUIRED_REVIEW_BEFORE_ANY_MERGE",
-    "MERGE_AUTHORITY_IN_THIS_RUN": false
+    "LITERAL_PROMPT_PREDICATE": "MERGED_AFTER_EXACT_HEAD_REVIEW_AND_COURTS",
+    "OPERATIONAL_STATE": "CANONICAL_MAIN_POST_MERGE_CI_PASS",
+    "MERGE_AUTHORITY_IN_THIS_RUN": true
   },
-  "WHY_CURRENT_PUBLIC_UI_IS_MISSING_LATER_WORK": "Current main contains merged market, Reality Compiler, ASK and durability advances, while the later customer/merchant/Apple donor PRs remain open, stacked, unmerged or visually rejected. Live production is the stable b993a2d safety anchor and is intentionally 11 canonical commits behind main, so neither public production nor current main contains the full three-face convergence UI.",
+  "POST_MERGE_CI": {
+    "RUN_ID": 31625316460,
+    "EXACT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+    "CONCLUSION": "SUCCESS",
+    "REQUIRED_CHECKS": [
+      "candidate-unit",
+      "focused-verifier",
+      "maria-verifier",
+      "cpanel-verifier",
+      "github-import-offline",
+      "durability-proof"
+    ]
+  },
+  "WHY_CURRENT_PUBLIC_UI_IS_MISSING_LATER_WORK": "Current main contains merged market, Reality Compiler, ASK and durability advances, while the later customer/merchant/Apple donor PRs remain open, stacked, unmerged or visually rejected. Live production is the stable b993a2d safety anchor and is intentionally 15 canonical commits behind main, so neither public production nor current main contains the full three-face convergence UI.",
   "CUSTOMER_WORLD_CURRENT_STATE": {
     "STATE": "PARTIALLY_IMPLEMENTED",
     "PRESENT": [
@@ -267,15 +287,15 @@
   "FIRST_BOUNDED_PRODUCT_SLICE": {
     "CANDIDATE": "ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION",
     "RATIONALE": "Current ASK and deterministic discovery seams already exist; the slice can add one read-only typed adapter without a second truth or search brain.",
-    "STATUS": "NOT_STARTED",
-    "BLOCKER": "PR #45 remains draft and unmerged, so the canonical base is not settled. The mission explicitly prohibits product implementation from a stale base when PR #45 is about to become canonical."
+    "STATUS": "READY_TO_START",
+    "BLOCKER": null
   },
-  "PHASE_BOUNDARY": "WAITING_FOR_PR45_CANONICAL_BASE",
+  "PHASE_BOUNDARY": "PR45_CANONICAL_LEDGER_REVALIDATION",
   "PRODUCT_IMPLEMENTATION_STARTED": false,
   "NO_MARKET_4": true,
   "PRODUCTION_MUTATED": false,
   "EXTERNAL_EFFECTS": {
-    "MERGE": 0,
+    "MERGE": 1,
     "DEPLOY": 0,
     "PRODUCTION_RESTART": 0,
     "DATABASE_WRITE": 0,
@@ -286,5 +306,5 @@
     "PAID_PROVIDER_CALL": 0,
     "MEDIA_SPEND": 0
   },
-  "NEXT_OWNER_ACTION": "Mark PR #45 ready for review and obtain required review approval. Any merge remains a separate explicit owner-authorized normal-merge action."
+  "NEXT_OWNER_ACTION": "Implement and court ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION on this preserved branch; keep production frozen."
 }

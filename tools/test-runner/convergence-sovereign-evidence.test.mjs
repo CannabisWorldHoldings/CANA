@@ -42,6 +42,7 @@ function nonEmptyString(value, message) {
 test('three-face truth map keeps one reality and three purpose-built projections', () => {
   const truthMap = loadJson('THREE_FACE_TRUTH_MAP.json');
   assert.equal(truthMap.SCHEMA_VERSION, 1);
+  assert.equal(truthMap.CANONICAL_BASE, 'c436e3742929af71ee6cd45acc47fb2cabd55fef');
   assert.deepEqual(
     truthMap.FACES.map((face) => face.ID).sort(),
     ['CANA_OWNER', 'CUSTOMER', 'MERCHANT'],
@@ -99,6 +100,7 @@ test('three-face truth map keeps one reality and three purpose-built projections
 test('capability conservation ledger accounts for requested donors without silent loss', () => {
   const ledger = loadJson('CAPABILITY_CONSERVATION_LEDGER.json');
   assert.equal(ledger.SCHEMA_VERSION, 1);
+  assert.equal(ledger.CANONICAL_MAIN, 'c436e3742929af71ee6cd45acc47fb2cabd55fef');
   assert.deepEqual(new Set(ledger.ALLOWED_DISPOSITIONS), DISPOSITIONS);
   assert.ok(Array.isArray(ledger.CAPABILITIES) && ledger.CAPABILITIES.length >= 20);
 
@@ -182,16 +184,24 @@ test('first report records live identities, requested states and the owner-gated
   ];
   for (const field of requiredFields) assert.ok(field in report, `${field} is required`);
 
-  assert.equal(report.CURRENT_MAIN, 'eee23d6973a5b3b7678e256de9b5ceb5f294e4a3');
+  assert.equal(report.CURRENT_MAIN, 'c436e3742929af71ee6cd45acc47fb2cabd55fef');
   assert.equal(report.CURRENT_PRODUCTION_SHA, 'b993a2d5252380472b20ab4565ce07da9df1e61d');
-  assert.equal(report.PR45_HEAD, '56f6040c542ac809229587a002609bb9b6528be6');
+  assert.equal(report.PR45_HEAD, '0de5f8b4d8e47735576c3f73ce99e9ecaf026e93');
   assert.equal(report.PR45_READY_FOR_OWNER_MERGE, true);
-  assert.equal(report.PR45_MERGED, false);
-  assert.equal(report.PR45_OPERATIONAL_GATE, 'DRAFT_AND_REVIEW_SKIPPED');
-  assert.equal(report.PHASE_BOUNDARY, 'WAITING_FOR_PR45_CANONICAL_BASE');
+  assert.equal(report.PR45_MERGED, true);
+  assert.equal(report.PR45_MERGE_COMMIT, report.CURRENT_MAIN);
+  assert.deepEqual(report.PR45_MERGE_PARENTS, [report.PR45_BASE, report.PR45_HEAD]);
+  assert.equal(report.PR45_REVIEWED_HEAD_IN_MAIN_ANCESTRY, true);
+  assert.equal(report.PR45_REVIEW_STATE.UNRESOLVED_THREADS, 0);
+  assert.equal(report.PR45_OPERATIONAL_GATE, 'CANONICALIZED');
+  assert.equal(report.PHASE_BOUNDARY, 'PR45_CANONICAL_LEDGER_REVALIDATION');
   assert.equal(report.PRODUCT_IMPLEMENTATION_STARTED, false);
   assert.equal(report.PRODUCTION_MUTATED, false);
   assert.equal(report.NO_MARKET_4, true);
-  assert.equal(report.PR45_HOSTED_CI.RUN_ID, 31614869730);
+  assert.equal(report.PR45_HOSTED_CI.RUN_ID, 31624478534);
   assert.equal(report.PR45_HOSTED_CI.CONCLUSION, 'SUCCESS');
+  assert.equal(report.POST_MERGE_CI.RUN_ID, 31625316460);
+  assert.equal(report.POST_MERGE_CI.EXACT_MAIN, report.CURRENT_MAIN);
+  assert.equal(report.POST_MERGE_CI.CONCLUSION, 'SUCCESS');
+  assert.equal(report.EXTERNAL_EFFECTS.MERGE, 1);
 });
