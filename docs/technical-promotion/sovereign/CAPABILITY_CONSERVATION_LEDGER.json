@@ -1,0 +1,747 @@
+{
+  "SCHEMA_VERSION": 1,
+  "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
+  "AS_OF": "2026-08-12T16:26:57Z",
+  "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
+  "CANONICAL_MAIN": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+  "POLICY": "NO_VERIFIED_WORK_MAY_DISAPPEAR_SILENTLY",
+  "ALLOWED_DISPOSITIONS": [
+    "CANONICAL",
+    "SUPERSEDED_BY",
+    "ADAPT",
+    "ABSORB",
+    "HAND_PORT",
+    "FUNCTIONAL_DONOR",
+    "VISUAL_DONOR",
+    "OWNER_REJECTED",
+    "ARCHIVE",
+    "RETIRE"
+  ],
+  "CAPABILITIES": [
+    {
+      "SOURCE": "PR #21",
+      "CAPABILITY": "Customer marketplace functional architecture",
+      "ORIGINAL_PURPOSE": "Give customers dedicated delivery, dispensary and search routes with grouped discovery, list/map behavior, mobile navigation, accessibility and truthful empty states.",
+      "CURRENT_EQUIVALENT": "Current marketplace components, directory-search.mjs, product-discovery.mjs, tenant routes and public truth predicates implement a subset; dedicated route parity is absent.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "FUNCTIONAL_DONOR_ONLY; DO_NOT_RAW_MERGE; VISUAL_COMPOSITION_REJECTED",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/app/[domain], apps/web/src/lib/directory-search.mjs, apps/web/src/lib/product-discovery.mjs and ASK consumers",
+      "DEPENDENCIES": [
+        "current public-record truth predicate",
+        "tenant market context",
+        "Reality Compiler claims",
+        "delivery eligibility authority"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #21 head fa16fd507ea79d42d914e314de3b825170ff9b97",
+          "EVIDENCE": "Dedicated /delivery, /dispensaries and /search donors plus customer marketplace libraries, browser, accessibility and performance receipts exist on an open unmerged branch.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        },
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/directory-search.mjs",
+          "EVIDENCE": "Current main retains bounded search and public truth filtering without PR #21 route parity.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "FUNCTIONAL_DONOR"
+    },
+    {
+      "SOURCE": "PR #21",
+      "CAPABILITY": "Customer marketplace visual candidate",
+      "ORIGINAL_PURPOSE": "Present a premium customer-only marketplace using a prior sovereign visual composition.",
+      "CURRENT_EQUIVALENT": "Current main marketplace UI remains the active implementation; the PR #21 composition is retained only as negative owner evidence.",
+      "CURRENT_STATE": "FALSIFIED",
+      "OWNER_DECISION": "OWNER_REJECTED_VISUAL; TEST_SUCCESS_DOES_NOT_OVERRIDE_TASTE_DECISION",
+      "TARGET_CANONICAL_SEAM": "Sovereign UI Gauntlet negative-evidence corpus",
+      "DEPENDENCIES": [
+        "owner visual review",
+        "white-neutral and green-accent-only constitution"
+      ],
+      "PROOF": [
+        {
+          "REF": "rejected candidate 5c7fe2707dcb2836ed62e1c3d9a01bb62cd50723",
+          "EVIDENCE": "Technical courts passed, but the owner rejected the visual candidate; it is not an approved baseline.",
+          "STATE": "FALSIFIED"
+        }
+      ],
+      "DISPOSITION": "OWNER_REJECTED"
+    },
+    {
+      "SOURCE": "PR #22",
+      "CAPABILITY": "Competitor-to-creative evidence bridge",
+      "ORIGINAL_PURPOSE": "Bind competitor evidence and owner rejection to three responsive draft campaign candidates without provider spend or publication.",
+      "CURRENT_EQUIVALENT": "Current SiteMind, competitor-shadow and ad-creative seams exist separately; the governed delta-to-creative bridge is not canonical.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "OWNER_SELECTION_PENDING; ZERO_PROVIDER_CALLS; NO_PRODUCTION_AUTHORITY",
+      "TARGET_CANONICAL_SEAM": "SiteMind evidence receipts to CANA opportunity and packages/ad-creative draft pipeline",
+      "DEPENDENCIES": [
+        "untrusted evidence handling",
+        "owner rejection memory",
+        "creative rights and truth courts"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #22 head af83c306f67a7b63d44c1b810dd660ea9deca8dc",
+          "EVIDENCE": "Open stacked branch contains sitemind-competitive-evolution, responsive campaign assets and explicit owner-pending/zero-cost receipts.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "PR #24",
+      "CAPABILITY": "Creative learning persistence and owner harness",
+      "ORIGINAL_PURPOSE": "Persist governed creative context, experiments, rights decisions, taste signals and learning behind a secure API.",
+      "CURRENT_EQUIVALENT": "Current ad-creative pipeline provides provider-neutral generation and verification, but no canonical winner/taste/experiment learning ledger exists.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "OWNER_APPROVAL_PENDING; MOCK_PATH_ONLY; EXPERIMENTS_NOT_EXECUTED",
+      "TARGET_CANONICAL_SEAM": "packages/ad-creative plus canonical Opportunity, attribution and learning receipts",
+      "DEPENDENCIES": [
+        "named owner approval",
+        "rights court",
+        "attributed outcome evidence"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #24 head 88adc037a2e6eecbfe8903b5e2d58c2bc4cc1345",
+          "EVIDENCE": "Open donor includes creative-learning API and learning modules; its own truth receipt records zero approved winners, zero provider generation and zero executed experiments.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "FUNCTIONAL_DONOR"
+    },
+    {
+      "SOURCE": "PR #25",
+      "CAPABILITY": "Governed dynamic creative foundation",
+      "ORIGINAL_PURPOSE": "Generate materially different draft campaigns, run a multi-judge visual court, fail closed on rotation and keep activation owner-gated.",
+      "CURRENT_EQUIVALENT": "Current ad-creative provider contract and pipeline cover generation/inspection/verification; lifecycle tournament and placement review remain donor-only.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "OWNER_REVIEW_REQUIRED; LEVEL_0_AND_1_CANNOT_ACTIVATE; ZERO_EXTERNAL_CALLS",
+      "TARGET_CANONICAL_SEAM": "packages/ad-creative, merchant media authority and disclosed placement contracts",
+      "DEPENDENCIES": [
+        "creative truth and rights courts",
+        "merchant media provenance",
+        "sponsorship separation"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #25 head 5384e8ac223c5566ce0aef0e020cc07a39a1e2c3",
+          "EVIDENCE": "Open donor implements dynamic foundation, deterministic provider, review lab and owner-review evidence with no activation authority.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "FUNCTIONAL_DONOR"
+    },
+    {
+      "SOURCE": "PR #28",
+      "CAPABILITY": "One Graph entity genome",
+      "ORIGINAL_PURPOSE": "Represent a typed 16-class entity genome with verified truth envelopes, typed references and sponsorship quarantine.",
+      "CURRENT_EQUIVALENT": "Reality Compiler entity-resolution, market claims and canonical Prisma models now own entity and claim truth.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "HISTORICAL_SEQUENCE_GO; OPEN_UNMERGED; DO_NOT_TRANSPLANT_AS_SECOND_GRAPH",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/lib/reality/entity-resolution.mjs and apps/web/prisma/schema.prisma",
+      "DEPENDENCIES": [
+        "claim-level provenance",
+        "single canonical entity owner"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #28 head eae094ca9357283b105d48bfea28691287c61a46",
+          "EVIDENCE": "Open donor has entity-genome implementation and tests; current main has newer reality/entity-resolution and market-claim seams.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "SUPERSEDED_BY"
+    },
+    {
+      "SOURCE": "PR #30",
+      "CAPABILITY": "Graph-to-market projection",
+      "ORIGINAL_PURPOSE": "Project verified entity graph facts into deterministic market pages while excluding unverified and sponsored truth.",
+      "CURRENT_EQUIVALENT": "Reality Compiler, market-claim adapter/court and market contract registry are the newer canonical projection boundary.",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "HISTORICAL_SEQUENCE_GO; OPEN_STACKED_DONOR; MODERN_CANONICAL_SEAM_WINS",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/lib/reality/reality-compiler.mjs and market-claim-adapter.mjs",
+      "DEPENDENCIES": [
+        "verified current claims",
+        "market-specific authority"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #30 head a12263257dfc12437c355e5bad5ace0c807b3999",
+          "EVIDENCE": "Open donor contains market-graph-projection; current main instead contains merged Reality Compiler projection seams.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        },
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/reality/market-claim-adapter.mjs",
+          "EVIDENCE": "Current canonical projection adapter exists on exact main.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "SUPERSEDED_BY"
+    },
+    {
+      "SOURCE": "PR #31",
+      "CAPABILITY": "Verified market pages and delivery service-area law",
+      "ORIGINAL_PURPOSE": "Compile verified-only market pages and fail-closed delivery eligibility from auditable licensing and service-area inputs.",
+      "CURRENT_EQUIVALENT": "Market claims, Reality Compiler and geo repository own truth; first-class address-level delivery eligibility is still incomplete.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "HISTORICAL_SEQUENCE_GO; TRANSLATE_LAWS_INTO_CURRENT_AUTHORITY; DO_NOT_TRANSPLANT_RADIUS_GUESSING",
+      "TARGET_CANONICAL_SEAM": "Reality claims plus PostGIS service-area geometry and ASK delivery eligibility",
+      "DEPENDENCIES": [
+        "jurisdiction law",
+        "delivery authority",
+        "fulfillment relationship",
+        "current service-area evidence"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #31 head f7804ea6c699cd2ca0b650e166199609731b9215",
+          "EVIDENCE": "Open donor includes market-page-compiler and service-area laws; current main has newer market/reality seams but no complete address eligibility chain.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "SUPERSEDED_BY"
+    },
+    {
+      "SOURCE": "PR #32",
+      "CAPABILITY": "Language-to-verified discovery command",
+      "ORIGINAL_PURPOSE": "Translate language into fulfillment, time, price, product and merchant intent, refusing unknown facets.",
+      "CURRENT_EQUIVALENT": "ASK Intent IR, ask-service, answerability frontier, market-gap recheck, directory search and product discovery are merged canonical seams.",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "HISTORICAL_SEQUENCE_GO; CURRENT_ASK_IS_CANONICAL; RECOVER_ONLY_MISSING_FACETS",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/lib/ask/intent-ir.mjs and ask-service.mjs",
+      "DEPENDENCIES": [
+        "Reality Compiler",
+        "market context",
+        "delivery eligibility"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #32 head 027749b85900bb947dac04d6b0a444be0269a3aa",
+          "EVIDENCE": "Open donor has discovery command/resolution; merged ASK now owns intent and answerability on current main.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        },
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/ask/intent-ir.mjs",
+          "EVIDENCE": "Current canonical Intent IR exists and is covered by ASK tests.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "SUPERSEDED_BY"
+    },
+    {
+      "SOURCE": "PR #33",
+      "CAPABILITY": "Rights-attested merchant media intake",
+      "ORIGINAL_PURPOSE": "Accept merchant media with rights attestation, exact hashes, clean-creative law and structured deal composition without auto-publication.",
+      "CURRENT_EQUIVALENT": "Merchant validation/mutations and ad-creative verification exist; dedicated merchant media provenance intake does not.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "HISTORICAL_SEQUENCE_GO; HAND_PORT_INTO_CURRENT_MERCHANT_AUTHORITY; NO_AUTO_PUBLISH",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/lib/merchant-validation.mjs, merchant-mutations.mjs and packages/ad-creative verification",
+      "DEPENDENCIES": [
+        "merchant role authority",
+        "media rights state",
+        "exact content hashing"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #33 head 285275240bd0a8c73679956a4ef9b418cb472395",
+          "EVIDENCE": "Open donor contains merchant-media-intake and tests; current main has no equivalent intake module.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "PR #34",
+      "CAPABILITY": "Apple-inspired token layer",
+      "ORIGINAL_PURPOSE": "Provide SF-first typography, 980px reading column, restrained type hierarchy, frosted navigation and media overlays as an original ORDERWEEDDC design grammar.",
+      "CURRENT_EQUIVALENT": "Current globals.css and marketplace components do not contain the full reviewed token layer or an approved Sovereign UI Gauntlet receipt.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "UNMERGED_UNAPPROVED_VISUAL_DONOR; HAND_PORT_AND_OWNER_REVIEW_REQUIRED",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/app/globals.css plus customer component system and browser gauntlet",
+      "DEPENDENCIES": [
+        "owner visual acceptance",
+        "day/night browser matrix",
+        "responsive accessibility and performance courts"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #34 head 593be6303d0c3f281a4581982d41c8cad2754837",
+          "EVIDENCE": "Open stacked donor changes globals.css only; no current-main adoption or owner-approved gauntlet receipt exists.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "VISUAL_DONOR"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Reality Compiler and claim courts",
+      "ORIGINAL_PURPOSE": "Compile official evidence into claim-level provenance while preserving UNKNOWN until predicate-specific verification admits a claim.",
+      "CURRENT_EQUIVALENT": "apps/web/src/lib/reality/reality-compiler.mjs, market-claim-court.mjs, entity-resolution.mjs and reality-repository.mjs",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "CANONICAL_CURRENT_AUTHORITY; EXTEND_DONT_REBUILD",
+      "TARGET_CANONICAL_SEAM": "Existing apps/web/src/lib/reality modules",
+      "DEPENDENCIES": [
+        "canonical Prisma schema",
+        "source authority policy",
+        "append-only evidence"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/tests/reality-compiler.test.mjs",
+          "EVIDENCE": "Merged exact-main court exercises official snapshots, provenance, UNKNOWN, verification and falsification boundaries.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Lane-parametric durable tri-market reality store",
+      "ORIGINAL_PURPOSE": "Persist D.C., Virginia and Maryland through one acquisition state machine and one durable reality repository.",
+      "CURRENT_EQUIVALENT": "market-acquisition-lanes.mjs, acquire-market-reality.mjs, reality-repository.mjs and tri-market-durable-store.test.mjs",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "CANONICAL_AFTER_PR44; PR45_REAL_POSTGRES_COURT_PENDING_OWNER_MERGE",
+      "TARGET_CANONICAL_SEAM": "Existing multi-market acquisition and repository modules",
+      "DEPENDENCIES": [
+        "PR #45 real PostgreSQL/Prisma court",
+        "PostGIS and H3 availability"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+          "EVIDENCE": "PR #44 merged one lane-parametric durable multi-market store into canonical main.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "ASK Intent IR and answerability frontier",
+      "ORIGINAL_PURPOSE": "Structure user intent, preserve unanswerable dimensions and turn evidence gaps into governed work rather than hallucinated answers.",
+      "CURRENT_EQUIVALENT": "apps/web/src/lib/ask/{intent-ir,ask-service,ask-work,answerability-frontier,market-gap-recheck}.mjs",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "CANONICAL_INTENT_SUBSTRATE; SEARCH_DELIVERY_MUST_CONSUM_IT",
+      "TARGET_CANONICAL_SEAM": "Existing ASK modules and directory/product discovery adapters",
+      "DEPENDENCIES": [
+        "Reality Compiler",
+        "market claims",
+        "continuation receipts"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/tests/ask-service-where.test.mjs",
+          "EVIDENCE": "Current main includes tested intent, where and answerability behavior.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "PostGIS/H3 Geo Intelligence Kernel",
+      "ORIGINAL_PURPOSE": "Own geometry, spatial indexing, H3 derivation and public map evidence projections in the database/geo repository boundary.",
+      "CURRENT_EQUIVALENT": "Prisma PostgreSQL/PostGIS schema, prisma/sql geo kernel and apps/web/src/lib/geo modules",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "CANONICAL_GEO_OWNER; DISPOSABLE_COURT_PROOF_IS_NOT_PRODUCTION_PROOF",
+      "TARGET_CANONICAL_SEAM": "apps/web/src/lib/geo/geo-repository.mjs and canonical PostGIS/H3 migrations",
+      "DEPENDENCIES": [
+        "managed provider extension availability",
+        "owner-authorized production migration"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:docs/geo/EVIDENCE_LEDGER.md",
+          "EVIDENCE": "Disposable PostgreSQL/PostGIS/H3 courts are recorded as verified; production execution remains explicitly unproven.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Customer marketplace projection",
+      "ORIGINAL_PURPOSE": "Expose tenant-scoped public marketplace, products, deals, neighborhoods, maps and truthful directory results.",
+      "CURRENT_EQUIVALENT": "apps/web/src/app/[domain], marketplace components, directory-search.mjs and product-discovery.mjs",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "RETAIN_CURRENT_TRUTH_SEAMS; RECONSTRUCT_FUNCTION_AND_VISUALS_WITH_OWNER_REVIEW",
+      "TARGET_CANONICAL_SEAM": "Customer face defined in THREE_FACE_TRUTH_MAP.json",
+      "DEPENDENCIES": [
+        "ASK convergence",
+        "delivery eligibility",
+        "Apple visual hand-port",
+        "browser gauntlet"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/tests/marketplace-ui.test.mjs",
+          "EVIDENCE": "Current marketplace contract exists, but dedicated customer routes and accepted sovereign visual proof are incomplete.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Merchant validation, mutations and dashboard",
+      "ORIGINAL_PURPOSE": "Provide role-bounded business management, claim validation, catalog operations and merchant evidence views.",
+      "CURRENT_EQUIVALENT": "apps/web/src/lib/merchant-{validation,mutations,dashboard}.mjs and business routes",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "RETAIN_AS_MERCHANT_AUTHORITY; ADD_ASSISTANT_FIRST_PROJECTIONS_WITHOUT_EXPOSING_CANA",
+      "TARGET_CANONICAL_SEAM": "Merchant face defined in THREE_FACE_TRUTH_MAP.json",
+      "DEPENDENCIES": [
+        "merchant membership roles",
+        "media provenance",
+        "demand and outcome receipts"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/tests/merchant-dashboard.test.mjs",
+          "EVIDENCE": "Current merchant seams are tested; assistant-first growth and service-area workflows remain incomplete.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "CANA owner/admin projection",
+      "ORIGINAL_PURPOSE": "Expose admin, Site Intelligence, truth, continuation and durability state to authorized company operators.",
+      "CURRENT_EQUIVALENT": "apps/web/src/app/admin, site-intelligence.server.ts, Reality Compiler, ASK and Opportunity/ContinuationReceipt models",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "BUILD_DISTINCT_OBSIDIAN_OWNER_FACE_OVER_CURRENT_AUTHORITY; DO_NOT_CREATE_SECOND_COMPANY_BRAIN",
+      "TARGET_CANONICAL_SEAM": "CANA_OWNER face defined in THREE_FACE_TRUTH_MAP.json",
+      "DEPENDENCIES": [
+        "CANA_OPERATOR and CANA_OWNER roles",
+        "ranked opportunity adapter",
+        "Hermes bounded execution receipts"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/app/admin",
+          "EVIDENCE": "Admin and intelligence surfaces exist, but no distinct owner command workbench or full cross-face projection exists.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "SiteMind deterministic merchant/site intelligence",
+      "ORIGINAL_PURPOSE": "Audit local site presence, route contracts, evidence freshness and SEO/AEO readiness without granting execution authority.",
+      "CURRENT_EQUIVALENT": "apps/web/src/lib/sitemind.mjs, site-intelligence.mjs and site-intelligence.server.ts",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "SPECIALIZE_IN_MERCHANT_SITE_INTELLIGENCE; CONSOLIDATE_OVERLAPPING_SCORERS_BEHIND_ONE_RECEIPT",
+      "TARGET_CANONICAL_SEAM": "Merchant intelligence observation adapter feeding CANA evidence",
+      "DEPENDENCIES": [
+        "freshness policy",
+        "untrusted external evidence boundary",
+        "CANA opportunity creation"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/sitemind.mjs",
+          "EVIDENCE": "Deterministic receipt audit exists; live external SEO/Search Console evidence remains disconnected.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CANA × HERMES LINEAGE",
+      "CAPABILITY": "Hermes bounded execution substrate",
+      "ORIGINAL_PURPOSE": "Provide replaceable operator workbench, agent/tool orchestration and governed execution without owning company truth or policy.",
+      "CURRENT_EQUIVALENT": "CANA continuation/ActionContract authority plus explicitly pinned Hermes overlay/runtime donors",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "CANA_OWNS_TRUTH_AND_AUTHORITY; HERMES_PROPOSES_OR_EXECUTES_ONLY_AFTER_AUTHORIZATION",
+      "TARGET_CANONICAL_SEAM": "ContinuationReceipt and bounded action/approval contracts",
+      "DEPENDENCIES": [
+        "signed authorization",
+        "budget policy",
+        "execution receipt",
+        "outcome settlement"
+      ],
+      "PROOF": [
+        {
+          "REF": "ORDERWEEDDCRSI 125c81b084c7a76aae0dc28781f106cba3204e7b:vendor/hermes-overlay/README.md",
+          "EVIDENCE": "Lineage states Hermes proposes/executes while RSI authorizes/records; live Hermes runtime is not proven on current CANA main.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Growth Watch and competitive shadow",
+      "ORIGINAL_PURPOSE": "Fingerprint public competitor surfaces and turn changes into evidence-bound strategic triage.",
+      "CURRENT_EQUIVALENT": "competitor-shadow.mjs, SiteMind receipts and competitive shadow documentation",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "PRESERVE_AS_UNTRUSTED_OBSERVATION; ADD_DELTA_TO_CANA_OPPORTUNITY_SEAM",
+      "TARGET_CANONICAL_SEAM": "CANA evidence adapter to ranked Opportunity",
+      "DEPENDENCIES": [
+        "robots-respecting acquisition",
+        "evidence hashing",
+        "no-copy policy"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/scripts/competitor-shadow.mjs",
+          "EVIDENCE": "Deterministic public-surface fingerprinting exists; the governed delta-to-action bridge is missing.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "SEO and AEO intelligence",
+      "ORIGINAL_PURPOSE": "Measure route, freshness, structured-data and index eligibility as projections of verified market intelligence.",
+      "CURRENT_EQUIVALENT": "site-intelligence.mjs, seo-truth.mjs, structured-data.mjs and public tenant routes",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "NO_THIN_PROGRAMMATIC_SPAM; CONNECT_REAL_MARKET_TRUTH_TO_PUBLICATION_COURT",
+      "TARGET_CANONICAL_SEAM": "SiteMind observations to CANA publication decisions PUBLISH/HOLD/NOINDEX/MERGE_WITH_PARENT",
+      "DEPENDENCIES": [
+        "verified unique information",
+        "freshness",
+        "Search Console connection",
+        "indexation receipts"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/site-intelligence.mjs",
+          "EVIDENCE": "Local SEO observations exist; live indexation, impressions and rank are explicitly not connected.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Backlink authority foundry",
+      "ORIGINAL_PURPOSE": "Earn legitimate links to verified market studies, maps, tools and local resources with measurable outcomes.",
+      "CURRENT_EQUIVALENT": "Competitive/merchant offer documentation mentions backlink value; no acquisition ledger exists.",
+      "CURRENT_STATE": "PLANNED",
+      "OWNER_DECISION": "NO_SPAM_OR_PURCHASED_LINK_NETWORK; BUILD_ONLY_FROM_DESERVED_ASSETS",
+      "TARGET_CANONICAL_SEAM": "CANA opportunity and attribution substrate",
+      "DEPENDENCIES": [
+        "link-worthy verified asset",
+        "prospect evidence",
+        "owner send authority",
+        "link and referral receipts"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:docs/competitive/merchant-offer-teardown.md",
+          "EVIDENCE": "Backlink value is documented; no canonical prospect/acquisition persistence was found.",
+          "STATE": "PLANNED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Outreach system",
+      "ORIGINAL_PURPOSE": "Turn evidence and value into merchant, partner, publisher or journalist conversations with authority and response receipts.",
+      "CURRENT_EQUIVALENT": "Founder-sent email/DM/in-person guidance only; no automated outreach CRM or send authority exists.",
+      "CURRENT_STATE": "PLANNED",
+      "OWNER_DECISION": "DRAFT_QUEUE_SIMULATE_ONLY; NO_EXTERNAL_SEND_WITHOUT_OWNER_AUTHORITY",
+      "TARGET_CANONICAL_SEAM": "Merchant pipeline opportunity plus bounded Hermes draft generation",
+      "DEPENDENCIES": [
+        "prospect evidence",
+        "reason for contact",
+        "owner send approval",
+        "response and revenue attribution"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:docs/competitive/merchant-outreach-2026-07-23.md",
+          "EVIDENCE": "Only manual founder-sent outreach guidance is evidenced; automation is absent.",
+          "STATE": "PLANNED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Provider-neutral creative and image pipeline",
+      "ORIGINAL_PURPOSE": "Analyze, brief, generate, inspect and verify creative while forbidding posting before machine courts and named human approval.",
+      "CURRENT_EQUIVALENT": "packages/ad-creative/src/{pipeline,provider-contract,verification}.mjs and providers/gemini.mjs",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "CANONICAL_OFFLINE_PIPELINE; GENERATED_OUTPUT_REMAINS_DRAFT_ONLY_UNTIL_INDEPENDENT_PAID_AUTHORITY",
+      "TARGET_CANONICAL_SEAM": "Existing packages/ad-creative with merchant media provenance and attribution",
+      "DEPENDENCIES": [
+        "rights and truth courts",
+        "named owner approval",
+        "paid-call authorization",
+        "placement outcome identity"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:packages/ad-creative/src/pipeline.mjs",
+          "EVIDENCE": "Provider-neutral ordered pipeline is implemented and cannot post; live paid generation remains owner-gated.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Retail media foundation",
+      "ORIGINAL_PURPOSE": "Offer disclosed measurable sponsored inventory without altering organic truth.",
+      "CURRENT_EQUIVALENT": "Revenue doctrine, sponsorship separation concepts and interaction proof exist; campaign inventory/execution does not.",
+      "CURRENT_STATE": "PLANNED",
+      "OWNER_DECISION": "SPONSOR_DISCLOSURE_REQUIRED; PAID_NEVER_ALTERS_ORGANIC_TRUTH; NO_LIVE_SALE_OR_SPEND",
+      "TARGET_CANONICAL_SEAM": "Interaction proof, attribution and campaign opportunity contracts",
+      "DEPENDENCIES": [
+        "sponsor disclosure",
+        "placement identity",
+        "exposure and outcome receipts",
+        "merchant approval"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:packages/cana-policy/revenue/REVENUE_DOCTRINE.md",
+          "EVIDENCE": "Doctrine describes sponsored placement and measured lift, but no live retail-media implementation is proven.",
+          "STATE": "PLANNED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Billboard attribution foundation",
+      "ORIGINAL_PURPOSE": "Model a future city/neighborhood campaign through unique phone, QR and URL identities into ASK and attributed outcomes.",
+      "CURRENT_EQUIVALENT": "No billboard software or buying execution was found; only conceptual lineage exists.",
+      "CURRENT_STATE": "PLANNED",
+      "OWNER_DECISION": "DO_NOT_BUY_INVENTORY_PHONE_NUMBERS_OR_MEDIA; CONTRACTS_ONLY_AFTER_CANONICAL_ATTRIBUTION_SEAM",
+      "TARGET_CANONICAL_SEAM": "Campaign/intervention identity to ASK, interaction proof and attribution",
+      "DEPENDENCIES": [
+        "unique intervention identity",
+        "owner spend authority",
+        "call/QR/URL receipts"
+      ],
+      "PROOF": [
+        {
+          "REF": "repository archaeology at eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+          "EVIDENCE": "No canonical billboard implementation or external purchase receipt exists.",
+          "STATE": "PLANNED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Attribution and interaction proof",
+      "ORIGINAL_PURPOSE": "Bind privacy-preserving interactions to append-only demand credit and handoff evidence without overstating conversion or causality.",
+      "CURRENT_EQUIVALENT": "interaction-proof.mjs, attribution API, LeadEvent and DemandCreditEntry models",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "RETAIN_CURRENT_PROOF; DO_NOT_CALL_HANDOFFS_REVENUE_OR_CAUSAL_LIFT",
+      "TARGET_CANONICAL_SEAM": "One intervention-to-exposure-to-action-to-outcome-to-value ledger",
+      "DEPENDENCIES": [
+        "intervention identity",
+        "settled outcome evidence",
+        "confidence and incrementality policy"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/interaction-proof.mjs",
+          "EVIDENCE": "Signed replay-aware interaction proof is implemented; site intelligence explicitly limits handoffs to operational evidence, not conversion or revenue.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Winner and failure memory",
+      "ORIGINAL_PURPOSE": "Record assumptions, actions, failures or wins, root causes, corrections, reusable rules and future checks across engineering and growth.",
+      "CURRENT_EQUIVALENT": "Continuation receipts, evidence ledgers, postmortems, competitor snapshots and model call failure records exist separately.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "ABSORB_EXISTING_RECEIPTS_INTO_ONE_LEARNING_VIEW; DO_NOT_CREATE_DUPLICATE_MEMORY_AUTHORITY",
+      "TARGET_CANONICAL_SEAM": "CANA outcome and learning projection over existing authoritative ledgers",
+      "DEPENDENCIES": [
+        "attributed outcome",
+        "root-cause receipt",
+        "future-check identity"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:docs/postmortems",
+          "EVIDENCE": "Durable failure evidence exists in multiple forms, but no unified cross-domain winner/failure learning substrate is proven.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ABSORB"
+    },
+    {
+      "SOURCE": "CANA × RSI LINEAGE",
+      "CAPABILITY": "Provider-neutral model routing and cost/failure governance",
+      "ORIGINAL_PURPOSE": "Route cognitive tasks across replaceable providers with evidence citations, budgets, circuit breakers and no model authority.",
+      "CURRENT_EQUIVALENT": "ORDERWEEDDCRSI model_router.py donor plus current provider-neutral ad-creative contracts",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "MODELS_ARE_RESOURCES_NOT_AUTHORITIES; MOCK_DEFAULT; NO_PAID_CALL_WITHOUT_SIGNED_AUTHORIZATION",
+      "TARGET_CANONICAL_SEAM": "CANA policy/cost receipts and bounded Hermes execution",
+      "DEPENDENCIES": [
+        "task evaluation",
+        "budget reservation",
+        "provider health",
+        "owner paid-call authority"
+      ],
+      "PROOF": [
+        {
+          "REF": "ORDERWEEDDCRSI 125c81b084c7a76aae0dc28781f106cba3204e7b:runtime/model_router.py",
+          "EVIDENCE": "Lineage implements mock-default provider-neutral routing and durable breaker/cost/call state; current CANA integration and live tournament are unproven.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Domain network strategy",
+      "ORIGINAL_PURPOSE": "Assign domains to canonical marketplace, authority publication, neighborhood, campaign, future-market, redirect or defensive roles without clones.",
+      "CURRENT_EQUIVALENT": "Tenant/domain routing exists; governed domain portfolio roles and cross-domain authority policy do not.",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "ONE_AUTHORITATIVE_ORGANISM; NO_DOORWAY_CLONES; NO_DNS_CHANGES_IN_CONVERGENCE",
+      "TARGET_CANONICAL_SEAM": "Tenant host policy plus CANA domain asset registry",
+      "DEPENDENCIES": [
+        "owner hostname decision",
+        "canonical content authority",
+        "SEO publication court"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/src/lib/tenant-host.mjs",
+          "EVIDENCE": "Tenant/domain routing is implemented; portfolio roles and Virginia public hostname remain owner decisions.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "ADAPT"
+    },
+    {
+      "SOURCE": "CURRENT CANONICAL MAIN",
+      "CAPABILITY": "Opportunity and continuation substrate",
+      "ORIGINAL_PURPOSE": "Turn evidence gaps into ranked bounded work with authority, state and receipts.",
+      "CURRENT_EQUIVALENT": "Opportunity and ContinuationReceipt Prisma models plus ASK work and continuation kernel",
+      "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
+      "OWNER_DECISION": "CANONICAL_SUBSTRATE; EXTEND_WITH_MARKET_ENTITY_UPSIDE_COST_URGENCY_MEASUREMENT_FIELDS_ONLY_WHEN_NEEDED",
+      "TARGET_CANONICAL_SEAM": "Existing Opportunity/ContinuationReceipt models and ASK work consumers",
+      "DEPENDENCIES": [
+        "evidence identity",
+        "authority",
+        "measurement plan",
+        "outcome settlement"
+      ],
+      "PROOF": [
+        {
+          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/prisma/schema.prisma#Opportunity",
+          "EVIDENCE": "Canonical persistence models exist; one cross-face ranked opportunity projection is not yet implemented.",
+          "STATE": "PARTIALLY_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    }
+  ]
+}

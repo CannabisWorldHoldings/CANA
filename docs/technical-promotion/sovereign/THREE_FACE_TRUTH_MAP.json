@@ -1,0 +1,323 @@
+{
+  "SCHEMA_VERSION": 1,
+  "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
+  "AS_OF": "2026-08-12T16:26:57Z",
+  "CANONICAL_BASE": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+  "STATUS": "EVIDENCE_BOUND_CONVERGENCE_CONTRACT",
+  "DESIGN_LAW": "ONE_BRAIN_THREE_PURPOSE_BUILT_FACES",
+  "SHARED_REALITY": {
+    "AUTHORITY": "CANA_VERIFIED_REALITY",
+    "DATA_MODEL_OWNER": "apps/web/prisma/schema.prisma",
+    "MARKET_TRUTH_OWNER": "apps/web/src/lib/reality",
+    "GEO_TRUTH_OWNER": "POSTGIS_H3_KERNEL",
+    "INTENT_OWNER": "apps/web/src/lib/ask/intent-ir.mjs",
+    "UNKNOWN_POLICY": "PRESERVE_UNKNOWN",
+    "DEMONSTRATION_POLICY": "NEVER_PROMOTE_DEMONSTRATION_TO_CUSTOMER_TRUTH",
+    "PAID_ORGANIC_POLICY": "PAID_NEVER_ALTERS_ORGANIC_TRUTH",
+    "EXECUTION_BOUNDARY": "HERMES_BOUNDED_EXECUTION_ONLY"
+  },
+  "FACES": [
+    {
+      "ID": "CUSTOMER",
+      "PURPOSE": "Help me find what I want.",
+      "USERS": [
+        "CUSTOMER"
+      ],
+      "PRIMARY_JOBS": [
+        "discover",
+        "search",
+        "ask",
+        "compare",
+        "map",
+        "find dispensaries",
+        "find delivery",
+        "find products",
+        "find deals",
+        "understand neighborhoods",
+        "take lawful customer actions"
+      ],
+      "ROUTES": [
+        "/",
+        "/search",
+        "/delivery",
+        "/dispensaries",
+        "/products",
+        "/deals",
+        "/neighborhoods",
+        "/retailer/:id",
+        "/product/:id",
+        "/deal/:id",
+        "/neighborhood/:slug"
+      ],
+      "NAVIGATION_IDENTITY": "CUSTOMER_DISCOVERY_NAVIGATION",
+      "INFORMATION_DENSITY": "LOW_TO_MODERATE_PROGRESSIVE_DISCLOSURE",
+      "VOCABULARY": {
+        "SCOPE": "CUSTOMER_OUTCOMES",
+        "PREFERRED": [
+          "find",
+          "delivery",
+          "dispensaries",
+          "products",
+          "deals",
+          "verified",
+          "unknown"
+        ],
+        "EXCLUDED": [
+          "compiler",
+          "acquisition event",
+          "predicate authority",
+          "operator queue"
+        ]
+      },
+      "PERMISSIONS": [
+        "READ_PUBLIC_CURRENT_REALITY",
+        "SUBMIT_BOUNDED_INTENT",
+        "CREATE_PRIVACY_PRESERVING_INTERACTION_PROOF"
+      ],
+      "VISUAL_LANGUAGE": {
+        "SURFACE": "TRUE_WHITE_DAY_TRUE_BLACK_NIGHT",
+        "ACCENT": "GREEN_ONLY",
+        "DENSITY": "OPEN_IMAGE_LED",
+        "PROHIBITED": [
+          "MINT_CANVAS",
+          "GREEN_GRAY_SAAS_SURFACES",
+          "DASHBOARD_CARD_WALLS",
+          "EVIDENCE_CONSOLE_HERO"
+        ]
+      },
+      "CURRENT_STATE": {
+        "STATUS": "PARTIALLY_IMPLEMENTED",
+        "EVIDENCE": "Current main has public marketplace, product/deal/neighborhood, map, wallet and directory seams, but dedicated search/delivery/dispensary parity and the approved Apple visual canon are incomplete."
+      }
+    },
+    {
+      "ID": "MERCHANT",
+      "PURPOSE": "Help me run and grow my business.",
+      "USERS": [
+        "MERCHANT_MEMBER",
+        "MERCHANT_ADMIN"
+      ],
+      "PRIMARY_JOBS": [
+        "claim and verify",
+        "manage profile and media",
+        "manage products and deals",
+        "manage delivery and service area",
+        "understand customer demand",
+        "understand competition",
+        "improve SEO and AEO",
+        "review campaigns and outcomes"
+      ],
+      "ROUTES": [
+        "/business",
+        "/business/profile",
+        "/business/media",
+        "/business/products",
+        "/business/deals",
+        "/business/delivery",
+        "/business/analytics",
+        "/business/opportunities",
+        "/business/campaigns"
+      ],
+      "NAVIGATION_IDENTITY": "MERCHANT_ASSISTANT_WORKSPACE",
+      "INFORMATION_DENSITY": "MODERATE_ACTION_ORIENTED",
+      "VOCABULARY": {
+        "SCOPE": "MERCHANT_OPERATIONS_AND_GROWTH",
+        "PREFERRED": [
+          "your profile",
+          "your service area",
+          "customer demand",
+          "opportunity",
+          "preview",
+          "approval",
+          "result"
+        ],
+        "EXCLUDED": [
+          "company-wide policy engine",
+          "model tournament internals",
+          "production incident command"
+        ]
+      },
+      "PERMISSIONS": [
+        "READ_OWN_MERCHANT_REALITY",
+        "PROPOSE_OWN_MERCHANT_CHANGE",
+        "MANAGE_AUTHORIZED_MERCHANT_MEDIA",
+        "APPROVE_WITHIN_MERCHANT_ROLE",
+        "READ_AGGREGATED_NON_IDENTIFYING_DEMAND"
+      ],
+      "VISUAL_LANGUAGE": {
+        "SURFACE": "CALM_PREMIUM_NEUTRAL",
+        "ACCENT": "ACTION_STATE_ACCENTS",
+        "DENSITY": "ASSISTANT_FIRST_WITH_CONTEXT",
+        "PROHIBITED": [
+          "CUSTOMER_MARKETPLACE_NAV",
+          "CANA_OBSIDIAN_COMMAND_DENSITY",
+          "UNBOUNDED_INTERNAL_CONTROLS"
+        ]
+      },
+      "CURRENT_STATE": {
+        "STATUS": "PARTIALLY_IMPLEMENTED",
+        "EVIDENCE": "Current main has business routes plus merchant validation, mutation and dashboard seams; assistant-first service-area, demand, campaign and outcome convergence is incomplete."
+      }
+    },
+    {
+      "ID": "CANA_OWNER",
+      "PURPOSE": "Help me run and grow the entire company.",
+      "USERS": [
+        "CANA_OPERATOR",
+        "CANA_OWNER"
+      ],
+      "FUTURE_AUTHORIZED_USERS": [
+        "MARKET_OPERATOR",
+        "GROWTH_OPERATOR",
+        "REVENUE_OPERATOR",
+        "ENGINEERING_OPERATOR",
+        "COMPLIANCE_OPERATOR",
+        "EXECUTIVE"
+      ],
+      "PRIMARY_JOBS": [
+        "manage objectives and markets",
+        "inspect market truth and unknowns",
+        "rank opportunities",
+        "manage merchant pipeline and revenue",
+        "govern growth and competitive intelligence",
+        "govern outreach creative retail media and domains",
+        "govern agents models tools costs and budgets",
+        "approve deployments and respond to incidents",
+        "learn from outcomes and failures"
+      ],
+      "ROUTES": [
+        "/admin",
+        "/admin/site-intelligence",
+        "/cana/command",
+        "/cana/markets",
+        "/cana/truth",
+        "/cana/opportunities",
+        "/cana/growth",
+        "/cana/revenue",
+        "/cana/agents",
+        "/cana/learning",
+        "/cana/system-health",
+        "/cana/approvals"
+      ],
+      "NAVIGATION_IDENTITY": "CANA_COMPANY_COMMAND_WORKBENCH",
+      "INFORMATION_DENSITY": "HIGH_WITH_CLEAR_DECISION_HIERARCHY",
+      "VOCABULARY": {
+        "SCOPE": "COMPANY_MARKET_AUTHORITY_AND_EXECUTION",
+        "PREFERRED": [
+          "objective",
+          "market truth",
+          "unknown",
+          "opportunity",
+          "authority",
+          "budget",
+          "approval",
+          "deployment",
+          "incident",
+          "outcome",
+          "learning"
+        ],
+        "EXCLUDED": [
+          "shopper-first calls to action",
+          "merchant-only profile chores",
+          "provider-owned company state"
+        ]
+      },
+      "PERMISSIONS": [
+        "READ_COMPANY_REALITY",
+        "SET_BOUNDED_OBJECTIVES",
+        "AUTHORIZE_POLICY_BOUNDED_ACTIONS",
+        "APPROVE_OWNER_GATED_ACTIONS",
+        "READ_COST_AND_OUTCOME_RECEIPTS",
+        "MANAGE_ROLE_AND_MARKET_SEAMS"
+      ],
+      "VISUAL_LANGUAGE": {
+        "SURFACE": "TRUE_BLACK_OBSIDIAN",
+        "ACCENT": "CONTROLLED_STATUS_AND_DECISION_COLOR",
+        "DENSITY": "COMMAND_ORIENTED_MULTI_PANE",
+        "PROHIBITED": [
+          "GREEN_BLACK_GAMING",
+          "GENERIC_RETOOL_ADMIN",
+          "GENERIC_CRYPTO_DASHBOARD",
+          "SHOPPER_SITE_WITH_MORE_BUTTONS"
+        ]
+      },
+      "CURRENT_STATE": {
+        "STATUS": "PARTIALLY_IMPLEMENTED",
+        "EVIDENCE": "Current main has admin, Site Intelligence, Reality Compiler, ASK, continuation, opportunity and durability seams; a distinct owner command face and cross-face decision workspace are not yet implemented."
+      }
+    }
+  ],
+  "MARKET_SCOPE": {
+    "NO_MARKET_4": true,
+    "ONE_APPLICATION": true,
+    "MARKETS": [
+      {
+        "ID": "DC",
+        "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+        "PROJECTION_BOUNDARY": "Original proving market; current law and evidence determine delivery projections."
+      },
+      {
+        "ID": "MD",
+        "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+        "PROJECTION_BOUNDARY": "Transfer Test #2; Maryland authority and fulfillment rules remain market-specific."
+      },
+      {
+        "ID": "VA",
+        "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+        "PROJECTION_BOUNDARY": "Transfer Test #1; lifecycle state and hostname publication remain explicit owner decisions."
+      }
+    ]
+  },
+  "PROJECTION_EXAMPLES": [
+    {
+      "FACT": "DELIVERY_ELIGIBILITY",
+      "EVIDENCE_STATE": "CONTRACT_EXAMPLE_NOT_A_LIVE_CUSTOMER_CLAIM",
+      "ELIGIBILITY_CHAIN": [
+        "CUSTOMER_LOCATION",
+        "MARKET",
+        "JURISDICTION_LAW",
+        "LICENSE_OR_DELIVERY_AUTHORITY",
+        "FULFILLMENT_RELATIONSHIP",
+        "SERVICE_AREA",
+        "CURRENT_EVIDENCE",
+        "ELIGIBILITY",
+        "RESULT"
+      ],
+      "PROJECTIONS": {
+        "CUSTOMER": {
+          "REALITY_ID": "reality://delivery-eligibility/navy-yard/example",
+          "QUESTION": "Who can legally and actually serve this address?",
+          "UNKNOWN_OUTPUT": "Delivery eligibility is not yet verified for this address."
+        },
+        "MERCHANT": {
+          "REALITY_ID": "reality://delivery-eligibility/navy-yard/example",
+          "QUESTION": "Which verified service area can my authorized business claim?",
+          "UNKNOWN_OUTPUT": "This service-area claim needs current authority and evidence."
+        },
+        "CANA_OWNER": {
+          "REALITY_ID": "reality://delivery-eligibility/navy-yard/example",
+          "QUESTION": "Where do verified supply and expressed demand diverge?",
+          "UNKNOWN_OUTPUT": "Opportunity scoring is held until eligibility and demand evidence are sufficient."
+        }
+      }
+    }
+  ],
+  "CROSS_FACE_EVENT_FLOW": [
+    "CUSTOMER_INTENT",
+    "STRUCTURED_DEMAND_OR_GAP",
+    "CANA_EVIDENCE_AND_OPPORTUNITY",
+    "MERCHANT_VALUE_PROPOSAL",
+    "AUTHORIZED_HERMES_OR_HUMAN_ACTION",
+    "OUTCOME",
+    "ATTRIBUTION_WITH_CONFIDENCE",
+    "LEARNING",
+    "BETTER_NEXT_ACTION"
+  ],
+  "AUTHORIZATION_MINIMUM": [
+    "CUSTOMER",
+    "MERCHANT_MEMBER",
+    "MERCHANT_ADMIN",
+    "CANA_OPERATOR",
+    "CANA_OWNER"
+  ]
+}
