@@ -26,6 +26,7 @@ import {
   adjudicateExecutionProvenance,
 } from '../src/lib/reality/market-claim-court.mjs';
 import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
+import { answerCustomerDiscoveryFromReality } from '../src/lib/ask/ask-service.mjs';
 import { routeRealitySource, LIVE_SOURCE_REGISTRY } from '../src/lib/reality/source-portfolio-router.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -83,15 +84,27 @@ async function mdEvidence() {
     sourceId: receipt.source_id,
     observedAt: ACQUIRED_AT,
   });
-  const claims = formed.slice(0, 3).map((claim) => ({
+  const bethesdaAddress = formed.find((claim) => (
+    claim.predicate === 'regulated_address' && claim.value.includes(', Bethesda, MD ')
+  ));
+  assert.ok(bethesdaAddress, 'fixture must retain a Bethesda subject for customer projection');
+  const requiredPredicates = new Set([
+    'mca_registry_listing_exists',
+    'facility_name',
+    'regulated_address',
+  ]);
+  const claims = formed
+    .filter((claim) => claim.entity_identity === bethesdaAddress.entity_identity && requiredPredicates.has(claim.predicate))
+    .map((claim) => ({
     id: claim.claim_id,
     tenant: TENANT,
     claimType: claim.predicate,
     claimValue: claim.value,
+    entityIdentity: claim.entity_identity,
     snapshotId: 'md-snapshot-1',
     observedAt: new Date(ACQUIRED_AT),
     freshnessExpiresAt: new Date('2026-09-11T14:00:00.000Z'),
-  }));
+    }));
   const snapshot = {
     id: 'md-snapshot-1',
     sourceKey: receipt.source_key,
@@ -183,7 +196,32 @@ test('THE FIRST VERIFIED MARYLAND WORLD STATE: fixture acquisition → VERIFIED 
     assert.equal(decision.verification, 'VERIFIED');
     assert.equal(decision.decision_eligible, true);
     assert.equal(decision.source_id, MD_MCA_LIVE_CONTRACT.sourceKey);
+    assert.match(decision.subject_ref, /^md-mca:/);
   }
+
+  const projection = answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: TENANT,
+    claimDecisions: current,
+    now: AS_OF,
+  });
+  assert.equal(projection.results.length, 1, 'verified MCA Reality reaches ASK without a Retailer fixture');
+  assert.equal(projection.results[0].merchant_id, current[0].subject_ref);
+  assert.equal(projection.results[0].location.city.value, 'Bethesda');
+  assert.equal(projection.results[0].regulatory_state.state, 'UNKNOWN');
+  assert.equal(projection.results[0].delivery_eligibility.state, 'UNKNOWN');
+  assert.equal(projection.truth.gate, 'selectCurrentClaimDecisions + buildAnswerabilityFrontier');
+  assert.throws(
+    () => answerCustomerDiscoveryFromReality({
+      rawQuery: 'dispensary in bethesda',
+      marketId: 'US-MD',
+      tenantDomain: 'other.example',
+      claimDecisions: current,
+      now: AS_OF,
+    }),
+    /CANA_CUSTOMER_DISCOVERY_REALITY_PROVENANCE_MISMATCH/,
+  );
 });
 
 test('MD acquisition court: COMPILE ALLOWs; forgeries rejected with the same reasons as every market', async () => {

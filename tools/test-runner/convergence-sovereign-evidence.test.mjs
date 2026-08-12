@@ -199,13 +199,22 @@ test('first report records live identities, requested states and the owner-gated
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.STATUS, 'LOCAL_CANDIDATE_IMPLEMENTED');
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.SURFACES, [
     'apps/web/src/lib/ask/intent-ir.mjs',
+    'apps/web/src/lib/ask/answerability-frontier.mjs',
     'apps/web/src/lib/ask/ask-service.mjs',
+    'apps/web/src/lib/reality/market-claim-adapter.mjs',
     'apps/web/tests/ask-intent-ir.test.mjs',
     'apps/web/tests/ask-service-where.test.mjs',
+    'apps/web/tests/md-verified-world-state.test.mjs',
+    'apps/web/tests/va-verified-world-state.test.mjs',
   ]);
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.MARKETS, ['US-DC', 'US-MD', 'US-VA']);
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.TRUTH_STATES, ['KNOWN', 'UNKNOWN', 'CAPABILITY_GAP']);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.NO_SECOND_SEARCH_ENGINE, true);
+  assert.equal(
+    report.FIRST_BOUNDED_PRODUCT_SLICE.REALITY_PATH,
+    'fixture acquisition -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK customer projection',
+  );
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.FABRICATED_RETAILER_ROWS_IN_REALITY_COURT, false);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PROJECTION_DECIDES_TRUTH, false);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PRODUCTION_EFFECTS, 0);
   assert.equal(report.PRODUCTION_MUTATED, false);

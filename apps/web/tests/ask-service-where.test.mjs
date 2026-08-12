@@ -174,6 +174,7 @@ function verifiedCandidate({ marketId, state, latitude = null, longitude = null 
     provenance: {
       data_status: 'VERIFIED_CURRENT',
       source: source.source_id,
+      source_key: source.source_key,
       source_url: source.source_url,
       retrieved_at: '2026-08-08T00:00:00.000Z',
       verified_at: '2026-08-08T00:00:00.000Z',
@@ -210,10 +211,33 @@ function verifiedAnswer(candidate, unsupportedKnownDimensions = []) {
   };
 }
 
+function verifiedRealityDecisions(marketId, subjectRef, facts, overrides = {}) {
+  const source = askService.resolveCustomerMarketContext(marketId).evidence;
+  return facts.map(([predicate, value], index) => ({
+    claim_id: `${subjectRef}:${index}`,
+    tenant: 'orderweeddc.com',
+    subject_ref: subjectRef,
+    predicate,
+    value,
+    market_id: marketId,
+    contract_digest: source.contract_digest,
+    source_id: source.source_key,
+    source_url: source.source_url,
+    retrieved_at: '2026-08-08T00:00:00.000Z',
+    observed_at: '2026-08-08T00:00:00.000Z',
+    verified_at: '2026-08-08T00:00:00.000Z',
+    freshness_expires_at: '2026-09-10T00:00:00.000Z',
+    verification: 'VERIFIED',
+    decision_eligible: true,
+    ...overrides,
+  }));
+}
+
 test('customer discovery projection exports the bounded canonical seam', () => {
   assert.equal(typeof askService.resolveCustomerMarketContext, 'function');
   assert.equal(typeof askService.projectCustomerDiscovery, 'function');
   assert.equal(typeof askService.answerCustomerDiscovery, 'function');
+  assert.equal(typeof askService.answerCustomerDiscoveryFromReality, 'function');
 });
 
 test('customer market context admits exactly DC, Maryland and Virginia', () => {
@@ -227,6 +251,48 @@ test('customer market context admits exactly DC, Maryland and Virginia', () => {
     () => askService.resolveCustomerMarketContext('US-PA'),
     /CANA_CUSTOMER_DISCOVERY_MARKET_UNSUPPORTED/,
   );
+});
+
+test('canonical D.C. claim decisions project only a complete active public cohort', () => {
+  const facts = [
+    ['facility_name', 'Dupont Circle Wellness'],
+    ['license_number', 'ABRA-1'],
+    ['license_status', 'ACTIVE'],
+    ['operating_status', 'ACTIVE'],
+    ['regulated_address', '100 Truth Ave NW, Washington, DC 20001'],
+  ];
+  const active = askService.answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in dupont',
+    marketId: 'US-DC',
+    tenantDomain: 'orderweeddc.com',
+    claimDecisions: verifiedRealityDecisions('US-DC', 'dc:dupont', facts),
+    now: NOW,
+  });
+  assert.equal(active.results.length, 1);
+  assert.equal(active.results[0].regulatory_state.value, 'ACTIVE');
+  assert.equal(active.truth.answerability_frontier.answerable, true);
+
+  const inactive = askService.answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in dupont',
+    marketId: 'US-DC',
+    tenantDomain: 'orderweeddc.com',
+    claimDecisions: verifiedRealityDecisions('US-DC', 'dc:dupont', facts.map(([predicate, value]) => (
+      [predicate, predicate === 'operating_status' ? 'INACTIVE' : value]
+    ))),
+    now: NOW,
+  });
+  assert.equal(inactive.results.length, 0);
+  assert.equal(inactive.opportunity_signal.state, 'PROPOSE_ONLY');
+
+  const partial = askService.answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in dupont',
+    marketId: 'US-DC',
+    tenantDomain: 'orderweeddc.com',
+    claimDecisions: verifiedRealityDecisions('US-DC', 'dc:dupont', facts.slice(0, -1)),
+    now: NOW,
+  });
+  assert.equal(partial.results.length, 0);
+  assert.ok(partial.truth.answerability_frontier.blocking_predicates.includes('regulated_address'));
 });
 
 test('customer projection preserves one verified identity and market-specific unknowns across three markets', () => {

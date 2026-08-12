@@ -287,15 +287,19 @@
   ],
   "FIRST_BOUNDED_PRODUCT_SLICE": {
     "CANDIDATE": "ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION",
-    "RATIONALE": "Current ASK and deterministic discovery seams already exist; the slice can add one read-only typed adapter without a second truth or search brain.",
+    "RATIONALE": "Current ASK and deterministic discovery seams already exist; the slice adds one read-only typed adapter from canonical current claim decisions without a second truth or search brain.",
     "STATUS": "LOCAL_CANDIDATE_IMPLEMENTED",
     "BLOCKER": null,
     "IMPLEMENTATION_BASE": "e11218a79ff4b77782917be49058cb61b11f31cc",
     "SURFACES": [
       "apps/web/src/lib/ask/intent-ir.mjs",
+      "apps/web/src/lib/ask/answerability-frontier.mjs",
       "apps/web/src/lib/ask/ask-service.mjs",
+      "apps/web/src/lib/reality/market-claim-adapter.mjs",
       "apps/web/tests/ask-intent-ir.test.mjs",
-      "apps/web/tests/ask-service-where.test.mjs"
+      "apps/web/tests/ask-service-where.test.mjs",
+      "apps/web/tests/md-verified-world-state.test.mjs",
+      "apps/web/tests/va-verified-world-state.test.mjs"
     ],
     "MARKETS": [
       "US-DC",
@@ -308,6 +312,8 @@
       "CAPABILITY_GAP"
     ],
     "NO_SECOND_SEARCH_ENGINE": true,
+    "REALITY_PATH": "fixture acquisition -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK customer projection",
+    "FABRICATED_RETAILER_ROWS_IN_REALITY_COURT": false,
     "PROJECTION_DECIDES_TRUTH": false,
     "PRODUCTION_EFFECTS": 0
   },

@@ -25,7 +25,9 @@ const PREDICATE_FIELD = Object.freeze({
   license_type: 'license',
   license_expiration: 'license',
   facility_name: 'name',
+  name: 'name',
   regulated_address: 'address',
+  address: 'address',
   located_at: 'location',
   operating_status: 'is_open',
   hours: 'hours',
@@ -217,16 +219,29 @@ export function selectCurrentClaimDecisions({
     })) continue;
     current.push(Object.freeze({
       claim_id: claim.id,
+      tenant: claim.tenant,
+      subject_ref: field(claim, 'subjectRef', 'subject_ref')
+        ?? field(claim, 'entityIdentity', 'entity_identity')
+        ?? field(claim, 'subjectId', 'subject_id')
+        ?? field(claim, 'resolutionId', 'resolution_id')
+        ?? null,
       predicate: claim.claimType ?? claim.predicate,
       value: claim.claimValue ?? claim.value,
+      market_id: marketContractForSourceKey(field(acquisition, 'sourceKey', 'source_key'))?.market_id ?? null,
+      contract_digest: field(acquisition, 'requestDigest', 'request_digest'),
       source_id: field(acquisition, 'sourceKey', 'source_key'),
+      source_url: field(snapshot, 'sourceUrl', 'source_url'),
+      retrieved_at: new Date(field(acquisition, 'fetchedAt', 'fetched_at')).toISOString(),
       observed_at: new Date(claim.observedAt ?? claim.observed_at).toISOString(),
+      verified_at: eventAsOf.toISOString(),
       freshness_expires_at: expiry.toISOString(),
+      confidence: claim.confidence ?? null,
       verification: 'VERIFIED',
       decision_eligible: true,
       court_version: field(event, 'evaluatorVersion', 'evaluator_version'),
       acquisition_event_id: acquisitionEventId,
       verification_event_id: event.id,
+      evidence_ref: `market-claim:${claim.id}`,
     }));
   }
   return Object.freeze(current.sort((left, right) => left.claim_id.localeCompare(right.claim_id)));
