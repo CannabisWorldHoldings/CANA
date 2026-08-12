@@ -49,13 +49,22 @@ const LOCATION_LEXICON = [
 const MARKET_LOCATION_LEXICONS = Object.freeze({
   'US-DC': Object.freeze(LOCATION_LEXICON),
   'US-MD': Object.freeze([
-    'annapolis', 'baltimore', 'bethesda', 'catonsville', 'ellicott city',
-    'gaithersburg', 'laurel', 'mechanicsville', 'parkville', 'rockville',
-    'silver spring',
+    'abdereen', 'abingdon', 'annapolis', 'baltimore', 'bethesda', 'bowie',
+    'brandywine', 'burtonsville', 'cambridge', 'camp springs', 'capital heights',
+    'centreville', 'chevy chase', 'clinton', 'cockeysville', 'columbia', 'crofton',
+    'cumberland', 'curtis bay', 'edgewater', 'elkton', 'ellicott city', 'frederick',
+    'gaithersburg', 'gambrills', 'germantown', 'greenbelt', 'hagerstown',
+    'halethorpe', 'hyattsville', 'joppa', 'laurel', 'linthicum', 'lutherville',
+    'mechanicsville', 'middle river', 'new market', 'nottingham', 'ocean city',
+    'olney', 'parkville', 'pasadena', 'perryville', 'pikesville', 'reisterstown',
+    'rockville', 'salisbury', 'silver spring', 'timonium', 'towson',
+    'upper marlboro', 'waldorf', 'westminster', 'white plains', 'windsor mill',
   ]),
   'US-VA': Object.freeze([
-    'alexandria', 'arlington', 'christiansburg', 'lynchburg', 'manassas',
-    'norfolk', 'richmond', 'roanoke', 'virginia beach',
+    'abingdon', 'alexandria', 'arlington', 'bristol', 'christiansburg',
+    'colonial heights', 'danville', 'fairfax', 'glen allen', 'hampton', 'henrico',
+    'lynchburg', 'manassas', 'norfolk', 'portsmouth', 'richmond', 'roanoke',
+    'sterling', 'suffolk', 'virginia beach', 'williamsburg', 'woodbridge',
   ]),
 });
 
