@@ -96,12 +96,6 @@ async function acquire(sourceKey, versions, body, attempt, useStore = store) {
 }
 
 test.after(async () => {
-  const sourceKeys = [VA_CCA_LANE.sourceKey, MD_MCA_LANE.sourceKey];
-  await prisma.marketSourceCapabilityReceipt.deleteMany({ where: { sourceKey: { in: sourceKeys } } });
-  await prisma.marketSourceAcquisitionEvent.deleteMany({ where: { tenant: RUN_TENANT } });
-  await prisma.marketSourceCircuitEvent.deleteMany({ where: { tenant: RUN_TENANT } });
-  await prisma.marketSourceContentArtifact.deleteMany({ where: { sourceKey: { in: sourceKeys } } });
-  await prisma.marketSourceSnapshot.deleteMany({ where: { sourceKey: { in: sourceKeys } } });
   await prisma.$disconnect();
 });
 
@@ -193,15 +187,19 @@ test('DB IDEMPOTENCY: exact re-run reuses the immutable artifact; sequential dup
 });
 
 test('CONCURRENT DUPLICATES: advisory lock serializes; exactly one artifact; outcomes deterministic as a set', async () => {
+  const concurrentFixture = `${MD_FIXTURE}<!-- concurrent-duplicate-court -->`;
+  const concurrentDigest = sha256(concurrentFixture);
   const [a, b] = await Promise.all([
-    acquire(MD_MCA_LANE.sourceKey, MD_VERSIONS, MD_FIXTURE, 'pg-md-c1'),
-    acquire(MD_MCA_LANE.sourceKey, MD_VERSIONS, MD_FIXTURE, 'pg-md-c2'),
+    acquire(MD_MCA_LANE.sourceKey, MD_VERSIONS, concurrentFixture, 'pg-md-c1'),
+    acquire(MD_MCA_LANE.sourceKey, MD_VERSIONS, concurrentFixture, 'pg-md-c2'),
   ]);
   assert.deepEqual([a.state, b.state], ['COMPLETED', 'COMPLETED']);
   const outcomes = [a.outcome, b.outcome].sort();
   assert.deepEqual(outcomes, ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'],
     'the advisory lock serialized the duplicates: one CHANGED, one UNCHANGED');
-  const artifacts = await prisma.marketSourceContentArtifact.findMany({ where: { sourceKey: MD_MCA_LANE.sourceKey } });
+  const artifacts = await prisma.marketSourceContentArtifact.findMany({
+    where: { sourceKey: MD_MCA_LANE.sourceKey, contentSha256: concurrentDigest },
+  });
   assert.equal(artifacts.length, 1, 'concurrency produced exactly one immutable MD artifact');
 });
 

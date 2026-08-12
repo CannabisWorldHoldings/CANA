@@ -10,6 +10,14 @@ import { execFileSync } from 'node:child_process';
 
 const checks = [];
 const check = (id, ok, detail) => { checks.push({ id, ok: Boolean(ok), detail }); return Boolean(ok); };
+const DB_PROBE_IDS = [
+  'db.reachable',
+  'db.extension.postgis',
+  'db.extension.h3',
+  'db.extension.h3_postgis',
+  'db.migrations.ledger',
+  'db.store.operational',
+];
 
 function url(name) {
   try {
@@ -48,6 +56,7 @@ try {
 }
 if (engineLoadable) check('prisma.engine.loadable', true, 'client constructed');
 
+let dbProbeRefusal = 'not probed — configuration or engine refusal';
 if (prisma && checks.every((c) => c.id.startsWith('db.') ? c.ok : true)) {
   try {
     const [identity] = await prisma.$queryRawUnsafe(
@@ -78,11 +87,14 @@ if (prisma && checks.every((c) => c.id.startsWith('db.') ? c.ok : true)) {
       check('db.store.operational', false, String(error?.message ?? error).slice(0, 160));
     }
   } catch (error) {
-    check('db.reachable', false, String(error?.message ?? error).slice(0, 200));
-  } finally {
-    await prisma.$disconnect().catch(() => {});
+    dbProbeRefusal = String(error?.message ?? error).slice(0, 200);
+    if (!checks.some((c) => c.id === 'db.reachable')) check('db.reachable', false, dbProbeRefusal);
   }
 }
+for (const id of DB_PROBE_IDS) {
+  if (!checks.some((c) => c.id === id)) check(id, false, dbProbeRefusal);
+}
+if (prisma) await prisma.$disconnect().catch(() => {});
 
 // APPLICATION — canonical SHA expectation.
 const head = git('rev-parse', 'HEAD');
@@ -94,7 +106,9 @@ check('app.clean.head', git('status', '--porcelain') === '', 'working tree must 
 
 // DATA — backup receipt presence (path supplied by operator).
 const backupReceipt = process.env.CANA_PRE_MIGRATION_BACKUP_RECEIPT ?? null;
-check('data.backup.receipt', Boolean(backupReceipt), backupReceipt ?? 'CANA_PRE_MIGRATION_BACKUP_RECEIPT not set — required before migrate.sh');
+check('data.backup.receipt.present', Boolean(backupReceipt), backupReceipt
+  ? 'non-empty value present — presence only; provider/operator verification and authorization remain external'
+  : 'CANA_PRE_MIGRATION_BACKUP_RECEIPT not set — required before migrate.sh');
 
 const refusals = checks.filter((c) => !c.ok);
 const verdict = refusals.length === 0 ? 'CUTOVER_READY' : 'CUTOVER_REFUSED';
