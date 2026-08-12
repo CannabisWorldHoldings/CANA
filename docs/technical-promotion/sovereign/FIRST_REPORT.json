@@ -1,7 +1,7 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "REPORT_AS_OF": "2026-08-12T18:04:49Z",
+  "REPORT_AS_OF": "2026-08-12T18:16:56Z",
   "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
   "CURRENT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
   "CURRENT_MAIN_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
@@ -115,6 +115,7 @@
     "STATE": "PARTIALLY_IMPLEMENTED",
     "PRESENT": [
       "tenant marketplace",
+      "ASK intent to customer discovery projection candidate",
       "products",
       "deals",
       "neighborhoods",
@@ -195,7 +196,7 @@
   },
   "ASK_SEARCH_GAPS": {
     "STATE": "PARTIALLY_IMPLEMENTED",
-    "CANONICAL": "ASK Intent IR and answerability frontier",
+    "CANONICAL": "ASK Intent IR, answerability frontier and bounded customer discovery projection candidate",
     "GAPS": [
       "single adapter shared by /search, /delivery, /dispensaries and map",
       "price/time/category/deal facet completeness",
@@ -287,11 +288,29 @@
   "FIRST_BOUNDED_PRODUCT_SLICE": {
     "CANDIDATE": "ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION",
     "RATIONALE": "Current ASK and deterministic discovery seams already exist; the slice can add one read-only typed adapter without a second truth or search brain.",
-    "STATUS": "READY_TO_START",
-    "BLOCKER": null
+    "STATUS": "LOCAL_CANDIDATE_IMPLEMENTED",
+    "BLOCKER": null,
+    "IMPLEMENTATION_BASE": "e11218a79ff4b77782917be49058cb61b11f31cc",
+    "SURFACES": [
+      "apps/web/src/lib/ask/ask-service.mjs",
+      "apps/web/tests/ask-service-where.test.mjs"
+    ],
+    "MARKETS": [
+      "US-DC",
+      "US-MD",
+      "US-VA"
+    ],
+    "TRUTH_STATES": [
+      "KNOWN",
+      "UNKNOWN",
+      "CAPABILITY_GAP"
+    ],
+    "NO_SECOND_SEARCH_ENGINE": true,
+    "PROJECTION_DECIDES_TRUTH": false,
+    "PRODUCTION_EFFECTS": 0
   },
-  "PHASE_BOUNDARY": "PR45_CANONICAL_LEDGER_REVALIDATION",
-  "PRODUCT_IMPLEMENTATION_STARTED": false,
+  "PHASE_BOUNDARY": "ASK_CUSTOMER_DISCOVERY_CANDIDATE_REVIEW",
+  "PRODUCT_IMPLEMENTATION_STARTED": true,
   "NO_MARKET_4": true,
   "PRODUCTION_MUTATED": false,
   "EXTERNAL_EFFECTS": {
@@ -306,5 +325,5 @@
     "PAID_PROVIDER_CALL": 0,
     "MEDIA_SPEND": 0
   },
-  "NEXT_OWNER_ACTION": "Implement and court ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION on this preserved branch; keep production frozen."
+  "NEXT_OWNER_ACTION": "Review the exact ASK customer discovery candidate; keep production frozen and do not promote visual or route recovery without its separate courts."
 }

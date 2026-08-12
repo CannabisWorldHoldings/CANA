@@ -22,24 +22,235 @@
 
 import { currentPublicRecordWhere } from '../seo-truth.mjs';
 import { isPubliclyVerified } from '../data-status.mjs';
+import { MARKET_CONTRACT_REGISTRY } from '../reality/market-contract-registry.mjs';
 import {
   buildAnswerabilityFrontier,
   projectionClaimDecisions,
 } from './answerability-frontier.mjs';
-import { persistenceSafeIntent } from './intent-ir.mjs';
+import { compileIntent, persistenceSafeIntent } from './intent-ir.mjs';
 
 const MAX_CANDIDATES = 10;
+export const CUSTOMER_DISCOVERY_PROJECTION_VERSION = 'cana-customer-discovery-projection/v1';
+
+const CUSTOMER_MARKET_JURISDICTIONS = Object.freeze({
+  'US-DC': 'DC',
+  'US-MD': 'MD',
+  'US-VA': 'VA',
+});
+
+export const CUSTOMER_DISCOVERY_MARKETS = Object.freeze(Object.keys(CUSTOMER_MARKET_JURISDICTIONS));
+
+function customerDiscoveryFailure(code) {
+  throw new Error(code);
+}
+
+function projectionClock(asOf) {
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(clock.getTime())) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_CLOCK_INVALID');
+  return clock;
+}
+
+export function resolveCustomerMarketContext(marketId) {
+  if (!Object.hasOwn(CUSTOMER_MARKET_JURISDICTIONS, marketId)) {
+    customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_UNSUPPORTED');
+  }
+  const contract = MARKET_CONTRACT_REGISTRY.find((entry) => entry.market_id === marketId);
+  if (!contract) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_CONTRACT_MISSING');
+  return Object.freeze({
+    state: 'KNOWN',
+    market_id: marketId,
+    jurisdiction_code: CUSTOMER_MARKET_JURISDICTIONS[marketId],
+    evidence: Object.freeze({
+      source_key: contract.source_key,
+      source_id: contract.source_id,
+      contract_digest: contract.contract_digest,
+    }),
+  });
+}
+
+function admittedMarketContext(market) {
+  const expected = resolveCustomerMarketContext(market?.market_id);
+  if (
+    market?.state !== expected.state
+    || market?.jurisdiction_code !== expected.jurisdiction_code
+    || market?.evidence?.source_key !== expected.evidence.source_key
+    || market?.evidence?.source_id !== expected.evidence.source_id
+    || market?.evidence?.contract_digest !== expected.evidence.contract_digest
+  ) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_CONTEXT_INVALID');
+  return expected;
+}
+
+function knownProjection(value, evidenceRef = null) {
+  return Object.freeze({
+    state: 'KNOWN',
+    value,
+    ...(evidenceRef ? { evidence_ref: evidenceRef } : {}),
+  });
+}
+
+function unknownProjection(reason) {
+  return Object.freeze({ state: 'UNKNOWN', value: null, reason });
+}
+
+function capabilityGapProjection(dimension) {
+  return Object.freeze({
+    state: 'CAPABILITY_GAP',
+    value: null,
+    dimension,
+    reason: 'NO_DECISION_ELIGIBLE_CUSTOMER_PROJECTION',
+  });
+}
+
+function scalarProjection(value, reason, evidenceRef = null) {
+  return typeof value === 'string' && value.trim()
+    ? knownProjection(value, evidenceRef)
+    : unknownProjection(reason);
+}
+
+function intentProjection(intent, dimension, unknownReason) {
+  return intent?.dimensions?.[dimension]?.status === 'KNOWN'
+    ? capabilityGapProjection(dimension)
+    : unknownProjection(unknownReason);
+}
+
+function verifiedProjectionCandidate(candidate, market, clock) {
+  if (candidate?.location?.state !== market.jurisdiction_code) {
+    customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_MISMATCH');
+  }
+  const provenance = candidate?.provenance;
+  const verifiedAt = new Date(provenance?.verified_at);
+  const freshnessExpiresAt = new Date(provenance?.freshness_expires_at);
+  if (
+    provenance?.data_status !== 'VERIFIED_CURRENT'
+    || provenance?.is_demonstration === true
+    || !Number.isFinite(verifiedAt.getTime())
+    || verifiedAt > clock
+    || !Number.isFinite(freshnessExpiresAt.getTime())
+    || freshnessExpiresAt <= clock
+  ) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_UNVERIFIED_CANDIDATE');
+  return { verifiedAt, freshnessExpiresAt };
+}
+
+function projectCandidate(candidate, market, intent, clock) {
+  const { verifiedAt, freshnessExpiresAt } = verifiedProjectionCandidate(candidate, market, clock);
+  const coordinates = Number.isFinite(candidate.location.latitude) && Number.isFinite(candidate.location.longitude)
+    ? knownProjection(Object.freeze({ latitude: candidate.location.latitude, longitude: candidate.location.longitude }))
+    : unknownProjection('VERIFIED_COORDINATES_NOT_AVAILABLE');
+  const sourceRef = candidate.provenance.source_url ?? candidate.provenance.source ?? null;
+  const result = {
+    merchant_id: candidate.id,
+    customer_facing_name: scalarProjection(candidate.name, 'CUSTOMER_FACING_NAME_UNKNOWN', sourceRef),
+    business_type: scalarProjection(candidate.type, 'BUSINESS_TYPE_UNKNOWN', sourceRef),
+    regulatory_state: scalarProjection(candidate.regulatory?.license_status, 'REGULATORY_STATE_UNKNOWN', sourceRef),
+    verification_state: knownProjection(candidate.provenance.data_status, sourceRef),
+    location: Object.freeze({
+      address: scalarProjection(candidate.location.address, 'ADDRESS_UNKNOWN', sourceRef),
+      city: scalarProjection(candidate.location.city, 'CITY_UNKNOWN', sourceRef),
+      region: scalarProjection(candidate.location.state, 'REGION_UNKNOWN', sourceRef),
+      postal_code: scalarProjection(candidate.location.postal_code, 'POSTAL_CODE_UNKNOWN', sourceRef),
+      coordinates,
+    }),
+    market: knownProjection(market.market_id, market.evidence.contract_digest),
+    distance: unknownProjection('CUSTOMER_COORDINATES_AND_ROUTE_DISTANCE_NOT_PROVEN'),
+    fulfillment_type: intentProjection(intent, 'fulfillment', 'FULFILLMENT_INTENT_UNKNOWN'),
+    delivery_authority: intent?.dimensions?.fulfillment?.status === 'KNOWN'
+      ? capabilityGapProjection('fulfillment')
+      : unknownProjection('NO_DECISION_ELIGIBLE_DELIVERY_AUTHORITY_CLAIM'),
+    delivery_eligibility: intent?.dimensions?.fulfillment?.status === 'KNOWN'
+      ? capabilityGapProjection('fulfillment')
+      : unknownProjection('CUSTOMER_LOCATION_AND_SERVICE_AREA_NOT_PROVEN'),
+    price: intentProjection(intent, 'price_max_usd', 'PRICE_INTENT_UNKNOWN'),
+    category: intentProjection(intent, 'category', 'CATEGORY_INTENT_UNKNOWN'),
+    open_now: intentProjection(intent, 'open_now', 'OPEN_NOW_INTENT_UNKNOWN'),
+    deal: unknownProjection('NO_DECISION_ELIGIBLE_DEAL_EVIDENCE'),
+    freshness: knownProjection(Object.freeze({
+      retrieved_at: candidate.provenance.retrieved_at ?? null,
+      verified_at: verifiedAt.toISOString(),
+      freshness_expires_at: freshnessExpiresAt.toISOString(),
+    }), sourceRef),
+    provenance: Object.freeze({ ...candidate.provenance }),
+  };
+  const stateFields = [
+    'distance',
+    'fulfillment_type',
+    'delivery_authority',
+    'delivery_eligibility',
+    'price',
+    'category',
+    'open_now',
+    'deal',
+  ];
+  return Object.freeze({
+    ...result,
+    unknown_dimensions: Object.freeze([
+      ...(coordinates.state === 'UNKNOWN' ? ['location.coordinates'] : []),
+      ...stateFields.filter((field) => result[field].state === 'UNKNOWN'),
+    ]),
+    capability_gaps: Object.freeze(stateFields.filter((field) => result[field].state === 'CAPABILITY_GAP')),
+  });
+}
+
+export function projectCustomerDiscovery({ intent, market, answer, asOf = new Date() }) {
+  const clock = projectionClock(asOf);
+  const admittedMarket = admittedMarketContext(market);
+  if (!answer?.answerability_frontier || !Array.isArray(answer?.candidates)) {
+    customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_ANSWER_INVALID');
+  }
+  if (
+    answer.verified_candidate_count !== answer.candidates.length
+    || answer.zero_verified_result !== (answer.candidates.length === 0)
+  ) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_ANSWER_COUNT_MISMATCH');
+
+  const results = Object.freeze(answer.candidates.map((candidate) => (
+    projectCandidate(candidate, admittedMarket, intent, clock)
+  )));
+  const capabilityGaps = Object.freeze((answer.unsupported_known_dimensions ?? []).map((dimension) => Object.freeze({
+    state: 'CAPABILITY_GAP',
+    dimension,
+    opportunity_signal: answer.opportunitySpec?.kind === 'CAPABILITY_GAP',
+  })));
+  const opportunitySignal = answer.opportunitySpec
+    ? Object.freeze({
+        state: 'PROPOSE_ONLY',
+        kind: answer.opportunitySpec.kind,
+        signal: answer.opportunitySpec.signal,
+        required_authority: answer.opportunitySpec.requiredAuthority,
+        verification: 'UNKNOWN',
+        customer_effect: 'NONE',
+      })
+    : Object.freeze({ state: 'NONE' });
+
+  return Object.freeze({
+    schema_version: CUSTOMER_DISCOVERY_PROJECTION_VERSION,
+    generated_at: clock.toISOString(),
+    market: admittedMarket,
+    intent: Object.freeze(persistenceSafeIntent(intent)),
+    results,
+    capability_gaps: capabilityGaps,
+    opportunity_signal: opportunitySignal,
+    truth: Object.freeze({
+      gate: 'currentPublicRecordWhere + isPubliclyVerified',
+      projection_decides_truth: false,
+      unknown_policy: 'PRESERVE_UNKNOWN',
+      verified_candidate_count: results.length,
+      zero_verified_result: results.length === 0,
+      zero_result_reason: answer.zero_result_reason,
+      answerability_frontier: answer.answerability_frontier,
+    }),
+  });
+}
 
 /**
  * Build the Prisma `where` for an intent. Pure — unit-testable without a
  * database. Tenancy runs through the menu graph exactly like the UI and the
  * v1 retailers endpoint (Retailer has no brandId column).
  */
-export function buildCandidateWhere(intent, { brandId, now = new Date() }) {
+export function buildCandidateWhere(intent, { brandId, now = new Date(), market = null }) {
   const where = {
     ...currentPublicRecordWhere(now),
     menus: { some: { brandMenus: { some: { brandId } } } },
   };
+  if (market) where.state = admittedMarketContext(market).jurisdiction_code;
   const location = intent?.dimensions?.location;
   if (location?.status === 'KNOWN' && typeof location.value === 'string') {
     // Case-insensitive by explicit mode — never rely on collation defaults.
@@ -56,7 +267,7 @@ export function buildCandidateWhere(intent, { brandId, now = new Date() }) {
  * Returns candidates (verified only, provenance attached), plus an
  * opportunity spec when the evidence itself exposes a market gap.
  */
-export async function answerIntent(prisma, { intent, brandId, tenantDomain, now = new Date() }) {
+export async function answerIntent(prisma, { intent, brandId, tenantDomain, now = new Date(), market = null }) {
   const dimensions = intent?.dimensions ?? {};
   const persistedIntent = persistenceSafeIntent(intent);
   const location = dimensions.location;
@@ -119,7 +330,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
     };
   }
 
-  const where = buildCandidateWhere(intent, { brandId, now });
+  const where = buildCandidateWhere(intent, { brandId, now, market });
 
   const rows = await prisma.retailer.findMany({
     where,
@@ -159,6 +370,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
     location: { address: r.address, city: r.city, state: r.state, postal_code: r.zip, latitude: r.lat, longitude: r.lng },
     contact: { phone: r.phone, website: r.website },
     hours: { text: r.hours, source: r.hoursSource },
+    regulatory: { license_status: r.licenseStatus },
     provenance: {
       data_status: r.dataStatus,
       source: r.dataSource,
@@ -216,4 +428,23 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
     answerability_frontier: frontier,
     opportunitySpec,
   };
+}
+
+export async function answerCustomerDiscovery(prisma, {
+  rawQuery,
+  marketId,
+  brandId,
+  tenantDomain,
+  now = new Date(),
+}) {
+  const market = resolveCustomerMarketContext(marketId);
+  const intent = compileIntent(rawQuery, { now });
+  const answer = await answerIntent(prisma, {
+    intent,
+    brandId,
+    tenantDomain,
+    now,
+    market,
+  });
+  return projectCustomerDiscovery({ intent, market, answer, asOf: now });
 }

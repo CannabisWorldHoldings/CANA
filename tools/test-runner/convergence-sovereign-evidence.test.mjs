@@ -194,8 +194,14 @@ test('first report records live identities, requested states and the owner-gated
   assert.equal(report.PR45_REVIEWED_HEAD_IN_MAIN_ANCESTRY, true);
   assert.equal(report.PR45_REVIEW_STATE.UNRESOLVED_THREADS, 0);
   assert.equal(report.PR45_OPERATIONAL_GATE, 'CANONICALIZED');
-  assert.equal(report.PHASE_BOUNDARY, 'PR45_CANONICAL_LEDGER_REVALIDATION');
-  assert.equal(report.PRODUCT_IMPLEMENTATION_STARTED, false);
+  assert.equal(report.PHASE_BOUNDARY, 'ASK_CUSTOMER_DISCOVERY_CANDIDATE_REVIEW');
+  assert.equal(report.PRODUCT_IMPLEMENTATION_STARTED, true);
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.STATUS, 'LOCAL_CANDIDATE_IMPLEMENTED');
+  assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.MARKETS, ['US-DC', 'US-MD', 'US-VA']);
+  assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.TRUTH_STATES, ['KNOWN', 'UNKNOWN', 'CAPABILITY_GAP']);
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.NO_SECOND_SEARCH_ENGINE, true);
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PROJECTION_DECIDES_TRUTH, false);
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PRODUCTION_EFFECTS, 0);
   assert.equal(report.PRODUCTION_MUTATED, false);
   assert.equal(report.NO_MARKET_4, true);
   assert.equal(report.PR45_HOSTED_CI.RUN_ID, 31624478534);
