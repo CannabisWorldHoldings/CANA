@@ -440,3 +440,36 @@ test('Prisma latest-content selection has a stable global tie-break', async () =
     { id: 'desc' },
   ]);
 });
+
+test('Prisma acquisition store never replays source work after a transaction conflict', async () => {
+  const { createPrismaAcquisitionStore } = await import(ACQUISITION_MODULE);
+  const conflict = Object.assign(new Error('write conflict after source capture'), { code: 'P2034' });
+  let transactionCalls = 0;
+  let sourceWorkCalls = 0;
+  let transactionOptions = null;
+  const tx = { $queryRawUnsafe: async () => [] };
+  const prisma = {
+    $transaction: async (operation, options) => {
+      transactionCalls += 1;
+      transactionOptions = options;
+      await operation(tx);
+      throw conflict;
+    },
+  };
+  const store = createPrismaAcquisitionStore(prisma);
+  await assert.rejects(
+    store.runExclusive({
+      sourceKey: 'dcgis_abca_retailers_layer_31',
+      tenant: 'orderweeddc.com',
+      workClass: 'LIVE_REALITY_ACQUISITION',
+    }, async () => {
+      sourceWorkCalls += 1;
+      if (sourceWorkCalls > 1) throw new Error('CANA_TEST_SOURCE_WORK_REPLAYED');
+      return 'captured-once';
+    }),
+    { code: 'P2034' },
+  );
+  assert.equal(transactionCalls, 1, 'the store must not retry a transaction that already performed source work');
+  assert.equal(sourceWorkCalls, 1, 'source capture is never replayed after a database conflict');
+  assert.equal(transactionOptions?.isolationLevel, 'ReadCommitted');
+});
