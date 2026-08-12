@@ -926,6 +926,7 @@
     "apps/web/tests/legacy-abca-etl.test.mjs",
     "apps/web/tests/neighborhood-search.test.mjs",
     "apps/web/tests/security-boundary.test.mjs",
+    "apps/web/tests/tenant-rewrite.test.mjs",
     "apps/web/tests/helpers/**",
     "apps/web/src/app/admin/site-intelligence/page.tsx",
     "apps/web/src/lib/site-intelligence.ts",
