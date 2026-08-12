@@ -913,7 +913,18 @@
     ,"docs/evidence/phase-b-slice2/TEMPORAL_INTEGRITY.md"
     ,"docs/reality/PHASE_B_SLICE2_LIVE_ACQUISITION.md"
     ,"tools/reality/verify-slice2-evidence-packet.mjs"
-    ,"tools/reality/verify-slice2-evidence-packet.test.mjs"
+    ,"tools/reality/verify-slice2-evidence-packet.test.mjs",
+    "apps/web/src/lib/markets/va/va-cca-registry-parser.mjs",
+    "apps/web/src/lib/markets/va/va-claims.mjs",
+    "apps/web/src/lib/markets/va/va-market-registry.mjs",
+    "apps/web/src/lib/markets/va/va-watch-evidence.mjs",
+    "apps/web/tests/fixtures/va-cca/dispensaries.html",
+    "apps/web/tests/fixtures/va-cca/processors.html",
+    "apps/web/tests/va-cca-registry-parser.test.mjs",
+    "apps/web/tests/va-claims.test.mjs",
+    "apps/web/tests/va-market-registry.test.mjs",
+    "apps/web/tests/va-watch-evidence.test.mjs",
+    "docs/markets/VIRGINIA_PRE_ENTRY.md"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",

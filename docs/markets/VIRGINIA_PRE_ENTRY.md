@@ -54,16 +54,43 @@ Countdown hub + VA medical directory via tenant routing (`tenant-rewrite.mjs`, a
 PR #40 lands). **Do not serve VA content on orderweeddc.com** — hostname decision is the
 owner's (see Dominance Addendum §5, domain architecture).
 
-## Transfer Test #1 — telemetry receipt v0
+## SLICE 2 (this branch) — claims, delivery model, watch evidence
+
+| Path | Purpose |
+|---|---|
+| `apps/web/src/lib/markets/va/va-claims.mjs` | Extracted statements → market claims (UNKNOWN default, decision-ineligible); VA identity v1 (name+address; license = explicit UNKNOWN — CCA pages publish no license numbers); first-class delivery model with UNKNOWN_DELIVERY_ELIGIBILITY |
+| `apps/web/src/lib/markets/va/va-watch-evidence.mjs` | OBSERVE_ONLY watch evidence: EVENT→SOURCE→HASH→CHANGE→IMPACT→DEADLINE→ACTION→AUTHORITY, hash-chained + tamper-evident, deadlines only as cited countdown facts |
+| `apps/web/tests/va-claims.test.mjs`, `va-watch-evidence.test.mjs` | Courts: UNKNOWN-default law, identity stability, delivery honesty law (no evidence → UNKNOWN, verified geometry only → ELIGIBLE/NOT_ELIGIBLE, never proximity), chain linkage/tamper/time laws |
+
+**Durability lane ownership:** the eleven exact Virginia paths were admitted to
+`owned_create_paths` (no wildcards) with the scope digest updated in
+`tools/durability/cli.mjs` — the same narrow pattern PR #40 used. No court was
+weakened; the digest law verified locally before push.
+
+## Transfer Test #1 — telemetry receipt v1 (hardened)
+
+**TIME TO EXTRACTED COVERAGE ≠ TIME TO VERIFIED WORLD STATE.** They are different
+metrics and only the first is achieved.
 
 | Metric | Value |
 |---|---|
-| Slice 1 started | 2026-08-12T12:08Z |
-| Slice 1 tests green | 2026-08-12T12:30Z (16/16) |
-| Time to extracted entity coverage | ~22 min (28/28 entities: 23 dispensaries + 5 processors) |
-| Reused capability | evidence doctrine, court/fixture pattern, statement→claim shape, admitted-source law, watch-trigger model (definitions) |
-| VA-specific new code | 2 lib modules, 2 test files, 2 fixtures (~600 LOC incl. tests) |
-| Not yet measured | time-to-verified coverage (slice 2), indexation (slice 3), first merchant |
+| Time to extracted entity coverage | ~22 min (28/28: 23 dispensaries + 5 processors) — ACHIEVED 2026-08-12 |
+| Time to verified world state | NOT ACHIEVED — requires acquisition run + verification court + entity resolution against the live lane (slice 2b) |
+| NEW code (VA-specific) | 4 lib modules + 4 test files + 2 fixtures + this doc (~1,300 LOC incl. tests) |
+| REUSED untouched | evidence doctrine, court/fixture pattern, canonical-JSON digest discipline, hash-chain receipt pattern (continuation kernel lineage), admitted-source + watch-target models, durability ownership mechanism |
+| FORKED (duplicated instead of generalized) | claim formation (va-claims.mjs) — deliberate, see below |
+| FAILED TO GENERALIZE (findings) | (1) `market-claim-adapter.mjs` validates lineage against the hardcoded ABCA live contract — it would reject VA claims today; (2) `live-abca-adapter.mjs` is ArcGIS/DNS-pin specific — VA's source is HTML pages needing its own bounded fetch contract; (3) `entity-resolution.mjs` is DC-license-format specific (`/^[A-Z]{4}-\d{6}$/`) — VA identity needed a new normalization version |
+| MARKET CONTRACT CANDIDATES | source contract (id+digest+boundedness) as a parameter instead of a hardcoded import; identity normalization as a versioned per-market strategy; claim lineage validation keyed by market contract registry |
+| New failure modes discovered | CCA processor accordion publishes no street addresses → identity law correctly refuses to fabricate processor claims (0 claims formed — honest) |
+| Architectural changes required in core | none yet — slice 2 stayed in the VA namespace; core generalization is a separate courted lane |
 
-D.C. baseline for comparison: reconstruct from PR #29/#35/#37 evidence ledgers.
-Update this table in each subsequent slice — the learning curve IS the product.
+## SLICE 2b (next) — live-lane wiring (core-lane ownership required)
+
+1. Generalize `market-claim-adapter.mjs` lineage validation from the hardcoded ABCA
+   contract to a market-contract registry (core file — separate courted change).
+2. `live-va-cca-adapter.mjs`: bounded HTML acquisition with the same authority laws
+   (fixed origin, pinned lookup, byte/time bounds, acquisition state machine).
+3. Register `VA_CCA_SOURCE` in `reality-compiler.mjs` + append the frozen entry to
+   `LIVE_SOURCE_REGISTRY` in `source-portfolio-router.mjs` (distinct independence group).
+4. Verification court run → first VERIFIED VA world state → telemetry row filled.
+
