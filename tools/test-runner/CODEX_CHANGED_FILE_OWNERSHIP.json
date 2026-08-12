@@ -941,7 +941,11 @@
     "docs/markets/MARYLAND_TRANSFER.md",
     "apps/web/src/lib/markets/market-claims.mjs",
     "apps/web/src/lib/reality/bounded-html-acquisition.mjs",
-    "docs/markets/MARKET_CORE_GENERALIZATION.md"
+    "docs/markets/MARKET_CORE_GENERALIZATION.md",
+    "apps/web/src/lib/reality/acquire-market-reality.mjs",
+    "apps/web/src/lib/reality/market-acquisition-lanes.mjs",
+    "apps/web/tests/tri-market-durable-store.test.mjs",
+    "docs/markets/TRI_MARKET_DURABLE_REALITY.md"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",

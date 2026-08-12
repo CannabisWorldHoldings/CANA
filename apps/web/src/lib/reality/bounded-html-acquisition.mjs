@@ -192,6 +192,7 @@ export function createBoundedHtmlAcquisition({ contract, extract, errorPrefix, e
       pre_content_sha256: preSha,
       post_content_sha256: postSha,
       content_stability: 'CONTENT_STABLE',
+      payload_text: post.text,
       payload_bytes: post.bytes,
       wire_bytes: pre.bytes + post.bytes,
       record_count: records.length,
