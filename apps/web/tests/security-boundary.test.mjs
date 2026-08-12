@@ -17,8 +17,10 @@ import {
   serializeStructuredData,
 } from '../src/lib/seo-truth.mjs';
 import {
+  CONFIGURED_TENANT_HOST_PATTERN,
   isExplicitRequestHost,
   tenantRedirectPath,
+  tenantRewriteRules,
 } from '../src/lib/tenant-rewrite.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -168,7 +170,7 @@ test('host validation runs before infrastructure and privileged route bypasses',
   );
 });
 
-test('configured staging hosts normalize upstream Host before relative tenant routing', () => {
+test('configured staging hosts retain their authority during relative tenant routing', () => {
   const proxySource = fs.readFileSync(
     path.join(webRoot, 'src/proxy.ts'),
     'utf8',
@@ -177,29 +179,32 @@ test('configured staging hosts normalize upstream Host before relative tenant ro
   const districtGate = proxySource.indexOf("host === 'districtweed.com'");
   const weedDmvGate = proxySource.indexOf("host === 'weeddmv.com'");
   const passthrough = proxySource.indexOf("url.pathname.startsWith('/api')");
-  const configuredHostRouting = proxySource.indexOf(
-    'if (!isExplicitRequestHost(host))',
+  const configuredRules = tenantRewriteRules().filter(
+    (rule) => rule.has[0].value === CONFIGURED_TENANT_HOST_PATTERN,
   );
 
   assert.ok(adminGate >= 0);
   assert.ok(districtGate >= 0);
   assert.ok(weedDmvGate > districtGate);
   assert.ok(passthrough > weedDmvGate);
-  assert.ok(configuredHostRouting > adminGate);
-  assert.ok(configuredHostRouting > passthrough);
   assert.match(proxySource, /Access Gated/);
   assert.match(proxySource, /Access Isolated/);
   assert.match(proxySource, /isStaticAssetPath\(url\.pathname\)/);
   assert.match(proxySource, /isCanonicalPlatformHostname\(host\)/);
-  assert.match(proxySource, /new Headers\(request\.headers\)/);
-  assert.match(
-    proxySource,
-    /requestHeaders\.set\('host', 'orderweeddc\.com'\)/,
+  assert.equal(configuredRules.length, 2);
+  assert.deepEqual(
+    configuredRules.map(({ source, destination }) => ({ source, destination })),
+    [
+      { source: '/', destination: '/orderweeddc.localhost' },
+      {
+        source: '/:path*',
+        destination: '/orderweeddc.localhost/:path*',
+      },
+    ],
   );
-  assert.match(
-    proxySource,
-    /NextResponse\.next\(\{\s*request: \{ headers: requestHeaders \},\s*\}\)/,
-  );
+  assert.doesNotMatch(proxySource, /new Headers\(request\.headers\)/);
+  assert.doesNotMatch(proxySource, /requestHeaders\.set\(/);
+  assert.doesNotMatch(proxySource, /request:\s*\{\s*headers:/);
   assert.doesNotMatch(proxySource, /url\.pathname\s*=\s*`\/orderweeddc\.localhost/);
   assert.doesNotMatch(proxySource, /NextResponse\.rewrite/);
 });

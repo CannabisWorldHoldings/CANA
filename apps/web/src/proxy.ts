@@ -5,10 +5,7 @@ import {
   parseAllowedRequestHost,
 } from '@/lib/host-policy.mjs';
 import { isCanonicalPlatformHostname } from '@/lib/tenant-host.mjs';
-import {
-  isExplicitRequestHost,
-  tenantRedirectPath,
-} from '@/lib/tenant-rewrite.mjs';
+import { tenantRedirectPath } from '@/lib/tenant-rewrite.mjs';
 
 const NON_INDEXABLE_RESPONSE_HEADERS = {
   'Cache-Control': 'no-store',
@@ -120,14 +117,6 @@ export function proxy(request: NextRequest) {
       ? `http://orderweeddc.localhost${port ? `:${port}` : ''}`
       : 'https://orderweeddc.com';
     return NextResponse.redirect(new URL(`${targetBase}${redirectPath}`));
-  }
-
-  if (!isExplicitRequestHost(host)) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('host', 'orderweeddc.com');
-    return NextResponse.next({
-      request: { headers: requestHeaders },
-    });
   }
 
   return NextResponse.next();

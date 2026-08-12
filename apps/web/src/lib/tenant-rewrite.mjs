@@ -1,5 +1,14 @@
 const CANONICAL_TENANT_PATH = '/orderweeddc.localhost';
 
+/*
+ * The proxy rejects every host that is neither statically known nor explicitly
+ * configured before these rewrites run. This final host predicate therefore
+ * routes only a validated configured hostname while preserving the request Host
+ * for same-origin form and URL security checks.
+ */
+export const CONFIGURED_TENANT_HOST_PATTERN =
+  '(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?';
+
 export const TENANT_HOST_ROUTES = Object.freeze([
   { host: 'orderweeddc.com', destination: CANONICAL_TENANT_PATH },
   { host: 'orderweeddc.localhost', destination: CANONICAL_TENANT_PATH },
@@ -58,7 +67,13 @@ function destinationWithQuery(destination, query) {
 }
 
 export function tenantRewriteRules() {
-  return TENANT_HOST_ROUTES.flatMap(({ host, destination, query }) => [
+  return [
+    ...TENANT_HOST_ROUTES,
+    {
+      host: CONFIGURED_TENANT_HOST_PATTERN,
+      destination: CANONICAL_TENANT_PATH,
+    },
+  ].flatMap(({ host, destination, query }) => [
     {
       source: '/',
       has: [{ type: 'host', value: host }],

@@ -919,6 +919,7 @@
     "apps/web/benchmarks/discovery-tasks.json",
     "apps/web/src/lib/public-submission.mjs",
     "apps/web/src/proxy.ts",
+    "apps/web/src/lib/tenant-rewrite.mjs",
     "apps/web/src/lib/data-status.mjs",
     "apps/web/src/lib/seo-truth.mjs",
     "apps/web/tests/data-status.test.mjs",
