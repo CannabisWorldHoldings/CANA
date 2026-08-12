@@ -16,6 +16,9 @@ import { sha256File } from './receipt.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const WEB = path.join(ROOT, 'apps', 'web');
 const MIGRATION_COURT = path.join(WEB, 'tests', 'migration-court.test.mjs');
+const VERIFY_WORKFLOW = path.join(ROOT, '.github', 'workflows', 'cana-verify.yml');
+const RUNNER = path.join(ROOT, 'tools', 'test-runner', 'runner.mjs');
+const POSTGRES_RUNTIME = path.join(ROOT, 'tools', 'postgres-sim', 'runtime.mjs');
 
 function cana(...args) {
   const env = {
@@ -30,10 +33,98 @@ function cana(...args) {
   });
 }
 
+function assertNoContinueOnError(workflow, job) {
+  assert.doesNotMatch(workflow, /continue-on-error/);
+  assert.doesNotMatch(workflow, /^\s*(?:\?\s*)?"[^"\n]*\\[^"\n]*"\s*(?::|$)/m);
+  assert.doesNotMatch(workflow, /(?:^|[\s:[{,])[&*][a-z0-9_-]+(?=\s|$|[,}\]])/im);
+  assert.doesNotMatch(job, /\\/);
+  assert.doesNotMatch(job, /^\s*<<\s*:/m);
+}
+
 test('the root dispatcher refuses an unknown verification profile', () => {
   const result = cana('verify', 'not-a-profile');
   assert.equal(result.status, 2);
   assert.match(result.stderr, /unknown verification profile/i);
+});
+
+test('the focused CI envelope exceeds the complete bounded path plus its safety margin', () => {
+  const workflow = fs.readFileSync(VERIFY_WORKFLOW, 'utf8');
+  const runner = fs.readFileSync(RUNNER, 'utf8');
+  const postgresRuntime = fs.readFileSync(POSTGRES_RUNTIME, 'utf8');
+  const focusedJob = workflow.match(
+    /\n  focused-verifier:\n(?<body>[\s\S]*?)(?=\n  [a-z][a-z0-9-]*:\n)/,
+  )?.groups?.body;
+  assert.ok(focusedJob, 'focused-verifier job must remain present');
+
+  const outerMinutes = Number(focusedJob.match(/timeout-minutes:\s*(\d+)/)?.[1]);
+  const verifierImageMinutes = Number(
+    runner.match(/\['build', '--tag',[\s\S]*?timeout:\s*(\d+)\s*\*\s*60_000/)?.[1],
+  );
+  const focusedExecutionMinutes = Number(
+    runner.match(/focused:\s*(\d+)\s*\*\s*60_000/)?.[1],
+  );
+  const postgresImageMinutes = Number(
+    postgresRuntime.match(/\['build', '--tag',[\s\S]*?timeout:\s*(\d+)\s*\*\s*60_000/)?.[1],
+  );
+  const runnerDefaultMinutes = Number(
+    runner.match(/timeout\s*=\s*(\d+)\s*_000/)?.[1],
+  ) / 60;
+  const postgresDefaultMinutes = Number(
+    postgresRuntime.match(/timeout\s*=\s*(\d+)\s*_000/)?.[1],
+  ) / 60;
+  const postgresHealthAttempts = Number(
+    postgresRuntime.match(/for \(let attempt = 0; attempt < (\d+);/)?.[1],
+  );
+  const operationalMarginMinutes = 10;
+
+  for (const [label, value] of Object.entries({
+    outerMinutes,
+    verifierImageMinutes,
+    focusedExecutionMinutes,
+    postgresImageMinutes,
+    runnerDefaultMinutes,
+    postgresDefaultMinutes,
+    postgresHealthAttempts,
+  })) {
+    assert.ok(Number.isInteger(value) && value > 0, `${label} must be a positive minute budget`);
+  }
+  const boundedStageMinutes = {
+    repositoryIdentity: 4 * runnerDefaultMinutes,
+    verifierImage: 0.5 + 0.5 + verifierImageMinutes + runnerDefaultMinutes,
+    worktreeAndSabotage: 3 * runnerDefaultMinutes,
+    sourceBundle: 2,
+    postgresImage: 0.5 + postgresImageMinutes + postgresDefaultMinutes,
+    postgresCreateReadinessAndProbes:
+      0.5 + 0.5 + (postgresHealthAttempts * 6 / 60) + 0.5 + 0.5,
+    verifierCreateAndTransfer: runnerDefaultMinutes + 2,
+    focusedExecution: focusedExecutionMinutes,
+    verifierCleanup: 0.5 + 0.5,
+    postgresCleanup: 2 * postgresDefaultMinutes,
+    finalCleanupAndInspection: 0.5 + runnerDefaultMinutes + runnerDefaultMinutes,
+  };
+  const boundedInnerMinutes = Object.values(boundedStageMinutes)
+    .reduce((total, minutes) => total + minutes, 0);
+  assert.equal(boundedInnerMinutes, 70);
+  assert.ok(
+    outerMinutes > boundedInnerMinutes + operationalMarginMinutes,
+    `focused outer timeout ${outerMinutes}m must exceed ${boundedInnerMinutes}m of bounded inner work plus ${operationalMarginMinutes}m margin`,
+  );
+  assert.match(focusedJob, /- run:\s*\.\/cana verify focused\s*(?:\n|$)/);
+  assertNoContinueOnError(workflow, focusedJob);
+  for (const key of [
+    'continue-on-error',
+    '"continue-on-error"',
+    "'continue-on-error'",
+    '"continue\\u002don\\u002derror"',
+  ]) {
+    const hostileWorkflow = `${workflow}\n${key}: false\n`;
+    assert.throws(() => assertNoContinueOnError(hostileWorkflow, focusedJob));
+  }
+  assert.throws(() => assertNoContinueOnError(workflow, `${focusedJob}\n    <<: *defaults\n`));
+  assert.throws(() => assertNoContinueOnError(
+    `${workflow}\nshared-key: &fail-soft "continue\\u002don\\u002derror"\n`,
+    `${focusedJob}\n    *fail-soft: true\n`,
+  ));
 });
 
 test('receipts bind to the active session and cannot override envelope fields', async () => {
