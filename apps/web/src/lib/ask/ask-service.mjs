@@ -63,6 +63,7 @@ export function resolveCustomerMarketContext(marketId) {
     evidence: Object.freeze({
       source_key: contract.source_key,
       source_id: contract.source_id,
+      source_url: contract.source_url,
       contract_digest: contract.contract_digest,
     }),
   });
@@ -75,6 +76,7 @@ function admittedMarketContext(market) {
     || market?.jurisdiction_code !== expected.jurisdiction_code
     || market?.evidence?.source_key !== expected.evidence.source_key
     || market?.evidence?.source_id !== expected.evidence.source_id
+    || market?.evidence?.source_url !== expected.evidence.source_url
     || market?.evidence?.contract_digest !== expected.evidence.contract_digest
   ) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_CONTEXT_INVALID');
   return expected;
@@ -118,6 +120,10 @@ function verifiedProjectionCandidate(candidate, market, clock) {
     customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_MISMATCH');
   }
   const provenance = candidate?.provenance;
+  if (
+    provenance?.source !== market.evidence.source_id
+    || provenance?.source_url !== market.evidence.source_url
+  ) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_MARKET_PROVENANCE_MISMATCH');
   const verifiedAt = new Date(provenance?.verified_at);
   const freshnessExpiresAt = new Date(provenance?.freshness_expires_at);
   if (
@@ -250,7 +256,12 @@ export function buildCandidateWhere(intent, { brandId, now = new Date(), market 
     ...currentPublicRecordWhere(now),
     menus: { some: { brandMenus: { some: { brandId } } } },
   };
-  if (market) where.state = admittedMarketContext(market).jurisdiction_code;
+  if (market) {
+    const admittedMarket = admittedMarketContext(market);
+    where.state = admittedMarket.jurisdiction_code;
+    where.dataSource = admittedMarket.evidence.source_id;
+    where.sourceUrl = admittedMarket.evidence.source_url;
+  }
   const location = intent?.dimensions?.location;
   if (location?.status === 'KNOWN' && typeof location.value === 'string') {
     // Case-insensitive by explicit mode — never rely on collation defaults.
@@ -438,7 +449,7 @@ export async function answerCustomerDiscovery(prisma, {
   now = new Date(),
 }) {
   const market = resolveCustomerMarketContext(marketId);
-  const intent = compileIntent(rawQuery, { now });
+  const intent = compileIntent(rawQuery, { now, marketId });
   const answer = await answerIntent(prisma, {
     intent,
     brandId,

@@ -197,6 +197,12 @@ test('first report records live identities, requested states and the owner-gated
   assert.equal(report.PHASE_BOUNDARY, 'ASK_CUSTOMER_DISCOVERY_CANDIDATE_REVIEW');
   assert.equal(report.PRODUCT_IMPLEMENTATION_STARTED, true);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.STATUS, 'LOCAL_CANDIDATE_IMPLEMENTED');
+  assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.SURFACES, [
+    'apps/web/src/lib/ask/intent-ir.mjs',
+    'apps/web/src/lib/ask/ask-service.mjs',
+    'apps/web/tests/ask-intent-ir.test.mjs',
+    'apps/web/tests/ask-service-where.test.mjs',
+  ]);
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.MARKETS, ['US-DC', 'US-MD', 'US-VA']);
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.TRUTH_STATES, ['KNOWN', 'UNKNOWN', 'CAPABILITY_GAP']);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.NO_SECOND_SEARCH_ENGINE, true);

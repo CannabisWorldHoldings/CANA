@@ -292,7 +292,9 @@
     "BLOCKER": null,
     "IMPLEMENTATION_BASE": "e11218a79ff4b77782917be49058cb61b11f31cc",
     "SURFACES": [
+      "apps/web/src/lib/ask/intent-ir.mjs",
       "apps/web/src/lib/ask/ask-service.mjs",
+      "apps/web/tests/ask-intent-ir.test.mjs",
       "apps/web/tests/ask-service-where.test.mjs"
     ],
     "MARKETS": [

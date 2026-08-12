@@ -155,6 +155,7 @@ test('ASK returns only a subject-complete current Answerability Frontier', async
 });
 
 function verifiedCandidate({ marketId, state, latitude = null, longitude = null } = {}) {
+  const source = askService.resolveCustomerMarketContext(marketId).evidence;
   return {
     id: `retailer-${marketId}`,
     name: `${marketId} Evidence Retailer`,
@@ -172,8 +173,8 @@ function verifiedCandidate({ marketId, state, latitude = null, longitude = null 
     regulatory: { license_status: 'ACTIVE' },
     provenance: {
       data_status: 'VERIFIED_CURRENT',
-      source: `${marketId}-OFFICIAL`,
-      source_url: 'https://example.invalid/official',
+      source: source.source_id,
+      source_url: source.source_url,
       retrieved_at: '2026-08-08T00:00:00.000Z',
       verified_at: '2026-08-08T00:00:00.000Z',
       freshness_expires_at: '2026-09-10T00:00:00.000Z',
@@ -299,36 +300,54 @@ test('projection fails closed on cross-market, stale or demonstration candidates
     () => askService.projectCustomerDiscovery({ intent, market, answer: verifiedAnswer(demonstration), asOf: NOW }),
     /CANA_CUSTOMER_DISCOVERY_UNVERIFIED_CANDIDATE/,
   );
+
+  const foreignSource = verifiedCandidate({ marketId: 'US-DC', state: 'DC' });
+  foreignSource.provenance.source = 'attacker-controlled-source';
+  assert.throws(
+    () => askService.projectCustomerDiscovery({ intent, market, answer: verifiedAnswer(foreignSource), asOf: NOW }),
+    /CANA_CUSTOMER_DISCOVERY_MARKET_PROVENANCE_MISMATCH/,
+  );
 });
 
-test('customer discovery orchestration reuses ASK and applies market scope to the verified query', async () => {
-  let capturedWhere = null;
-  const prisma = {
-    retailer: {
-      async findMany({ where }) {
-        capturedWhere = where;
-        return [{
-          id: 'retailer-us-dc', name: 'Evidence Retailer', type: 'storefront',
-          address: '100 Truth Ave NW', city: 'Dupont Circle', state: 'DC', zip: '20036',
-          lat: 38.91, lng: -77.04, phone: null, website: null, hours: null, hoursSource: null,
-          licenseStatus: 'ACTIVE', dataStatus: 'VERIFIED_CURRENT', dataSource: 'DC_ABCA',
-          sourceUrl: 'https://example.invalid/official', retrievedAt: new Date('2026-08-08T00:00:00.000Z'),
-          verifiedAt: new Date('2026-08-08T00:00:00.000Z'), freshnessExpiresAt: new Date('2026-09-10T00:00:00.000Z'),
-          confidence: 1, isDemonstration: false,
-        }];
-      },
-    },
-  };
-  const projection = await askService.answerCustomerDiscovery(prisma, {
-    rawQuery: 'dispensary in dupont',
-    marketId: 'US-DC',
-    brandId: BRAND,
-    tenantDomain: 'orderweeddc.com',
-    now: NOW,
-  });
+test('customer discovery orchestration compiles real DC, Maryland and Virginia locations and binds official source scope', async () => {
+  const inputs = [
+    { marketId: 'US-DC', state: 'DC', query: 'dispensary in dupont', location: 'dupont circle' },
+    { marketId: 'US-MD', state: 'MD', query: 'dispensary in bethesda', location: 'bethesda' },
+    { marketId: 'US-VA', state: 'VA', query: 'dispensary in richmond', location: 'richmond' },
+  ];
 
-  assert.equal(capturedWhere.state, 'DC');
-  assert.equal(projection.intent.dimensions.location.value, 'dupont circle');
-  assert.equal(projection.results.length, 1);
-  assert.equal(projection.truth.answerability_frontier.answerable, true);
+  for (const input of inputs) {
+    let capturedWhere = null;
+    const source = askService.resolveCustomerMarketContext(input.marketId).evidence;
+    const prisma = {
+      retailer: {
+        async findMany({ where }) {
+          capturedWhere = where;
+          return [{
+            id: `retailer-${input.marketId}`, name: 'Evidence Retailer', type: 'storefront',
+            address: '100 Truth Ave', city: input.location, state: input.state, zip: '00000',
+            lat: null, lng: null, phone: null, website: null, hours: null, hoursSource: null,
+            licenseStatus: 'ACTIVE', dataStatus: 'VERIFIED_CURRENT', dataSource: source.source_id,
+            sourceUrl: source.source_url, retrievedAt: new Date('2026-08-08T00:00:00.000Z'),
+            verifiedAt: new Date('2026-08-08T00:00:00.000Z'), freshnessExpiresAt: new Date('2026-09-10T00:00:00.000Z'),
+            confidence: 1, isDemonstration: false,
+          }];
+        },
+      },
+    };
+    const projection = await askService.answerCustomerDiscovery(prisma, {
+      rawQuery: input.query,
+      marketId: input.marketId,
+      brandId: BRAND,
+      tenantDomain: 'orderweeddc.com',
+      now: NOW,
+    });
+
+    assert.equal(capturedWhere.state, input.state);
+    assert.equal(capturedWhere.dataSource, source.source_id);
+    assert.equal(capturedWhere.sourceUrl, source.source_url);
+    assert.equal(projection.intent.dimensions.location.value, input.location);
+    assert.equal(projection.results.length, 1);
+    assert.equal(projection.truth.answerability_frontier.answerable, true);
+  }
 });

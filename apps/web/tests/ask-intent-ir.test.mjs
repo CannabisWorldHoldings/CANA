@@ -45,6 +45,21 @@ test('longest location token wins: "dupont circle" and bare "dupont" both compil
   assert.equal(compileIntent('flower in dupont', { now: NOW }).dimensions.location.value, 'dupont circle');
 });
 
+test('market context selects bounded Maryland and Virginia location vocabulary', () => {
+  assert.equal(
+    compileIntent('dispensary in bethesda', { now: NOW, marketId: 'US-MD' }).dimensions.location.value,
+    'bethesda',
+  );
+  assert.equal(
+    compileIntent('dispensary in richmond', { now: NOW, marketId: 'US-VA' }).dimensions.location.value,
+    'richmond',
+  );
+  assert.equal(
+    compileIntent('dispensary in bethesda', { now: NOW, marketId: 'US-VA' }).dimensions.location.status,
+    'UNKNOWN',
+  );
+});
+
 test('fulfillment and open-now compile only from explicit language', () => {
   const ir = compileIntent('delivery open now in navy yard', { now: NOW });
   assert.equal(ir.dimensions.fulfillment.value, 'delivery');
