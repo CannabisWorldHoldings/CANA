@@ -1,11 +1,16 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "REPORT_AS_OF": "2026-08-13T05:27:04Z",
+  "REPORT_AS_OF": "2026-08-13T17:25:47Z",
   "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
-  "CURRENT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
-  "CURRENT_MAIN_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
+  "CURRENT_MAIN": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+  "CURRENT_MAIN_TREE": "58571ec7986d2c37950505517b1ff11f80b16a28",
   "CURRENT_PRODUCTION_SHA": "b993a2d5252380472b20ab4565ce07da9df1e61d",
+  "CANONICAL_EQUIVALENCE": {
+    "CANA_FEATURE_RUNTIME_OUTCOME_MAP.json": "This report already records capability, runtime surface, proof state and outcome boundary.",
+    "CANA_MISSING_CONNECTION_LEDGER.json": "MISSING_CONNECTIVE_TISSUE and the per-domain GAP fields are the canonical existing equivalent.",
+    "ACTION": "EXTEND_EXISTING_CANONICAL_EQUIVALENTS"
+  },
   "CURRENT_PRODUCTION_STATE": {
     "EVIDENCE_STATE": "VERIFIED_AT_PROOF_TIME_NOT_REPROBED",
     "HOMEPAGE_HTTP_STATUS": 200,
@@ -14,12 +19,12 @@
     "DATABASE_STATUS": "UP",
     "RELEASE_HTTP_STATUS": 200,
     "BUILT_AT": "2026-08-12T12:11:32.201Z",
-    "RELATIONSHIP_TO_MAIN": "ANCESTOR_15_COMMITS_BEHIND_NOT_DIVERGENT",
+    "RELATIONSHIP_TO_MAIN": "ANCESTOR_35_COMMITS_BEHIND_NOT_DIVERGENT",
     "PROOF": [
       "GET https://orderweeddc.com/ at 2026-08-12T16:26:55Z",
       "GET https://orderweeddc.com/api/health at 2026-08-12T16:26:56Z",
       "GET https://orderweeddc.com/api/release at 2026-08-12T16:26:57Z",
-      "GitHub compare b993a2d5252380472b20ab4565ce07da9df1e61d...c436e3742929af71ee6cd45acc47fb2cabd55fef"
+      "Git ancestry revalidated against fb20365ffa3eeb55f1c2c0d8323dfd8febadb016; production was not reprobed or mutated"
     ]
   },
   "CURRENT_PRODUCTION_DATABASE_IDENTITY": {
@@ -110,12 +115,35 @@
       "durability-proof"
     ]
   },
-  "WHY_CURRENT_PUBLIC_UI_IS_MISSING_LATER_WORK": "Current main contains merged market, Reality Compiler, ASK and durability advances, while the later customer/merchant/Apple donor PRs remain open, stacked, unmerged or visually rejected. Live production is the stable b993a2d safety anchor and is intentionally 15 canonical commits behind main, so neither public production nor current main contains the full three-face convergence UI.",
+  "PR47": {
+    "BASE": "fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d",
+    "HEAD": "c4e3e895a9fe7728de61f395e1f6181966385cb2",
+    "TREE": "58571ec7986d2c37950505517b1ff11f80b16a28",
+    "STATE": "MERGED_NORMAL_HISTORY_PRESERVED",
+    "MERGE_COMMIT": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+    "MERGE_PARENTS": [
+      "fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d",
+      "c4e3e895a9fe7728de61f395e1f6181966385cb2"
+    ],
+    "REVIEWED_HEAD_IN_MAIN_ANCESTRY": true,
+    "EXACT_HEAD_RUN": 31709241735,
+    "EXACT_MAIN_RUN": 31725051309,
+    "REQUIRED_JOBS": "6/6_PASS",
+    "CODERABBIT": "SUCCESS",
+    "UNRESOLVED_REVIEW_THREADS": 0,
+    "PRODUCTION_EFFECTS": 0
+  },
+  "WHY_CURRENT_PUBLIC_UI_IS_MISSING_LATER_WORK": "Current main now contains PR #47 functional Customer World convergence over canonical Reality and ASK. The Apple visual donor remains open and unapproved, merchant and owner faces remain partial, and production intentionally remains at the stable b993a2d safety anchor; therefore neither current main nor production is the completed three-face organism.",
   "CUSTOMER_WORLD_CURRENT_STATE": {
     "STATE": "PARTIALLY_IMPLEMENTED",
     "PRESENT": [
       "tenant marketplace",
       "ASK intent to customer discovery projection candidate",
+      "canonical dedicated /search route",
+      "canonical dedicated /delivery route",
+      "canonical dedicated /dispensaries route",
+      "canonical /merchant/:id profile route",
+      "shared list/map identity continuity",
       "products",
       "deals",
       "neighborhoods",
@@ -124,9 +152,6 @@
       "truth filters"
     ],
     "MISSING": [
-      "canonical dedicated /search route",
-      "canonical dedicated /delivery route",
-      "canonical dedicated /dispensaries route",
       "first-class address delivery eligibility",
       "approved Apple visual canon",
       "full Sovereign UI Gauntlet"
@@ -288,9 +313,9 @@
   "FIRST_BOUNDED_PRODUCT_SLICE": {
     "CANDIDATE": "ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION",
     "RATIONALE": "Current ASK and deterministic discovery seams already exist; the slice adds one read-only typed adapter from canonical current claim decisions without a second truth or search brain.",
-    "STATUS": "LOCAL_CANDIDATE_IMPLEMENTED",
+    "STATUS": "CANONICAL_MAIN_VERIFIED_IMPLEMENTED",
     "BLOCKER": null,
-    "IMPLEMENTATION_BASE": "e11218a79ff4b77782917be49058cb61b11f31cc",
+    "IMPLEMENTATION_BASE": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
     "SURFACES": [
       "apps/web/src/lib/ask/intent-ir.mjs",
       "apps/web/src/lib/ask/answerability-frontier.mjs",
@@ -332,7 +357,7 @@
     "PROJECTION_DECIDES_TRUTH": false,
     "PRODUCTION_EFFECTS": 0
   },
-  "PHASE_BOUNDARY": "ASK_CUSTOMER_DISCOVERY_CANDIDATE_REVIEW",
+  "PHASE_BOUNDARY": "CUSTOMER_APPLE_VISUAL_CANON_OWNER_GATE_NEXT",
   "PRODUCT_IMPLEMENTATION_STARTED": true,
   "NO_MARKET_4": true,
   "PRODUCTION_MUTATED": false,
@@ -348,5 +373,5 @@
     "PAID_PROVIDER_CALL": 0,
     "MEDIA_SPEND": 0
   },
-  "NEXT_OWNER_ACTION": "Review the exact ASK customer discovery candidate; keep production frozen and do not promote visual or route recovery without its separate courts."
+  "NEXT_OWNER_ACTION": "Review the future bounded Apple Visual Canon candidate after its 390/768/1024/1440 browser gauntlet; keep production frozen."
 }

@@ -1,0 +1,87 @@
+{
+  "SCHEMA_VERSION": 1,
+  "RECORDED_AT": "2026-08-13T17:25:47Z",
+  "REPOSITORY": "CannabisWorldHoldings/CANA",
+  "PR": 47,
+  "TITLE": "feat(customer): converge functional discovery on canonical Reality",
+  "AUTHORIZATION": "OWNER_AUTHORIZED_NORMAL_MERGE_ONLY_AT_EXACT_BASE_AND_HEAD",
+  "PREFLIGHT": {
+    "STATE": "OPEN",
+    "DRAFT": false,
+    "MERGEABLE": "MERGEABLE",
+    "MERGE_STATE": "CLEAN",
+    "BASE": "fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d",
+    "HEAD": "c4e3e895a9fe7728de61f395e1f6181966385cb2",
+    "TREE": "58571ec7986d2c37950505517b1ff11f80b16a28",
+    "EXACT_HEAD_RUN": 31709241735,
+    "REQUIRED_JOBS": {
+      "candidate-unit": "SUCCESS",
+      "focused-verifier": "SUCCESS",
+      "maria-verifier": "SUCCESS",
+      "cpanel-verifier": "SUCCESS",
+      "durability-proof": "SUCCESS",
+      "github-import-offline": "SUCCESS"
+    },
+    "CODERABBIT": "SUCCESS",
+    "UNRESOLVED_REVIEW_THREADS": 0,
+    "LOCAL_WORKTREE": "CLEAN",
+    "LOCAL_TARGETED_TESTS": [
+      "50/50 PASS",
+      "47/47 PASS"
+    ],
+    "SEMANTIC_REVIEW": "PASS_NO_TRUTH_REGRESSION_NO_SCOPE_EXPANSION"
+  },
+  "MERGE": {
+    "METHOD": "NORMAL_HISTORY_PRESERVING",
+    "SQUASH": false,
+    "REBASE": false,
+    "MATCH_HEAD_COMMIT": "c4e3e895a9fe7728de61f395e1f6181966385cb2",
+    "COMMIT": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+    "TREE": "58571ec7986d2c37950505517b1ff11f80b16a28",
+    "PARENTS": [
+      "fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d",
+      "c4e3e895a9fe7728de61f395e1f6181966385cb2"
+    ],
+    "REVIEWED_HEAD_IS_ANCESTOR": true
+  },
+  "POST_MERGE": {
+    "EXACT_MAIN": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+    "RUN": 31725051309,
+    "CONCLUSION": "SUCCESS",
+    "REQUIRED_JOBS": {
+      "candidate-unit": "SUCCESS",
+      "focused-verifier": "SUCCESS",
+      "maria-verifier": "SUCCESS",
+      "cpanel-verifier": "SUCCESS",
+      "durability-proof": "SUCCESS",
+      "github-import-offline": "SUCCESS"
+    }
+  },
+  "FUNCTIONAL_RESULT": {
+    "STATE": "CANONICAL_MAIN_VERIFIED_IMPLEMENTED",
+    "ROUTES": [
+      "/",
+      "/search",
+      "/delivery",
+      "/dispensaries",
+      "/merchant/:id"
+    ],
+    "TRUTH_SOURCE": "Reality -> ASK -> Customer World",
+    "UNKNOWN_POLICY": "PRESERVE_UNKNOWN",
+    "MARKETS": [
+      "US-DC",
+      "US-MD",
+      "US-VA"
+    ]
+  },
+  "BOUNDARY": {
+    "APPLE_VISUAL_CANON": "NOT_STARTED_BY_THIS_RECEIPT",
+    "PRODUCTION_SHA": "b993a2d5252380472b20ab4565ce07da9df1e61d",
+    "PRODUCTION_EFFECTS": 0,
+    "DATABASE_EFFECTS": 0,
+    "DEPLOYMENT_EFFECTS": 0,
+    "OUTREACH_EFFECTS": 0,
+    "PAID_PROVIDER_EFFECTS": 0,
+    "MARKET4_EFFECTS": 0
+  }
+}

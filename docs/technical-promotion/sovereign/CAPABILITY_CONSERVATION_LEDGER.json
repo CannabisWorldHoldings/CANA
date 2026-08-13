@@ -1,9 +1,16 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "AS_OF": "2026-08-12T18:04:49Z",
+  "AS_OF": "2026-08-13T17:25:47Z",
   "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
-  "CANONICAL_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+  "CANONICAL_MAIN": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+  "CANONICAL_TREE": "58571ec7986d2c37950505517b1ff11f80b16a28",
+  "PRODUCTION_ANCHOR": "b993a2d5252380472b20ab4565ce07da9df1e61d",
+  "CANONICAL_EQUIVALENCE": {
+    "REQUESTED_ARTIFACT": "CANA_CODEX_TOTAL_PROJECT_CONVERGENCE_MAP.json",
+    "DISPOSITION": "EXTEND_EXISTING_CANONICAL_EQUIVALENT",
+    "REASON": "This ledger already owns mechanism conservation, current equivalents, proof, conflicts and dispositions; creating a second map would duplicate authority."
+  },
   "POLICY": "NO_VERIFIED_WORK_MAY_DISAPPEAR_SILENTLY",
   "ALLOWED_DISPOSITIONS": [
     "CANONICAL",
@@ -275,6 +282,34 @@
       "DISPOSITION": "VISUAL_DONOR"
     },
     {
+      "SOURCE": "PR #47",
+      "CAPABILITY": "Canonical Customer World functional convergence",
+      "ORIGINAL_PURPOSE": "Connect home, search, delivery, dispensary, list, map and merchant profiles to one canonical Reality and ASK substrate while preserving explicit unknown and capability-gap states.",
+      "CURRENT_EQUIVALENT": "apps/web/src/lib/customer-world.mjs, apps/web/src/lib/ask/customer-discovery.mjs, apps/web/src/app/[domain] customer routes and customer-world components",
+      "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
+      "OWNER_DECISION": "NORMAL_MERGED_AFTER_EXACT_HEAD_COURT; FUNCTIONAL_CANONICAL; APPLE_VISUAL_WORK_REMAINS_SEPARATE",
+      "TARGET_CANONICAL_SEAM": "Current Customer World routes and canonical Reality projection",
+      "DEPENDENCIES": [
+        "MarketClaim current-decision selection",
+        "ASK Intent IR and answerability frontier",
+        "tenant and market admission",
+        "PostGIS/H3 map projection where coordinates are verified"
+      ],
+      "PROOF": [
+        {
+          "REF": "PR #47 reviewed head c4e3e895a9fe7728de61f395e1f6181966385cb2",
+          "EVIDENCE": "Exact base fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d, exact tree 58571ec7986d2c37950505517b1ff11f80b16a28, six hosted checks and CodeRabbit passed with zero unresolved review threads.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        },
+        {
+          "REF": "merge fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+          "EVIDENCE": "Normal merge has exact parents fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d and c4e3e895a9fe7728de61f395e1f6181966385cb2; post-merge run 31725051309 passed all six canonical-main jobs.",
+          "STATE": "VERIFIED_IMPLEMENTED"
+        }
+      ],
+      "DISPOSITION": "CANONICAL"
+    },
+    {
       "SOURCE": "CURRENT CANONICAL MAIN",
       "CAPABILITY": "Reality Compiler and claim courts",
       "ORIGINAL_PURPOSE": "Compile official evidence into claim-level provenance while preserving UNKNOWN until predicate-specific verification admits a claim.",
@@ -364,20 +399,19 @@
       "SOURCE": "CURRENT CANONICAL MAIN",
       "CAPABILITY": "Customer marketplace projection",
       "ORIGINAL_PURPOSE": "Expose tenant-scoped public marketplace, products, deals, neighborhoods, maps and truthful directory results.",
-      "CURRENT_EQUIVALENT": "apps/web/src/app/[domain], marketplace components, directory-search.mjs and product-discovery.mjs",
+      "CURRENT_EQUIVALENT": "apps/web/src/app/[domain], customer-world.mjs, customer discovery projection, marketplace components, directory-search.mjs and product-discovery.mjs",
       "CURRENT_STATE": "PARTIALLY_IMPLEMENTED",
-      "OWNER_DECISION": "RETAIN_CURRENT_TRUTH_SEAMS; RECONSTRUCT_FUNCTION_AND_VISUALS_WITH_OWNER_REVIEW",
+      "OWNER_DECISION": "PR47_FUNCTIONAL_CANONICAL; RETAIN_CURRENT_TRUTH_SEAMS; APPLE_VISUAL_CANON_REQUIRES_SEPARATE_OWNER_REVIEW",
       "TARGET_CANONICAL_SEAM": "Customer face defined in THREE_FACE_TRUTH_MAP.json",
       "DEPENDENCIES": [
-        "ASK convergence",
         "delivery eligibility",
         "Apple visual hand-port",
         "browser gauntlet"
       ],
       "PROOF": [
         {
-          "REF": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3:apps/web/tests/marketplace-ui.test.mjs",
-          "EVIDENCE": "Current marketplace contract exists, but dedicated customer routes and accepted sovereign visual proof are incomplete.",
+          "REF": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016:apps/web/tests/customer-world.test.mjs",
+          "EVIDENCE": "Dedicated home, search, delivery, dispensary, list/map and canonical merchant profile behavior is merged and exact-main verified; accepted sovereign visual proof remains incomplete.",
           "STATE": "PARTIALLY_IMPLEMENTED"
         }
       ],

@@ -1,8 +1,13 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "AS_OF": "2026-08-12T18:04:49Z",
-  "CANONICAL_BASE": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+  "AS_OF": "2026-08-13T17:25:47Z",
+  "CANONICAL_BASE": "fb20365ffa3eeb55f1c2c0d8323dfd8febadb016",
+  "CANONICAL_TREE": "58571ec7986d2c37950505517b1ff11f80b16a28",
+  "CANONICAL_EQUIVALENCE": {
+    "REQUESTED_ARTIFACT": "CANA_THREE_FACE_ROUTE_MAP.json",
+    "DISPOSITION": "EXTEND_EXISTING_CANONICAL_EQUIVALENT"
+  },
   "STATUS": "EVIDENCE_BOUND_CONVERGENCE_CONTRACT",
   "DESIGN_LAW": "ONE_BRAIN_THREE_PURPOSE_BUILT_FACES",
   "SHARED_REALITY": {
@@ -44,11 +49,30 @@
         "/products",
         "/deals",
         "/neighborhoods",
+        "/merchant/:id",
         "/retailer/:id",
-        "/product/:id",
-        "/deal/:id",
-        "/neighborhood/:slug"
+        "/neighborhoods/:slug"
       ],
+      "ROUTE_STATUS": {
+        "CURRENT_RUNTIME_VERIFIED": [
+          "/",
+          "/search",
+          "/delivery",
+          "/dispensaries",
+          "/merchant/:id"
+        ],
+        "CURRENT_LEGACY_OR_ADJACENT": [
+          "/products",
+          "/deals",
+          "/neighborhoods",
+          "/neighborhoods/:slug",
+          "/retailer/:id"
+        ],
+        "NOT_PROVEN_AS_DISTINCT_ROUTE": [
+          "/product/:id",
+          "/deal/:id"
+        ]
+      },
       "NAVIGATION_IDENTITY": "CUSTOMER_DISCOVERY_NAVIGATION",
       "INFORMATION_DENSITY": "LOW_TO_MODERATE_PROGRESSIVE_DISCLOSURE",
       "VOCABULARY": {
@@ -87,7 +111,7 @@
       },
       "CURRENT_STATE": {
         "STATUS": "PARTIALLY_IMPLEMENTED",
-        "EVIDENCE": "Current main has public marketplace, product/deal/neighborhood, map, wallet and directory seams, but dedicated search/delivery/dispensary parity and the approved Apple visual canon are incomplete."
+        "EVIDENCE": "PR #47 is canonical at fb20365ffa3eeb55f1c2c0d8323dfd8febadb016: home, search, delivery, dispensaries, list/map and merchant profiles consume one Reality/ASK substrate. Delivery eligibility, product/deal completeness and the owner-approved Apple visual canon remain incomplete."
       }
     },
     {
