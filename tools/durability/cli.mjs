@@ -44,6 +44,9 @@ const PHASE_B_SLICE1_ASSIGNMENT_SHA256 =
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
 const PHASE_B_SLICE2_ASSIGNMENT_SHA256 =
   '93a98630b1b46199fdc678bd591d1bd1c35fb1f4c0abbc02dc2fca20e05d6869';
+const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08_13';
+const CUSTOMER_DISCOVERY_ASSIGNMENT_SHA256 =
+  'b5400748ef1897eaaa3dda96c5c4fca737ef9b70acd4b03681c8c0fa2376988f';
 const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   'root_dispatcher',
   'reason',
@@ -58,6 +61,7 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   PR35_ASSIGNMENT,
   PHASE_B_SLICE1_ASSIGNMENT,
   PHASE_B_SLICE2_ASSIGNMENT,
+  CUSTOMER_DISCOVERY_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PR29_ASSIGNMENT,
@@ -65,7 +69,15 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'ded17c4955386789ba3e1ed5339dc6e97da639fe61441f67eb541529b1160fba';
+  '82b66035ebf613b55f8e2ce23ce785ff88f45c4ca36601a96b71b4ca6ef85109';
+
+export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
+  'apps/web/src/lib/ask/customer-discovery-contract.mjs',
+  'apps/web/src/lib/ask/customer-discovery-projection.mjs',
+  'apps/web/src/lib/ask/customer-discovery.mjs',
+  'apps/web/src/lib/ask/customer-reality-answer.mjs',
+  'apps/web/src/lib/ask/legacy-retailer-answer.mjs',
+]);
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
   'apps/web/src/lib/interaction-proof.mjs',
@@ -1139,6 +1151,38 @@ export function validateOwnershipManifest(ownership) {
     refusal('Phase B Slice 2 court blob admission is malformed');
   }
 
+  const customerDiscoveryAssignment =
+    ownership.explicit_user_assignment[CUSTOMER_DISCOVERY_ASSIGNMENT];
+  if (
+    !exactKeys(customerDiscoveryAssignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'base_commit',
+      'authorized_paths',
+      'approval_sha256',
+    ])
+    || customerDiscoveryAssignment.authorization !==
+      'CANA × ORDERWEEDDC — PR45 CANONICALIZATION + THREE-FACE CONVERGENCE IGNITION'
+    || customerDiscoveryAssignment.base_commit !==
+      'c436e3742929af71ee6cd45acc47fb2cabd55fef'
+    || customerDiscoveryAssignment.authorization_effect !==
+      'Durability path ownership only; no live acquisition, provider, credential, paid-call, spending, publishing, deployment, production, database mutation, DNS, outreach, verification-bypass or self-promotion authority.'
+    || !Array.isArray(customerDiscoveryAssignment.authorized_paths)
+    || JSON.stringify(customerDiscoveryAssignment.authorized_paths) !==
+      JSON.stringify(CUSTOMER_DISCOVERY_AUTHORIZED_PATHS)
+  ) {
+    refusal('ASK customer discovery ownership assignment is malformed');
+  }
+  for (const authorizedPath of CUSTOMER_DISCOVERY_AUTHORIZED_PATHS) {
+    if (allOwnedPaths.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(`ASK customer discovery path must have exactly one ownership entry: ${authorizedPath}`);
+    }
+    if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(`ASK customer discovery path must have exactly one planned-candidate entry: ${authorizedPath}`);
+    }
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -1189,6 +1233,19 @@ export function validateOwnershipManifest(ownership) {
     phaseBSlice2ActualDigest !== PHASE_B_SLICE2_ASSIGNMENT_SHA256
   ) {
     refusal('Phase B Slice 2 assignment failed its owner-approval digest');
+  }
+  const {
+    approval_sha256: customerDiscoveryRecordedDigest,
+    ...customerDiscoveryApprovalPayload
+  } = customerDiscoveryAssignment;
+  const customerDiscoveryActualDigest = sha256Bytes(
+    canonicalJson(customerDiscoveryApprovalPayload),
+  );
+  if (
+    customerDiscoveryRecordedDigest !== CUSTOMER_DISCOVERY_ASSIGNMENT_SHA256
+    || customerDiscoveryActualDigest !== CUSTOMER_DISCOVERY_ASSIGNMENT_SHA256
+  ) {
+    refusal('ASK customer discovery assignment failed its owner-approval digest');
   }
 
   const { approval_sha256: pr2RecordedDigest, ...pr2ApprovalPayload } = pr2Assignment;

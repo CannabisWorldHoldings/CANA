@@ -692,6 +692,20 @@
         "apps/web/tests/migration-court.test.mjs": "221193fa171cf3f963f820ed3730c59c95d8e7a88858927d89aab5fa9cf285e8"
       },
       "approval_sha256": "93a98630b1b46199fdc678bd591d1bd1c35fb1f4c0abbc02dc2fca20e05d6869"
+    },
+    "ask_customer_discovery_projection_2026_08_13": {
+      "authorization": "CANA × ORDERWEEDDC — PR45 CANONICALIZATION + THREE-FACE CONVERGENCE IGNITION",
+      "scope": "The five exact ASK customer-discovery module paths required to implement the owner-authorized ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION slice; no wildcard or neighboring-path authority.",
+      "authorization_effect": "Durability path ownership only; no live acquisition, provider, credential, paid-call, spending, publishing, deployment, production, database mutation, DNS, outreach, verification-bypass or self-promotion authority.",
+      "base_commit": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+      "authorized_paths": [
+        "apps/web/src/lib/ask/customer-discovery-contract.mjs",
+        "apps/web/src/lib/ask/customer-discovery-projection.mjs",
+        "apps/web/src/lib/ask/customer-discovery.mjs",
+        "apps/web/src/lib/ask/customer-reality-answer.mjs",
+        "apps/web/src/lib/ask/legacy-retailer-answer.mjs"
+      ],
+      "approval_sha256": "b5400748ef1897eaaa3dda96c5c4fca737ef9b70acd4b03681c8c0fa2376988f"
     }
   },
   "owned_create_paths": [
@@ -947,7 +961,12 @@
     "apps/web/tests/tri-market-durable-store.test.mjs",
     "docs/markets/TRI_MARKET_DURABLE_REALITY.md",
     "apps/web/scripts/cutover-preflight.mjs",
-    "apps/web/tests/tri-market-postgres-court.test.mjs"
+    "apps/web/tests/tri-market-postgres-court.test.mjs",
+    "apps/web/src/lib/ask/customer-discovery-contract.mjs",
+    "apps/web/src/lib/ask/customer-discovery-projection.mjs",
+    "apps/web/src/lib/ask/customer-discovery.mjs",
+    "apps/web/src/lib/ask/customer-reality-answer.mjs",
+    "apps/web/src/lib/ask/legacy-retailer-answer.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -1348,6 +1367,11 @@
     ,"docs/reality/PHASE_B_SLICE2_LIVE_ACQUISITION.md"
     ,"tools/reality/verify-slice2-evidence-packet.mjs"
     ,"tools/reality/verify-slice2-evidence-packet.test.mjs"
+    ,"apps/web/src/lib/ask/customer-discovery-contract.mjs"
+    ,"apps/web/src/lib/ask/customer-discovery-projection.mjs"
+    ,"apps/web/src/lib/ask/customer-discovery.mjs"
+    ,"apps/web/src/lib/ask/customer-reality-answer.mjs"
+    ,"apps/web/src/lib/ask/legacy-retailer-answer.mjs"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",

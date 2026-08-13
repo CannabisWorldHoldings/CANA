@@ -10,6 +10,7 @@ let marketGap;
 let continuationConsumers;
 let answerability;
 let askWork;
+let customerContract;
 
 const WEB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -20,6 +21,7 @@ before(async () => {
     continuationConsumers = await import('../src/lib/continuation/continuation-consumers.mjs');
     answerability = await import('../src/lib/ask/answerability-frontier.mjs');
     askWork = await import('../src/lib/ask/ask-work.mjs');
+    customerContract = await import('../src/lib/ask/customer-discovery-contract.mjs');
   } catch (error) {
     assert.fail(`Reality organism loop is not implemented: ${error.message}`);
   }
@@ -32,18 +34,24 @@ async function marketGapHarness({
   opportunityTriggerId = 'trigger-1',
   tamperReceipt = false,
   defer = false,
+  marketId = null,
 } = {}) {
   const now = new Date('2026-08-10T04:00:00.000Z');
   const updates = [];
   const storedIntent = {
     raw_query: 'sha256:minimized', unknown_dimensions: [], unsupported_known_dimensions: [],
-    dimensions: { location: { status: 'KNOWN', value: 'Dupont Circle' } },
+    dimensions: { location: { status: 'KNOWN', value: marketId === 'US-MD' ? 'Bethesda' : 'Dupont Circle' } },
   };
+  const realityRule = marketId == null ? null : customerContract.CUSTOMER_REALITY_RULES[marketId];
   const storedFrontier = answerability.buildAnswerabilityFrontier({
     tenant: 'orderweeddc.com', intent: storedIntent, claimDecisions: [], asOf: now,
+    ...(realityRule ? {
+      predicateOverrides: { location: realityRule.required },
+      evidenceGateVersion: customerContract.CUSTOMER_DISCOVERY_REALITY_GATE_VERSION,
+    } : {}),
   });
   const evidenceRequirements = JSON.stringify(askWork.frontierWorkRequirements({
-    opportunityId: 'gap-1', frontier: storedFrontier,
+    opportunityId: 'gap-1', frontier: storedFrontier, marketId,
   }));
   const mission = {
     id: 'mission-1', tenant: 'orderweeddc.com', status: 'ACTIVE',
@@ -91,10 +99,12 @@ async function marketGapHarness({
     followUpTriggerId: opportunityTriggerId,
     evidence: JSON.stringify({
       intent_ir: storedIntent,
+      ...(marketId == null ? {} : { market_id: marketId }),
       answerability_frontier: storedFrontier,
     }),
   };
   let brandFailuresRemaining = 0;
+  let retailerReads = 0;
   const tx = {
     $queryRaw: async () => {
       const reflected = receipts.some((entry) => (
@@ -150,7 +160,8 @@ async function marketGapHarness({
         return { id: 'brand-1' };
       },
     },
-    retailer: { findMany: async () => [retailer] },
+    retailer: { findMany: async () => { retailerReads += 1; return [retailer]; } },
+    marketClaim: { findMany: async () => [] },
   };
   const harness = {
     tx,
@@ -161,6 +172,7 @@ async function marketGapHarness({
     tickId,
     tenant,
     now,
+    retailerReadCount() { return retailerReads; },
     failNextConsumer() { brandFailuresRemaining += 1; },
   };
   if (defer) return harness;
@@ -179,6 +191,13 @@ test('registered MARKET_GAP consumer closes tenant-scoped work only from a durab
   assert.equal(result.verified_candidate_count, 1);
   assert.equal(updates.some(([kind, args]) => kind === 'opportunity' && args.data.status === 'CLOSED'), true);
   assert.equal(updates.some(([kind, args]) => kind === 'mission-many' && args.where.tenant === 'orderweeddc.com'), true);
+});
+
+test('market-bound MARKET_GAP rechecks canonical Reality without falling back to Retailer rows', async () => {
+  const { result, retailerReadCount } = await marketGapHarness({ marketId: 'US-MD' });
+  assert.equal(result.state, 'PERSISTENT');
+  assert.equal(result.verified_candidate_count, 0);
+  assert.equal(retailerReadCount(), 0);
 });
 
 test('scheduled continuation tick accepts an explicit tenant from inherited environment', () => {

@@ -296,6 +296,39 @@ test('canonical D.C. claim decisions project only a complete active public cohor
   assert.ok(partial.truth.answerability_frontier.blocking_predicates.includes('regulated_address'));
 });
 
+test('one unprojectable official subject cannot poison an otherwise valid market answer', () => {
+  const validFacts = [
+    ['facility_name', 'Dupont Circle Wellness'],
+    ['license_number', 'ABRA-1'],
+    ['license_status', 'ACTIVE'],
+    ['operating_status', 'ACTIVE'],
+    ['regulated_address', '100 Truth Ave NW, Washington, DC 20001'],
+  ];
+  const unrelatedMalformedFacts = validFacts.map(([predicate, value]) => [
+    predicate,
+    predicate === 'facility_name'
+      ? 'Unrelated Official Record'
+      : predicate === 'regulated_address'
+        ? 'Address unavailable in canonical postal format'
+        : value,
+  ]);
+  const projection = askService.answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in dupont',
+    marketId: 'US-DC',
+    tenantDomain: 'orderweeddc.com',
+    claimDecisions: [
+      ...verifiedRealityDecisions('US-DC', 'dc:unrelated', unrelatedMalformedFacts),
+      ...verifiedRealityDecisions('US-DC', 'dc:dupont', validFacts),
+    ],
+    now: NOW,
+  });
+  assert.deepEqual(
+    projection.results.map((result) => result.merchant_id),
+    ['dc:dupont'],
+    'the valid matching subject remains answerable while an unprojectable official subject is excluded',
+  );
+});
+
 test('customer projection preserves one verified identity and market-specific unknowns across three markets', () => {
   const intent = compileIntent('dispensary in dupont', { now: NOW });
   const markets = [
