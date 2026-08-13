@@ -426,6 +426,25 @@ test('ASK customer discovery ownership cannot broaden scope or authority', () =>
   }
 });
 
+test('ASK customer discovery paths must stay owned and planned', () => {
+  const target = CUSTOMER_DISCOVERY_AUTHORIZED_PATHS[0];
+  for (const key of ['owned_create_paths', 'planned_candidate_files']) {
+    const manifest = ownership();
+    manifest[key] = manifest[key].filter((entry) => entry !== target);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /ASK customer discovery|changed-file ownership patterns/,
+    );
+  }
+});
+
+test('the convergence evidence court has exact ownership and a planned-candidate entry', () => {
+  const manifest = ownership();
+  const target = 'tools/test-runner/convergence-sovereign-evidence.test.mjs';
+  assert.equal(manifest.owned_create_paths.filter((entry) => entry === target).length, 1);
+  assert.equal(manifest.planned_candidate_files.filter((entry) => entry === target).length, 1);
+});
+
 test('the six owner-approved Stage A paths have exact changed-file ownership', () => {
   const manifest = ownership();
   const assignment = validateOwnershipManifest(manifest);

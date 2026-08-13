@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { compileIntent } from '../src/lib/ask/intent-ir.mjs';
+import { canonicalMarketLocation, compileIntent } from '../src/lib/ask/intent-ir.mjs';
 import { parseMcaRegistryPage } from '../src/lib/markets/md/md-mca-registry-parser.mjs';
 import { parseCcaRegistryPage } from '../src/lib/markets/va/va-cca-registry-parser.mjs';
 
@@ -63,6 +63,23 @@ test('market context selects bounded Maryland and Virginia location vocabulary',
   );
 });
 
+test('Maryland canonical place names and official-registry typo aliases resolve to one location', () => {
+  for (const [input, canonical] of [
+    ['aberdeen', 'aberdeen'],
+    ['abdereen', 'aberdeen'],
+    ['capitol heights', 'capitol heights'],
+    ['capital heights', 'capitol heights'],
+  ]) {
+    const location = compileIntent(`dispensary in ${input}`, {
+      now: NOW,
+      marketId: 'US-MD',
+    }).dimensions.location;
+    assert.equal(location.status, 'KNOWN');
+    assert.equal(location.value, canonical);
+    assert.equal(canonicalMarketLocation(input, 'US-MD'), canonical);
+  }
+});
+
 test('market location vocabulary covers every city extracted from the canonical official fixtures', async () => {
   const fixtureContracts = [
     {
@@ -87,7 +104,7 @@ test('market location vocabulary covers every city extracted from the canonical 
         marketId: contract.marketId,
       }).dimensions.location;
       assert.equal(location.status, 'KNOWN', `${contract.marketId} missing ${city}`);
-      assert.equal(location.value, city);
+      assert.equal(location.value, canonicalMarketLocation(city, contract.marketId));
     }
   }
 });

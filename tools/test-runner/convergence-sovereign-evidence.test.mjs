@@ -181,6 +181,11 @@ test('first report records live identities, requested states and the owner-gated
     'ATTRIBUTION_STATE',
     'FAILURE_MEMORY_STATE',
     'MISSING_CONNECTIVE_TISSUE',
+    'PR45_BASE',
+    'PR45_MERGE_PARENTS',
+    'PR45_REVIEW_STATE',
+    'POST_MERGE_CI',
+    'FIRST_BOUNDED_PRODUCT_SLICE',
   ];
   for (const field of requiredFields) assert.ok(field in report, `${field} is required`);
 

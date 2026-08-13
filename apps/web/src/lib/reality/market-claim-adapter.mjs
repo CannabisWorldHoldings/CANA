@@ -85,17 +85,6 @@ function bounded(rows, code) {
   return rows;
 }
 
-function latestClaimRows(rows) {
-  const latest = new Map();
-  for (const row of rows) {
-    if (typeof row.claimKey !== 'string' || !row.claimKey) {
-      throw new Error('CANA_MARKET_TRUTH_CLAIM_KEY_INVALID');
-    }
-    if (!latest.has(row.claimKey)) latest.set(row.claimKey, row);
-  }
-  return [...latest.values()];
-}
-
 /**
  * Read the bounded append-only evidence graph required to decide current
  * market truth. Every query is tenant and official-source scoped; the pure
@@ -112,8 +101,12 @@ export async function loadCurrentClaimDecisions(prisma, {
     throw new Error('CANA_MARKET_TRUTH_READ_SCOPE_INVALID');
   }
 
-  const claimHistory = bounded(await prisma.marketClaim.findMany({
-    where: { tenant, snapshot: { is: { sourceKey } } },
+  const currentClaimRows = bounded(await prisma.marketClaim.findMany({
+    where: {
+      tenant,
+      snapshot: { is: { sourceKey } },
+      versions: { none: {} },
+    },
     select: {
       id: true,
       tenant: true,
@@ -129,31 +122,48 @@ export async function loadCurrentClaimDecisions(prisma, {
       verification: true,
       decisionEligible: true,
       evidence: { select: { observationId: true } },
+      verificationEvents: {
+        where: { asOf: { lte: clock } },
+        select: {
+          id: true,
+          claimId: true,
+          acquisitionEventId: true,
+          decision: true,
+          evaluatorVersion: true,
+          asOf: true,
+          freshnessExpiresAt: true,
+        },
+        orderBy: [{ asOf: 'desc' }, { id: 'desc' }],
+        take: 1,
+      },
     },
     orderBy: [{ claimKey: 'asc' }, { version: 'desc' }, { id: 'asc' }],
     take: MAX_CURRENT_CLAIM_HISTORY + 1,
-  }), 'CANA_MARKET_TRUTH_CLAIM_HISTORY_BUDGET_EXCEEDED');
-  const claims = latestClaimRows(claimHistory).map(({ evidence, ...claim }) => ({
+  }), 'CANA_MARKET_TRUTH_CURRENT_CLAIM_BUDGET_EXCEEDED');
+  const currentClaimKeys = new Set();
+  for (const claim of currentClaimRows) {
+    if (typeof claim.claimKey !== 'string' || !claim.claimKey) {
+      throw new Error('CANA_MARKET_TRUTH_CLAIM_KEY_INVALID');
+    }
+    if (currentClaimKeys.has(claim.claimKey)) {
+      throw new Error('CANA_MARKET_TRUTH_CURRENT_CLAIM_FORKED');
+    }
+    currentClaimKeys.add(claim.claimKey);
+  }
+  const claims = currentClaimRows.map(({
+    evidence,
+    verificationEvents,
+    ...claim
+  }) => ({
     ...claim,
     observationIds: evidence.map((entry) => entry.observationId),
+    latestVerificationEvent: verificationEvents[0] ?? null,
   }));
   if (claims.length === 0) return Object.freeze([]);
 
-  const claimIds = claims.map((claim) => claim.id);
-  const verificationEvents = bounded(await prisma.marketVerificationEvent.findMany({
-    where: { claimId: { in: claimIds }, asOf: { lte: clock } },
-    select: {
-      id: true,
-      claimId: true,
-      acquisitionEventId: true,
-      decision: true,
-      evaluatorVersion: true,
-      asOf: true,
-      freshnessExpiresAt: true,
-    },
-    orderBy: [{ claimId: 'asc' }, { asOf: 'desc' }, { id: 'desc' }],
-    take: MAX_CURRENT_CLAIM_HISTORY + 1,
-  }), 'CANA_MARKET_TRUTH_VERIFICATION_EVENT_BUDGET_EXCEEDED');
+  const verificationEvents = claims
+    .map((claim) => claim.latestVerificationEvent)
+    .filter(Boolean);
   const acquisitionIds = [...new Set(verificationEvents
     .map((event) => event.acquisitionEventId)
     .filter((id) => typeof id === 'string' && id.length > 0))];
@@ -183,6 +193,7 @@ export async function loadCurrentClaimDecisions(prisma, {
       authorityPolicyVersion: true,
       freshnessPolicyVersion: true,
       verificationCourtVersion: true,
+      errorCode: true,
     },
     take: MAX_CURRENT_CLAIM_HISTORY + 1,
   }), 'CANA_MARKET_TRUTH_ACQUISITION_BUDGET_EXCEEDED');
@@ -192,6 +203,15 @@ export async function loadCurrentClaimDecisions(prisma, {
   const snapshotIds = [...new Set(acquisitionEvents
     .map((event) => event.snapshotId)
     .filter((id) => typeof id === 'string' && id.length > 0))];
+  const observationIds = [...new Set(claims.flatMap((claim) => claim.observationIds))];
+  const parserVersions = [...new Set(acquisitionEvents
+    .map((event) => event.parserVersion)
+    .filter((value) => typeof value === 'string' && value.length > 0))];
+  const policyVersions = [...new Set(acquisitionEvents.flatMap((event) => [
+    event.authorityPolicyVersion,
+    event.freshnessPolicyVersion,
+    event.verificationCourtVersion,
+  ]).filter((value) => typeof value === 'string' && value.length > 0))];
 
   const contentArtifacts = contentArtifactIds.length === 0 ? [] : bounded(
     await prisma.marketSourceContentArtifact.findMany({
@@ -232,6 +252,26 @@ export async function loadCurrentClaimDecisions(prisma, {
     where: {
       effectiveAt: { lte: clock },
       OR: [{ tenant }, { tenant: null }],
+      AND: [{ OR: [
+        ...(acquisitionIds.length > 0 ? [
+          { targetKind: 'SOURCE_ACQUISITION', targetId: { in: acquisitionIds } },
+          { acquisitionEventId: { in: acquisitionIds } },
+        ] : []),
+        ...(contentArtifactIds.length > 0 ? [
+          { targetKind: 'CONTENT_ARTIFACT', targetId: { in: contentArtifactIds } },
+          { contentArtifactId: { in: contentArtifactIds } },
+        ] : []),
+        ...(snapshotIds.length > 0 ? [
+          { targetKind: 'SNAPSHOT', targetId: { in: snapshotIds } },
+          { snapshotId: { in: snapshotIds } },
+        ] : []),
+        ...(observationIds.length > 0
+          ? [{ targetKind: 'OBSERVATION', targetId: { in: observationIds } }] : []),
+        ...(parserVersions.length > 0
+          ? [{ targetKind: 'PARSER_VERSION', targetId: { in: parserVersions } }] : []),
+        ...(policyVersions.length > 0
+          ? [{ targetKind: 'POLICY_VERSION', targetId: { in: policyVersions } }] : []),
+      ] }],
     },
     select: {
       tenant: true,

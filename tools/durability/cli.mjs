@@ -69,7 +69,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '82b66035ebf613b55f8e2ce23ce785ff88f45c4ca36601a96b71b4ca6ef85109';
+  '3a7c9b351d37335989f0b1d82a931ecbe6a96e1770b6afcba65f8a193dc141c1';
 
 export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery-contract.mjs',
@@ -1153,6 +1153,7 @@ export function validateOwnershipManifest(ownership) {
 
   const customerDiscoveryAssignment =
     ownership.explicit_user_assignment[CUSTOMER_DISCOVERY_ASSIGNMENT];
+  const customerDiscoveryPaths = customerDiscoveryAssignment?.authorized_paths;
   if (
     !exactKeys(customerDiscoveryAssignment, [
       'authorization',
@@ -1168,13 +1169,29 @@ export function validateOwnershipManifest(ownership) {
       'c436e3742929af71ee6cd45acc47fb2cabd55fef'
     || customerDiscoveryAssignment.authorization_effect !==
       'Durability path ownership only; no live acquisition, provider, credential, paid-call, spending, publishing, deployment, production, database mutation, DNS, outreach, verification-bypass or self-promotion authority.'
-    || !Array.isArray(customerDiscoveryAssignment.authorized_paths)
-    || JSON.stringify(customerDiscoveryAssignment.authorized_paths) !==
+    || !Array.isArray(customerDiscoveryPaths)
+    || JSON.stringify(customerDiscoveryPaths) !==
       JSON.stringify(CUSTOMER_DISCOVERY_AUTHORIZED_PATHS)
   ) {
     refusal('ASK customer discovery ownership assignment is malformed');
   }
-  for (const authorizedPath of CUSTOMER_DISCOVERY_AUTHORIZED_PATHS) {
+  if (
+    new Set(customerDiscoveryPaths).size !== customerDiscoveryPaths.length
+    || JSON.stringify(customerDiscoveryPaths) !== JSON.stringify([...customerDiscoveryPaths].sort())
+    || customerDiscoveryPaths.some(
+      (entry) =>
+        typeof entry !== 'string'
+        || entry.length === 0
+        || entry.startsWith('/')
+        || entry.includes('\\')
+        || entry.includes('*')
+        || entry.includes('..')
+        || path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('ASK customer discovery paths must be unique sorted exact repository paths');
+  }
+  for (const authorizedPath of customerDiscoveryPaths) {
     if (allOwnedPaths.filter((pattern) => pattern === authorizedPath).length !== 1) {
       refusal(`ASK customer discovery path must have exactly one ownership entry: ${authorizedPath}`);
     }

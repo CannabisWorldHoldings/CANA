@@ -323,7 +323,7 @@
       "ORIGINAL_PURPOSE": "Structure user intent, preserve unanswerable dimensions and turn evidence gaps into governed work rather than hallucinated answers.",
       "CURRENT_EQUIVALENT": "apps/web/src/lib/ask/{intent-ir,ask-service,ask-work,answerability-frontier,market-gap-recheck}.mjs",
       "CURRENT_STATE": "VERIFIED_IMPLEMENTED",
-      "OWNER_DECISION": "CANONICAL_INTENT_SUBSTRATE; SEARCH_DELIVERY_MUST_CONSUM_IT",
+      "OWNER_DECISION": "CANONICAL_INTENT_SUBSTRATE; SEARCH_DELIVERY_MUST_CONSUME_IT",
       "TARGET_CANONICAL_SEAM": "Existing ASK modules and directory/product discovery adapters",
       "DEPENDENCIES": [
         "Reality Compiler",

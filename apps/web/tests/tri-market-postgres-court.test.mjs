@@ -270,17 +270,52 @@ test('REAL TRI-MARKET PERSISTENCE: VA + MD through the actual Prisma store; raw 
   assert.equal(loaded.length, requiredPredicates.size,
     'the bounded loader must read the verified subject through actual Prisma relations');
   assert.equal(await prisma.retailer.findUnique({ where: { id: resolution.id } }), null);
+  const firstCustomer = await resolveCustomerDiscovery(prisma, {
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: RUN_TENANT,
+    now: projectionAsOf,
+  });
+  assert.equal(firstCustomer.projection.results.length, 1,
+    'verified durable Reality must reach the customer projection without a Retailer fallback');
+  assert.equal(firstCustomer.projection.results[0].merchant_id, resolution.id);
+  assert.equal(firstCustomer.projection.results[0].location.city.value, 'Bethesda');
+  assert.equal(firstCustomer.projection.results[0].delivery_eligibility.state, 'UNKNOWN');
+  const historical = subjectClaims[0];
+  await prisma.marketClaim.create({
+    data: {
+      id: `${historical.claim_id}:history`,
+      tenant: RUN_TENANT,
+      claimKey: `${historical.entity_identity}:${historical.predicate}`,
+      claimType: historical.predicate,
+      claimValue: 'historical value must not project',
+      version: 2,
+      resolutionId: resolution.id,
+      snapshotId: md.snapshot_id,
+      compilationId: compilation.id,
+      supersedesClaimId: historical.claim_id,
+      observedAt: new Date(historical.observed_at),
+      freshnessExpiresAt,
+      verification: 'UNKNOWN',
+      decisionEligible: false,
+    },
+  });
+  const currentAfterHistory = await loadCurrentClaimDecisions(prisma, {
+    tenant: RUN_TENANT,
+    sourceKey: MD_MCA_LANE.sourceKey,
+    asOf: projectionAsOf,
+  });
+  assert.equal(currentAfterHistory.length, requiredPredicates.size - 1,
+    'the loader must count current claim keys, not older append-only versions');
+  assert.equal(currentAfterHistory.some((decision) => decision.claim_id === historical.claim_id), false);
   const customer = await resolveCustomerDiscovery(prisma, {
     rawQuery: 'dispensary in bethesda',
     marketId: 'US-MD',
     tenantDomain: RUN_TENANT,
     now: projectionAsOf,
   });
-  assert.equal(customer.projection.results.length, 1,
-    'verified durable Reality must reach the customer projection without a Retailer fallback');
-  assert.equal(customer.projection.results[0].merchant_id, resolution.id);
-  assert.equal(customer.projection.results[0].location.city.value, 'Bethesda');
-  assert.equal(customer.projection.results[0].delivery_eligibility.state, 'UNKNOWN');
+  assert.equal(customer.projection.results.length, 0,
+    'an unverified latest claim version must withdraw the previously verified subject');
 });
 
 test('DB IDEMPOTENCY: exact re-run reuses the immutable artifact; sequential duplicates stay deterministic', async () => {

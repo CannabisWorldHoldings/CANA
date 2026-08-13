@@ -2,6 +2,7 @@ import { compileRetailerTruth } from '../reality/market-claim-adapter.mjs';
 import { buildAnswerabilityFrontier } from './answerability-frontier.mjs';
 import {
   CUSTOMER_DISCOVERY_REALITY_GATE_VERSION,
+  CUSTOMER_UNSUPPORTED_DIMENSIONS,
   CUSTOMER_REALITY_RULES,
   customerDiscoveryFailure,
   projectionClock,
@@ -140,7 +141,7 @@ function candidate(subjectRef, decisions, market, now) {
 export function answerVerifiedRealityIntent({ intent, market, tenantDomain, claimDecisions = [], now = new Date() }) {
   const clock = projectionClock(now);
   const location = intent?.dimensions?.location;
-  const unsupported = ['category', 'price_max_usd', 'fulfillment', 'open_now']
+  const unsupported = CUSTOMER_UNSUPPORTED_DIMENSIONS
     .filter((name) => intent?.dimensions?.[name]?.status === 'KNOWN');
   const emptyFrontier = frontier({ tenantDomain, intent, claimDecisions: [], marketId: market.market_id, now: clock });
   if (location?.status !== 'KNOWN' || unsupported.length > 0) {

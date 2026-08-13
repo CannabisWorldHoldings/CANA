@@ -115,21 +115,28 @@ export async function recheckMarketGap(prisma, {
     if (evidence.market_id != null && requirement.marketId !== evidence.market_id) {
       return Object.freeze({ state: 'REFUSED', reason: 'MARKET_BINDING_MISMATCH' });
     }
-    const brand = await tx.brand.findUnique({ where: { domain: tenant }, select: { id: true } });
-    if (!brand) return Object.freeze({ state: 'PERSISTENT', reason: 'TENANT_BRAND_NOT_FOUND', verified_candidate_count: 0 });
-    const answer = evidence.market_id == null
-      ? await answerIntent(tx, {
-          intent: evidence.intent_ir,
-          brandId: brand.id,
-          tenantDomain: tenant,
-          now,
-        })
-      : (await resolveCustomerDiscoveryIntent(tx, {
-          intent: evidence.intent_ir,
-          marketId: evidence.market_id,
-          tenantDomain: tenant,
-          now,
-        })).answer;
+    let answer;
+    if (evidence.market_id == null) {
+      const brand = await tx.brand.findUnique({ where: { domain: tenant }, select: { id: true } });
+      if (!brand) {
+        return Object.freeze({
+          state: 'PERSISTENT', reason: 'TENANT_BRAND_NOT_FOUND', verified_candidate_count: 0,
+        });
+      }
+      answer = await answerIntent(tx, {
+        intent: evidence.intent_ir,
+        brandId: brand.id,
+        tenantDomain: tenant,
+        now,
+      });
+    } else {
+      answer = (await resolveCustomerDiscoveryIntent(tx, {
+        intent: evidence.intent_ir,
+        marketId: evidence.market_id,
+        tenantDomain: tenant,
+        now,
+      })).answer;
+    }
     const frontierDecision = adjudicateFrontierRecheck({
       storedFrontier: evidence.answerability_frontier,
       requirement,

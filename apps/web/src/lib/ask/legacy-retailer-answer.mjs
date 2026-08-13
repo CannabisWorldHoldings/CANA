@@ -12,7 +12,10 @@ import {
   buildAnswerabilityFrontier,
   projectionClaimDecisions,
 } from './answerability-frontier.mjs';
-import { admittedMarketContext } from './customer-discovery-contract.mjs';
+import {
+  admittedMarketContext,
+  CUSTOMER_UNSUPPORTED_DIMENSIONS,
+} from './customer-discovery-contract.mjs';
 import { persistenceSafeIntent } from './intent-ir.mjs';
 
 const MAX_CANDIDATES = 10;
@@ -42,7 +45,7 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
   const dimensions = intent?.dimensions ?? {};
   const persistedIntent = persistenceSafeIntent(intent);
   const location = dimensions.location;
-  const unsupportedKnownDimensions = ['category', 'price_max_usd', 'fulfillment', 'open_now']
+  const unsupportedKnownDimensions = CUSTOMER_UNSUPPORTED_DIMENSIONS
     .filter((name) => dimensions[name]?.status === 'KNOWN');
   const emptyFrontier = buildAnswerabilityFrontier({
     tenant: tenantDomain,

@@ -46,11 +46,18 @@ const LOCATION_LEXICON = [
 // Market-specific tokens are still customer-language vocabulary, not market
 // truth. They are bounded to cities published in the canonical official
 // registry fixtures for the admitted Maryland and Virginia contracts.
+const MARKET_LOCATION_ALIASES = Object.freeze({
+  'US-MD': Object.freeze({
+    abdereen: 'aberdeen',
+    'capital heights': 'capitol heights',
+  }),
+});
+
 const MARKET_LOCATION_LEXICONS = Object.freeze({
   'US-DC': Object.freeze(LOCATION_LEXICON),
   'US-MD': Object.freeze([
-    'abdereen', 'abingdon', 'annapolis', 'baltimore', 'bethesda', 'bowie',
-    'brandywine', 'burtonsville', 'cambridge', 'camp springs', 'capital heights',
+    'aberdeen', 'abdereen', 'abingdon', 'annapolis', 'baltimore', 'bethesda', 'bowie',
+    'brandywine', 'burtonsville', 'cambridge', 'camp springs', 'capitol heights', 'capital heights',
     'centreville', 'chevy chase', 'clinton', 'cockeysville', 'columbia', 'crofton',
     'cumberland', 'curtis bay', 'edgewater', 'elkton', 'ellicott city', 'frederick',
     'gaithersburg', 'gambrills', 'germantown', 'greenbelt', 'hagerstown',
@@ -67,6 +74,10 @@ const MARKET_LOCATION_LEXICONS = Object.freeze({
     'sterling', 'suffolk', 'virginia beach', 'williamsburg', 'woodbridge',
   ]),
 });
+
+export function canonicalMarketLocation(value, marketId) {
+  return MARKET_LOCATION_ALIASES[marketId]?.[value] ?? value;
+}
 
 const CATEGORY_LEXICON = [
   { value: 'flower', tokens: ['flower', 'bud', 'eighth', '8th', 'ounce', 'oz'] },
@@ -110,7 +121,8 @@ export function compileIntent(rawQuery, { now = new Date(), marketId = null } = 
     : MARKET_LOCATION_LEXICONS[marketId] ?? [];
   for (const token of [...locationLexicon].sort((a, b) => b.length - a.length)) {
     if (findToken(normalized, token)) {
-      location = known(token === 'dupont' ? 'dupont circle' : token, token);
+      const normalizedToken = token === 'dupont' ? 'dupont circle' : token;
+      location = known(canonicalMarketLocation(normalizedToken, marketId), token);
       break;
     }
   }

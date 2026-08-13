@@ -1,6 +1,9 @@
 import { loadCurrentClaimDecisions } from '../reality/market-claim-adapter.mjs';
 import { compileIntent } from './intent-ir.mjs';
-import { resolveCustomerMarketContext } from './customer-discovery-contract.mjs';
+import {
+  CUSTOMER_UNSUPPORTED_DIMENSIONS,
+  resolveCustomerMarketContext,
+} from './customer-discovery-contract.mjs';
 import { projectCustomerDiscovery } from './customer-discovery-projection.mjs';
 import { answerVerifiedRealityIntent } from './customer-reality-answer.mjs';
 
@@ -12,7 +15,7 @@ export async function resolveCustomerDiscoveryIntent(prisma, {
 }) {
   const market = resolveCustomerMarketContext(marketId);
   const locationKnown = intent?.dimensions?.location?.status === 'KNOWN';
-  const unsupportedKnown = ['category', 'price_max_usd', 'fulfillment', 'open_now']
+  const unsupportedKnown = CUSTOMER_UNSUPPORTED_DIMENSIONS
     .some((name) => intent?.dimensions?.[name]?.status === 'KNOWN');
   const claimDecisions = locationKnown && !unsupportedKnown
     ? await loadCurrentClaimDecisions(prisma, {

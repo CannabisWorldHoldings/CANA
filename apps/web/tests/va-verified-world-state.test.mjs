@@ -206,9 +206,12 @@ test('THE FIRST VERIFIED VIRGINIA WORLD STATE: fixture acquisition → VERIFIED 
         version: 1,
         resolutionId: claim.entityIdentity,
         evidence: [],
+        verificationEvents: verificationEvents.filter((item) => item.claimId === claim.id),
       }));
     } },
-    marketVerificationEvent: { findMany: async () => verificationEvents },
+    marketVerificationEvent: { findMany: async () => {
+      throw new Error('current-state loader must use the latest nested verification event');
+    } },
     marketSourceAcquisitionEvent: { findMany: async () => [event] },
     marketSourceContentArtifact: { findMany: async () => [artifact] },
     marketSourceSnapshot: { findMany: async () => [snapshot] },
@@ -226,6 +229,7 @@ test('THE FIRST VERIFIED VIRGINIA WORLD STATE: fixture acquisition → VERIFIED 
   assert.deepEqual(storeReads, [['claims', {
     tenant: TENANT,
     snapshot: { is: { sourceKey: VA_CCA_LIVE_CONTRACT.sourceKey } },
+    versions: { none: {} },
   }]]);
 });
 

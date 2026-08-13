@@ -10,6 +10,12 @@ const MARKET_JURISDICTIONS = Object.freeze({
 });
 
 export const CUSTOMER_DISCOVERY_MARKETS = Object.freeze(Object.keys(MARKET_JURISDICTIONS));
+export const CUSTOMER_UNSUPPORTED_DIMENSIONS = Object.freeze([
+  'category',
+  'price_max_usd',
+  'fulfillment',
+  'open_now',
+]);
 
 export const CUSTOMER_REALITY_RULES = Object.freeze({
   'US-DC': Object.freeze({

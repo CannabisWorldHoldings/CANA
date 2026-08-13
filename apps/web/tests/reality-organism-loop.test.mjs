@@ -35,6 +35,7 @@ async function marketGapHarness({
   tamperReceipt = false,
   defer = false,
   marketId = null,
+  brandExists = true,
 } = {}) {
   const now = new Date('2026-08-10T04:00:00.000Z');
   const updates = [];
@@ -104,6 +105,7 @@ async function marketGapHarness({
     }),
   };
   let brandFailuresRemaining = 0;
+  let brandReads = 0;
   let retailerReads = 0;
   const tx = {
     $queryRaw: async () => {
@@ -153,11 +155,12 @@ async function marketGapHarness({
     },
     brand: {
       findUnique: async () => {
+        brandReads += 1;
         if (brandFailuresRemaining > 0) {
           brandFailuresRemaining -= 1;
           throw Object.assign(new Error('injected consumer failure'), { code: 'INJECTED_CONSUMER_FAILURE' });
         }
-        return { id: 'brand-1' };
+        return brandExists ? { id: 'brand-1' } : null;
       },
     },
     retailer: { findMany: async () => { retailerReads += 1; return [retailer]; } },
@@ -173,6 +176,7 @@ async function marketGapHarness({
     tenant,
     now,
     retailerReadCount() { return retailerReads; },
+    brandReadCount() { return brandReads; },
     failNextConsumer() { brandFailuresRemaining += 1; },
   };
   if (defer) return harness;
@@ -194,10 +198,14 @@ test('registered MARKET_GAP consumer closes tenant-scoped work only from a durab
 });
 
 test('market-bound MARKET_GAP rechecks canonical Reality without falling back to Retailer rows', async () => {
-  const { result, retailerReadCount } = await marketGapHarness({ marketId: 'US-MD' });
+  const { result, retailerReadCount, brandReadCount } = await marketGapHarness({
+    marketId: 'US-MD',
+    brandExists: false,
+  });
   assert.equal(result.state, 'PERSISTENT');
   assert.equal(result.verified_candidate_count, 0);
   assert.equal(retailerReadCount(), 0);
+  assert.equal(brandReadCount(), 0, 'market Reality rechecks must not require a legacy Brand row');
 });
 
 test('scheduled continuation tick accepts an explicit tenant from inherited environment', () => {
