@@ -12,6 +12,7 @@ import {
   jsonLdScriptProps,
 } from '@/lib/structured-data.mjs';
 import { Flame } from 'lucide-react';
+import { DealAlertCard } from '@/components/deal-alert-card';
 
 type Props = {
   params: Promise<{ domain: string }>;
@@ -138,10 +139,11 @@ export default async function DealsHubPage({ params }: Props) {
       </section>
 
       <div className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        <DealAlertCard />
         {/* Deals Grid */}
         {deals.length === 0 ? (
           <div className="rounded-2xl border border-brand-border bg-brand-surface p-12 text-center space-y-3">
-            <p className="font-bold text-brand-text">No active deals found at this time.</p>
+            <p className="font-bold text-brand-text">No verified current deals are available right now. Sign up above and we'll let you know the moment we verify one.</p>
             <p className="text-xs max-w-md mx-auto text-brand-muted">Retailer promotions change frequently. Check back soon or browse our full business directory.</p>
             <Link href="/" className="inline-block bg-brand-primary-fill-strong text-white font-bold text-xs px-5 py-2.5 rounded-xl hover:brightness-110 transition-all">
               Explore Directory

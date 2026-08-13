@@ -115,6 +115,7 @@ model User {
   auditLogs         AuditLog[]
   loyaltyAccounts   LoyaltyAccount[]
   sessions          Session[]
+  customerConsents  CustomerConsent[]
 }
 
 // Retailer (Dispensary, Delivery service, or Brand)
@@ -1267,4 +1268,26 @@ model AskIntentSignal {
   createdAt      DateTime @default(now())
 
   @@index([tenant, createdAt])
+}
+
+
+// Customer Consent ledger — tracks voluntary opt-ins, preferences, and revocations
+model CustomerConsent {
+  id                 String   @id @default(uuid())
+  userId             String?
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  contactNormalized  String   // E.g. normalized email or E.164 phone
+  channel            String   // EMAIL, SMS, ALL
+  consentStatus      String   @default("CONSENT_GRANTED") // CONSENT_GRANTED, UNSUBSCRIBED, CONSENT_REVOKED, SUPPRESSED
+  consentVersion     String   @default("EXP-2026-DC-01")
+  source             String   @default("DEAL_ALERTS_LANDING")
+  campaignId         String?
+  frequency          String   @default("DAILY") // DAILY, WEEKLY, REALTIME
+  neighborhood       String?
+  receiptHash        String   @unique
+  timestamp          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([contactNormalized, channel])
+  @@index([consentStatus, timestamp])
 }
