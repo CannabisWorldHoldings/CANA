@@ -29,6 +29,10 @@ import {
   adjudicateExecutionProvenance,
 } from '../src/lib/reality/market-claim-court.mjs';
 import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
+import {
+  answerCustomerDiscoveryFromReality,
+  resolveCustomerDiscovery,
+} from '../src/lib/ask/ask-service.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = readFileSync(path.join(here, 'fixtures', 'va-cca', 'dispensaries.html'), 'utf8');
@@ -60,16 +64,24 @@ async function vaEvidence() {
     sourceId: receipt.source_id,
     observedAt: ACQUIRED_AT,
   });
-  const claims = formed.slice(0, 3).map((claim, index) => ({
+  const richmondAddress = formed.find((claim) => (
+    claim.predicate === 'address' && claim.value.includes(', Richmond, VA ')
+  ));
+  assert.ok(richmondAddress, 'fixture must retain a Richmond subject for customer projection');
+  const requiredPredicates = new Set(['cca_registry_listing_exists', 'name', 'address']);
+  const claims = formed
+    .filter((claim) => claim.entity_identity === richmondAddress.entity_identity && requiredPredicates.has(claim.predicate))
+    .map((claim, index) => ({
     id: claim.claim_id,
     tenant: TENANT,
     claimType: claim.predicate,
     claimValue: claim.value,
+    entityIdentity: claim.entity_identity,
     snapshotId: 'va-snapshot-1',
     observedAt: new Date(ACQUIRED_AT),
     freshnessExpiresAt: new Date('2026-09-11T13:00:00.000Z'),
     index,
-  }));
+    }));
   const snapshot = {
     id: 'va-snapshot-1',
     sourceKey: receipt.source_key,
@@ -167,7 +179,58 @@ test('THE FIRST VERIFIED VIRGINIA WORLD STATE: fixture acquisition → VERIFIED 
     assert.equal(decision.decision_eligible, true);
     assert.equal(decision.source_id, VA_CCA_LIVE_CONTRACT.sourceKey);
     assert.equal(decision.court_version, MARKET_CLAIM_COURT_VERSION);
+    assert.match(decision.subject_ref, /^va-cca:/);
   }
+
+  const projection = answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in richmond',
+    marketId: 'US-VA',
+    tenantDomain: TENANT,
+    claimDecisions: current,
+    now: AS_OF,
+  });
+  assert.equal(projection.results.length, 1, 'verified CCA Reality reaches ASK without a Retailer fixture');
+  assert.equal(projection.results[0].merchant_id, current[0].subject_ref);
+  assert.equal(projection.results[0].location.city.value, 'Richmond');
+  assert.equal(projection.results[0].regulatory_state.state, 'UNKNOWN');
+  assert.equal(projection.results[0].delivery_eligibility.state, 'UNKNOWN');
+  assert.equal(projection.truth.gate, 'selectCurrentClaimDecisions + buildAnswerabilityFrontier');
+
+  const storeReads = [];
+  const persisted = {
+    marketClaim: { findMany: async (query) => {
+      storeReads.push(['claims', query.where]);
+      return claims.map((claim) => ({
+        ...claim,
+        claimKey: `${claim.entityIdentity}:${claim.claimType}`,
+        version: 1,
+        resolutionId: claim.entityIdentity,
+        evidence: [],
+        verificationEvents: verificationEvents.filter((item) => item.claimId === claim.id),
+      }));
+    } },
+    marketVerificationEvent: { findMany: async () => {
+      throw new Error('current-state loader must use the latest nested verification event');
+    } },
+    marketSourceAcquisitionEvent: { findMany: async () => [event] },
+    marketSourceContentArtifact: { findMany: async () => [artifact] },
+    marketSourceSnapshot: { findMany: async () => [snapshot] },
+    marketEvidenceRevocationEvent: { findMany: async () => [] },
+  };
+  const liveSurface = await resolveCustomerDiscovery(persisted, {
+    rawQuery: 'dispensary in richmond',
+    marketId: 'US-VA',
+    tenantDomain: TENANT,
+    now: AS_OF,
+  });
+  assert.equal(liveSurface.projection.results.length, 1,
+    'the customer orchestration must load canonical persisted Reality, not a fabricated Retailer');
+  assert.equal(liveSurface.projection.results[0].merchant_id, current[0].subject_ref);
+  assert.deepEqual(storeReads, [['claims', {
+    tenant: TENANT,
+    snapshot: { is: { sourceKey: VA_CCA_LIVE_CONTRACT.sourceKey } },
+    versions: { none: {} },
+  }]]);
 });
 
 test('VA acquisition court: COMPILE purpose ALLOWs; forged digest and foreign source are rejected', async () => {

@@ -76,6 +76,23 @@ test('frontier work binds exact evidence, blocker set, and REFLECTION_ONLY loop 
   });
 });
 
+test('customer gap work and dedupe identity bind the admitted market', () => {
+  const gap = frontier();
+  const dcKey = frontierOpportunityKey({
+    tenant: 'orderweeddc.com', kind: 'MARKET_GAP', frontier: gap, marketId: 'US-DC',
+  });
+  const mdKey = frontierOpportunityKey({
+    tenant: 'orderweeddc.com', kind: 'MARKET_GAP', frontier: gap, marketId: 'US-MD',
+  });
+  assert.notEqual(dcKey, mdKey);
+  assert.equal(frontierWorkRequirements({
+    opportunityId: 'opportunity-1', frontier: gap, marketId: 'US-VA',
+  }).marketId, 'US-VA');
+  assert.throws(() => frontierOpportunityKey({
+    tenant: 'orderweeddc.com', kind: 'MARKET_GAP', frontier: gap, marketId: 'US-PA',
+  }), /CANA_ASK_MARKET_INVALID/);
+});
+
 test('demand priority is transparent, bounded, and cannot assert economic value', () => {
   const one = computeDemandPriority({ admittedSignalCount: 1, uniqueDemandCount: 1, blockingPredicates: CORE });
   const repeated = computeDemandPriority({ admittedSignalCount: 9, uniqueDemandCount: 1, blockingPredicates: CORE });

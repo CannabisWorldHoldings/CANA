@@ -3,7 +3,11 @@ import {
   inSerializableTransaction,
   loadVerifiedFiredConsumerAuthority,
 } from '../continuation/continuation-storage.mjs';
-import { answerIntent } from './ask-service.mjs';
+import {
+  CUSTOMER_DISCOVERY_MARKETS,
+  answerIntent,
+  resolveCustomerDiscoveryIntent,
+} from './ask-service.mjs';
 
 function parseEvidence(value) {
   try {
@@ -11,6 +15,9 @@ function parseEvidence(value) {
     if (!parsed?.intent_ir || typeof parsed.intent_ir !== 'object') throw new Error('intent_ir missing');
     if (!parsed?.answerability_frontier || typeof parsed.answerability_frontier !== 'object') {
       throw new Error('answerability_frontier missing');
+    }
+    if (parsed.market_id != null && !CUSTOMER_DISCOVERY_MARKETS.includes(parsed.market_id)) {
+      throw new Error('market_id invalid');
     }
     return parsed;
   } catch (error) {
@@ -105,14 +112,31 @@ export async function recheckMarketGap(prisma, {
       return Object.freeze({ state: 'REFUSED', reason: 'OPPORTUNITY_TRIGGER_BINDING_MISMATCH' });
     }
     const evidence = parseEvidence(opportunity.evidence);
-    const brand = await tx.brand.findUnique({ where: { domain: tenant }, select: { id: true } });
-    if (!brand) return Object.freeze({ state: 'PERSISTENT', reason: 'TENANT_BRAND_NOT_FOUND', verified_candidate_count: 0 });
-    const answer = await answerIntent(tx, {
-      intent: evidence.intent_ir,
-      brandId: brand.id,
-      tenantDomain: tenant,
-      now,
-    });
+    if (evidence.market_id != null && requirement.marketId !== evidence.market_id) {
+      return Object.freeze({ state: 'REFUSED', reason: 'MARKET_BINDING_MISMATCH' });
+    }
+    let answer;
+    if (evidence.market_id == null) {
+      const brand = await tx.brand.findUnique({ where: { domain: tenant }, select: { id: true } });
+      if (!brand) {
+        return Object.freeze({
+          state: 'PERSISTENT', reason: 'TENANT_BRAND_NOT_FOUND', verified_candidate_count: 0,
+        });
+      }
+      answer = await answerIntent(tx, {
+        intent: evidence.intent_ir,
+        brandId: brand.id,
+        tenantDomain: tenant,
+        now,
+      });
+    } else {
+      answer = (await resolveCustomerDiscoveryIntent(tx, {
+        intent: evidence.intent_ir,
+        marketId: evidence.market_id,
+        tenantDomain: tenant,
+        now,
+      })).answer;
+    }
     const frontierDecision = adjudicateFrontierRecheck({
       storedFrontier: evidence.answerability_frontier,
       requirement,
@@ -133,7 +157,7 @@ export async function recheckMarketGap(prisma, {
           observedState: JSON.stringify({
             verified_candidate_count: answer.verified_candidate_count,
             closed_at: now.toISOString(),
-            query_gate: 'currentPublicRecordWhere + isPubliclyVerified',
+            query_gate: answer.truth_gate ?? 'currentPublicRecordWhere + isPubliclyVerified',
             frontier_key: answer.answerability_frontier.frontier_key,
             evidence_digest: answer.answerability_frontier.evidence_digest,
             required_predicates: answer.answerability_frontier.required_predicates,

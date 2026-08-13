@@ -144,6 +144,8 @@ export function buildAnswerabilityFrontier({
   intent,
   claimDecisions = [],
   asOf = new Date(),
+  predicateOverrides = {},
+  evidenceGateVersion = ANSWERABILITY_EVIDENCE_GATE_VERSION,
 }) {
   const canonicalTenantValue = canonicalTenant(tenant);
   const clock = asOf instanceof Date ? asOf : new Date(asOf);
@@ -151,7 +153,23 @@ export function buildAnswerabilityFrontier({
   const intentScope = canonicalIntentScope(intent);
   const knownDimensions = Object.keys(intentScope).sort();
   const unsupportedKnownDimensions = knownDimensions.filter((name) => !SUPPORTED_DIMENSIONS.has(name));
-  const requiredPredicates = sortedUnique(knownDimensions.flatMap((name) => DIMENSION_PREDICATES[name]));
+  if (!predicateOverrides || typeof predicateOverrides !== 'object' || Array.isArray(predicateOverrides)) {
+    fail('CANA_ANSWERABILITY_PREDICATE_OVERRIDE_INVALID');
+  }
+  for (const [dimension, predicates] of Object.entries(predicateOverrides)) {
+    if (!Object.hasOwn(DIMENSION_PREDICATES, dimension)
+      || !Array.isArray(predicates)
+      || predicates.length === 0
+      || predicates.some((predicate) => typeof predicate !== 'string' || !predicate)) {
+      fail('CANA_ANSWERABILITY_PREDICATE_OVERRIDE_INVALID');
+    }
+  }
+  if (typeof evidenceGateVersion !== 'string' || !evidenceGateVersion) {
+    fail('CANA_ANSWERABILITY_EVIDENCE_GATE_INVALID');
+  }
+  const requiredPredicates = sortedUnique(knownDimensions.flatMap((name) => (
+    predicateOverrides[name] ?? DIMENSION_PREDICATES[name]
+  )));
   const coverage = subjectCoverage(claimDecisions, requiredPredicates, clock);
   const best = coverage[0] ?? Object.freeze({
     subject_ref: null,
@@ -177,14 +195,14 @@ export function buildAnswerabilityFrontier({
   });
   const frontierKey = digest({
     schema_version: ANSWERABILITY_FRONTIER_VERSION,
-    evidence_gate_version: ANSWERABILITY_EVIDENCE_GATE_VERSION,
+    evidence_gate_version: evidenceGateVersion,
     tenant: canonicalTenantValue,
     intent_scope: intentScope,
     required_predicates: requiredPredicates,
   });
   const frontierBody = {
     schema_version: ANSWERABILITY_FRONTIER_VERSION,
-    evidence_gate_version: ANSWERABILITY_EVIDENCE_GATE_VERSION,
+    evidence_gate_version: evidenceGateVersion,
     tenant: canonicalTenantValue,
     intent_scope: intentScope,
     required_predicates: requiredPredicates,

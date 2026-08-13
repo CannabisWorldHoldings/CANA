@@ -25,7 +25,11 @@ import { formMdMarketClaims, MD_CLAIMS_SCHEMA_VERSION, MD_ENTITY_NORMALIZATION_V
 import { parseCcaRegistryPage } from '../src/lib/markets/va/va-cca-registry-parser.mjs';
 import { parseMcaRegistryPage } from '../src/lib/markets/md/md-mca-registry-parser.mjs';
 import { MARKET_CLAIM_COURT_VERSION } from '../src/lib/reality/market-claim-court.mjs';
-import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
+import {
+  loadCurrentClaimDecisions,
+  selectCurrentClaimDecisions,
+} from '../src/lib/reality/market-claim-adapter.mjs';
+import { resolveCustomerDiscovery } from '../src/lib/ask/ask-service.mjs';
 
 const databaseUrl = process.env.DATABASE_URL ?? '';
 const disposableSystemIdentifier = process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER ?? '';
@@ -175,6 +179,143 @@ test('REAL TRI-MARKET PERSISTENCE: VA + MD through the actual Prisma store; raw 
   assert.equal(vaVerified.length, 2); assert.equal(mdVerified.length, 2);
   for (const d of vaVerified) { assert.equal(d.verification, 'VERIFIED'); assert.equal(d.source_id, VA_CCA_LANE.sourceKey); }
   for (const d of mdVerified) { assert.equal(d.verification, 'VERIFIED'); assert.equal(d.source_id, MD_MCA_LANE.sourceKey); }
+
+  // Persist one verified Maryland subject, then traverse the exact production
+  // read path: Prisma relations -> current-claim selector -> ASK projection.
+  // No Retailer row exists for this subject, so a result cannot come from the
+  // legacy public-record path or a hand-shaped repository delegate.
+  const mdSnapshot = await prisma.marketSourceSnapshot.findUniqueOrThrow({ where: { id: md.snapshot_id } });
+  const mdRecords = parseMcaRegistryPage(mdSnapshot.payloadJson, { url: mdSnapshot.sourceUrl }).records;
+  const mdClaims = formMdMarketClaims({
+    statements: mdRecords,
+    sourceId: md.source_key,
+    observedAt: md.acquired_at,
+  });
+  const bethesdaAddress = mdClaims.find((claim) => (
+    claim.predicate === 'regulated_address' && claim.value.includes(', Bethesda, MD ')
+  ));
+  assert.ok(bethesdaAddress, 'the official fixture must retain a Bethesda subject');
+  const requiredPredicates = new Set([
+    'mca_registry_listing_exists',
+    'facility_name',
+    'regulated_address',
+  ]);
+  const subjectClaims = mdClaims.filter((claim) => (
+    claim.entity_identity === bethesdaAddress.entity_identity
+      && requiredPredicates.has(claim.predicate)
+  ));
+  assert.equal(subjectClaims.length, requiredPredicates.size);
+  const compilation = await prisma.marketCompilation.create({
+    data: {
+      tenant: RUN_TENANT,
+      snapshotId: md.snapshot_id,
+      contentArtifactId: md.content_artifact_id,
+      acquisitionEventId: md.acquisition_event_id,
+    },
+  });
+  const resolution = await prisma.marketEntityResolution.create({
+    data: {
+      id: bethesdaAddress.entity_identity,
+      snapshotId: md.snapshot_id,
+      compilationId: compilation.id,
+      sourceRecordId: bethesdaAddress.entity_identity,
+      sourceRecordSha256: sha256(bethesdaAddress.entity_identity),
+      normalizedName: subjectClaims.find((claim) => claim.predicate === 'facility_name')?.value ?? null,
+      normalizedAddress: bethesdaAddress.value,
+      status: 'UNMATCHED',
+      reason: 'CANONICAL_MARKET_IDENTITY',
+      candidateIds: '[]',
+      normalizationVersion: MD_ENTITY_NORMALIZATION_VERSION,
+    },
+  });
+  const verifiedAt = new Date();
+  const freshnessExpiresAt = new Date(verifiedAt.getTime() + 20 * 86_400_000);
+  for (const claim of subjectClaims) {
+    await prisma.marketClaim.create({
+      data: {
+        id: claim.claim_id,
+        tenant: RUN_TENANT,
+        claimKey: `${claim.entity_identity}:${claim.predicate}`,
+        claimType: claim.predicate,
+        claimValue: claim.value,
+        version: 1,
+        resolutionId: resolution.id,
+        snapshotId: md.snapshot_id,
+        compilationId: compilation.id,
+        observedAt: new Date(claim.observed_at),
+        freshnessExpiresAt,
+        verification: 'UNKNOWN',
+        decisionEligible: false,
+      },
+    });
+    await prisma.marketVerificationEvent.create({
+      data: {
+        claimId: claim.claim_id,
+        acquisitionEventId: md.acquisition_event_id,
+        decision: 'ALLOW',
+        reason: 'TRI_MARKET_POSTGRES_CUSTOMER_PROJECTION_COURT',
+        evaluatorVersion: MARKET_CLAIM_COURT_VERSION,
+        evidenceDigest: sha256(`${claim.claim_id}:${md.acquisition_event_id}`),
+        asOf: verifiedAt,
+        freshnessExpiresAt,
+      },
+    });
+  }
+  const projectionAsOf = new Date(verifiedAt.getTime() + 60_000);
+  const loaded = await loadCurrentClaimDecisions(prisma, {
+    tenant: RUN_TENANT,
+    sourceKey: MD_MCA_LANE.sourceKey,
+    asOf: projectionAsOf,
+  });
+  assert.equal(loaded.length, requiredPredicates.size,
+    'the bounded loader must read the verified subject through actual Prisma relations');
+  assert.equal(await prisma.retailer.findUnique({ where: { id: resolution.id } }), null);
+  const firstCustomer = await resolveCustomerDiscovery(prisma, {
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: RUN_TENANT,
+    now: projectionAsOf,
+  });
+  assert.equal(firstCustomer.projection.results.length, 1,
+    'verified durable Reality must reach the customer projection without a Retailer fallback');
+  assert.equal(firstCustomer.projection.results[0].merchant_id, resolution.id);
+  assert.equal(firstCustomer.projection.results[0].location.city.value, 'Bethesda');
+  assert.equal(firstCustomer.projection.results[0].delivery_eligibility.state, 'UNKNOWN');
+  const historical = subjectClaims[0];
+  await prisma.marketClaim.create({
+    data: {
+      id: `${historical.claim_id}:history`,
+      tenant: RUN_TENANT,
+      claimKey: `${historical.entity_identity}:${historical.predicate}`,
+      claimType: historical.predicate,
+      claimValue: 'historical value must not project',
+      version: 2,
+      resolutionId: resolution.id,
+      snapshotId: md.snapshot_id,
+      compilationId: compilation.id,
+      supersedesClaimId: historical.claim_id,
+      observedAt: new Date(historical.observed_at),
+      freshnessExpiresAt,
+      verification: 'UNKNOWN',
+      decisionEligible: false,
+    },
+  });
+  const currentAfterHistory = await loadCurrentClaimDecisions(prisma, {
+    tenant: RUN_TENANT,
+    sourceKey: MD_MCA_LANE.sourceKey,
+    asOf: projectionAsOf,
+  });
+  assert.equal(currentAfterHistory.length, requiredPredicates.size - 1,
+    'the loader must count current claim keys, not older append-only versions');
+  assert.equal(currentAfterHistory.some((decision) => decision.claim_id === historical.claim_id), false);
+  const customer = await resolveCustomerDiscovery(prisma, {
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: RUN_TENANT,
+    now: projectionAsOf,
+  });
+  assert.equal(customer.projection.results.length, 0,
+    'an unverified latest claim version must withdraw the previously verified subject');
 });
 
 test('DB IDEMPOTENCY: exact re-run reuses the immutable artifact; sequential duplicates stay deterministic', async () => {

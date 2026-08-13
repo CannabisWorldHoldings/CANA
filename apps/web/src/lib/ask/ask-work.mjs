@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { createMission, createTrigger } from '../continuation/continuation-repository.mjs';
 import { inSerializableTransaction } from '../continuation/continuation-storage.mjs';
+import { MARKET_CONTRACT_REGISTRY } from '../reality/market-contract-registry.mjs';
 import { persistenceSafeIntent } from './intent-ir.mjs';
 import {
   PUBLIC_SUBMISSION_SURFACES,
@@ -56,20 +57,29 @@ function validFrontier(frontier, tenant) {
     && typeof frontier.intent_scope === 'object';
 }
 
-export function frontierOpportunityKey({ tenant, kind, frontier }) {
+function admittedMarketId(marketId) {
+  if (marketId == null) return null;
+  if (!MARKET_CONTRACT_REGISTRY.some((contract) => contract.market_id === marketId)) {
+    throw new Error('CANA_ASK_MARKET_INVALID');
+  }
+  return marketId;
+}
+
+export function frontierOpportunityKey({ tenant, kind, frontier, marketId = null }) {
   askPersistenceScope(tenant);
   if (!['MARKET_GAP', 'CAPABILITY_GAP'].includes(kind) || !validFrontier(frontier, tenant)) {
     throw new Error('CANA_ASK_FRONTIER_INVALID');
   }
   return digest({
-    version: 2,
+    version: marketId == null ? 2 : 3,
     tenant,
     kind,
     frontier_key: frontier.frontier_key,
+    ...(marketId == null ? {} : { market_id: admittedMarketId(marketId) }),
   });
 }
 
-export function frontierWorkRequirements({ opportunityId, frontier }) {
+export function frontierWorkRequirements({ opportunityId, frontier, marketId = null }) {
   if (typeof opportunityId !== 'string' || !opportunityId || !validFrontier(frontier, frontier?.tenant)) {
     throw new Error('CANA_ASK_FRONTIER_WORK_INVALID');
   }
@@ -83,6 +93,7 @@ export function frontierWorkRequirements({ opportunityId, frontier }) {
     intentScope: frontier.intent_scope,
     requiredPredicates: frontier.required_predicates,
     loopMode: 'REFLECTION_ONLY',
+    ...(marketId == null ? {} : { marketId: admittedMarketId(marketId) }),
   });
 }
 
@@ -126,9 +137,9 @@ export function computeDemandPriority({
   });
 }
 
-function opportunityPolicy(spec, intent, frontier, opportunityId) {
+function opportunityPolicy(spec, intent, frontier, opportunityId, marketId) {
   if (spec.kind === 'MARKET_GAP') {
-    const requirements = frontierWorkRequirements({ opportunityId, frontier });
+    const requirements = frontierWorkRequirements({ opportunityId, frontier, marketId });
     return {
       purpose: 'Monitor the evidence-bound MARKET_GAP until it closes, is dismissed, or expires',
       reason: `Make MARKET_GAP work due for intent "${intent.raw_query}"; a registered consumer must re-check the evidence-gated store`,
@@ -203,6 +214,7 @@ export async function recordAskWork(
           tenant: domain,
           kind: answer.opportunitySpec.kind,
           frontier,
+          marketId: answer.market_id ?? null,
         });
         await tx.$queryRawUnsafe(
           'SELECT pg_advisory_xact_lock(hashtextextended($1, 0))::text AS lock_result',
@@ -223,6 +235,7 @@ export async function recordAskWork(
               zero_result_reason: answer.zero_result_reason,
               verified_candidate_count: answer.verified_candidate_count,
               unsupported_known_dimensions: answer.unsupported_known_dimensions,
+              market_id: answer.market_id ?? null,
               answerability_frontier: frontier,
               observed_at: now.toISOString(),
             }),
@@ -244,7 +257,7 @@ export async function recordAskWork(
           const policy = opportunityPolicy(answer.opportunitySpec, {
             raw_query: intentDigest,
             unsupported_known_dimensions: answer.unsupported_known_dimensions,
-          }, frontier, created.id);
+          }, frontier, created.id, answer.market_id ?? null);
           const mission = await createMission(tx, {
             tenant: domain,
             purpose: `${policy.purpose}: ${created.id}`,

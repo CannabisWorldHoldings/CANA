@@ -2,6 +2,8 @@ import { isEvidenceRevoked } from './evidence-revocation.mjs';
 import { marketContractForSourceKey } from './market-contract-registry.mjs';
 import { adjudicateExecutionProvenance, MARKET_CLAIM_COURT_VERSION } from './market-claim-court.mjs';
 
+const MAX_CURRENT_CLAIM_HISTORY = 5_000;
+
 const PUBLIC_FIELDS = Object.freeze([
   'license',
   'name',
@@ -25,7 +27,9 @@ const PREDICATE_FIELD = Object.freeze({
   license_type: 'license',
   license_expiration: 'license',
   facility_name: 'name',
+  name: 'name',
   regulated_address: 'address',
+  address: 'address',
   located_at: 'location',
   operating_status: 'is_open',
   hours: 'hours',
@@ -76,6 +80,227 @@ function field(row, camel, snake) {
   return row?.[camel] ?? row?.[snake];
 }
 
+function bounded(rows, code) {
+  if (rows.length > MAX_CURRENT_CLAIM_HISTORY) throw new Error(code);
+  return rows;
+}
+
+/**
+ * Read the bounded append-only evidence graph required to decide current
+ * market truth. Every query is tenant and official-source scoped; the pure
+ * selector below remains the only component that can admit a claim.
+ */
+export async function loadCurrentClaimDecisions(prisma, {
+  tenant,
+  sourceKey,
+  asOf = new Date(),
+}) {
+  const clock = asOf instanceof Date ? asOf : new Date(asOf);
+  if (!Number.isFinite(clock.getTime())) throw new Error('CANA_MARKET_TRUTH_AS_OF_INVALID');
+  if (typeof tenant !== 'string' || !tenant || marketContractForSourceKey(sourceKey) === null) {
+    throw new Error('CANA_MARKET_TRUTH_READ_SCOPE_INVALID');
+  }
+
+  const currentClaimRows = bounded(await prisma.marketClaim.findMany({
+    where: {
+      tenant,
+      snapshot: { is: { sourceKey } },
+      versions: { none: {} },
+    },
+    select: {
+      id: true,
+      tenant: true,
+      claimKey: true,
+      claimType: true,
+      claimValue: true,
+      version: true,
+      resolutionId: true,
+      snapshotId: true,
+      observedAt: true,
+      freshnessExpiresAt: true,
+      confidence: true,
+      verification: true,
+      decisionEligible: true,
+      evidence: { select: { observationId: true } },
+      verificationEvents: {
+        where: { asOf: { lte: clock } },
+        select: {
+          id: true,
+          claimId: true,
+          acquisitionEventId: true,
+          decision: true,
+          evaluatorVersion: true,
+          asOf: true,
+          freshnessExpiresAt: true,
+        },
+        orderBy: [{ asOf: 'desc' }, { id: 'desc' }],
+        take: 1,
+      },
+    },
+    orderBy: [{ claimKey: 'asc' }, { version: 'desc' }, { id: 'asc' }],
+    take: MAX_CURRENT_CLAIM_HISTORY + 1,
+  }), 'CANA_MARKET_TRUTH_CURRENT_CLAIM_BUDGET_EXCEEDED');
+  const currentClaimKeys = new Set();
+  for (const claim of currentClaimRows) {
+    if (typeof claim.claimKey !== 'string' || !claim.claimKey) {
+      throw new Error('CANA_MARKET_TRUTH_CLAIM_KEY_INVALID');
+    }
+    if (currentClaimKeys.has(claim.claimKey)) {
+      throw new Error('CANA_MARKET_TRUTH_CURRENT_CLAIM_FORKED');
+    }
+    currentClaimKeys.add(claim.claimKey);
+  }
+  const claims = currentClaimRows.map(({
+    evidence,
+    verificationEvents,
+    ...claim
+  }) => ({
+    ...claim,
+    observationIds: evidence.map((entry) => entry.observationId),
+    latestVerificationEvent: verificationEvents[0] ?? null,
+  }));
+  if (claims.length === 0) return Object.freeze([]);
+
+  const verificationEvents = claims
+    .map((claim) => claim.latestVerificationEvent)
+    .filter(Boolean);
+  const acquisitionIds = [...new Set(verificationEvents
+    .map((event) => event.acquisitionEventId)
+    .filter((id) => typeof id === 'string' && id.length > 0))];
+  if (acquisitionIds.length === 0) return Object.freeze([]);
+
+  const acquisitionEvents = bounded(await prisma.marketSourceAcquisitionEvent.findMany({
+    where: { id: { in: acquisitionIds }, tenant, sourceKey },
+    select: {
+      id: true,
+      tenant: true,
+      sourceKey: true,
+      state: true,
+      outcome: true,
+      completeness: true,
+      requestDigest: true,
+      adapterContractDigest: true,
+      snapshotId: true,
+      contentArtifactId: true,
+      fetchedAt: true,
+      revisionState: true,
+      repositoryCommitSha: true,
+      repositoryTreeSha: true,
+      adapterVersion: true,
+      parserVersion: true,
+      compilerVersion: true,
+      entityResolverVersion: true,
+      authorityPolicyVersion: true,
+      freshnessPolicyVersion: true,
+      verificationCourtVersion: true,
+      errorCode: true,
+    },
+    take: MAX_CURRENT_CLAIM_HISTORY + 1,
+  }), 'CANA_MARKET_TRUTH_ACQUISITION_BUDGET_EXCEEDED');
+  const contentArtifactIds = [...new Set(acquisitionEvents
+    .map((event) => event.contentArtifactId)
+    .filter((id) => typeof id === 'string' && id.length > 0))];
+  const snapshotIds = [...new Set(acquisitionEvents
+    .map((event) => event.snapshotId)
+    .filter((id) => typeof id === 'string' && id.length > 0))];
+  const observationIds = [...new Set(claims.flatMap((claim) => claim.observationIds))];
+  const parserVersions = [...new Set(acquisitionEvents
+    .map((event) => event.parserVersion)
+    .filter((value) => typeof value === 'string' && value.length > 0))];
+  const policyVersions = [...new Set(acquisitionEvents.flatMap((event) => [
+    event.authorityPolicyVersion,
+    event.freshnessPolicyVersion,
+    event.verificationCourtVersion,
+  ]).filter((value) => typeof value === 'string' && value.length > 0))];
+
+  const contentArtifacts = contentArtifactIds.length === 0 ? [] : bounded(
+    await prisma.marketSourceContentArtifact.findMany({
+      where: { id: { in: contentArtifactIds }, sourceKey },
+      select: {
+        id: true,
+        snapshotId: true,
+        sourceKey: true,
+        sourceUrl: true,
+        requestContractDigest: true,
+        contentSha256: true,
+        payloadBytes: true,
+        recordCount: true,
+        schemaVersion: true,
+      },
+      take: MAX_CURRENT_CLAIM_HISTORY + 1,
+    }),
+    'CANA_MARKET_TRUTH_CONTENT_ARTIFACT_BUDGET_EXCEEDED',
+  );
+  const sourceSnapshots = snapshotIds.length === 0 ? [] : bounded(
+    await prisma.marketSourceSnapshot.findMany({
+      where: { id: { in: snapshotIds }, sourceKey },
+      select: {
+        id: true,
+        sourceKey: true,
+        sourceUrl: true,
+        payloadSha256: true,
+        payloadBytes: true,
+        recordCount: true,
+        schemaVersion: true,
+        completeness: true,
+      },
+      take: MAX_CURRENT_CLAIM_HISTORY + 1,
+    }),
+    'CANA_MARKET_TRUTH_SNAPSHOT_BUDGET_EXCEEDED',
+  );
+  const revocations = bounded(await prisma.marketEvidenceRevocationEvent.findMany({
+    where: {
+      effectiveAt: { lte: clock },
+      OR: [{ tenant }, { tenant: null }],
+      AND: [{ OR: [
+        ...(acquisitionIds.length > 0 ? [
+          { targetKind: 'SOURCE_ACQUISITION', targetId: { in: acquisitionIds } },
+          { acquisitionEventId: { in: acquisitionIds } },
+        ] : []),
+        ...(contentArtifactIds.length > 0 ? [
+          { targetKind: 'CONTENT_ARTIFACT', targetId: { in: contentArtifactIds } },
+          { contentArtifactId: { in: contentArtifactIds } },
+        ] : []),
+        ...(snapshotIds.length > 0 ? [
+          { targetKind: 'SNAPSHOT', targetId: { in: snapshotIds } },
+          { snapshotId: { in: snapshotIds } },
+        ] : []),
+        ...(observationIds.length > 0
+          ? [{ targetKind: 'OBSERVATION', targetId: { in: observationIds } }] : []),
+        ...(parserVersions.length > 0
+          ? [{ targetKind: 'PARSER_VERSION', targetId: { in: parserVersions } }] : []),
+        ...(policyVersions.length > 0
+          ? [{ targetKind: 'POLICY_VERSION', targetId: { in: policyVersions } }] : []),
+      ] }],
+    },
+    select: {
+      tenant: true,
+      targetKind: true,
+      targetId: true,
+      decision: true,
+      effectiveAt: true,
+      contentArtifactId: true,
+      acquisitionEventId: true,
+      snapshotId: true,
+      observationId: true,
+      parserVersion: true,
+      policyVersion: true,
+    },
+    orderBy: [{ effectiveAt: 'desc' }, { id: 'desc' }],
+    take: MAX_CURRENT_CLAIM_HISTORY + 1,
+  }), 'CANA_MARKET_TRUTH_REVOCATION_BUDGET_EXCEEDED');
+
+  return selectCurrentClaimDecisions({
+    claims,
+    verificationEvents,
+    acquisitionEvents,
+    contentArtifacts,
+    sourceSnapshots,
+    revocations,
+    asOf: clock,
+  });
+}
+
 function admittedAcquisition(claim, event, acquisition, artifact, snapshot, eventAsOf) {
   const claimTenant = claim.tenant;
   const claimSnapshotId = field(claim, 'snapshotId', 'snapshot_id');
@@ -105,6 +330,8 @@ function admittedAcquisition(claim, event, acquisition, artifact, snapshot, even
     && claimTenant.length > 0
     && acquisition?.tenant === claimTenant
     && acquisition?.state === 'COMPLETED'
+    && !acquisition?.errorCode
+    && !acquisition?.error_code
     && ['SOURCE_CHANGED', 'SOURCE_UNCHANGED'].includes(outcome)
     && acquisition?.completeness === 'COMPLETE'
     && field(acquisition, 'sourceKey', 'source_key') === contract.source_key
@@ -203,6 +430,7 @@ export function selectCurrentClaimDecisions({
     if (isEvidenceRevoked({
       claimId: claim.id,
       acquisitionEventId,
+      contentArtifactId,
       snapshotId: claim.snapshotId ?? claim.snapshot_id,
       observationIds: claim.observationIds ?? claim.observation_ids ?? [],
       parserVersion: field(acquisition, 'parserVersion', 'parser_version'),
@@ -217,16 +445,29 @@ export function selectCurrentClaimDecisions({
     })) continue;
     current.push(Object.freeze({
       claim_id: claim.id,
+      tenant: claim.tenant,
+      subject_ref: field(claim, 'subjectRef', 'subject_ref')
+        ?? field(claim, 'entityIdentity', 'entity_identity')
+        ?? field(claim, 'subjectId', 'subject_id')
+        ?? field(claim, 'resolutionId', 'resolution_id')
+        ?? null,
       predicate: claim.claimType ?? claim.predicate,
       value: claim.claimValue ?? claim.value,
+      market_id: marketContractForSourceKey(field(acquisition, 'sourceKey', 'source_key'))?.market_id ?? null,
+      contract_digest: field(acquisition, 'requestDigest', 'request_digest'),
       source_id: field(acquisition, 'sourceKey', 'source_key'),
+      source_url: field(snapshot, 'sourceUrl', 'source_url'),
+      retrieved_at: new Date(field(acquisition, 'fetchedAt', 'fetched_at')).toISOString(),
       observed_at: new Date(claim.observedAt ?? claim.observed_at).toISOString(),
+      verified_at: eventAsOf.toISOString(),
       freshness_expires_at: expiry.toISOString(),
+      confidence: claim.confidence ?? null,
       verification: 'VERIFIED',
       decision_eligible: true,
       court_version: field(event, 'evaluatorVersion', 'evaluator_version'),
       acquisition_event_id: acquisitionEventId,
       verification_event_id: event.id,
+      evidence_ref: `market-claim:${claim.id}`,
     }));
   }
   return Object.freeze(current.sort((left, right) => left.claim_id.localeCompare(right.claim_id)));

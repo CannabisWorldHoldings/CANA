@@ -1,0 +1,352 @@
+{
+  "SCHEMA_VERSION": 1,
+  "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
+  "REPORT_AS_OF": "2026-08-13T05:27:04Z",
+  "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
+  "CURRENT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+  "CURRENT_MAIN_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
+  "CURRENT_PRODUCTION_SHA": "b993a2d5252380472b20ab4565ce07da9df1e61d",
+  "CURRENT_PRODUCTION_STATE": {
+    "EVIDENCE_STATE": "VERIFIED_AT_PROOF_TIME_NOT_REPROBED",
+    "HOMEPAGE_HTTP_STATUS": 200,
+    "HEALTH_HTTP_STATUS": 200,
+    "HEALTH_STATUS": "HEALTHY",
+    "DATABASE_STATUS": "UP",
+    "RELEASE_HTTP_STATUS": 200,
+    "BUILT_AT": "2026-08-12T12:11:32.201Z",
+    "RELATIONSHIP_TO_MAIN": "ANCESTOR_15_COMMITS_BEHIND_NOT_DIVERGENT",
+    "PROOF": [
+      "GET https://orderweeddc.com/ at 2026-08-12T16:26:55Z",
+      "GET https://orderweeddc.com/api/health at 2026-08-12T16:26:56Z",
+      "GET https://orderweeddc.com/api/release at 2026-08-12T16:26:57Z",
+      "GitHub compare b993a2d5252380472b20ab4565ce07da9df1e61d...c436e3742929af71ee6cd45acc47fb2cabd55fef"
+    ]
+  },
+  "CURRENT_PRODUCTION_DATABASE_IDENTITY": {
+    "STATE": "UNVERIFIED_CURRENT",
+    "PROMPT_EXPECTED_NAME": "cana-orderweeddc-production",
+    "CLAIM": "No current read-only evidence available in this run proves the dedicated production Neon project name; no credential or production database access was attempted."
+  },
+  "STAGING_STATE": {
+    "STATE": "HISTORICAL_PREPARED_NOT_RUNNING_HOLD",
+    "STAGED_SHA": "e54d6cfe5187a40a1e1a955244bbd5b0f7e742bf",
+    "ROOT": "/home/ordectpu/apps/orderweeddc-staging/current",
+    "PRODUCTION_ROOT": "/home/ordectpu/apps/orderweeddc/current",
+    "RUNTIME_STARTED": false,
+    "BLOCKER": "Historical cPanel outbound TCP 5432 connection refusal to both managed database endpoints; current staging runtime was not probed.",
+    "MUTATION_COUNTS": {
+      "PRODUCTION": 0,
+      "DATABASE": 0,
+      "ENVIRONMENT": 0,
+      "RESTART": 0,
+      "DNS": 0,
+      "CRON": 0,
+      "NEON": 0,
+      "PAID_CALL": 0
+    }
+  },
+  "PR45_BASE": "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+  "PR45_HEAD": "0de5f8b4d8e47735576c3f73ce99e9ecaf026e93",
+  "PR45_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
+  "PR45_STATE": "MERGED_NORMAL_HISTORY_PRESERVED",
+  "PR45_MERGED": true,
+  "PR45_MERGE_COMMIT": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+  "PR45_MERGE_PARENTS": [
+    "eee23d6973a5b3b7678e256de9b5ceb5f294e4a3",
+    "0de5f8b4d8e47735576c3f73ce99e9ecaf026e93"
+  ],
+  "PR45_REVIEWED_HEAD_IN_MAIN_ANCESTRY": true,
+  "PR45_HOSTED_CI": {
+    "RUN_ID": 31624478534,
+    "EXACT_HEAD": "0de5f8b4d8e47735576c3f73ce99e9ecaf026e93",
+    "CONCLUSION": "SUCCESS",
+    "REQUIRED_CHECKS": [
+      "candidate-unit",
+      "focused-verifier",
+      "maria-verifier",
+      "cpanel-verifier",
+      "github-import-offline",
+      "durability-proof"
+    ],
+    "REAL_DATABASE_COURT": {
+      "POSTGRESQL_PRISMA": "PASS",
+      "SQLITE_SURROGATE": false,
+      "MARIADB_SURROGATE": false,
+      "MOCKED_PRISMA": false,
+      "POSTGIS_REQUIRED": true,
+      "H3_AND_H3_POSTGIS_RECORDED": true,
+      "TRANSACTION_ROLLBACK": "PASS",
+      "SEQUENTIAL_IDEMPOTENCY": "PASS",
+      "CONCURRENT_DUPLICATE_DETERMINISM": "PASS",
+      "TRI_MARKET_ISOLATION": "PASS",
+      "FAILURE_PERSISTENCE": "PASS",
+      "CUTOVER_PREFLIGHT_READ_ONLY": true
+    }
+  },
+  "PR45_REVIEW_STATE": {
+    "SUBMITTED_REVIEWS": 14,
+    "REVIEW_DECISION": "NONE",
+    "CODERABBIT_CHECK": "SUCCESS",
+    "CODERABBIT_REVIEW": "SUBSTANTIVE_REVIEW_COMPLETE",
+    "UNRESOLVED_THREADS": 0
+  },
+  "PR45_READY_FOR_OWNER_MERGE": true,
+  "PR45_OPERATIONAL_GATE": "CANONICALIZED",
+  "PR45_VERDICT": {
+    "LITERAL_PROMPT_PREDICATE": "MERGED_AFTER_EXACT_HEAD_REVIEW_AND_COURTS",
+    "OPERATIONAL_STATE": "CANONICAL_MAIN_POST_MERGE_CI_PASS",
+    "MERGE_AUTHORITY_IN_THIS_RUN": true
+  },
+  "POST_MERGE_CI": {
+    "RUN_ID": 31625316460,
+    "EXACT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
+    "CONCLUSION": "SUCCESS",
+    "REQUIRED_CHECKS": [
+      "candidate-unit",
+      "focused-verifier",
+      "maria-verifier",
+      "cpanel-verifier",
+      "github-import-offline",
+      "durability-proof"
+    ]
+  },
+  "WHY_CURRENT_PUBLIC_UI_IS_MISSING_LATER_WORK": "Current main contains merged market, Reality Compiler, ASK and durability advances, while the later customer/merchant/Apple donor PRs remain open, stacked, unmerged or visually rejected. Live production is the stable b993a2d safety anchor and is intentionally 15 canonical commits behind main, so neither public production nor current main contains the full three-face convergence UI.",
+  "CUSTOMER_WORLD_CURRENT_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": [
+      "tenant marketplace",
+      "ASK intent to customer discovery projection candidate",
+      "products",
+      "deals",
+      "neighborhoods",
+      "map",
+      "directory search",
+      "truth filters"
+    ],
+    "MISSING": [
+      "canonical dedicated /search route",
+      "canonical dedicated /delivery route",
+      "canonical dedicated /dispensaries route",
+      "first-class address delivery eligibility",
+      "approved Apple visual canon",
+      "full Sovereign UI Gauntlet"
+    ]
+  },
+  "MERCHANT_WORLD_CURRENT_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": [
+      "business routes",
+      "merchant validation",
+      "merchant mutations",
+      "merchant dashboard"
+    ],
+    "MISSING": [
+      "assistant-first command workflow",
+      "rights-attested media intake",
+      "verified service-area management",
+      "customer demand projection",
+      "campaign and outcome loop"
+    ]
+  },
+  "CANA_WORLD_CURRENT_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": [
+      "admin",
+      "Site Intelligence",
+      "Reality Compiler",
+      "tri-market acquisition",
+      "ASK",
+      "continuation receipts",
+      "Opportunity model",
+      "durability courts"
+    ],
+    "MISSING": [
+      "distinct obsidian owner command face",
+      "company-wide cross-face event view",
+      "ranked multi-source opportunity projection",
+      "Hermes execution workbench binding",
+      "cost budget approval and outcome panes"
+    ]
+  },
+  "PR21_DISPOSITION": "FUNCTIONAL_DONOR_PLUS_OWNER_REJECTED_VISUAL; DO_NOT_RAW_MERGE",
+  "PR22_DISPOSITION": "ADAPT_COMPETITOR_EVIDENCE_BRIDGE; OWNER_SELECTION_PENDING; NO_PROVIDER_OR_PRODUCTION_AUTHORITY",
+  "PR24_DISPOSITION": "FUNCTIONAL_DONOR_FOR_CREATIVE_LEARNING; ZERO_WINNERS_AND_EXPERIMENTS; OWNER_PENDING",
+  "PR25_DISPOSITION": "FUNCTIONAL_DONOR_FOR_GOVERNED_DYNAMIC_CREATIVE; OWNER_REVIEW_REQUIRED",
+  "PR28_DISPOSITION": "SUPERSEDED_BY_CURRENT_REALITY_ENTITY_AND_CLAIM_AUTHORITY; PRESERVE_SEMANTICS",
+  "PR30_DISPOSITION": "SUPERSEDED_BY_CURRENT_REALITY_PROJECTION_SEAMS",
+  "PR31_DISPOSITION": "SUPERSEDED_BY_REALITY_AND_GEO_AUTHORITY; RECOVER_DELIVERY_LAWS_WITHOUT_RADIUS_GUESSES",
+  "PR32_DISPOSITION": "SUPERSEDED_BY_CURRENT_ASK_INTENT_IR; RECOVER_ONLY_MISSING_FACETS",
+  "PR33_DISPOSITION": "ADAPT_RIGHTS_ATTESTED_MEDIA_INTAKE_INTO_CURRENT_MERCHANT_AUTHORITY",
+  "PR34_DISPOSITION": "VISUAL_DONOR_ONLY; HAND_PORT; OWNER_AND_BROWSER_GAUNTLET_REQUIRED",
+  "APPLE_UI_MISSING_COMPONENTS": [
+    "verified SF-first/system typography token adoption",
+    "verified 980px reading-column token adoption",
+    "approved restrained type-scale adoption",
+    "approved frosted navigation/material",
+    "approved day/night visual system",
+    "approved tint chips",
+    "approved technical-spec hierarchy",
+    "approved image media overlays",
+    "browser evidence at 390/768/1024/1440",
+    "owner visual acceptance receipt"
+  ],
+  "SOVEREIGN_GAUNTLET_STATE": {
+    "STATE": "BLOCKED",
+    "REASON": "No canonical current-main gauntlet certification or owner-approved visual candidate exists. Current marketplace tests and donor browser receipts are technical evidence, not visual approval."
+  },
+  "ASK_SEARCH_GAPS": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "CANONICAL": "ASK Intent IR, answerability frontier and bounded customer discovery projection candidate",
+    "GAPS": [
+      "single adapter shared by /search, /delivery, /dispensaries and map",
+      "price/time/category/deal facet completeness",
+      "delivery eligibility intent-to-evidence resolution",
+      "customer demand to merchant/owner opportunity projection"
+    ]
+  },
+  "DELIVERY_GAPS": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "CANONICAL_INPUTS": [
+      "market",
+      "jurisdiction law",
+      "license/delivery authority",
+      "fulfillment relationship",
+      "PostGIS service area",
+      "current evidence"
+    ],
+    "GAPS": [
+      "address-to-market boundary",
+      "canonical delivery-authority claims",
+      "fulfillment relationship representation",
+      "verified service-area geometry",
+      "current eligibility projection",
+      "truthful UNKNOWN customer state"
+    ]
+  },
+  "HERMES_CURRENT_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "BOUNDARY": "CANA owns company truth, policy, authority, budgets, receipts and learning; Hermes is a replaceable bounded execution/operator substrate.",
+    "GAP": "No current canonical live Hermes workbench binding is proven; provider/live runtime remains owner-gated."
+  },
+  "SITEMIND_CURRENT_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": "Deterministic local site/route/freshness/SEO receipts and admin projection.",
+    "GAP": "Overlapping SiteMind/site-intelligence scoring needs one canonical receipt adapter; live external Search Console and merchant outcome evidence are disconnected."
+  },
+  "GROWTH_WATCH_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": "Robots-respecting deterministic public-surface fingerprinting and competitive triage doctrine.",
+    "GAP": "No canonical snapshot-delta to CANA evidence/opportunity/action receipt bridge."
+  },
+  "SEO_AEO_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": "Local truth, freshness, structured data and route/index-eligibility inspection.",
+    "GAP": "Search Console, live indexation/impression/rank evidence and publication court are not connected."
+  },
+  "BACKLINK_STATE": {
+    "STATE": "PLANNED",
+    "PRESENT": "Link-worthy asset and backlink value concepts in competitive/merchant documentation.",
+    "GAP": "No prospect, outreach, acquired/lost link, referral or assisted-value ledger."
+  },
+  "OUTREACH_STATE": {
+    "STATE": "PLANNED",
+    "PRESENT": "Manual founder-sent email/DM/in-person guidance.",
+    "GAP": "No governed prospect/message/send/response/meeting/conversion ledger; all convergence outreach remains draft/queue/simulate only."
+  },
+  "CREATIVE_IMAGE_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": "Provider-neutral analyze/brief/generate/inspect/verify pipeline with named human approval before posting; donor tournament and learning mechanisms exist off-main.",
+    "GAP": "No canonical merchant media provenance intake, owner-approved visual winner, executed experiment, paid provider authority or outcome learning loop."
+  },
+  "BILLBOARD_STATE": {
+    "STATE": "PLANNED",
+    "PRESENT": "Governed future channel concept only.",
+    "GAP": "No canonical campaign/placement/phone/QR/URL/ASK/attribution software; no inventory, number or media purchase is authorized."
+  },
+  "ATTRIBUTION_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": "Signed replay-aware interaction proof, LeadEvent handoffs and DemandCreditEntry ledger.",
+    "GAP": "Handoffs do not establish conversion, revenue, incrementality or causality; one settled intervention-to-outcome ledger is missing."
+  },
+  "FAILURE_MEMORY_STATE": {
+    "STATE": "PARTIALLY_IMPLEMENTED",
+    "PRESENT": "Continuation receipts, evidence ledgers, postmortems, competitor snapshots and model failure/cost donor records.",
+    "GAP": "No canonical cross-domain assumption/action/outcome/root-cause/correction/rule/future-check projection."
+  },
+  "MISSING_CONNECTIVE_TISSUE": [
+    "one shared projection adapter from verified market reality into Customer, Merchant and CANA Owner faces",
+    "ASK intent shared by search, delivery, dispensaries, map and merchant demand",
+    "first-class delivery eligibility chain backed by market law and PostGIS service areas",
+    "customer signal to structured demand/gap to ranked Opportunity",
+    "SiteMind and Growth Watch observations to canonical CANA evidence",
+    "Opportunity to bounded Hermes/human action with approval and cost receipts",
+    "intervention identity to exposure/action/outcome/value/confidence",
+    "outcome to unified winner/failure learning",
+    "approved Apple customer visual canon and full browser gauntlet",
+    "distinct Merchant assistant and CANA Owner command projections"
+  ],
+  "FIRST_BOUNDED_PRODUCT_SLICE": {
+    "CANDIDATE": "ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION",
+    "RATIONALE": "Current ASK and deterministic discovery seams already exist; the slice adds one read-only typed adapter from canonical current claim decisions without a second truth or search brain.",
+    "STATUS": "LOCAL_CANDIDATE_IMPLEMENTED",
+    "BLOCKER": null,
+    "IMPLEMENTATION_BASE": "e11218a79ff4b77782917be49058cb61b11f31cc",
+    "SURFACES": [
+      "apps/web/src/lib/ask/intent-ir.mjs",
+      "apps/web/src/lib/ask/answerability-frontier.mjs",
+      "apps/web/src/lib/ask/ask-service.mjs",
+      "apps/web/src/lib/ask/customer-discovery-contract.mjs",
+      "apps/web/src/lib/ask/customer-discovery-projection.mjs",
+      "apps/web/src/lib/ask/customer-discovery.mjs",
+      "apps/web/src/lib/ask/customer-reality-answer.mjs",
+      "apps/web/src/lib/ask/legacy-retailer-answer.mjs",
+      "apps/web/src/lib/ask/ask-work.mjs",
+      "apps/web/src/lib/ask/market-gap-recheck.mjs",
+      "apps/web/src/app/api/v1/ask/route.ts",
+      "apps/web/src/lib/reality/evidence-revocation.mjs",
+      "apps/web/src/lib/reality/market-claim-adapter.mjs",
+      "apps/web/tests/ask-intent-ir.test.mjs",
+      "apps/web/tests/ask-service-where.test.mjs",
+      "apps/web/tests/md-verified-world-state.test.mjs",
+      "apps/web/tests/va-verified-world-state.test.mjs",
+      "apps/web/tests/tri-market-postgres-court.test.mjs"
+    ],
+    "MARKETS": [
+      "US-DC",
+      "US-MD",
+      "US-VA"
+    ],
+    "TRUTH_STATES": [
+      "KNOWN",
+      "UNKNOWN",
+      "CAPABILITY_GAP"
+    ],
+    "NO_SECOND_SEARCH_ENGINE": true,
+    "REALITY_PATH": "durable MarketClaim lineage -> loadCurrentClaimDecisions -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK API customer projection",
+    "PUBLIC_ROUTE_USES_CANONICAL_REALITY_STORE": true,
+    "CONTINUATION_RECHECK_USES_SAME_MARKET_REALITY_STORE": true,
+    "DISPOSABLE_POSTGRES_ROUTE_PROOF": "PERSISTED_VERIFIED_MD_CLAIMS_TO_CUSTOMER_PROJECTION_WITHOUT_RETAILER_ROW",
+    "HOSTED_REALITY_ROWS": "NOT_PROBED_PRODUCTION_FROZEN",
+    "ZERO_ROW_BEHAVIOR": "HONEST_NO_VERIFIED_CURRENT_MATCH_WITHOUT_FALLBACK_TO_RETAILER",
+    "FABRICATED_RETAILER_ROWS_IN_REALITY_COURT": false,
+    "PROJECTION_DECIDES_TRUTH": false,
+    "PRODUCTION_EFFECTS": 0
+  },
+  "PHASE_BOUNDARY": "ASK_CUSTOMER_DISCOVERY_CANDIDATE_REVIEW",
+  "PRODUCT_IMPLEMENTATION_STARTED": true,
+  "NO_MARKET_4": true,
+  "PRODUCTION_MUTATED": false,
+  "EXTERNAL_EFFECTS": {
+    "MERGE": 1,
+    "DEPLOY": 0,
+    "PRODUCTION_RESTART": 0,
+    "DATABASE_WRITE": 0,
+    "MIGRATION": 0,
+    "DNS_CHANGE": 0,
+    "CRON_CHANGE": 0,
+    "OUTREACH_SEND": 0,
+    "PAID_PROVIDER_CALL": 0,
+    "MEDIA_SPEND": 0
+  },
+  "NEXT_OWNER_ACTION": "Review the exact ASK customer discovery candidate; keep production frozen and do not promote visual or route recovery without its separate courts."
+}

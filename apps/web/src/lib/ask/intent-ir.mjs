@@ -43,6 +43,42 @@ const LOCATION_LEXICON = [
   'downtown', 'chinatown', 'ivy city', 'mount pleasant', 'brightwood', 'deanwood',
 ];
 
+// Market-specific tokens are still customer-language vocabulary, not market
+// truth. They are bounded to cities published in the canonical official
+// registry fixtures for the admitted Maryland and Virginia contracts.
+const MARKET_LOCATION_ALIASES = Object.freeze({
+  'US-MD': Object.freeze({
+    abdereen: 'aberdeen',
+    'capital heights': 'capitol heights',
+  }),
+});
+
+const MARKET_LOCATION_LEXICONS = Object.freeze({
+  'US-DC': Object.freeze(LOCATION_LEXICON),
+  'US-MD': Object.freeze([
+    'aberdeen', 'abdereen', 'abingdon', 'annapolis', 'baltimore', 'bethesda', 'bowie',
+    'brandywine', 'burtonsville', 'cambridge', 'camp springs', 'capitol heights', 'capital heights',
+    'centreville', 'chevy chase', 'clinton', 'cockeysville', 'columbia', 'crofton',
+    'cumberland', 'curtis bay', 'edgewater', 'elkton', 'ellicott city', 'frederick',
+    'gaithersburg', 'gambrills', 'germantown', 'greenbelt', 'hagerstown',
+    'halethorpe', 'hyattsville', 'joppa', 'laurel', 'linthicum', 'lutherville',
+    'mechanicsville', 'middle river', 'new market', 'nottingham', 'ocean city',
+    'olney', 'parkville', 'pasadena', 'perryville', 'pikesville', 'reisterstown',
+    'rockville', 'salisbury', 'silver spring', 'timonium', 'towson',
+    'upper marlboro', 'waldorf', 'westminster', 'white plains', 'windsor mill',
+  ]),
+  'US-VA': Object.freeze([
+    'abingdon', 'alexandria', 'arlington', 'bristol', 'christiansburg',
+    'colonial heights', 'danville', 'fairfax', 'glen allen', 'hampton', 'henrico',
+    'lynchburg', 'manassas', 'norfolk', 'portsmouth', 'richmond', 'roanoke',
+    'sterling', 'suffolk', 'virginia beach', 'williamsburg', 'woodbridge',
+  ]),
+});
+
+export function canonicalMarketLocation(value, marketId) {
+  return MARKET_LOCATION_ALIASES[marketId]?.[value] ?? value;
+}
+
 const CATEGORY_LEXICON = [
   { value: 'flower', tokens: ['flower', 'bud', 'eighth', '8th', 'ounce', 'oz'] },
   { value: 'preroll', tokens: ['preroll', 'pre-roll', 'prerolls', 'pre-rolls', 'joint', 'joints', 'blunt', 'blunts'] },
@@ -72,17 +108,21 @@ function findToken(haystack, token) {
 /**
  * Compile a raw query into the Intent IR.
  * @param {string} rawQuery
- * @param {{ now?: Date }} [options]
+ * @param {{ now?: Date, marketId?: string }} [options]
  */
-export function compileIntent(rawQuery, { now = new Date() } = {}) {
+export function compileIntent(rawQuery, { now = new Date(), marketId = null } = {}) {
   const raw = typeof rawQuery === 'string' ? rawQuery : '';
   const normalized = raw.toLowerCase().replace(/\s+/g, ' ').trim().slice(0, 500);
 
   // location — longest matching token wins (so "dupont circle" beats "dupont").
   let location = UNKNOWN;
-  for (const token of [...LOCATION_LEXICON].sort((a, b) => b.length - a.length)) {
+  const locationLexicon = marketId === null
+    ? MARKET_LOCATION_LEXICONS['US-DC']
+    : MARKET_LOCATION_LEXICONS[marketId] ?? [];
+  for (const token of [...locationLexicon].sort((a, b) => b.length - a.length)) {
     if (findToken(normalized, token)) {
-      location = known(token === 'dupont' ? 'dupont circle' : token, token);
+      const normalizedToken = token === 'dupont' ? 'dupont circle' : token;
+      location = known(canonicalMarketLocation(normalizedToken, marketId), token);
       break;
     }
   }

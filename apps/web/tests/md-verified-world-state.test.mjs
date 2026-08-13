@@ -25,7 +25,14 @@ import {
   adjudicateAcquisitionEvidence,
   adjudicateExecutionProvenance,
 } from '../src/lib/reality/market-claim-court.mjs';
-import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
+import {
+  loadCurrentClaimDecisions,
+  selectCurrentClaimDecisions,
+} from '../src/lib/reality/market-claim-adapter.mjs';
+import {
+  answerCustomerDiscoveryFromReality,
+  resolveCustomerDiscovery,
+} from '../src/lib/ask/ask-service.mjs';
 import { routeRealitySource, LIVE_SOURCE_REGISTRY } from '../src/lib/reality/source-portfolio-router.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -83,15 +90,29 @@ async function mdEvidence() {
     sourceId: receipt.source_id,
     observedAt: ACQUIRED_AT,
   });
-  const claims = formed.slice(0, 3).map((claim) => ({
+  const bethesdaAddress = formed.find((claim) => (
+    claim.predicate === 'regulated_address' && claim.value.includes(', Bethesda, MD ')
+  ));
+  assert.ok(bethesdaAddress, 'fixture must retain a Bethesda subject for customer projection');
+  const requiredPredicates = new Set([
+    'mca_registry_listing_exists',
+    'facility_name',
+    'regulated_address',
+  ]);
+  const claims = formed
+    .filter((claim) => claim.entity_identity === bethesdaAddress.entity_identity && requiredPredicates.has(claim.predicate))
+    .map((claim) => ({
     id: claim.claim_id,
     tenant: TENANT,
     claimType: claim.predicate,
     claimValue: claim.value,
+    entityIdentity: claim.entity_identity,
     snapshotId: 'md-snapshot-1',
     observedAt: new Date(ACQUIRED_AT),
     freshnessExpiresAt: new Date('2026-09-11T14:00:00.000Z'),
-  }));
+    }));
+  assert.equal(claims.length, requiredPredicates.size,
+    'the Bethesda subject must retain every required predicate');
   const snapshot = {
     id: 'md-snapshot-1',
     sourceKey: receipt.source_key,
@@ -183,7 +204,116 @@ test('THE FIRST VERIFIED MARYLAND WORLD STATE: fixture acquisition → VERIFIED 
     assert.equal(decision.verification, 'VERIFIED');
     assert.equal(decision.decision_eligible, true);
     assert.equal(decision.source_id, MD_MCA_LIVE_CONTRACT.sourceKey);
+    assert.match(decision.subject_ref, /^md-mca:/);
   }
+
+  const projection = answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: TENANT,
+    claimDecisions: current,
+    now: AS_OF,
+  });
+  assert.equal(projection.results.length, 1, 'verified MCA Reality reaches ASK without a Retailer fixture');
+  assert.equal(projection.results[0].merchant_id, current[0].subject_ref);
+  assert.equal(projection.results[0].location.city.value, 'Bethesda');
+  assert.equal(projection.results[0].regulatory_state.state, 'UNKNOWN');
+  assert.equal(projection.results[0].delivery_eligibility.state, 'UNKNOWN');
+  assert.equal(projection.truth.gate, 'selectCurrentClaimDecisions + buildAnswerabilityFrontier');
+
+  const storeReads = [];
+  let persistedAcquisition = event;
+  const persisted = {
+    marketClaim: { findMany: async (query) => {
+      storeReads.push(['claims', query.where]);
+      return claims.map((claim) => ({
+        ...claim,
+        claimKey: `${claim.entityIdentity}:${claim.claimType}`,
+        version: 1,
+        resolutionId: claim.entityIdentity,
+        evidence: [],
+        verificationEvents: verificationEvents.filter((item) => item.claimId === claim.id),
+      }));
+    } },
+    marketVerificationEvent: { findMany: async () => {
+      throw new Error('current-state loader must use the latest nested verification event');
+    } },
+    marketSourceAcquisitionEvent: { findMany: async (query) => {
+      assert.equal(query.select.errorCode, true, 'the persisted error status must cross the read boundary');
+      return [persistedAcquisition];
+    } },
+    marketSourceContentArtifact: { findMany: async () => [artifact] },
+    marketSourceSnapshot: { findMany: async () => [snapshot] },
+    marketEvidenceRevocationEvent: { findMany: async (query) => {
+      const lineage = query.where.AND[0].OR;
+      assert.ok(lineage.some((clause) => (
+        clause.targetKind === 'SOURCE_ACQUISITION'
+          && clause.targetId.in.includes(event.id)
+      )), 'revocation reads must be acquisition-lineage scoped');
+      assert.ok(lineage.some((clause) => (
+        clause.targetKind === 'SNAPSHOT'
+          && clause.targetId.in.includes(snapshot.id)
+      )), 'revocation reads must be snapshot-lineage scoped');
+      return [];
+    } },
+  };
+  const liveSurface = await resolveCustomerDiscovery(persisted, {
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: TENANT,
+    now: AS_OF,
+  });
+  assert.equal(liveSurface.projection.results.length, 1,
+    'the customer orchestration must load canonical persisted Reality, not a fabricated Retailer');
+  assert.equal(liveSurface.projection.results[0].merchant_id, current[0].subject_ref);
+  assert.deepEqual(storeReads, [['claims', {
+    tenant: TENANT,
+    snapshot: { is: { sourceKey: MD_MCA_LIVE_CONTRACT.sourceKey } },
+    versions: { none: {} },
+  }]]);
+  persistedAcquisition = { ...event, errorCode: 'UPSTREAM_CAPTURE_FAILED' };
+  const errored = await resolveCustomerDiscovery(persisted, {
+    rawQuery: 'dispensary in bethesda',
+    marketId: 'US-MD',
+    tenantDomain: TENANT,
+    now: AS_OF,
+  });
+  assert.equal(errored.projection.results.length, 0,
+    'an errored COMPLETED acquisition must never authorize customer truth');
+  const forkedClaim = {
+    ...claims[0],
+    id: `${claims[0].id}:fork`,
+    version: 2,
+  };
+  const forkedStore = {
+    ...persisted,
+    marketClaim: { findMany: async () => [claims[0], forkedClaim].map((claim) => ({
+      ...claim,
+      claimKey: `${claim.entityIdentity}:${claim.claimType}`,
+      version: claim.version ?? 1,
+      resolutionId: claim.entityIdentity,
+      evidence: [],
+      verificationEvents: verificationEvents.filter((item) => item.claimId === claims[0].id),
+    })) },
+  };
+  await assert.rejects(
+    () => loadCurrentClaimDecisions(forkedStore, {
+      tenant: TENANT,
+      sourceKey: MD_MCA_LIVE_CONTRACT.sourceKey,
+      asOf: AS_OF,
+    }),
+    /CANA_MARKET_TRUTH_CURRENT_CLAIM_FORKED/,
+  );
+  assert.throws(
+    () => answerCustomerDiscoveryFromReality({
+      rawQuery: 'dispensary in bethesda',
+      marketId: 'US-MD',
+      tenantDomain: 'other.example',
+      claimDecisions: current,
+      now: AS_OF,
+    }),
+    /CANA_CUSTOMER_DISCOVERY_REALITY_PROVENANCE_MISMATCH/,
+  );
 });
 
 test('MD acquisition court: COMPILE ALLOWs; forgeries rejected with the same reasons as every market', async () => {

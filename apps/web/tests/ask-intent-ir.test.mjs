@@ -7,7 +7,10 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compileIntent } from '../src/lib/ask/intent-ir.mjs';
+import { readFile } from 'node:fs/promises';
+import { canonicalMarketLocation, compileIntent } from '../src/lib/ask/intent-ir.mjs';
+import { parseMcaRegistryPage } from '../src/lib/markets/md/md-mca-registry-parser.mjs';
+import { parseCcaRegistryPage } from '../src/lib/markets/va/va-cca-registry-parser.mjs';
 
 const NOW = new Date('2026-08-09T12:00:00Z');
 
@@ -43,6 +46,67 @@ test('location tokens match on word boundaries: "rickshaw" is NOT shaw', () => {
 test('longest location token wins: "dupont circle" and bare "dupont" both compile to dupont circle', () => {
   assert.equal(compileIntent('flower near dupont circle', { now: NOW }).dimensions.location.value, 'dupont circle');
   assert.equal(compileIntent('flower in dupont', { now: NOW }).dimensions.location.value, 'dupont circle');
+});
+
+test('market context selects bounded Maryland and Virginia location vocabulary', () => {
+  assert.equal(
+    compileIntent('dispensary in bethesda', { now: NOW, marketId: 'US-MD' }).dimensions.location.value,
+    'bethesda',
+  );
+  assert.equal(
+    compileIntent('dispensary in richmond', { now: NOW, marketId: 'US-VA' }).dimensions.location.value,
+    'richmond',
+  );
+  assert.equal(
+    compileIntent('dispensary in bethesda', { now: NOW, marketId: 'US-VA' }).dimensions.location.status,
+    'UNKNOWN',
+  );
+});
+
+test('Maryland canonical place names and official-registry typo aliases resolve to one location', () => {
+  for (const [input, canonical] of [
+    ['aberdeen', 'aberdeen'],
+    ['abdereen', 'aberdeen'],
+    ['capitol heights', 'capitol heights'],
+    ['capital heights', 'capitol heights'],
+  ]) {
+    const location = compileIntent(`dispensary in ${input}`, {
+      now: NOW,
+      marketId: 'US-MD',
+    }).dimensions.location;
+    assert.equal(location.status, 'KNOWN');
+    assert.equal(location.value, canonical);
+    assert.equal(canonicalMarketLocation(input, 'US-MD'), canonical);
+  }
+});
+
+test('market location vocabulary covers every city extracted from the canonical official fixtures', async () => {
+  const fixtureContracts = [
+    {
+      marketId: 'US-MD',
+      path: new URL('./fixtures/md-mca/dispensaries.html', import.meta.url),
+      parser: parseMcaRegistryPage,
+    },
+    {
+      marketId: 'US-VA',
+      path: new URL('./fixtures/va-cca/dispensaries.html', import.meta.url),
+      parser: parseCcaRegistryPage,
+    },
+  ];
+
+  for (const contract of fixtureContracts) {
+    const { records } = contract.parser(await readFile(contract.path, 'utf8'));
+    const cities = [...new Set(records.map((record) => record.address.city.toLowerCase()))].sort();
+    assert.ok(cities.length > 0);
+    for (const city of cities) {
+      const location = compileIntent(`dispensary in ${city}`, {
+        now: NOW,
+        marketId: contract.marketId,
+      }).dimensions.location;
+      assert.equal(location.status, 'KNOWN', `${contract.marketId} missing ${city}`);
+      assert.equal(location.value, canonicalMarketLocation(city, contract.marketId));
+    }
+  }
 });
 
 test('fulfillment and open-now compile only from explicit language', () => {
