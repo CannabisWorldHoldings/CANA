@@ -101,7 +101,7 @@ test('comparison links contain only normalized bounded identifiers', () => {
   assert.equal(retailerCompareHref([]), '/compare');
 });
 
-test('comparison UI is noindex, bounded, evidence-aware, and tracking-free', () => {
+test('comparison UI remains noindex, bounded, evidence-aware, and separate from canonical customer discovery', () => {
   const compareSource = fs.readFileSync(
     path.join(webRoot, 'src/app/[domain]/compare/page.tsx'),
     'utf8',
@@ -129,8 +129,9 @@ test('comparison UI is noindex, bounded, evidence-aware, and tracking-free', () 
   assert.match(compareSource, /\.\.\.currentDealWhere\(asOf\)/);
   assert.match(compareSource, /safePublicReferenceUrl\(retailer\.sourceUrl\)/);
   assert.doesNotMatch(compareSource, /localStorage|sessionStorage|cookies\(/);
-  assert.match(homeSource, /action="\/compare"/);
-  assert.match(homeSource, /name="retailer"/);
+  assert.match(homeSource, /loadCustomerWorld/);
+  assert.doesNotMatch(homeSource, /action="\/compare"|name="retailer"/);
+  assert.doesNotMatch(homeSource, /prisma\.retailer/);
   assert.match(robotsSource, /'\/compare'/);
   assert.match(siteBrainSource, /id: 'compare'/);
 });

@@ -730,6 +730,10 @@
         "apps/web/tests/customer-world.test.mjs",
         "apps/web/tests/customer-world-routes.test.mjs",
         "apps/web/tests/tenant-rewrite.test.mjs",
+        "apps/web/tests/directory-search.test.mjs",
+        "apps/web/tests/retailer-compare.test.mjs",
+        "apps/web/tests/retailer-detail-search.test.mjs",
+        "apps/web/tests/security-boundary.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
       "approval_reference": "OWNER_DIRECT_REQUEST_IN_CURRENT_THREAD_2026_08_13"
@@ -1430,6 +1434,10 @@
     ,"apps/web/tests/customer-world.test.mjs"
     ,"apps/web/tests/customer-world-routes.test.mjs"
     ,"apps/web/tests/tenant-rewrite.test.mjs"
+    ,"apps/web/tests/directory-search.test.mjs"
+    ,"apps/web/tests/retailer-compare.test.mjs"
+    ,"apps/web/tests/retailer-detail-search.test.mjs"
+    ,"apps/web/tests/security-boundary.test.mjs"
     ,"tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
   ],
   "global_no_edit": [
