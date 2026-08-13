@@ -29,7 +29,10 @@ import {
   adjudicateExecutionProvenance,
 } from '../src/lib/reality/market-claim-court.mjs';
 import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
-import { answerCustomerDiscoveryFromReality } from '../src/lib/ask/ask-service.mjs';
+import {
+  answerCustomerDiscoveryFromReality,
+  resolveCustomerDiscovery,
+} from '../src/lib/ask/ask-service.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE = readFileSync(path.join(here, 'fixtures', 'va-cca', 'dispensaries.html'), 'utf8');
@@ -192,6 +195,38 @@ test('THE FIRST VERIFIED VIRGINIA WORLD STATE: fixture acquisition → VERIFIED 
   assert.equal(projection.results[0].regulatory_state.state, 'UNKNOWN');
   assert.equal(projection.results[0].delivery_eligibility.state, 'UNKNOWN');
   assert.equal(projection.truth.gate, 'selectCurrentClaimDecisions + buildAnswerabilityFrontier');
+
+  const storeReads = [];
+  const persisted = {
+    marketClaim: { findMany: async (query) => {
+      storeReads.push(['claims', query.where]);
+      return claims.map((claim) => ({
+        ...claim,
+        claimKey: `${claim.entityIdentity}:${claim.claimType}`,
+        version: 1,
+        resolutionId: claim.entityIdentity,
+        evidence: [],
+      }));
+    } },
+    marketVerificationEvent: { findMany: async () => verificationEvents },
+    marketSourceAcquisitionEvent: { findMany: async () => [event] },
+    marketSourceContentArtifact: { findMany: async () => [artifact] },
+    marketSourceSnapshot: { findMany: async () => [snapshot] },
+    marketEvidenceRevocationEvent: { findMany: async () => [] },
+  };
+  const liveSurface = await resolveCustomerDiscovery(persisted, {
+    rawQuery: 'dispensary in richmond',
+    marketId: 'US-VA',
+    tenantDomain: TENANT,
+    now: AS_OF,
+  });
+  assert.equal(liveSurface.projection.results.length, 1,
+    'the customer orchestration must load canonical persisted Reality, not a fabricated Retailer');
+  assert.equal(liveSurface.projection.results[0].merchant_id, current[0].subject_ref);
+  assert.deepEqual(storeReads, [['claims', {
+    tenant: TENANT,
+    snapshot: { is: { sourceKey: VA_CCA_LIVE_CONTRACT.sourceKey } },
+  }]]);
 });
 
 test('VA acquisition court: COMPILE purpose ALLOWs; forged digest and foreign source are rejected', async () => {

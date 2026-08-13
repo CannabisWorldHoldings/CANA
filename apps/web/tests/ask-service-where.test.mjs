@@ -9,6 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { answerIntent, buildCandidateWhere } from '../src/lib/ask/ask-service.mjs';
 import * as askService from '../src/lib/ask/ask-service.mjs';
 import { askPersistenceScope } from '../src/lib/ask/ask-work.mjs';
@@ -375,7 +376,7 @@ test('projection fails closed on cross-market, stale or demonstration candidates
   );
 });
 
-test('customer discovery orchestration compiles real DC, Maryland and Virginia locations and binds official source scope', async () => {
+test('customer discovery orchestration preserves market intent and avoids store reads for capability gaps', async () => {
   const inputs = [
     { marketId: 'US-DC', state: 'DC', query: 'dispensary in dupont', location: 'dupont circle' },
     { marketId: 'US-MD', state: 'MD', query: 'dispensary in bethesda', location: 'bethesda' },
@@ -383,37 +384,27 @@ test('customer discovery orchestration compiles real DC, Maryland and Virginia l
   ];
 
   for (const input of inputs) {
-    let capturedWhere = null;
-    const source = askService.resolveCustomerMarketContext(input.marketId).evidence;
-    const prisma = {
-      retailer: {
-        async findMany({ where }) {
-          capturedWhere = where;
-          return [{
-            id: `retailer-${input.marketId}`, name: 'Evidence Retailer', type: 'storefront',
-            address: '100 Truth Ave', city: input.location, state: input.state, zip: '00000',
-            lat: null, lng: null, phone: null, website: null, hours: null, hoursSource: null,
-            licenseStatus: 'ACTIVE', dataStatus: 'VERIFIED_CURRENT', dataSource: source.source_id,
-            sourceUrl: source.source_url, retrievedAt: new Date('2026-08-08T00:00:00.000Z'),
-            verifiedAt: new Date('2026-08-08T00:00:00.000Z'), freshnessExpiresAt: new Date('2026-09-10T00:00:00.000Z'),
-            confidence: 1, isDemonstration: false,
-          }];
-        },
-      },
-    };
+    let reads = 0;
+    const prisma = new Proxy({}, { get() { reads += 1; throw new Error('unexpected store read'); } });
     const projection = await askService.answerCustomerDiscovery(prisma, {
-      rawQuery: input.query,
+      rawQuery: `delivery ${input.query}`,
       marketId: input.marketId,
-      brandId: BRAND,
       tenantDomain: 'orderweeddc.com',
       now: NOW,
     });
 
-    assert.equal(capturedWhere.state, input.state);
-    assert.equal(capturedWhere.dataSource, source.source_id);
-    assert.equal(capturedWhere.sourceUrl, source.source_url);
     assert.equal(projection.intent.dimensions.location.value, input.location);
-    assert.equal(projection.results.length, 1);
-    assert.equal(projection.truth.answerability_frontier.answerable, true);
+    assert.equal(projection.market.market_id, input.marketId);
+    assert.equal(projection.results.length, 0);
+    assert.deepEqual(projection.capability_gaps.map((gap) => gap.dimension), ['fulfillment']);
+    assert.equal(reads, 0);
   }
+});
+
+test('the public ASK route invokes canonical Reality orchestration and never the legacy Retailer answer path', () => {
+  const route = readFileSync(new URL('../src/app/api/v1/ask/route.ts', import.meta.url), 'utf8');
+  assert.match(route, /resolveCustomerDiscovery\(prisma/);
+  assert.match(route, /searchParams\.get\('market'\)/);
+  assert.doesNotMatch(route, /answerIntent|prisma\.retailer|currentPublicRecordWhere/);
+  assert.match(route, /selectCurrentClaimDecisions \+ buildAnswerabilityFrontier/);
 });

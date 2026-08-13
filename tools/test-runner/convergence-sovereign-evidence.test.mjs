@@ -201,6 +201,10 @@ test('first report records live identities, requested states and the owner-gated
     'apps/web/src/lib/ask/intent-ir.mjs',
     'apps/web/src/lib/ask/answerability-frontier.mjs',
     'apps/web/src/lib/ask/ask-service.mjs',
+    'apps/web/src/lib/ask/ask-work.mjs',
+    'apps/web/src/lib/ask/market-gap-recheck.mjs',
+    'apps/web/src/app/api/v1/ask/route.ts',
+    'apps/web/src/lib/reality/evidence-revocation.mjs',
     'apps/web/src/lib/reality/market-claim-adapter.mjs',
     'apps/web/tests/ask-intent-ir.test.mjs',
     'apps/web/tests/ask-service-where.test.mjs',
@@ -212,8 +216,11 @@ test('first report records live identities, requested states and the owner-gated
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.NO_SECOND_SEARCH_ENGINE, true);
   assert.equal(
     report.FIRST_BOUNDED_PRODUCT_SLICE.REALITY_PATH,
-    'fixture acquisition -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK customer projection',
+    'durable MarketClaim lineage -> loadCurrentClaimDecisions -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK API customer projection',
   );
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PUBLIC_ROUTE_USES_CANONICAL_REALITY_STORE, true);
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.CONTINUATION_RECHECK_USES_SAME_MARKET_REALITY_STORE, true);
+  assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.HOSTED_REALITY_ROWS, 'NOT_PROBED_PRODUCTION_FROZEN');
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.FABRICATED_RETAILER_ROWS_IN_REALITY_COURT, false);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PROJECTION_DECIDES_TRUTH, false);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PRODUCTION_EFFECTS, 0);

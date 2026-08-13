@@ -82,6 +82,7 @@ export function applyRevocationCourt({ decisions, blastRadius, revocationEventId
 export function isEvidenceRevoked({
   claimId,
   acquisitionEventId,
+  contentArtifactId,
   snapshotId,
   observationIds = [],
   parserVersion,
@@ -101,12 +102,15 @@ export function isEvidenceRevoked({
       const target = event.targetId ?? event.target_id;
       return kind === 'CLAIM' && target === claimId
         || kind === 'SOURCE_ACQUISITION' && target === acquisitionEventId
+        || kind === 'CONTENT_ARTIFACT' && target === contentArtifactId
         || kind === 'SNAPSHOT' && target === snapshotId
         || kind === 'OBSERVATION' && observationIds.includes(target)
         || kind === 'PARSER_VERSION' && target === parserVersion
         || kind === 'POLICY_VERSION' && policyVersions.includes(target)
         || typeof acquisitionEventId === 'string' && acquisitionEventId.length > 0
           && event.acquisitionEventId === acquisitionEventId
+        || typeof contentArtifactId === 'string' && contentArtifactId.length > 0
+          && event.contentArtifactId === contentArtifactId
         || typeof snapshotId === 'string' && snapshotId.length > 0
           && event.snapshotId === snapshotId;
     });

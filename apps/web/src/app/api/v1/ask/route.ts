@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { compileIntent } from '@/lib/ask/intent-ir.mjs';
-import { answerIntent } from '@/lib/ask/ask-service.mjs';
+import {
+  resolveCustomerDiscovery,
+  resolveCustomerMarketContext,
+} from '@/lib/ask/ask-service.mjs';
 import { recordAskWork } from '@/lib/ask/ask-work.mjs';
 
 /**
@@ -10,9 +12,9 @@ import { recordAskWork } from '@/lib/ask/ask-work.mjs';
  * REAL USER INTENT -> USEFUL EVIDENCE-GATED ANSWER -> MERCHANT OPPORTUNITY.
  *
  * Commitments, enforced below:
- *  1. SAME TRUTH BOUNDARY AS THE UI. Candidates pass the identical double
- *     gate (currentPublicRecordWhere + isPubliclyVerified) every rendered
- *     page uses. Demonstration data cannot answer a real customer.
+ *  1. SAME CANONICAL REALITY AS CANA. Candidates consume current, admitted
+ *     MarketClaim evidence through the existing Verification Court and
+ *     Answerability Frontier. The route does not create a second truth path.
  *  2. UNKNOWN LOOKS LIKE UNKNOWN. The Intent IR's unknown dimensions are in
  *     the payload verbatim. A zero-candidate result is an explicit honest
  *     state, never an empty-200 shrug and never invented supply.
@@ -35,6 +37,7 @@ const API_VERSION = 'v1';
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const q = (url.searchParams.get('q') ?? '').slice(0, 500);
+  const marketId = (url.searchParams.get('market') ?? 'US-DC').slice(0, 16);
   const host = request.headers.get('host') ?? '';
   const domain = host.split(':')[0];
 
@@ -45,11 +48,19 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  try {
+    resolveCustomerMarketContext(marketId);
+  } catch {
+    return NextResponse.json(
+      { api_version: API_VERSION, error: 'UNSUPPORTED_MARKET', detail: 'market must be US-DC, US-MD, or US-VA' },
+      { status: 400, headers: { 'X-API-Version': API_VERSION } },
+    );
+  }
+
   let brand;
   const now = new Date();
-  const intent = compileIntent(q, { now });
   try {
-    brand = await prisma.brand.findUnique({ where: { domain }, select: { id: true, name: true } });
+    brand = await prisma.brand.findUnique({ where: { domain }, select: { name: true } });
   } catch {
     return NextResponse.json(
       { api_version: API_VERSION, error: 'STORE_UNAVAILABLE', detail: 'evidence-gated store could not be read' },
@@ -63,15 +74,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  let answer;
+  let discovery;
   try {
-    answer = await answerIntent(prisma, { intent, brandId: brand.id, tenantDomain: domain, now });
+    discovery = await resolveCustomerDiscovery(prisma, {
+      rawQuery: q,
+      marketId,
+      tenantDomain: domain,
+      now,
+    });
   } catch {
     return NextResponse.json(
       { api_version: API_VERSION, error: 'STORE_UNAVAILABLE', detail: 'evidence-gated store could not be read' },
       { status: 503, headers: { 'X-API-Version': API_VERSION } },
     );
   }
+  const { answer, intent, projection } = discovery;
 
   const recording = await recordAskWork(prisma, {
     answer,
@@ -83,9 +100,10 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       api_version: API_VERSION,
-      generated_at: now.toISOString(),
+      generated_at: projection.generated_at,
       tenant: { domain, name: brand.name },
-      intent,
+      market: projection.market,
+      intent: projection.intent,
       answer: {
         verified_candidate_count: answer.verified_candidate_count,
         zero_verified_result: answer.zero_verified_result,
@@ -96,7 +114,8 @@ export async function GET(request: NextRequest) {
             ? 'No VERIFIED_CURRENT record matches this supported intent. This is an honest absence, not proof that no supply exists.'
             : 'CANA cannot make this intent decision-eligible from its current verified dimensions. No supply or eligibility conclusion was inferred.'
           : null,
-        candidates: answer.candidates,
+        candidates: projection.results,
+        capability_gaps: projection.capability_gaps,
       },
       opportunity: recording.opportunity,
       instrumentation: {
@@ -106,7 +125,8 @@ export async function GET(request: NextRequest) {
         continuation_armed: recording.continuationArmed,
       },
       truth_contract: {
-        gate: 'currentPublicRecordWhere + isPubliclyVerified — identical to rendered pages',
+        gate: 'selectCurrentClaimDecisions + buildAnswerabilityFrontier',
+        projection_decides_truth: false,
         unknowns: 'unknown intent dimensions are listed verbatim and never guessed',
         opportunities: 'opportunity value claims default verification UNKNOWN; acting on one requires authority',
       },

@@ -1,7 +1,7 @@
 {
   "SCHEMA_VERSION": 1,
   "ARTIFACT_HOME": "docs/technical-promotion/sovereign",
-  "REPORT_AS_OF": "2026-08-12T18:16:56Z",
+  "REPORT_AS_OF": "2026-08-13T05:27:04Z",
   "CANONICAL_REPOSITORY": "CannabisWorldHoldings/CANA",
   "CURRENT_MAIN": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
   "CURRENT_MAIN_TREE": "d30e83463f7d8793e3dab755a7da7976034791b0",
@@ -295,6 +295,10 @@
       "apps/web/src/lib/ask/intent-ir.mjs",
       "apps/web/src/lib/ask/answerability-frontier.mjs",
       "apps/web/src/lib/ask/ask-service.mjs",
+      "apps/web/src/lib/ask/ask-work.mjs",
+      "apps/web/src/lib/ask/market-gap-recheck.mjs",
+      "apps/web/src/app/api/v1/ask/route.ts",
+      "apps/web/src/lib/reality/evidence-revocation.mjs",
       "apps/web/src/lib/reality/market-claim-adapter.mjs",
       "apps/web/tests/ask-intent-ir.test.mjs",
       "apps/web/tests/ask-service-where.test.mjs",
@@ -312,7 +316,11 @@
       "CAPABILITY_GAP"
     ],
     "NO_SECOND_SEARCH_ENGINE": true,
-    "REALITY_PATH": "fixture acquisition -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK customer projection",
+    "REALITY_PATH": "durable MarketClaim lineage -> loadCurrentClaimDecisions -> selectCurrentClaimDecisions -> compileRetailerTruth -> ASK API customer projection",
+    "PUBLIC_ROUTE_USES_CANONICAL_REALITY_STORE": true,
+    "CONTINUATION_RECHECK_USES_SAME_MARKET_REALITY_STORE": true,
+    "HOSTED_REALITY_ROWS": "NOT_PROBED_PRODUCTION_FROZEN",
+    "ZERO_ROW_BEHAVIOR": "HONEST_NO_VERIFIED_CURRENT_MATCH_WITHOUT_FALLBACK_TO_RETAILER",
     "FABRICATED_RETAILER_ROWS_IN_REALITY_COURT": false,
     "PROJECTION_DECIDES_TRUTH": false,
     "PRODUCTION_EFFECTS": 0

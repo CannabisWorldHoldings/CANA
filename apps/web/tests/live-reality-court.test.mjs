@@ -406,6 +406,22 @@ test('current truth requires a current acquisition-bound court event and exclude
   });
   assert.deepEqual(current.map((item) => item.claim_id), ['claim-b']);
 
+  const artifactRevoked = adapter.selectCurrentClaimDecisions({
+    claims,
+    verificationEvents: events,
+    acquisitionEvents: acquisitions,
+    contentArtifacts,
+    sourceSnapshots,
+    revocations: [{
+      decision: 'EVIDENCE_REVOKED',
+      targetKind: 'CONTENT_ARTIFACT',
+      targetId: 'content-b',
+      effectiveAt: AS_OF,
+    }],
+    asOf: new Date('2026-08-12T00:00:00.000Z'),
+  });
+  assert.deepEqual(artifactRevoked.map((item) => item.claim_id), ['claim-a']);
+
   for (const effectiveAt of [undefined, 'not-a-date']) {
     const malformedRevocation = adapter.selectCurrentClaimDecisions({
       claims,
@@ -448,6 +464,7 @@ test('current truth requires a current acquisition-bound court event and exclude
   const hostileAcquisitions = [
     { tenant: 'other.example' },
     { state: 'FAILED', outcome: 'SOURCE_FAILED' },
+    { errorCode: 'CANA_HOSTILE_COMPLETED_ERROR' },
     { sourceKey: 'attacker-source' },
     { snapshotId: 'other-snapshot' },
     { contentArtifactId: null },

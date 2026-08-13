@@ -3,10 +3,11 @@
  *
  * REAL USER INTENT -> USEFUL, EVIDENCE-GATED ANSWER -> MERCHANT OPPORTUNITY.
  *
- * Truth commitments (same gates as every rendered page and v1 endpoint):
- *  - Candidates pass currentPublicRecordWhere() AND isPubliclyVerified() —
- *    the identical double gate the UI uses. Demonstration data cannot answer
- *    a real customer.
+ * Truth commitments:
+ *  - Legacy ASK consumers retain the current public-record gate. Customer
+ *    discovery consumes the canonical current MarketClaim graph through the
+ *    Verification Court and Answerability Frontier. Neither path decides
+ *    truth inside the projection.
  *  - Location matching is case-insensitive `contains` (the documented
  *    SQLite->PostgreSQL silent-failure class: "dupont" must match
  *    "Dupont Circle").
@@ -22,7 +23,10 @@
 
 import { currentPublicRecordWhere } from '../seo-truth.mjs';
 import { isPubliclyVerified } from '../data-status.mjs';
-import { compileRetailerTruth } from '../reality/market-claim-adapter.mjs';
+import {
+  compileRetailerTruth,
+  loadCurrentClaimDecisions,
+} from '../reality/market-claim-adapter.mjs';
 import { MARKET_CONTRACT_REGISTRY } from '../reality/market-contract-registry.mjs';
 import {
   buildAnswerabilityFrontier,
@@ -313,6 +317,7 @@ function answerVerifiedRealityIntent({ intent, market, tenantDomain, claimDecisi
   });
   if (location?.status !== 'KNOWN') {
     return {
+      market_id: market.market_id,
       candidates: [], verified_candidate_count: 0, zero_verified_result: true,
       zero_result_reason: 'REQUIRED_INTENT_DIMENSION_UNKNOWN', unsupported_known_dimensions: unsupported,
       answerability_frontier: emptyFrontier, opportunitySpec: null,
@@ -321,6 +326,7 @@ function answerVerifiedRealityIntent({ intent, market, tenantDomain, claimDecisi
   }
   if (unsupported.length > 0) {
     return {
+      market_id: market.market_id,
       candidates: [], verified_candidate_count: 0, zero_verified_result: true,
       zero_result_reason: 'UNSUPPORTED_VERIFIED_DIMENSION', unsupported_known_dimensions: unsupported,
       answerability_frontier: emptyFrontier,
@@ -352,6 +358,7 @@ function answerVerifiedRealityIntent({ intent, market, tenantDomain, claimDecisi
     .filter(Boolean)
     .slice(0, MAX_CANDIDATES);
   return {
+    market_id: market.market_id,
     candidates,
     verified_candidate_count: candidates.length,
     zero_verified_result: candidates.length === 0,
@@ -696,20 +703,58 @@ export async function answerIntent(prisma, { intent, brandId, tenantDomain, now 
 export async function answerCustomerDiscovery(prisma, {
   rawQuery,
   marketId,
-  brandId,
+  tenantDomain,
+  now = new Date(),
+}) {
+  return (await resolveCustomerDiscovery(prisma, {
+    rawQuery,
+    marketId,
+    tenantDomain,
+    now,
+  })).projection;
+}
+
+export async function resolveCustomerDiscoveryIntent(prisma, {
+  intent,
+  marketId,
   tenantDomain,
   now = new Date(),
 }) {
   const market = resolveCustomerMarketContext(marketId);
-  const intent = compileIntent(rawQuery, { now, marketId });
-  const answer = await answerIntent(prisma, {
+  const locationKnown = intent?.dimensions?.location?.status === 'KNOWN';
+  const unsupportedKnown = ['category', 'price_max_usd', 'fulfillment', 'open_now']
+    .some((name) => intent?.dimensions?.[name]?.status === 'KNOWN');
+  const claimDecisions = locationKnown && !unsupportedKnown
+    ? await loadCurrentClaimDecisions(prisma, {
+        tenant: tenantDomain,
+        sourceKey: market.evidence.source_key,
+        asOf: now,
+      })
+    : [];
+  const answer = answerVerifiedRealityIntent({
     intent,
-    brandId,
+    market,
+    tenantDomain,
+    claimDecisions,
+    now,
+  });
+  const projection = projectCustomerDiscovery({ intent, market, answer, asOf: now });
+  return Object.freeze({ intent, market, answer, projection });
+}
+
+export async function resolveCustomerDiscovery(prisma, {
+  rawQuery,
+  marketId,
+  tenantDomain,
+  now = new Date(),
+}) {
+  const intent = compileIntent(rawQuery, { now, marketId });
+  return resolveCustomerDiscoveryIntent(prisma, {
+    intent,
+    marketId,
     tenantDomain,
     now,
-    market,
   });
-  return projectCustomerDiscovery({ intent, market, answer, asOf: now });
 }
 
 export function answerCustomerDiscoveryFromReality({
