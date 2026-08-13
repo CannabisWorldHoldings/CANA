@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { loadCustomerWorld } from '@/lib/customer-world.server';
+import { normalizeCustomerMerchantId } from '@/lib/customer-world.mjs';
 
 function text(field: { state: string; value: unknown }, fallback: string) {
   return field?.state === 'KNOWN' && typeof field.value === 'string' ? field.value : fallback;
@@ -11,13 +12,15 @@ export default async function MerchantProfilePage({ params, searchParams }: {
   searchParams: Promise<{ market?: string | string[]; query?: string | string[] }>;
 }) {
   const [{ domain, id }, filters] = await Promise.all([params, searchParams]);
+  const merchantId = normalizeCustomerMerchantId(id);
+  if (!merchantId) return notFound();
   const result = await loadCustomerWorld({
     journey: 'SEARCH',
     market: filters.market,
     query: filters.query,
     tenantDomain: domain,
   });
-  const merchant = result?.world.results.find((entry: { id: string }) => entry.id === id);
+  const merchant = result?.world.results.find((entry: { id: string }) => entry.id === merchantId);
   if (!result || !merchant) return notFound();
   return (
     <article className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 lg:px-10" data-customer-merchant-id={merchant.id}>

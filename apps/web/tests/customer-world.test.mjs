@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   buildCustomerWorldView,
+  normalizeCustomerMerchantId,
   normalizeCustomerWorldRequest,
   resolveCustomerWorld,
 } from '../src/lib/customer-world.mjs';
@@ -93,6 +94,19 @@ test('one request contract bounds market, query, journey, and view', () => {
     () => normalizeCustomerWorldRequest({ journey: 'SEARCH', market: 'US-PA', query: 'Erie' }),
     /CANA_CUSTOMER_WORLD_MARKET_UNSUPPORTED/,
   );
+});
+
+test('merchant profile identity accepts one encoded route segment and rejects path escapes', () => {
+  assert.equal(
+    normalizeCustomerMerchantId('md-mca%3A0e018719e799ea50b7bc828a'),
+    'md-mca:0e018719e799ea50b7bc828a',
+  );
+  assert.equal(
+    normalizeCustomerMerchantId('md-mca:0e018719e799ea50b7bc828a'),
+    'md-mca:0e018719e799ea50b7bc828a',
+  );
+  assert.equal(normalizeCustomerMerchantId('..%2Fadmin'), null);
+  assert.equal(normalizeCustomerMerchantId('%E0%A4%A'), null);
 });
 
 test('delivery is a first-class route intent, not a retailer type query alias', () => {

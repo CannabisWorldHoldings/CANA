@@ -7,6 +7,7 @@ export const CUSTOMER_WORLD_JOURNEYS = Object.freeze([
 
 const CUSTOMER_WORLD_VIEWS = new Set(['list', 'map']);
 const QUERY_LIMIT = 160;
+const MERCHANT_ID_LIMIT = 200;
 
 function first(value) {
   return Array.isArray(value) ? value[0] : value;
@@ -14,6 +15,20 @@ function first(value) {
 
 function clean(value, limit) {
   return typeof first(value) === 'string' ? first(value).trim().slice(0, limit) : '';
+}
+
+export function normalizeCustomerMerchantId(value) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MERCHANT_ID_LIMIT) return null;
+  try {
+    const decoded = decodeURIComponent(value);
+    return decoded.length > 0
+      && decoded.length <= MERCHANT_ID_LIMIT
+      && !/[\u0000-\u001f\u007f/\\]/.test(decoded)
+      ? decoded
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 function unknown(reason) {
