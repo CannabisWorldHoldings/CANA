@@ -92,6 +92,13 @@ const JOURNEY_COPY = {
   },
 } as const;
 
+const JOURNEY_PATH = {
+  HOME: '/',
+  SEARCH: '/search',
+  DELIVERY: '/delivery',
+  DISPENSARIES: '/dispensaries',
+} as const;
+
 function value(field: EvidenceField, fallback: string) {
   return field?.state === 'KNOWN' && (typeof field.value === 'string' || typeof field.value === 'number')
     ? String(field.value)
@@ -99,10 +106,9 @@ function value(field: EvidenceField, fallback: string) {
 }
 
 function viewHref(world: CustomerWorld, view: 'list' | 'map') {
-  const copy = JOURNEY_COPY[world.request.journey];
   const params = new URLSearchParams({ market: world.request.market_id, view });
   if (world.request.customer_query) params.set('query', world.request.customer_query);
-  return `${copy.action}?${params}`;
+  return `${JOURNEY_PATH[world.request.journey]}?${params}`;
 }
 
 function UnknownFacts({ result }: { result: CustomerResult }) {

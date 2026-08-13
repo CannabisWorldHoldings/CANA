@@ -36,6 +36,16 @@ test('delivery and dispensaries are separate navigable journeys, never query ali
   }
 });
 
+test('list and map toggles preserve every distinct customer journey route', () => {
+  const page = source('src/components/customer-world-page.tsx');
+  assert.match(page, /HOME:\s*['"]\/['"]/);
+  assert.match(page, /SEARCH:\s*['"]\/search['"]/);
+  assert.match(page, /DELIVERY:\s*['"]\/delivery['"]/);
+  assert.match(page, /DISPENSARIES:\s*['"]\/dispensaries['"]/);
+  assert.match(page, /JOURNEY_PATH\[world\.request\.journey\]/);
+  assert.doesNotMatch(page, /const copy = JOURNEY_COPY\[world\.request\.journey\];[\s\S]{0,200}return `\$\{copy\.action\}\?\$\{params\}`/);
+});
+
 test('customer routes include honest loading and unexpected-error boundaries', () => {
   const loading = source('src/app/[domain]/loading.tsx');
   const error = source('src/app/[domain]/error.tsx');
