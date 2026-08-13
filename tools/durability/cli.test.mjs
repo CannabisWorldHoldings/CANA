@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   CUSTOMER_DISCOVERY_AUTHORIZED_PATHS,
+  CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS,
   courtEditAdmitted,
   matchOwned,
   MISSION1_AUTHORIZED_PATHS,
@@ -40,6 +41,7 @@ const OWNERSHIP_FILE = path.join(
 const PHASE_B_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
 const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08_13';
+const CUSTOMER_FUNCTIONAL_ASSIGNMENT = 'customer_functional_convergence_2026_08_13';
 const PHASE_B_SLICE2_BASE = 'e3139d960b837a8ea7ef7f01acfab5111dd96cc7';
 const PHASE_B_SLICE2_TREE = '5b6c4b85d613d1de71879bc7e27b63cb96ba7405';
 const PHASE_B_EXPECTED_PATHS = Object.freeze([
@@ -434,6 +436,45 @@ test('ASK customer discovery paths must stay owned and planned', () => {
     assert.throws(
       () => validateOwnershipManifest(manifest),
       /ASK customer discovery|changed-file ownership patterns/,
+    );
+  }
+});
+
+test('Customer Functional Convergence paths have exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  const assignment = manifest.explicit_user_assignment[CUSTOMER_FUNCTIONAL_ASSIGNMENT];
+  assert.deepEqual(assignment.authorized_paths, [...CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS]);
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/components/customer-world-neighbor.tsx'], manifest),
+    ['apps/web/src/components/customer-world-neighbor.tsx'],
+  );
+});
+
+test('Customer Functional Convergence ownership cannot broaden scope or authority', () => {
+  for (const mutate of [
+    (value) => { value.authorized_paths[0] = 'apps/web/src/app/[domain]/**'; },
+    (value) => { value.base_commit = '0'.repeat(40); },
+    (value) => { value.authorization_effect += ' production authority'; },
+    (value) => { value.approval_reference = 'SELF_APPROVED'; },
+  ]) {
+    const manifest = ownership();
+    mutate(manifest.explicit_user_assignment[CUSTOMER_FUNCTIONAL_ASSIGNMENT]);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /Customer Functional Convergence|changed-file ownership patterns/,
+    );
+  }
+});
+
+test('Customer Functional Convergence paths must stay owned and planned', () => {
+  const target = 'apps/web/tests/retailer-detail-search.test.mjs';
+  for (const key of ['owned_modify_paths', 'planned_candidate_files']) {
+    const manifest = ownership();
+    manifest[key] = manifest[key].filter((entry) => entry !== target);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /Customer Functional Convergence|changed-file ownership patterns/,
     );
   }
 });

@@ -47,6 +47,7 @@ const PHASE_B_SLICE2_ASSIGNMENT_SHA256 =
 const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08_13';
 const CUSTOMER_DISCOVERY_ASSIGNMENT_SHA256 =
   'b5400748ef1897eaaa3dda96c5c4fca737ef9b70acd4b03681c8c0fa2376988f';
+const CUSTOMER_FUNCTIONAL_ASSIGNMENT = 'customer_functional_convergence_2026_08_13';
 const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   'root_dispatcher',
   'reason',
@@ -62,6 +63,7 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   PHASE_B_SLICE1_ASSIGNMENT,
   PHASE_B_SLICE2_ASSIGNMENT,
   CUSTOMER_DISCOVERY_ASSIGNMENT,
+  CUSTOMER_FUNCTIONAL_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PR29_ASSIGNMENT,
@@ -69,7 +71,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '3a7c9b351d37335989f0b1d82a931ecbe6a96e1770b6afcba65f8a193dc141c1';
+  '0dc14edb85168a36d582198bde802fe266e14114ab73b0e1588afaaedda6903d';
 
 export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery-contract.mjs',
@@ -77,6 +79,35 @@ export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery.mjs',
   'apps/web/src/lib/ask/customer-reality-answer.mjs',
   'apps/web/src/lib/ask/legacy-retailer-answer.mjs',
+]);
+export const CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS = Object.freeze([
+  'apps/web/src/app/[domain]/page.tsx',
+  'apps/web/src/app/[domain]/layout.tsx',
+  'apps/web/src/app/[domain]/search/page.tsx',
+  'apps/web/src/app/[domain]/delivery/page.tsx',
+  'apps/web/src/app/[domain]/dispensaries/page.tsx',
+  'apps/web/src/app/[domain]/merchant/[id]/page.tsx',
+  'apps/web/src/app/[domain]/loading.tsx',
+  'apps/web/src/app/[domain]/error.tsx',
+  'apps/web/src/components/customer-world-page.tsx',
+  'apps/web/src/components/marketplace-category-rail.tsx',
+  'apps/web/src/components/retailer-map-maplibre.tsx',
+  'apps/web/src/lib/ask/customer-discovery-projection.mjs',
+  'apps/web/src/lib/ask/customer-discovery.mjs',
+  'apps/web/src/lib/ask/customer-reality-answer.mjs',
+  'apps/web/src/lib/customer-world.mjs',
+  'apps/web/src/lib/customer-world.server.ts',
+  'apps/web/src/lib/tenant-rewrite.mjs',
+  'apps/web/tests/customer-world.test.mjs',
+  'apps/web/tests/customer-world-routes.test.mjs',
+  'apps/web/tests/tenant-rewrite.test.mjs',
+  'apps/web/tests/directory-search.test.mjs',
+  'apps/web/tests/retailer-compare.test.mjs',
+  'apps/web/tests/retailer-detail-search.test.mjs',
+  'apps/web/tests/security-boundary.test.mjs',
+  'tools/durability/cli.mjs',
+  'tools/durability/cli.test.mjs',
+  'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
 ]);
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
@@ -1197,6 +1228,56 @@ export function validateOwnershipManifest(ownership) {
     }
     if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPath).length !== 1) {
       refusal(`ASK customer discovery path must have exactly one planned-candidate entry: ${authorizedPath}`);
+    }
+  }
+
+  const customerFunctionalAssignment =
+    ownership.explicit_user_assignment[CUSTOMER_FUNCTIONAL_ASSIGNMENT];
+  const customerFunctionalPaths = customerFunctionalAssignment?.authorized_paths;
+  if (
+    !exactKeys(customerFunctionalAssignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'base_commit',
+      'authorized_paths',
+      'approval_reference',
+    ])
+    || customerFunctionalAssignment.authorization !==
+      'PR #46 FINAL PROMOTION + CUSTOMER WORLD IGNITION'
+    || customerFunctionalAssignment.base_commit !==
+      'fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d'
+    || customerFunctionalAssignment.authorization_effect !==
+      'Durability path ownership only; no Apple visual approval, production deployment, restart, database mutation, DNS, acquisition, outreach, paid action, Market #4, verification bypass, or self-promotion authority.'
+    || customerFunctionalAssignment.approval_reference !==
+      'OWNER_DIRECT_REQUEST_IN_CURRENT_THREAD_2026_08_13'
+    || !Array.isArray(customerFunctionalPaths)
+    || JSON.stringify(customerFunctionalPaths) !==
+      JSON.stringify(CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS)
+  ) {
+    refusal('Customer Functional Convergence ownership assignment is malformed');
+  }
+  if (
+    new Set(customerFunctionalPaths).size !== customerFunctionalPaths.length
+    || customerFunctionalPaths.some(
+      (entry) =>
+        typeof entry !== 'string'
+        || entry.length === 0
+        || entry.startsWith('/')
+        || entry.includes('\\')
+        || entry.includes('*')
+        || entry.includes('..')
+        || path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('Customer Functional Convergence paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of customerFunctionalPaths) {
+    if (allOwnedPaths.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(`Customer Functional Convergence path must have exactly one ownership entry: ${authorizedPath}`);
+    }
+    if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(`Customer Functional Convergence path must have exactly one planned-candidate entry: ${authorizedPath}`);
     }
   }
 

@@ -737,6 +737,8 @@
         "apps/web/tests/retailer-compare.test.mjs",
         "apps/web/tests/retailer-detail-search.test.mjs",
         "apps/web/tests/security-boundary.test.mjs",
+        "tools/durability/cli.mjs",
+        "tools/durability/cli.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
       "approval_reference": "OWNER_DIRECT_REQUEST_IN_CURRENT_THREAD_2026_08_13"
@@ -1131,6 +1133,7 @@
     ,"NAMECHEAP_CPANEL_DEPLOYMENT.md"
     ,"deploy/namecheap/artifact-exclusions.mjs"
     ,"apps/web/src/components/marketplace-category-rail.tsx"
+    ,"apps/web/tests/retailer-detail-search.test.mjs"
   ],
   "planned_candidate_files": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -1420,8 +1423,6 @@
     ,"apps/web/src/lib/ask/customer-discovery.mjs"
     ,"apps/web/src/lib/ask/customer-reality-answer.mjs"
     ,"apps/web/src/lib/ask/legacy-retailer-answer.mjs"
-    ,"apps/web/src/app/[domain]/layout.tsx"
-    ,"apps/web/src/app/[domain]/page.tsx"
     ,"apps/web/src/app/[domain]/search/page.tsx"
     ,"apps/web/src/app/[domain]/delivery/page.tsx"
     ,"apps/web/src/app/[domain]/dispensaries/page.tsx"
@@ -1437,11 +1438,7 @@
     ,"apps/web/tests/customer-world.test.mjs"
     ,"apps/web/tests/customer-world-routes.test.mjs"
     ,"apps/web/tests/tenant-rewrite.test.mjs"
-    ,"apps/web/tests/directory-search.test.mjs"
-    ,"apps/web/tests/retailer-compare.test.mjs"
     ,"apps/web/tests/retailer-detail-search.test.mjs"
-    ,"apps/web/tests/security-boundary.test.mjs"
-    ,"tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",
