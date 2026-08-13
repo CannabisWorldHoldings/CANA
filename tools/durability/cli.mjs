@@ -71,7 +71,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '0dc14edb85168a36d582198bde802fe266e14114ab73b0e1588afaaedda6903d';
+  '981b0f49cb4e92da93a0159aeefc091d341e7f4c9a6e4a09999375b259ab2c8f';
 
 export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery-contract.mjs',
@@ -90,12 +90,14 @@ export const CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/loading.tsx',
   'apps/web/src/app/[domain]/error.tsx',
   'apps/web/src/components/customer-world-page.tsx',
+  'apps/web/src/components/customer-world-results.tsx',
   'apps/web/src/components/marketplace-category-rail.tsx',
   'apps/web/src/components/retailer-map-maplibre.tsx',
   'apps/web/src/lib/ask/customer-discovery-projection.mjs',
   'apps/web/src/lib/ask/customer-discovery.mjs',
   'apps/web/src/lib/ask/customer-reality-answer.mjs',
   'apps/web/src/lib/customer-world.mjs',
+  'apps/web/src/lib/customer-world-navigation.mjs',
   'apps/web/src/lib/customer-world.server.ts',
   'apps/web/src/lib/tenant-rewrite.mjs',
   'apps/web/tests/customer-world.test.mjs',

@@ -3,10 +3,17 @@ import {
   resolveCustomerDiscovery,
   resolveCustomerMerchantProfile,
 } from './ask/customer-discovery.mjs';
+import {
+  CUSTOMER_WORLD_JOURNEYS,
+  CUSTOMER_WORLD_JOURNEY_PATHS,
+  customerWorldViewHref,
+} from './customer-world-navigation.mjs';
 
-export const CUSTOMER_WORLD_JOURNEYS = Object.freeze([
-  'HOME', 'SEARCH', 'DELIVERY', 'DISPENSARIES',
-]);
+export {
+  CUSTOMER_WORLD_JOURNEYS,
+  CUSTOMER_WORLD_JOURNEY_PATHS,
+  customerWorldViewHref,
+};
 
 const CUSTOMER_WORLD_VIEWS = new Set(['list', 'map']);
 const QUERY_LIMIT = 160;

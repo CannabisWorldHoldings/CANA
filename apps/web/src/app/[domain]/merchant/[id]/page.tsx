@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import { loadCustomerMerchantProfile } from '@/lib/customer-world.server';
 import { normalizeCustomerMerchantId } from '@/lib/customer-world.mjs';
 
-function text(field: { state: string; value: unknown }, fallback: string) {
+type EvidenceField = { state: string; value: unknown };
+
+function text(field: EvidenceField, fallback: string) {
   return field?.state === 'KNOWN' && typeof field.value === 'string' ? field.value : fallback;
 }
 
@@ -22,6 +24,14 @@ export default async function MerchantProfilePage({ params, searchParams }: {
   });
   if (!result) return notFound();
   const { merchant, request } = result.profile;
+  const merchantFacts: ReadonlyArray<readonly [string, EvidenceField]> = [
+    ['Regulatory state', merchant.regulatory_state],
+    ['Hours', merchant.open_now],
+    ['Price', merchant.price],
+    ['Inventory', merchant.inventory],
+    ['Delivery eligibility', merchant.delivery_eligibility],
+    ['Service area', merchant.service_area],
+  ];
   return (
     <article className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 lg:px-10" data-customer-merchant-id={merchant.id}>
       <p className="kicker">Canonical verified merchant profile</p>
@@ -34,17 +44,10 @@ export default async function MerchantProfilePage({ params, searchParams }: {
         {text(merchant.location.region, 'Region UNKNOWN')}
       </p>
       <dl className="mt-8 grid gap-3 sm:grid-cols-2">
-        {[
-          ['Regulatory state', merchant.regulatory_state],
-          ['Hours', merchant.open_now],
-          ['Price', merchant.price],
-          ['Inventory', merchant.inventory],
-          ['Delivery eligibility', merchant.delivery_eligibility],
-          ['Service area', merchant.service_area],
-        ].map(([label, field]) => (
-          <div key={label as string} className="rounded-xl border border-brand-border bg-brand-surface p-4">
-            <dt className="text-xs font-semibold text-brand-muted">{label as string}</dt>
-            <dd className="mt-1 font-bold text-brand-text">{(field as { state: string }).state}</dd>
+        {merchantFacts.map(([label, field]) => (
+          <div key={label} className="rounded-xl border border-brand-border bg-brand-surface p-4">
+            <dt className="text-xs font-semibold text-brand-muted">{label}</dt>
+            <dd className="mt-1 font-bold text-brand-text">{field.state}</dd>
           </div>
         ))}
       </dl>

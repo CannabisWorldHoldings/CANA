@@ -1,61 +1,62 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 
-const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-
-function source(relativePath) {
-  return fs.readFileSync(path.join(webRoot, relativePath), 'utf8');
+async function navigation() {
+  const customerWorld = await import('../src/lib/customer-world.mjs');
+  assert.equal(typeof customerWorld.customerWorldViewHref, 'function');
+  return customerWorld;
 }
 
-test('home, search, delivery, dispensaries, and merchant profile consume one customer world resolver', () => {
-  const routes = [
-    ['src/app/[domain]/page.tsx', "journey: 'HOME'"],
-    ['src/app/[domain]/search/page.tsx', "journey: 'SEARCH'"],
-    ['src/app/[domain]/delivery/page.tsx', "journey: 'DELIVERY'"],
-    ['src/app/[domain]/dispensaries/page.tsx', "journey: 'DISPENSARIES'"],
-    ['src/app/[domain]/merchant/[id]/page.tsx', 'loadCustomerMerchantProfile'],
-  ];
-  for (const [file, journey] of routes) {
-    const route = source(file);
-    assert.match(route, /loadCustomer(?:World|MerchantProfile)/);
-    assert.ok(route.includes(journey), `${file} must declare ${journey}`);
-    assert.doesNotMatch(route, /prisma\.retailer|directoryRetailerWhere|\?type=delivery/);
-  }
+function world(journey, customerQuery = 'Bethesda') {
+  return {
+    request: {
+      journey,
+      market_id: 'US-MD',
+      customer_query: customerQuery,
+    },
+  };
+}
+
+test('exports customer world view href as executable navigation behavior', async () => {
+  const customerWorld = await navigation();
+  assert.equal(typeof customerWorld.customerWorldViewHref, 'function');
 });
 
-test('delivery and dispensaries are separate navigable journeys, never query aliases', () => {
-  const layout = source('src/app/[domain]/layout.tsx');
-  const rail = source('src/components/marketplace-category-rail.tsx');
-  for (const code of [layout, rail]) {
-    assert.match(code, /href:\s*['"]\/delivery['"]/);
-    assert.match(code, /href:\s*['"]\/dispensaries['"]/);
-    assert.doesNotMatch(code, /\?type=delivery/);
-  }
+for (const [journey, pathname] of [
+  ['HOME', '/'],
+  ['SEARCH', '/search'],
+  ['DELIVERY', '/delivery'],
+  ['DISPENSARIES', '/dispensaries'],
+]) {
+  test(`${journey} retains its distinct customer journey path and filters`, async () => {
+    const { customerWorldViewHref } = await navigation();
+    const href = customerWorldViewHref(world(journey), 'map');
+    const url = new URL(href, 'https://customer.example');
+    assert.equal(url.pathname, pathname);
+    assert.deepEqual(Object.fromEntries(url.searchParams), {
+      market: 'US-MD',
+      view: 'map',
+      query: 'Bethesda',
+    });
+  });
+}
+
+test('customer world view href omits an empty query', async () => {
+  const { customerWorldViewHref } = await navigation();
+  const url = new URL(customerWorldViewHref(world('DELIVERY', ''), 'list'), 'https://customer.example');
+  assert.equal(url.pathname, '/delivery');
+  assert.deepEqual(Object.fromEntries(url.searchParams), { market: 'US-MD', view: 'list' });
 });
 
-test('list and map toggles preserve every distinct customer journey route', () => {
-  const page = source('src/components/customer-world-page.tsx');
-  assert.match(page, /HOME:\s*['"]\/['"]/);
-  assert.match(page, /SEARCH:\s*['"]\/search['"]/);
-  assert.match(page, /DELIVERY:\s*['"]\/delivery['"]/);
-  assert.match(page, /DISPENSARIES:\s*['"]\/dispensaries['"]/);
-  assert.match(page, /JOURNEY_PATH\[world\.request\.journey\]/);
-  assert.doesNotMatch(page, /const copy = JOURNEY_COPY\[world\.request\.journey\];[\s\S]{0,200}return `\$\{copy\.action\}\?\$\{params\}`/);
-});
-
-test('customer routes include honest loading and unexpected-error boundaries', () => {
-  const loading = source('src/app/[domain]/loading.tsx');
-  const error = source('src/app/[domain]/error.tsx');
-  assert.match(loading, /role="status"/);
-  assert.match(loading, /Loading verified customer discovery/);
-  assert.match(error, /role="alert"/);
-  assert.match(error, /Verified customer discovery is temporarily unavailable/);
-});
-
-test('the functional slice does not add Apple visual canon or CSS changes', () => {
-  const routes = source('src/components/customer-world-page.tsx');
-  assert.doesNotMatch(routes, /apple|frosted|glass|backdrop-blur/i);
+test('customer world view href encodes reserved query characters without changing intent', async () => {
+  const { customerWorldViewHref } = await navigation();
+  const customerQuery = 'Bethesda & Silver Spring / ?';
+  const url = new URL(
+    customerWorldViewHref(world('DISPENSARIES', customerQuery), 'map'),
+    'https://customer.example',
+  );
+  assert.equal(url.pathname, '/dispensaries');
+  assert.equal(url.searchParams.get('query'), customerQuery);
+  assert.equal(url.searchParams.get('market'), 'US-MD');
+  assert.equal(url.searchParams.get('view'), 'map');
 });

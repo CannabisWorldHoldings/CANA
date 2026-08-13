@@ -722,12 +722,14 @@
         "apps/web/src/app/[domain]/loading.tsx",
         "apps/web/src/app/[domain]/error.tsx",
         "apps/web/src/components/customer-world-page.tsx",
+        "apps/web/src/components/customer-world-results.tsx",
         "apps/web/src/components/marketplace-category-rail.tsx",
         "apps/web/src/components/retailer-map-maplibre.tsx",
         "apps/web/src/lib/ask/customer-discovery-projection.mjs",
         "apps/web/src/lib/ask/customer-discovery.mjs",
         "apps/web/src/lib/ask/customer-reality-answer.mjs",
         "apps/web/src/lib/customer-world.mjs",
+        "apps/web/src/lib/customer-world-navigation.mjs",
         "apps/web/src/lib/customer-world.server.ts",
         "apps/web/src/lib/tenant-rewrite.mjs",
         "apps/web/tests/customer-world.test.mjs",
@@ -1011,7 +1013,9 @@
     "apps/web/src/app/[domain]/loading.tsx",
     "apps/web/src/app/[domain]/error.tsx",
     "apps/web/src/components/customer-world-page.tsx",
+    "apps/web/src/components/customer-world-results.tsx",
     "apps/web/src/lib/customer-world.mjs",
+    "apps/web/src/lib/customer-world-navigation.mjs",
     "apps/web/src/lib/customer-world.server.ts",
     "apps/web/tests/customer-world.test.mjs",
     "apps/web/tests/customer-world-routes.test.mjs"
@@ -1430,9 +1434,11 @@
     ,"apps/web/src/app/[domain]/loading.tsx"
     ,"apps/web/src/app/[domain]/error.tsx"
     ,"apps/web/src/components/customer-world-page.tsx"
+    ,"apps/web/src/components/customer-world-results.tsx"
     ,"apps/web/src/components/marketplace-category-rail.tsx"
     ,"apps/web/src/components/retailer-map-maplibre.tsx"
     ,"apps/web/src/lib/customer-world.mjs"
+    ,"apps/web/src/lib/customer-world-navigation.mjs"
     ,"apps/web/src/lib/customer-world.server.ts"
     ,"apps/web/src/lib/tenant-rewrite.mjs"
     ,"apps/web/tests/customer-world.test.mjs"
