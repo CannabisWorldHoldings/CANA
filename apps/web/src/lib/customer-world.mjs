@@ -1,5 +1,8 @@
 import { CUSTOMER_DISCOVERY_MARKETS } from './ask/customer-discovery-contract.mjs';
-import { resolveCustomerDiscovery } from './ask/customer-discovery.mjs';
+import {
+  resolveCustomerDiscovery,
+  resolveCustomerMerchantProfile,
+} from './ask/customer-discovery.mjs';
 
 export const CUSTOMER_WORLD_JOURNEYS = Object.freeze([
   'HOME', 'SEARCH', 'DELIVERY', 'DISPENSARIES',
@@ -181,4 +184,30 @@ export async function resolveCustomerWorld(prisma, options) {
     now: options.now,
   });
   return buildCustomerWorldView({ request, projection: discovery.projection });
+}
+
+export async function resolveCustomerMerchant(prisma, options) {
+  const merchantId = normalizeCustomerMerchantId(options.merchantId);
+  if (!merchantId) throw new Error('CANA_CUSTOMER_MERCHANT_ID_INVALID');
+  const requestedMarket = clean(options.market, 16) || null;
+  if (requestedMarket !== null && !CUSTOMER_DISCOVERY_MARKETS.includes(requestedMarket)) {
+    throw new Error('CANA_CUSTOMER_WORLD_MARKET_UNSUPPORTED');
+  }
+  const profile = await resolveCustomerMerchantProfile(prisma, {
+    merchantId,
+    marketId: requestedMarket,
+    tenantDomain: options.tenantDomain,
+    now: options.now,
+  });
+  if (!profile) return null;
+  const request = normalizeCustomerWorldRequest({
+    journey: 'SEARCH',
+    market: profile.market.market_id,
+    query: options.query,
+  });
+  return Object.freeze({
+    merchant: customerCard(profile.result, request),
+    request,
+    market: profile.market,
+  });
 }

@@ -7,6 +7,8 @@ import {
   normalizeCustomerWorldRequest,
   resolveCustomerWorld,
 } from '../src/lib/customer-world.mjs';
+import { resolveCustomerMerchantProfileFromReality } from '../src/lib/ask/customer-discovery.mjs';
+import { resolveCustomerMarketContext } from '../src/lib/ask/customer-discovery-contract.mjs';
 
 const NOW = new Date('2026-08-13T08:30:00.000Z');
 
@@ -107,6 +109,46 @@ test('merchant profile identity accepts one encoded route segment and rejects pa
   );
   assert.equal(normalizeCustomerMerchantId('..%2Fadmin'), null);
   assert.equal(normalizeCustomerMerchantId('%E0%A4%A'), null);
+});
+
+test('a canonical merchant profile resolves by identity without replaying a search query', () => {
+  const market = resolveCustomerMarketContext('US-MD');
+  const merchantId = 'md-mca:0e018719e799ea50b7bc828a';
+  const decisions = [
+    ['facility_name', 'Bethesda Wellness'],
+    ['mca_registry_listing_exists', 'Dispensary'],
+    ['regulated_address', '1 Wisconsin Ave, Bethesda, MD 20814'],
+  ].map(([predicate, value], index) => ({
+    claim_id: `claim-${index}`,
+    tenant: 'orderweeddc.localhost',
+    subject_ref: merchantId,
+    predicate,
+    value,
+    market_id: market.market_id,
+    contract_digest: market.evidence.contract_digest,
+    source_id: market.evidence.source_key,
+    source_url: market.evidence.source_url,
+    retrieved_at: '2026-08-13T06:00:00.000Z',
+    observed_at: '2026-08-13T06:00:00.000Z',
+    verified_at: '2026-08-13T06:05:00.000Z',
+    freshness_expires_at: '2026-08-14T06:05:00.000Z',
+    verification: 'VERIFIED',
+    decision_eligible: true,
+    evidence_ref: `market-claim:${index}`,
+  }));
+  const profile = resolveCustomerMerchantProfileFromReality({
+    merchantId,
+    marketId: 'US-MD',
+    tenantDomain: 'orderweeddc.localhost',
+    claimDecisions: decisions,
+    now: NOW,
+  });
+  assert.equal(profile.result.merchant_id, merchantId);
+  assert.equal(profile.result.customer_facing_name.value, 'Bethesda Wellness');
+  assert.equal(profile.result.location.city.value, 'Bethesda');
+  assert.equal(profile.result.delivery_eligibility.state, 'UNKNOWN');
+  assert.equal(profile.intent.compiler, 'canonical-merchant-identity-v1');
+  assert.equal(profile.intent.raw_query, undefined, 'profile identity is not laundered into search text');
 });
 
 test('delivery is a first-class route intent, not a retailer type query alias', () => {

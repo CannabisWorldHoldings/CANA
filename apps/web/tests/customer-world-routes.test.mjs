@@ -16,11 +16,11 @@ test('home, search, delivery, dispensaries, and merchant profile consume one cus
     ['src/app/[domain]/search/page.tsx', "journey: 'SEARCH'"],
     ['src/app/[domain]/delivery/page.tsx', "journey: 'DELIVERY'"],
     ['src/app/[domain]/dispensaries/page.tsx', "journey: 'DISPENSARIES'"],
-    ['src/app/[domain]/merchant/[id]/page.tsx', 'loadCustomerWorld'],
+    ['src/app/[domain]/merchant/[id]/page.tsx', 'loadCustomerMerchantProfile'],
   ];
   for (const [file, journey] of routes) {
     const route = source(file);
-    assert.match(route, /loadCustomerWorld/);
+    assert.match(route, /loadCustomer(?:World|MerchantProfile)/);
     assert.ok(route.includes(journey), `${file} must declare ${journey}`);
     assert.doesNotMatch(route, /prisma\.retailer|directoryRetailerWhere|\?type=delivery/);
   }

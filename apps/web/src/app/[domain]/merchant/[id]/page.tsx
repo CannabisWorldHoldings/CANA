@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { loadCustomerWorld } from '@/lib/customer-world.server';
+import { loadCustomerMerchantProfile } from '@/lib/customer-world.server';
 import { normalizeCustomerMerchantId } from '@/lib/customer-world.mjs';
 
 function text(field: { state: string; value: unknown }, fallback: string) {
@@ -14,14 +14,14 @@ export default async function MerchantProfilePage({ params, searchParams }: {
   const [{ domain, id }, filters] = await Promise.all([params, searchParams]);
   const merchantId = normalizeCustomerMerchantId(id);
   if (!merchantId) return notFound();
-  const result = await loadCustomerWorld({
-    journey: 'SEARCH',
+  const result = await loadCustomerMerchantProfile({
+    merchantId,
     market: filters.market,
     query: filters.query,
     tenantDomain: domain,
   });
-  const merchant = result?.world.results.find((entry: { id: string }) => entry.id === merchantId);
-  if (!result || !merchant) return notFound();
+  if (!result) return notFound();
+  const { merchant, request } = result.profile;
   return (
     <article className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 lg:px-10" data-customer-merchant-id={merchant.id}>
       <p className="kicker">Canonical verified merchant profile</p>
@@ -49,8 +49,8 @@ export default async function MerchantProfilePage({ params, searchParams }: {
         ))}
       </dl>
       <p className="mt-6 text-xs text-brand-muted">Source: {merchant.provenance.source ?? 'UNKNOWN'}</p>
-      <Link href={`/search?${new URLSearchParams({ market: result.world.request.market_id, query: result.world.request.customer_query })}`} className="mt-7 inline-flex min-h-11 items-center font-bold text-brand-primary-text">
-        Back to the same discovery results
+      <Link href={`/search?${new URLSearchParams({ market: request.market_id, ...(request.customer_query ? { query: request.customer_query } : {}) })}`} className="mt-7 inline-flex min-h-11 items-center font-bold text-brand-primary-text">
+        Browse customer search
       </Link>
     </article>
   );
