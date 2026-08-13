@@ -65,7 +65,7 @@ test('public retailer collections and card previews use fixed database limits', 
     path.join(webRoot, 'src/app/[domain]/retailer/[id]/page.tsx'),
     'utf8',
   );
-  const directorySource = fs.readFileSync(
+  const customerHomeSource = fs.readFileSync(
     path.join(webRoot, 'src/app/[domain]/page.tsx'),
     'utf8',
   );
@@ -89,8 +89,8 @@ test('public retailer collections and card previews use fixed database limits', 
   );
   assert.match(detailSource, /take: RETAILER_DEAL_PAGE_SIZE/);
   assert.match(detailSource, /take: RETAILER_MENU_PAGE_SIZE/);
-  for (const source of [directorySource, neighborhoodSource]) {
-    assert.match(source, /take: PUBLIC_DEAL_PREVIEW_LIMIT/);
-  }
+  assert.match(neighborhoodSource, /take: PUBLIC_DEAL_PREVIEW_LIMIT/);
+  assert.match(customerHomeSource, /loadCustomerWorld/);
+  assert.doesNotMatch(customerHomeSource, /PUBLIC_DEAL_PREVIEW_LIMIT|prisma\.retailer/);
   assert.equal(PUBLIC_DEAL_PREVIEW_LIMIT, 3);
 });

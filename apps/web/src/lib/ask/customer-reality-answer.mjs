@@ -138,6 +138,47 @@ function candidate(subjectRef, decisions, market, now) {
   };
 }
 
+function merchantProfileIntent(merchantId) {
+  return Object.freeze({
+    ir_version: 1,
+    compiler: 'canonical-merchant-identity-v1',
+    dimensions: Object.freeze({
+      location: Object.freeze({ status: 'KNOWN', value: merchantId, matched_token: null }),
+      category: Object.freeze({ status: 'UNKNOWN', value: null, matched_token: null }),
+      price_max_usd: Object.freeze({ status: 'UNKNOWN', value: null, matched_token: null }),
+      fulfillment: Object.freeze({ status: 'UNKNOWN', value: null, matched_token: null }),
+      open_now: Object.freeze({ status: 'UNKNOWN', value: null, matched_token: null }),
+    }),
+    unknown_dimensions: Object.freeze([
+      'category', 'price_max_usd', 'fulfillment', 'open_now',
+    ]),
+  });
+}
+
+export function selectVerifiedRealityMerchant({
+  merchantId,
+  market,
+  tenantDomain,
+  claimDecisions = [],
+  now = new Date(),
+}) {
+  const clock = projectionClock(now);
+  validateDecisions(claimDecisions, market, tenantDomain, clock);
+  const decisions = claimDecisions.filter((decision) => decision.subject_ref === merchantId);
+  if (decisions.length === 0) return null;
+  const intent = merchantProfileIntent(merchantId);
+  const currentFrontier = frontier({
+    tenantDomain,
+    intent,
+    claimDecisions: decisions,
+    marketId: market.market_id,
+    now: clock,
+  });
+  if (!currentFrontier.answerable || currentFrontier.answerable_subject_ref !== merchantId) return null;
+  const result = candidate(merchantId, decisions, market, clock);
+  return result ? Object.freeze({ candidate: Object.freeze(result), intent }) : null;
+}
+
 export function answerVerifiedRealityIntent({ intent, market, tenantDomain, claimDecisions = [], now = new Date() }) {
   const clock = projectionClock(now);
   const location = intent?.dimensions?.location;

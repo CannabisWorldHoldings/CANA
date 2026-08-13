@@ -19,13 +19,13 @@ const QUICK_PATHS = [
     icon: BadgePercent,
   },
   {
-    href: '/?type=storefront',
+    href: '/dispensaries',
     label: 'Dispensaries',
     detail: 'Browse storefronts',
     icon: Store,
   },
   {
-    href: '/?type=delivery',
+    href: '/delivery',
     label: 'Delivery',
     detail: 'Explore services',
     icon: Truck,

@@ -182,9 +182,13 @@ test('directory ordering is transparent and never ranks sponsorship', () => {
   );
 });
 
-test('directory page applies server-side count, cap, offset, and freshness predicates', () => {
+test('customer home delegates discovery to the canonical bounded Customer World', () => {
   const pageSource = fs.readFileSync(
     path.join(webRoot, 'src/app/[domain]/page.tsx'),
+    'utf8',
+  );
+  const customerWorldSource = fs.readFileSync(
+    path.join(webRoot, 'src/lib/customer-world.mjs'),
     'utf8',
   );
   const schema = fs.readFileSync(
@@ -192,11 +196,12 @@ test('directory page applies server-side count, cap, offset, and freshness predi
     'utf8',
   );
 
-  assert.match(pageSource, /prisma\.retailer\.count\(\{ where \}\)/);
-  assert.match(pageSource, /take: DIRECTORY_PAGE_SIZE/);
-  assert.match(pageSource, /skip: \(currentPage - 1\) \* DIRECTORY_PAGE_SIZE/);
-  assert.match(pageSource, /where: currentDealWhere\(asOf\)/);
-  assert.match(pageSource, /directoryRetailerOrderBy\(requestedFilters\.sort\)/);
+  assert.match(pageSource, /loadCustomerWorld/);
+  assert.match(pageSource, /journey: 'HOME'/);
+  assert.doesNotMatch(pageSource, /prisma\.retailer|directoryRetailerWhere/);
+  assert.match(customerWorldSource, /resolveCustomerDiscovery/);
+  assert.match(customerWorldSource, /const QUERY_LIMIT = 160/);
+  assert.doesNotMatch(customerWorldSource, /prisma\.retailer|directoryRetailerWhere/);
   assert.doesNotMatch(pageSource, /isSponsored:\s*['"]desc['"]/);
   assert.equal(DIRECTORY_PAGE_SIZE, 20);
   assert.match(

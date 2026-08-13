@@ -105,6 +105,15 @@ function projectCandidate(candidate, market, intent, clock) {
   });
 }
 
+export function projectCustomerDiscoveryCandidate({
+  candidate,
+  intent,
+  market,
+  asOf = new Date(),
+}) {
+  return projectCandidate(candidate, admittedMarketContext(market), intent, projectionClock(asOf));
+}
+
 export function projectCustomerDiscovery({ intent, market, answer, asOf = new Date() }) {
   const clock = projectionClock(asOf);
   const admittedMarket = admittedMarketContext(market);
@@ -116,7 +125,7 @@ export function projectCustomerDiscovery({ intent, market, answer, asOf = new Da
     || answer.zero_verified_result !== (answer.candidates.length === 0)
   ) customerDiscoveryFailure('CANA_CUSTOMER_DISCOVERY_ANSWER_COUNT_MISMATCH');
   const results = Object.freeze(answer.candidates.map((candidate) => (
-    projectCandidate(candidate, admittedMarket, intent, clock)
+    projectCustomerDiscoveryCandidate({ candidate, market: admittedMarket, intent, asOf: clock })
   )));
   const capabilityGaps = Object.freeze((answer.unsupported_known_dimensions ?? []).map((dimension) => Object.freeze({
     state: 'CAPABILITY_GAP',
