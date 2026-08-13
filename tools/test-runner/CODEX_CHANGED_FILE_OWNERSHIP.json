@@ -706,6 +706,33 @@
         "apps/web/src/lib/ask/legacy-retailer-answer.mjs"
       ],
       "approval_sha256": "b5400748ef1897eaaa3dda96c5c4fca737ef9b70acd4b03681c8c0fa2376988f"
+    },
+    "customer_functional_convergence_2026_08_13": {
+      "authorization": "PR #46 FINAL PROMOTION + CUSTOMER WORLD IGNITION",
+      "scope": "One bounded Customer Functional Convergence slice: home, search, delivery, dispensaries, list-map and merchant-profile discovery through the canonical ASK to Reality projection; Apple visual canon excluded.",
+      "authorization_effect": "Durability path ownership only; no Apple visual approval, production deployment, restart, database mutation, DNS, acquisition, outreach, paid action, Market #4, verification bypass, or self-promotion authority.",
+      "base_commit": "fd440bbdc9aea4ff6dabac2d3ffae6784285bd4d",
+      "authorized_paths": [
+        "apps/web/src/app/[domain]/page.tsx",
+        "apps/web/src/app/[domain]/layout.tsx",
+        "apps/web/src/app/[domain]/search/page.tsx",
+        "apps/web/src/app/[domain]/delivery/page.tsx",
+        "apps/web/src/app/[domain]/dispensaries/page.tsx",
+        "apps/web/src/app/[domain]/merchant/[id]/page.tsx",
+        "apps/web/src/app/[domain]/loading.tsx",
+        "apps/web/src/app/[domain]/error.tsx",
+        "apps/web/src/components/customer-world-page.tsx",
+        "apps/web/src/components/marketplace-category-rail.tsx",
+        "apps/web/src/components/retailer-map-maplibre.tsx",
+        "apps/web/src/lib/customer-world.mjs",
+        "apps/web/src/lib/customer-world.server.ts",
+        "apps/web/src/lib/tenant-rewrite.mjs",
+        "apps/web/tests/customer-world.test.mjs",
+        "apps/web/tests/customer-world-routes.test.mjs",
+        "apps/web/tests/tenant-rewrite.test.mjs",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ],
+      "approval_reference": "OWNER_DIRECT_REQUEST_IN_CURRENT_THREAD_2026_08_13"
     }
   },
   "owned_create_paths": [
@@ -967,7 +994,18 @@
     "apps/web/src/lib/ask/customer-discovery-projection.mjs",
     "apps/web/src/lib/ask/customer-discovery.mjs",
     "apps/web/src/lib/ask/customer-reality-answer.mjs",
-    "apps/web/src/lib/ask/legacy-retailer-answer.mjs"
+    "apps/web/src/lib/ask/legacy-retailer-answer.mjs",
+    "apps/web/src/app/[domain]/search/page.tsx",
+    "apps/web/src/app/[domain]/delivery/page.tsx",
+    "apps/web/src/app/[domain]/dispensaries/page.tsx",
+    "apps/web/src/app/[domain]/merchant/[id]/page.tsx",
+    "apps/web/src/app/[domain]/loading.tsx",
+    "apps/web/src/app/[domain]/error.tsx",
+    "apps/web/src/components/customer-world-page.tsx",
+    "apps/web/src/lib/customer-world.mjs",
+    "apps/web/src/lib/customer-world.server.ts",
+    "apps/web/tests/customer-world.test.mjs",
+    "apps/web/tests/customer-world-routes.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -1085,6 +1123,7 @@
     ,"deploy/namecheap/artifact-exclusions.test.mjs"
     ,"NAMECHEAP_CPANEL_DEPLOYMENT.md"
     ,"deploy/namecheap/artifact-exclusions.mjs"
+    ,"apps/web/src/components/marketplace-category-rail.tsx"
   ],
   "planned_candidate_files": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -1374,6 +1413,24 @@
     ,"apps/web/src/lib/ask/customer-discovery.mjs"
     ,"apps/web/src/lib/ask/customer-reality-answer.mjs"
     ,"apps/web/src/lib/ask/legacy-retailer-answer.mjs"
+    ,"apps/web/src/app/[domain]/layout.tsx"
+    ,"apps/web/src/app/[domain]/page.tsx"
+    ,"apps/web/src/app/[domain]/search/page.tsx"
+    ,"apps/web/src/app/[domain]/delivery/page.tsx"
+    ,"apps/web/src/app/[domain]/dispensaries/page.tsx"
+    ,"apps/web/src/app/[domain]/merchant/[id]/page.tsx"
+    ,"apps/web/src/app/[domain]/loading.tsx"
+    ,"apps/web/src/app/[domain]/error.tsx"
+    ,"apps/web/src/components/customer-world-page.tsx"
+    ,"apps/web/src/components/marketplace-category-rail.tsx"
+    ,"apps/web/src/components/retailer-map-maplibre.tsx"
+    ,"apps/web/src/lib/customer-world.mjs"
+    ,"apps/web/src/lib/customer-world.server.ts"
+    ,"apps/web/src/lib/tenant-rewrite.mjs"
+    ,"apps/web/tests/customer-world.test.mjs"
+    ,"apps/web/tests/customer-world-routes.test.mjs"
+    ,"apps/web/tests/tenant-rewrite.test.mjs"
+    ,"tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",

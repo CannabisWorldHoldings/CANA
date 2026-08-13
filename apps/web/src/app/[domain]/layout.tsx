@@ -25,8 +25,9 @@ import DaypartThemeControl from '@/components/daypart-theme-control';
 import { Leaf, LifeBuoy, MapPin, ShieldCheck } from 'lucide-react';
 
 const NAV_LINKS = [
-  { href: '/', label: 'Dispensaries' },
-  { href: '/?type=delivery', label: 'Delivery' },
+  { href: '/dispensaries', label: 'Dispensaries' },
+  { href: '/delivery', label: 'Delivery' },
+  { href: '/search', label: 'Search' },
   { href: '/products', label: 'Products' },
   { href: '/deals', label: 'Deals' },
   { href: '/neighborhoods', label: 'Neighborhoods' },
@@ -287,7 +288,9 @@ export default async function TenantLayout({ children, params }: { children: Rea
             <nav aria-label="Explore">
               <p className="kicker mb-3">Explore</p>
               <ul className="space-y-2 text-sm text-brand-muted">
-                <li><Link href="/" className="transition-colors hover:text-brand-primary-text">Retailer directory</Link></li>
+                    <li><Link href="/search" className="transition-colors hover:text-brand-primary-text">Verified search</Link></li>
+                    <li><Link href="/delivery" className="transition-colors hover:text-brand-primary-text">Delivery discovery</Link></li>
+                    <li><Link href="/dispensaries" className="transition-colors hover:text-brand-primary-text">Dispensary discovery</Link></li>
                 <li><Link href="/products" className="transition-colors hover:text-brand-primary-text">Products</Link></li>
                 <li><Link href="/deals" className="transition-colors hover:text-brand-primary-text">Verified deals</Link></li>
                 <li><Link href="/neighborhoods" className="transition-colors hover:text-brand-primary-text">Neighborhoods</Link></li>

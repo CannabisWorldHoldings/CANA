@@ -33,11 +33,12 @@ export type ProjectedMarker = {
   lat: number;
   lng: number;
   h3R9: string | null;
-  coordinateSource: 'geo_entity' | 'legacy_retailer';
+  coordinateSource: 'geo_entity' | 'legacy_retailer' | 'canonical_reality_claim';
   coordinateVerification: string;
   publiclyVerified: boolean;
   dataStatus: string;
   claims: Record<string, ProjectedClaim>;
+  profileHref?: string;
 };
 
 type Props = {
@@ -77,7 +78,7 @@ function popupHtml(marker: ProjectedMarker): string {
       ${badge}
       ${statusLine}
       ${hoursLine}
-      <a class="cana-pop-link" href="/retailer/${escape(marker.retailerId)}">View Directory</a>
+      <a class="cana-pop-link" href="${escape(marker.profileHref ?? `/retailer/${marker.retailerId}`)}">View verified profile</a>
     </div>`;
 }
 
