@@ -210,6 +210,7 @@ test('first report records live identities, requested states and the owner-gated
     'apps/web/tests/ask-service-where.test.mjs',
     'apps/web/tests/md-verified-world-state.test.mjs',
     'apps/web/tests/va-verified-world-state.test.mjs',
+    'apps/web/tests/tri-market-postgres-court.test.mjs',
   ]);
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.MARKETS, ['US-DC', 'US-MD', 'US-VA']);
   assert.deepEqual(report.FIRST_BOUNDED_PRODUCT_SLICE.TRUTH_STATES, ['KNOWN', 'UNKNOWN', 'CAPABILITY_GAP']);
@@ -220,6 +221,10 @@ test('first report records live identities, requested states and the owner-gated
   );
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PUBLIC_ROUTE_USES_CANONICAL_REALITY_STORE, true);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.CONTINUATION_RECHECK_USES_SAME_MARKET_REALITY_STORE, true);
+  assert.equal(
+    report.FIRST_BOUNDED_PRODUCT_SLICE.DISPOSABLE_POSTGRES_ROUTE_PROOF,
+    'PERSISTED_VERIFIED_MD_CLAIMS_TO_CUSTOMER_PROJECTION_WITHOUT_RETAILER_ROW',
+  );
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.HOSTED_REALITY_ROWS, 'NOT_PROBED_PRODUCTION_FROZEN');
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.FABRICATED_RETAILER_ROWS_IN_REALITY_COURT, false);
   assert.equal(report.FIRST_BOUNDED_PRODUCT_SLICE.PROJECTION_DECIDES_TRUTH, false);
