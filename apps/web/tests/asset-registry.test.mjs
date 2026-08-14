@@ -11,6 +11,7 @@ import {
   assertRegisteredImage,
   getAsset,
   getAssetByPath,
+  issuePendingRightsCapability,
   listAssets,
   mayRepresentRealEntity,
   resolveAssetUse,
@@ -49,12 +50,13 @@ test('every registered path points at a file that actually exists', () => {
 });
 
 test('generic illustrative assets may never represent a real entity', () => {
+  const capability = issuePendingRightsCapability('orderweeddc.localhost');
   for (const record of listAssets()) {
     if (record.subject === 'GENERIC_ILLUSTRATIVE') {
       assert.equal(mayRepresentRealEntity(record.id), false);
       assert.throws(
         () => resolveAssetUse(record.id, record.contexts[0], {
-          allowPendingRights: true,
+          pendingRightsCapability: capability,
           representsRealEntity: true,
         }),
         /may not represent a real entity/,
@@ -64,6 +66,8 @@ test('generic illustrative assets may never represent a real entity', () => {
 });
 
 test('render authorization enforces context and pending rights', () => {
+  const capability = issuePendingRightsCapability('orderweeddc.localhost');
+  assert.ok(capability);
   assert.equal(
     resolveAssetUse('brand.wordmark.light', 'chrome')?.path,
     '/brand/orderweeddc-on-light.png',
@@ -74,13 +78,13 @@ test('render authorization enforces context and pending rights', () => {
   );
   assert.equal(
     resolveAssetUse('home.category.flower', 'category-navigation', {
-      allowPendingRights: true,
+      pendingRightsCapability: capability,
     })?.path,
     '/art/cat-flower.jpg',
   );
   assert.throws(
     () => resolveAssetUse('home.category.flower', 'hero-ambience', {
-      allowPendingRights: true,
+      pendingRightsCapability: capability,
     }),
     /not authorized for context/,
   );
@@ -88,6 +92,48 @@ test('render authorization enforces context and pending rights', () => {
     () => resolveAssetUse('missing.asset', 'styleguide'),
     /unknown registered asset/,
   );
+});
+
+test('pending-rights capability is local, non-production, and unforgeable', () => {
+  const localCapability = issuePendingRightsCapability('orderweeddc.localhost');
+  assert.ok(localCapability);
+  assert.equal(issuePendingRightsCapability('orderweeddc.com'), null);
+  assert.equal(issuePendingRightsCapability('localhost'), null);
+  assert.equal(
+    resolveAssetUse('home.category.flower', 'category-navigation', {
+      pendingRightsCapability: {},
+    }),
+    null,
+  );
+
+  const previousNodeEnv = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = 'production';
+    assert.equal(issuePendingRightsCapability('orderweeddc.localhost'), null);
+    assert.equal(
+      resolveAssetUse('home.category.flower', 'category-navigation', {
+        pendingRightsCapability: localCapability,
+      }),
+      null,
+    );
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
+});
+
+test('registry records and nested policy fields are immutable', () => {
+  const records = listAssets();
+  const record = getAsset('home.category.flower');
+  assert.ok(Object.isFrozen(records));
+  assert.ok(record);
+  assert.ok(Object.isFrozen(record));
+  assert.ok(Object.isFrozen(record.aspect));
+  assert.ok(Object.isFrozen(record.contexts));
+  assert.throws(() => { record.rights = 'OWNED'; }, TypeError);
+  assert.throws(() => { record.contexts.push('hero-ambience'); }, TypeError);
+  assert.equal(record.rights, 'OWNED_PROVENANCE_REVIEW_PENDING');
+  assert.equal(record.contexts.includes('hero-ambience'), false);
 });
 
 test('the registry gate throws for unregistered consumer imagery', () => {

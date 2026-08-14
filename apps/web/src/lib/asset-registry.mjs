@@ -73,7 +73,11 @@ const RECORDS = Object.freeze([
   { id: 'home.category.accessories', path: '/art/cat-accessories.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Accessories category illustration', contexts: ['category-navigation', 'styleguide'] },
   { id: 'home.delivery', path: '/art/retailer-delivery.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [3, 2], altGuidance: 'Illustrative delivery scene (not a delivery promise)', contexts: ['campaign-ambience', 'styleguide'] },
   { id: 'home.dc', path: '/art/hero-dc.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [7, 3], altGuidance: 'Washington, D.C. atmosphere', contexts: ['district-feature', 'styleguide'] },
-]);
+].map((record) => Object.freeze({
+  ...record,
+  aspect: Object.freeze([...record.aspect]),
+  contexts: Object.freeze([...record.contexts]),
+})));
 
 const BY_ID = new Map(RECORDS.map((record) => [record.id, record]));
 const BY_PATH = new Map(RECORDS.map((record) => [record.path, record]));
@@ -90,14 +94,39 @@ export function getAssetByPath(path) {
   return BY_PATH.get(path) ?? null;
 }
 
+const PENDING_RIGHTS_CAPABILITIES = new WeakSet();
+
+/**
+ * Pending-provenance art is available only for local, non-production review.
+ * Callers cannot manufacture this capability: authorization is held privately
+ * by this module and bound to the validated request hostname.
+ */
+export function issuePendingRightsCapability(hostname) {
+  if (
+    process.env.NODE_ENV === 'production'
+    || typeof hostname !== 'string'
+    || !hostname.endsWith('.localhost')
+    || hostname.length <= '.localhost'.length
+  ) {
+    return null;
+  }
+  const capability = Object.freeze({});
+  PENDING_RIGHTS_CAPABILITIES.add(capability);
+  return capability;
+}
+
 /**
  * Authorize one registered use at the render boundary. Unknown contexts,
  * subject impersonation, and uncleared rights all fail closed.
+ * @param {string} id
+ * @param {string} context
+ * @param {{ pendingRightsCapability?: object | null, representsRealEntity?: boolean }} [options]
  */
-export function resolveAssetUse(id, context, {
-  allowPendingRights = false,
-  representsRealEntity = false,
-} = {}) {
+export function resolveAssetUse(id, context, options = {}) {
+  const {
+    pendingRightsCapability = null,
+    representsRealEntity = false,
+  } = options;
   const record = BY_ID.get(id);
   if (!record) throw new Error(`unknown registered asset: ${id}`);
   if (!ASSET_CONTEXTS.includes(context) || !record.contexts.includes(context)) {
@@ -106,7 +135,13 @@ export function resolveAssetUse(id, context, {
   if (representsRealEntity && record.subject !== 'REAL_SUBJECT') {
     throw new Error(`asset ${id} may not represent a real entity`);
   }
-  if (record.rights === 'OWNED_PROVENANCE_REVIEW_PENDING' && !allowPendingRights) {
+  if (
+    record.rights === 'OWNED_PROVENANCE_REVIEW_PENDING'
+    && (
+      process.env.NODE_ENV === 'production'
+      || !PENDING_RIGHTS_CAPABILITIES.has(pendingRightsCapability)
+    )
+  ) {
     return null;
   }
   if (!ASSET_RIGHTS.includes(record.rights)) {
