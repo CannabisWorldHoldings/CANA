@@ -99,7 +99,7 @@ export function getAssetByPath(path) {
 export function isPendingAssetPath(path) {
   if (typeof path !== 'string') return false;
   let candidate = path;
-  for (let depth = 0; depth < 8; depth += 1) {
+  for (let depth = 0; depth <= 8; depth += 1) {
     if (
       BY_PATH.get(candidate)?.rights === 'OWNED_PROVENANCE_REVIEW_PENDING'
       || candidate.startsWith('/art/')
@@ -110,12 +110,15 @@ export function isPendingAssetPath(path) {
     try {
       const decoded = decodeURIComponent(candidate);
       if (decoded === candidate) return false;
+      // Decoding shrinks valid nested escapes, but cap the work to avoid
+      // adversarial CPU use. A still-encoded path fails closed at the cap.
+      if (depth === 8) return true;
       candidate = decoded;
     } catch {
-      return false;
+      return candidate.includes('%');
     }
   }
-  return false;
+  return true;
 }
 
 /** The HTTP delivery boundary for pending files in public/. */
