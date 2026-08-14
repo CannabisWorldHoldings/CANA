@@ -77,20 +77,28 @@ function MarketSearch({ marketId }: { marketId: string }) {
   );
 }
 
-function CustomerHome({ world }: { world: CustomerWorld }) {
+function CustomerHome({
+  world,
+  allowIllustrativeArt,
+}: {
+  world: CustomerWorld;
+  allowIllustrativeArt: boolean;
+}) {
   return (
     <div className="owd-home">
       <section className="owd-home-hero" aria-labelledby="home-title">
         <div className="owd-home-hero__media" aria-hidden="true">
-          <Image
-            src={HOME_ASSETS.hero}
-            alt=""
-            fill
-            priority
-            unoptimized
-            sizes="(max-width: 734px) 100vw, 1680px"
-            className="owd-home-hero__image"
-          />
+          {allowIllustrativeArt ? (
+            <Image
+              src={HOME_ASSETS.hero}
+              alt=""
+              fill
+              priority
+              unoptimized
+              sizes="(max-width: 734px) 100vw, 1680px"
+              className="owd-home-hero__image"
+            />
+          ) : null}
         </div>
         <div className="owd-container-commerce owd-home-hero__copy">
           <p className="owd-eyebrow">Washington, D.C.</p>
@@ -111,7 +119,11 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
         <div className="owd-home-categories__rail">
           {CATEGORIES.map((category) => (
             <Link key={category.href} href={category.href} className="owd-home-category">
-              <Image src={category.image} alt="" width={120} height={120} sizes="120px" unoptimized />
+              {allowIllustrativeArt ? (
+                <Image src={category.image} alt="" width={120} height={120} sizes="120px" unoptimized />
+              ) : (
+                <span className="owd-home-category__reserved" aria-hidden="true" />
+              )}
               <span>{category.label}</span>
             </Link>
           ))}
@@ -131,7 +143,9 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
               <span className="owd-home-campaign__action">Explore storefronts <ArrowRight size={15} aria-hidden="true" /></span>
             </span>
             <span className="owd-home-campaign__media" aria-hidden="true">
-              <Image src={HOME_ASSETS.storefront} alt="" fill sizes="(max-width: 734px) 87vw, 700px" unoptimized />
+              {allowIllustrativeArt ? (
+                <Image src={HOME_ASSETS.storefront} alt="" fill sizes="(max-width: 734px) 87vw, 700px" unoptimized />
+              ) : null}
             </span>
           </Link>
           <Link href="/delivery" className="owd-home-campaign owd-home-campaign--delivery">
@@ -142,7 +156,9 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
               <span className="owd-home-campaign__action">Explore delivery <ArrowRight size={15} aria-hidden="true" /></span>
             </span>
             <span className="owd-home-campaign__media" aria-hidden="true">
-              <Image src={HOME_ASSETS.delivery} alt="" fill sizes="(max-width: 734px) 87vw, 560px" unoptimized />
+              {allowIllustrativeArt ? (
+                <Image src={HOME_ASSETS.delivery} alt="" fill sizes="(max-width: 734px) 87vw, 560px" unoptimized />
+              ) : null}
             </span>
           </Link>
         </div>
@@ -160,7 +176,9 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
             <Link href="/neighborhoods">Explore neighborhoods <ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
           <div className="owd-home-district__media" aria-hidden="true">
-            <Image src={HOME_ASSETS.dc} alt="" fill sizes="(max-width: 734px) 100vw, 760px" unoptimized />
+            {allowIllustrativeArt ? (
+              <Image src={HOME_ASSETS.dc} alt="" fill sizes="(max-width: 734px) 100vw, 760px" unoptimized />
+            ) : null}
           </div>
         </div>
       </section>
@@ -194,12 +212,19 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
 export default function CustomerWorldPage({
   world,
   isCanonicalBrand = false,
+  allowIllustrativeArt = false,
 }: {
   world: CustomerWorld;
   isCanonicalBrand?: boolean;
+  allowIllustrativeArt?: boolean;
 }) {
   if (world.request.journey === 'HOME' && isCanonicalBrand) {
-    return <CustomerHome world={world} />;
+    return (
+      <CustomerHome
+        world={world}
+        allowIllustrativeArt={allowIllustrativeArt}
+      />
+    );
   }
 
   const copy = JOURNEY_COPY[world.request.journey];

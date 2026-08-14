@@ -240,13 +240,27 @@ test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
     state_explanation: 'Enter a place to begin.',
   };
   const canonical = renderToStaticMarkup(
-    React.createElement(CustomerWorldPage, { world, isCanonicalBrand: true }),
+    React.createElement(CustomerWorldPage, {
+      world,
+      isCanonicalBrand: true,
+      allowIllustrativeArt: true,
+    }),
+  );
+  const canonicalProduction = renderToStaticMarkup(
+    React.createElement(CustomerWorldPage, {
+      world,
+      isCanonicalBrand: true,
+      allowIllustrativeArt: false,
+    }),
   );
   const tenant = renderToStaticMarkup(
     React.createElement(CustomerWorldPage, { world, isCanonicalBrand: false }),
   );
 
   assert.match(canonical, /D\.C\. cannabis\./);
+  assert.match(canonical, /marketplace\/hero-marketplace-v2\.webp/);
+  assert.doesNotMatch(canonicalProduction, /marketplace\/hero-marketplace-v2\.webp/);
+  assert.doesNotMatch(canonicalProduction, /art\/cat-flower\.jpg/);
   assert.doesNotMatch(tenant, /D\.C\. cannabis\./);
   assert.match(tenant, /One verified path from intent to discovery\./);
   assert.match(tenant, /Customer journeys/);
