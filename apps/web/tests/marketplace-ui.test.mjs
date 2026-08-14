@@ -18,6 +18,9 @@ const directorySearch = await import(
 const daypartTheme = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/daypart-theme.mjs')).href
 );
+const assetRegistry = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/asset-registry.mjs')).href
+);
 const sponsorshipEntitlement = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/sponsorship-entitlement.mjs')).href
 );
@@ -27,6 +30,7 @@ const originalTsxLoader = require.extensions['.tsx'];
 Module._load = function loadMarketplaceDependency(request, parent, isMain) {
   if (request === '@/lib/directory-search.mjs') return directorySearch;
   if (request === '@/lib/daypart-theme.mjs') return daypartTheme;
+  if (request === '@/lib/asset-registry.mjs') return assetRegistry;
   if (request === '@/lib/sponsorship-entitlement.mjs') {
     return sponsorshipEntitlement;
   }
@@ -56,6 +60,17 @@ Module._load = function loadMarketplaceDependency(request, parent, isMain) {
     return {
       __esModule: true,
       default: () => React.createElement('button', null, 'Favorite'),
+    };
+  }
+  if (request === '@/components/customer-world-results') {
+    return {
+      __esModule: true,
+      default: () => React.createElement('div', null, 'Customer results'),
+    };
+  }
+  if (request === '@/lib/customer-world.mjs') {
+    return {
+      customerWorldViewHref: (_world, view) => `/?view=${view}`,
     };
   }
   return originalLoad.call(this, request, parent, isMain);
@@ -210,6 +225,31 @@ test('age-gate branding remains tenant scoped', () => {
   assert.match(canonical, /brand\/orderweeddc-on-light\.png/);
   assert.doesNotMatch(tenant, /brand\/orderweeddc-on-light\.png/);
   assert.match(tenant, />Synthetic Tenant</);
+});
+
+test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
+  const CustomerWorldPage = component('customer-world-page.tsx');
+  const world = {
+    request: {
+      customer_query: '',
+      journey: 'HOME',
+      market_id: 'US-DC',
+      requested_view: 'list',
+    },
+    state: 'INPUT_REQUIRED',
+    state_explanation: 'Enter a place to begin.',
+  };
+  const canonical = renderToStaticMarkup(
+    React.createElement(CustomerWorldPage, { world, isCanonicalBrand: true }),
+  );
+  const tenant = renderToStaticMarkup(
+    React.createElement(CustomerWorldPage, { world, isCanonicalBrand: false }),
+  );
+
+  assert.match(canonical, /D\.C\. cannabis\./);
+  assert.doesNotMatch(tenant, /D\.C\. cannabis\./);
+  assert.match(tenant, /One verified path from intent to discovery\./);
+  assert.match(tenant, /Customer journeys/);
 });
 
 test('marketplace components and artwork are present in the canonical workspace', () => {

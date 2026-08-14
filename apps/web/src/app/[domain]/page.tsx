@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import CustomerWorldPage from '@/components/customer-world-page';
 import { loadCustomerWorld } from '@/lib/customer-world.server';
+import { CANONICAL_TENANT_DOMAIN } from '@/lib/tenant-host.mjs';
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 
 type Props = {
@@ -31,5 +32,10 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     tenantDomain: domain,
   });
   if (!result) return notFound();
-  return <CustomerWorldPage world={result.world} />;
+  return (
+    <CustomerWorldPage
+      world={result.world}
+      isCanonicalBrand={domain === CANONICAL_TENANT_DOMAIN}
+    />
+  );
 }

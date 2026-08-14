@@ -2,9 +2,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, BadgeDollarSign, Link2, Route } from 'lucide-react';
 import CustomerWorldResults, { type CustomerWorld } from '@/components/customer-world-results';
+import { getAsset } from '@/lib/asset-registry.mjs';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
 
 const JOURNEY_COPY = {
+  HOME: {
+    eyebrow: 'Customer World',
+    title: 'One verified path from intent to discovery.',
+    description: 'Search admitted market Reality, choose a distinct customer journey, and see unknowns before making a decision.',
+    action: '/search',
+    placeholder: 'City or neighborhood',
+  },
   SEARCH: {
     eyebrow: 'Marketplace search',
     title: 'Search verified merchant records without blending truth paths.',
@@ -28,14 +36,27 @@ const JOURNEY_COPY = {
   },
 } as const;
 
+function registeredAssetPath(id: string): string {
+  const asset = getAsset(id);
+  if (!asset) throw new Error(`missing registered homepage asset: ${id}`);
+  return asset.path;
+}
+
+const HOME_ASSETS = {
+  hero: registeredAssetPath('marketplace.hero.v2'),
+  storefront: registeredAssetPath('marketplace.retailer.1'),
+  delivery: registeredAssetPath('home.delivery'),
+  dc: registeredAssetPath('home.dc'),
+} as const;
+
 const CATEGORIES = [
-  { href: '/products?category=flower', label: 'Flower', image: '/art/cat-flower.jpg' },
-  { href: '/products?category=edibles', label: 'Edibles', image: '/art/cat-edibles.jpg' },
-  { href: '/products?category=vapes', label: 'Vapes', image: '/art/cat-vapes.jpg' },
-  { href: '/products?category=concentrates', label: 'Concentrates', image: '/art/cat-concentrates.jpg' },
-  { href: '/products?category=pre-rolls', label: 'Pre-rolls', image: '/art/cat-pre-rolls.jpg' },
-  { href: '/products?category=topicals', label: 'Topicals', image: '/art/cat-topicals.jpg' },
-  { href: '/products?category=accessories', label: 'Accessories', image: '/art/cat-accessories.jpg' },
+  { href: '/products?category=flower', label: 'Flower', image: registeredAssetPath('home.category.flower') },
+  { href: '/products?category=edibles', label: 'Edibles', image: registeredAssetPath('home.category.edibles') },
+  { href: '/products?category=vapes', label: 'Vapes', image: registeredAssetPath('home.category.vapes') },
+  { href: '/products?category=concentrates', label: 'Concentrates', image: registeredAssetPath('home.category.concentrates') },
+  { href: '/products?category=pre-rolls', label: 'Pre-rolls', image: registeredAssetPath('home.category.pre-rolls') },
+  { href: '/products?category=topicals', label: 'Topicals', image: registeredAssetPath('home.category.topicals') },
+  { href: '/products?category=accessories', label: 'Accessories', image: registeredAssetPath('home.category.accessories') },
 ] as const;
 
 function MarketSearch({ marketId }: { marketId: string }) {
@@ -62,7 +83,7 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
       <section className="owd-home-hero" aria-labelledby="home-title">
         <div className="owd-home-hero__media" aria-hidden="true">
           <Image
-            src="/marketplace/hero-marketplace-v2.webp"
+            src={HOME_ASSETS.hero}
             alt=""
             fill
             priority
@@ -110,7 +131,7 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
               <span className="owd-home-campaign__action">Explore storefronts <ArrowRight size={15} aria-hidden="true" /></span>
             </span>
             <span className="owd-home-campaign__media" aria-hidden="true">
-              <Image src="/marketplace/retailer-1.webp" alt="" fill sizes="(max-width: 734px) 87vw, 700px" unoptimized />
+              <Image src={HOME_ASSETS.storefront} alt="" fill sizes="(max-width: 734px) 87vw, 700px" unoptimized />
             </span>
           </Link>
           <Link href="/delivery" className="owd-home-campaign owd-home-campaign--delivery">
@@ -121,7 +142,7 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
               <span className="owd-home-campaign__action">Explore delivery <ArrowRight size={15} aria-hidden="true" /></span>
             </span>
             <span className="owd-home-campaign__media" aria-hidden="true">
-              <Image src="/art/retailer-delivery.jpg" alt="" fill sizes="(max-width: 734px) 87vw, 560px" unoptimized />
+              <Image src={HOME_ASSETS.delivery} alt="" fill sizes="(max-width: 734px) 87vw, 560px" unoptimized />
             </span>
           </Link>
         </div>
@@ -139,7 +160,7 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
             <Link href="/neighborhoods">Explore neighborhoods <ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
           <div className="owd-home-district__media" aria-hidden="true">
-            <Image src="/art/hero-dc.webp" alt="" fill sizes="(max-width: 734px) 100vw, 760px" unoptimized />
+            <Image src={HOME_ASSETS.dc} alt="" fill sizes="(max-width: 734px) 100vw, 760px" unoptimized />
           </div>
         </div>
       </section>
@@ -170,8 +191,16 @@ function CustomerHome({ world }: { world: CustomerWorld }) {
   );
 }
 
-export default function CustomerWorldPage({ world }: { world: CustomerWorld }) {
-  if (world.request.journey === 'HOME') return <CustomerHome world={world} />;
+export default function CustomerWorldPage({
+  world,
+  isCanonicalBrand = false,
+}: {
+  world: CustomerWorld;
+  isCanonicalBrand?: boolean;
+}) {
+  if (world.request.journey === 'HOME' && isCanonicalBrand) {
+    return <CustomerHome world={world} />;
+  }
 
   const copy = JOURNEY_COPY[world.request.journey];
   const mapView = world.request.requested_view === 'map';
@@ -194,6 +223,13 @@ export default function CustomerWorldPage({ world }: { world: CustomerWorld }) {
             <input type="hidden" name="view" value={world.request.requested_view} />
             <button type="submit" className="min-h-12 rounded-xl bg-brand-primary-fill-strong px-6 text-sm font-bold text-white">Discover</button>
           </form>
+          {world.request.journey === 'HOME' ? (
+            <nav aria-label="Customer journeys" className="mt-8 grid gap-3 sm:grid-cols-3">
+              <Link href="/search" className="rounded-xl border border-brand-border bg-brand-surface p-4 font-bold text-brand-text">Search the market</Link>
+              <Link href="/delivery" className="rounded-xl border border-brand-border bg-brand-surface p-4 font-bold text-brand-text">Delivery discovery</Link>
+              <Link href="/dispensaries" className="rounded-xl border border-brand-border bg-brand-surface p-4 font-bold text-brand-text">Dispensary discovery</Link>
+            </nav>
+          ) : null}
         </div>
       </section>
 
