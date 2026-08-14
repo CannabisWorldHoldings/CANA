@@ -100,10 +100,20 @@ export function isPendingAssetPath(path) {
   if (typeof path !== 'string') return false;
   let candidate = path;
   for (let depth = 0; depth <= 8; depth += 1) {
+    const canonicalCandidate = `/${candidate
+      .replaceAll('\\', '/')
+      .split('/')
+      .reduce((segments, segment) => {
+        if (!segment || segment === '.') return segments;
+        if (segment === '..') segments.pop();
+        else segments.push(segment);
+        return segments;
+      }, [])
+      .join('/')}`;
     if (
-      BY_PATH.get(candidate)?.rights === 'OWNED_PROVENANCE_REVIEW_PENDING'
-      || candidate.startsWith('/art/')
-      || candidate.startsWith('/marketplace/')
+      BY_PATH.get(canonicalCandidate)?.rights === 'OWNED_PROVENANCE_REVIEW_PENDING'
+      || canonicalCandidate.startsWith('/art/')
+      || canonicalCandidate.startsWith('/marketplace/')
     ) {
       return true;
     }
