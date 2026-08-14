@@ -12,6 +12,7 @@
  * Leaflet implementation remains the default engine until that gate is green.
  */
 import { useEffect, useRef, useState } from 'react';
+// @ts-ignore
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { basemapStyle } from '@/lib/geo/tile-sources.mjs';

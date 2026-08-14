@@ -13,6 +13,7 @@ import {
 } from '@/lib/structured-data.mjs';
 import { Flame } from 'lucide-react';
 import { DealAlertCard } from '@/components/deal-alert-card';
+import { DealCardWithTracking } from '@/components/deal-card-with-tracking';
 
 type Props = {
   params: Promise<{ domain: string }>;
@@ -152,55 +153,7 @@ export default async function DealsHubPage({ params }: Props) {
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {deals.map((deal) => (
-              <div
-                key={deal.id}
-                className="record-card rounded-2xl p-6 flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-black text-orange-700 bg-orange-400/10 border border-orange-400/20 px-2.5 py-1 rounded-lg">
-                      <Flame size={12} aria-hidden="true" />
-                      {deal.isDemonstration ? 'DEMO OFFER' : deal.discount}
-                    </span>
-                    <DataStatusBadge
-                      dataStatus={deal.dataStatus}
-                      isDemonstration={deal.isDemonstration}
-                      verifiedAt={deal.verifiedAt}
-                      freshnessExpiresAt={deal.freshnessExpiresAt}
-                      compact
-                    />
-                  </div>
-
-                  <h3 className="font-display text-lg font-extrabold text-brand-text leading-snug">{deal.title}</h3>
-                  <p className="text-xs text-brand-muted leading-relaxed line-clamp-3">{deal.description}</p>
-                </div>
-
-                <div className="space-y-3 border-t border-brand-border/60 pt-4">
-                  {/* Code & Expiry */}
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="bg-brand-background border border-brand-border px-3 py-1.5 rounded-lg font-mono font-bold text-brand-text">
-                      Code: {deal.code || 'NO CODE NEEDED'}
-                    </div>
-                    <span className="text-[10px] text-brand-muted font-semibold">
-                      Expires {new Date(deal.expiryDate).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  {/* Retailer Card Footer */}
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <span className="text-xs font-bold text-brand-text block">{deal.retailer.name}</span>
-                      <span className="text-[10px] text-brand-muted capitalize">{deal.retailer.type} • {deal.retailer.city}</span>
-                    </div>
-                    <Link
-                      href={`/retailer/${deal.retailer.id}`}
-                      className="text-xs font-bold text-brand-primary-text hover:underline"
-                    >
-                      View Menu →
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <DealCardWithTracking key={deal.id} deal={deal} />
             ))}
           </div>
         )}
