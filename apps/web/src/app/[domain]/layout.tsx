@@ -22,12 +22,11 @@ import AgeGate from '@/components/age-gate';
 import MobileNav from '@/components/mobile-nav';
 import BrandWordmark from '@/components/brand-wordmark';
 import DaypartThemeControl from '@/components/daypart-theme-control';
-import { Leaf, LifeBuoy, MapPin, ShieldCheck } from 'lucide-react';
+import { CircleUserRound, Leaf, MapPin, Search } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/dispensaries', label: 'Dispensaries' },
   { href: '/delivery', label: 'Delivery' },
-  { href: '/search', label: 'Search' },
   { href: '/products', label: 'Products' },
   { href: '/deals', label: 'Deals' },
   { href: '/neighborhoods', label: 'Neighborhoods' },
@@ -146,101 +145,84 @@ export default async function TenantLayout({ children, params }: { children: Rea
         isCanonicalBrand={isCanonicalBrand}
       />
 
-      {isCanonicalBrand && (
-        <aside className="operator-strip border-b border-brand-border px-4 py-2 text-center text-[11px] font-semibold">
-          D.C. operators: publish evidence, claim your listing, and reach
-          ready-to-shop visitors.
-          <Link
-            href="/pricing"
-            className="ml-2 font-bold text-brand-primary-text hover:underline"
-          >
-            See published pricing →
-          </Link>
-        </aside>
-      )}
-
-      {/* Brand Header Nav */}
-      <header className="sticky top-0 z-50 border-b border-brand-border bg-brand-background/90 backdrop-blur-xl">
-        <div className="relative mx-auto flex h-20 max-w-screen-2xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+      {/* Customer chrome — one quiet 48px row (approved header contract). */}
+      <header className="sticky top-0 z-50 border-b border-[color:var(--owd-hairline)] bg-brand-background/80 [backdrop-filter:saturate(180%)_blur(20px)] [-webkit-backdrop-filter:saturate(180%)_blur(20px)]">
+        <div className="mx-auto flex h-12 max-w-[1680px] items-center justify-between gap-4 px-5 sm:px-6">
           <Link
             href="/"
             aria-label={`${displayName} home`}
-            className="flex shrink-0 items-center gap-2.5 text-xl font-bold tracking-[-0.04em] text-brand-text font-display"
+            className="flex h-11 shrink-0 items-center gap-2 text-brand-text"
           >
             {isCanonicalBrand ? (
               <>
-                <BrandWordmark className="w-40 sm:w-52" priority />
+                <BrandWordmark className="w-28" priority />
                 <span className="sr-only">{displayName}</span>
               </>
             ) : (
               <>
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary/15 text-brand-primary-text ring-1 ring-brand-primary/30">
-                  <Leaf size={16} strokeWidth={2.5} aria-hidden="true" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-brand-primary/15 text-brand-primary-text">
+                  <Leaf size={14} strokeWidth={2.5} aria-hidden="true" />
                 </span>
-                <span>{displayName}</span>
+                <span className="text-[15px] font-semibold tracking-[-0.02em]">{displayName}</span>
               </>
             )}
           </Link>
 
-          {isCanonicalBrand && (
-            <span className="hidden shrink-0 items-center gap-2 rounded-full border border-brand-border bg-brand-surface px-3 py-2 text-xs font-semibold text-brand-text xl:inline-flex">
-              <MapPin
-                size={14}
-                className="text-brand-primary-text"
-                aria-hidden="true"
-              />
-              Washington, D.C.
-            </span>
-          )}
-
           <nav
             aria-label="Primary navigation"
-            className="hidden items-center gap-0.5 text-sm font-medium lg:flex"
+            className="owd-nav hidden items-center gap-6 min-[834px]:flex"
           >
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-2 text-brand-muted transition-colors hover:bg-brand-raised hover:text-brand-text"
+                className="text-brand-muted transition-colors hover:text-brand-text"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-3 py-1.5 text-[11px] font-semibold text-brand-muted 2xl:inline-flex">
-              <ShieldCheck size={13} className="text-brand-primary-text" aria-hidden="true" />
-              Evidence labeled
-            </span>
+          <div className="flex shrink-0 items-center gap-0.5">
             <Link
-              href="/help"
-              aria-label="Open help center"
-              title="Help center"
-              className="hidden h-10 w-10 items-center justify-center rounded-lg border border-brand-border bg-brand-surface text-brand-muted transition-colors hover:border-brand-primary/40 hover:text-brand-text md:inline-flex"
+              href="/search"
+              aria-label="Search"
+              title="Search"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-brand-muted transition-colors hover:text-brand-text"
             >
-              <LifeBuoy size={16} aria-hidden="true" />
+              <Search size={17} aria-hidden="true" />
             </Link>
-            {isCanonicalBrand && <DaypartThemeControl />}
+            {isCanonicalBrand && (
+              <span
+                className="hidden h-7 shrink-0 items-center gap-1 rounded-full bg-brand-raised px-2.5 text-[12px] font-semibold text-brand-muted sm:inline-flex"
+                title="Serving Washington, D.C."
+              >
+                <MapPin size={12} aria-hidden="true" />
+                DC
+              </span>
+            )}
             <Link
               href="/customer/login"
-              className="hidden rounded-lg border border-brand-border bg-brand-surface px-4 py-2.5 text-xs font-bold text-brand-text transition-colors hover:border-brand-primary/40 sm:inline-flex"
+              aria-label="Account"
+              title="Account"
+              className="hidden h-11 w-11 items-center justify-center rounded-full text-brand-muted transition-colors hover:text-brand-text min-[834px]:flex"
             >
-              Log in
+              <CircleUserRound size={17} aria-hidden="true" />
             </Link>
             <Link
               href="/business/claim"
-              className="hidden rounded-lg bg-brand-primary-fill-strong px-4 py-2.5 text-xs font-bold text-white transition-transform hover:-translate-y-0.5 xl:inline-flex"
+              className="owd-nav hidden whitespace-nowrap pl-3 text-brand-muted transition-colors hover:text-brand-text xl:inline-flex"
             >
               List your business
             </Link>
             <MobileNav
-              links={[
-                ...NAV_LINKS,
-                { href: '/customer/login', label: 'Customer login' },
+              links={NAV_LINKS}
+              secondaryLinks={[
+                { href: '/customer/login', label: 'Log in' },
                 { href: '/business/claim', label: 'List your business' },
                 { href: canonicalBusiness, label: 'Business portal' },
               ]}
+              utility={isCanonicalBrand ? <DaypartThemeControl /> : undefined}
             />
           </div>
         </div>
@@ -319,12 +301,14 @@ export default async function TenantLayout({ children, params }: { children: Rea
                   </a>
                 </li>
                 <li><Link href="/help" className="transition-colors hover:text-brand-primary-text">Help center &amp; FAQ</Link></li>
+                <li><Link href="/help" className="transition-colors hover:text-brand-primary-text">How verification works</Link></li>
                 <li><Link href="/legal" className="transition-colors hover:text-brand-primary-text">Legal &amp; compliance</Link></li>
                 <li><Link href="/education" className="transition-colors hover:text-brand-primary-text">D.C. cannabis rules</Link></li>
               </ul>
             </nav>
           </div>
-          <div className="mt-10 border-t border-brand-border pt-6 text-center">
+          <div className="mt-10 flex flex-col items-center gap-4 border-t border-brand-border pt-6 text-center">
+            {isCanonicalBrand && <DaypartThemeControl />}
             <p className="text-xs text-brand-muted">
               © {new Date().getFullYear()} {displayName}. All rights reserved.
             </p>
