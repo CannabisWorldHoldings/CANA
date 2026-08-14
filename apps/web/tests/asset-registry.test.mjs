@@ -155,6 +155,13 @@ test('pending-rights capability is local, non-production, and unforgeable', () =
 
 test('pending file delivery is restricted to local non-production hosts', () => {
   const pendingPath = '/marketplace/hero-marketplace-v2.webp';
+  const nestedPendingPath = (depth) => {
+    let value = '/%61rt/cat-flower.jpg';
+    for (let index = 1; index < depth; index += 1) {
+      value = value.replaceAll('%', '%25');
+    }
+    return value;
+  };
   assert.equal(mayServePendingAssetPath(pendingPath, 'orderweeddc.localhost'), true);
   assert.equal(mayServePendingAssetPath(pendingPath, 'orderweeddc.com'), false);
   assert.equal(mayServePendingAssetPath(pendingPath, 'localhost'), false);
@@ -165,6 +172,8 @@ test('pending file delivery is restricted to local non-production hosts', () => 
     '/%61rt/cat-flower.jpg',
     '/%2561rt/cat-flower.jpg',
     '/marketplace%2Fhero-marketplace-v2.webp',
+    nestedPendingPath(8),
+    nestedPendingPath(32),
   ]) {
     assert.equal(isPendingAssetPath(encodedPath), true, encodedPath);
     assert.equal(mayServePendingAssetPath(encodedPath, 'orderweeddc.com'), false, encodedPath);
