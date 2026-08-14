@@ -1027,7 +1027,11 @@
     "apps/web/src/components/deal-card.tsx",
     "apps/web/src/components/editorial-card.tsx",
     "apps/web/src/components/neighborhood-tile.tsx",
-    "apps/web/src/components/card-fixtures.mjs"
+    "apps/web/src/components/card-fixtures.mjs",
+    "apps/web/src/lib/label-vocabulary.mjs",
+    "apps/web/tests/label-vocabulary.test.mjs",
+    "apps/web/src/components/disclosure-modal.tsx",
+    "apps/web/src/components/evidence-trigger.tsx"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
