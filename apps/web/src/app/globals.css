@@ -662,3 +662,359 @@ html[data-daypart="night"] .marketplace-hero__veil {
 .cana-pop-link:hover { filter: brightness(1.1); }
 
 .maplibregl-popup-content { border-radius: 12px; padding: 0.75rem; }
+
+/* ============================================================================
+   P0.1 — ORDERWEEDDC DESIGN TOKEN LAYER (branch: design/tokens-port)
+   ============================================================================
+   Semantic port of the T6 APPLE TOKEN LAYER (transplant/t6-apple-token-layer,
+   apps/web/src/app/globals.css @ blob 726f8af) onto current main, extended per
+   the approved NAV_RESPONSIVE_TYPOGRAPHY_SPEC (design mission 2026-08-13,
+   measured from production apple.com CSS + rendered CDP validation).
+
+   LAW: ADDITIVE ONLY. Nothing below redefines an existing selector from the
+   file above. Tokens and .owd-* classes are inert until components adopt them
+   (P0.2+). The ONE rendering-affecting change is the font register (§A),
+   per the owner's APPLE_STANDARD ruling (2026-08-09: "use the same fonts as
+   them"): SF system stack first on Apple devices, self-hosted Geist remains
+   the metric-compatible fallback everywhere else. Zero new font files; CSP
+   unchanged.
+
+   Supersessions vs the T6 source (deliberate, documented):
+   - T6 --type-body: 19px  → 17px here (Apple body is 17px measured everywhere;
+     19px is the intro register — see --owd-type-intro).
+   - T6 --apple-gutter: 22px → --owd-grid-gutter: 24px (measured --sk-cssgrid
+     inner gutter); 22px retained as the mobile minimum gutter.
+   - T6's 9-step --type-* scale → the trio system below (adds the display tier
+     above 56px and the measured responsive drops at 1068px/734px).
+   T6 blocks ported verbatim (values unchanged): frost recipes, tint-chip,
+   tech-specs anatomy, media-overlay law, footnote opacity ladder.
+   ========================================================================== */
+
+/* --- A. FONT REGISTER (T6 port; the one rendering-affecting change) ------- */
+:root {
+  --font-family-display: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Geist", system-ui, sans-serif;
+  --font-family-body: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Geist", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* --font-family-evidence intentionally unchanged (Geist Mono): machine data
+     only — receipts, hashes, license numbers. Never decorative chrome. */
+}
+
+/* --- B. CONTAINERS & BREAKPOINTS (measured apple.com system) -------------- */
+:root {
+  /* Story column: 980px fixed ≥1069px → 692px ≤1068px → 87.5% ≤734px. */
+  --owd-content-story: 980px;
+  --owd-content-story-md: 692px;
+  /* Commerce container: 1260px fluid (rendered-measured on flagship/family/
+     business pages: 1260 → ~1120 → ~896 → ~730 → 87.5%). */
+  --owd-content-commerce: 1260px;
+  --owd-content-hero-max: 1680px;
+  --owd-content-mobile: 87.5%;
+  --owd-grid-gutter: 24px;
+  --owd-gutter-min-mobile: 22px;
+  /* Breakpoint constants for JS/docs consumption. CSS media queries below use
+     the literal values (custom properties cannot parameterize @media):
+     sm ≤734 · nav-compact ≤833 · lg ≥1069 · xl ≥1441. */
+  --owd-bp-sm: 734px;
+  --owd-bp-nav: 834px;
+  --owd-bp-lg: 1069px;
+  --owd-bp-xl: 1441px;
+  /* Chrome heights (adopted in P0.2): */
+  --owd-header-h: 48px;
+  --owd-subnav-h: 44px;
+}
+
+/* Container utilities (inert until adopted) */
+.owd-container-story {
+  width: 100%;
+  max-width: var(--owd-content-story);
+  margin-inline: auto;
+  padding-inline: max(var(--owd-gutter-min-mobile), env(safe-area-inset-left));
+}
+.owd-container-commerce {
+  width: 100%;
+  max-width: var(--owd-content-commerce);
+  margin-inline: auto;
+  padding-inline: max(var(--owd-gutter-min-mobile), env(safe-area-inset-left));
+}
+@media (max-width: 1068px) {
+  .owd-container-story { max-width: var(--owd-content-story-md); }
+}
+@media (max-width: 734px) {
+  .owd-container-story,
+  .owd-container-commerce {
+    max-width: none;
+    width: var(--owd-content-mobile);
+    padding-inline: 0;
+  }
+}
+
+/* --- C. TYPE SYSTEM (responsive trios; drops at exactly 1068px and 734px) -- */
+:root {
+  --owd-type-display: 64px;   /* 64 → 52 → 40 */
+  --owd-type-h1: 48px;        /* 48 → 40 → 32 */
+  --owd-type-h2: 40px;        /* 40 → 32 → 28 */
+  --owd-type-h3: 28px;        /* 28 → 24 → 21 */
+  --owd-type-intro: 21px;     /* 21 → 19 → 17 */
+  --owd-type-body: 17px;      /* constant — the reading floor */
+  --owd-type-body-reduced: 14px;
+  --owd-type-caption: 12px;
+  --owd-type-eyebrow: 14px;
+  --owd-type-nav: 13px;
+  --owd-type-price: 17px;
+}
+
+.owd-display {
+  font-family: var(--font-family-display);
+  font-size: var(--owd-type-display);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.owd-h1 {
+  font-family: var(--font-family-display);
+  font-size: var(--owd-type-h1);
+  line-height: 1.08;
+  letter-spacing: -0.005em;
+  font-weight: 600;
+}
+.owd-h2 {
+  font-family: var(--font-family-display);
+  font-size: var(--owd-type-h2);
+  line-height: 1.1;
+  letter-spacing: -0.003em;
+  font-weight: 600;
+}
+.owd-h3 {
+  font-family: var(--font-family-display);
+  font-size: var(--owd-type-h3);
+  line-height: 1.14;
+  letter-spacing: 0.007em;
+  font-weight: 600;
+}
+.owd-intro {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-intro);
+  line-height: 1.38;
+  letter-spacing: 0.011em;
+  font-weight: 400;
+}
+.owd-body {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-body);
+  line-height: 1.47;
+  letter-spacing: -0.022em;
+  font-weight: 400;
+}
+.owd-body-reduced {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-body-reduced);
+  line-height: 1.43;
+  letter-spacing: -0.016em;
+  font-weight: 400;
+}
+.owd-caption {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-caption);
+  line-height: 1.33;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+.owd-eyebrow {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-eyebrow);
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+  /* No uppercase tracking-chrome: T6 grammar law — mono/caps are for machine
+     data, not section labels. Color via .owd-quiet or an explicit token. */
+}
+.owd-nav {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-nav);
+  line-height: 1;
+  font-weight: 500;
+}
+.owd-price {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-price);
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.owd-price-qualifier {
+  font-family: var(--font-family-body);
+  font-size: var(--owd-type-body-reduced);
+  line-height: 1.3;
+  font-weight: 400;
+}
+/* Two-tone section heading: bold ink phrase + quiet second phrase, one line.
+   Usage: <h2 class="owd-h2">Happening now. <span class="owd-quiet">Fresh
+   drops worth knowing.</span></h2> */
+.owd-quiet { color: var(--brand-muted); }
+
+@media (max-width: 1068px) {
+  :root {
+    --owd-type-display: 52px;
+    --owd-type-h1: 40px;
+    --owd-type-h2: 32px;
+    --owd-type-h3: 24px;
+    --owd-type-intro: 19px;
+  }
+}
+@media (max-width: 734px) {
+  :root {
+    --owd-type-display: 40px;
+    --owd-type-h1: 32px;
+    --owd-type-h2: 28px;
+    --owd-type-h3: 21px;
+    --owd-type-intro: 17px;
+  }
+}
+
+/* --- D. GEOMETRY, HAIRLINES, SECTION RHYTHM -------------------------------- */
+:root {
+  --owd-radius-card: 20px;
+  --owd-radius-tile: 28px;
+  --owd-radius-control: 12px;
+  --owd-radius-control-sm: 10px;
+  --owd-radius-pill: 980px; /* the measured Apple pill */
+  --owd-hairline: rgba(13, 31, 24, 0.12);
+  /* Section vertical rhythm (density gears: cinematic/editorial/operational) */
+  --owd-sect-pad-xl: 120px;
+  --owd-sect-pad-lg: 96px;
+  --owd-sect-pad-md: 72px;
+  --owd-sect-pad-sm: 48px;
+}
+html[data-daypart="night"] .canonical-tenant-shell {
+  --owd-hairline: rgba(205, 235, 214, 0.14);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-daypart]) .canonical-tenant-shell {
+    --owd-hairline: rgba(205, 235, 214, 0.14);
+  }
+}
+@media (max-width: 734px) {
+  :root {
+    --owd-sect-pad-xl: 80px;
+    --owd-sect-pad-lg: 64px;
+    --owd-sect-pad-md: 48px;
+    --owd-sect-pad-sm: 32px;
+  }
+}
+.owd-hairline-b { border-bottom: 1px solid var(--owd-hairline); }
+.owd-hairline-t { border-top: 1px solid var(--owd-hairline); }
+
+/* --- E. MOTION CANON (measured: cubic-bezier(.4,0,.6,1) @ 240–320ms) ------- */
+:root {
+  --owd-ease-standard: cubic-bezier(0.4, 0, 0.6, 1);
+  --owd-ease-enter: cubic-bezier(0.16, 1, 0.3, 1); /* existing entrance curve */
+  --owd-dur-fast: 160ms;
+  --owd-dur-std: 240ms;
+  --owd-dur-slow: 320ms;
+}
+
+/* --- F. RAIL & CARD GEOMETRY (adopted by the rail primitive, P0.3) --------- */
+:root {
+  --owd-rail-gap: 20px;
+  --owd-rail-gap-dense: 12px;
+  --owd-paddle-size: 36px;
+  --owd-card-merchant-w: 400px;
+  --owd-card-merchant-h: 500px;
+  --owd-card-product-w: 300px;
+  --owd-card-product-h: 380px;
+  --owd-tile-neighborhood-w: 470px;
+  --owd-tile-neighborhood-h: 310px;
+}
+
+/* --- G. T6 MATERIAL & GRAMMAR (verbatim port, values unchanged) ------------ */
+:root {
+  /* the shared reading column (apple.com: 980px; alias of --owd-content-story) */
+  --apple-column: 980px;
+
+  /* frosted chrome recipe (apple.com gnav, compiled) */
+  --frost-chrome-light: rgba(250, 250, 252, 0.8);
+  --frost-chrome-dark: rgba(22, 22, 23, 0.8);
+  --frost-filter: saturate(180%) blur(20px);
+
+  /* tech-specs anatomy */
+  --specs-label-size: 24px;   /* 24/600 section labels */
+  --specs-value-color: #a1a1a6;
+  --specs-hairline: #d2d2d7;  /* ONE hairline per section — padding is the table */
+
+  /* footer opacity hierarchy (apple.com footer, compiled) */
+  --footnote-strong: 0.88;
+  --footnote-mid: 0.72;
+  --footnote-soft: 0.56;
+  --footnote-faint: 0.48;
+}
+
+/* the apple.com frosted navigation material */
+.frosted-nav {
+  background: var(--frost-chrome-light);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+.frosted-nav-dark {
+  background: var(--frost-chrome-dark);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+
+/* tint-chip grammar: low-alpha brand tint, deep text, no border chrome */
+.tint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 100px;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary-fill-strong);
+}
+
+/* tech-specs rows: 24/600 label + muted value + single hairline per section */
+.tech-specs {
+  max-width: 660px;
+  margin: 0 auto;
+  border-top: 1px solid var(--specs-hairline);
+  padding-top: 34px;
+}
+.tech-specs .spec-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 6px 34px;
+  padding: 14px 0;
+}
+.tech-specs .spec-label {
+  font-size: var(--specs-label-size);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.tech-specs .spec-value {
+  font-size: 14px;
+  color: var(--specs-value-color);
+  align-self: center;
+}
+@media (max-width: 600px) {
+  .tech-specs .spec-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* overlay law utility: anything layered over imagery stays small,
+   frosted, and off the subject — never a solid pill smothering the tile */
+.media-overlay {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: var(--frost-chrome-light);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+
+/* --- END P0.1 TOKEN LAYER --------------------------------------------------- */
