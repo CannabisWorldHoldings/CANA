@@ -12,8 +12,10 @@ import {
   getAsset,
   getAssetByPath,
   issuePendingRightsCapability,
+  isPendingAssetPath,
   listAssets,
   mayRepresentRealEntity,
+  mayServePendingAssetPath,
   resolveAssetUse,
   SUBJECT_TRUTH,
 } from '../src/lib/asset-registry.mjs';
@@ -46,6 +48,35 @@ test('every registered path points at a file that actually exists', () => {
       existsSync(path.join(PUBLIC_DIR, record.path)),
       `registered asset missing on disk: ${record.path}`,
     );
+  }
+});
+
+test('every local illustrative file is registered for fail-closed HTTP delivery', () => {
+  const illustrativeFiles = [
+    '/art/cat-accessories.jpg',
+    '/art/cat-concentrates.jpg',
+    '/art/cat-edibles.jpg',
+    '/art/cat-flower.jpg',
+    '/art/cat-pre-rolls.jpg',
+    '/art/cat-topicals.jpg',
+    '/art/cat-vapes.jpg',
+    '/art/hero-dc.jpg',
+    '/art/hero-dc.webp',
+    '/art/retailer-delivery.jpg',
+    '/art/retailer-storefront.jpg',
+    '/marketplace/hero-marketplace-v2.webp',
+    '/marketplace/product-0.webp',
+    '/marketplace/product-1.webp',
+    '/marketplace/product-2.webp',
+    '/marketplace/product-3.webp',
+    '/marketplace/retailer-0.webp',
+    '/marketplace/retailer-1.webp',
+    '/marketplace/retailer-2.webp',
+    '/marketplace/retailer-3.webp',
+  ];
+  for (const assetPath of illustrativeFiles) {
+    assert.ok(getAssetByPath(assetPath), assetPath);
+    assert.equal(isPendingAssetPath(assetPath), true, assetPath);
   }
 });
 
@@ -116,6 +147,23 @@ test('pending-rights capability is local, non-production, and unforgeable', () =
       }),
       null,
     );
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
+});
+
+test('pending file delivery is restricted to local non-production hosts', () => {
+  const pendingPath = '/marketplace/hero-marketplace-v2.webp';
+  assert.equal(mayServePendingAssetPath(pendingPath, 'orderweeddc.localhost'), true);
+  assert.equal(mayServePendingAssetPath(pendingPath, 'orderweeddc.com'), false);
+  assert.equal(mayServePendingAssetPath(pendingPath, 'localhost'), false);
+  assert.equal(mayServePendingAssetPath('/brand/orderweeddc-on-light.png', 'orderweeddc.com'), true);
+
+  const previousNodeEnv = process.env.NODE_ENV;
+  try {
+    process.env.NODE_ENV = 'production';
+    assert.equal(mayServePendingAssetPath(pendingPath, 'orderweeddc.localhost'), false);
   } finally {
     if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousNodeEnv;

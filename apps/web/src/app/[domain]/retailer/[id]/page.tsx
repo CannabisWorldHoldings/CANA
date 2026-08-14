@@ -307,16 +307,6 @@ export default async function RetailerDetailPage({
 
       {/* Header Profile Section */}
       <div className="record-card rounded-2xl overflow-hidden">
-        {/* Banner artwork */}
-        <img
-          src={retailer.type === 'storefront' ? '/art/retailer-storefront.jpg' : '/art/retailer-delivery.jpg'}
-          alt="Illustrative artwork — not a photo of this business"
-          width={720}
-          height={480}
-          className="h-36 w-full rounded-xl object-cover border border-brand-border"
-          loading="lazy"
-        />
-        <p className="mt-1 px-6 text-[10px] text-brand-muted/70">Illustrative artwork — not a photo of this business.</p>
         <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">

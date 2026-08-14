@@ -6,6 +6,7 @@ import {
 } from '@/lib/host-policy.mjs';
 import { isCanonicalPlatformHostname } from '@/lib/tenant-host.mjs';
 import { tenantRedirectPath } from '@/lib/tenant-rewrite.mjs';
+import { mayServePendingAssetPath } from '@/lib/asset-registry.mjs';
 
 const NON_INDEXABLE_RESPONSE_HEADERS = {
   'Cache-Control': 'no-store',
@@ -36,6 +37,19 @@ function closedHostResponse(title: string, message: string) {
   );
 }
 
+function pendingAssetPlaceholderResponse() {
+  return new NextResponse(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><rect width="16" height="9" fill="#f4f1eb"/></svg>',
+    {
+      status: 200,
+      headers: {
+        ...NON_INDEXABLE_RESPONSE_HEADERS,
+        'Content-Type': 'image/svg+xml; charset=utf-8',
+      },
+    },
+  );
+}
+
 export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostnameHeader = request.headers.get('host');
@@ -51,6 +65,22 @@ export function proxy(request: NextRequest) {
     });
   }
   const { hostname: host, port } = requestHost;
+
+  // Pending-provenance files physically remain in public/ for local visual
+  // review, but their HTTP delivery is globally fail-closed everywhere else.
+  if (!mayServePendingAssetPath(url.pathname, host)) {
+    return pendingAssetPlaceholderResponse();
+  }
+
+  if (
+    url.pathname.startsWith('/lab')
+    && (process.env.NODE_ENV === 'production' || !host.endsWith('.localhost'))
+  ) {
+    return closedHostResponse(
+      'Internal Surface',
+      'The visual review lab is available only on a local development host.',
+    );
+  }
 
   // Canonical-host consolidation: www permanently redirects to the apex,
   // preserving path and query, so exactly one public origin exists.
