@@ -1039,7 +1039,8 @@
     "tools/visual-court/static-collector.mjs",
     "tools/visual-court/run-static.mjs",
     "tools/visual-court/screenshot-harness.mjs",
-    "apps/web/tests/visual-court.test.mjs"
+    "apps/web/tests/visual-court.test.mjs",
+    "apps/web/src/app/lab/design/page.tsx"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
