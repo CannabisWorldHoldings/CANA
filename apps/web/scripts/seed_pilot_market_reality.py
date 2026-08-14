@@ -63,9 +63,9 @@ def seed_market_reality(db_file):
 
     for d in pilot_deals:
         cursor.execute("""
-            INSERT OR REPLACE INTO Deal (id, retailerId, title, description, discount, code, expiryDate, isActive, dataStatus, verifiedAt, freshnessExpiresAt, isDemonstration, createdAt, updatedAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'VERIFIED_CURRENT', ?, ?, 0, datetime('now'), datetime('now'))
-        """, (d[0], d[1], d[2], d[3], d[4], d[5], expiry_str, now_str, expiry_str))
+            INSERT OR REPLACE INTO Deal (id, retailerId, title, description, discount, code, expiryDate, isActive, dataStatus, dataSource, verifiedAt, freshnessExpiresAt, isDemonstration, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'DEMONSTRATION_ONLY', 'Demonstration Fixture (Unverified Promotion)', NULL, NULL, 1, datetime('now'), datetime('now'))
+        """, (d[0], d[1], d[2], d[3], d[4], d[5], expiry_str))
 
     # 4. Link Retailers to Brand via Product/MenuEntry/BrandMenu
     for i, (rid, rname) in enumerate(retailer_ids):
@@ -78,7 +78,7 @@ def seed_market_reality(db_file):
 
     conn.commit()
     conn.close()
-    print(f"[SUCCESS] Database {db_file} seeded with {len(retailer_ids)} Official DC ABCA Retailers and {len(pilot_deals)} VERIFIED_CURRENT Deals!")
+    print(f"[SUCCESS] Database {db_file} seeded with {len(retailer_ids)} Official DC ABCA Retailers and {len(pilot_deals)} DEMONSTRATION Deals (Isolated fixture).")
 
 if __name__ == '__main__':
     seed_market_reality(dev_db)
