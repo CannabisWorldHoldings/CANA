@@ -1018,7 +1018,16 @@
     "apps/web/src/lib/customer-world-navigation.mjs",
     "apps/web/src/lib/customer-world.server.ts",
     "apps/web/tests/customer-world.test.mjs",
-    "apps/web/tests/customer-world-routes.test.mjs"
+    "apps/web/tests/customer-world-routes.test.mjs",
+    "apps/web/src/lib/card-logic.mjs",
+    "apps/web/tests/card-logic.test.mjs",
+    "apps/web/src/components/rail.tsx",
+    "apps/web/src/components/merchant-card.tsx",
+    "apps/web/src/components/product-card.tsx",
+    "apps/web/src/components/deal-card.tsx",
+    "apps/web/src/components/editorial-card.tsx",
+    "apps/web/src/components/neighborhood-tile.tsx",
+    "apps/web/src/components/card-fixtures.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
