@@ -159,6 +159,16 @@ test('pending file delivery is restricted to local non-production hosts', () => 
   assert.equal(mayServePendingAssetPath(pendingPath, 'orderweeddc.com'), false);
   assert.equal(mayServePendingAssetPath(pendingPath, 'localhost'), false);
   assert.equal(mayServePendingAssetPath('/brand/orderweeddc-on-light.png', 'orderweeddc.com'), true);
+  for (const encodedPath of [
+    '/art/%63at-flower.jpg',
+    '/art/cat-flower%2Ejpg',
+    '/%61rt/cat-flower.jpg',
+    '/%2561rt/cat-flower.jpg',
+    '/marketplace%2Fhero-marketplace-v2.webp',
+  ]) {
+    assert.equal(isPendingAssetPath(encodedPath), true, encodedPath);
+    assert.equal(mayServePendingAssetPath(encodedPath, 'orderweeddc.com'), false, encodedPath);
+  }
 
   const previousNodeEnv = process.env.NODE_ENV;
   try {

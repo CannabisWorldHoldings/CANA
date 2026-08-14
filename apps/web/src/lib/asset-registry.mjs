@@ -97,7 +97,25 @@ export function getAssetByPath(path) {
 }
 
 export function isPendingAssetPath(path) {
-  return BY_PATH.get(path)?.rights === 'OWNED_PROVENANCE_REVIEW_PENDING';
+  if (typeof path !== 'string') return false;
+  let candidate = path;
+  for (let depth = 0; depth < 8; depth += 1) {
+    if (
+      BY_PATH.get(candidate)?.rights === 'OWNED_PROVENANCE_REVIEW_PENDING'
+      || candidate.startsWith('/art/')
+      || candidate.startsWith('/marketplace/')
+    ) {
+      return true;
+    }
+    try {
+      const decoded = decodeURIComponent(candidate);
+      if (decoded === candidate) return false;
+      candidate = decoded;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 /** The HTTP delivery boundary for pending files in public/. */

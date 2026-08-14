@@ -744,6 +744,16 @@
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ],
       "approval_reference": "OWNER_DIRECT_REQUEST_IN_CURRENT_THREAD_2026_08_13"
+    },
+    "orderweeddc_home_composition_v1_2026_08_14": {
+      "authorization": "ORDERWEEDDC P1 HOME COMPOSITION V1 CORRECTION PASS",
+      "scope": "The exact consumer product-page path required to remove pending generic art from named records; no product truth, database, schema, merchant data, deployment, DNS, or neighboring-path authority.",
+      "authorization_effect": "Durability path ownership only; no visual approval, production deployment, external effect, verification bypass, or self-promotion authority.",
+      "base_commit": "4aeef38218aec1c1689a6eb143c712e401a894a9",
+      "authorized_paths": [
+        "apps/web/src/app/[domain]/products/page.tsx"
+      ],
+      "approval_reference": "OWNER_ATTACHED_P1_CORRECTION_PROMPT_IN_CURRENT_THREAD_2026_08_14"
     }
   },
   "owned_create_paths": [
@@ -1088,6 +1098,7 @@
     "apps/web/src/app/favicon.ico",
     "apps/web/src/app/[domain]/layout.tsx",
     "apps/web/src/app/[domain]/page.tsx",
+    "apps/web/src/app/[domain]/products/page.tsx",
     "apps/web/src/app/globals.css",
     "apps/web/src/app/layout.tsx",
     "apps/web/src/components/age-gate.tsx",
@@ -1284,6 +1295,7 @@
     "apps/web/public/icon-512.png",
     "apps/web/src/app/[domain]/layout.tsx",
     "apps/web/src/app/[domain]/page.tsx",
+    "apps/web/src/app/[domain]/products/page.tsx",
     "apps/web/src/app/globals.css",
     "apps/web/src/app/layout.tsx",
     "apps/web/src/components/age-gate.tsx",
