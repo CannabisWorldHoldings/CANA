@@ -1031,7 +1031,10 @@
     "apps/web/src/lib/label-vocabulary.mjs",
     "apps/web/tests/label-vocabulary.test.mjs",
     "apps/web/src/components/disclosure-modal.tsx",
-    "apps/web/src/components/evidence-trigger.tsx"
+    "apps/web/src/components/evidence-trigger.tsx",
+    "apps/web/src/lib/asset-registry.mjs",
+    "apps/web/tests/asset-registry.test.mjs",
+    "apps/web/src/components/smart-image.tsx"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
