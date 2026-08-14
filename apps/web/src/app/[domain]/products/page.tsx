@@ -557,26 +557,12 @@ export default async function ProductDiscoveryPage({
                 const thc = formatPercent(entry.product.thcPercent);
                 const cbd = formatPercent(entry.product.cbdPercent);
 
-                const ARTWORK_CATEGORIES = ['flower', 'edibles', 'concentrates', 'vapes', 'pre-rolls', 'topicals', 'accessories'];
-                const categoryKey = entry.product.category;
-                const hasArtwork = ARTWORK_CATEGORIES.includes(categoryKey);
-
                 return (
                   <article
                     key={entry.id}
                     className="record-card flex min-w-0 flex-col rounded-2xl p-5 transition-colors hover:border-brand-primary/30"
                   >
                     <div className="flex items-start justify-between gap-4">
-                      {hasArtwork && (
-                        <img
-                          src={`/art/cat-${categoryKey}.jpg`}
-                          alt={`${CATEGORY_LABELS[categoryKey] ?? categoryKey} illustrative artwork`}
-                          width={64}
-                          height={64}
-                          className="h-14 w-14 shrink-0 rounded-lg object-cover border border-brand-border"
-                          loading="lazy"
-                        />
-                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full border border-brand-border bg-brand-background px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-brand-muted">

@@ -19,6 +19,7 @@ export function collectStaticInputs(rootDir) {
   const smartImage = read(rootDir, 'apps/web/src/components/smart-image.tsx');
   const homeRoute = read(rootDir, 'apps/web/src/app/[domain]/page.tsx');
   const assetRegistry = read(rootDir, 'apps/web/src/lib/asset-registry.mjs');
+  const proxy = read(rootDir, 'apps/web/src/proxy.ts');
 
   // Header height: the height class on the header's inner container.
   const headerBlock = layout.slice(layout.indexOf('<header'), layout.indexOf('</header>'));
@@ -76,7 +77,9 @@ export function collectStaticInputs(rootDir) {
     productionArtGate: homeRoute.includes('issuePendingRightsCapability(origin.hostname)')
       && assetRegistry.includes("process.env.NODE_ENV === 'production'")
       && assetRegistry.includes("hostname.endsWith('.localhost')")
-      && assetRegistry.includes('PENDING_RIGHTS_CAPABILITIES.has'),
+      && assetRegistry.includes('PENDING_RIGHTS_CAPABILITIES.has')
+      && proxy.includes('mayServePendingAssetPath(url.pathname, host)')
+      && proxy.includes('pendingAssetPlaceholderResponse'),
     heroMinHeightPx,
     campaignAsymmetric: globals.includes('minmax(0, 1.16fr) minmax(340px, 0.84fr)'),
   };

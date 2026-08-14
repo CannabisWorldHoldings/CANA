@@ -73,6 +73,8 @@ const RECORDS = Object.freeze([
   { id: 'home.category.accessories', path: '/art/cat-accessories.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Accessories category illustration', contexts: ['category-navigation', 'styleguide'] },
   { id: 'home.delivery', path: '/art/retailer-delivery.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [3, 2], altGuidance: 'Illustrative delivery scene (not a delivery promise)', contexts: ['campaign-ambience', 'styleguide'] },
   { id: 'home.dc', path: '/art/hero-dc.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [7, 3], altGuidance: 'Washington, D.C. atmosphere', contexts: ['district-feature', 'styleguide'] },
+  { id: 'home.dc.legacy-jpg', path: '/art/hero-dc.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [7, 3], altGuidance: 'Legacy Washington, D.C. atmosphere', contexts: ['demonstration', 'styleguide'] },
+  { id: 'home.storefront.legacy', path: '/art/retailer-storefront.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [3, 2], altGuidance: 'Legacy illustrative storefront scene (not a specific business)', contexts: ['demonstration', 'styleguide'] },
 ].map((record) => Object.freeze({
   ...record,
   aspect: Object.freeze([...record.aspect]),
@@ -92,6 +94,21 @@ export function getAsset(id) {
 
 export function getAssetByPath(path) {
   return BY_PATH.get(path) ?? null;
+}
+
+export function isPendingAssetPath(path) {
+  return BY_PATH.get(path)?.rights === 'OWNED_PROVENANCE_REVIEW_PENDING';
+}
+
+/** The HTTP delivery boundary for pending files in public/. */
+export function mayServePendingAssetPath(path, hostname) {
+  if (!isPendingAssetPath(path)) return true;
+  return (
+    process.env.NODE_ENV !== 'production'
+    && typeof hostname === 'string'
+    && hostname.endsWith('.localhost')
+    && hostname.length > '.localhost'.length
+  );
 }
 
 const PENDING_RIGHTS_CAPABILITIES = new WeakSet();
