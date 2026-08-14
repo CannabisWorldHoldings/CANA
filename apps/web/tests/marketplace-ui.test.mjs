@@ -245,6 +245,9 @@ test('age-gate branding remains tenant scoped', () => {
 
 test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
   const CustomerWorldPage = component('customer-world-page.tsx');
+  const illustrativeArtCapability = assetRegistry.issuePendingRightsCapability(
+    'orderweeddc.localhost',
+  );
   const world = {
     request: {
       customer_query: '',
@@ -259,14 +262,14 @@ test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
     React.createElement(CustomerWorldPage, {
       world,
       isCanonicalBrand: true,
-      allowIllustrativeArt: true,
+      illustrativeArtCapability,
     }),
   );
   const canonicalProduction = renderToStaticMarkup(
     React.createElement(CustomerWorldPage, {
       world,
       isCanonicalBrand: true,
-      allowIllustrativeArt: false,
+      illustrativeArtCapability: null,
     }),
   );
   const tenant = renderToStaticMarkup(
@@ -283,6 +286,39 @@ test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
   assert.doesNotMatch(tenant, /What are you/);
   assert.match(tenant, /One verified path from intent to discovery\./);
   assert.match(tenant, /Customer journeys/);
+});
+
+test('SmartImage applies registered-asset policy to raw paths', () => {
+  const SmartImage = component('smart-image.tsx');
+  const props = {
+    src: '/art/cat-flower.jpg',
+    context: 'category-navigation',
+    alt: '',
+  };
+  const rejected = renderToStaticMarkup(React.createElement(SmartImage, props));
+  const forged = renderToStaticMarkup(
+    React.createElement(SmartImage, { ...props, pendingRightsCapability: {} }),
+  );
+  const authorized = renderToStaticMarkup(
+    React.createElement(SmartImage, {
+      ...props,
+      pendingRightsCapability: assetRegistry.issuePendingRightsCapability(
+        'orderweeddc.localhost',
+      ),
+    }),
+  );
+  const attested = renderToStaticMarkup(
+    React.createElement(SmartImage, {
+      src: '/uploads/attested/merchant-123/storefront.avif',
+      context: 'campaign',
+      alt: 'Merchant storefront',
+    }),
+  );
+
+  assert.equal(rejected, '');
+  assert.equal(forged, '');
+  assert.match(authorized, /art\/cat-flower\.jpg/);
+  assert.match(attested, /uploads\/attested\/merchant-123\/storefront\.avif/);
 });
 
 test('marketplace components and artwork are present in the canonical workspace', () => {

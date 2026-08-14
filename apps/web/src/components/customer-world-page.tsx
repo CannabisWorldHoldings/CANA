@@ -73,10 +73,10 @@ function MarketSearch({ marketId }: { marketId: string }) {
 
 function CustomerHome({
   world,
-  allowIllustrativeArt,
+  illustrativeArtCapability,
 }: {
   world: CustomerWorld;
-  allowIllustrativeArt: boolean;
+  illustrativeArtCapability: object | null;
 }) {
   return (
     <div className="owd-home">
@@ -88,7 +88,7 @@ function CustomerHome({
             alt=""
             fill
             priority
-            allowPendingRights={allowIllustrativeArt}
+            pendingRightsCapability={illustrativeArtCapability}
             sizes="(max-width: 734px) 100vw, 1680px"
             className="owd-home-hero__image"
           />
@@ -128,7 +128,7 @@ function CustomerHome({
                     context="category-navigation"
                     alt=""
                     fill
-                    allowPendingRights={allowIllustrativeArt}
+                    pendingRightsCapability={illustrativeArtCapability}
                     sizes="112px"
                   />
                 </span>
@@ -157,7 +157,7 @@ function CustomerHome({
                 context="campaign-ambience"
                 alt=""
                 fill
-                allowPendingRights={allowIllustrativeArt}
+                pendingRightsCapability={illustrativeArtCapability}
                 sizes="(max-width: 734px) 87vw, 700px"
               />
             </span>
@@ -175,7 +175,7 @@ function CustomerHome({
                 context="campaign-ambience"
                 alt=""
                 fill
-                allowPendingRights={allowIllustrativeArt}
+                pendingRightsCapability={illustrativeArtCapability}
                 sizes="(max-width: 734px) 87vw, 560px"
               />
             </span>
@@ -200,7 +200,7 @@ function CustomerHome({
               context="district-feature"
               alt=""
               fill
-              allowPendingRights={allowIllustrativeArt}
+              pendingRightsCapability={illustrativeArtCapability}
               sizes="(max-width: 734px) 100vw, 760px"
             />
           </div>
@@ -236,17 +236,17 @@ function CustomerHome({
 export default function CustomerWorldPage({
   world,
   isCanonicalBrand = false,
-  allowIllustrativeArt = false,
+  illustrativeArtCapability = null,
 }: {
   world: CustomerWorld;
   isCanonicalBrand?: boolean;
-  allowIllustrativeArt?: boolean;
+  illustrativeArtCapability?: object | null;
 }) {
   if (world.request.journey === 'HOME' && isCanonicalBrand) {
     return (
       <CustomerHome
         world={world}
-        allowIllustrativeArt={allowIllustrativeArt}
+        illustrativeArtCapability={illustrativeArtCapability}
       />
     );
   }

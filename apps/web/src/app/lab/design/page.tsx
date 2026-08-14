@@ -7,6 +7,8 @@ import NeighborhoodTile from '@/components/neighborhood-tile';
 import ProductCard from '@/components/product-card';
 import Rail, { RailItem } from '@/components/rail';
 import SmartImage from '@/components/smart-image';
+import { issuePendingRightsCapability } from '@/lib/asset-registry.mjs';
+import { requestOrigin } from '@/lib/server-request-url';
 import {
   dealCardStates,
   editorialCardStates,
@@ -45,7 +47,9 @@ function Section({ title, note, children }: { title: string; note?: string; chil
   );
 }
 
-export default function DesignStyleguidePage() {
+export default async function DesignStyleguidePage() {
+  const origin = await requestOrigin();
+  const illustrativeArtCapability = issuePendingRightsCapability(origin.hostname);
   const fullMerchants = Array.from({ length: 6 }, (_, index) => ({
     ...merchantCardStates.full,
     name: `${merchantCardStates.full.name} ${index + 1}`,
@@ -206,7 +210,11 @@ export default function DesignStyleguidePage() {
             <p className="owd-caption mt-2 text-brand-muted">brand.wordmark.light — BRAND_MARK, OWNED</p>
           </div>
           <div className="w-80">
-            <SmartImage assetId="marketplace.hero.v2" context="styleguide" allowPendingRights />
+            <SmartImage
+              assetId="marketplace.hero.v2"
+              context="styleguide"
+              pendingRightsCapability={illustrativeArtCapability}
+            />
             <p className="owd-caption mt-2 text-brand-muted">
               marketplace.hero.v2 — GENERIC_ILLUSTRATIVE, demonstration contexts only
             </p>

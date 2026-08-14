@@ -1,4 +1,8 @@
-import { assertRegisteredImage, resolveAssetUse } from '@/lib/asset-registry.mjs';
+import {
+  assertRegisteredImage,
+  getAssetByPath,
+  resolveAssetUse,
+} from '@/lib/asset-registry.mjs';
 import type { CSSProperties } from 'react';
 
 type AssetContext =
@@ -37,11 +41,11 @@ export default function SmartImage({
   className,
   sizes,
   fill = false,
-  allowPendingRights = false,
+  pendingRightsCapability = null,
   representsRealEntity = false,
 }: {
   assetId?: string;
-  context?: AssetContext;
+  context: AssetContext;
   src?: string;
   mobileSrc?: string;
   alt?: string;
@@ -52,17 +56,32 @@ export default function SmartImage({
   className?: string;
   sizes?: string;
   fill?: boolean;
-  allowPendingRights?: boolean;
+  pendingRightsCapability?: object | null;
   representsRealEntity?: boolean;
 }) {
+  const sourceRecord = !assetId && src ? getAssetByPath(src) : null;
   const record = assetId
-    ? resolveAssetUse(assetId, context, { allowPendingRights, representsRealEntity })
-    : null;
-  if (assetId && !record) return null;
+    ? resolveAssetUse(assetId, context, { pendingRightsCapability, representsRealEntity })
+    : sourceRecord
+      ? resolveAssetUse(sourceRecord.id, context, {
+          pendingRightsCapability,
+          representsRealEntity,
+        })
+      : null;
+  if ((assetId || sourceRecord) && !record) return null;
   const resolvedSrc = record?.path ?? src;
   if (!resolvedSrc) return null;
   assertRegisteredImage(resolvedSrc);
-  if (mobileSrc) assertRegisteredImage(mobileSrc);
+  const mobileRecord = mobileSrc ? getAssetByPath(mobileSrc) : null;
+  const authorizedMobileRecord = mobileRecord
+    ? resolveAssetUse(mobileRecord.id, context, {
+        pendingRightsCapability,
+        representsRealEntity,
+      })
+    : null;
+  if (mobileRecord && !authorizedMobileRecord) return null;
+  const resolvedMobileSrc = authorizedMobileRecord?.path ?? mobileSrc;
+  if (resolvedMobileSrc) assertRegisteredImage(resolvedMobileSrc);
 
   const resolvedAlt = alt ?? record?.altGuidance ?? '';
   const ratio = aspect ?? record?.aspect ?? null;
@@ -97,13 +116,13 @@ export default function SmartImage({
     'data-asset-rights': record?.rights,
   };
 
-  if (!mobileSrc) return <span {...frameProps}>{img}</span>;
+  if (!resolvedMobileSrc) return <span {...frameProps}>{img}</span>;
 
   return (
     <picture {...frameProps}>
       <source
         media="(max-width: 734px)"
-        srcSet={mobileSrc}
+        srcSet={resolvedMobileSrc}
         {...(mobileAspect ? { width: mobileAspect[0] * 100, height: mobileAspect[1] * 100 } : {})}
       />
       {img}
