@@ -1034,7 +1034,12 @@
     "apps/web/src/components/evidence-trigger.tsx",
     "apps/web/src/lib/asset-registry.mjs",
     "apps/web/tests/asset-registry.test.mjs",
-    "apps/web/src/components/smart-image.tsx"
+    "apps/web/src/components/smart-image.tsx",
+    "tools/visual-court/checks.mjs",
+    "tools/visual-court/static-collector.mjs",
+    "tools/visual-court/run-static.mjs",
+    "tools/visual-court/screenshot-harness.mjs",
+    "apps/web/tests/visual-court.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
