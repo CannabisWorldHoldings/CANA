@@ -323,7 +323,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
           </div>
         </div>
       </footer>
-      <CartDrawer />
+      {!isCanonicalBrand && <CartDrawer />}
     </div>
   );
 }
