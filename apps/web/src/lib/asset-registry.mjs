@@ -19,6 +19,24 @@ export const SUBJECT_TRUTH = Object.freeze([
   'BRAND_MARK',          // our own identity assets
 ]);
 
+export const ASSET_CONTEXTS = Object.freeze([
+  'chrome',
+  'footer',
+  'og',
+  'campaign',
+  'hero-ambience',
+  'category-navigation',
+  'campaign-ambience',
+  'district-feature',
+  'demonstration',
+  'styleguide',
+]);
+
+export const ASSET_RIGHTS = Object.freeze([
+  'OWNED',
+  'OWNED_PROVENANCE_REVIEW_PENDING',
+]);
+
 const RECORDS = Object.freeze([
   // --- Brand lockups (platform-owned, cleared) ---
   { id: 'brand.wordmark.light', path: '/brand/orderweeddc-on-light.png', kind: 'TIER1_BRAND', subject: 'BRAND_MARK', rights: 'OWNED', aspect: [900, 187], altGuidance: 'ORDERWEEDDC wordmark', contexts: ['chrome', 'footer', 'og'] },
@@ -36,7 +54,7 @@ const RECORDS = Object.freeze([
   //     program in VISUAL_ASSET_PRODUCTION_PLAN.) ---
   { id: 'marketplace.hero.v2', path: '/marketplace/hero-marketplace-v2.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [16, 9], altGuidance: 'Ambient marketplace scene (illustrative, not a specific business)', contexts: ['hero-ambience', 'demonstration', 'styleguide'] },
   { id: 'marketplace.retailer.0', path: '/marketplace/retailer-0.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [4, 5], altGuidance: 'Illustrative retail scene (not a specific business)', contexts: ['demonstration', 'styleguide'] },
-  { id: 'marketplace.retailer.1', path: '/marketplace/retailer-1.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [4, 5], altGuidance: 'Illustrative retail scene (not a specific business)', contexts: ['hero-ambience', 'demonstration', 'styleguide'] },
+  { id: 'marketplace.retailer.1', path: '/marketplace/retailer-1.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [4, 5], altGuidance: 'Illustrative retail scene (not a specific business)', contexts: ['campaign-ambience', 'demonstration', 'styleguide'] },
   { id: 'marketplace.retailer.2', path: '/marketplace/retailer-2.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [4, 5], altGuidance: 'Illustrative retail scene (not a specific business)', contexts: ['demonstration', 'styleguide'] },
   { id: 'marketplace.retailer.3', path: '/marketplace/retailer-3.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [4, 5], altGuidance: 'Illustrative retail scene (not a specific business)', contexts: ['demonstration', 'styleguide'] },
   { id: 'marketplace.product.0', path: '/marketplace/product-0.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Illustrative product still (not a specific product)', contexts: ['demonstration', 'styleguide'] },
@@ -46,15 +64,15 @@ const RECORDS = Object.freeze([
 
   // --- Platform-owned customer-home art. These records are category/location
   //     atmosphere only and must never be attached to a named merchant or SKU. ---
-  { id: 'home.category.flower', path: '/art/cat-flower.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Flower category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.category.edibles', path: '/art/cat-edibles.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Edibles category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.category.vapes', path: '/art/cat-vapes.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Vapes category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.category.concentrates', path: '/art/cat-concentrates.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Concentrates category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.category.pre-rolls', path: '/art/cat-pre-rolls.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Pre-rolls category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.category.topicals', path: '/art/cat-topicals.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Topicals category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.category.accessories', path: '/art/cat-accessories.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Accessories category illustration', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.delivery', path: '/art/retailer-delivery.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [3, 2], altGuidance: 'Illustrative delivery scene (not a delivery promise)', contexts: ['hero-ambience', 'styleguide'] },
-  { id: 'home.dc', path: '/art/hero-dc.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [7, 3], altGuidance: 'Washington, D.C. atmosphere', contexts: ['hero-ambience', 'styleguide'] },
+  { id: 'home.category.flower', path: '/art/cat-flower.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Flower category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.category.edibles', path: '/art/cat-edibles.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Edibles category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.category.vapes', path: '/art/cat-vapes.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Vapes category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.category.concentrates', path: '/art/cat-concentrates.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Concentrates category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.category.pre-rolls', path: '/art/cat-pre-rolls.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Pre-rolls category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.category.topicals', path: '/art/cat-topicals.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Topicals category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.category.accessories', path: '/art/cat-accessories.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [1, 1], altGuidance: 'Accessories category illustration', contexts: ['category-navigation', 'styleguide'] },
+  { id: 'home.delivery', path: '/art/retailer-delivery.jpg', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [3, 2], altGuidance: 'Illustrative delivery scene (not a delivery promise)', contexts: ['campaign-ambience', 'styleguide'] },
+  { id: 'home.dc', path: '/art/hero-dc.webp', kind: 'TIER4_PLATFORM_ART', subject: 'GENERIC_ILLUSTRATIVE', rights: 'OWNED_PROVENANCE_REVIEW_PENDING', aspect: [7, 3], altGuidance: 'Washington, D.C. atmosphere', contexts: ['district-feature', 'styleguide'] },
 ]);
 
 const BY_ID = new Map(RECORDS.map((record) => [record.id, record]));
@@ -70,6 +88,31 @@ export function getAsset(id) {
 
 export function getAssetByPath(path) {
   return BY_PATH.get(path) ?? null;
+}
+
+/**
+ * Authorize one registered use at the render boundary. Unknown contexts,
+ * subject impersonation, and uncleared rights all fail closed.
+ */
+export function resolveAssetUse(id, context, {
+  allowPendingRights = false,
+  representsRealEntity = false,
+} = {}) {
+  const record = BY_ID.get(id);
+  if (!record) throw new Error(`unknown registered asset: ${id}`);
+  if (!ASSET_CONTEXTS.includes(context) || !record.contexts.includes(context)) {
+    throw new Error(`asset ${id} is not authorized for context: ${context ?? 'missing'}`);
+  }
+  if (representsRealEntity && record.subject !== 'REAL_SUBJECT') {
+    throw new Error(`asset ${id} may not represent a real entity`);
+  }
+  if (record.rights === 'OWNED_PROVENANCE_REVIEW_PENDING' && !allowPendingRights) {
+    return null;
+  }
+  if (!ASSET_RIGHTS.includes(record.rights)) {
+    throw new Error(`asset ${id} has an unsupported rights state: ${record.rights}`);
+  }
+  return record;
 }
 
 /**

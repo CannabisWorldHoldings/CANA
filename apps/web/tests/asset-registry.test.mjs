@@ -5,12 +5,15 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  ASSET_CONTEXTS,
   ASSET_KINDS,
+  ASSET_RIGHTS,
   assertRegisteredImage,
   getAsset,
   getAssetByPath,
   listAssets,
   mayRepresentRealEntity,
+  resolveAssetUse,
   SUBJECT_TRUTH,
 } from '../src/lib/asset-registry.mjs';
 
@@ -28,10 +31,11 @@ test('every registered record is complete, unique, and lawful', () => {
     paths.add(record.path);
     assert.ok(ASSET_KINDS.includes(record.kind), `unknown kind: ${record.kind}`);
     assert.ok(SUBJECT_TRUTH.includes(record.subject), `unknown subject class: ${record.subject}`);
-    assert.ok(typeof record.rights === 'string' && record.rights.length > 0);
+    assert.ok(ASSET_RIGHTS.includes(record.rights), `unknown rights state: ${record.rights}`);
     assert.ok(Array.isArray(record.aspect) && record.aspect.length === 2);
     assert.ok(typeof record.altGuidance === 'string' && record.altGuidance.length > 0);
     assert.ok(Array.isArray(record.contexts) && record.contexts.length > 0);
+    assert.ok(record.contexts.every((context) => ASSET_CONTEXTS.includes(context)));
   }
 });
 
@@ -48,12 +52,42 @@ test('generic illustrative assets may never represent a real entity', () => {
   for (const record of listAssets()) {
     if (record.subject === 'GENERIC_ILLUSTRATIVE') {
       assert.equal(mayRepresentRealEntity(record.id), false);
-      assert.ok(
-        record.contexts.every((context) => ['demonstration', 'styleguide', 'hero-ambience'].includes(context)),
-        `illustrative asset with an unlawful context: ${record.id}`,
+      assert.throws(
+        () => resolveAssetUse(record.id, record.contexts[0], {
+          allowPendingRights: true,
+          representsRealEntity: true,
+        }),
+        /may not represent a real entity/,
       );
     }
   }
+});
+
+test('render authorization enforces context and pending rights', () => {
+  assert.equal(
+    resolveAssetUse('brand.wordmark.light', 'chrome')?.path,
+    '/brand/orderweeddc-on-light.png',
+  );
+  assert.equal(
+    resolveAssetUse('home.category.flower', 'category-navigation'),
+    null,
+  );
+  assert.equal(
+    resolveAssetUse('home.category.flower', 'category-navigation', {
+      allowPendingRights: true,
+    })?.path,
+    '/art/cat-flower.jpg',
+  );
+  assert.throws(
+    () => resolveAssetUse('home.category.flower', 'hero-ambience', {
+      allowPendingRights: true,
+    }),
+    /not authorized for context/,
+  );
+  assert.throws(
+    () => resolveAssetUse('missing.asset', 'styleguide'),
+    /unknown registered asset/,
+  );
 });
 
 test('the registry gate throws for unregistered consumer imagery', () => {

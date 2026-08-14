@@ -8,6 +8,7 @@ import {
   checkChipVocabulary,
   checkConsumerShellPurity,
   checkHeaderHeight,
+  checkHomeComposition,
   checkImageRegistry,
   checkNavCensus,
   checkOverflow,
@@ -31,6 +32,7 @@ test('the current repository passes every static visual-court law', () => {
     checkTypeTokens(inputs.typeTokens),
     checkTrioBreakpoints(inputs.trioBreakpoints),
     checkRailContract(inputs.railContract),
+    checkHomeComposition(inputs.homeComposition),
   ];
   const verdict = courtVerdict(checks, 'STATIC');
   assert.equal(verdict.verdict, 'PASS', JSON.stringify(verdict.checks, null, 2));
@@ -51,6 +53,17 @@ test('the dashboard-regression tampers all fail closed', () => {
   // Rail loses snap or its minimum refusal → FAIL.
   assert.equal(checkRailContract({ hasSnap: false, hasMinRefusal: true, paddlesPointerOnly: true }).status, 'FAIL');
   assert.equal(checkRailContract({ hasSnap: true, hasMinRefusal: false, paddlesPointerOnly: true }).status, 'FAIL');
+  assert.equal(checkHomeComposition({
+    usesCanonicalRail: false,
+    usesRailItem: false,
+    smartImageCount: 0,
+    importsNextImage: true,
+    askUsesCanonicalSearch: false,
+    imagePolicyEnforced: false,
+    productionArtGate: false,
+    heroMinHeightPx: 400,
+    campaignAsymmetric: false,
+  }).status, 'FAIL');
 });
 
 test('the chip vocabulary law rejects alien badges and holds for the closed set', () => {
