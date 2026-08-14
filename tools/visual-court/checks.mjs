@@ -70,6 +70,36 @@ export function checkImageRegistry({ unregistered }) {
   return result('A14.image-registry', ok, ok ? 'all imagery registered/attested' : `unregistered: ${unregistered.join(',')}`);
 }
 
+/** A15 — P1 home must consume P0 and preserve the production image gate. */
+export function checkHomeComposition({
+  usesCanonicalRail,
+  usesRailItem,
+  smartImageCount,
+  importsNextImage,
+  askUsesCanonicalSearch,
+  imagePolicyEnforced,
+  productionArtGate,
+  heroMinHeightPx,
+  campaignAsymmetric,
+}) {
+  const ok = usesCanonicalRail === true
+    && usesRailItem === true
+    && Number.isFinite(smartImageCount)
+    && smartImageCount >= 5
+    && importsNextImage === false
+    && askUsesCanonicalSearch === true
+    && imagePolicyEnforced === true
+    && productionArtGate === true
+    && Number.isFinite(heroMinHeightPx)
+    && heroMinHeightPx >= 630
+    && campaignAsymmetric === true;
+  return result(
+    'A15.p1-home-composition',
+    ok,
+    `rail=${usesCanonicalRail}/${usesRailItem} smartImages=${smartImageCount} nextImage=${importsNextImage} ask=${askUsesCanonicalSearch} policy=${imagePolicyEnforced} productionGate=${productionArtGate} hero=${heroMinHeightPx}px asymmetric=${campaignAsymmetric}`,
+  );
+}
+
 /** A7 — no horizontal document overflow at any mandated width (RENDERED mode). */
 export function checkOverflow({ overflowingWidths }) {
   const ok = (overflowingWidths ?? []).length === 0;

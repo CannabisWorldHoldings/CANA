@@ -202,11 +202,11 @@ export default function DesignStyleguidePage() {
       >
         <div className="flex flex-wrap items-start gap-8">
           <div className="w-64">
-            <SmartImage assetId="brand.wordmark.light" />
+            <SmartImage assetId="brand.wordmark.light" context="chrome" />
             <p className="owd-caption mt-2 text-brand-muted">brand.wordmark.light — BRAND_MARK, OWNED</p>
           </div>
           <div className="w-80">
-            <SmartImage assetId="marketplace.hero.v2" />
+            <SmartImage assetId="marketplace.hero.v2" context="styleguide" allowPendingRights />
             <p className="owd-caption mt-2 text-brand-muted">
               marketplace.hero.v2 — GENERIC_ILLUSTRATIVE, demonstration contexts only
             </p>

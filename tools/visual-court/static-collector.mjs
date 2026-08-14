@@ -15,6 +15,9 @@ export function collectStaticInputs(rootDir) {
   const layout = read(rootDir, 'apps/web/src/app/[domain]/layout.tsx');
   const globals = read(rootDir, 'apps/web/src/app/globals.css');
   const rail = read(rootDir, 'apps/web/src/components/rail.tsx');
+  const home = read(rootDir, 'apps/web/src/components/customer-world-page.tsx');
+  const smartImage = read(rootDir, 'apps/web/src/components/smart-image.tsx');
+  const homeRoute = read(rootDir, 'apps/web/src/app/[domain]/page.tsx');
 
   // Header height: the height class on the header's inner container.
   const headerBlock = layout.slice(layout.indexOf('<header'), layout.indexOf('</header>'));
@@ -54,6 +57,26 @@ export function collectStaticInputs(rootDir) {
   const hasMinRefusal = rail.includes('minItems') && rail.includes('return null');
   const paddlesPointerOnly = rail.includes('min-[1024px]:flex');
 
+  const heroBlock = globals.slice(
+    globals.indexOf('.owd-home-hero {'),
+    globals.indexOf('}', globals.indexOf('.owd-home-hero {')),
+  );
+  const heroMinHeightPx = Number(heroBlock.match(/min-height:\s*(\d+)px/)?.[1]);
+  const homeComposition = {
+    usesCanonicalRail: home.includes("from '@/components/rail'") && home.includes('<Rail'),
+    usesRailItem: home.includes('<RailItem'),
+    smartImageCount: (home.match(/<SmartImage/g) ?? []).length,
+    importsNextImage: home.includes("from 'next/image'"),
+    askUsesCanonicalSearch: home.includes('Ask ORDERWEEDDC') && home.includes('action="/search"'),
+    imagePolicyEnforced: smartImage.includes('resolveAssetUse')
+      && smartImage.includes('allowPendingRights')
+      && smartImage.includes('assertRegisteredImage'),
+    productionArtGate: homeRoute.includes("process.env.NODE_ENV !== 'production'")
+      && homeRoute.includes("origin.hostname.endsWith('.localhost')"),
+    heroMinHeightPx,
+    campaignAsymmetric: globals.includes('minmax(0, 1.16fr) minmax(340px, 0.84fr)'),
+  };
+
   return {
     headerHeight: { desktopPx },
     navCensus: { navLinkCount, forbiddenPresent },
@@ -61,5 +84,6 @@ export function collectStaticInputs(rootDir) {
     typeTokens: { tokens },
     trioBreakpoints: { mediaBlocks },
     railContract: { hasSnap, hasMinRefusal, paddlesPointerOnly },
+    homeComposition,
   };
 }

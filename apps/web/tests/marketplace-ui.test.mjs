@@ -68,6 +68,22 @@ Module._load = function loadMarketplaceDependency(request, parent, isMain) {
       default: () => React.createElement('div', null, 'Customer results'),
     };
   }
+  if (request === '@/components/rail') {
+    return originalLoad.call(
+      this,
+      path.join(webRoot, 'src/components/rail.tsx'),
+      parent,
+      isMain,
+    );
+  }
+  if (request === '@/components/smart-image') {
+    return originalLoad.call(
+      this,
+      path.join(webRoot, 'src/components/smart-image.tsx'),
+      parent,
+      isMain,
+    );
+  }
   if (request === '@/lib/customer-world.mjs') {
     return {
       customerWorldViewHref: (_world, view) => `/?view=${view}`,
@@ -257,11 +273,14 @@ test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
     React.createElement(CustomerWorldPage, { world, isCanonicalBrand: false }),
   );
 
-  assert.match(canonical, /D\.C\. cannabis\./);
+  assert.match(canonical, /What are you/);
+  assert.match(canonical, /Ask ORDERWEEDDC/);
+  assert.match(canonical, /Browse by product format/);
+  assert.match(canonical, /data-asset-context="category-navigation"/);
   assert.match(canonical, /marketplace\/hero-marketplace-v2\.webp/);
   assert.doesNotMatch(canonicalProduction, /marketplace\/hero-marketplace-v2\.webp/);
   assert.doesNotMatch(canonicalProduction, /art\/cat-flower\.jpg/);
-  assert.doesNotMatch(tenant, /D\.C\. cannabis\./);
+  assert.doesNotMatch(tenant, /What are you/);
   assert.match(tenant, /One verified path from intent to discovery\./);
   assert.match(tenant, /Customer journeys/);
 });

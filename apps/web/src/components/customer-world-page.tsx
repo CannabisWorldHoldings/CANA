@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, BadgeDollarSign, Link2, Route } from 'lucide-react';
 import CustomerWorldResults, { type CustomerWorld } from '@/components/customer-world-results';
-import { getAsset } from '@/lib/asset-registry.mjs';
+import Rail, { RailItem } from '@/components/rail';
+import SmartImage from '@/components/smart-image';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
 
 const JOURNEY_COPY = {
@@ -36,43 +36,37 @@ const JOURNEY_COPY = {
   },
 } as const;
 
-function registeredAssetPath(id: string): string {
-  const asset = getAsset(id);
-  if (!asset) throw new Error(`missing registered homepage asset: ${id}`);
-  return asset.path;
-}
-
 const HOME_ASSETS = {
-  hero: registeredAssetPath('marketplace.hero.v2'),
-  storefront: registeredAssetPath('marketplace.retailer.1'),
-  delivery: registeredAssetPath('home.delivery'),
-  dc: registeredAssetPath('home.dc'),
+  hero: 'marketplace.hero.v2',
+  storefront: 'marketplace.retailer.1',
+  delivery: 'home.delivery',
+  dc: 'home.dc',
 } as const;
 
 const CATEGORIES = [
-  { href: '/products?category=flower', label: 'Flower', image: registeredAssetPath('home.category.flower') },
-  { href: '/products?category=edibles', label: 'Edibles', image: registeredAssetPath('home.category.edibles') },
-  { href: '/products?category=vapes', label: 'Vapes', image: registeredAssetPath('home.category.vapes') },
-  { href: '/products?category=concentrates', label: 'Concentrates', image: registeredAssetPath('home.category.concentrates') },
-  { href: '/products?category=pre-rolls', label: 'Pre-rolls', image: registeredAssetPath('home.category.pre-rolls') },
-  { href: '/products?category=topicals', label: 'Topicals', image: registeredAssetPath('home.category.topicals') },
-  { href: '/products?category=accessories', label: 'Accessories', image: registeredAssetPath('home.category.accessories') },
+  { href: '/products?category=flower', label: 'Flower', assetId: 'home.category.flower' },
+  { href: '/products?category=edibles', label: 'Edibles', assetId: 'home.category.edibles' },
+  { href: '/products?category=vapes', label: 'Vapes', assetId: 'home.category.vapes' },
+  { href: '/products?category=concentrates', label: 'Concentrates', assetId: 'home.category.concentrates' },
+  { href: '/products?category=pre-rolls', label: 'Pre-rolls', assetId: 'home.category.pre-rolls' },
+  { href: '/products?category=topicals', label: 'Topicals', assetId: 'home.category.topicals' },
+  { href: '/products?category=accessories', label: 'Accessories', assetId: 'home.category.accessories' },
 ] as const;
 
 function MarketSearch({ marketId }: { marketId: string }) {
   return (
     <form action="/search" method="GET" className="owd-home-search">
-      <label htmlFor="home-market-query" className="sr-only">Search by city or neighborhood</label>
+      <label htmlFor="home-market-query" className="sr-only">Ask ORDERWEEDDC what you are looking for</label>
       <input
         id="home-market-query"
         name="query"
         type="search"
         maxLength={160}
-        placeholder="Try Dupont Circle or Adams Morgan"
-        autoComplete="postal-code"
+        placeholder="Ask ORDERWEEDDC…"
+        autoComplete="off"
       />
       <input type="hidden" name="market" value={marketId} />
-      <button type="submit">Search</button>
+      <button type="submit">Ask ORDERWEEDDC</button>
     </form>
   );
 }
@@ -88,26 +82,29 @@ function CustomerHome({
     <div className="owd-home">
       <section className="owd-home-hero" aria-labelledby="home-title">
         <div className="owd-home-hero__media" aria-hidden="true">
-          {allowIllustrativeArt ? (
-            <Image
-              src={HOME_ASSETS.hero}
-              alt=""
-              fill
-              priority
-              unoptimized
-              sizes="(max-width: 734px) 100vw, 1680px"
-              className="owd-home-hero__image"
-            />
-          ) : null}
+          <SmartImage
+            assetId={HOME_ASSETS.hero}
+            context="hero-ambience"
+            alt=""
+            fill
+            priority
+            allowPendingRights={allowIllustrativeArt}
+            sizes="(max-width: 734px) 100vw, 1680px"
+            className="owd-home-hero__image"
+          />
         </div>
         <div className="owd-container-commerce owd-home-hero__copy">
-          <p className="owd-eyebrow">Washington, D.C.</p>
-          <h1 id="home-title" className="owd-display">D.C. cannabis.<br />Clearer choices.</h1>
+          <p className="owd-eyebrow">Ask ORDERWEEDDC</p>
+          <h1 id="home-title" className="owd-display">What are you<br />looking for?</h1>
           <p className="owd-intro">
-            Find dispensaries, explore delivery, and browse product formats with
-            sources and unknowns kept in view.
+            Describe what you need in ordinary words. We will check the admitted
+            D.C. market Reality and keep unsupported answers visible.
           </p>
           <MarketSearch marketId={world.request.market_id} />
+          <p className="owd-home-search-examples">
+            Try “Something near Dupont Circle tonight,” “Dispensaries near Capitol Hill,”
+            or “What can I actually verify near me?”
+          </p>
           <nav aria-label="Featured ways to shop" className="owd-home-hero__links">
             <Link href="/dispensaries">Browse dispensaries <ArrowRight size={15} aria-hidden="true" /></Link>
             <Link href="/delivery">Explore delivery <ArrowRight size={15} aria-hidden="true" /></Link>
@@ -115,20 +112,32 @@ function CustomerHome({
         </div>
       </section>
 
-      <nav aria-label="Browse product categories" className="owd-home-categories">
-        <div className="owd-home-categories__rail">
+      <div className="owd-home-categories">
+        <Rail
+          label="Browse by product format"
+          sublabel="Start with a familiar format."
+          itemCount={CATEGORIES.length}
+          minItems={1}
+        >
           {CATEGORIES.map((category) => (
-            <Link key={category.href} href={category.href} className="owd-home-category">
-              {allowIllustrativeArt ? (
-                <Image src={category.image} alt="" width={120} height={120} sizes="120px" unoptimized />
-              ) : (
-                <span className="owd-home-category__reserved" aria-hidden="true" />
-              )}
-              <span>{category.label}</span>
-            </Link>
+            <RailItem key={category.href}>
+              <Link href={category.href} className="owd-home-category">
+                <span className="owd-home-category__media" aria-hidden="true">
+                  <SmartImage
+                    assetId={category.assetId}
+                    context="category-navigation"
+                    alt=""
+                    fill
+                    allowPendingRights={allowIllustrativeArt}
+                    sizes="112px"
+                  />
+                </span>
+                <span>{category.label}</span>
+              </Link>
+            </RailItem>
           ))}
-        </div>
-      </nav>
+        </Rail>
+      </div>
 
       <section className="owd-home-program owd-container-commerce" aria-labelledby="shop-heading">
         <h2 id="shop-heading" className="owd-h2">
@@ -143,9 +152,14 @@ function CustomerHome({
               <span className="owd-home-campaign__action">Explore storefronts <ArrowRight size={15} aria-hidden="true" /></span>
             </span>
             <span className="owd-home-campaign__media" aria-hidden="true">
-              {allowIllustrativeArt ? (
-                <Image src={HOME_ASSETS.storefront} alt="" fill sizes="(max-width: 734px) 87vw, 700px" unoptimized />
-              ) : null}
+              <SmartImage
+                assetId={HOME_ASSETS.storefront}
+                context="campaign-ambience"
+                alt=""
+                fill
+                allowPendingRights={allowIllustrativeArt}
+                sizes="(max-width: 734px) 87vw, 700px"
+              />
             </span>
           </Link>
           <Link href="/delivery" className="owd-home-campaign owd-home-campaign--delivery">
@@ -156,9 +170,14 @@ function CustomerHome({
               <span className="owd-home-campaign__action">Explore delivery <ArrowRight size={15} aria-hidden="true" /></span>
             </span>
             <span className="owd-home-campaign__media" aria-hidden="true">
-              {allowIllustrativeArt ? (
-                <Image src={HOME_ASSETS.delivery} alt="" fill sizes="(max-width: 734px) 87vw, 560px" unoptimized />
-              ) : null}
+              <SmartImage
+                assetId={HOME_ASSETS.delivery}
+                context="campaign-ambience"
+                alt=""
+                fill
+                allowPendingRights={allowIllustrativeArt}
+                sizes="(max-width: 734px) 87vw, 560px"
+              />
             </span>
           </Link>
         </div>
@@ -176,9 +195,14 @@ function CustomerHome({
             <Link href="/neighborhoods">Explore neighborhoods <ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
           <div className="owd-home-district__media" aria-hidden="true">
-            {allowIllustrativeArt ? (
-              <Image src={HOME_ASSETS.dc} alt="" fill sizes="(max-width: 734px) 100vw, 760px" unoptimized />
-            ) : null}
+            <SmartImage
+              assetId={HOME_ASSETS.dc}
+              context="district-feature"
+              alt=""
+              fill
+              allowPendingRights={allowIllustrativeArt}
+              sizes="(max-width: 734px) 100vw, 760px"
+            />
           </div>
         </div>
       </section>
