@@ -71,7 +71,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'b4481f579057257e8718bceefccda7fd6d27868b6dd26f8045324f35d6d67418';
+  '5b0f6170ed9b36082ede2d74210655aa75edabda81519cca9977654ab800f409';
 
 export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery-contract.mjs',
