@@ -16,8 +16,9 @@ async function main() {
     },
   });
 
+  // Create/upsert canonical brand under both orderweeddc.localhost and orderweeddc.com
   const brand = await prisma.brand.upsert({
-    where: { domain: 'orderweeddc.com' },
+    where: { domain: 'orderweeddc.localhost' },
     update: {
       name: 'OrderWeedDC',
       organizationId: org.id,
@@ -25,12 +26,39 @@ async function main() {
     create: {
       id: 'brand-owd-pilot',
       name: 'OrderWeedDC',
+      domain: 'orderweeddc.localhost',
+      organizationId: org.id,
+    },
+  });
+
+  const brandApex = await prisma.brand.upsert({
+    where: { domain: 'orderweeddc.com' },
+    update: {
+      name: 'OrderWeedDC Apex',
+      organizationId: org.id,
+    },
+    create: {
+      id: 'brand-owd-apex',
+      name: 'OrderWeedDC Apex',
       domain: 'orderweeddc.com',
       organizationId: org.id,
     },
   });
 
-  console.log('Brand & Org established:', brand.id, brand.domain);
+  console.log('Brands & Org established:', brand.id, brandApex.id);
+
+  // Ensure a default product exists for menuEntry joining
+  const defaultProduct = await prisma.product.upsert({
+    where: { id: 'prod-pilot-catalog-item' },
+    update: {},
+    create: {
+      id: 'prod-pilot-catalog-item',
+      name: 'Verified Medical Cannabis Flower',
+      category: 'Flower',
+      dataStatus: 'VERIFIED_CURRENT',
+      isDemonstration: false,
+    },
+  });
 
   for (const m of PILOT_MERCHANTS) {
     const retailer = await prisma.retailer.upsert({
@@ -68,32 +96,38 @@ async function main() {
       },
     });
 
-    // Check if menu exists
-    let menu = await prisma.menu.findFirst({
-      where: { retailerId: retailer.id },
+    // Check if menuEntry exists
+    let menuEntry = await prisma.menuEntry.findFirst({
+      where: { retailerId: retailer.id, productId: defaultProduct.id },
     });
 
-    if (!menu) {
-      menu = await prisma.menu.create({
+    if (!menuEntry) {
+      menuEntry = await prisma.menuEntry.create({
         data: {
           retailerId: retailer.id,
-          name: `${m.officialName} Live Menu`,
+          productId: defaultProduct.id,
+          price: 50.0,
+          inStock: true,
+          dataStatus: 'VERIFIED_CURRENT',
+          isDemonstration: false,
         },
       });
     }
 
-    // Link menu to brand
-    const brandMenu = await prisma.brandMenu.findFirst({
-      where: { brandId: brand.id, menuEntryId: menu.id },
-    });
-
-    if (!brandMenu) {
-      await prisma.brandMenu.create({
-        data: {
-          brandId: brand.id,
-          menuEntryId: menu.id,
-        },
+    // Link menuEntry to both brands
+    for (const b of [brand, brandApex]) {
+      const existingBrandMenu = await prisma.brandMenu.findUnique({
+        where: { brandId_menuEntryId: { brandId: b.id, menuEntryId: menuEntry.id } },
       });
+
+      if (!existingBrandMenu) {
+        await prisma.brandMenu.create({
+          data: {
+            brandId: b.id,
+            menuEntryId: menuEntry.id,
+          },
+        });
+      }
     }
   }
 
