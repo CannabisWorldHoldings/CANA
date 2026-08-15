@@ -1,6 +1,8 @@
-import { prisma } from '../src/lib/prisma.ts';
+import { PrismaClient } from '@prisma/client';
 import { PILOT_MERCHANTS, LIVE_PROMOTIONAL_OFFERS } from '../src/lib/reality/market-reality-pilot.mjs';
 import { syncLiveDealsToDurableStore } from '../src/lib/reality/promotional-revalidation.mjs';
+
+const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding pilot retailers, brands, and live deals...');
