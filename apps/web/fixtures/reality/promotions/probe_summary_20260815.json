@@ -1,0 +1,56 @@
+[
+  {
+    "merchantId": "BIZ-DC-ABCA117361",
+    "merchantName": "Takoma Wellness Center",
+    "url": "https://takomawellness.com/",
+    "finalUrl": "https://takomawellness.com/",
+    "status": 200,
+    "sha256": "10674addb8692839b164c512cdd8d4167149d12d128952801018c5b44ba2ab85",
+    "artifact": "BIZ-DC-ABCA117361_takomawellness_com_.html",
+    "keywords": [
+      "first time"
+    ],
+    "size": 108232,
+    "retrievedAt": "2026-08-15T20:08:05.209962+00:00"
+  },
+  {
+    "merchantId": "BIZ-DC-ABCA117379",
+    "merchantName": "Anacostia Organics",
+    "url": "https://www.anacostiaorganics.com/",
+    "finalUrl": "https://www.anacostiaorganics.com/",
+    "status": 200,
+    "sha256": "a287ab646b134b227ae6d95ccabb384bc5f4c577ba0f1b1d1af84a7d94bfbdd4",
+    "artifact": "BIZ-DC-ABCA117379_www_anacostiaorganics_com_.html",
+    "keywords": [
+      "% off"
+    ],
+    "size": 178908,
+    "retrievedAt": "2026-08-15T20:08:13.433534+00:00"
+  },
+  {
+    "merchantId": "BIZ-DC-ABCA117379",
+    "merchantName": "Anacostia Organics",
+    "url": "https://www.anacostiaorganics.com/menu",
+    "finalUrl": "https://www.anacostiaorganics.com/menu",
+    "status": 200,
+    "sha256": "a1addd2edafa2c79fbd46f14961cc8ca837f294573042eb201509d591a8fb100",
+    "artifact": "BIZ-DC-ABCA117379_www_anacostiaorganics_com_menu.html",
+    "keywords": [],
+    "size": 100951,
+    "retrievedAt": "2026-08-15T20:08:13.797427+00:00"
+  },
+  {
+    "merchantId": "BIZ-DC-ABCA127461",
+    "merchantName": "Chocolate City Wellness",
+    "url": "https://www.chocolatecitysmokeshop.com/",
+    "finalUrl": "https://www.chocolatecitysmokeshop.com/",
+    "status": 200,
+    "sha256": "f3b59441845ec1534385eee7b96b4ef803580d8b27bdb13e9058c4f837c19e1a",
+    "artifact": "BIZ-DC-ABCA127461_www_chocolatecitysmokeshop_com_.html",
+    "keywords": [
+      "special"
+    ],
+    "size": 15671,
+    "retrievedAt": "2026-08-15T20:08:14.695654+00:00"
+  }
+]
