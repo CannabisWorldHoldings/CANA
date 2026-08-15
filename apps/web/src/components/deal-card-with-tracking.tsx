@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Flame } from 'lucide-react';
 import { DataStatusBadge } from '@/components/data-status-badge';
@@ -25,17 +25,50 @@ type Deal = {
 };
 
 export function DealCardWithTracking({ deal }: { deal: Deal }) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const hasViewedRef = useRef(false);
+
   useEffect(() => {
-    // Record DEAL_VIEWED on render
-    fetch('/api/v1/customer/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventType: 'DEAL_VIEWED',
-        retailerId: deal.retailer.id,
-        dealId: deal.id,
-      }),
-    }).catch(() => {});
+    // True Deal View Semantics: Observe actual viewport visibility (>= 50% visible)
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
+      return;
+    }
+
+    if (hasViewedRef.current) return;
+
+    const element = cardRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && !hasViewedRef.current) {
+            hasViewedRef.current = true;
+            // Record DEAL_VIEWED only upon verified viewport visibility
+            fetch('/api/v1/customer/events', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                eventType: 'DEAL_VIEWED',
+                retailerId: deal.retailer.id,
+                dealId: deal.id,
+              }),
+            }).catch(() => {});
+            observer.disconnect();
+            break;
+          }
+        }
+      },
+      {
+        threshold: [0.5],
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
   }, [deal.id, deal.retailer.id]);
 
   const handleMerchantClick = () => {
@@ -53,7 +86,10 @@ export function DealCardWithTracking({ deal }: { deal: Deal }) {
   };
 
   return (
-    <div className="record-card rounded-2xl p-6 flex flex-col justify-between space-y-4">
+    <div
+      ref={cardRef}
+      className="record-card rounded-2xl p-6 flex flex-col justify-between space-y-4"
+    >
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-xs font-black text-orange-700 bg-orange-400/10 border border-orange-400/20 px-2.5 py-1 rounded-lg">
@@ -61,7 +97,7 @@ export function DealCardWithTracking({ deal }: { deal: Deal }) {
             {deal.isDemonstration ? 'DEMO OFFER' : deal.discount}
           </span>
           <DataStatusBadge
-            dataStatus={deal.dataStatus as any}
+            dataStatus={deal.dataStatus}
             isDemonstration={deal.isDemonstration}
             verifiedAt={deal.verifiedAt}
             freshnessExpiresAt={deal.freshnessExpiresAt}
@@ -69,8 +105,12 @@ export function DealCardWithTracking({ deal }: { deal: Deal }) {
           />
         </div>
 
-        <h3 className="font-display text-lg font-extrabold text-brand-text leading-snug">{deal.title}</h3>
-        <p className="text-xs text-brand-muted leading-relaxed line-clamp-3">{deal.description}</p>
+        <h3 className="font-display text-lg font-extrabold text-brand-text leading-snug">
+          {deal.title}
+        </h3>
+        <p className="text-xs text-brand-muted leading-relaxed line-clamp-3">
+          {deal.description}
+        </p>
       </div>
 
       <div className="space-y-3 border-t border-brand-border/60 pt-4">
@@ -86,7 +126,9 @@ export function DealCardWithTracking({ deal }: { deal: Deal }) {
         <div className="flex items-center justify-between pt-2">
           <div>
             <span className="text-xs font-bold text-brand-text block">{deal.retailer.name}</span>
-            <span className="text-[10px] text-brand-muted capitalize">{deal.retailer.type} • {deal.retailer.city}</span>
+            <span className="text-[10px] text-brand-muted capitalize">
+              {deal.retailer.type} • {deal.retailer.city}
+            </span>
           </div>
           <Link
             href={`/retailer/${deal.retailer.id}`}

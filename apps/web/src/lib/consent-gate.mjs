@@ -1,25 +1,15 @@
-import crypto from 'crypto';
-import { prisma } from '@/lib/prisma';
+import crypto from 'node:crypto';
 
-export const ALLOWED_CHANNELS = ['EMAIL', 'SMS'] as const;
-export type AllowedChannel = (typeof ALLOWED_CHANNELS)[number];
-
-export const ALLOWED_FREQUENCIES = ['DAILY', 'WEEKLY', 'REALTIME', 'INSTANT'] as const;
-export type AllowedFrequency = (typeof ALLOWED_FREQUENCIES)[number];
-
-export const ALLOWED_CONSENT_STATUSES = [
+export const ALLOWED_CHANNELS = Object.freeze(['EMAIL', 'SMS']);
+export const ALLOWED_FREQUENCIES = Object.freeze(['DAILY', 'WEEKLY', 'REALTIME', 'INSTANT']);
+export const ALLOWED_CONSENT_STATUSES = Object.freeze([
   'CONSENT_GRANTED',
   'UNSUBSCRIBED',
   'CONSENT_REVOKED',
   'SUPPRESSED',
-] as const;
-export type AllowedConsentStatus = (typeof ALLOWED_CONSENT_STATUSES)[number];
+]);
 
-export function normalizeContact(contact: string): {
-  contactNormalized: string;
-  channel: AllowedChannel;
-  valid: boolean;
-} {
+export function normalizeContact(contact) {
   if (typeof contact !== 'string') {
     return { contactNormalized: '', channel: 'EMAIL', valid: false };
   }
@@ -40,21 +30,13 @@ export function normalizeContact(contact: string): {
   return { contactNormalized: trimmed, channel: 'SMS', valid: false };
 }
 
-export function generateReceiptHash(
-  brandId: string,
-  contactNormalized: string,
-  timestamp: Date,
-  status: string
-): string {
-  const payload = `${brandId}:${contactNormalized}:${timestamp.toISOString()}:${status}:EXP-2026-DC-01`;
+export function generateReceiptHash(brandId, contactNormalized, timestamp, status) {
+  const tsStr = timestamp instanceof Date ? timestamp.toISOString() : new Date(timestamp).toISOString();
+  const payload = `${brandId}:${contactNormalized}:${tsStr}:${status}:EXP-2026-DC-01`;
   return `RC-${crypto.createHash('sha256').update(payload).digest('hex').slice(0, 10)}`;
 }
 
-export async function checkDispatchEligibility(
-  brandId: string,
-  contactNormalized: string,
-  channel: AllowedChannel
-): Promise<{ eligible: boolean; reason: string }> {
+export async function checkDispatchEligibility(prismaClient, brandId, contactNormalized, channel) {
   try {
     if (!brandId || typeof brandId !== 'string') {
       return { eligible: false, reason: 'BRAND_ID_REQUIRED' };
@@ -64,7 +46,7 @@ export async function checkDispatchEligibility(
       return { eligible: false, reason: 'CONTACT_REQUIRED' };
     }
 
-    const latestConsent = await prisma.customerConsent.findFirst({
+    const latestConsent = await prismaClient.customerConsent.findFirst({
       where: {
         brandId,
         contactNormalized,
@@ -82,7 +64,7 @@ export async function checkDispatchEligibility(
     }
 
     return { eligible: false, reason: `CONSENT_REJECTED_${latestConsent.consentStatus}` };
-  } catch {
+  } catch (_error) {
     return { eligible: false, reason: 'CONSENT_GATE_ERROR' };
   }
 }

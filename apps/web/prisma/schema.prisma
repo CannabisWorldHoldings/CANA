@@ -99,6 +99,7 @@ model Brand {
   leads           LeadEvent[]
   menuSelections  BrandMenu[]
   loyaltyAccounts LoyaltyAccount[]
+  customerConsents CustomerConsent[]
 }
 
 // User model for shared network-wide customer identity and administrative access
@@ -1274,6 +1275,8 @@ model AskIntentSignal {
 // Customer Consent ledger — tracks voluntary opt-ins, preferences, and revocations
 model CustomerConsent {
   id                 String   @id @default(uuid())
+  brandId            String
+  brand              Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
   userId             String?
   user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   contactNormalized  String   // E.g. normalized email or E.164 phone
@@ -1288,6 +1291,6 @@ model CustomerConsent {
   timestamp          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  @@index([contactNormalized, channel])
-  @@index([consentStatus, timestamp])
+  @@index([brandId, contactNormalized, channel])
+  @@index([brandId, consentStatus, timestamp])
 }
