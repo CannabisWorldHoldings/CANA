@@ -16,15 +16,14 @@ async function main() {
     },
   });
 
-  // Create/upsert canonical brand under both orderweeddc.localhost and orderweeddc.com
-  const brand = await prisma.brand.upsert({
+  // Ensure both domains exist in database
+  const brandLocal = await prisma.brand.upsert({
     where: { domain: 'orderweeddc.localhost' },
     update: {
       name: 'OrderWeedDC',
       organizationId: org.id,
     },
     create: {
-      id: 'brand-owd-pilot',
       name: 'OrderWeedDC',
       domain: 'orderweeddc.localhost',
       organizationId: org.id,
@@ -38,14 +37,13 @@ async function main() {
       organizationId: org.id,
     },
     create: {
-      id: 'brand-owd-apex',
       name: 'OrderWeedDC Apex',
       domain: 'orderweeddc.com',
       organizationId: org.id,
     },
   });
 
-  console.log('Brands & Org established:', brand.id, brandApex.id);
+  console.log('Brands & Org established:', brandLocal.id, brandApex.id);
 
   // Ensure a default product exists for menuEntry joining
   const defaultProduct = await prisma.product.upsert({
@@ -115,7 +113,7 @@ async function main() {
     }
 
     // Link menuEntry to both brands
-    for (const b of [brand, brandApex]) {
+    for (const b of [brandLocal, brandApex]) {
       const existingBrandMenu = await prisma.brandMenu.findUnique({
         where: { brandId_menuEntryId: { brandId: b.id, menuEntryId: menuEntry.id } },
       });
