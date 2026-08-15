@@ -1,19 +1,29 @@
 import crypto from 'node:crypto';
 
 /**
- * CANA / ORDERWEEDDC LIVE MARKET REALITY PILOT
+ * CANA / ORDERWEEDDC LIVE MARKET REALITY PILOT — TRUTH-CORRECTED
  *
- * Grounded in official D.C. ABCA licensed retailer observations (Layer 31)
- * and verified public operational evidence.
+ * Grounded strictly in official D.C. ABCA licensed retailer observations (Layer 31)
+ * from the certified canonical snapshot fixture (Vintage: 2026-06-05).
  *
  * TRUTH PRINCIPLES ENFORCED:
- *  1. LICENSE EVIDENCE != PROMOTIONAL DEAL EVIDENCE (Deals count = 0).
- *  2. DEMONSTRATION DEALS remain DEMONSTRATION_ONLY.
- *  3. FRESHNESS FIREWALL: verifiedAt <= asOf && freshnessExpiresAt > asOf.
- *  4. SERVER-TRUSTED OUTBOUND DESTINATIONS ONLY.
+ *  1. REREADING AN OLD FIXTURE CANNOT MANUFACTURE CURRENTNESS.
+ *     - sourceObservedAt: 2026-06-05T00:00:00.000Z
+ *     - retrievedAt: 2026-06-05T00:00:00.000Z
+ *     - verifiedAt: 2026-06-05T00:00:00.000Z
+ *     - freshnessExpiresAt: 2026-06-12T00:00:00.000Z (Expired as of 2026-08-15)
+ *  2. EPISTEMIC CLASSIFICATION:
+ *     - Operational claims are HISTORICALLY_OBSERVED (Vintage: June 5, 2026).
+ *     - Active real-time license dispatch claims are STALE (requires fresh live SLA).
+ *     - Live VERIFIED_CURRENT claim count as of today is 0.
+ *  3. LICENSE EVIDENCE != PROMOTIONAL DEAL EVIDENCE (Deals count = 0).
+ *  4. DEMONSTRATION DEALS remain DEMONSTRATION_ONLY.
+ *  5. CANONICAL DESTINATIONS are server-controlled.
  */
 
 export const DC_ABCA_SOURCE_ID = 'dcgis:abca:licensed-medical-cannabis-retailers:layer-31';
+export const FIXTURE_VINTAGE_DATE = '2026-06-05T00:00:00.000Z';
+export const FIXTURE_EXPIRY_DATE = '2026-06-12T00:00:00.000Z';
 
 export const PILOT_MERCHANTS = Object.freeze([
   {
@@ -32,12 +42,19 @@ export const PILOT_MERCHANTS = Object.freeze([
     facilityType: 'storefront',
     canonicalWebsite: 'https://anacostiaorganics.com',
     sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: '2026-06-05T00:00:00.000Z',
-    retrievedAt: '2026-08-15T14:00:00.000Z',
-    verifiedAt: '2026-08-15T14:00:00.000Z',
-    freshnessExpiresAt: '2026-08-22T14:00:00.000Z', // 7-day freshness window
+    sourceObservedAt: FIXTURE_VINTAGE_DATE,
+    retrievedAt: FIXTURE_VINTAGE_DATE,
+    verifiedAt: FIXTURE_VINTAGE_DATE,
+    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
     isDemonstration: false,
-    dataStatus: 'VERIFIED_CURRENT',
+    dataStatus: 'HISTORICALLY_OBSERVED',
+    claims: {
+      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
+      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
+      GEOLOCATION: 'HISTORICALLY_OBSERVED',
+      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
+      ACTIVE_LICENSE: 'STALE',
+    },
   },
   {
     retailerId: 'BIZ-DC-ABCA117373',
@@ -55,12 +72,19 @@ export const PILOT_MERCHANTS = Object.freeze([
     facilityType: 'storefront',
     canonicalWebsite: 'https://takomawellness.com',
     sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: '2026-06-05T00:00:00.000Z',
-    retrievedAt: '2026-08-15T14:00:00.000Z',
-    verifiedAt: '2026-08-15T14:00:00.000Z',
-    freshnessExpiresAt: '2026-08-22T14:00:00.000Z',
+    sourceObservedAt: FIXTURE_VINTAGE_DATE,
+    retrievedAt: FIXTURE_VINTAGE_DATE,
+    verifiedAt: FIXTURE_VINTAGE_DATE,
+    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
     isDemonstration: false,
-    dataStatus: 'VERIFIED_CURRENT',
+    dataStatus: 'HISTORICALLY_OBSERVED',
+    claims: {
+      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
+      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
+      GEOLOCATION: 'HISTORICALLY_OBSERVED',
+      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
+      ACTIVE_LICENSE: 'STALE',
+    },
   },
   {
     retailerId: 'BIZ-DC-ABCA127461',
@@ -78,12 +102,19 @@ export const PILOT_MERCHANTS = Object.freeze([
     facilityType: 'storefront',
     canonicalWebsite: 'https://chocolatecitywellness.com',
     sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: '2026-06-05T00:00:00.000Z',
-    retrievedAt: '2026-08-15T14:00:00.000Z',
-    verifiedAt: '2026-08-15T14:00:00.000Z',
-    freshnessExpiresAt: '2026-08-22T14:00:00.000Z',
+    sourceObservedAt: FIXTURE_VINTAGE_DATE,
+    retrievedAt: FIXTURE_VINTAGE_DATE,
+    verifiedAt: FIXTURE_VINTAGE_DATE,
+    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
     isDemonstration: false,
-    dataStatus: 'VERIFIED_CURRENT',
+    dataStatus: 'HISTORICALLY_OBSERVED',
+    claims: {
+      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
+      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
+      GEOLOCATION: 'HISTORICALLY_OBSERVED',
+      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
+      ACTIVE_LICENSE: 'STALE',
+    },
   },
   {
     retailerId: 'BIZ-DC-ABCA127484',
@@ -101,17 +132,24 @@ export const PILOT_MERCHANTS = Object.freeze([
     facilityType: 'storefront',
     canonicalWebsite: 'https://allvybezdc.com',
     sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: '2026-06-05T00:00:00.000Z',
-    retrievedAt: '2026-08-15T14:00:00.000Z',
-    verifiedAt: '2026-08-15T14:00:00.000Z',
-    freshnessExpiresAt: '2026-08-22T14:00:00.000Z',
+    sourceObservedAt: FIXTURE_VINTAGE_DATE,
+    retrievedAt: FIXTURE_VINTAGE_DATE,
+    verifiedAt: FIXTURE_VINTAGE_DATE,
+    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
     isDemonstration: false,
-    dataStatus: 'VERIFIED_CURRENT',
+    dataStatus: 'HISTORICALLY_OBSERVED',
+    claims: {
+      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
+      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
+      GEOLOCATION: 'HISTORICALLY_OBSERVED',
+      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
+      ACTIVE_LICENSE: 'STALE',
+    },
   },
 ]);
 
 /**
- * Generates an evidence receipt for a verified market claim.
+ * Generates an evidence receipt for a market claim.
  */
 export function buildMarketEvidenceReceipt(merchant, claimType, claimValue) {
   const payload = [
@@ -120,31 +158,35 @@ export function buildMarketEvidenceReceipt(merchant, claimType, claimValue) {
     claimType,
     JSON.stringify(claimValue),
     merchant.sourceId,
-    merchant.verifiedAt,
+    merchant.sourceObservedAt,
     merchant.freshnessExpiresAt,
   ].join('|');
 
   const evidenceHash = crypto.createHash('sha256').update(payload).digest('hex');
+  const claimClass = merchant.claims?.[claimType] || merchant.dataStatus;
 
   return {
     merchantId: merchant.retailerId,
     licenseId: merchant.licenseNumber,
     claimType,
     claimValue,
-    sourceType: 'OFFICIAL_REGULATOR_REGISTRY',
+    sourceType: 'OFFICIAL_REGULATOR_SNAPSHOT_FIXTURE',
     sourceReference: merchant.sourceId,
+    sourceDataVintage: merchant.sourceObservedAt,
     sourceObservedAt: merchant.sourceObservedAt,
     retrievedAt: merchant.retrievedAt,
     verifiedAt: merchant.verifiedAt,
     freshnessExpiresAt: merchant.freshnessExpiresAt,
     evidenceHash,
-    epistemicClass: merchant.dataStatus,
-    verificationResult: 'PASS_OFFICIAL_REGISTRY_VERIFIED',
+    epistemicClass: claimClass,
+    verificationResult: 'PASS_HISTORICAL_REGISTRY_VERIFIED',
   };
 }
 
 /**
- * Projects public-safe retailer facts subject to the freshness firewall.
+ * Projects retailer facts subject to the strict freshness firewall.
+ * When evaluated against asOf > freshnessExpiresAt (e.g. current August 2026),
+ * the record is correctly withheld from VERIFIED_CURRENT projection and labeled HISTORICAL/STALE.
  */
 export function projectVerifiedRetailerPublicFacts(merchant, asOf = new Date()) {
   const asOfTime = asOf instanceof Date ? asOf.getTime() : new Date(asOf).getTime();
@@ -153,22 +195,20 @@ export function projectVerifiedRetailerPublicFacts(merchant, asOf = new Date()) 
 
   // Freshness firewall check
   const isFresh = verifiedTime <= asOfTime && expiresTime > asOfTime;
-  const isEligible = !merchant.isDemonstration && merchant.dataStatus === 'VERIFIED_CURRENT' && isFresh;
 
-  if (!isEligible) {
+  if (!isFresh) {
     return {
       retailerId: merchant.retailerId,
       officialName: merchant.officialName,
-      status: !isFresh ? 'STALE' : merchant.dataStatus,
+      status: 'STALE',
       isPubliclyProjectable: false,
-      disqualificationReason: !isFresh
-        ? 'FRESHNESS_EXPIRED'
-        : merchant.isDemonstration
-        ? 'DEMONSTRATION_FIXTURE'
-        : 'UNVERIFIED_STATUS',
+      disqualificationReason: 'FRESHNESS_EXPIRED',
+      sourceVintage: merchant.sourceObservedAt,
+      claims: merchant.claims,
     };
   }
 
+  // In historical playback (where asOf was within the June 2026 freshness window):
   return {
     retailerId: merchant.retailerId,
     name: merchant.officialName,
