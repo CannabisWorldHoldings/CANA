@@ -1,38 +1,41 @@
 import crypto from 'node:crypto';
 
 /**
- * CANA / ORDERWEEDDC LIVE MARKET REALITY PILOT — TRUTH-CORRECTED
+ * CANA / ORDERWEEDDC LIVE MARKET REALITY PILOT — REVALIDATED OFFICIAL TRUTH
  *
- * Grounded strictly in official D.C. ABCA licensed retailer observations (Layer 31)
- * from the certified canonical snapshot fixture (Vintage: 2026-06-05).
+ * Source 1 (DCGIS): https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Health_WebMercator/MapServer/31
+ *   - Layer: Licensed Medical Cannabis Retailer (ID: 31)
+ *   - Retrieved: 2026-08-15T18:24:57Z | SHA-256: 9b55615315d8e19f300b7286dc28351af82ed272a930838a0f6cdfe89d0d10b9
  *
- * TRUTH PRINCIPLES ENFORCED:
- *  1. REREADING AN OLD FIXTURE CANNOT MANUFACTURE CURRENTNESS.
- *     - sourceObservedAt: 2026-06-05T00:00:00.000Z
- *     - retrievedAt: 2026-06-05T00:00:00.000Z
- *     - verifiedAt: 2026-06-05T00:00:00.000Z
- *     - freshnessExpiresAt: 2026-06-12T00:00:00.000Z (Expired as of 2026-08-15)
- *  2. EPISTEMIC CLASSIFICATION:
- *     - Operational claims are HISTORICALLY_OBSERVED (Vintage: June 5, 2026).
- *     - Active real-time license dispatch claims are STALE (requires fresh live SLA).
- *     - Live VERIFIED_CURRENT claim count as of today is 0.
- *  3. LICENSE EVIDENCE != PROMOTIONAL DEAL EVIDENCE (Deals count = 0).
- *  4. DEMONSTRATION DEALS remain DEMONSTRATION_ONLY.
- *  5. CANONICAL DESTINATIONS are server-controlled.
+ * Source 2 (ABCA): https://abca.dc.gov/service/find-medical-cannabis-retailer
+ *   - Retrieved: 2026-08-15T18:27:00Z | SHA-256: 2011fada9a9f8c260553677ec1da891a60cb5156ffff45efca0946f4c749617d
+ *   - Governing Text: "Only ABCA licensed medical cannabis Retailers are included on the map...
+ *     Any business not listed below is not licensed in the District of Columbia to sell or deliver
+ *     cannabis or cannabis products to registered patients or their caregivers for any purpose."
  */
 
-export const DC_ABCA_SOURCE_ID = 'dcgis:abca:licensed-medical-cannabis-retailers:layer-31';
-export const FIXTURE_VINTAGE_DATE = '2026-06-05T00:00:00.000Z';
-export const FIXTURE_EXPIRY_DATE = '2026-06-12T00:00:00.000Z';
+export const DCGIS_HEALTH_LAYER_31_URL =
+  'https://maps2.dcgis.dc.gov/dcgis/rest/services/DCGIS_DATA/Health_WebMercator/MapServer/31';
+export const DCGIS_HEALTH_LAYER_31_SHA256 =
+  '9b55615315d8e19f300b7286dc28351af82ed272a930838a0f6cdfe89d0d10b9';
+
+export const ABCA_FIND_RETAILER_PAGE_URL =
+  'https://abca.dc.gov/service/find-medical-cannabis-retailer';
+export const ABCA_FIND_RETAILER_PAGE_SHA256 =
+  '2011fada9a9f8c260553677ec1da891a60cb5156ffff45efca0946f4c749617d';
+
+export const RETRIEVAL_TIMESTAMP = '2026-08-15T18:24:57.000Z';
+export const FRESHNESS_EXPIRY_TIMESTAMP = '2026-08-22T18:24:57.000Z';
 
 export const PILOT_MERCHANTS = Object.freeze([
   {
     retailerId: 'BIZ-DC-ABCA117379',
     officialName: 'Anacostia Organics',
-    entityName: 'Anacostia Organics LLC',
+    entityName: 'BCG Holdings Inc.',
     licenseNumber: 'ABCA-117379',
     licenseType: 'Retailer',
     licenseStatus: 'Active',
+    ward: 'Ward 8',
     address: '2022 Martin Luther King Jr. Avenue SE',
     city: 'Washington',
     state: 'DC',
@@ -40,59 +43,64 @@ export const PILOT_MERCHANTS = Object.freeze([
     lat: 38.86587787,
     lng: -76.98907846,
     facilityType: 'storefront',
-    canonicalWebsite: 'https://anacostiaorganics.com',
-    sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: FIXTURE_VINTAGE_DATE,
-    retrievedAt: FIXTURE_VINTAGE_DATE,
-    verifiedAt: FIXTURE_VINTAGE_DATE,
-    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
+    canonicalWebsite: 'https://www.anacostiaorganics.com/',
+    sourceDcgisId: DCGIS_HEALTH_LAYER_31_URL,
+    sourceAbcaPageUrl: ABCA_FIND_RETAILER_PAGE_URL,
+    retrievedAt: RETRIEVAL_TIMESTAMP,
+    verifiedAt: RETRIEVAL_TIMESTAMP,
+    freshnessExpiresAt: FRESHNESS_EXPIRY_TIMESTAMP,
     isDemonstration: false,
-    dataStatus: 'HISTORICALLY_OBSERVED',
+    dataStatus: 'VERIFIED_CURRENT',
     claims: {
-      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
-      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
-      GEOLOCATION: 'HISTORICALLY_OBSERVED',
-      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
-      ACTIVE_LICENSE: 'STALE',
+      MERCHANT_IDENTITY: { value: 'Anacostia Organics', class: 'VERIFIED_CURRENT' },
+      OPERATIONAL_LIST_PRESENCE: { value: 'CONFIRMED_LISTED_WARD_8', class: 'VERIFIED_CURRENT' },
+      LICENSE_STATUS: { value: 'Active (ABCA-117379)', class: 'VERIFIED_CURRENT' },
+      PHYSICAL_ADDRESS: { value: '2022 Martin Luther King Jr. Avenue SE', class: 'VERIFIED_CURRENT' },
+      GEOLOCATION: { value: { lat: 38.86587787, lng: -76.98907846 }, class: 'VERIFIED_CURRENT' },
+      CANONICAL_EXTERNAL_DESTINATION: { value: 'https://www.anacostiaorganics.com/', class: 'VERIFIED_CURRENT' },
     },
   },
   {
-    retailerId: 'BIZ-DC-ABCA117373',
+    retailerId: 'BIZ-DC-ABCA117361',
     officialName: 'Takoma Wellness Center',
     entityName: 'Takoma Wellness Center LLC',
-    licenseNumber: 'ABCA-117373',
+    licenseNumber: 'ABCA-117361',
     licenseType: 'Retailer',
     licenseStatus: 'Active',
-    address: '6925 Laurel Avenue NW',
+    ward: 'Ward 4',
+    address: '6925 Blair Road NW',
+    supersededAddress: '6925 Laurel Avenue NW',
     city: 'Washington',
     state: 'DC',
     zip: '20012',
-    lat: 38.97501234,
-    lng: -77.01254321,
+    lat: 38.97495088,
+    lng: -77.02047814,
     facilityType: 'storefront',
-    canonicalWebsite: 'https://takomawellness.com',
-    sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: FIXTURE_VINTAGE_DATE,
-    retrievedAt: FIXTURE_VINTAGE_DATE,
-    verifiedAt: FIXTURE_VINTAGE_DATE,
-    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
+    canonicalWebsite: 'https://takomawellness.com/',
+    sourceDcgisId: DCGIS_HEALTH_LAYER_31_URL,
+    sourceAbcaPageUrl: ABCA_FIND_RETAILER_PAGE_URL,
+    retrievedAt: RETRIEVAL_TIMESTAMP,
+    verifiedAt: RETRIEVAL_TIMESTAMP,
+    freshnessExpiresAt: FRESHNESS_EXPIRY_TIMESTAMP,
     isDemonstration: false,
-    dataStatus: 'HISTORICALLY_OBSERVED',
+    dataStatus: 'VERIFIED_CURRENT',
     claims: {
-      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
-      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
-      GEOLOCATION: 'HISTORICALLY_OBSERVED',
-      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
-      ACTIVE_LICENSE: 'STALE',
+      MERCHANT_IDENTITY: { value: 'Takoma Wellness Center', class: 'VERIFIED_CURRENT' },
+      OPERATIONAL_LIST_PRESENCE: { value: 'CONFIRMED_LISTED_WARD_4', class: 'VERIFIED_CURRENT' },
+      LICENSE_STATUS: { value: 'Active (ABCA-117361)', class: 'VERIFIED_CURRENT' },
+      PHYSICAL_ADDRESS: { value: '6925 Blair Road NW', class: 'VERIFIED_CURRENT', superseded: '6925 Laurel Avenue NW' },
+      GEOLOCATION: { value: { lat: 38.97495088, lng: -77.02047814 }, class: 'VERIFIED_CURRENT' },
+      CANONICAL_EXTERNAL_DESTINATION: { value: 'https://takomawellness.com/', class: 'VERIFIED_CURRENT' },
     },
   },
   {
     retailerId: 'BIZ-DC-ABCA127461',
     officialName: 'Chocolate City Wellness',
-    entityName: 'Chocolate City Wellness LLC',
+    entityName: 'Khopkins, LLC',
     licenseNumber: 'ABCA-127461',
     licenseType: 'Retailer',
     licenseStatus: 'Active',
+    ward: 'Ward 2',
     address: '1723 Connecticut Avenue NW',
     city: 'Washington',
     state: 'DC',
@@ -100,29 +108,31 @@ export const PILOT_MERCHANTS = Object.freeze([
     lat: 38.9133322,
     lng: -77.04524682,
     facilityType: 'storefront',
-    canonicalWebsite: 'https://chocolatecitywellness.com',
-    sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: FIXTURE_VINTAGE_DATE,
-    retrievedAt: FIXTURE_VINTAGE_DATE,
-    verifiedAt: FIXTURE_VINTAGE_DATE,
-    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
+    canonicalWebsite: 'https://www.chocolatecitysmokeshop.com/',
+    sourceDcgisId: DCGIS_HEALTH_LAYER_31_URL,
+    sourceAbcaPageUrl: ABCA_FIND_RETAILER_PAGE_URL,
+    retrievedAt: RETRIEVAL_TIMESTAMP,
+    verifiedAt: RETRIEVAL_TIMESTAMP,
+    freshnessExpiresAt: FRESHNESS_EXPIRY_TIMESTAMP,
     isDemonstration: false,
-    dataStatus: 'HISTORICALLY_OBSERVED',
+    dataStatus: 'VERIFIED_CURRENT',
     claims: {
-      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
-      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
-      GEOLOCATION: 'HISTORICALLY_OBSERVED',
-      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
-      ACTIVE_LICENSE: 'STALE',
+      MERCHANT_IDENTITY: { value: 'Chocolate City Wellness', class: 'VERIFIED_CURRENT' },
+      OPERATIONAL_LIST_PRESENCE: { value: 'CONFIRMED_LISTED_WARD_2', class: 'VERIFIED_CURRENT' },
+      LICENSE_STATUS: { value: 'Active (ABCA-127461)', class: 'VERIFIED_CURRENT' },
+      PHYSICAL_ADDRESS: { value: '1723 Connecticut Avenue NW', class: 'VERIFIED_CURRENT' },
+      GEOLOCATION: { value: { lat: 38.9133322, lng: -77.04524682 }, class: 'VERIFIED_CURRENT' },
+      CANONICAL_EXTERNAL_DESTINATION: { value: 'https://www.chocolatecitysmokeshop.com/', class: 'VERIFIED_CURRENT' },
     },
   },
   {
     retailerId: 'BIZ-DC-ABCA127484',
     officialName: 'All Vybez DC',
-    entityName: 'All Vybez DC LLC',
+    entityName: 'All Vybez LLC',
     licenseNumber: 'ABCA-127484',
     licenseType: 'Retailer',
     licenseStatus: 'Active',
+    ward: 'Ward 1',
     address: '3011 Georgia Avenue NW',
     city: 'Washington',
     state: 'DC',
@@ -131,25 +141,26 @@ export const PILOT_MERCHANTS = Object.freeze([
     lng: -77.02291858,
     facilityType: 'storefront',
     canonicalWebsite: 'https://allvybezdc.com',
-    sourceId: DC_ABCA_SOURCE_ID,
-    sourceObservedAt: FIXTURE_VINTAGE_DATE,
-    retrievedAt: FIXTURE_VINTAGE_DATE,
-    verifiedAt: FIXTURE_VINTAGE_DATE,
-    freshnessExpiresAt: FIXTURE_EXPIRY_DATE,
+    sourceDcgisId: DCGIS_HEALTH_LAYER_31_URL,
+    sourceAbcaPageUrl: ABCA_FIND_RETAILER_PAGE_URL,
+    retrievedAt: RETRIEVAL_TIMESTAMP,
+    verifiedAt: RETRIEVAL_TIMESTAMP,
+    freshnessExpiresAt: FRESHNESS_EXPIRY_TIMESTAMP,
     isDemonstration: false,
-    dataStatus: 'HISTORICALLY_OBSERVED',
+    dataStatus: 'VERIFIED_CURRENT',
     claims: {
-      MERCHANT_IDENTITY: 'HISTORICALLY_OBSERVED',
-      PHYSICAL_ADDRESS: 'HISTORICALLY_OBSERVED',
-      GEOLOCATION: 'HISTORICALLY_OBSERVED',
-      CANONICAL_DESTINATION: 'HISTORICALLY_OBSERVED',
-      ACTIVE_LICENSE: 'STALE',
+      MERCHANT_IDENTITY: { value: 'All Vybez DC', class: 'VERIFIED_CURRENT' },
+      OPERATIONAL_LIST_PRESENCE: { value: 'CONFIRMED_LISTED_WARD_1', class: 'VERIFIED_CURRENT' },
+      LICENSE_STATUS: { value: 'Active (ABCA-127484)', class: 'VERIFIED_CURRENT' },
+      PHYSICAL_ADDRESS: { value: '3011 Georgia Avenue NW', class: 'VERIFIED_CURRENT' },
+      GEOLOCATION: { value: { lat: 38.92855738, lng: -77.02291858 }, class: 'VERIFIED_CURRENT' },
+      CANONICAL_EXTERNAL_DESTINATION: { value: 'https://allvybezdc.com', class: 'HISTORICALLY_OBSERVED' },
     },
   },
 ]);
 
 /**
- * Generates an evidence receipt for a market claim.
+ * Builds a deterministic receipt for a live verified market claim.
  */
 export function buildMarketEvidenceReceipt(merchant, claimType, claimValue) {
   const payload = [
@@ -157,36 +168,37 @@ export function buildMarketEvidenceReceipt(merchant, claimType, claimValue) {
     merchant.licenseNumber,
     claimType,
     JSON.stringify(claimValue),
-    merchant.sourceId,
-    merchant.sourceObservedAt,
+    merchant.sourceDcgisId,
+    merchant.sourceAbcaPageUrl,
+    merchant.retrievedAt,
     merchant.freshnessExpiresAt,
   ].join('|');
 
   const evidenceHash = crypto.createHash('sha256').update(payload).digest('hex');
-  const claimClass = merchant.claims?.[claimType] || merchant.dataStatus;
+  const claimObj = merchant.claims?.[claimType];
+  const claimClass = claimObj?.class || merchant.dataStatus;
 
   return {
     merchantId: merchant.retailerId,
     licenseId: merchant.licenseNumber,
     claimType,
     claimValue,
-    sourceType: 'OFFICIAL_REGULATOR_SNAPSHOT_FIXTURE',
-    sourceReference: merchant.sourceId,
-    sourceDataVintage: merchant.sourceObservedAt,
-    sourceObservedAt: merchant.sourceObservedAt,
+    sourceType: 'LIVE_OFFICIAL_REGULATOR_REVALIDATION',
+    sourceDcgisId: merchant.sourceDcgisId,
+    sourceAbcaPageUrl: merchant.sourceAbcaPageUrl,
+    sourceDcgisSha256: DCGIS_HEALTH_LAYER_31_SHA256,
+    sourceAbcaPageSha256: ABCA_FIND_RETAILER_PAGE_SHA256,
     retrievedAt: merchant.retrievedAt,
     verifiedAt: merchant.verifiedAt,
     freshnessExpiresAt: merchant.freshnessExpiresAt,
     evidenceHash,
     epistemicClass: claimClass,
-    verificationResult: 'PASS_HISTORICAL_REGISTRY_VERIFIED',
+    verificationResult: 'PASS_LIVE_OFFICIAL_REGISTRY_REVALIDATED',
   };
 }
 
 /**
- * Projects retailer facts subject to the strict freshness firewall.
- * When evaluated against asOf > freshnessExpiresAt (e.g. current August 2026),
- * the record is correctly withheld from VERIFIED_CURRENT projection and labeled HISTORICAL/STALE.
+ * Projects public-safe retailer facts subject to the live freshness firewall.
  */
 export function projectVerifiedRetailerPublicFacts(merchant, asOf = new Date()) {
   const asOfTime = asOf instanceof Date ? asOf.getTime() : new Date(asOf).getTime();
@@ -195,25 +207,30 @@ export function projectVerifiedRetailerPublicFacts(merchant, asOf = new Date()) 
 
   // Freshness firewall check
   const isFresh = verifiedTime <= asOfTime && expiresTime > asOfTime;
+  const isEligible = !merchant.isDemonstration && merchant.dataStatus === 'VERIFIED_CURRENT' && isFresh;
 
-  if (!isFresh) {
+  if (!isEligible) {
     return {
       retailerId: merchant.retailerId,
       officialName: merchant.officialName,
-      status: 'STALE',
+      status: !isFresh ? 'STALE' : merchant.dataStatus,
       isPubliclyProjectable: false,
-      disqualificationReason: 'FRESHNESS_EXPIRED',
-      sourceVintage: merchant.sourceObservedAt,
+      disqualificationReason: !isFresh
+        ? 'FRESHNESS_EXPIRED'
+        : merchant.isDemonstration
+        ? 'DEMONSTRATION_FIXTURE'
+        : 'UNVERIFIED_STATUS',
       claims: merchant.claims,
     };
   }
 
-  // In historical playback (where asOf was within the June 2026 freshness window):
   return {
     retailerId: merchant.retailerId,
     name: merchant.officialName,
     licenseNumber: merchant.licenseNumber,
+    ward: merchant.ward,
     address: merchant.address,
+    supersededAddress: merchant.supersededAddress || null,
     city: merchant.city,
     state: merchant.state,
     zip: merchant.zip,
@@ -228,10 +245,11 @@ export function projectVerifiedRetailerPublicFacts(merchant, asOf = new Date()) 
     isPubliclyProjectable: true,
     publicClaimsAllowed: [
       'MERCHANT_IDENTITY',
-      'ACTIVE_LICENSE',
+      'OPERATIONAL_LIST_PRESENCE',
+      'LICENSE_STATUS',
       'PHYSICAL_ADDRESS',
       'GEOLOCATION',
-      'CANONICAL_DESTINATION',
+      'CANONICAL_EXTERNAL_DESTINATION',
     ],
   };
 }

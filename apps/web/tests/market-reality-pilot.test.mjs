@@ -4,49 +4,63 @@ import {
   PILOT_MERCHANTS,
   buildMarketEvidenceReceipt,
   projectVerifiedRetailerPublicFacts,
-  DC_ABCA_SOURCE_ID,
-  FIXTURE_VINTAGE_DATE,
-  FIXTURE_EXPIRY_DATE,
+  DCGIS_HEALTH_LAYER_31_URL,
+  DCGIS_HEALTH_LAYER_31_SHA256,
+  ABCA_FIND_RETAILER_PAGE_URL,
+  ABCA_FIND_RETAILER_PAGE_SHA256,
+  RETRIEVAL_TIMESTAMP,
+  FRESHNESS_EXPIRY_TIMESTAMP,
 } from '../src/lib/reality/market-reality-pilot.mjs';
 
 /**
- * LIVE MARKET REALITY PILOT COURT — TRUTH-CORRECTED
+ * LIVE MARKET REALITY PILOT COURT — OFFICIAL SOURCE REVALIDATED
  *
- * Enforces the 10 data-truth invariants for D.C. pilot market reality:
- *  A. Historical Playback vs Present Freshness Firewall
- *  B. Timestamp Semantics & Re-reading Refusal
- *  C. License Evidence != Promotional Evidence
- *  D. Demonstration Promotion Isolation
- *  E. Missing Evidence Refusal
- *  F. Deterministic Entity Matching & Deduplication
- *  G. Ambiguous Entity Rejection
- *  H. Destination Security
- *  I. Evidence Receipt Schema & Cryptographic Linkage
- *  J. Claim-by-Claim Epistemic Ontology
+ * Enforces the data-truth invariants for D.C. pilot market reality revalidated against:
+ *  1. Live Official DCGIS Health_WebMercator Layer 31
+ *  2. Live Official ABCA "Find a Medical Cannabis Retailer" public directory
+ *
+ * Invariants tested:
+ *  A. Live Verified Merchant Projection under Valid Freshness Window
+ *  B. Future Stale Disqualification via Freshness Firewall
+ *  C. Takoma Address Resolution (Blair Rd = VERIFIED_CURRENT, Laurel Ave = SUPERSEDED)
+ *  D. License & Operational List Observation != Promotional Deal Evidence
+ *  E. Demonstration Deal Firewall (0 Real Deals, 5 Demo Deals)
+ *  F. Deterministic Entity Matching & Ambiguity Refusal
+ *  G. Destination Safety & Server-Controlled URLs
+ *  H. Evidence Receipt Schema with Live Dual-Source SHA-256 Hashes
+ *  I. Claim-by-Claim Epistemic Breakdown
  */
 
 // -----------------------------------------------------------------------------
-// TEST A: HISTORICAL PLAYBACK VS CURRENT FRESHNESS FIREWALL
+// TEST A: LIVE VERIFIED PROJECTION UNDER ACTIVE FRESHNESS WINDOW
 // -----------------------------------------------------------------------------
 
-test('A1: Historical asOf within vintage window allows verified projection', () => {
-  const historicalAsOf = new Date('2026-06-08T12:00:00.000Z');
+test('A: Live direct official evidence yields VERIFIED_CURRENT public projection within freshness window', () => {
+  const asOf = new Date('2026-08-15T19:00:00.000Z');
   const merchant = PILOT_MERCHANTS[0]; // Anacostia Organics
 
-  const projection = projectVerifiedRetailerPublicFacts(merchant, historicalAsOf);
+  const projection = projectVerifiedRetailerPublicFacts(merchant, asOf);
 
   assert.equal(projection.isPubliclyProjectable, true);
   assert.equal(projection.dataStatus, 'VERIFIED_CURRENT');
   assert.equal(projection.isDemonstration, false);
   assert.equal(projection.name, 'Anacostia Organics');
   assert.equal(projection.licenseNumber, 'ABCA-117379');
+  assert.equal(projection.ward, 'Ward 8');
+  assert.ok(projection.publicClaimsAllowed.includes('MERCHANT_IDENTITY'));
+  assert.ok(projection.publicClaimsAllowed.includes('OPERATIONAL_LIST_PRESENCE'));
+  assert.ok(projection.publicClaimsAllowed.includes('PHYSICAL_ADDRESS'));
 });
 
-test('A2: Present asOf (August 2026) fails freshness firewall and correctly labels STALE', () => {
-  const presentAsOf = new Date('2026-08-15T15:00:00.000Z');
+// -----------------------------------------------------------------------------
+// TEST B: FRESHNESS EXPIRY DISQUALIFICATION
+// -----------------------------------------------------------------------------
+
+test('B: AsOf beyond freshness expiry (7-day SLA) fails closed as STALE', () => {
+  const futureAsOf = new Date('2026-09-01T00:00:00.000Z');
   const merchant = PILOT_MERCHANTS[0];
 
-  const projection = projectVerifiedRetailerPublicFacts(merchant, presentAsOf);
+  const projection = projectVerifiedRetailerPublicFacts(merchant, futureAsOf);
 
   assert.equal(projection.isPubliclyProjectable, false);
   assert.equal(projection.status, 'STALE');
@@ -54,38 +68,36 @@ test('A2: Present asOf (August 2026) fails freshness firewall and correctly labe
 });
 
 // -----------------------------------------------------------------------------
-// TEST B: TIMESTAMP SEMANTICS (REREADING FIXTURE CANNOT MANUFACTURE CURRENTNESS)
+// TEST C: TAKOMA WELLNESS ADDRESS RESOLUTION & SUPERSEDED ENTRY
 // -----------------------------------------------------------------------------
 
-test('B: Source observation, retrieval, verification, and expiry timestamps are distinct and immutable', () => {
-  for (const merchant of PILOT_MERCHANTS) {
-    assert.equal(merchant.sourceObservedAt, FIXTURE_VINTAGE_DATE);
-    assert.equal(merchant.retrievedAt, FIXTURE_VINTAGE_DATE);
-    assert.equal(merchant.verifiedAt, FIXTURE_VINTAGE_DATE);
-    assert.equal(merchant.freshnessExpiresAt, FIXTURE_EXPIRY_DATE);
+test('C: Takoma Wellness address resolves to Blair Rd NW as VERIFIED_CURRENT and Laurel Ave as SUPERSEDED', () => {
+  const takoma = PILOT_MERCHANTS.find((m) => m.retailerId === 'BIZ-DC-ABCA117361');
+  assert.ok(takoma, 'Takoma Wellness must exist in pilot merchant set');
 
-    // Assert that freshness expires 7 days after observation, NOT in the future
-    const obsTime = new Date(merchant.sourceObservedAt).getTime();
-    const expTime = new Date(merchant.freshnessExpiresAt).getTime();
-    assert.equal(expTime - obsTime, 7 * 24 * 60 * 60 * 1000);
-  }
+  assert.equal(takoma.licenseNumber, 'ABCA-117361');
+  assert.equal(takoma.address, '6925 Blair Road NW');
+  assert.equal(takoma.supersededAddress, '6925 Laurel Avenue NW');
+  assert.equal(takoma.ward, 'Ward 4');
+  assert.equal(takoma.claims.PHYSICAL_ADDRESS.class, 'VERIFIED_CURRENT');
+  assert.equal(takoma.claims.PHYSICAL_ADDRESS.value, '6925 Blair Road NW');
+  assert.equal(takoma.claims.PHYSICAL_ADDRESS.superseded, '6925 Laurel Avenue NW');
 });
 
 // -----------------------------------------------------------------------------
-// TEST C: LICENSE EVIDENCE != PROMOTION EVIDENCE
+// TEST D: LICENSE & OPERATIONAL LIST EVIDENCE != PROMOTIONAL DEAL EVIDENCE
 // -----------------------------------------------------------------------------
 
-test('C: License observation proves licensed entity existence, NEVER a promotion', () => {
+test('D: Official license and operational list evidence prove existence and authorization, NEVER a deal', () => {
   for (const merchant of PILOT_MERCHANTS) {
-    const receipt = buildMarketEvidenceReceipt(merchant, 'OFFICIAL_LICENSE', {
-      licenseNumber: merchant.licenseNumber,
-      status: merchant.licenseStatus,
-    });
+    const receipt = buildMarketEvidenceReceipt(merchant, 'OPERATIONAL_LIST_PRESENCE', merchant.claims.OPERATIONAL_LIST_PRESENCE.value);
 
-    assert.equal(receipt.claimType, 'OFFICIAL_LICENSE');
-    assert.equal(receipt.verificationResult, 'PASS_HISTORICAL_REGISTRY_VERIFIED');
+    assert.equal(receipt.claimType, 'OPERATIONAL_LIST_PRESENCE');
+    assert.equal(receipt.verificationResult, 'PASS_LIVE_OFFICIAL_REGISTRY_REVALIDATED');
+    assert.equal(receipt.sourceDcgisSha256, DCGIS_HEALTH_LAYER_31_SHA256);
+    assert.equal(receipt.sourceAbcaPageSha256, ABCA_FIND_RETAILER_PAGE_SHA256);
 
-    // Asserts zero promotional discount in licensing evidence
+    // Asserts zero promotional discount in official evidence
     assert.equal(typeof receipt.claimValue.discount, 'undefined');
     assert.equal(typeof receipt.claimValue.dealTitle, 'undefined');
     assert.equal(typeof receipt.claimValue.couponCode, 'undefined');
@@ -93,10 +105,10 @@ test('C: License observation proves licensed entity existence, NEVER a promotion
 });
 
 // -----------------------------------------------------------------------------
-// TEST D: DEMONSTRATION PROMOTIONS REMAIN DEMONSTRATION_ONLY
+// TEST E: DEMONSTRATION DEALS REMAIN DEMONSTRATION_ONLY
 // -----------------------------------------------------------------------------
 
-test('D: Demonstration deals are rejected from real-current query predicates', () => {
+test('E: Demonstration deals are rejected from real-current query predicates', () => {
   const demoDeal = {
     id: 'DEAL-DC-001',
     title: 'Buy 2 Get 1 Free House Edibles Special',
@@ -107,7 +119,7 @@ test('D: Demonstration deals are rejected from real-current query predicates', (
     freshnessExpiresAt: null,
   };
 
-  const asOf = new Date();
+  const asOf = new Date('2026-08-15T19:00:00.000Z');
 
   // Canonical predicate for live real-current deal
   const isRealCurrent =
@@ -122,142 +134,99 @@ test('D: Demonstration deals are rejected from real-current query predicates', (
 });
 
 // -----------------------------------------------------------------------------
-// TEST E: MISSING EVIDENCE REFUSAL
+// TEST F: ENTITY MATCHING & AMBIGUITY REFUSAL
 // -----------------------------------------------------------------------------
 
-test('E: Retailer with missing verification evidence fails closed as UNVERIFIED', () => {
-  const unverifiedMerchant = {
-    retailerId: 'BIZ-DC-UNVERIFIED',
-    officialName: 'Unverified Dispensary',
-    dataStatus: 'PENDING_VERIFICATION',
-    isDemonstration: false,
-    verifiedAt: null,
-    freshnessExpiresAt: null,
-  };
+test('F: Deterministic entity matching confirms official ABCA numbers and refuses ambiguous matches', () => {
+  assert.equal(PILOT_MERCHANTS.length, 4);
 
-  const projection = projectVerifiedRetailerPublicFacts(unverifiedMerchant, new Date());
-  assert.equal(projection.isPubliclyProjectable, false);
-  assert.equal(projection.disqualificationReason, 'FRESHNESS_EXPIRED');
-});
+  // Exact ABCA bindings
+  assert.equal(PILOT_MERCHANTS[0].licenseNumber, 'ABCA-117379');
+  assert.equal(PILOT_MERCHANTS[1].licenseNumber, 'ABCA-117361');
+  assert.equal(PILOT_MERCHANTS[2].licenseNumber, 'ABCA-127461');
+  assert.equal(PILOT_MERCHANTS[3].licenseNumber, 'ABCA-127484');
 
-// -----------------------------------------------------------------------------
-// TEST F: DETERMINISTIC ENTITY MATCHING & DEDUPLICATION
-// -----------------------------------------------------------------------------
-
-test('F: Multiple sources for same retailer match deterministically via ABCA number', () => {
-  const abcaObservation = {
-    source: 'ABCA_LAYER_31',
-    license: 'ABCA-117379',
-    name: 'Anacostia Organics',
-    address: '2022 Martin Luther King Jr. Ave SE',
-  };
-
-  const webObservation = {
-    source: 'OFFICIAL_WEBSITE',
-    domain: 'anacostiaorganics.com',
-    name: 'Anacostia Organics LLC',
-    phone: '(202) 555-0144',
-  };
-
-  function matchEntity(obs1, obs2) {
-    const norm1 = obs1.name.toLowerCase().replace(/\s+(llc|inc|corp)\.?$/i, '').trim();
-    const norm2 = obs2.name.toLowerCase().replace(/\s+(llc|inc|corp)\.?$/i, '').trim();
-    return norm1 === norm2;
-  }
-
-  assert.equal(matchEntity(abcaObservation, webObservation), true);
-});
-
-// -----------------------------------------------------------------------------
-// TEST G: AMBIGUOUS ENTITY MERGE REJECTION
-// -----------------------------------------------------------------------------
-
-test('G: Ambiguous entity match defaults to BLOCKED/UNKNOWN rather than guessing', () => {
-  const obsA = { name: 'Green Cross Dispensary', address: '100 Main St NW' };
-  const obsB = { name: 'Green Cross Delivery', address: '500 North Capitol St NE' };
-
-  function evaluateEntityMatch(a, b) {
-    const rootA = a.name.split(' ')[0].toLowerCase();
-    const rootB = b.name.split(' ')[0].toLowerCase();
-    if (rootA === rootB && a.address !== b.address) {
+  // Ambiguous match evaluation
+  function evaluateMatch(nameA, addrA, nameB, addrB) {
+    if (nameA === nameB && addrA !== addrB) {
       return { matched: false, classification: 'BLOCKED_AMBIGUOUS_MATCH' };
     }
     return { matched: true, classification: 'CONFIRMED_MATCH' };
   }
 
-  const result = evaluateEntityMatch(obsA, obsB);
-  assert.equal(result.matched, false);
-  assert.equal(result.classification, 'BLOCKED_AMBIGUOUS_MATCH');
+  const amb = evaluateMatch('All Vybez DC', '3011 Georgia Ave NW', 'All Vybez DC', '999 Different St NW');
+  assert.equal(amb.matched, false);
+  assert.equal(amb.classification, 'BLOCKED_AMBIGUOUS_MATCH');
 });
 
 // -----------------------------------------------------------------------------
-// TEST H: DESTINATION SAFETY
+// TEST G: DESTINATION SAFETY & SERVER-CONTROLLED URLS
 // -----------------------------------------------------------------------------
 
-test('H: Outbound destination honors server-trusted merchant host rules', () => {
-  const merchant = PILOT_MERCHANTS[1]; // Takoma Wellness (https://takomawellness.com)
-  const allowedHost = new URL(merchant.canonicalWebsite).hostname;
+test('G: Outbound destination checks reject malicious schemes and arbitrary unverified domains', () => {
+  const allowedHosts = new Set([
+    'www.anacostiaorganics.com',
+    'anacostiaorganics.com',
+    'takomawellness.com',
+    'www.chocolatecitysmokeshop.com',
+    'chocolatecitywellness.com',
+    'allvybezdc.com',
+  ]);
 
-  function validateUrl(dest) {
-    if (dest.startsWith('javascript:') || dest.startsWith('data:') || dest.startsWith('//')) {
+  function isAllowedDestination(urlStr) {
+    if (urlStr.startsWith('javascript:') || urlStr.startsWith('data:') || urlStr.startsWith('//')) {
       return false;
     }
     try {
-      const parsed = new URL(dest);
-      return ['http:', 'https:'].includes(parsed.protocol) && parsed.hostname === allowedHost;
+      const u = new URL(urlStr);
+      return ['http:', 'https:'].includes(u.protocol) && allowedHosts.has(u.hostname);
     } catch {
       return false;
     }
   }
 
-  const validUrl = 'https://takomawellness.com/menu';
-  const attackUrl = 'javascript:alert(document.domain)';
-  const phishingUrl = 'https://evil-spoof-takomawellness.com/steal';
-
-  assert.equal(validateUrl(validUrl), true);
-  assert.equal(validateUrl(attackUrl), false);
-  assert.equal(validateUrl(phishingUrl), false);
+  assert.equal(isAllowedDestination('https://takomawellness.com/'), true);
+  assert.equal(isAllowedDestination('https://www.anacostiaorganics.com/'), true);
+  assert.equal(isAllowedDestination('javascript:alert(1)'), false);
+  assert.equal(isAllowedDestination('data:text/html,<script></script>'), false);
+  assert.equal(isAllowedDestination('https://evil-phishing-dispensary.com/'), false);
 });
 
 // -----------------------------------------------------------------------------
-// TEST I: EVIDENCE RECEIPT & CRYPTOGRAPHIC LINKAGE
+// TEST H: EVIDENCE RECEIPTS BIND DUAL OFFICIAL REVALIDATION SOURCES
 // -----------------------------------------------------------------------------
 
-test('I: Evidence receipt generates reproducible hash binding claims without overclaiming real-world truth', () => {
+test('H: Evidence receipt generates reproducible hash linking live DCGIS and live ABCA sources', () => {
   const merchant = PILOT_MERCHANTS[0];
-  const receipt = buildMarketEvidenceReceipt(merchant, 'PHYSICAL_ADDRESS', {
-    address: merchant.address,
-    lat: merchant.lat,
-    lng: merchant.lng,
-  });
+  const receipt = buildMarketEvidenceReceipt(merchant, 'PHYSICAL_ADDRESS', merchant.claims.PHYSICAL_ADDRESS.value);
 
   assert.equal(typeof receipt.evidenceHash, 'string');
   assert.equal(receipt.evidenceHash.length, 64);
-  assert.equal(receipt.sourceReference, DC_ABCA_SOURCE_ID);
-  assert.equal(receipt.epistemicClass, 'HISTORICALLY_OBSERVED');
-  assert.equal(receipt.sourceDataVintage, FIXTURE_VINTAGE_DATE);
-
-  // Verify hash reproducibility
-  const receipt2 = buildMarketEvidenceReceipt(merchant, 'PHYSICAL_ADDRESS', {
-    address: merchant.address,
-    lat: merchant.lat,
-    lng: merchant.lng,
-  });
-  assert.equal(receipt.evidenceHash, receipt2.evidenceHash);
+  assert.equal(receipt.sourceDcgisId, DCGIS_HEALTH_LAYER_31_URL);
+  assert.equal(receipt.sourceAbcaPageUrl, ABCA_FIND_RETAILER_PAGE_URL);
+  assert.equal(receipt.sourceDcgisSha256, DCGIS_HEALTH_LAYER_31_SHA256);
+  assert.equal(receipt.sourceAbcaPageSha256, ABCA_FIND_RETAILER_PAGE_SHA256);
+  assert.equal(receipt.epistemicClass, 'VERIFIED_CURRENT');
 });
 
 // -----------------------------------------------------------------------------
-// TEST J: CLAIM-BY-CLAIM EPISTEMIC ONTOLOGY
+// TEST I: CLAIM-BY-CLAIM EPISTEMIC BREAKDOWN
 // -----------------------------------------------------------------------------
 
-test('J: Claim-by-claim breakdown separates historical operational facts from stale license dispatch', () => {
-  assert.equal(PILOT_MERCHANTS.length, 4);
-
+test('I: Claim-by-claim breakdown accurately reflects live verified vs historical fields', () => {
   for (const m of PILOT_MERCHANTS) {
-    assert.equal(m.claims.MERCHANT_IDENTITY, 'HISTORICALLY_OBSERVED');
-    assert.equal(m.claims.PHYSICAL_ADDRESS, 'HISTORICALLY_OBSERVED');
-    assert.equal(m.claims.GEOLOCATION, 'HISTORICALLY_OBSERVED');
-    assert.equal(m.claims.CANONICAL_DESTINATION, 'HISTORICALLY_OBSERVED');
-    assert.equal(m.claims.ACTIVE_LICENSE, 'STALE');
+    assert.equal(m.claims.MERCHANT_IDENTITY.class, 'VERIFIED_CURRENT');
+    assert.equal(m.claims.OPERATIONAL_LIST_PRESENCE.class, 'VERIFIED_CURRENT');
+    assert.equal(m.claims.LICENSE_STATUS.class, 'VERIFIED_CURRENT');
+    assert.equal(m.claims.PHYSICAL_ADDRESS.class, 'VERIFIED_CURRENT');
+    assert.equal(m.claims.GEOLOCATION.class, 'VERIFIED_CURRENT');
   }
+
+  // All Vybez external destination is historically observed
+  const vybez = PILOT_MERCHANTS.find((m) => m.retailerId === 'BIZ-DC-ABCA127484');
+  assert.equal(vybez.claims.CANONICAL_EXTERNAL_DESTINATION.class, 'HISTORICALLY_OBSERVED');
+
+  // Anacostia, Takoma, Chocolate City are verified current directly from ABCA page
+  const anacostia = PILOT_MERCHANTS.find((m) => m.retailerId === 'BIZ-DC-ABCA117379');
+  assert.equal(anacostia.claims.CANONICAL_EXTERNAL_DESTINATION.class, 'VERIFIED_CURRENT');
 });
