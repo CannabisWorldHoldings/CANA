@@ -18,6 +18,7 @@ function read(rootDir, relative) {
 // without flagging legitimate lowercase English.
 const PUBLIC_COPY_FILES = [
   'apps/web/src/components/customer-world-page.tsx',
+  'apps/web/src/components/cart-drawer.tsx',
   'apps/web/src/app/[domain]/layout.tsx',
   'apps/web/src/lib/customer-world.mjs',
 ];
@@ -34,6 +35,7 @@ const FORBIDDEN_PUBLIC_TERMS = [
   { term: 'truth path', cs: false },
   { term: 'state machine', cs: false },
   { term: 'AWAITING_VERIFICATION', cs: true },
+  { term: 'staging', cs: false },
 ];
 
 function collectPublicCopyViolations(rootDir) {
