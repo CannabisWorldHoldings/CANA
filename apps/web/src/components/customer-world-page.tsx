@@ -4,7 +4,7 @@ import CustomerWorldResults, { type CustomerWorld } from '@/components/customer-
 import Rail, { RailItem } from '@/components/rail';
 import SmartImage from '@/components/smart-image';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
-import { publicWorldStateLabel } from '@/lib/label-vocabulary.mjs';
+import { chipLabel, publicWorldStateLabel } from '@/lib/label-vocabulary.mjs';
 
 const JOURNEY_COPY = {
   HOME: {
@@ -72,6 +72,112 @@ function MarketSearch({ marketId }: { marketId: string }) {
   );
 }
 
+function homeModule(world: CustomerWorld, kind: string) {
+  const modules = world.home_modules?.modules;
+  if (!Array.isArray(modules)) return null;
+  const found = modules.find((m) => m?.kind === kind);
+  if (!found || !Array.isArray(found.items) || found.items.length === 0) return null;
+  return found;
+}
+
+function shortDate(iso: string | undefined) {
+  if (!iso) return null;
+  const parsed = Date.parse(iso);
+  if (Number.isNaN(parsed)) return null;
+  return new Date(parsed).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York' });
+}
+
+/**
+ * Evidence-bound home modules (W-1b). Each section renders ONLY when the
+ * market-page compiler produced eligible items from verified records —
+ * absence stays absence, so the editorial scenes carry the page alone until
+ * real verified supply exists. No placeholders, no filler, no invented facts.
+ */
+function HomeDealsNow({ world }: { world: CustomerWorld }) {
+  const mod = homeModule(world, 'deals');
+  if (!mod) return null;
+  return (
+    <section className="owd-container-commerce py-12" aria-labelledby="now-heading">
+      <h2 id="now-heading" className="owd-h2">
+        Happening now. <span className="owd-quiet">Verified offers, ending soonest first.</span>
+      </h2>
+      <Rail label="Current verified deals" itemCount={mod.items!.length} minItems={1}>
+        {mod.items!.map((deal) => (
+          <RailItem key={String(deal.id)}>
+            <article className="flex h-full min-w-[300px] max-w-[340px] flex-col gap-2 rounded-[20px] border border-brand-border bg-brand-surface p-6">
+              <p className="owd-eyebrow">{String(deal.merchant_name ?? '')}</p>
+              <h3 className="owd-h3">{String(deal.title ?? '')}</h3>
+              <p className="text-sm text-brand-muted">
+                {typeof deal.price_usd === 'number' ? `$${deal.price_usd}` : null}
+                {deal.expires_at && shortDate(deal.expires_at) ? ` · through ${shortDate(deal.expires_at)}` : null}
+              </p>
+              <p className="mt-auto"><span className="tint-chip">{chipLabel('VERIFIED')}</span></p>
+            </article>
+          </RailItem>
+        ))}
+      </Rail>
+    </section>
+  );
+}
+
+function HomeStorefronts({ world }: { world: CustomerWorld }) {
+  const mod = homeModule(world, 'dispensaries');
+  if (!mod) return null;
+  return (
+    <section className="owd-container-commerce py-12" aria-labelledby="storefronts-heading">
+      <h2 id="storefronts-heading" className="owd-h2">
+        Storefronts worth exploring. <span className="owd-quiet">Licensed, current, and sourced.</span>
+      </h2>
+      <Rail label="Verified dispensaries" itemCount={mod.items!.length} minItems={1}>
+        {mod.items!.map((merchant) => (
+          <RailItem key={String(merchant.merchant_id)}>
+            <Link
+              href={`/merchant/${encodeURIComponent(String(merchant.merchant_id))}`}
+              className="flex h-full min-w-[280px] max-w-[320px] flex-col gap-2 rounded-[20px] border border-brand-border bg-brand-surface p-6"
+            >
+              <h3 className="owd-h3">{String(merchant.name ?? '')}</h3>
+              {merchant.neighborhood ? (
+                <p className="text-sm text-brand-muted">{String(merchant.neighborhood)}</p>
+              ) : null}
+              <p className="mt-auto"><span className="tint-chip">{chipLabel('VERIFIED')}</span></p>
+            </Link>
+          </RailItem>
+        ))}
+      </Rail>
+    </section>
+  );
+}
+
+function HomeDeliveryNow({ world }: { world: CustomerWorld }) {
+  const mod = homeModule(world, 'delivery_services');
+  if (!mod) return null;
+  return (
+    <section className="owd-container-commerce py-12" aria-labelledby="delivery-now-heading">
+      <h2 id="delivery-now-heading" className="owd-h2">
+        Delivery, honestly scoped. <span className="owd-quiet">Coverage shown only when verified.</span>
+      </h2>
+      <Rail label="Verified delivery services" itemCount={mod.items!.length} minItems={1}>
+        {mod.items!.map((service) => (
+          <RailItem key={String(service.merchant_id)}>
+            <Link
+              href={`/merchant/${encodeURIComponent(String(service.merchant_id))}`}
+              className="flex h-full min-w-[280px] max-w-[320px] flex-col gap-2 rounded-[20px] border border-brand-border bg-brand-surface p-6"
+            >
+              <h3 className="owd-h3">{String(service.name ?? '')}</h3>
+              {Array.isArray(service.facts?.serves) && service.facts!.serves!.length > 0 ? (
+                <p className="text-sm text-brand-muted">Serves {service.facts!.serves!.slice(0, 3).join(', ')}</p>
+              ) : (
+                <p className="text-sm text-brand-muted">Coverage confirmed per address at handoff.</p>
+              )}
+              <p className="mt-auto"><span className="tint-chip">{chipLabel('VERIFIED')}</span></p>
+            </Link>
+          </RailItem>
+        ))}
+      </Rail>
+    </section>
+  );
+}
+
 function CustomerHome({
   world,
   illustrativeArtCapability,
@@ -98,8 +204,8 @@ function CustomerHome({
           <p className="owd-eyebrow">Ask ORDERWEEDDC</p>
           <h1 id="home-title" className="owd-display">What are you<br />looking for?</h1>
           <p className="owd-intro">
-            Describe what you need in ordinary words. We will check the admitted
-            D.C. market Reality and keep unsupported answers visible.
+            Describe what you need in ordinary words. We check the verified
+            D.C. market and show what's known — and exactly what isn't.
           </p>
           <MarketSearch marketId={world.request.market_id} />
           <p className="owd-home-search-examples">
@@ -139,6 +245,8 @@ function CustomerHome({
           ))}
         </Rail>
       </div>
+
+      <HomeDealsNow world={world} />
 
       <section className="owd-home-program owd-container-commerce" aria-labelledby="shop-heading">
         <h2 id="shop-heading" className="owd-h2">
@@ -184,6 +292,9 @@ function CustomerHome({
         </div>
       </section>
 
+      <HomeStorefronts world={world} />
+      <HomeDeliveryNow world={world} />
+
       <section className="owd-home-district" aria-labelledby="district-heading">
         <div className="owd-container-commerce owd-home-district__inner">
           <div className="owd-home-district__copy">
@@ -216,7 +327,7 @@ function CustomerHome({
           <article>
             <Link2 aria-hidden="true" />
             <h3>Sources stay attached.</h3>
-            <p>Records keep their admitted source and current evidence state.</p>
+            <p>Every record keeps its named source and current evidence state.</p>
           </article>
           <article>
             <Route aria-hidden="true" />

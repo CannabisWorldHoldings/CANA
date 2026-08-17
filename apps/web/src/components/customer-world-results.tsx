@@ -34,9 +34,32 @@ type CustomerResult = {
   profile_href: string;
 };
 
+export type HomeModuleItem = Record<string, unknown> & {
+  merchant_id?: string;
+  name?: string;
+  id?: string;
+  title?: string;
+  merchant_name?: string;
+  neighborhood?: string | null;
+  price_usd?: number;
+  expires_at?: string;
+  eligibility?: string;
+  facts?: { serves?: string[] };
+  verified?: Record<string, unknown> | null;
+};
+export type HomeModule = {
+  kind: string;
+  state?: string;
+  fallback?: string;
+  items?: HomeModuleItem[];
+  provenance?: Record<string, unknown>;
+};
+export type HomeModules = { modules: HomeModule[]; integrity?: string[] } | null;
+
 export type CustomerWorld = {
   state: 'INPUT_REQUIRED' | 'CAPABILITY_GAP' | 'RESULTS' | 'EMPTY';
   state_explanation: string;
+  home_modules?: HomeModules;
   request: {
     journey: 'HOME' | 'SEARCH' | 'DELIVERY' | 'DISPENSARIES';
     market_id: string;

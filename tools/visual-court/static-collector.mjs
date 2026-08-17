@@ -42,15 +42,19 @@ function collectPublicCopyViolations(rootDir) {
   const violations = [];
   for (const relative of PUBLIC_COPY_FILES) {
     const source = read(rootDir, relative);
-    // String literals only: comments and identifiers are not rendered copy.
-    const literals = source.match(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g) ?? [];
-    for (const literal of literals) {
-      for (const { term, cs } of FORBIDDEN_PUBLIC_TERMS) {
-        const haystack = cs ? literal : literal.toLowerCase();
-        const needle = cs ? term : term.toLowerCase();
-        if (haystack.includes(needle)) {
-          violations.push({ file: relative, term, literal: literal.slice(0, 80) });
-        }
+    // Comment-stripped whole-source scan: string literals AND JSX text nodes
+    // are both rendered copy; comments are not. (A16 originally scanned only
+    // quoted literals and missed internal vocabulary in JSX text.)
+    const stripped = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+      .replace(/([^:'"])\/\/[^\n]*$/gm, '$1 ');
+    for (const { term, cs } of FORBIDDEN_PUBLIC_TERMS) {
+      const haystack = cs ? stripped : stripped.toLowerCase();
+      const needle = cs ? term : term.toLowerCase();
+      const at = haystack.indexOf(needle);
+      if (at !== -1) {
+        violations.push({ file: relative, term, literal: stripped.slice(at, at + 80).replace(/\s+/g, ' ') });
       }
     }
   }
