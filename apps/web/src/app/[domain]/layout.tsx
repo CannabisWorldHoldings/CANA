@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
       domain === CANONICAL_TENANT_DOMAIN
         ? PUBLIC_PRODUCT_DESCRIPTION
         : brand?.description ||
-          'Directory prototype with explicit source and verification states.',
+          'Local cannabis discovery backed by named sources, with unknowns labeled honestly.',
     metadataBase: origin,
     robots: {
       index: !isDemonstrationEnvironment,

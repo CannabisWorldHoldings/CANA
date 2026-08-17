@@ -11,6 +11,50 @@ function read(rootDir, relative) {
   return fs.readFileSync(path.join(rootDir, relative), 'utf8');
 }
 
+
+// A15 — public-copy vocabulary. Extract string literals from the files whose
+// strings render on consumer surfaces, then scan for internal/system terms.
+// Case-sensitive entries protect proper-noun system terms (capital-R Reality)
+// without flagging legitimate lowercase English.
+const PUBLIC_COPY_FILES = [
+  'apps/web/src/components/customer-world-page.tsx',
+  'apps/web/src/app/[domain]/layout.tsx',
+  'apps/web/src/lib/customer-world.mjs',
+];
+const FORBIDDEN_PUBLIC_TERMS = [
+  { term: 'admitted market', cs: false },
+  { term: 'admitted Reality', cs: true },
+  { term: 'canonical Reality', cs: true },
+  { term: 'Reality contract', cs: true },
+  { term: 'Reality projection', cs: true },
+  { term: 'answerability', cs: false },
+  { term: 'market contract', cs: false },
+  { term: 'Customer World', cs: true },
+  { term: 'Directory prototype', cs: false },
+  { term: 'truth path', cs: false },
+  { term: 'state machine', cs: false },
+  { term: 'AWAITING_VERIFICATION', cs: true },
+];
+
+function collectPublicCopyViolations(rootDir) {
+  const violations = [];
+  for (const relative of PUBLIC_COPY_FILES) {
+    const source = read(rootDir, relative);
+    // String literals only: comments and identifiers are not rendered copy.
+    const literals = source.match(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g) ?? [];
+    for (const literal of literals) {
+      for (const { term, cs } of FORBIDDEN_PUBLIC_TERMS) {
+        const haystack = cs ? literal : literal.toLowerCase();
+        const needle = cs ? term : term.toLowerCase();
+        if (haystack.includes(needle)) {
+          violations.push({ file: relative, term, literal: literal.slice(0, 80) });
+        }
+      }
+    }
+  }
+  return violations;
+}
+
 export function collectStaticInputs(rootDir) {
   const layout = read(rootDir, 'apps/web/src/app/[domain]/layout.tsx');
   const globals = read(rootDir, 'apps/web/src/app/globals.css');
@@ -84,6 +128,8 @@ export function collectStaticInputs(rootDir) {
     campaignAsymmetric: globals.includes('minmax(0, 1.16fr) minmax(340px, 0.84fr)'),
   };
 
+  const publicCopyViolations = collectPublicCopyViolations(rootDir);
+
   return {
     headerHeight: { desktopPx },
     navCensus: { navLinkCount, forbiddenPresent },
@@ -92,5 +138,6 @@ export function collectStaticInputs(rootDir) {
     trioBreakpoints: { mediaBlocks },
     railContract: { hasSnap, hasMinRefusal, paddlesPointerOnly },
     homeComposition,
+    publicCopyVocabulary: { violations: publicCopyViolations },
   };
 }

@@ -107,6 +107,16 @@ export function checkOverflow({ overflowingWidths }) {
 }
 
 /** Aggregate a verdict receipt. */
+/** A15 — consumer surfaces never leak internal/system vocabulary (owner
+ *  correction compiled to law: public UI must read as product, not engine).
+ *  Violations arrive from the collector as { file, term, literal } rows. */
+export function checkPublicCopyVocabulary({ violations }) {
+  const ok = (violations ?? []).length === 0;
+  return result('A16.public-copy-vocabulary', ok, ok
+    ? 'no internal vocabulary in public copy'
+    : (violations ?? []).slice(0, 6).map((v) => `${v.file}: "${v.term}"`).join('; '));
+}
+
 export function courtVerdict(checks, mode) {
   const failures = checks.filter((check) => check.status === 'FAIL');
   return {

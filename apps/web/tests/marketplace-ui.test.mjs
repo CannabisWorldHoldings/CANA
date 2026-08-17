@@ -284,7 +284,7 @@ test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
   assert.doesNotMatch(canonicalProduction, /marketplace\/hero-marketplace-v2\.webp/);
   assert.doesNotMatch(canonicalProduction, /art\/cat-flower\.jpg/);
   assert.doesNotMatch(tenant, /What are you/);
-  assert.match(tenant, /One verified path from intent to discovery\./);
+  assert.match(tenant, /Cannabis discovery without the guesswork\./);
   assert.match(tenant, /Customer journeys/);
 });
 

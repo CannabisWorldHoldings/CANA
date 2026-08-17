@@ -6,6 +6,8 @@ import {
   CHIP_KINDS,
   chipLabel,
   isAllowedChip,
+  PUBLIC_WORLD_STATE_LABELS,
+  publicWorldStateLabel,
 } from '../src/lib/label-vocabulary.mjs';
 
 test('the chip vocabulary is closed at exactly eight kinds', () => {
@@ -63,4 +65,15 @@ test('a receipt of only-uncertain rows is still an honest receipt', () => {
   assert.equal(receipt.known.length, 0);
   assert.equal(receipt.uncertain.length, 1);
   assert.equal(receipt.latestCheckedAt, null);
+});
+
+test('public world-state labels translate every machine state and fail closed', () => {
+  assert.equal(publicWorldStateLabel('INPUT_REQUIRED'), 'Add a location');
+  assert.equal(publicWorldStateLabel('CAPABILITY_GAP'), 'Partly answerable');
+  assert.equal(publicWorldStateLabel('EMPTY'), 'Nothing verified yet');
+  assert.equal(publicWorldStateLabel('RESULTS'), 'Verified results');
+  assert.equal(publicWorldStateLabel('SOMETHING_INTERNAL'), 'Status unavailable');
+  for (const label of Object.values(PUBLIC_WORLD_STATE_LABELS)) {
+    assert.doesNotMatch(label, /_|Reality|canonical/);
+  }
 });

@@ -153,12 +153,12 @@ export function buildCustomerWorldView({ request, projection }) {
       ? 'CAPABILITY_GAP'
       : results.length > 0 ? 'RESULTS' : 'EMPTY';
   const stateExplanation = state === 'INPUT_REQUIRED'
-    ? 'Enter a supported city or neighborhood. Customer location remains UNKNOWN until you do.'
+    ? 'Enter a city or neighborhood to see verified options near you.'
     : state === 'CAPABILITY_GAP'
-      ? `CANA cannot verify ${unsupportedDimensions.join(', ')} from the admitted Reality contract.`
+      ? `We can't verify ${unsupportedDimensions.join(', ')} yet, so we won't guess at it.`
       : state === 'EMPTY'
-        ? 'No verified current match was found. This is not proof that no real-world option exists.'
-        : 'Every result passed the canonical current Reality and ASK answerability gates.';
+        ? "No verified match right now. That doesn't mean nothing exists — only that we won't show what we can't back up."
+        : 'Every result here is backed by a current, verified source.';
   return Object.freeze({
     schema_version: 'cana-customer-world/v1',
     state,

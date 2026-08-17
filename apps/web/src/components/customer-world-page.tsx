@@ -4,33 +4,34 @@ import CustomerWorldResults, { type CustomerWorld } from '@/components/customer-
 import Rail, { RailItem } from '@/components/rail';
 import SmartImage from '@/components/smart-image';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
+import { publicWorldStateLabel } from '@/lib/label-vocabulary.mjs';
 
 const JOURNEY_COPY = {
   HOME: {
-    eyebrow: 'Customer World',
-    title: 'One verified path from intent to discovery.',
-    description: 'Search admitted market Reality, choose a distinct customer journey, and see unknowns before making a decision.',
+    eyebrow: 'Local discovery',
+    title: 'Cannabis discovery without the guesswork.',
+    description: 'Find dispensaries, delivery, and current deals — every result backed by a named source, every unknown labeled honestly.',
     action: '/search',
     placeholder: 'City or neighborhood',
   },
   SEARCH: {
-    eyebrow: 'Marketplace search',
-    title: 'Search verified merchant records without blending truth paths.',
-    description: 'ASK compiles your words, applies the selected market contract, and returns only current canonical Reality projections.',
+    eyebrow: 'Search',
+    title: 'Search verified cannabis businesses.',
+    description: 'Ask in your own words. Results come only from current, verified records — sources and freshness included.',
     action: '/search',
-    placeholder: 'City, neighborhood, or supported intent',
+    placeholder: 'City, neighborhood, or what you are looking for',
   },
   DELIVERY: {
-    eyebrow: 'Delivery discovery',
-    title: 'Delivery is a distinct journey, with eligibility kept honest.',
-    description: 'A verified merchant record does not prove delivery authority, service area, fee, minimum, inventory, or arrival time.',
+    eyebrow: 'Delivery',
+    title: 'See who actually delivers to you.',
+    description: "A verified business record doesn't prove delivery range, fees, minimums, stock, or timing. We show what's verified and label the rest unknown.",
     action: '/delivery',
     placeholder: 'City or neighborhood for delivery',
   },
   DISPENSARIES: {
-    eyebrow: 'Dispensary discovery',
-    title: 'Find regulator-backed dispensary records by place.',
-    description: 'Results carry their admitted market source and current verification state. Hours, inventory, and popularity remain unknown unless proven.',
+    eyebrow: 'Dispensaries',
+    title: 'Find licensed dispensaries near you.',
+    description: 'Every result carries its source and when it was last checked. Hours, stock, and popularity stay unknown until proven.',
     action: '/dispensaries',
     placeholder: 'City or neighborhood for dispensaries',
   },
@@ -286,7 +287,7 @@ export default function CustomerWorldPage({
         <div className="mx-auto max-w-screen-2xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-bold text-brand-text">State: {world.state}</p>
+              <p className="text-sm font-bold text-brand-text" data-world-state={world.state}>{publicWorldStateLabel(world.state)}</p>
               <p className="mt-1 max-w-3xl text-sm text-brand-muted">{world.state_explanation}</p>
             </div>
             <nav aria-label="Discovery view" className="flex rounded-xl border border-brand-border bg-brand-surface p-1">
