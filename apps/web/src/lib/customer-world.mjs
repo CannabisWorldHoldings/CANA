@@ -157,7 +157,7 @@ export function buildCustomerWorldView({ request, projection }) {
     : state === 'CAPABILITY_GAP'
       ? `We can't verify ${unsupportedDimensions.join(', ')} yet, so we won't guess at it.`
       : state === 'EMPTY'
-        ? "No verified match right now. That doesn't mean nothing exists — only that we won't show what we can't back up."
+        ? "No verified match right now — which is not proof that nothing exists. We just won't show what we can't back up."
         : 'Every result here is backed by a current, verified source.';
   return Object.freeze({
     schema_version: 'cana-customer-world/v1',
