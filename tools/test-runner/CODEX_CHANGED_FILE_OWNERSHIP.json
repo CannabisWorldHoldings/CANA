@@ -801,6 +801,10 @@
         "apps/web/tests/merchant-media-intake.test.mjs",
         "apps/web/tests/service-area.test.mjs",
         "apps/web/tests/visual-court.test.mjs",
+        "docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md",
+        "tools/alive-loop/adapter.mjs",
+        "tools/alive-loop/alive-loop.test.mjs",
+        "tools/alive-loop/run-cycle.mjs",
         "tools/durability/cli.mjs",
         "tools/durability/cli.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
@@ -808,7 +812,8 @@
         "tools/visual-court/run-static.mjs",
         "tools/visual-court/static-collector.mjs"
       ],
-      "approval_reference": "OWNER_SOVEREIGN_ONE_SHOT_ACTIVATION_PROMPT_2026_08_17_HYPERAGENT_THREAD_cmsxmgvpx3pr108adgpmk22wv"
+      "approval_reference": "OWNER_SOVEREIGN_ONE_SHOT_ACTIVATION_PROMPT_2026_08_17_HYPERAGENT_THREAD_cmsxmgvpx3pr108adgpmk22wv",
+      "alive_loop_note": "Minimum Alive Loop implemented per docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md Mission 2 boundary: one thin composition adapter over skills-src seams; fourteen spec courts pass; three live LEVEL-0 cycles receipted at the pinned tree."
     }
   },
   "owned_create_paths": [
@@ -1044,6 +1049,8 @@
     "docs/evidence/phase-b-slice2/SOURCE_RELIABILITY_STATE.json",
     "docs/evidence/phase-b-slice2/TEMPORAL_INTEGRITY.md",
     "docs/reality/PHASE_B_SLICE2_LIVE_ACQUISITION.md",
+    "tools/alive-loop/alive-loop.test.mjs",
+    "tools/alive-loop/run-cycle.mjs",
     "tools/reality/verify-slice2-evidence-packet.mjs",
     "tools/reality/verify-slice2-evidence-packet.test.mjs",
     "apps/web/src/lib/markets/va/va-cca-registry-parser.mjs",
@@ -1114,6 +1121,7 @@
     "apps/web/src/lib/asset-registry.mjs",
     "apps/web/tests/asset-registry.test.mjs",
     "apps/web/src/components/smart-image.tsx",
+    "tools/alive-loop/adapter.mjs",
     "tools/visual-court/checks.mjs",
     "tools/visual-court/static-collector.mjs",
     "tools/visual-court/run-static.mjs",
@@ -1256,6 +1264,7 @@
     "apps/web/src/components/marketplace-category-rail.tsx",
     "apps/web/tests/retailer-detail-search.test.mjs",
     "apps/web/src/components/mobile-nav.tsx",
+    "docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md",
     "tools/visual-court/checks.mjs",
     "tools/visual-court/run-static.mjs",
     "tools/visual-court/static-collector.mjs"
