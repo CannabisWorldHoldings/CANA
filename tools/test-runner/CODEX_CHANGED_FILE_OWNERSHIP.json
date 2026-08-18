@@ -828,6 +828,8 @@
         "tools/durability/cli.test.mjs",
         "tools/experience-fabric/kernel.mjs",
         "tools/experience-fabric/kernel.test.mjs",
+        "tools/market-state/state-law.mjs",
+        "tools/market-state/state-law.test.mjs",
         "tools/sentinel/bridge.mjs",
         "tools/sentinel/sentinel.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",

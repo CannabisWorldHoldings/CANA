@@ -15,7 +15,7 @@ An honest constitution states which of its laws have teeth.
 4. Evidence is mandatory at every resolution, confirmation, demotion, and settlement. [ENFORCED — forecast-ledger, goodhart-guard, slow-memory]
 
 ## II. Market-State Separation
-5. Four state kinds never silently mix: OBSERVED REALITY · ESTIMATED CURRENT STATE · FORECAST STATE · COUNTERFACTUAL WORLD. A forecast is never inventory; a simulation is never a listing fact; an inference is never evidence. [ENFORCED for forecasts — typed ForecastObject ledger; DECLARED at full schema level — next slice]
+5. Four state kinds never silently mix: OBSERVED REALITY · ESTIMATED CURRENT STATE · FORECAST STATE · COUNTERFACTUAL WORLD. A forecast is never inventory; a simulation is never a listing fact; an inference is never evidence. Derived claims carry the weakest input kind (type laundering refuses); decay is explicit; upgrades demand new observation evidence. [ENFORCED — tools/market-state/state-law.mjs (mixing, laundering, transition courts); Prisma claim-pipeline wiring is the registry-recorded next bottleneck]
 6. Generated presentation never masquerades as merchant or product evidence. [ENFORCED — asset registry rights gates + ECONOMIC-TRUTH/DATA-TRUTH oracles, tools/experience-fabric]
 
 ## III. Authority
