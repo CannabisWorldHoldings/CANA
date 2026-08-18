@@ -18,6 +18,7 @@ const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8'
 
 const args = process.argv.slice(2);
 const missionName = args[args.indexOf('--mission') + 1] ?? 'static-court';
+const missionVersion = args.includes('--version') ? Number(args[args.indexOf('--version') + 1]) || 1 : 1;
 
 const HEAD = git('rev-parse', 'HEAD');
 const TREE = git('rev-parse', 'HEAD^{tree}');
@@ -94,6 +95,42 @@ const FIXTURES = {
       };
     },
   },
+  'sentinel-sweep': {
+    objective: 'observe competitor and own public surfaces and compile drift into triage-ready candidates',
+    metric: 'shadow sweep produces a parseable report and every delta compiles through the signal-to-fix court',
+    target: 'competitive-sentinel',
+    allowed_paths: ['apps/web/scripts', 'tools/sentinel', '.cana-local'],
+    subjects: ['competitive sentinel'],
+    run: async () => {
+      const outDir = path.join(ROOT, '.cana-local', 'sentinel');
+      const proc = spawnSync('node', ['apps/web/scripts/competitor-shadow.mjs', `--dir=${outDir}`], { cwd: ROOT, encoding: 'utf8', timeout: 240000 });
+      const { readdirSync, readFileSync, writeFileSync } = await import('node:fs');
+      let report = null; let reportFile = null;
+      try {
+        reportFile = readdirSync(outDir).filter((f) => f.endsWith('.json')).sort().pop() ?? null;
+        if (reportFile) report = JSON.parse(readFileSync(path.join(outDir, reportFile), 'utf8'));
+      } catch { /* stays null */ }
+      const deltas = report?.deltas ?? report?.diff?.deltas ?? [];
+      const { compileSentinelProposals } = await import('../sentinel/bridge.mjs');
+      const compiled = compileSentinelProposals(deltas, {
+        observedAt: new Date().toISOString(),
+        reportRef: reportFile ? `.cana-local/sentinel/${reportFile}` : 'no-report',
+      });
+      if (reportFile) {
+        writeFileSync(path.join(outDir, `proposals-${Date.now()}.json`), JSON.stringify(compiled, null, 2));
+      }
+      const ok = proc.status === 0 && report !== null;
+      return {
+        succeeded: ok,
+        failureReason: ok ? undefined : `shadow exit ${proc.status}, report ${reportFile ?? 'ABSENT'}`,
+        evidence: ok ? [{ observation: `sweep report ${reportFile}: ${(report.results ?? []).length} surfaces, ${deltas.length} deltas, ${compiled.proposals.length} proposals, ${compiled.skipped.length} skipped`, ref: `.cana-local/sentinel/${reportFile}` }] : [],
+        observed_side_effects: 0,
+        touched_paths: ['.cana-local/sentinel'],
+        output: { surfaces: (report?.results ?? []).length, deltas: deltas.length, proposals: compiled.proposals.length },
+        measurement: { source: 'competitor-shadow + sentinel-bridge', window: 'single-sweep', improved: ok, value: `deltas=${deltas.length}` },
+      };
+    },
+  },
 };
 
 const mission = FIXTURES[missionName];
@@ -104,7 +141,7 @@ if (!mission) {
 
 const grant = {
   mission_id: `alive-${missionName}`,
-  mission_version: 1,
+  mission_version: missionVersion,
   issued_at: NOW.toISOString(),
   expires_at: new Date(NOW.getTime() + 30 * 60 * 1000).toISOString(),
   cana_commit: HEAD,
