@@ -814,6 +814,8 @@
         "tools/alive-loop/winner-memory.test.mjs",
         "tools/durability/cli.mjs",
         "tools/durability/cli.test.mjs",
+        "tools/experience-fabric/kernel.mjs",
+        "tools/experience-fabric/kernel.test.mjs",
         "tools/sentinel/bridge.mjs",
         "tools/sentinel/sentinel.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
@@ -826,7 +828,8 @@
       "sentinel_note": "Sentinel bridge composes the existing competitor-shadow engine into signal-to-fix + the alive loop (mission sentinel-sweep). First live governed sweep admitted: 15 surfaces, lesson wm_782d05b57414. Shadow engine honesty rails unchanged.",
       "winner_memory_note": "Durable Winner Memory closes the recursion: admitted lessons persist hash-chained and recall as labeled non-business facts into future cycles. Demonstrated 4-mission chain (recalled 0->3, memory 1->4, valid chain). 7/7 courts.",
       "forecast_note": "Predictive Readiness Fabric slice 1: Forecast Ledger (prediction as reality-graded primitive; custody hole found+fixed in BOTH ledgers by its own court). First live forecast resolved: geo-court recovery, p=0.7, outcome TRUE, Brier 0.09.",
-      "goodhart_note": "Goodhart guard (ShadowForge M2): confirmation metrics sealed by salted commitment BEFORE generation; bytes-drift and selection-reuse refused; blind confirmations receipted. 7/7 courts. The gate that makes amplifiers safe to enable."
+      "goodhart_note": "Goodhart guard (ShadowForge M2): confirmation metrics sealed by salted commitment BEFORE generation; bytes-drift and selection-reuse refused; blind confirmations receipted. 7/7 courts. The gate that makes amplifiers safe to enable.",
+      "experience_fabric_note": "OWD-EXPERIENCE-FABRIC v1: IntentPatch default-deny write sets, content-addressed private mutations, 6 deterministic oracles (visual/runtime oracles PLANNED, never faked), SAME_FACT quarantine, merchant-approval promotion gate, exact rollback, proof-carrying receipts. Independent implementation of the cross-account Slice-1 contract (its patch was unavailable here). 8/8 courts incl. 300-mutation assault."
     }
   },
   "owned_create_paths": [
@@ -1071,6 +1074,7 @@
     "tools/alive-loop/run-cycle.mjs",
     "tools/alive-loop/winner-memory.mjs",
     "tools/alive-loop/winner-memory.test.mjs",
+    "tools/experience-fabric/kernel.test.mjs",
     "tools/reality/verify-slice2-evidence-packet.mjs",
     "tools/reality/verify-slice2-evidence-packet.test.mjs",
     "apps/web/src/lib/markets/va/va-cca-registry-parser.mjs",
@@ -1142,6 +1146,7 @@
     "apps/web/tests/asset-registry.test.mjs",
     "apps/web/src/components/smart-image.tsx",
     "tools/alive-loop/adapter.mjs",
+    "tools/experience-fabric/kernel.mjs",
     "tools/sentinel/bridge.mjs",
     "tools/sentinel/sentinel.test.mjs",
     "tools/visual-court/checks.mjs",
