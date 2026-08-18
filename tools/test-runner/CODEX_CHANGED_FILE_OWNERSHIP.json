@@ -801,6 +801,7 @@
         "apps/web/tests/merchant-media-intake.test.mjs",
         "apps/web/tests/service-area.test.mjs",
         "apps/web/tests/visual-court.test.mjs",
+        "demo/orderweeddc-live",
         "docs/competitive/shadow/2026-08-18.json",
         "docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md",
         "docs/vanguard/CAPABILITY_REGISTRY.json",
