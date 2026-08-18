@@ -26,6 +26,7 @@ import { LessonStore, verifyLessonFile } from './winner-memory.mjs';
 import { ForecastLedger, verifyForecastFile } from './forecast-ledger.mjs';
 import { GoodhartGuard, verifyGuardFile } from './goodhart-guard.mjs';
 import { SlowStore, verifySlowFile } from './slow-memory.mjs';
+import { RegretLedger, verifyRegretFile } from '../vanguard/regret-ledger.mjs';
 
 const MARK_A = 'PROBE_MARKER_ALPHA';
 const MARK_B = 'PROBE_MARKER_BRAVO'; // same length — mutation, not reshape
@@ -76,6 +77,18 @@ const PROBES = {
     });
     return { file, verify: verifyGuardFile };
   },
+  'regret-ledger': () => {
+    const d = tmp('regret');
+    const file = path.join(d, 'regret.jsonl');
+    new RegretLedger(file).register({
+      chosen_action: `probe decision ${MARK_A}`,
+      alternatives: [{ id: 'probe-alt', summary: 'do nothing' }],
+      expected_value: { basis: 'UNKNOWN' },
+      information_available: [{ observation: 'probe info', ref: 'probe.ref' }],
+      policy_version: 'probe/1',
+    });
+    return { file, verify: verifyRegretFile };
+  },
   'slow-memory': () => {
     const d = tmp('slow');
     const file = path.join(d, 'slow.jsonl');
@@ -125,6 +138,7 @@ const BUILTIN_FAMILIES = [
   { id: 'slow-memory', dir: 'winner-memory', match: (f) => f === 'slow.jsonl', verify: verifySlowFile },
   { id: 'forecasts', dir: 'forecasts', match: (f) => f === 'ledger.jsonl', verify: verifyForecastFile },
   { id: 'goodhart-guard', dir: 'goodhart', match: (f) => f === 'guard.jsonl', verify: verifyGuardFile },
+  { id: 'regret-ledger', dir: 'regret', match: (f) => f === 'regret.jsonl', verify: verifyRegretFile },
 ];
 
 const listJsonl = (root) => {
