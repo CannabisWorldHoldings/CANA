@@ -8,6 +8,19 @@ import { fileURLToPath } from 'node:url';
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const A = (f) => fs.readFileSync(path.join(DIR, 'assets', f), 'utf8').trim();
 let html = fs.readFileSync(path.join(DIR, 'template.html'), 'utf8');
+// JSON-LD: machine-readable registry (schema.org) — registry facts only.
+const RECS = JSON.parse(A('records.json'));
+const jsonld = JSON.stringify({
+  '@context': 'https://schema.org', '@type': 'ItemList',
+  name: 'Licensed cannabis retailers — Washington, D.C. (DC ABCA registry, snapshot 2026-06-05)',
+  numberOfItems: RECS.length,
+  itemListElement: RECS.map((r, i) => ({ '@type': 'ListItem', position: i + 1, item: {
+    '@type': 'Store', name: r.n, identifier: r.a,
+    address: { '@type': 'PostalAddress', streetAddress: r.ad, addressLocality: 'Washington', addressRegion: 'DC' },
+    geo: { '@type': 'GeoCoordinates', latitude: r.lat, longitude: r.lon },
+  }})),
+});
+html = html.split('{{JSONLD}}').join('<script type="application/ld+json">' + jsonld.replace(/</g, '\\u003c') + '</scr' + 'ipt>');
 const sub = {
   '{{LOGO_DARK}}': A('logo-dark-bg.b64'),
   '{{LOGO_LIGHT}}': A('logo-light-bg.b64'),

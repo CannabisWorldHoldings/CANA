@@ -9,6 +9,7 @@ document.documentElement.dataset.theme = (qp==='day'||qp==='night') ? qp : (p===
 catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2>=7&&h2<19)?'day':'night';}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>orderweeddc — the District, on the record</title>
+{{JSONLD}}
 <style>
   :root, html[data-theme="night"] body{
     --canvas:#000000; --card:#1d1d1f; --card2:#161617; --hair:rgba(255,255,255,.16); --hair2:rgba(255,255,255,.28);
@@ -259,6 +260,27 @@ catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2
   .dealcard .dterms{font-size:14px;color:var(--ink2);margin-top:6px}
   .dealcard .dby{font-size:12px;color:var(--mute);margin-top:12px}
 
+  .heart{font-size:16px;line-height:1;color:var(--dim);padding:2px 4px;border-radius:8px}
+  .heart.on{color:var(--pink)}
+  #sov{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.45);backdrop-filter:blur(18px);display:flex;align-items:flex-start;justify-content:center;padding:80px 22px 22px}
+  #sov[hidden]{display:none!important}
+  #sov .spanel{background:var(--canvas);border-radius:20px;max-width:640px;width:100%;padding:22px;box-shadow:0 40px 100px rgba(0,0,0,.35)}
+  #sov .sin{display:flex;align-items:center;background:var(--card);border-radius:12px;padding:12px 16px}
+  #sov .sin input{flex:1;border:none;background:none;font:inherit;font-size:16px;color:var(--ink);outline:none}
+  #sov .ql{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  #sov .sres{margin-top:14px;display:grid;gap:8px;max-height:50vh;overflow:auto}
+  .bounty{border:1px solid rgba(255,159,10,.45);background:rgba(255,159,10,.06);border-radius:12px;padding:12px 14px;margin-top:10px}
+  .bounty .bq{font-weight:600;color:var(--ink);font-size:14px}
+  .bounty .bn{font-size:12px;color:var(--orange);margin-top:3px;font-weight:600}
+  .widgetta{width:100%;min-height:110px;background:var(--canvas);border:1px solid var(--hair);border-radius:12px;padding:12px;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ink2);margin-top:12px;resize:vertical}
+  .keysstrip{margin-top:44px;text-align:left}
+  .keyrow{display:flex;gap:14px;align-items:flex-start;padding:16px 0;border-bottom:1px solid var(--hair)}
+  .keyrow:last-child{border-bottom:none}
+  .keyrow .kicon{font-size:18px}
+  .keyrow .kt{font-size:14px;font-weight:600;color:var(--ink)}
+  .keyrow .kd{font-size:13px;color:var(--mute);margin-top:3px;line-height:1.6}
+  .keyrow .kstat{margin-left:auto;flex-shrink:0}
+
   /* ---- age gate ---- */
   #gate{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);backdrop-filter:blur(22px);display:flex;align-items:center;justify-content:center;padding:22px}
   #gate[hidden]{display:none!important}
@@ -286,6 +308,20 @@ catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2
   </div>
 </div>
 
+<div id="sov" hidden role="dialog" aria-modal="true" aria-label="Search">
+  <div class="spanel">
+    <div class="sin"><input id="sovq" type="search" placeholder="Search the District&mldr;" aria-label="Search"><button class="chip" data-act="search-close" style="margin-left:8px">Close</button></div>
+    <div class="ql">
+      <span class="mono" style="align-self:center">Quick links</span>
+      <button class="chip" data-act="preset-go" data-q="delivery in ward 8">Delivery in Ward 8</button>
+      <button class="chip" data-act="preset-go" data-q="education tastings">Education tastings</button>
+      <button class="chip" data-act="preset-go" data-q="east of the river">East of the river</button>
+      <a class="chip" href="#/map" data-act="search-close2" style="text-decoration:none">Open the map</a>
+    </div>
+    <div class="sres" id="sres"></div>
+  </div>
+</div>
+
 <div class="ribbonbar"><b>Demonstration build</b> · every business fact from DC ABCA public licensing records · snapshot 2026-06-05 · menus &amp; hours appear only when a business verifies them</div>
 
 <header class="site">
@@ -299,6 +335,7 @@ catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2
     <a class="link" data-nav="deals" href="#/deals">Deals</a>
     <a class="link" data-nav="merchants" href="#/merchants">For businesses</a>
     <span class="spacer"></span>
+    <button class="chip" data-act="search-open" aria-label="Search" style="padding:7px 14px">Search</button>
     <button class="chip" id="themebtn" data-act="theme" title="The site follows the sun — white by day, emerald-black by night. Tap to override." aria-label="Theme: follows local time; tap to override"></button>
     <a class="cta" href="#/merchants">Claim your listing</a>
   </nav>
@@ -405,6 +442,7 @@ catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2
       <button class="chip" data-act="filter" data-f="tasting">Education tasting</button>
       <button class="chip" data-act="filter" data-f="safeuse">Safe-use</button>
       <button class="chip" data-act="filter" data-f="garden">Summer garden</button>
+      <button class="chip" data-act="filter" data-f="saved">♥ Saved</button>
       <select id="wsel" class="chip" aria-label="Filter by ward">
         <option value="">All wards</option>
         <option>1</option><option>2</option><option>3</option><option>4</option>
@@ -597,6 +635,11 @@ catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2
       <a class="panel hov oneitem" href="#/trust"><span class="one-k">07</span><h3>The Oath</h3><p class="k">Four kinds of knowledge, never mixed. Paid never touches organic. Corrections welcome.</p></a>
       <a class="panel hov oneitem" href="#/system"><span class="one-k">08</span><h3>The Machine</h3><p class="k">The substrate keeps hash-chained receipts on its own learning. Owner demo.</p></a>
     </div>
+    <div class="panel keysstrip"><h3 style="font-size:19px;font-weight:600">The three keys <span class="stamp st-warn" style="font-size:9px;margin-left:8px">owner demo — all closed</span></h3>
+      <div class="keyrow"><span class="kicon">🔑</span><span><span class="kt">KEY 1 — Environment</span><div class="kd">A host with unintercepted egress ignites live acquisition: the 74 records promote through the claim court to public. The integrity guard refuses man-in-the-middle evidence by design.</div></span><span class="kstat stamp st-unk">closed</span></div>
+      <div class="keyrow"><span class="kicon">🔑</span><span><span class="kt">KEY 2 — Deploy</span><div class="kd">Production and DNS are the owner's hands alone. The truth widget URLs and public journeys activate here.</div></span><span class="kstat stamp st-unk">closed</span></div>
+      <div class="keyrow"><span class="kicon">🔑</span><span><span class="kt">KEY 3 — Outreach</span><div class="kd">One named merchant, one private preview, one follow-up maximum, permanent stop rule. The Sovereign Cell packet is staged and waiting.</div></span><span class="kstat stamp st-unk">closed</span></div>
+    </div>
     <p class="k" style="margin-top:40px;font-size:12px;color:var(--dim)">Proof compounds. 74 verified retailers · 85/85 machine courts green · every claim carries its source.<br>Built to grow: what people can't find becomes demand intelligence, what businesses do becomes measured outcomes, and every lesson makes the next answer better.</p>
   </div>
 </div>
@@ -699,10 +742,15 @@ const getClaims = () => jget('owd_claims', {});
 const getClaim = (a) => getClaims()[a] || null;
 const setClaim = (a, data) => { const c = getClaims(); c[a] = { ...(c[a]||{}), ...data }; jset('owd_claims', c); };
 const logDemand = (q) => { if(!q) return; const d = jget('owd_demand', []); d.push({ q: q.slice(0,80), at: Date.now() }); jset('owd_demand', d.slice(-50)); };
+const getFavs = () => jget('owd_favs', {});
+const toggleFav = (a) => { const f = getFavs(); if (f[a]) delete f[a]; else f[a] = true; jset('owd_favs', f); };
+const getRequests = () => jget('owd_requests', []);
+const addRequest = (q) => { if(!q) return; jset('owd_requests', [...getRequests(), { q: q.slice(0,80), at: Date.now() }].slice(-50)); };
+const requestAgg = () => { const m = {}; getRequests().forEach(x => m[x.q.toLowerCase()] = (m[x.q.toLowerCase()]||0)+1); return Object.entries(m).sort((a,b)=>b[1]-a[1]); };
 const demandAgg = () => { const m = {}; jget('owd_demand', []).forEach(x => m[x.q.toLowerCase()] = (m[x.q.toLowerCase()]||0)+1); return Object.entries(m).sort((a,b)=>b[1]-a[1]); };
 
 /* ---------- explore ---------- */
-const F = {delivery:false,tasting:false,safeuse:false,garden:false};
+const F = {delivery:false,tasting:false,safeuse:false,garden:false,saved:false};
 function tog(btn){ const k=btn.dataset.f; F[k]=!F[k]; btn.classList.toggle('on',F[k]); renderList(); }
 function match(r){
   const q=(document.getElementById('q')?.value||'').toLowerCase();
@@ -713,6 +761,7 @@ function match(r){
   if(F.tasting && !r.en.includes('Education Tasting')) return false;
   if(F.safeuse && !r.en.includes('Safe-Use')) return false;
   if(F.garden && !r.en.includes('Summer Garden')) return false;
+  if(F.saved && !getFavs()[r.a]) return false;
   return true;
 }
 const TAGCLS = {'Delivery':'t-del','Education Tasting':'t-tst','Safe-Use':'t-safe','Summer Garden':'t-gar'};
@@ -731,7 +780,7 @@ function cardHTML(r){
     ${eb?`<span class="ebrow">${eb}</span>`:''}
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
       <span class="nm">${r.n}</span>
-      <span class="wpill" style="background:${WCOLORS[r.w]}">W${r.w}</span>
+      <span style="display:flex;gap:6px;align-items:center"><button class="heart ${getFavs()[r.a]?'on':''}" data-act="fav" data-a="${r.a}" aria-label="${getFavs()[r.a]?'Remove from saved':'Save'}">${getFavs()[r.a]?'♥':'♡'}</button><span class="wpill" style="background:${WCOLORS[r.w]}">W${r.w}</span></span>
     </div>
     <span class="ad">${r.ad}</span>
     <div class="meta">
@@ -743,9 +792,10 @@ function cardHTML(r){
 }
 function renderList(){
   const rows = RECORDS.filter(match);
-  if (rows.length === 0) logDemand(document.getElementById('q')?.value?.trim());
+  const qv = (document.getElementById('q')?.value||'').trim();
+  if (rows.length === 0) logDemand(qv);
   document.getElementById('list').innerHTML = rows.map(cardHTML).join('') ||
-    `<div class="panel" style="grid-column:1/-1"><span class="stamp st-warn">Zero verified matches</span><p class="k" style="margin-top:14px">In the live system this exact miss becomes demand intelligence — a signal to the businesses positioned to serve it. Nothing gets invented to fill the gap.</p></div>`;
+    `<div class="panel" style="grid-column:1/-1"><span class="stamp st-warn">Zero verified matches</span><p class="k" style="margin-top:14px">This exact miss just became demand intelligence — aggregated for the businesses positioned to serve it. Nothing gets invented to fill the gap.</p>${qv?`<button class="actbtn ghost" style="margin-top:16px;padding:9px 18px;font-size:13px" data-act="request" data-q="${qv.replace(/"/g,'&quot;')}">Request &ldquo;${qv.replace(/</g,'&lt;')}&rdquo; from the market</button>`:''}</div>`;
   document.getElementById('count').textContent = `${rows.length} of ${RECORDS.length} licensed retailers · ${SNAP}`;
 }
 
@@ -829,8 +879,9 @@ function ask(e){
   if(rows.length===0){
     logDemand(q);
     out.innerHTML = `<div class="panel"><span class="stamp st-warn">Zero verified matches</span>
-      <p style="margin-top:16px;font-family:var(--serif);font-size:21px"><b>No licensed retailer matches that — yet.</b></p>
-      <p class="k" style="margin-top:10px">In the live system this exact question is recorded as unmet demand: a real signal, aggregated privately, offered to the businesses positioned to serve it. Nothing fake gets shown to fill the silence.</p>
+      <p style="margin-top:16px;font-size:21px;font-weight:600"><b>No licensed retailer matches that — yet.</b></p>
+      <p class="k" style="margin-top:10px">This exact question is now recorded as unmet demand: a real signal, aggregated privately, offered to the businesses positioned to serve it. Nothing fake gets shown to fill the silence.</p>
+      <button class="actbtn ghost" style="margin-top:16px;padding:9px 18px;font-size:13px" data-act="request" data-q="${q.replace(/"/g,'&quot;')}">Request this from the market</button>
       <div class="ansmeta">Evidence: ${SNAP} · your query stayed on this device in this demo</div></div>`;
     return;
   }
@@ -958,8 +1009,19 @@ function renderOS(){
         <p class="k" style="margin-top:8px">${r.en.includes('Education Tasting')?`Only ${tastAll} of 74 retailers city-wide hold Education Tasting — yours is a differentiator worth staging.`:`${tastAll} retailers city-wide hold Education Tasting; you don't — a candidate endorsement to pursue.`}</p>
       </div>
       <div class="panel"><h3>Demand you can't see <span class="stamp st-unk" style="font-size:9px">session sample</span></h3>
-        ${demand.length? demand.slice(0,6).map(([q,n])=>`<div class="demandrow"><span class="dq">"${q}"</span><span class="dc">${n} search${n>1?'es':''} · 0 verified matches</span></div>`).join('') : '<p class="k" style="margin-top:8px">No unmet demand captured this session. When customers search for things nobody serves, those misses appear here — aggregated, never individual.</p>'}
-        <p class="k" style="margin-top:12px;font-size:11px;color:var(--dim)">In production this aggregates privately across all customers — demand intelligence, not surveillance.</p>
+        ${requestAgg().slice(0,4).map(([q,n])=>`<div class="bounty"><div class="bq">&ldquo;${q}&rdquo;</div><div class="bn">${n} customer request${n>1?'s':''} · nobody serves this yet — first mover takes it</div></div>`).join('')}
+        ${demand.length? demand.slice(0,5).map(([q,n])=>`<div class="demandrow"><span class="dq">"${q}"</span><span class="dc">${n} search${n>1?'es':''} · 0 verified matches</span></div>`).join('') : (requestAgg().length? '' : '<p class="k" style="margin-top:8px">No unmet demand captured this session. When customers search for things nobody serves, those misses appear here — aggregated, never individual.</p>')}
+        <p class="k" style="margin-top:12px;font-size:11px;color:var(--dim)">In production this aggregates privately across all customers — demand intelligence, not surveillance. Amber cards are explicit customer requests: the reverse marketplace.</p>
+      </div>
+      <div class="panel"><h3>Your truth widget <span class="stamp st-ver" style="font-size:9px"><span class="dot"></span>distribution</span></h3>
+        <p class="k" style="margin-top:8px">Paste this on your own site — a live verified badge that routes discovery back through the registry. Freshness and revocation stay with the license.</p>
+        <textarea class="widgetta" id="os-widget" readonly>&lt;a href="https://orderweeddc.com/r/${r.a}" style="display:inline-flex;align-items:center;gap:8px;font:600 13px -apple-system,sans-serif;color:#067d2e;text-decoration:none;border:1px solid #d2d2d7;border-radius:999px;padding:8px 14px"&gt;&#10003; Verified licensed retailer &mdash; ${r.n} &middot; Ward ${r.w} &middot; ${r.a} &middot; via orderweeddc&lt;/a&gt;</textarea>
+        <button class="actbtn ghost" style="margin-top:10px;padding:9px 18px;font-size:13px" data-act="copy-widget">Copy embed code</button>
+        <p class="k" style="margin-top:8px;font-size:11px;color:var(--dim)">URL activates with production (KEY 2). The badge claims only what the registry verifies.</p>
+      </div>
+      <div class="panel"><h3>Outcome receipts</h3>
+        <p class="k" style="margin-top:8px"><span class="stamp st-unk">None yet</span></p>
+        <p class="k" style="margin-top:10px">Receipts begin when reality supplies outcomes: a baseline visibility audit, then attributed deltas from live customers. This demo refuses to invent them — when they exist, they'll be numbers you can hold, not hype.</p>
       </div>
       <div class="panel" style="grid-column:1/-1"><h3>Next best action</h3>
         <div class="nba"><div class="nbat">${nba.t}</div><p>${nba.p}</p></div>
@@ -1020,6 +1082,19 @@ function cycleTheme(){
 }
 setInterval(applyTheme, 60000); // dawn and dusk arrive on their own
 
+/* ---------- search overlay: live suggestions ---------- */
+document.getElementById('sovq').addEventListener('input', () => {
+  const q = document.getElementById('sovq').value.trim().toLowerCase();
+  const res = document.getElementById('sres');
+  if (!q) { res.innerHTML = ''; return; }
+  const hits = RECORDS.filter(r => (r.n+' '+r.e+' '+r.ad).toLowerCase().includes(q)).slice(0,8);
+  res.innerHTML = hits.length ? hits.map(r=>`<a class="ansrow" href="#/r/${encodeURIComponent(r.a)}" data-act="search-close2">
+    <span><b style="color:var(--ink);font-size:15px;font-weight:600">${r.n}</b><br><span class="k" style="font-size:12px;color:var(--mute)">${r.ad}</span></span>
+    <span class="wpill" style="background:${WCOLORS[r.w]};height:fit-content">W${r.w}</span></a>`).join('')
+  : `<div class="panel"><span class="stamp st-warn" style="font-size:9px">Zero verified matches</span><p class="k" style="margin-top:8px">Recorded as demand. <a href="#/ask" data-act="search-close2">Ask the District</a> for an evidence-bound answer.</p></div>`;
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const s = document.getElementById('sov'); if (s && !s.hidden) s.hidden = true; } });
+
 /* ---------- CSP-proof interaction layer: no inline handlers anywhere ---------- */
 document.addEventListener('click', (e) => {
   if (e.target.closest('a[data-native]')) return; // native links never hijacked
@@ -1042,6 +1117,12 @@ document.addEventListener('click', (e) => {
   }
   else if (act === 'os-save-hours') { const r = osRecord(); if(r){ setClaim(r.a, { hours: document.getElementById('os-hours').value.trim() || null }); renderOS(); } }
   else if (act === 'os-add-item') { const r = osRecord(); if(r){ const n=document.getElementById('os-mn').value.trim(), p=document.getElementById('os-mp').value.trim(); if(n&&p){ const c=getClaim(r.a); setClaim(r.a,{ menu:[...(c.menu||[]),{n,p}] }); renderOS(); } } }
+  else if (act === 'fav') { toggleFav(el.dataset.a); if(document.getElementById('v-explore').classList.contains('on')) renderList(); if(document.getElementById('v-profile').classList.contains('on')) renderProfile(el.dataset.a); }
+  else if (act === 'search-open') { document.getElementById('sov').hidden = false; setTimeout(()=>document.getElementById('sovq').focus(), 50); }
+  else if (act === 'search-close' || act === 'search-close2') { document.getElementById('sov').hidden = true; }
+  else if (act === 'preset-go') { document.getElementById('sov').hidden = true; location.hash = '#/ask'; setTimeout(()=>askPreset(el.dataset.q), 90); }
+  else if (act === 'request') { addRequest(el.dataset.q); el.outerHTML = '<span class="stamp st-ver" style="margin-top:16px"><span class="dot"></span>Request recorded — aggregated for the market (demo session)</span>'; }
+  else if (act === 'copy-widget') { const ta = document.getElementById('os-widget'); ta.select(); try { navigator.clipboard.writeText(ta.value); } catch { document.execCommand && document.execCommand('copy'); } el.textContent = 'Copied ✓'; setTimeout(()=>el.textContent='Copy embed code', 1600); }
   else if (act === 'os-save-deal') { const r = osRecord(); if(r){ const tt=document.getElementById('os-dt').value.trim(), terms=document.getElementById('os-dterms').value.trim(); if(tt&&terms){ setClaim(r.a,{ deal:{ t:tt, terms } }); renderOS(); } } }
   else if (act === 'report') alert('Demo: a correction report would be logged with your note, timestamped, and traced to resolution.');
 });
