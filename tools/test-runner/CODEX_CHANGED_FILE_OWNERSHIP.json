@@ -836,6 +836,8 @@
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
         "tools/vanguard/allocator.mjs",
         "tools/vanguard/cockpit.mjs",
+        "tools/vanguard/console.mjs",
+        "tools/vanguard/console.test.mjs",
         "tools/vanguard/economic-layer.test.mjs",
         "tools/vanguard/governor.mjs",
         "tools/vanguard/portfolio.json",
