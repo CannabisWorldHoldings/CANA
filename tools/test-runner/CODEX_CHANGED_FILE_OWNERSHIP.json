@@ -807,6 +807,7 @@
         "docs/vanguard/CONSTITUTION.md",
         "docs/vanguard/LAYERS.md",
         "docs/vanguard/MISSION_PACKET.template.md",
+        "docs/vanguard/VICTORY_BOARD.json",
         "tools/alive-loop/adapter.mjs",
         "tools/alive-loop/alive-loop.test.mjs",
         "tools/alive-loop/confirm-metric.mjs",
@@ -830,6 +831,8 @@
         "tools/sentinel/bridge.mjs",
         "tools/sentinel/sentinel.test.mjs",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+        "tools/vanguard/victory-board.mjs",
+        "tools/vanguard/victory-board.test.mjs",
         "tools/visual-court/checks.mjs",
         "tools/visual-court/run-static.mjs",
         "tools/visual-court/static-collector.mjs"

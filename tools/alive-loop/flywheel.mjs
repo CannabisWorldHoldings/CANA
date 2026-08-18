@@ -360,8 +360,21 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       const recorded = JSON.parse(fs.readFileSync(path.resolve(signalFileArg.slice(14)), 'utf8'));
       for (const s of recorded) signals.push(s);
     }
-    // Sentinel drift → OWNER-GATED lane (never auto-executed here).
+    // Victory Board gaps → OWNER-GATED lane (constitution §X law 40): the
+    // victory queue is carried by the metabolism, not by anyone's memory.
+    // An invalid board is a real local defect and becomes a sensed signal.
     let ownerGated = [];
+    try {
+      const boardPath = path.join(ROOT, 'docs', 'vanguard', 'VICTORY_BOARD.json');
+      if (fs.existsSync(boardPath)) {
+        const { loadBoard, gapsAsOwnerQueue } = await import('../vanguard/victory-board.mjs');
+        try {
+          ownerGated.push(...gapsAsOwnerQueue(loadBoard(boardPath)));
+        } catch (err) {
+          signals.push({ id: 'victory-board-invalid', kind: 'COVERAGE_GAP', severity: 3, observation: `victory board fails its court: ${err.message}`, ref: 'docs/vanguard/VICTORY_BOARD.json' });
+        }
+      }
+    } catch { /* board lane stays empty rather than fabricated */ }
     try {
       const sentinelDir = path.join(LOCAL, 'sentinel');
       const latest = fs.existsSync(sentinelDir) ? fs.readdirSync(sentinelDir).filter((f) => /^\d{4}-\d{2}-\d{2}\.json$/.test(f)).sort().pop() : null;

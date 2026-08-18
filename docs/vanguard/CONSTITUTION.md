@@ -40,7 +40,7 @@ An honest constitution states which of its laws have teeth.
 19. Merchant identity is a security boundary: one merchant's brand DNA never migrates to another, whatever performed. [ENFORCED — BRAND oracle byte-identity, experience-fabric; PROTECTED_PATHS]
 20. PAID ≠ ORGANIC, non-negotiable: paid eligibility never touches organic relevance; every paid unit is disclosed. [DECLARED — entitlement guards EXISTS_UPSTREAM]
 21. One truth, many projections: web, Ask, search, map, merchant OS, reports, media, and machine APIs all project from the same market reality. [DECLARED — architecture-bearing]
-22. Victory is never feature count. Do not rebuild commodity infrastructure (POS, payments) without a strategic reason; integrate where lawful and superior. The moat is accumulated, reality-graded local causal intelligence. [DECLARED]
+22. Capability count alone is never victory — but capability breadth is a weapon. The law is ZERO USELESS FEATURES, MAXIMUM USEFUL CAPABILITY (see Section X). Do not rebuild commodity infrastructure (POS, payments) without a strategic reason; integrate where lawful and superior. The moat is accumulated, reality-graded local causal intelligence. [DECLARED; amended — see Amendment 1]
 23. Revenue never overrides trust: no fake urgency, invented discounts, silent paid ranking, fabricated popularity, or deceptive personalization. [DECLARED; deal-validity laws ENFORCED in market-page-compiler]
 
 ## VII. Experience
@@ -56,7 +56,60 @@ An honest constitution states which of its laws have teeth.
 29. Proof states never collapse: IDEA → DESIGNED → IMPLEMENTED_LOCAL → TESTED_LOCAL → RENDERED → SHADOWED → PILOTED → CANONICAL → DEPLOYED → USED → OUTCOME_OBSERVED → VALUE_SUPPORTED → CAUSALLY_SUPPORTED → REPLICATED → PROVEN_WITHIN_DEFINED_SCOPE. [ENFORCED — registry states; DECLARED as full lattice]
 30. No premature victory: not "beat X" for looks, not "AGI" for tool calls, not "self-improving" for memory, not "causal" for a post-hoc rise, not "merchant value" for a click. Ambition is a search mandate; reality determines the verdict. [DECLARED — with the flywheel as its mechanical spine]
 
+## X. Total Victory Supremacy (Amendment 1)
+Subordination clause: this section directs AMBITION within Sections I–IX; it never
+overrides truth, authority, owner gates, identity, privacy, or trust. The only
+permanent constraints are reality, law, authority, security, ethics, evidence, and
+physical/economic limits. Everything else is subject to engineering attack.
+
+31. Total system advantage: the mission maximizes every dimension that matters —
+    capability breadth AND depth, intelligence, autonomy, speed, customer value,
+    merchant value, experience, distribution, growth, revenue, trust, defensibility,
+    learning velocity — together wherever economically, technically, legally, and
+    strategically possible. No arbitrary feature, intelligence, growth, creative, or
+    ambition ceiling. [DECLARED — instrumented by the Victory Board]
+32. Capability decision rule: meaningful advantage → BUILD. Mature external system
+    better with little ownership advantage → INTEGRATE. Compounding proprietary
+    advantage → OWN. Commoditized → ABSTRACT. No meaningful advantage → KILL.
+    [DECLARED]
+33. Feature compounding: prefer capabilities that make other capabilities more
+    powerful. Every major capability must connect into the organism — a registry row
+    and a Victory Board line — or it does not ship. [ENFORCED — registry + board courts]
+34. Strategic omnivory: any lawful mechanism anywhere — algorithm, workflow, growth
+    lane, UX primitive, forecasting technique, business model — is a candidate donor:
+    discover → understand → test transfer → assimilate → attempt to surpass. Reading
+    about a mechanism is never implementation. [DECLARED — frontier pipeline states]
+35. Frontier continuity: for every consequential mechanism maintain CHAMPION,
+    CHALLENGER, ALIEN CHALLENGER (different mechanism family), and SUCCESSOR THREAT.
+    No champion by history. [ENFORCED as practice — judge succession v1→v2, zero-base
+    visual tournament; DECLARED as universal registry fields]
+36. Pareto search: never optimize a single KPI. Tradeoffs are made explicit, then
+    attacked — QUALITY and SPEED, GROWTH and TRUST, AUTONOMY and CONTROL, MORE
+    CAPABILITY and BETTER SIMPLICITY. Breaking an accepted tradeoff is a first-class
+    form of innovation. [DECLARED]
+37. Speed supremacy: compress time-to-detect, -understand, -decide, -test,
+    -implement, -verify, -learn, -scale. Measured from receipts, never asserted.
+    [ENFORCED — timestamps on every chained row]
+38. Learning velocity is a target variable: continuously ask what is slowing the rate
+    of improvement, then improve that. The machinery of improvement is itself subject
+    to improvement. [ENFORCED — the flywheel's own construction was its first meal]
+39. Losing experiments strengthen the organism: losses are recorded, attributed, and
+    feed the next attempt. Winners scale, losers die, no result vanishes. [ENFORCED —
+    Brier misses recorded (0.81 court), REJECTED rows, demotion-with-evidence]
+40. Victory claims are court-gated: no MATCH or SURPASS claim without evidence refs;
+    gaps carry a next strike; the board is structurally incapable of claiming
+    permanent victory. DO NOT CLAIM PERMANENT VICTORY — ENGINEER CONTINUOUS
+    ADVANTAGE. [ENFORCED — tools/vanguard/victory-board.mjs]
+
 ## Amendment law
 Amendments are rare, receipted, and never merge volatile state into this layer.
 Every amendment names its signal (receipt ref) and its disposition of prior law
 (EXTENDED · SUPERSEDED · REFUSED).
+
+**AMENDMENT 1** (2026-08-18) — signal: owner correction "Total Victory Supremacy Law"
+(pasted external exchange, boot report Turn 17). Dispositions: EXTENDS law 22 (from
+"victory is never feature count" to "zero useless features, maximum useful
+capability"); EXTENDS laws 14 and 30 (ambition widened, evidence bar unchanged);
+SUPERSEDES the narrow reading "10× better cannot mean more features" (donor text,
+never our law); REFUSES nothing in Sections I–IX — owner gates, truth discipline,
+identity boundaries, and trust laws stand whole.
