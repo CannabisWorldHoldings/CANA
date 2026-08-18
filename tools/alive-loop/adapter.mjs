@@ -154,7 +154,13 @@ export class CycleStore {
         mission_id: record.mission_id, idem_key: record.idem_key,
         payload_digest: record.payload_digest, prev_hash: record.prev_hash,
       }));
-      if (record.prev_hash !== prev || record.hash !== expected) {
+      // Strict custody: the payload BODY is recomputed against its digest, so a
+      // rewritten payload breaks the chain even when every row field is intact.
+      // (The hole the forecast court caught in its siblings, closed here after
+      // the custody sweep's blindness probe caught this verifier accepting a
+      // body mutation — receipt: _mission/receipts/flywheel/00-verifier-blind-detection.json.)
+      if (record.prev_hash !== prev || record.hash !== expected
+        || sha(canonical(record.payload ?? null)) !== record.payload_digest) {
         return { valid: false, at_seq: record.seq };
       }
       prev = record.hash;
@@ -199,7 +205,7 @@ export class CycleStore {
   }
 }
 
-/** Standalone verifier — usable after the adapter is removed (court 14). */
+/** Standalone verifier — usable after the adapter is removed (court 14). Strict: payload bodies recomputed. */
 export function verifyChainFile(filePath) {
   const lines = fs.readFileSync(filePath, 'utf8').split('\n').filter((l) => l.trim() !== '');
   let prev = 'GENESIS';
@@ -210,7 +216,8 @@ export function verifyChainFile(filePath) {
       mission_id: record.mission_id, idem_key: record.idem_key,
       payload_digest: record.payload_digest, prev_hash: record.prev_hash,
     }))).digest('hex');
-    if (record.prev_hash !== prev || record.hash !== expected) return { valid: false, at: index };
+    const bodyDigest = createHash('sha256').update(JSON.stringify(sortKeys(record.payload ?? null))).digest('hex');
+    if (record.prev_hash !== prev || record.hash !== expected || bodyDigest !== record.payload_digest) return { valid: false, at: index };
     prev = record.hash;
   }
   return { valid: true, count: lines.length };

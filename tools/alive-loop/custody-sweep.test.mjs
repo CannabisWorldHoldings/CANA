@@ -22,16 +22,15 @@ const seedLessons = (root) => {
   return store;
 };
 
-test('DETECTION COURT: the cycle-store verifier is currently BLIND to payload-body mutation', () => {
-  // This court PINS the live weakness the sweep was built to catch: the
-  // alive-loop cycle store validates the row-hash chain but never recomputes
-  // payload digests, so a mutated payload body slides through. Its sibling
-  // ledgers (winner memory, forecasts, guard) already refuse this. When the
-  // hole is fixed, this assertion flips to STRICT — by a commit that cites
-  // this receipt as its signal.
+test('DETECTION COURT, resolved: the cycle-store verifier now refuses payload-body mutation', () => {
+  // History of this court: at commit cc5fd04 it PINNED a live weakness — the
+  // cycle store validated the row-hash chain but never recomputed payload
+  // digests, so a mutated payload body slid through (probe verdict
+  // VERIFIER_BLIND; receipt _mission/receipts/flywheel/00-verifier-blind-detection.json).
+  // The fix commit flipped this assertion to STRICT, exactly as predeclared.
   const p = probeVerifier('alive-loop-cycles');
   assert.equal(p.valid_chain_ok, true, 'honest bytes must verify');
-  assert.equal(p.verdict, 'VERIFIER_BLIND', 'the sweep detects the real hole (fix flips this court to STRICT)');
+  assert.equal(p.verdict, 'STRICT', 'the hole the sweep caught is closed and pinned closed');
 });
 
 test('the fixed ledgers all probe STRICT: valid chains pass, body mutants are refused', () => {

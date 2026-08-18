@@ -187,9 +187,13 @@ test('court 8: receipt mutation, deletion, reordering, and replay are detected',
   const original = fs.readFileSync(file, 'utf8');
   const lines = original.trim().split('\n');
 
-  // Mutation
+  // Mutation (row field)
   fs.writeFileSync(file, original.replace('"state":"COMPILED"', '"state":"COMPILED_X"'));
   assert.equal(verifyChainFile(file).valid, false, 'mutated record breaks the chain');
+  // Mutation (payload BODY — row fields untouched; the custody-sweep probe
+  // caught the verifier blind to exactly this, so it is pinned here forever)
+  fs.writeFileSync(file, original.replace('"final":"ADMITTED"', '"final":"REWRITTEN"'));
+  assert.equal(verifyChainFile(file).valid, false, 'payload-body mutation breaks the chain');
   // Deletion
   fs.writeFileSync(file, lines.filter((_, i) => i !== 2).join('\n') + '\n');
   assert.equal(verifyChainFile(file).valid, false, 'deleted record breaks the chain');
