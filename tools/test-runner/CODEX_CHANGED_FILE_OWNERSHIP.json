@@ -840,6 +840,8 @@
         "tools/vanguard/cockpit.mjs",
         "tools/vanguard/console.mjs",
         "tools/vanguard/console.test.mjs",
+        "tools/vanguard/dual-forecast.mjs",
+        "tools/vanguard/dual-forecast.test.mjs",
         "tools/vanguard/economic-layer.test.mjs",
         "tools/vanguard/governor.mjs",
         "tools/vanguard/portfolio.json",
