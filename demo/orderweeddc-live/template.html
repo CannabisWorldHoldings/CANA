@@ -281,6 +281,21 @@ catch(e){var h2=new Date().getHours();document.documentElement.dataset.theme=(h2
   .keyrow .kd{font-size:13px;color:var(--mute);margin-top:3px;line-height:1.6}
   .keyrow .kstat{margin-left:auto;flex-shrink:0}
 
+  .bestprice{font-size:9.5px;font-weight:700;letter-spacing:.02em;color:#fff;background:var(--em, #2E9F45);background:#2E9F45;border-radius:5px;padding:2px 7px;margin-left:8px;text-transform:uppercase}
+  .laybtn{font-size:12px;font-weight:500;color:var(--ink2);background:var(--canvas);border:1px solid var(--hair);border-radius:10px;padding:9px 14px;transition:all .2s}
+  .laybtn.on{border-color:var(--btn);color:var(--blue);font-weight:600}
+  .courtline{font-size:11px;color:var(--green);margin-top:10px;line-height:1.6}
+  .studio{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+  .studio .bd{border-radius:12px;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative}
+  .studio .bd.on{border-color:var(--btn)}
+  .studio .bd img{display:block;width:100%;height:110px;object-fit:cover}
+  .creative{position:relative;border-radius:16px;overflow:hidden;margin-top:14px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+  .creative img{display:block;width:100%}
+  .creative .ov{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:22px;background:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.72))}
+  .creative .cn{font-size:24px;font-weight:700;color:#fff;letter-spacing:-.015em;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+  .creative .cd{font-size:15px;color:#fff;opacity:.95;margin-top:4px;font-weight:600}
+  .creative .cm{font-size:10px;color:rgba(255,255,255,.75);margin-top:10px;letter-spacing:.04em;text-transform:uppercase}
+
   /* ---- age gate ---- */
   #gate{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.5);backdrop-filter:blur(22px);display:flex;align-items:center;justify-content:center;padding:22px}
   #gate[hidden]{display:none!important}
@@ -898,6 +913,21 @@ function ask(e){
   </div>`;
 }
 
+/* ---------- price pledge: best-here when here < elsewhere (numeric) ---------- */
+const money = (s) => { const m = String(s||'').match(/([0-9]+(?:\.[0-9]+)?)/); return m ? parseFloat(m[1]) : null; };
+const bestHere = (m) => { const a = money(m.p), b = money(m.ep); return a != null && b != null && a < b; };
+
+/* ---------- layout compiler: a described layout becomes a governed patch ---------- */
+function compileLayout(text){
+  const found = [];
+  const keys = [['menu','menu'],['deal','deal'],['hour','hours'],['special','deal']];
+  const lower = (text||'').toLowerCase();
+  keys.forEach(([kw, sec]) => { const i = lower.indexOf(kw); if (i >= 0 && !found.some(f=>f.sec===sec)) found.push({ i, sec }); });
+  const order = found.sort((a,b)=>a.i-b.i).map(f=>f.sec);
+  ['deal','menu','hours'].forEach(s => { if(!order.includes(s)) order.push(s); });
+  return order;
+}
+
 /* ---------- the business panel: registry truth (green) vs business truth (blue) ---------- */
 function bizPanel(r){
   const c = getClaim(r.a);
@@ -914,12 +944,16 @@ function bizPanel(r){
     <div class="srcline">We don't guess menus or hours · the moment this business claims and verifies, these fields go live — marked business-verified</div>
   </div>`;
   const menu = c.menu||[];
+  const S = {
+    hours: `<span class="kk">Hours</span><span>${c.hours ? c.hours : '<span class="unk">not yet posted</span>'}</span>`,
+    menu: `<span class="kk">Menu</span><span>${menu.length? menu.map(m=>`${m.n}${bestHere(m)?'<span class="bestprice">Best price here ✓</span>':''} <span style="color:var(--mute)">· ${m.p}</span>`).join('<br>') : '<span class="unk">not yet posted</span>'}</span>`,
+    deal: `<span class="kk">Deal</span><span>${c.deal? `<b${(c.layout?.preset==='showcase')?' style="font-size:19px"':''}>${c.deal.t}</b><br><span class="k" style="font-size:13px;color:var(--mute)">${c.deal.terms}</span>` : '<span class="unk">none posted</span>'}</span>`,
+  };
+  const order = c.layout?.order || {classic:['hours','menu','deal'],showcase:['deal','menu','hours'],menufirst:['menu','deal','hours']}[c.layout?.preset||'classic'];
   return `<div class="panel">
     <span class="stamp st-biz"><span class="dot"></span>Business-verified · demo session</span>
     <div class="kv">
-      <span class="kk">Hours</span><span>${c.hours ? c.hours : '<span class="unk">not yet posted</span>'}</span>
-      <span class="kk">Menu</span><span>${menu.length? menu.map(m=>`${m.n} <span style="color:var(--mute)">· ${m.p}</span>`).join('<br>') : '<span class="unk">not yet posted</span>'}</span>
-      <span class="kk">Deal</span><span>${c.deal? `<b>${c.deal.t}</b><br><span class="k" style="font-size:13px;color:var(--mute)">${c.deal.terms}</span>` : '<span class="unk">none posted</span>'}</span>
+      ${order.map(k=>S[k]||'').join('\n      ')}
     </div>
     <a class="actbtn" href="#/os">Manage storefront</a>
     <div class="srcline">Business-entered fields are labeled exactly that — distinct from the registry's green Verified◊, never blended. Demo session only; nothing is published.</div>
@@ -992,9 +1026,10 @@ function renderOS(){
       <div class="panel"><h3>Storefront</h3>
         <div class="field"><label>Hours (e.g. Mon–Sat 10–8, Sun 11–6)</label><input id="os-hours" value="${c.hours||''}" placeholder="Post your hours"></div>
         <button class="actbtn ghost" style="margin-top:12px;padding:9px 18px;font-size:13px" data-act="os-save-hours">Save hours</button>
-        <div style="margin-top:18px">${menu.map((m,i)=>`<div class="menuline"><span>${m.n}</span><span class="mp">${m.p}</span></div>`).join('') || '<p class="k">No menu items yet.</p>'}</div>
+        <div style="margin-top:18px">${menu.map((m,i)=>`<div class="menuline"><span>${m.n}${bestHere(m)?'<span class="bestprice">Best price here ✓</span>':''}</span><span class="mp">${m.p}${m.ep?` <span style="color:var(--dim);font-weight:400;font-size:12px">(elsewhere ${m.ep})</span>`:''}</span></div>`).join('') || '<p class="k">No menu items yet.</p>'}</div>
         <div class="field"><label>Add menu item</label><input id="os-mn" placeholder="Item name"></div>
-        <div class="field"><input id="os-mp" placeholder="Price (e.g. $45 / 3.5g)"></div>
+        <div class="field"><input id="os-mp" placeholder="Your price here (e.g. $45 / 3.5g)"></div>
+        <div class="field"><input id="os-ep" placeholder="Your price elsewhere (optional — powers the Best-Price pledge)"></div>
         <button class="actbtn ghost" style="margin-top:12px;padding:9px 18px;font-size:13px" data-act="os-add-item">Add item</button>
       </div>
       <div class="panel"><h3>Your deal</h3>
@@ -1012,6 +1047,30 @@ function renderOS(){
         ${requestAgg().slice(0,4).map(([q,n])=>`<div class="bounty"><div class="bq">&ldquo;${q}&rdquo;</div><div class="bn">${n} customer request${n>1?'s':''} · nobody serves this yet — first mover takes it</div></div>`).join('')}
         ${demand.length? demand.slice(0,5).map(([q,n])=>`<div class="demandrow"><span class="dq">"${q}"</span><span class="dc">${n} search${n>1?'es':''} · 0 verified matches</span></div>`).join('') : (requestAgg().length? '' : '<p class="k" style="margin-top:8px">No unmet demand captured this session. When customers search for things nobody serves, those misses appear here — aggregated, never individual.</p>')}
         <p class="k" style="margin-top:12px;font-size:11px;color:var(--dim)">In production this aggregates privately across all customers — demand intelligence, not surveillance. Amber cards are explicit customer requests: the reverse marketplace.</p>
+      </div>
+      <div class="panel"><h3>Layout engine <span class="stamp st-ver" style="font-size:9px"><span class="dot"></span>fabric-governed</span></h3>
+        <p class="k" style="margin-top:8px">Press a layout — your public listing rearranges instantly. Or describe your own below.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+          ${[['classic','Classic'],['showcase','Deal showcase'],['menufirst','Menu first']].map(([k,lbl])=>`<button class="laybtn ${(c.layout?.preset||'classic')===k?'on':''}" data-act="layout-preset" data-p="${k}">${lbl}</button>`).join('')}
+        </div>
+        <div class="field"><label>Bring your own layout — describe it, it happens</label><input id="os-layout" placeholder="e.g. menu first, then the deal, hours last"></div>
+        <button class="actbtn ghost" style="margin-top:12px;padding:9px 18px;font-size:13px" data-act="layout-custom">Apply my layout</button>
+        <div class="courtline">Every layout change is a governed patch: it may rearrange presentation, but identity, license, verified facts and prices are protected paths it physically cannot touch. Patch court: PASS.</div>
+      </div>
+      <div class="panel"><h3>AI studio <span class="stamp st-biz" style="font-size:9px"><span class="dot"></span>identity-locked</span></h3>
+        <p class="k" style="margin-top:8px">Pick a backdrop — your verified name and live deal are composited deterministically. AI paints scenes; it never touches your identity.</p>
+        <div class="studio">
+          <div class="bd ${(c.creative??1)===1?'on':''}" data-act="studio-pick" data-b="1"><img src="{{IMG_INTERIOR}}" alt="Emerald jewel-box backdrop"></div>
+          <div class="bd ${c.creative===2?'on':''}" data-act="studio-pick" data-b="2"><img src="{{IMG_COURIER}}" alt="DC mural energy backdrop"></div>
+        </div>
+        <div class="creative"><img src="${c.creative===2?'{{IMG_COURIER}}':'{{IMG_INTERIOR}}'}" alt="">
+          <div class="ov"><div class="cn">${r.n}</div><div class="cd">${c.deal? c.deal.t : 'Ward '+r.w+' · licensed & verified'}</div><div class="cm">Ward ${r.w} · ${r.a} · via orderweeddc</div></div>
+        </div>
+        <p class="k" style="margin-top:10px;font-size:11px;color:var(--dim)">Backdrops are AI-generated scene assets (pre-generated for this demo) and are never presented as your premises. Text and identity are composited by the system — the deterministic-composition law. Production adds fresh per-brand generation.</p>
+      </div>
+      <div class="panel"><h3>Price pledge <span class="stamp st-warn" style="font-size:9px">self-attested in demo</span></h3>
+        <p class="k" style="margin-top:8px">Customers come where the price is provably better. Add your elsewhere-price on any menu item — when your price here is lower, the item earns the <span class="bestprice" style="margin-left:0">Best price here ✓</span> badge on your public listing.</p>
+        <p class="k" style="margin-top:10px;font-size:11px;color:var(--dim)">In production the sentinel lawfully observes your public menus elsewhere and the badge becomes sentinel-verified — a pledge customers can trust and competitors can't fake. Demo badges are self-attested and say so.</p>
       </div>
       <div class="panel"><h3>Your truth widget <span class="stamp st-ver" style="font-size:9px"><span class="dot"></span>distribution</span></h3>
         <p class="k" style="margin-top:8px">Paste this on your own site — a live verified badge that routes discovery back through the registry. Freshness and revocation stay with the license.</p>
@@ -1116,13 +1175,16 @@ document.addEventListener('click', (e) => {
     else alert('That does not match the license on record. In production, verification is against the ABCA license-holder — no match, no keys.');
   }
   else if (act === 'os-save-hours') { const r = osRecord(); if(r){ setClaim(r.a, { hours: document.getElementById('os-hours').value.trim() || null }); renderOS(); } }
-  else if (act === 'os-add-item') { const r = osRecord(); if(r){ const n=document.getElementById('os-mn').value.trim(), p=document.getElementById('os-mp').value.trim(); if(n&&p){ const c=getClaim(r.a); setClaim(r.a,{ menu:[...(c.menu||[]),{n,p}] }); renderOS(); } } }
+  else if (act === 'os-add-item') { const r = osRecord(); if(r){ const n=document.getElementById('os-mn').value.trim(), p=document.getElementById('os-mp').value.trim(), ep=document.getElementById('os-ep').value.trim(); if(n&&p){ const c=getClaim(r.a); setClaim(r.a,{ menu:[...(c.menu||[]),{n,p,ep:ep||null}] }); renderOS(); } } }
   else if (act === 'fav') { toggleFav(el.dataset.a); if(document.getElementById('v-explore').classList.contains('on')) renderList(); if(document.getElementById('v-profile').classList.contains('on')) renderProfile(el.dataset.a); }
   else if (act === 'search-open') { document.getElementById('sov').hidden = false; setTimeout(()=>document.getElementById('sovq').focus(), 50); }
   else if (act === 'search-close' || act === 'search-close2') { document.getElementById('sov').hidden = true; }
   else if (act === 'preset-go') { document.getElementById('sov').hidden = true; location.hash = '#/ask'; setTimeout(()=>askPreset(el.dataset.q), 90); }
   else if (act === 'request') { addRequest(el.dataset.q); el.outerHTML = '<span class="stamp st-ver" style="margin-top:16px"><span class="dot"></span>Request recorded — aggregated for the market (demo session)</span>'; }
   else if (act === 'copy-widget') { const ta = document.getElementById('os-widget'); ta.select(); try { navigator.clipboard.writeText(ta.value); } catch { document.execCommand && document.execCommand('copy'); } el.textContent = 'Copied ✓'; setTimeout(()=>el.textContent='Copy embed code', 1600); }
+  else if (act === 'layout-preset') { const r = osRecord(); if(r){ setClaim(r.a, { layout: { preset: el.dataset.p } }); renderOS(); } }
+  else if (act === 'layout-custom') { const r = osRecord(); if(r){ const txt = document.getElementById('os-layout').value.trim(); if(txt){ setClaim(r.a, { layout: { preset: 'custom', order: compileLayout(txt) } }); renderOS(); } } }
+  else if (act === 'studio-pick') { const r = osRecord(); if(r){ setClaim(r.a, { creative: Number(el.dataset.b) }); renderOS(); } }
   else if (act === 'os-save-deal') { const r = osRecord(); if(r){ const tt=document.getElementById('os-dt').value.trim(), terms=document.getElementById('os-dterms').value.trim(); if(tt&&terms){ setClaim(r.a,{ deal:{ t:tt, terms } }); renderOS(); } } }
   else if (act === 'report') alert('Demo: a correction report would be logged with your note, timestamped, and traced to resolution.');
 });
