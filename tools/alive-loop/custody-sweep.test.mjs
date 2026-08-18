@@ -34,7 +34,7 @@ test('DETECTION COURT, resolved: the cycle-store verifier now refuses payload-bo
 });
 
 test('the fixed ledgers all probe STRICT: valid chains pass, body mutants are refused', () => {
-  for (const family of ['winner-memory', 'forecasts', 'goodhart-guard']) {
+  for (const family of ['winner-memory', 'slow-memory', 'forecasts', 'goodhart-guard']) {
     const p = probeVerifier(family);
     assert.equal(p.valid_chain_ok, true, `${family}: honest bytes verify`);
     assert.equal(p.mutation_refused, true, `${family}: body mutation refused`);

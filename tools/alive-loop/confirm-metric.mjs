@@ -15,6 +15,13 @@
 //
 // Verdict contract (stdout, single JSON object):
 //   { improved: boolean, evidence: [{ observation, ref }] }
+//
+// SUCCESSION LAW: judges are never edited in place — any byte change retires
+// the prior sealed version by JUDGE_DRIFTED refusal, and the new version is
+// sealed fresh under a new metric id BEFORE it confirms any contest.
+// History: fw-metabolism-v1 (commitment 2688571e…) confirmed fwc_1, then was
+// retired by this succession; fw-metabolism-v2 adds the slow-memory family
+// (two-temperature learning) to all three arms.
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -38,6 +45,7 @@ const canonical = (v) => JSON.stringify(sortKeys(v));
 const FAMILIES = [
   { id: 'alive-loop-cycles', dir: 'alive-loop', match: (f) => /^cycle\..+\.jsonl$/.test(f), rowFields: ['seq', 'at', 'state', 'mission_id', 'idem_key', 'payload_digest', 'prev_hash'], bodyKey: 'payload', digestKey: 'payload_digest' },
   { id: 'winner-memory', dir: 'winner-memory', match: (f) => f === 'lessons.jsonl', rowFields: ['seq', 'at', 'lesson_id', 'lesson_digest', 'prev_hash'], bodyKey: 'lesson', digestKey: 'lesson_digest' },
+  { id: 'slow-memory', dir: 'winner-memory', match: (f) => f === 'slow.jsonl', rowFields: ['seq', 'at', 'kind', 'lesson_id', 'payload_digest', 'prev_hash'], bodyKey: 'payload', digestKey: 'payload_digest' },
   { id: 'forecasts', dir: 'forecasts', match: (f) => f === 'ledger.jsonl', rowFields: ['seq', 'at', 'kind', 'forecast_id', 'payload_digest', 'prev_hash'], bodyKey: 'payload', digestKey: 'payload_digest' },
   { id: 'goodhart-guard', dir: 'goodhart', match: (f) => f === 'guard.jsonl', rowFields: ['seq', 'at', 'kind', 'metric_id', 'payload_digest', 'prev_hash'], bodyKey: 'payload', digestKey: 'payload_digest' },
   { id: 'flywheel', dir: 'flywheel', match: (f) => f.endsWith('.jsonl'), rowFields: ['seq', 'at', 'kind', 'cycle_id', 'payload_digest', 'prev_hash'], bodyKey: 'payload', digestKey: 'payload_digest' },
@@ -105,10 +113,24 @@ async function probeVerifiers() {
       new GoodhartGuard(file).commitConfirmation({ metricId: 'judge-probe', scriptPath: m, salt: 'judge-probe-salt-over-16', purpose: `probe ${MARK_A}` });
       return { file, verify: verifyGuardFile };
     }],
+    ['slow-memory', async () => {
+      const { SlowStore, verifySlowFile } = await import('./slow-memory.mjs');
+      const d = fs.mkdtempSync(path.join(os.tmpdir(), 'judge-sm-'));
+      const file = path.join(d, 'slow.jsonl');
+      new SlowStore(file).promote({
+        lesson: { stored: true, lesson_id: 'wm_judgeslow0001', plane: 'LOCAL_VERIFICATION', brittle_point: MARK_A, improvement: 'probe', outcome_metric: 'probe', measured: { improved: true, source: 'probe', non_business: true }, learned_at: new Date().toISOString() },
+        replications: [
+          { mission_id: 'judge-m1', receipt_ref: 'p.a', measured_improved: true, at: new Date().toISOString() },
+          { mission_id: 'judge-m2', receipt_ref: 'p.b', measured_improved: true, at: new Date().toISOString() },
+        ],
+        scope: 'judge probe',
+      });
+      return { file, verify: verifySlowFile };
+    }],
   ];
   const results = [];
   for (const [family, build] of cases) {
-    const { file, verify } = build();
+    const { file, verify } = await build();
     const original = fs.readFileSync(file, 'utf8');
     const cleanOk = verify(file).valid === true;
     const mutant = `${file}.mutant`;
@@ -127,6 +149,7 @@ const BATTERY = [
   'tools/alive-loop/goodhart-guard.test.mjs',
   'tools/alive-loop/custody-sweep.test.mjs',
   'tools/alive-loop/flywheel.test.mjs',
+  'tools/alive-loop/slow-memory.test.mjs',
   'tools/sentinel/sentinel.test.mjs',
   'tools/experience-fabric/kernel.test.mjs',
 ];

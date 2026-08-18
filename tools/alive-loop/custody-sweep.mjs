@@ -25,6 +25,7 @@ import { CycleStore, verifyChainFile } from './adapter.mjs';
 import { LessonStore, verifyLessonFile } from './winner-memory.mjs';
 import { ForecastLedger, verifyForecastFile } from './forecast-ledger.mjs';
 import { GoodhartGuard, verifyGuardFile } from './goodhart-guard.mjs';
+import { SlowStore, verifySlowFile } from './slow-memory.mjs';
 
 const MARK_A = 'PROBE_MARKER_ALPHA';
 const MARK_B = 'PROBE_MARKER_BRAVO'; // same length — mutation, not reshape
@@ -75,6 +76,23 @@ const PROBES = {
     });
     return { file, verify: verifyGuardFile };
   },
+  'slow-memory': () => {
+    const d = tmp('slow');
+    const file = path.join(d, 'slow.jsonl');
+    new SlowStore(file).promote({
+      lesson: {
+        stored: true, lesson_id: 'wm_probe0000slow', plane: 'LOCAL_VERIFICATION',
+        brittle_point: MARK_A, improvement: 'probe', outcome_metric: 'probe court',
+        measured: { improved: true, source: 'probe', non_business: true }, learned_at: new Date().toISOString(),
+      },
+      replications: [
+        { mission_id: 'probe-m1', receipt_ref: 'probe.a', measured_improved: true, at: new Date().toISOString() },
+        { mission_id: 'probe-m2', receipt_ref: 'probe.b', measured_improved: true, at: new Date().toISOString() },
+      ],
+      scope: 'probe scope',
+    });
+    return { file, verify: verifySlowFile };
+  },
 };
 
 /** Court one family's verifier: valid chain must pass, body mutant must be refused. */
@@ -104,6 +122,7 @@ export function probeVerifier(familyId, build = PROBES[familyId]) {
 const BUILTIN_FAMILIES = [
   { id: 'alive-loop-cycles', dir: 'alive-loop', match: (f) => /^cycle\..+\.jsonl$/.test(f), verify: verifyChainFile },
   { id: 'winner-memory', dir: 'winner-memory', match: (f) => f === 'lessons.jsonl', verify: verifyLessonFile },
+  { id: 'slow-memory', dir: 'winner-memory', match: (f) => f === 'slow.jsonl', verify: verifySlowFile },
   { id: 'forecasts', dir: 'forecasts', match: (f) => f === 'ledger.jsonl', verify: verifyForecastFile },
   { id: 'goodhart-guard', dir: 'goodhart', match: (f) => f === 'guard.jsonl', verify: verifyGuardFile },
 ];

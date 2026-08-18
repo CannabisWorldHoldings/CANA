@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 
 import { idempotencyKey, runCycle } from './adapter.mjs';
 import { LessonStore, lessonsAsFacts } from './winner-memory.mjs';
+import { SlowStore, slowLessonsAsFacts } from './slow-memory.mjs';
 import { ForecastLedger } from './forecast-ledger.mjs';
 import { GoodhartGuard } from './goodhart-guard.mjs';
 import { sweep } from './custody-sweep.mjs';
@@ -171,10 +172,17 @@ export async function runFlywheelCycle({
   store.append('CYCLE_OPEN', cycleId, { head: repo.head, mission: execution?.missionId ?? 'sense-only' });
 
   // RECALL — the system starts from its measured past, never a blank slate.
+  // Two temperatures: SLOW (replicated, architecture-grade) recalls first,
+  // FAST (provisional, context-bound) after — both honestly labeled.
   const lessonStore = new LessonStore(stores.lessons);
   const prior = lessonStore.recall({ limit: 25 });
-  const recalledFacts = lessonsAsFacts(prior, { now });
-  store.append('RECALLED', cycleId, { lessons: prior.length });
+  let slowRecall = { active: [], stale: [] };
+  if (stores.slow) slowRecall = new SlowStore(stores.slow).recall({ now });
+  const recalledFacts = [
+    ...slowLessonsAsFacts(slowRecall.active, { now }),
+    ...lessonsAsFacts(prior, { now }),
+  ];
+  store.append('RECALLED', cycleId, { fast: prior.length, slow: slowRecall.active.length, slow_stale: slowRecall.stale.length });
 
   // APPOINT — the judge is sealed BEFORE sensing and selection (Goodhart law).
   const guard = new GoodhartGuard(stores.guard);
@@ -390,18 +398,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     };
   };
 
-  const salt = fs.readFileSync(path.join(LOCAL, 'goodhart', 'salt.fw-metabolism-v1'), 'utf8').trim();
+  const salt = fs.readFileSync(path.join(LOCAL, 'goodhart', 'salt.fw-metabolism-v2'), 'utf8').trim();
   const result = await runFlywheelCycle({
     repo: { root: ROOT, head: HEAD, tree: TREE },
     stores: {
       flywheel: path.join(LOCAL, 'flywheel', 'flywheel.jsonl'),
       lessons: path.join(LOCAL, 'winner-memory', 'lessons.jsonl'),
+      slow: path.join(LOCAL, 'winner-memory', 'slow.jsonl'),
       forecasts: path.join(LOCAL, 'forecasts', 'ledger.jsonl'),
       guard: path.join(LOCAL, 'goodhart', 'guard.jsonl'),
     },
     sense: liveSense,
     metric: {
-      id: 'fw-metabolism-v1',
+      id: 'fw-metabolism-v2',
       scriptPath: path.join(ROOT, 'tools', 'alive-loop', 'confirm-metric.mjs'),
       salt,
       purpose: 'confirm that strict custody holds across every live ledger (payload digests recomputed by an independent inline auditor), that every registered chain verifier refuses payload-body mutation, and that the full tools court battery passes at the current tree',
