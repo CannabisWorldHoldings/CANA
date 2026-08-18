@@ -69,7 +69,8 @@ export class LessonStore {
   verifyChain() {
     let prev = 'GENESIS';
     for (const r of this.records()) {
-      if (r.prev_hash !== prev || r.hash !== LessonStore.rowHash(r)) return { valid: false, at_seq: r.seq };
+      if (r.prev_hash !== prev || r.hash !== LessonStore.rowHash(r)
+        || sha(canonical(r.lesson)) !== r.lesson_digest) return { valid: false, at_seq: r.seq };
       prev = r.hash;
     }
     return { valid: true, count: this.records().length };
@@ -118,7 +119,8 @@ export function verifyLessonFile(filePath) {
   for (const [i, line] of lines.entries()) {
     const r = JSON.parse(line);
     const expect = createHash('sha256').update(JSON.stringify(sortKeys({ seq: r.seq, at: r.at, lesson_id: r.lesson_id, lesson_digest: r.lesson_digest, prev_hash: r.prev_hash }))).digest('hex');
-    if (r.prev_hash !== prev || r.hash !== expect) return { valid: false, at: i };
+    const lessonDigest = createHash('sha256').update(JSON.stringify(sortKeys(r.lesson))).digest('hex');
+    if (r.prev_hash !== prev || r.hash !== expect || lessonDigest !== r.lesson_digest) return { valid: false, at: i };
     prev = r.hash;
   }
   return { valid: true, count: lines.length };

@@ -77,6 +77,8 @@ test('tamper detection: mutation, deletion, reorder, replay all break the chain'
 
   fs.writeFileSync(file, original.replace('wm_000000000002', 'wm_TAMPERED0002'));
   assert.equal(verifyLessonFile(file).valid, false);
+  fs.writeFileSync(file, original.replace('unverified assumption', 'flattering rewritten claim'));
+  assert.equal(verifyLessonFile(file).valid, false, 'lesson BODY mutation must break the chain');
   fs.writeFileSync(file, [lines[0], lines[2]].join('\n') + '\n');
   assert.equal(verifyLessonFile(file).valid, false);
   fs.writeFileSync(file, [lines[1], lines[0], lines[2]].join('\n') + '\n');
