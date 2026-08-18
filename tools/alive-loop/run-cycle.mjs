@@ -12,6 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { idempotencyKey, runCycle } from './adapter.mjs';
+import { LessonStore, lessonsAsFacts } from './winner-memory.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
@@ -162,6 +163,12 @@ const grant = {
 };
 grant.idempotency_key = idempotencyKey(grant);
 
+// RECURSION IN: recall prior admitted lessons and fold them into this cycle's
+// context, so the system reasons with its own measured past — not a blank slate.
+const lessonStore = new LessonStore(path.join(ROOT, '.cana-local', 'winner-memory', 'lessons.jsonl'));
+const priorLessons = lessonStore.recall({ limit: 25 });
+const recalledFacts = lessonsAsFacts(priorLessons, { now: NOW });
+
 const facts = [{
   id: `fact-head-${HEAD.slice(0, 12)}`,
   claim: `candidate tree pinned at ${HEAD.slice(0, 12)} for ${mission.target} verification: ${mission.metric}`,
@@ -171,7 +178,7 @@ const facts = [{
   observed_at: NOW.toISOString().slice(0, 10),
   valid_for_days: 1,
   tags: [mission.target, 'verification', 'pinned', 'tree', ...mission.subjects],
-}];
+}, ...recalledFacts];
 
 const result = await runCycle({
   grant,
@@ -184,6 +191,13 @@ const result = await runCycle({
   intentSubjects: mission.subjects,
 });
 
+// RECURSION OUT: an admitted lesson persists to the durable store (dedupe-safe
+// on idempotent re-runs), becoming context for every future cycle.
+let persisted = null;
+if (result.admitted && result.lesson) {
+  try { persisted = lessonStore.persist(result.lesson); } catch (err) { persisted = { error: err.message }; }
+}
+
 console.log(JSON.stringify({
   mission: grant.mission_id,
   pinned: HEAD.slice(0, 12),
@@ -192,6 +206,9 @@ console.log(JSON.stringify({
   admitted: result.admitted ?? null,
   lesson_id: result.lesson?.lesson_id ?? null,
   rejection_reason: result.rejection_reason ?? null,
+  recalled_prior_lessons: priorLessons.length,
+  lesson_persisted: persisted,
+  winner_memory_total: lessonStore.verifyChain().count,
   chain: result.chain ?? null,
   store: path.relative(ROOT, result.store_path),
 }, null, 2));

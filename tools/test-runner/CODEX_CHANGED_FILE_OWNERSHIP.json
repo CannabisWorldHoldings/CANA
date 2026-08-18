@@ -806,6 +806,8 @@
         "tools/alive-loop/adapter.mjs",
         "tools/alive-loop/alive-loop.test.mjs",
         "tools/alive-loop/run-cycle.mjs",
+        "tools/alive-loop/winner-memory.mjs",
+        "tools/alive-loop/winner-memory.test.mjs",
         "tools/durability/cli.mjs",
         "tools/durability/cli.test.mjs",
         "tools/sentinel/bridge.mjs",
@@ -817,7 +819,8 @@
       ],
       "approval_reference": "OWNER_SOVEREIGN_ONE_SHOT_ACTIVATION_PROMPT_2026_08_17_HYPERAGENT_THREAD_cmsxmgvpx3pr108adgpmk22wv",
       "alive_loop_note": "Minimum Alive Loop implemented per docs/convergence/mission-1/MINIMUM_ALIVE_LOOP_SPEC.md Mission 2 boundary: one thin composition adapter over skills-src seams; fourteen spec courts pass; three live LEVEL-0 cycles receipted at the pinned tree.",
-      "sentinel_note": "Sentinel bridge composes the existing competitor-shadow engine into signal-to-fix + the alive loop (mission sentinel-sweep). First live governed sweep admitted: 15 surfaces, lesson wm_782d05b57414. Shadow engine honesty rails unchanged."
+      "sentinel_note": "Sentinel bridge composes the existing competitor-shadow engine into signal-to-fix + the alive loop (mission sentinel-sweep). First live governed sweep admitted: 15 surfaces, lesson wm_782d05b57414. Shadow engine honesty rails unchanged.",
+      "winner_memory_note": "Durable Winner Memory closes the recursion: admitted lessons persist hash-chained and recall as labeled non-business facts into future cycles. Demonstrated 4-mission chain (recalled 0->3, memory 1->4, valid chain). 7/7 courts."
     }
   },
   "owned_create_paths": [
@@ -1056,6 +1059,8 @@
     "docs/reality/PHASE_B_SLICE2_LIVE_ACQUISITION.md",
     "tools/alive-loop/alive-loop.test.mjs",
     "tools/alive-loop/run-cycle.mjs",
+    "tools/alive-loop/winner-memory.mjs",
+    "tools/alive-loop/winner-memory.test.mjs",
     "tools/reality/verify-slice2-evidence-packet.mjs",
     "tools/reality/verify-slice2-evidence-packet.test.mjs",
     "apps/web/src/lib/markets/va/va-cca-registry-parser.mjs",
