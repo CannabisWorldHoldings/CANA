@@ -1,0 +1,9 @@
+$ cd standalone && python3 -m unittest discover -s tests
+...................................
+----------------------------------------------------------------------
+Ran 35 tests in 3.676s
+
+OK
+exit=0
+date: 2026-08-19T01:11:10Z
+base_commit: 3a340f3a4c2ab28a5b85bb1a91845932b74c8b05
