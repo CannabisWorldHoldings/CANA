@@ -910,6 +910,23 @@
         "_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ]
+    },
+    "federation_gates_cd_2026_08_18": {
+      "authorization": "SOVEREIGN COGNITIVE FEDERATION continuation, Gates C+D (owner instruction, thread cmszd6rop03o107adbvhnh6f3).",
+      "scope": "Additive only: tools/federation/ (6 new files), _mission/evolution/EC-0001, ledger update, this registry.",
+      "reason": "Gate C: MemoryAtom + settlement composing winner-memory/slow-memory (9/9 court incl. full \u00a763 lifecycle). Gate D: EvolutionCase engine + EC-0001 on the real sentinel-duplication failure \u2014 3 diagnoses, 2 candidates, 6-case measured holdout, PROMOTE C2 capability-census court, C1 retained as L1 residue, negative evidence preserved.",
+      "paths": [
+        "tools/federation/memory.mjs",
+        "tools/federation/memory.test.mjs",
+        "tools/federation/evolution.mjs",
+        "tools/federation/evolution.test.mjs",
+        "tools/federation/capability-census.mjs",
+        "tools/federation/capability-owners.json",
+        "tools/federation/ec-0001.mjs",
+        "_mission/evolution/EC-0001-sentinel-duplication.json",
+        "_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ]
     }
   },
   "owned_create_paths": [

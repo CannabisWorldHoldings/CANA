@@ -1,6 +1,6 @@
 # CANA SOVEREIGN COGNITIVE FEDERATION — CURRENT STATE (RECOVERY LEDGER)
 
-Updated: 2026-08-19T02:55Z · Thread: cmszd6rop03o107adbvhnh6f3 · Continuation of the Sovereign Build lineage.
+Updated: 2026-08-19T03:15Z · Thread: cmszd6rop03o107adbvhnh6f3 · Continuation of the Sovereign Build lineage.
 Every claim carries a canonical proof state. This file is the restart-safe entry point (§38): a future agent continues from here without rereading transcripts.
 
 ## 1. Forensic recovery — VERIFIED
@@ -38,8 +38,8 @@ Every claim carries a canonical proof state. This file is the restart-safe entry
 |---|---|
 | A Capability Genome schemas | VERIFIED_IMPLEMENTED (executable, tested, real donor encoded) |
 | B Agent/Task contracts | VERIFIED_IMPLEMENTED (executable, tested, real task encoded) |
-| C Memory settlement (MemoryAtom, Trajectory) | PLANNED — must compose with winner-memory/slow-memory, not replace them |
-| D EvolutionCase wrapping the Alive Loop | PLANNED — candidate real failure: the withdrawn-sentinel duplication event, or a visual-court failure from loop history |
+| C Memory settlement (MemoryAtom) | VERIFIED_IMPLEMENTED — settlement path + §63 lifecycle court 9/9; delegates durable residue to winner-memory (FAST) and leaves SLOW law untouched. Trajectory capture still PLANNED |
+| D EvolutionCase | VERIFIED_IMPLEMENTED — EC-0001 (sentinel duplication) end-to-end: 3 diagnoses, 2 candidates, 6-case measured holdout, PROMOTE C2 (capability census court), C1 kept as L1 residue, rollback demonstrated. Record: _mission/evolution/EC-0001-sentinel-duplication.json |
 | E Evaluator registry + succession | PLANNED |
 | F OCOP donor adapter | PARTIALLY_IMPLEMENTED (DonorGenome exists; assimilation pipeline PLANNED) |
 | G Workforce compiler | PLANNED |
@@ -55,6 +55,8 @@ Every claim carries a canonical proof state. This file is the restart-safe entry
 
 ## 7. Next exact actions
 
-1. Gate C: `MemoryAtom` + settlement path composing `tools/alive-loop/winner-memory.mjs` and `slow-memory.mjs` as the durable stores (no new memory authority).
-2. Gate D: one real EvolutionCase — encode the sentinel-duplication failure (cause: recovery step skipped before invention) with two candidate mutations (e.g., mandatory pre-build capability census vs. ownership-registry lookup court), holdout, promotion, rollback.
-3. Re-run `./cana verify focused` with Postgres up before any owner handoff of app-touching changes.
+1. Gate E: evaluator registry + one EvaluatorSuccessionCase (candidate judge may not self-certify; bridge corpus from existing court history).
+2. Gate C residue: Trajectory capture schema for consequential runs, feeding MemoryAtoms.
+3. Wire capability-census into the build path (pre-commit or cana verify hook) — currently a standalone court invoked manually; enforcement wiring is PLANNED.
+4. Re-run `./cana verify focused` with Postgres up before any owner handoff of app-touching changes.
+5. Runtime residue settled this session (untracked, per state law): .cana-local/federation/memory.jsonl atom ma_417cf25351d7d598 + FAST lesson wm_417cf25351d7d598.
