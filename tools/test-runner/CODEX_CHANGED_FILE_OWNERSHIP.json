@@ -927,6 +927,22 @@
         "_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ]
+    },
+    "federation_gate_e_2026_08_18": {
+      "authorization": "SOVEREIGN COGNITIVE FEDERATION continuation, Gate E + census enforcement (owner instruction, thread cmszd6rop03o107adbvhnh6f3).",
+      "scope": "Additive new files under tools/federation/ + _mission/evolution/ES-0001 + minimal dispatcher wiring in the explicitly-assigned root dispatcher `cana` (census gate BEFORE the verification court; tools/test-runner untouched) + this registry.",
+      "reason": "Gate E: evaluator registry + fail-closed EvaluatorSuccessionCase (self-certification structurally refused) + ES-0001, a REAL succession: 3 live-probed morphological evasions defeated census v1; candidate v2 failed its own hidden holdout once (S3, RETAIN_INCUMBENT receipted), was repaired with corpora unchanged, then SUCCEEDED (bridge 6/6, holdout 6/6, zero false refusals, fail-closed mutation test). v1 RETIRED but forensically replayable. Census enforcement: ./cana census declare/resolve/status + verify-blocking gate (registry integrity, holdout replay, unresolved-duplicate declarations).",
+      "paths": [
+        "tools/federation/evaluators.mjs",
+        "tools/federation/evaluators.test.mjs",
+        "tools/federation/es-0001.mjs",
+        "tools/federation/evaluator-registry.json",
+        "tools/federation/census-gate.mjs",
+        "tools/federation/capability-census.mjs",
+        "_mission/evolution/ES-0001-census-term-matching.json",
+        "cana",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ]
     }
   },
   "owned_create_paths": [

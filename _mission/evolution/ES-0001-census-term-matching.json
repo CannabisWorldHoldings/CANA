@@ -1,0 +1,160 @@
+{
+  "case_id": "es_5e562641f5809ec8",
+  "scope": "capability-census-term-matching",
+  "incumbent": {
+    "evaluator_id": "census-term-v1",
+    "mechanism": "exact-word job-term matching"
+  },
+  "candidate": {
+    "evaluator_id": "census-term-v2",
+    "mechanism": "conservative inflection-folded matching (foldV2, iteration v2.1)",
+    "repair_history": "v2.0 FAILED hidden holdout case S3 (verdict at that run: RETAIN_INCUMBENT — receipted in thread): -ing stripping dropped the stem's terminal e (\"storing\"->\"stor\" vs \"store\"->\"store\"). One principled repair (terminal-e neutralization) with criteria and corpora UNCHANGED; re-judged against the same bridge and holdout."
+  },
+  "candidate_author": "lane-implementation",
+  "adjudicator": "lane-verification (node:test harness over measured runs of BOTH evaluators)",
+  "reason": "Three live probes (2026-08-19, pre-candidate) proved morphological evasion: proposals naming owned jobs in plural/gerund form pass v1 as CLEAR_TO_BUILD, defeating the census gate promoted by EC-0001.",
+  "demonstrated_defects": [
+    {
+      "probe": "nightly monitoring of competitors with fingerprints of their pages and drift detections",
+      "incumbentVerdict": "CLEAR_TO_BUILD",
+      "correctVerdict": "REFUSED_DUPLICATE"
+    },
+    {
+      "probe": "shadowing competitors and fingerprinting page snapshots",
+      "incumbentVerdict": "CLEAR_TO_BUILD",
+      "correctVerdict": "REFUSED_DUPLICATE"
+    },
+    {
+      "probe": "a durable lessons memory storing admitted lessons from improvement cycles",
+      "incumbentVerdict": "CLEAR_TO_BUILD",
+      "correctVerdict": "REFUSED_DUPLICATE"
+    }
+  ],
+  "promotion_criteria": [
+    "P1: reproduce every EC-0001 bridge verdict (6/6)",
+    "P2: correct on every hidden holdout case (evasions refused AND clears untouched — zero new false refusals)",
+    "P3: correct the incumbent on at least one holdout case",
+    "P4: fail closed on missing registry"
+  ],
+  "criteria_fixed_before_candidate": true,
+  "bridge_corpus": [
+    "H1-historical-replay",
+    "H2-synonym-attack",
+    "H3-new-capability",
+    "H4-new-capability-2",
+    "H5-owned-loop",
+    "H6-owned-memory"
+  ],
+  "bridge_results": [
+    {
+      "case": "H1-historical-replay",
+      "expected": "REFUSED_DUPLICATE",
+      "v1": "REFUSED_DUPLICATE",
+      "v2": "REFUSED_DUPLICATE",
+      "agree": true
+    },
+    {
+      "case": "H2-synonym-attack",
+      "expected": "REFUSED_DUPLICATE",
+      "v1": "REFUSED_DUPLICATE",
+      "v2": "REFUSED_DUPLICATE",
+      "agree": true
+    },
+    {
+      "case": "H3-new-capability",
+      "expected": "CLEAR_TO_BUILD",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "CLEAR_TO_BUILD",
+      "agree": true
+    },
+    {
+      "case": "H4-new-capability-2",
+      "expected": "CLEAR_TO_BUILD",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "CLEAR_TO_BUILD",
+      "agree": true
+    },
+    {
+      "case": "H5-owned-loop",
+      "expected": "REFUSED_DUPLICATE",
+      "v1": "REFUSED_DUPLICATE",
+      "v2": "REFUSED_DUPLICATE",
+      "agree": true
+    },
+    {
+      "case": "H6-owned-memory",
+      "expected": "REFUSED_DUPLICATE",
+      "v1": "REFUSED_DUPLICATE",
+      "v2": "REFUSED_DUPLICATE",
+      "agree": true
+    }
+  ],
+  "hidden_holdout": [
+    "S1-plural-evasion",
+    "S2-gerund-evasion",
+    "S3-lesson-plural",
+    "S4-clear-geo",
+    "S5-clear-outreach",
+    "S6-clear-trajectory"
+  ],
+  "holdout_results": [
+    {
+      "case": "S1-plural-evasion",
+      "correct": "REFUSED_DUPLICATE",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "REFUSED_DUPLICATE",
+      "incumbentCorrect": false,
+      "candidateCorrect": true
+    },
+    {
+      "case": "S2-gerund-evasion",
+      "correct": "REFUSED_DUPLICATE",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "REFUSED_DUPLICATE",
+      "incumbentCorrect": false,
+      "candidateCorrect": true
+    },
+    {
+      "case": "S3-lesson-plural",
+      "correct": "REFUSED_DUPLICATE",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "REFUSED_DUPLICATE",
+      "incumbentCorrect": false,
+      "candidateCorrect": true
+    },
+    {
+      "case": "S4-clear-geo",
+      "correct": "CLEAR_TO_BUILD",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "CLEAR_TO_BUILD",
+      "incumbentCorrect": true,
+      "candidateCorrect": true
+    },
+    {
+      "case": "S5-clear-outreach",
+      "correct": "CLEAR_TO_BUILD",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "CLEAR_TO_BUILD",
+      "incumbentCorrect": true,
+      "candidateCorrect": true
+    },
+    {
+      "case": "S6-clear-trajectory",
+      "correct": "CLEAR_TO_BUILD",
+      "v1": "CLEAR_TO_BUILD",
+      "v2": "CLEAR_TO_BUILD",
+      "incumbentCorrect": true,
+      "candidateCorrect": true
+    }
+  ],
+  "mutation_test": {
+    "description": "missing/empty owners registry refuses to run (loadOwners throws; gate blocks verify)",
+    "pass": true
+  },
+  "distribution_shift_note": "Corpora are English build proposals from this repo's actual practice; multilingual or semantic-synonym proposals are OUT OF SCOPE for v2 and recorded as its known blind spots in the registry.",
+  "reversibility": "evaluator-registry.json status flip (v2 INCUMBENT -> v1) via git revert of the Gate E commit; censusVerdict accepts an explicit version override for forensic replay of either evaluator forever.",
+  "verdict": "SUCCEED",
+  "succession_receipt": "_mission/receipts/federation-gate-e (composed suite) + this record's measured bridge/holdout results",
+  "valid": true,
+  "errors": []
+}

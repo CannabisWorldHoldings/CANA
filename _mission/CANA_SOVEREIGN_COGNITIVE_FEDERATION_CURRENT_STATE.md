@@ -1,6 +1,6 @@
 # CANA SOVEREIGN COGNITIVE FEDERATION — CURRENT STATE (RECOVERY LEDGER)
 
-Updated: 2026-08-19T03:15Z · Thread: cmszd6rop03o107adbvhnh6f3 · Continuation of the Sovereign Build lineage.
+Updated: 2026-08-19T03:40Z · Thread: cmszd6rop03o107adbvhnh6f3 · Continuation of the Sovereign Build lineage.
 Every claim carries a canonical proof state. This file is the restart-safe entry point (§38): a future agent continues from here without rereading transcripts.
 
 ## 1. Forensic recovery — VERIFIED
@@ -40,7 +40,7 @@ Every claim carries a canonical proof state. This file is the restart-safe entry
 | B Agent/Task contracts | VERIFIED_IMPLEMENTED (executable, tested, real task encoded) |
 | C Memory settlement (MemoryAtom) | VERIFIED_IMPLEMENTED — settlement path + §63 lifecycle court 9/9; delegates durable residue to winner-memory (FAST) and leaves SLOW law untouched. Trajectory capture still PLANNED |
 | D EvolutionCase | VERIFIED_IMPLEMENTED — EC-0001 (sentinel duplication) end-to-end: 3 diagnoses, 2 candidates, 6-case measured holdout, PROMOTE C2 (capability census court), C1 kept as L1 residue, rollback demonstrated. Record: _mission/evolution/EC-0001-sentinel-duplication.json |
-| E Evaluator registry + succession | PLANNED |
+| E Evaluator registry + succession | VERIFIED_IMPLEMENTED — evaluator-registry.json + ES-0001: real defect (3 live-probed morphological evasions past census v1), candidate v2 FAILED holdout once (S3) and was repaired with corpora unchanged, then SUCCEED: bridge 6/6, hidden holdout 6/6, zero false refusals, fail-closed mutation test. v1 RETIRED, forensically replayable via version override. Record: _mission/evolution/ES-0001-census-term-matching.json |
 | F OCOP donor adapter | PARTIALLY_IMPLEMENTED (DonorGenome exists; assimilation pipeline PLANNED) |
 | G Workforce compiler | PLANNED |
 | H Haptic/causal outcomes | PLANNED (no real market outcomes exist yet to settle) |
@@ -57,6 +57,6 @@ Every claim carries a canonical proof state. This file is the restart-safe entry
 
 1. Gate E: evaluator registry + one EvaluatorSuccessionCase (candidate judge may not self-certify; bridge corpus from existing court history).
 2. Gate C residue: Trajectory capture schema for consequential runs, feeding MemoryAtoms.
-3. Wire capability-census into the build path (pre-commit or cana verify hook) — currently a standalone court invoked manually; enforcement wiring is PLANNED.
+3. DONE: census ENFORCED in ./cana verify (census-gate.mjs: registry integrity + holdout replay + declaration court block the court run; ./cana census declare/resolve/status). Demonstrated live: duplicate declaration blocked verify until explicitly resolved.
 4. Re-run `./cana verify focused` with Postgres up before any owner handoff of app-touching changes.
 5. Runtime residue settled this session (untracked, per state law): .cana-local/federation/memory.jsonl atom ma_417cf25351d7d598 + FAST lesson wm_417cf25351d7d598.

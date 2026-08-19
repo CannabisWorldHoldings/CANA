@@ -11,6 +11,11 @@ Verification:
   ./cana verify maria
   ./cana verify cpanel
 
+Capability census (EC-0001):
+  ./cana census declare "<what you intend to build>"
+  ./cana census resolve <id> --as "<resolution>"
+  ./cana census status
+
 Durability:
   ./cana durability status
   ./cana durability build
@@ -36,8 +41,23 @@ async function main() {
     return;
   }
   if (scope === 'verify') {
+    // CENSUS GATE (EC-0001 promoted mutation): deterministic pre-court check.
+    // Registry integrity + holdout replay + unresolved duplicate declarations
+    // block verification BEFORE the court runs. The court itself is untouched.
+    const { censusGateForVerify } = await import('./tools/federation/census-gate.mjs');
+    const gate = censusGateForVerify();
+    if (!gate.ok) {
+      process.stderr.write(`census gate refuses verification:\n${JSON.stringify(gate.findings, null, 2)}\n`);
+      process.exitCode = 1;
+      return;
+    }
     const { runVerification } = await import('./tools/test-runner/runner.mjs');
     await runVerification(action, rest);
+    return;
+  }
+  if (scope === 'census') {
+    const { runCensus } = await import('./tools/federation/census-gate.mjs');
+    await runCensus(action, rest);
     return;
   }
   if (scope === 'durability') {
