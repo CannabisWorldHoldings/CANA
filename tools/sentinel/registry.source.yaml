@@ -1,0 +1,53 @@
+# CANA OS — Watch-Target Registry
+# Public pages only. Polite cadence with jitter; raw snapshots cached per observation window.
+defaults:
+  cadence: daily
+  jitter_minutes: 90
+  channels: [web]
+  per_host_rate_limit_rpm: 6
+  evidence: [html, dom, screenshot, metadata, schema]
+
+competitors:
+  - id: leafly
+    name: Leafly
+    tier: primary
+    watch:
+      - { url: "https://www.leafly.com/", class: homepage }
+      - { url: "https://www.leafly.com/dispensaries/district-of-columbia", class: location_dc }
+      - { url: "https://www.leafly.com/deals", class: deals }
+    ads: { library: meta_ad_library, query: "Leafly" }
+
+  - id: weedmaps
+    name: Weedmaps
+    tier: primary
+    watch:
+      - { url: "https://weedmaps.com/", class: homepage }
+      - { url: "https://weedmaps.com/dispensaries/in/united-states/washington-dc", class: location_dc }
+      - { url: "https://weedmaps.com/deals", class: deals }
+    ads: { library: meta_ad_library, query: "Weedmaps" }
+
+  - id: wheresweed
+    name: "Where's Weed"
+    tier: primary
+    watch:
+      - { url: "https://wheresweed.com/", class: homepage }
+      - { url: "https://wheresweed.com/washington-dc", class: location_dc }
+    ads: { library: meta_ad_library, query: "Where's Weed" }
+
+  - id: dutchie
+    name: Dutchie
+    tier: platform
+    watch:
+      - { url: "https://dutchie.com/", class: homepage }
+      - { url: "https://business.dutchie.com/", class: merchant_pitch }
+    notes: "Dispensary software leader — watch merchant tooling + monetization moves."
+
+self:
+  id: orderweeddc
+  name: ORDERWEEDDC
+  role: protected_target
+  watch:
+    - { url: "https://orderweeddc.com/", class: homepage }
+  notes: >
+    Self-observation for regression evidence only. All mutations to this property flow
+    through signed ActionContracts, draft PRs, and the release gates in cana-policy/doctrine.

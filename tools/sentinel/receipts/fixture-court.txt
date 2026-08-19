@@ -1,0 +1,12 @@
+$ node --test sentinel.test.mjs
+✔ committed registry loads and matches the archive plan (4 competitors, 10 watch URLs) (0.394296ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 79.892506
+date: 2026-08-19T01:16:50Z
+base_commit: 9b52962c753199271b92ed5c3bc9e5317c139874

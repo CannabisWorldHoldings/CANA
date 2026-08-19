@@ -1,0 +1,76 @@
+{
+  "mode": "live",
+  "observedAt": "2026-08-19T01:14:44.878Z",
+  "receipts": [
+    {
+      "url": "https://www.leafly.com/",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "fa84d918692c3015",
+      "drift": false
+    },
+    {
+      "url": "https://www.leafly.com/dispensaries/district-of-columbia",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "545ba70e7f29a969",
+      "drift": false
+    },
+    {
+      "url": "https://www.leafly.com/deals",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "a56eab8ab9a4d328",
+      "drift": false
+    },
+    {
+      "url": "https://weedmaps.com/",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "653c2efadf6ab518",
+      "drift": false
+    },
+    {
+      "url": "https://weedmaps.com/dispensaries/in/united-states/washington-dc",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "0b96363cafd0e1c6",
+      "drift": false
+    },
+    {
+      "url": "https://weedmaps.com/deals",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "56a469f81785508a",
+      "drift": false
+    },
+    {
+      "url": "https://wheresweed.com/",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "b8582966b29a3adb",
+      "drift": false
+    },
+    {
+      "url": "https://wheresweed.com/washington-dc",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "305acaaa178baece",
+      "drift": false
+    },
+    {
+      "url": "https://dutchie.com/",
+      "action": "HTTP_ERROR",
+      "status": 403
+    },
+    {
+      "url": "https://business.dutchie.com/",
+      "action": "FINGERPRINTED_LIVE",
+      "status": 200,
+      "sha": "18ac455362c8961d",
+      "drift": false
+    }
+  ],
+  "events": [],
+  "law": "Every drift is TRIAGE_REQUIRED. The sentinel never self-authorizes a response."
+}

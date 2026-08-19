@@ -791,6 +791,20 @@
         "packages/governor-kernel/standalone/tests/test_core.py",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ]
+    },
+    "sentinel_monitor_2026_08_18": {
+      "authorization": "Owner-approved three-lane plan (thread cmszd6rop03o107adbvhnh6f3, 2026-08-18): build the fingerprint-only competitor monitor the ORDERWEEDDCRSI registry planned.",
+      "scope": "Additive only. Exact new paths under tools/sentinel/; no existing file modified except this registry.",
+      "reason": "Fingerprint-only sentinel on the cana-signal-to-fix ChangeEvent seam: robots honored, 10s host gate, TRIAGE_REQUIRED drift events, no self-authorization path, double-gated live mode. 10/10 fixture court + one receipted live probe.",
+      "paths": [
+        "tools/sentinel/monitor.mjs",
+        "tools/sentinel/sentinel.test.mjs",
+        "tools/sentinel/registry.json",
+        "tools/sentinel/registry.source.yaml",
+        "tools/sentinel/receipts/fixture-court.txt",
+        "tools/sentinel/receipts/live-probe-2026-08-19T0114Z.json",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ]
     }
   },
   "owned_create_paths": [
