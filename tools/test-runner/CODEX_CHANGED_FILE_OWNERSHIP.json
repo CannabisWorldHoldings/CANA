@@ -898,6 +898,18 @@
         "packages/governor-kernel/standalone/tests/test_core.py",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ]
+    },
+    "federation_gates_ab_2026_08_18": {
+      "authorization": "SOVEREIGN COGNITIVE FEDERATION continuation directive (owner, 2026-08-18, thread cmszd6rop03o107adbvhnh6f3).",
+      "scope": "Additive only: tools/federation/ (3 files), _mission recovery ledger, this registry.",
+      "reason": "Gate A (CapabilityGene/GeneComplex/DonorGenome/DonorPreservationContract) and Gate B (AgentPassport/TaskContract/ResultContract) as fail-closed executable schemas, exercised 13/13 with real donor and task data; recovery ledger binds newest sovereign tip 9d3bd70.",
+      "paths": [
+        "tools/federation/genome.mjs",
+        "tools/federation/contracts.mjs",
+        "tools/federation/federation.test.mjs",
+        "_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md",
+        "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
+      ]
     }
   },
   "owned_create_paths": [
