@@ -1,0 +1,25 @@
+# secrets — never commit real credentials
+.env
+*.pem
+*.key
+
+# runtime
+node_modules/
+**/__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# data & evidence (live in Postgres / object storage, not git)
+*.db
+*.sqlite
+pgdata/
+miniodata/
+fixtures/live/
+.canadata/
+.signing_key
+
+# OS / editor
+.DS_Store
+Thumbs.db
