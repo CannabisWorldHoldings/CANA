@@ -1,0 +1,50 @@
+{
+  "_comment": "ES-0002 POSITIVE FIXTURE — the correctly-bound successor candidate. Identity is by SHA; branch_evidence is EVIDENCE ONLY and never authorizes. This is the candidate the frozen court must ACCEPT. candidate_commit_sha is the successor lane HEAD (eef002e9). All ancestry is proven live by git against the mirror; the evidence.* fields bind the prior receipts recorded under out/.",
+  "promotion_schema_version": 2,
+  "promotion_event_type": "successor-lane-promotion-v2",
+  "candidate_commit_sha": "eef002e9b194933c7c1964f1967ba40e14095576",
+  "candidate_tree_sha": "6278f29a6c596a934abfd3bb1a3fbf9ccdcd7d79",
+  "branch_evidence": "hyperagent/cana-sovereign-successor",
+  "promotion_target": "main",
+  "promotion_scope": "successor-lane-technical-promotion",
+  "generated_at": "2026-08-20T05:30:00Z",
+  "observed_at": "2026-08-20T05:30:00Z",
+  "owner_gate": {
+    "state": "PENDING",
+    "claimed_owner_approved": false,
+    "note": "Owner gate is PENDING by design; ES-0002 proves TECHNICAL evidence only."
+  },
+  "claimed_verdict": null,
+  "evidence": {
+    "evaluator_version": 2,
+    "judge_source_sha256": "1e6e5c2303c210c8bff137b351fe23de7cd502cc782f1190f2ac5263dd79bcd1",
+    "corpus_sha256": "edefd64754583e4b7b867ed99b45e9f99a30f9143b6ed9d1a393ade7b4c7e29f",
+    "conservation": { "required": 35, "verified": 35, "loss": 0 },
+    "authority_court": { "green": true, "receipt": "out/AUTHORITY_COURT_RECEIPTS/" },
+    "single_authorize_seat": { "count": 1, "module": "tools/authority/authority.mjs" },
+    "hermes_boundary": { "pass": true, "court": "tools/authority/hermes-boundary.test.mjs" },
+    "capability_census": { "ok": true, "gate": "tools/federation/census-gate.mjs" },
+    "sovereign_ci_workflow": {
+      "workflow_path": ".github/workflows/cana-verify-sovereign.yml",
+      "workflow_name": "CANA sovereign verification",
+      "job_name": "verify sovereign (repository PostGIS + H3 image)"
+    },
+    "sovereign_ci_run": {
+      "run_id": "32350042003",
+      "receipt_sha256": "edc290546ef26fc75a0d028b7d4a95c1dbe1f3032bb4096871694f458508edf5",
+      "self_reference": false
+    },
+    "required_stage_results": {
+      "clean-checkout": "VERIFIED",
+      "source-identity": "VERIFIED",
+      "capability-census": "VERIFIED",
+      "authority-court": "VERIFIED",
+      "deterministic-courts": "VERIFIED",
+      "federation-courts": "VERIFIED",
+      "post38-courts": "VERIFIED",
+      "security-adversarial": "VERIFIED",
+      "reconstruction": "VERIFIED",
+      "artifact-hashes": "VERIFIED"
+    }
+  }
+}

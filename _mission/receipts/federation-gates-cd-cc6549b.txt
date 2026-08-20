@@ -1,0 +1,8 @@
+$ composed suite @ cc6549b4f365f302e156e827e8ca5378d464b176
+ℹ tests 116
+ℹ pass 116
+ℹ fail 0
+17 passed in 0.06s
+OK
+rollback: VERIFIED (throwaway branch, revert == pre-slice tree)
+date: 2026-08-19T03:04:59Z

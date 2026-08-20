@@ -1,4 +1,5 @@
 import { CUSTOMER_DISCOVERY_MARKETS } from './ask/customer-discovery-contract.mjs';
+import { compileMarketPage } from './market-page-compiler.mjs';
 import {
   resolveCustomerDiscovery,
   resolveCustomerMerchantProfile,
@@ -114,6 +115,77 @@ function customerMap(results) {
   });
 }
 
+const HOME_MODULE_MARKET_LABELS = Object.freeze({
+  'US-DC': 'Washington, D.C.',
+  'US-MD': 'Maryland',
+  'US-VA': 'Virginia',
+});
+
+/**
+ * W-1 seam — HOME journey only: project verified customer cards into the
+ * market-page compiler's record vocabulary. Only KNOWN, VERIFIED_CURRENT
+ * facts cross the seam; every other dimension stays behind, and the
+ * compiler's own laws decide module eligibility from there. Nothing here
+ * invents placements, deals, questions, service areas, or license data the
+ * projection did not carry — empty inputs produce the compiler's honest
+ * UNSOLD / absent states rather than filler.
+ */
+export function marketPageRecordsFromCards(cards) {
+  const merchants = [];
+  const deals = [];
+  for (const card of Array.isArray(cards) ? cards : []) {
+    const name = knownValue(card.name);
+    const verification = knownValue(card.verification_state);
+    const freshness = knownValue(card.freshness);
+    if (!name || verification !== 'VERIFIED_CURRENT' || !freshness?.verified_at) continue;
+    const fulfillment = knownValue(card.fulfillment_type);
+    const businessType = knownValue(card.business_type);
+    const kind = /deliver/i.test(String(fulfillment ?? '')) || /deliver/i.test(String(businessType ?? ''))
+      ? 'DELIVERY'
+      : 'DISPENSARY';
+    const provenance = card.provenance ?? null;
+    const merchant = {
+      merchant_id: card.id,
+      name,
+      kind,
+      license: {
+        status: 'VERIFIED_CURRENT',
+        checked_at: freshness.verified_at,
+        ...(provenance?.source ? { authority: provenance.source } : {}),
+        ...(provenance?.source_url ? { source_url: provenance.source_url } : {}),
+      },
+    };
+    const distance = knownValue(card.distance);
+    if (Number.isFinite(distance)) merchant.distance_miles = distance;
+    merchants.push(merchant);
+
+    const deal = knownValue(card.deal);
+    if (deal && typeof deal === 'object' && deal.id && deal.title) {
+      deals.push({
+        id: String(deal.id),
+        merchant_id: card.id,
+        title: String(deal.title),
+        ...(deal.category ? { category: deal.category } : {}),
+        ...(Number.isFinite(deal.price_usd) ? { price_usd: deal.price_usd } : {}),
+        checked_at: freshness.verified_at,
+        ...(deal.validity ? { validity: deal.validity } : {}),
+      });
+    }
+  }
+  return { placements: [], merchants, deals, questions: [] };
+}
+
+function compileHomeModules({ request, results, projection }) {
+  if (request.journey !== 'HOME' || results.length === 0) return null;
+  const records = marketPageRecordsFromCards(results);
+  if (records.merchants.length === 0) return null;
+  const marketId = projection.market?.market_id ?? request.market_id;
+  return compileMarketPage(records, {
+    market: HOME_MODULE_MARKET_LABELS[marketId] ?? marketId,
+    now: projection.generated_at,
+  });
+}
+
 export function normalizeCustomerWorldRequest({
   journey = 'SEARCH', market, query, view,
 } = {}) {
@@ -153,16 +225,18 @@ export function buildCustomerWorldView({ request, projection }) {
       ? 'CAPABILITY_GAP'
       : results.length > 0 ? 'RESULTS' : 'EMPTY';
   const stateExplanation = state === 'INPUT_REQUIRED'
-    ? 'Enter a supported city or neighborhood. Customer location remains UNKNOWN until you do.'
+    ? 'Enter a city or neighborhood to see verified options near you.'
     : state === 'CAPABILITY_GAP'
-      ? `CANA cannot verify ${unsupportedDimensions.join(', ')} from the admitted Reality contract.`
+      ? `We can't verify ${unsupportedDimensions.join(', ')} yet, so we won't guess at it.`
       : state === 'EMPTY'
-        ? 'No verified current match was found. This is not proof that no real-world option exists.'
-        : 'Every result passed the canonical current Reality and ASK answerability gates.';
+        ? "No verified match right now — which is not proof that nothing exists. We just won't show what we can't back up."
+        : 'Every result here is backed by a current, verified source.';
+  const homeModules = compileHomeModules({ request, results, projection });
   return Object.freeze({
     schema_version: 'cana-customer-world/v1',
     state,
     state_explanation: stateExplanation,
+    home_modules: homeModules,
     request,
     market: projection.market,
     intent: projection.intent,

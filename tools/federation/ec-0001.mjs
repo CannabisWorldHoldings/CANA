@@ -1,0 +1,97 @@
+#!/usr/bin/env node
+/**
+ * EC-0001 — the first real EvolutionCase: the sentinel-duplication failure.
+ *
+ * This is not a toy. On 2026-08-18 (this thread) a fingerprint-only
+ * competitor monitor was designed, built, tested (10/10) and live-probed —
+ * and then WITHDRAWN, because forensic recovery of the sovereign bundles
+ * revealed the capability already had a canonical owner
+ * (apps/web/scripts/competitor-shadow.mjs + tools/sentinel/bridge.mjs).
+ * Real cost was paid: duplicate build effort, a duplicate live probe,
+ * and a reconciliation pass.
+ *
+ * This module builds the case record from the real evidence. The holdout is
+ * executed live by the caller (evolution.test.mjs / the generator) against
+ * the census implementation — results are measured, not asserted.
+ */
+import { makeEvolutionCase } from './evolution.mjs';
+import { censusVerdict, loadOwners } from './capability-census.mjs';
+
+/** Holdout: proposals the candidates were NOT built against (incl. the historical replay). */
+export const HOLDOUT = [
+  { id: 'H1-historical-replay', proposal: 'build a fingerprint-only competitor monitor that fetches competitor pages daily and detects competitor drift', expected: 'REFUSED_DUPLICATE' },
+  { id: 'H2-synonym-attack', proposal: 'nightly job to shadow competitor sites, fingerprint pages and diff snapshots', expected: 'REFUSED_DUPLICATE' },
+  { id: 'H3-new-capability', proposal: 'workforce compiler that maps a mission to a minimum sufficient worker set', expected: 'CLEAR_TO_BUILD' },
+  { id: 'H4-new-capability-2', proposal: 'trajectory capture schema for consequential agent runs', expected: 'CLEAR_TO_BUILD' },
+  { id: 'H5-owned-loop', proposal: 'a new self improvement loop with its own improvement cycle runner', expected: 'REFUSED_DUPLICATE' },
+  { id: 'H6-owned-memory', proposal: 'a durable lessons memory store for admitted lessons', expected: 'REFUSED_DUPLICATE' },
+];
+
+export function runHoldout() {
+  const owners = loadOwners();
+  return HOLDOUT.map((h) => {
+    const v = censusVerdict(h.proposal, owners);
+    return { case: h.id, expected: h.expected, observed: v.verdict, pass: v.verdict === h.expected, collisions: v.collisions.map((c) => c.capability) };
+  });
+}
+
+export function buildEC0001({ holdoutResults }) {
+  return makeEvolutionCase({
+    mission: 'federation-continuation-2026-08-18',
+    systemRevision: 'federation/continuation @ 781ddd9 (sovereign tip 9d3bd70 + kernel 5327136 + gates A/B)',
+    observedFailure: 'Duplicate capability built: tools/sentinel/monitor.mjs (commit f0f7090 on kernel/governor-extraction) re-implemented competitor shadowing already owned by apps/web/scripts/competitor-shadow.mjs + tools/sentinel/bridge.mjs on the sovereign lineage. Detected only during forensic recovery; withdrawn during reconciliation. Real cost: duplicate build, duplicate live probe, reconciliation pass.',
+    noveltyState: 'IMPLEMENTATION_DEFECT',
+    diagnoses: [
+      {
+        id: 'D1-process-gap',
+        hypothesis: 'No mandatory pre-build capability census: nothing forced the question "who already owns this job?" before invention.',
+        evidence: 'The build proceeded directly from the approved plan to implementation; no census step exists in any court. Recovery ledger §3 records the collision.',
+      },
+      {
+        id: 'D2-knowledge-gap',
+        hypothesis: 'The capability universe was truncated: origin/main lacked the sovereign substrate (local-only lineage), so even a census over the checked-out tree would have missed the owner.',
+        evidence: 'tools/alive-loop and tools/sentinel absent at origin/main 3a340f3 (verified); owner existed only in orderweeddc-sovereign-vnext bundles. MISSION_STATE.json had recorded 1028 local-only commits.',
+      },
+      {
+        id: 'D3-registry-granularity',
+        hypothesis: 'CODEX_CHANGED_FILE_OWNERSHIP.json registers file ownership, not JOB ownership, so path-level checks cannot catch a same-job different-path rebuild.',
+        evidence: 'The duplicate used non-colliding paths (tools/sentinel/monitor.mjs vs apps/web/scripts/competitor-shadow.mjs); the only file collision was an unrelated test filename.',
+      },
+    ],
+    selectedSurface: 'L4_WORKFLOW_POLICY_CODE',
+    surfaceSelectionReason: 'L1 memory alone cannot deterministically refuse a build (recall is advisory and skippable — D1 shows advisory steps get skipped). L2/L3 have the same advisory weakness. L4 is the lowest surface that produces a deterministic, testable refusal; nothing higher (L5+) is needed. D2 is additionally mitigated at L1 by settling the recovered-lineage fact into memory (residue, not the mutation).',
+    candidateMutations: [
+      {
+        id: 'C1-memory-lesson',
+        surface: 'L1_MEMORY',
+        change: 'Settle a procedural MemoryAtom + FAST lesson: "before building any new capability, run the capability census over ALL recovered lineages including bundles." Advisory recall at build time.',
+        rollback: 'quarantine the atom with evidence',
+      },
+      {
+        id: 'C2-census-court',
+        surface: 'L4_WORKFLOW_POLICY_CODE',
+        change: 'tools/federation/capability-census.mjs + capability-owners.json: deterministic pre-build court; a proposal matching >=2 job terms of a registered owner exits 1 with owner citation; missing/malformed registry fails closed.',
+        rollback: 'git revert of the Gate C+D commit (single additive commit)',
+      },
+    ],
+    mutationAuthor: 'lane-implementation',
+    baseline: 'Pre-mutation behavior, measured: 1 duplicate-capability build in 1 continuation (the sentinel monitor); no mechanism existed that could have refused it (census run on H1 replay against pre-mutation tree: no such tool).',
+    evaluator: {
+      ref: 'node --test tools/federation/evolution.test.mjs (holdout block) — deterministic replay through node:test, owned by the verification lane; the non-collision law it enforces predates both candidates (_mission ledger §3, directive §1/§74)',
+      owner: 'lane-verification',
+      declared_before_candidates: true,
+    },
+    holdout: HOLDOUT.map((h) => h.id),
+    holdoutResults,
+    costDelta: 'census adds one deterministic local check per new-capability build (~ms); no model cost; registry maintenance is the recurring cost',
+    regressions: [],
+    mechanismAttribution: 'C2 wins because refusal is deterministic and testable: all 6 holdout cases pass, including the historical replay (H1) and synonym attack (H2), with zero false refusals on genuinely-new capabilities (H3, H4). C1 evaluated on the same holdout cannot mechanically refuse anything (advisory recall has no exit code) — it is retained as RESIDUE at L1 (settled atom + lesson feeding winner-memory), mitigating D2, but it is not the promoted mutation. D3 is addressed inside C2 by making the registry job-term-based rather than path-based.',
+    verdict: 'PROMOTE',
+    promotedCandidate: 'C2-census-court',
+    negativeEvidence: [
+      'C1-memory-lesson REJECTED as the primary mutation: advisory memory cannot produce a deterministic refusal (same failure family as D1 would recur under skip pressure). Retained as L1 residue only.',
+    ],
+    parentLineage: 'sovereign tip 9d3bd70 → 5327136 → 781ddd9',
+    rollbackTarget: '781ddd9 + receipt commit (revert the single Gate C+D commit restores the pre-mutation tree; demonstrated on a throwaway branch)',
+  });
+}

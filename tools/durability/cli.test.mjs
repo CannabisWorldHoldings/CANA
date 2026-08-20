@@ -19,6 +19,7 @@ import {
   mission2OwnershipAssignment,
   MISSION3_M001_AUTHORIZED_PATHS,
   mission3M001OwnershipAssignment,
+  ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS,
   ownershipPatterns,
   PR35_AUTHORIZED_PATHS,
   PR2_AUTHORIZED_PATHS,
@@ -42,6 +43,8 @@ const PHASE_B_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
 const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08_13';
 const CUSTOMER_FUNCTIONAL_ASSIGNMENT = 'customer_functional_convergence_2026_08_13';
+const ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT =
+  'orderweeddc_home_composition_v1_2026_08_14';
 const PHASE_B_SLICE2_BASE = 'e3139d960b837a8ea7ef7f01acfab5111dd96cc7';
 const PHASE_B_SLICE2_TREE = '5b6c4b85d613d1de71879bc7e27b63cb96ba7405';
 const PHASE_B_EXPECTED_PATHS = Object.freeze([
@@ -475,6 +478,48 @@ test('Customer Functional Convergence paths must stay owned and planned', () => 
     assert.throws(
       () => validateOwnershipManifest(manifest),
       /Customer Functional Convergence|changed-file ownership patterns/,
+    );
+  }
+});
+
+test('ORDERWEEDDC Home Composition has exact ownership without neighboring authority', () => {
+  const manifest = ownership();
+  const assignment =
+    manifest.explicit_user_assignment[ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT];
+  assert.deepEqual(
+    assignment.authorized_paths,
+    [...ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS],
+  );
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/app/[domain]/products/neighbor.tsx'], manifest),
+    ['apps/web/src/app/[domain]/products/neighbor.tsx'],
+  );
+});
+
+test('ORDERWEEDDC Home Composition authority and paths fail closed', () => {
+  for (const mutate of [
+    (value) => { value.authorized_paths[0] = 'apps/web/src/app/[domain]/products/**'; },
+    (value) => { value.base_commit = '0'.repeat(40); },
+    (value) => { value.authorization_effect += ' production authority'; },
+    (value) => { value.approval_reference = 'SELF_APPROVED'; },
+  ]) {
+    const manifest = ownership();
+    mutate(manifest.explicit_user_assignment[ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT]);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /ORDERWEEDDC Home Composition|changed-file ownership patterns/,
+    );
+  }
+
+  for (const key of ['owned_modify_paths', 'planned_candidate_files']) {
+    const manifest = ownership();
+    manifest[key] = manifest[key].filter(
+      (entry) => entry !== ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS[0],
+    );
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /ORDERWEEDDC Home Composition|changed-file ownership patterns/,
     );
   }
 });
