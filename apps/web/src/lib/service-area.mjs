@@ -45,10 +45,49 @@ export const DEFAULT_MAX_VERIFIED_AGE_HOURS = 24;
 
 const normalize = (s) => String(s).trim().toLowerCase();
 
-/** Minutes since local midnight for the injected clock. */
+/**
+ * Wall-clock day-of-week and minute-of-day IN THE TIMESTAMP'S OWN OFFSET.
+ *
+ * Delivery hours are market-local: a "Saturday 10:00 → 4am" window means
+ * Saturday in the market's timezone, and the queried instant carries that
+ * timezone as an explicit UTC offset (e.g. `-04:00`). Using Date#getDay /
+ * getHours / getMinutes would resolve the instant against the RUNNER's
+ * local timezone instead, so the same instant produced a different
+ * day/minute-of-day on a UTC CI runner than on an America/New_York
+ * developer machine — a spill-past-midnight window opened or closed
+ * depending on where the test ran (PREEXISTING_PRODUCT_DEFECT).
+ *
+ * The correct semantics: shift the absolute instant by the timestamp's own
+ * offset and read the UTC-based fields of the shifted instant. That yields
+ * the market-local wall clock regardless of the runner's timezone. An offset
+ * is extracted from the ISO-8601 string; a bare/`Z` timestamp is treated as
+ * UTC. If no offset can be determined the value falls back to the parsed
+ * instant read in UTC (still runner-independent).
+ */
+function offsetMinutesFromTimestamp(now) {
+  if (now instanceof Date) return 0; // a Date is an absolute instant; read it in UTC
+  const match = /([+-])(\d{2}):?(\d{2})$/.exec(String(now).trim());
+  if (match) {
+    const sign = match[1] === '-' ? -1 : 1;
+    return sign * (Number(match[2]) * 60 + Number(match[3]));
+  }
+  return 0; // bare or Z-suffixed timestamp: already UTC wall clock
+}
+
+/** The market-local wall clock (day-of-week + minute-of-day) of the queried
+ *  instant, honoring the timestamp's OWN offset rather than the runner TZ. */
+function marketLocalWallClock(now) {
+  const instant = new Date(now);
+  const shifted = new Date(instant.getTime() + offsetMinutesFromTimestamp(now) * 60_000);
+  return {
+    day: shifted.getUTCDay(),
+    mins: shifted.getUTCHours() * 60 + shifted.getUTCMinutes(),
+  };
+}
+
+/** Minutes since market-local midnight for the injected clock. */
 function minutesOfDay(now) {
-  const d = new Date(now);
-  return d.getHours() * 60 + d.getMinutes();
+  return marketLocalWallClock(now).mins;
 }
 
 /**
@@ -58,9 +97,7 @@ function minutesOfDay(now) {
  */
 export function isOpenAt(hours, now) {
   if (!Array.isArray(hours) || hours.length === 0) return null; // unknown, not closed
-  const d = new Date(now);
-  const day = d.getDay();
-  const mins = minutesOfDay(now);
+  const { day, mins } = marketLocalWallClock(now);
   for (const h of hours) {
     if (h.day === day && mins >= h.open_minutes && mins < h.close_minutes) return true;
     // yesterday's window spilling past midnight
