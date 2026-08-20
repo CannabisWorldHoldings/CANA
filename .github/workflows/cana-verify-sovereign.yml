@@ -74,9 +74,6 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/cana_verify
       DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/cana_verify
-      CANA_RECEIPT_DIR: ${{ runner.temp }}/cana-ci/receipts
-      CANA_SOVEREIGN_RECEIPT_COPY: ${{ runner.temp }}/cana-ci/verify-sovereign.json
-      CANA_SOURCE_MIRROR: ${{ runner.temp }}/cana-ci/source-mirror.git
       CANA_VISUAL_BASE_URL: http://127.0.0.1:3000
       NEXT_TELEMETRY_DISABLED: '1'
 
@@ -85,6 +82,14 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
+
+      - name: Route CI byproducts outside the verified tree
+        # runner context is invalid in job-level env; RUNNER_TEMP is a plain
+        # env var at step runtime, exported for every later step via GITHUB_ENV.
+        run: |
+          echo "CANA_RECEIPT_DIR=$RUNNER_TEMP/cana-ci/receipts" >> "$GITHUB_ENV"
+          echo "CANA_SOVEREIGN_RECEIPT_COPY=$RUNNER_TEMP/cana-ci/verify-sovereign.json" >> "$GITHUB_ENV"
+          echo "CANA_SOURCE_MIRROR=$RUNNER_TEMP/cana-ci/source-mirror.git" >> "$GITHUB_ENV"
 
       - name: Set up Node with dependency caching
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
@@ -215,9 +220,6 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres@127.0.0.1:5432/cana_verify
       DIRECT_URL: postgresql://postgres@127.0.0.1:5432/cana_verify
-      CANA_RECEIPT_DIR: ${{ runner.temp }}/cana-ci/receipts
-      CANA_SOVEREIGN_RECEIPT_COPY: ${{ runner.temp }}/cana-ci/verify-sovereign.json
-      CANA_SOURCE_MIRROR: ${{ runner.temp }}/cana-ci/source-mirror.git
       NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
@@ -225,6 +227,14 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
+
+      - name: Route CI byproducts outside the verified tree
+        # runner context is invalid in job-level env; RUNNER_TEMP is a plain
+        # env var at step runtime, exported for every later step via GITHUB_ENV.
+        run: |
+          echo "CANA_RECEIPT_DIR=$RUNNER_TEMP/cana-ci/receipts" >> "$GITHUB_ENV"
+          echo "CANA_SOVEREIGN_RECEIPT_COPY=$RUNNER_TEMP/cana-ci/verify-sovereign.json" >> "$GITHUB_ENV"
+          echo "CANA_SOURCE_MIRROR=$RUNNER_TEMP/cana-ci/source-mirror.git" >> "$GITHUB_ENV"
 
       - name: Set up Node with dependency caching
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
