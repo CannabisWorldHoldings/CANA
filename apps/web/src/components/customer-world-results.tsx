@@ -54,7 +54,7 @@ export type HomeModule = {
   items?: HomeModuleItem[];
   provenance?: Record<string, unknown>;
 };
-export type HomeModules = { modules: HomeModule[]; integrity?: string[] } | null;
+export type HomeModules = { modules: readonly HomeModule[]; integrity?: readonly string[] } | null;
 
 export type CustomerWorld = {
   state: 'INPUT_REQUIRED' | 'CAPABILITY_GAP' | 'RESULTS' | 'EMPTY';
