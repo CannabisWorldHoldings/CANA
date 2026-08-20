@@ -7,7 +7,14 @@ import { fileURLToPath } from 'node:url';
 import { sha256File } from '../test-runner/receipt.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
+// Owner-authorized prohibited-source baseline (OWNERSHIP_RESIGN_GO, see
+// out/OWNERSHIP_RESIGN_EVIDENCE.md). Re-anchored from the protected commit
+// c953ebcd to 3fd1f2f0 — the accepted-lineage commit that admitted the
+// court-reviewed demand-credits blob (c881bc44…, == manifest pr29 court_blob_sha256)
+// and at which the handoff route is still at its reviewed blob (6292b725…).
+// DATA constant only; the diff predicate below is unchanged and stays load-bearing:
+// any future drift of a prohibited business source from its reviewed baseline trips it.
+const BASE = '3fd1f2f0d10ad4a97cfb177f2fee4745ef010bce';
 const DEMAND_CREDITS = 'apps/web/src/lib/demand-credits.mjs';
 const HANDOFF_ROUTE = 'apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts';
 const MARIA_RUNNER = 'tools/mariadb-sim/run.mjs';

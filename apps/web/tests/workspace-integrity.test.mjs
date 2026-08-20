@@ -36,7 +36,16 @@ test('the release workspace names only executable, verified packages', () => {
     .sort();
   // paid-governance is a Python package (unittest-verified), so it lives in
   // packages/ but is intentionally absent from the npm workspaces list above.
-  assert.deepEqual(packageDirectories, ['ad-creative', 'ai', 'paid-governance']);
+  // governor-kernel is conserved Federation work (a Python kernel with its own
+  // attack-court/standalone/sitemind test suites), added by the sovereign-sibling
+  // merge; like paid-governance it lives in packages/ but is intentionally absent
+  // from the npm workspaces list above.
+  assert.deepEqual(packageDirectories, [
+    'ad-creative',
+    'ai',
+    'governor-kernel',
+    'paid-governance',
+  ]);
 });
 
 test('shadow application and data-model entry points stay retired', () => {

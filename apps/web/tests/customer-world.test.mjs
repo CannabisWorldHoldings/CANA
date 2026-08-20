@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   buildCustomerWorldView,
+  marketPageRecordsFromCards,
   normalizeCustomerMerchantId,
   normalizeCustomerWorldRequest,
   resolveCustomerWorld,
@@ -279,4 +280,51 @@ test('resolver reads canonical Reality and never falls back to Retailer', async 
   assert.equal(world.state, 'EMPTY');
   assert.equal(marketClaimReads, 1);
   assert.equal(retailerReads, 0);
+});
+
+test('W-1 seam: HOME journey compiles evidence-bound home modules; other journeys never do', () => {
+  const homeView = buildCustomerWorldView({
+    request: normalizeCustomerWorldRequest({ journey: 'HOME', market: 'US-MD', query: 'bethesda' }),
+    projection: projection(),
+  });
+  assert.ok(homeView.home_modules, 'HOME view carries compiled modules');
+  const hero = homeView.home_modules.modules.find((m) => m.kind === 'hero_media');
+  assert.equal(hero.state, 'UNSOLD_INVENTORY', 'no placements are ever fabricated');
+  assert.equal(hero.fallback, 'EDITORIAL_HERO');
+  const dispensaries = homeView.home_modules.modules.find((m) => m.kind === 'dispensaries');
+  assert.ok(dispensaries, 'the verified card crossed the seam as a dispensary record');
+  const searchView = buildCustomerWorldView({
+    request: normalizeCustomerWorldRequest({ journey: 'SEARCH', market: 'US-MD', query: 'bethesda' }),
+    projection: projection(),
+  });
+  assert.equal(searchView.home_modules, null, 'SEARCH journey never carries home modules');
+});
+
+test('W-1 seam: unknown card dimensions never become deals, placements, or questions', () => {
+  const view = buildCustomerWorldView({
+    request: normalizeCustomerWorldRequest({ journey: 'HOME', market: 'US-MD', query: 'bethesda' }),
+    projection: projection(),
+  });
+  const deals = view.home_modules.modules.find((m) => m.kind === 'deals');
+  if (deals) assert.equal(deals.items.length, 0, 'UNKNOWN deal dimension stays out of the deals module');
+  const questions = view.home_modules.modules.find((m) => m.kind === 'local_questions');
+  if (questions) assert.equal((questions.items ?? []).length, 0);
+});
+
+test('W-1 seam: zero results and unverifiable cards produce no modules — absence stays absence', () => {
+  const emptyProjection = projection();
+  const view = buildCustomerWorldView({
+    request: normalizeCustomerWorldRequest({ journey: 'HOME', market: 'US-MD', query: 'bethesda' }),
+    projection: { ...emptyProjection, results: [] },
+  });
+  assert.equal(view.home_modules, null);
+
+  const records = marketPageRecordsFromCards([
+    { id: 'stale', name: field('KNOWN', 'Stale Shop'), verification_state: field('KNOWN', 'STALE'), freshness: field('KNOWN', { verified_at: '2026-08-13T06:05:00.000Z' }) },
+    { id: 'nameless', name: field('UNKNOWN'), verification_state: field('KNOWN', 'VERIFIED_CURRENT'), freshness: field('KNOWN', { verified_at: '2026-08-13T06:05:00.000Z' }) },
+    { id: 'unfresh', name: field('KNOWN', 'No Freshness'), verification_state: field('KNOWN', 'VERIFIED_CURRENT'), freshness: field('UNKNOWN') },
+  ]);
+  assert.equal(records.merchants.length, 0, 'nothing unverifiable crosses the seam');
+  assert.deepEqual(records.placements, []);
+  assert.deepEqual(records.questions, []);
 });

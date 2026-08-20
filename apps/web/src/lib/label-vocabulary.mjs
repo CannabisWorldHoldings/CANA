@@ -106,3 +106,21 @@ export function buildEvidenceReceipt({ claims, unknowns } = {}) {
     latestCheckedAt: latestCheckedAt === null ? null : new Date(latestCheckedAt).toISOString(),
   };
 }
+
+/**
+ * PUBLIC WORLD-STATE LABELS (owner-correction compiled: public UI must never
+ * expose engineering vocabulary). The machine states INPUT_REQUIRED /
+ * CAPABILITY_GAP / EMPTY / RESULTS are constitutional and stay in the schema
+ * and in data attributes for tests; a consumer reads plain language. Unknown
+ * states fail closed to an honest fallback instead of leaking the raw enum.
+ */
+export const PUBLIC_WORLD_STATE_LABELS = Object.freeze({
+  INPUT_REQUIRED: 'Add a location',
+  CAPABILITY_GAP: 'Partly answerable',
+  EMPTY: 'Nothing verified yet',
+  RESULTS: 'Verified results',
+});
+
+export function publicWorldStateLabel(state) {
+  return PUBLIC_WORLD_STATE_LABELS[state] ?? 'Status unavailable';
+}

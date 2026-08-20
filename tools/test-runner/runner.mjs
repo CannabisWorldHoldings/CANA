@@ -365,7 +365,13 @@ async function standardVerification(profile) {
   return receipt.body;
 }
 
-export async function runVerification(profile) {
+export async function runVerification(profile, rest = []) {
+  if (profile === 'sovereign') {
+    // NOT an alias. `sovereign` is a fifteen-stage composition with its own
+    // classification contract and its own single receipt — see sovereign.mjs.
+    const { runSovereignVerification } = await import('./sovereign.mjs');
+    return runSovereignVerification(rest);
+  }
   if (STANDARD_PROFILES.has(profile)) {
     return standardVerification(profile);
   }
@@ -377,5 +383,11 @@ export async function runVerification(profile) {
     const { runCpanelSimulation } = await import('../cpanel-sim/run.mjs');
     return runCpanelSimulation({ repoRoot: ROOT });
   }
-  throw Object.assign(new Error(`unknown verification profile: ${profile}`), { exitCode: 2 });
+  throw Object.assign(
+    new Error(
+      `unknown verification profile: ${profile}\n`
+      + 'known profiles: sovereign, focused, full, clean-clone, release, maria, cpanel',
+    ),
+    { exitCode: 2 },
+  );
 }

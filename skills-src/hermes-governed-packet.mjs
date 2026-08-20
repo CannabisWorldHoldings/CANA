@@ -32,10 +32,27 @@
  *   node packet.mjs --selftest
  */
 import { createHash } from 'node:crypto';
+// PHASE D — CLOSE THE HERMES CRITICAL PATH.
+// The prior law let `makeGrant` accept ANY non-empty `issuedBy` string: whoever wrote issuedBy WAS
+// the policy authority (qC boundary court, CRITICAL violation "forgeable policy authority"). The
+// grant is now cryptographically bound to a CANA Authority authorization object minted by the SINGLE
+// seat (tools/authority/authority.mjs). Hermes VERIFIES that object under the owner-root signer
+// interface; it can neither self-authorize (it has no signing oracle) nor self-verify (verification
+// is a pure check against an EXTERNAL owner key it does not hold). An arbitrary issuedBy is refused.
+import { pathToFileURL } from 'node:url';
+import {
+  verifyAuthorization, authorizationActionDigest,
+} from '../tools/authority/authority.mjs';
 
 const has = (k) => process.argv.includes(`--${k}`);
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
+// Fire the CLI self-test ONLY when this file is the process entry point, not when it is imported
+// (by tools/alive-loop/adapter.mjs, the courts, or another module) with `--selftest` in argv.
+const isEntry = () => {
+  try { return !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href; }
+  catch { return false; }
+};
 
 /** Capabilities Hermes may be granted. Anything absent is refused. */
 export const CAPABILITIES = Object.freeze([
@@ -54,26 +71,108 @@ export const OWNER_ONLY = Object.freeze([
   'DNS_CHANGE', 'CREDENTIAL_DISCLOSURE', 'DELETE_PRODUCTION_DATA',
 ]);
 
-/** An authorization grant issued by CANA. */
-export function makeGrant({ capability, budgetUnits, expiresAt, issuedBy, now = new Date() }) {
+/**
+ * A capability grant DERIVED FROM a CANA Authority authorization.
+ *
+ * PHASE D — a grant can ONLY be minted from an authorization object produced by tools/authority and
+ * cryptographically bound to it. The caller no longer supplies `issuedBy` (an arbitrary string is
+ * refused outright); the issuer is taken from the VERIFIED authorization. The authorization is
+ * verified via the signer INTERFACE (owner-root public key), so Hermes:
+ *   - cannot self-authorize (it holds no signing oracle; only authorize() can mint an authorization),
+ *   - cannot self-verify (verification checks a signature made by an EXTERNAL owner key),
+ *   - cannot widen the capability (grant capability must equal the authorization's capability),
+ *   - cannot widen/replace the action (the authorization is bound to an exact action digest),
+ *   - cannot cross a tenant (the authorization carries a tenant that must match),
+ *   - cannot forge the authorization id (id must recompute from the signed body),
+ *   - cannot use an expired authorization.
+ *
+ * @param {object} args
+ * @param {string} args.capability   capability being granted (must equal authorization.capability)
+ * @param {number} args.budgetUnits  positive integer budget (must be <= authorization.budget_units)
+ * @param {object} args.authorization  authorization object from tools/authority authorize()
+ * @param {object} args.verifier     owner-root verifier (ownerRootVerifier) — the signer interface
+ * @param {object} args.boundAction  { action_type, resource?, tenant, scope?, action? } this grant is for
+ * @param {Date}   [args.now]
+ *
+ * The legacy `issuedBy` / `expiresAt` parameters are GONE. Supplying `issuedBy` is ignored; the only
+ * admissible attribution is the verified authorization. This is the fix for the qC CRITICAL defect.
+ */
+export function makeGrant({ capability, budgetUnits, authorization, verifier, boundAction, now = new Date() }) {
   const errors = [];
+  // 1. Capability must be in the allowlist and not owner-only (unchanged containment).
   if (OWNER_ONLY.includes(capability)) {
     errors.push(`${capability} is owner-only and cannot be granted to an agent`);
   } else if (!CAPABILITIES.includes(capability)) {
     errors.push(`unknown capability ${capability}`);
   }
   if (!Number.isInteger(budgetUnits) || budgetUnits <= 0) errors.push('budgetUnits must be a positive integer');
-  if (!text(issuedBy)) errors.push('issuedBy required — an unattributed grant is not an authorization');
-  const exp = expiresAt instanceof Date ? expiresAt : (text(expiresAt) ? new Date(expiresAt) : null);
-  if (!exp || Number.isNaN(exp.getTime())) errors.push('a valid expiresAt is required');
-  else if (exp.getTime() <= now.getTime()) errors.push('grant already expired');
 
+  // 2. An authorization object AND a verifier are MANDATORY. No authorization => no grant. This is
+  //    what makes an arbitrary issuedBy impossible: there is no issuedBy parameter anymore.
+  if (!authorization || typeof authorization !== 'object') {
+    errors.push('REFUSED: a grant requires a CANA Authority authorization object — an unattributed grant is not an authorization');
+  }
+  if (!verifier || typeof verifier.verify !== 'function') {
+    errors.push('REFUSED: an owner-root verifier is required to admit an authorization; Hermes cannot self-verify');
+  }
+  if (!boundAction || !text(boundAction.action_type) || !text(boundAction.tenant)) {
+    errors.push('REFUSED: boundAction { action_type, tenant } is required so the authorization can be bound to THIS action');
+  }
+
+  let verified = null;
+  if (errors.length === 0) {
+    // 3. Verify the authorization under the owner root, bound to THIS action + tenant. This single
+    //    call refuses: forged id, invalid/absent signature, expired, wrong action digest, wrong
+    //    tenant, and (fail-closed) a production run with no production signer.
+    verified = verifyAuthorization(authorization, verifier, {
+      now: now.getTime(),
+      action_type: boundAction.action_type,
+      resource: boundAction.resource ?? null,
+      tenant: boundAction.tenant,
+      scope: boundAction.scope ?? null,
+      action: boundAction.action ?? null,
+    });
+    if (!verified.ok) {
+      errors.push(`REFUSED: authorization not admissible (${verified.code})`);
+    } else {
+      // 4. Capability SUBSET: the grant may not exceed the authorized capability.
+      if (authorization.capability !== capability) {
+        errors.push(`REFUSED: grant capability ${capability} exceeds the authorized capability ${authorization.capability} — a grant cannot widen its authorization`);
+      }
+      // 5. Budget SUBSET: the grant budget may not exceed the authorized budget.
+      if (Number.isInteger(budgetUnits) && Number.isFinite(authorization.budget_units)
+          && budgetUnits > authorization.budget_units) {
+        errors.push(`REFUSED: grant budget ${budgetUnits} exceeds authorized budget ${authorization.budget_units}`);
+      }
+      // 6. Action digest bind (belt-and-suspenders alongside verifyAuthorization's own check): the
+      //    authorization must be for exactly this action.
+      const expectDigest = authorizationActionDigest({
+        action_type: boundAction.action_type, resource: boundAction.resource ?? null,
+        tenant: boundAction.tenant, scope: boundAction.scope ?? null, action: boundAction.action ?? null,
+      });
+      if (authorization.action_digest !== expectDigest) {
+        errors.push('REFUSED: authorization action digest does not match this action — a grant cannot be replayed onto a different action');
+      }
+    }
+  }
+
+  if (errors.length) {
+    return { capability, budget_units: budgetUnits, issued_by: null, expires_at: null, valid: false, errors, grant_id: null };
+  }
+
+  // Attribution comes ONLY from the verified authorization — never a caller string.
+  const issuedBy = `CANA-AUTHORITY:${verified.auth.id}`;
   const grant = {
     capability, budget_units: budgetUnits, issued_by: issuedBy,
-    expires_at: exp && !Number.isNaN(exp?.getTime?.()) ? exp.toISOString() : null,
-    valid: errors.length === 0, errors,
+    authorization_id: verified.auth.id,
+    authorization_nonce: verified.auth.nonce,
+    expires_at: verified.auth.expires_at,
+    valid: true, errors: [],
   };
-  grant.grant_id = 'gr_' + sha(`${capability}|${budgetUnits}|${grant.expires_at}|${issuedBy}`).slice(0, 16);
+  // grant_id binds the authorization id + nonce, so it is a function of the SIGNED authorization, not
+  // of caller-reproducible public inputs (closes the qC replay gap: a grant is no longer replayable
+  // by any party — it requires an authorization only the seat can mint).
+  grant.grant_id = 'gr_' + sha(`${capability}|${budgetUnits}|${grant.expires_at}|${verified.auth.id}|${verified.auth.nonce}`).slice(0, 16);
   return grant;
 }
 
@@ -249,7 +348,7 @@ export function makeReceipt({ packet, outcome, now = new Date() }) {
 }
 
 // ---------------- self-test ----------------
-if (has('selftest')) {
+if (has('selftest') && isEntry()) {
   let pass = 0, fail = 0;
   const t = (n, c) => { c ? (pass++, console.log(`  ok   ${n}`)) : (fail++, console.log(`  FAIL ${n}`)); };
   const now = new Date('2026-07-26T12:00:00Z');
@@ -268,16 +367,106 @@ if (has('selftest')) {
     return { ...body, packet_digest: sha(JSON.stringify(body)) };
   };
   const ctx = mkCtx();
-  const g = () => makeGrant({ capability: 'RUN_BROWSER_COURT', budgetUnits: 10, expiresAt: future, issuedBy: 'CANA', now });
+
+  // PHASE D: makeGrant no longer takes an arbitrary issuedBy — it binds to a CANA Authority
+  // authorization minted by the SINGLE seat. The selftest builds a REAL one through the real
+  // authorize() path (DEV signer, temp state dir) so every downstream seal/receipt test still runs
+  // against a genuine grant. Where a test previously asserted the OLD forgeable behavior, it now
+  // asserts the NEW refusal (noted in the commit message).
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const authMod = await import('../tools/authority/authority.mjs');
+  const { authorize, provisionDevOwnerRoot, devOwnerSigner, ownerRootVerifier, ContainmentStore,
+    mintOwnerAuthorization } = authMod;
+
+  const selfRoot = mkdtempSync(join(tmpdir(), 'hermes-selftest-'));
+  const stateDir = join(selfRoot, 'state');
+  const ownerRoot = join(selfRoot, 'owner');
+  provisionDevOwnerRoot(ownerRoot);
+  const selfSigner = devOwnerSigner(ownerRoot);
+  const selfVerifier = ownerRootVerifier(ownerRoot);
+  const cstore = new ContainmentStore(stateDir);
+  cstore.setBudget('calls', 1000);
+  cstore.issueAuthorization({ id: 'auth_self', actor_id: 'actor_owner', tenant_id: 'tenant_self', site_id: 'site_1',
+    allowed_actions: ['RUN_BROWSER_COURT', 'RUN_TESTS', 'WRITE_LOCAL_BRANCH'], allowed_resources: ['*'],
+    financial_budget: 0, runtime_budget: 1000, call_budget: 1000, delegation_depth: 2,
+    issued_at: now.toISOString(), not_before: null, expires_at: future.toISOString() });
+  cstore.issueCapability({ id: 'cap_self', worker_id: 'worker_1', authorization_id: 'auth_self',
+    allowed_actions: ['RUN_BROWSER_COURT', 'RUN_TESTS', 'WRITE_LOCAL_BRANCH'], allowed_resources: ['*'],
+    runtime_budget: 500, call_budget: 500, delegation_depth: 0, issued_at: now.toISOString(), expires_at: future.toISOString() });
+
+  // Build a real mission-2 sealed mission + context for authorize() (real generator!=judge path).
+  const { compileMinimalContext } = await import('../tools/mission-2/context.mjs');
+  const { createMissionContract } = await import('../tools/mission-2/contracts.mjs');
+  const { sha256: m2sha } = await import('../tools/mission-2/canonical.mjs');
+  const SC = 'a'.repeat(40); const ST = 'b'.repeat(40); const SEV = m2sha('protected-base-receipt');
+  const mkMission = (missionId) => {
+    const seed = { mission_id: missionId, tenant_id: 'tenant_self', workspace_id: 'workspace_self',
+      objective: 'run the browser court on the homepage', source_repository: 'r', source_commit: SC, source_tree: ST, permitted_files: ['docs/status.md'] };
+    const fct = { id: 'f1', claim: 'server is running and canonical checks are proven by protected-base receipts',
+      authority: 'INDEPENDENTLY_VERIFIED_RECEIPT', truth_status: 'VERIFIED', source: 's', observed_at: '2026-07-26T08:00:00.000Z',
+      valid_for_days: 1, tags: ['subject:x'], tenant_id: 'tenant_self', workspace_id: 'workspace_self', source_commit: SC,
+      source_tree: ST, evidence_sha256: SEV, target_files: ['docs/status.md'], provenance_status: 'CURRENT_VERIFIED' };
+    const packet = compileMinimalContext({ mission: seed, facts: [fct], now });
+    const m = createMissionContract({ mission_id: missionId, tenant_id: 'tenant_self', workspace_id: 'workspace_self',
+      mission_type: 'STALE_REGISTERED_PROJECT_FACT', objective: seed.objective,
+      originating_signal: { signal_id: 's1', evidence_ref: `sha256:${SEV}` }, source_repository: 'r', source_commit: SC, source_tree: ST,
+      source_evidence_references: [`sha256:${SEV}`], context_compiler_version: 'sitemind-context-compiler/mission-2-adapter-1',
+      context_packet_hash: packet.packet_hash, authority_identity: 'CANA', authorization_identity: 'CANA_V1',
+      permitted_files: ['docs/status.md'], permitted_resources: ['ISOLATED_GIT_WORKTREE'],
+      permitted_capabilities: ['READ_REPOSITORY', 'RUN_TESTS', 'WRITE_LOCAL_BRANCH'], provider_state: 'NONE',
+      hermes_state: 'DISABLED', approved_hermes_pin: 'NONE', budget: { currency: 'USD', maximum: 0, spent: 0 },
+      external_effect_policy: 'NONE', production_access: 'NONE', timeout_ms: 60000, expires_at: future.toISOString(),
+      success_criteria: ['a', 'b'], verifier_identity: 'VERIFIER_V1',
+      verification_contract: { operation: { kind: 'REPLACE_EXACT_TEXT', path: 'docs/status.md', find: 'x', replace: 'y' }, expected_text: 'y' },
+      rollback_procedure: { kind: 'EXACT_BYTES', description: 'restore' }, current_lifecycle_state: 'MISSION_SEALED',
+      latest_checkpoint: null, execution_attempts: [], evidence_references: [], failure_history: [],
+      promotion_status: 'NOT_EVALUATED', next_eligible_action: 'AUTHORIZE' });
+    return { packet, m };
+  };
+  const authFor = (missionId, capability = 'RUN_BROWSER_COURT', resource = 'docs/status.md') => {
+    const { packet, m } = mkMission(missionId);
+    const r = authorize({ now: now.toISOString(), tenant: 'tenant_self', executorIdentity: 'EXEC_V1',
+      action: { action_type: capability, resource }, capability, budgetUnits: 10, mission: m, contextPacket: packet,
+      containment: { authorization_id: 'auth_self', worker_capability_id: 'cap_self', worker_id: 'worker_1',
+        actor_id: 'actor_owner', site_id: 'site_1', mission_id: missionId, budget: { calls: 1 } },
+      signer: selfSigner, verifier: selfVerifier, ownerRootDir: ownerRoot }, { stateDir });
+    return r.authorization;
+  };
+  const boundBrowser = { action_type: 'RUN_BROWSER_COURT', resource: 'docs/status.md', tenant: 'tenant_self' };
+  const g = () => makeGrant({ capability: 'RUN_BROWSER_COURT', budgetUnits: 10,
+    authorization: authFor('m_' + (pass + fail)), verifier: selfVerifier, boundAction: boundBrowser, now });
   const intent = { description: 'run the a11y court on /', capability: 'RUN_BROWSER_COURT',
     successTest: 'court exits zero', rollback: 'none required; read-only' };
 
   t('valid grant issued', g().valid);
-  t('owner-only capability REFUSED as a grant', !makeGrant({ capability: 'DEPLOY_PRODUCTION', budgetUnits: 1, expiresAt: future, issuedBy: 'CANA', now }).valid);
-  t('unknown capability refused', !makeGrant({ capability: 'DO_ANYTHING', budgetUnits: 1, expiresAt: future, issuedBy: 'CANA', now }).valid);
-  t('zero budget refused', !makeGrant({ capability: 'RUN_TESTS', budgetUnits: 0, expiresAt: future, issuedBy: 'CANA', now }).valid);
-  t('unattributed grant refused', !makeGrant({ capability: 'RUN_TESTS', budgetUnits: 5, expiresAt: future, issuedBy: '  ', now }).valid);
-  t('expired grant refused', !makeGrant({ capability: 'RUN_TESTS', budgetUnits: 5, expiresAt: new Date(now.getTime() - 1000), issuedBy: 'CANA', now }).valid);
+  t('owner-only capability REFUSED as a grant', !makeGrant({ capability: 'DEPLOY_PRODUCTION', budgetUnits: 1,
+    authorization: authFor('m_owner', 'RUN_BROWSER_COURT'), verifier: selfVerifier, boundAction: boundBrowser, now }).valid);
+  t('unknown capability refused', !makeGrant({ capability: 'DO_ANYTHING', budgetUnits: 1,
+    authorization: authFor('m_unknown', 'RUN_BROWSER_COURT'), verifier: selfVerifier, boundAction: boundBrowser, now }).valid);
+  t('zero budget refused', !makeGrant({ capability: 'RUN_TESTS', budgetUnits: 0,
+    authorization: authFor('m_zero', 'RUN_TESTS'), verifier: selfVerifier,
+    boundAction: { action_type: 'RUN_TESTS', resource: 'docs/status.md', tenant: 'tenant_self' }, now }).valid);
+  // CHANGED (Phase D): the OLD test asserted an empty issuedBy string was refused. issuedBy no longer
+  // exists; the equivalent guarantee is "no authorization object => refused as unattributed".
+  t('unattributed grant refused (no authorization object)', !makeGrant({ capability: 'RUN_TESTS', budgetUnits: 5,
+    authorization: null, verifier: selfVerifier,
+    boundAction: { action_type: 'RUN_TESTS', resource: 'docs/status.md', tenant: 'tenant_self' }, now }).valid);
+  // CHANGED (Phase D): expiry is now enforced on the AUTHORIZATION (bound to mission expiry). An
+  // authorization evaluated after its expiry is refused by the verifier.
+  t('expired authorization refused', !makeGrant({ capability: 'RUN_BROWSER_COURT', budgetUnits: 5,
+    authorization: authFor('m_exp'), verifier: selfVerifier, boundAction: boundBrowser,
+    now: new Date(future.getTime() + 1000) }).valid);
+  // NEW (Phase D): an arbitrary issuedBy can no longer forge authority — there is nowhere to put it,
+  // and a grant with no authorization is refused. This is the qC CRITICAL fix, asserted here.
+  t('forged issuedBy is impossible (parameter removed; grant refused without authorization)',
+    makeGrant({ capability: 'RUN_TESTS', budgetUnits: 5, issuedBy: 'the executor pretending to be CANA',
+      verifier: selfVerifier, boundAction: { action_type: 'RUN_TESTS', tenant: 'tenant_self' }, now }).valid === false);
+  // NEW (Phase D): a grant cannot widen the authorized capability.
+  t('capability widening refused', makeGrant({ capability: 'RUN_TESTS', budgetUnits: 5,
+    authorization: authFor('m_widen', 'RUN_BROWSER_COURT'), verifier: selfVerifier,
+    boundAction: { action_type: 'RUN_TESTS', resource: 'docs/status.md', tenant: 'tenant_self' }, now }).valid === false);
 
   const p = sealPacket({ contextPacket: ctx, grant: g(), intent, now });
   t('packet seals with context + authority', p.valid);
@@ -411,6 +600,7 @@ if (has('selftest')) {
   t('BUDGET OVERRUN refused',
     !makeReceipt({ packet: p.packet, outcome: { succeeded: true, budgetUsed: 99, evidence: [{ observation: 'o', ref: 'r' }] }, now }).valid);
 
+  try { rmSync(selfRoot, { recursive: true, force: true }); } catch { /* best effort */ }
   console.log(`\n  Governed Packet self-test: ${pass} passed, ${fail} failed`);
   process.exit(fail === 0 ? 0 : 1);
 }

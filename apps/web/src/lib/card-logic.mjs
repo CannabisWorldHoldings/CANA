@@ -28,6 +28,7 @@ export function selectMerchantFactChip({ evidenceState, activeDealTitle, distanc
  * ONLY when the price exists, its source retailer is verified, and the menu
  * freshness window is still open. Anything else renders no price — never a
  * placeholder, never a guess.
+ * @param {{ priceCents?: number, sourceVerified?: boolean, freshnessExpiresAt?: string, now?: number }} [options]
  */
 export function gateProductPrice({ priceCents, sourceVerified, freshnessExpiresAt, now = Date.now() } = {}) {
   const numeric = Number.isFinite(priceCents) && priceCents > 0;
@@ -46,6 +47,7 @@ export function gateProductPrice({ priceCents, sourceVerified, freshnessExpiresA
  * Deal temporal truth: ACTIVE / EXPIRING_SOON (≤48h) / EXPIRED / INACTIVE.
  * An expired or inactive deal must never render as live inventory, and a
  * countdown can never be negative.
+ * @param {{ isActive?: boolean, expiresAt?: string, now?: number }} [options]
  */
 export function dealTemporalState({ isActive, expiresAt, now = Date.now() } = {}) {
   if (isActive !== true) return { state: 'INACTIVE' };

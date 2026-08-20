@@ -1,6 +1,17 @@
 # Minimum Alive Loop Specification
 
-Status: `DESIGN_READY_NOT_IMPLEMENTED`
+Status: `IMPLEMENTED_LOCAL_BRANCH` (2026-08-17, branch agent/orderweeddc-sovereign-one-shot-vnext)
+
+Implementation: `tools/alive-loop/adapter.mjs` (one thin composition adapter, per the
+Mission 2 boundary below) + `tools/alive-loop/run-cycle.mjs` (bounded live runner).
+All fourteen required executable courts pass as tests in
+`tools/alive-loop/alive-loop.test.mjs` (15/15 with the acceptance test). Three live
+cycles (static-court, pure-suites, public-copy) completed all ten states at a pinned
+tree with zero ungranted effects, deterministic resume, and hash-chained receipts.
+OS seams (`runtime/mission.py` lease, `runtime/evidence.py` envelope) are re-implemented
+minimally with `[OS-CONTRACT]` provenance markers — the OS repository is not present in
+the build environment and no unallowlisted symbol was copied. Hosted inclusion,
+secrets, providers, backup/restore, and owner approval remain unproven and gated.
 
 Purpose: give Mission 2 an exact, bounded implementation path without creating a new
 governor, ledger, router, or loop engine.

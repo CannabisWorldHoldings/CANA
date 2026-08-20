@@ -48,6 +48,13 @@ const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08
 const CUSTOMER_DISCOVERY_ASSIGNMENT_SHA256 =
   'b5400748ef1897eaaa3dda96c5c4fca737ef9b70acd4b03681c8c0fa2376988f';
 const CUSTOMER_FUNCTIONAL_ASSIGNMENT = 'customer_functional_convergence_2026_08_13';
+const ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT =
+  'orderweeddc_home_composition_v1_2026_08_14';
+const SOVEREIGN_ONE_SHOT_ASSIGNMENT = 'orderweeddc_sovereign_one_shot_2026_08_17';
+const GOVERNOR_KERNEL_EXTRACTION_ASSIGNMENT = 'governor_kernel_extraction_2026_08_18';
+const FEDERATION_GATES_AB_ASSIGNMENT = 'federation_gates_ab_2026_08_18';
+const FEDERATION_GATES_CD_ASSIGNMENT = 'federation_gates_cd_2026_08_18';
+const FEDERATION_GATE_E_ASSIGNMENT = 'federation_gate_e_2026_08_18';
 const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   'root_dispatcher',
   'reason',
@@ -64,6 +71,12 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
   CUSTOMER_DISCOVERY_ASSIGNMENT,
   CUSTOMER_FUNCTIONAL_ASSIGNMENT,
+  ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT,
+  SOVEREIGN_ONE_SHOT_ASSIGNMENT,
+  GOVERNOR_KERNEL_EXTRACTION_ASSIGNMENT,
+  FEDERATION_GATES_AB_ASSIGNMENT,
+  FEDERATION_GATES_CD_ASSIGNMENT,
+  FEDERATION_GATE_E_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PR29_ASSIGNMENT,
@@ -71,7 +84,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '5e3266bd9eeff5bed46d993c603ba43d63824b216da1563140a603ec1731d8ec';
+  '4a368db5329998a2d1d983cf2822e40e417d2cc9474cc100a6e681f6a2e056f5';
 
 export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery-contract.mjs',
@@ -110,6 +123,9 @@ export const CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS = Object.freeze([
   'tools/durability/cli.mjs',
   'tools/durability/cli.test.mjs',
   'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+]);
+export const ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS = Object.freeze([
+  'apps/web/src/app/[domain]/products/page.tsx',
 ]);
 export const STAGE_A_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/app/[domain]/retailer/[id]/page.tsx',
@@ -1280,6 +1296,66 @@ export function validateOwnershipManifest(ownership) {
     }
     if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPath).length !== 1) {
       refusal(`Customer Functional Convergence path must have exactly one planned-candidate entry: ${authorizedPath}`);
+    }
+  }
+
+  const orderweeddcHomeCompositionAssignment =
+    ownership.explicit_user_assignment[ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT];
+  const orderweeddcHomeCompositionPaths =
+    orderweeddcHomeCompositionAssignment?.authorized_paths;
+  if (
+    !exactKeys(orderweeddcHomeCompositionAssignment, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'base_commit',
+      'authorized_paths',
+      'approval_reference',
+    ])
+    || orderweeddcHomeCompositionAssignment.authorization !==
+      'ORDERWEEDDC P1 HOME COMPOSITION V1 CORRECTION PASS'
+    || orderweeddcHomeCompositionAssignment.base_commit !==
+      '4aeef38218aec1c1689a6eb143c712e401a894a9'
+    || orderweeddcHomeCompositionAssignment.authorization_effect !==
+      'Durability path ownership only; no visual approval, production deployment, external effect, verification bypass, or self-promotion authority.'
+    || orderweeddcHomeCompositionAssignment.approval_reference !==
+      'OWNER_ATTACHED_P1_CORRECTION_PROMPT_IN_CURRENT_THREAD_2026_08_14'
+    || !Array.isArray(orderweeddcHomeCompositionPaths)
+    || JSON.stringify(orderweeddcHomeCompositionPaths) !==
+      JSON.stringify(ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS)
+  ) {
+    refusal('ORDERWEEDDC Home Composition ownership assignment is malformed');
+  }
+  if (
+    new Set(orderweeddcHomeCompositionPaths).size !==
+      orderweeddcHomeCompositionPaths.length
+    || orderweeddcHomeCompositionPaths.some(
+      (entry) =>
+        typeof entry !== 'string'
+        || entry.length === 0
+        || entry.startsWith('/')
+        || entry.includes('\\')
+        || entry.includes('*')
+        || entry.includes('..')
+        || path.posix.normalize(entry) !== entry,
+    )
+  ) {
+    refusal('ORDERWEEDDC Home Composition paths must be unique exact repository paths');
+  }
+  for (const authorizedPath of orderweeddcHomeCompositionPaths) {
+    if (allOwnedPaths.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(
+        `ORDERWEEDDC Home Composition path must have exactly one ownership entry: ${authorizedPath}`,
+      );
+    }
+    if (
+      ownership.planned_candidate_files.filter(
+        (pattern) => pattern === authorizedPath,
+      ).length !== 1
+    ) {
+      refusal(
+        `ORDERWEEDDC Home Composition path must have exactly one planned-candidate entry: ${authorizedPath}`,
+      );
     }
   }
 

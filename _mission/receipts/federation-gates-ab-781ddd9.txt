@@ -1,0 +1,9 @@
+$ node --test (all sovereign + federation courts) @ 781ddd988e7f77e6d12ea3396d19e3320c3ba4a2
+ℹ tests 98
+ℹ pass 98
+ℹ fail 0
+
+$ kernel suites
+17 passed in 0.07s
+OK
+date: 2026-08-19T02:53:39Z

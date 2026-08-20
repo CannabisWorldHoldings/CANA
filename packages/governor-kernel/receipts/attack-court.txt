@@ -1,0 +1,184 @@
+$ cd sitemind-core && PYTHONPATH=src:../satellites python3 run_attack_court.py
+{
+  "passed": true,
+  "total": 19,
+  "passed_count": 19,
+  "attacks": [
+    {
+      "attack": "valid_control",
+      "expected": "SUCCEEDED",
+      "observed": "SUCCEEDED",
+      "passed": true,
+      "reasons": []
+    },
+    {
+      "attack": "idempotency_replay",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "idempotency_replay"
+      ]
+    },
+    {
+      "attack": "tampered_tenant",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "action_signature_invalid",
+        "idempotency_replay",
+        "tenant_id_mismatch"
+      ]
+    },
+    {
+      "attack": "cross_tenant_resigned",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "tenant_id_mismatch"
+      ]
+    },
+    {
+      "attack": "negative_spend",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "financial_exposure_invalid"
+      ]
+    },
+    {
+      "attack": "over_budget",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "financial_exposure_exceeds_cap"
+      ]
+    },
+    {
+      "attack": "expired_authorization",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "authorization_outside_validity"
+      ]
+    },
+    {
+      "attack": "unsigned_action",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "action_unsigned"
+      ]
+    },
+    {
+      "attack": "irreversible_action",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "irreversible_action_not_authorized"
+      ]
+    },
+    {
+      "attack": "resource_escape",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "resource_not_authorized",
+        "resource_not_permitted_for_worker"
+      ]
+    },
+    {
+      "attack": "delegation_overflow",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "delegation_depth_exceeded"
+      ]
+    },
+    {
+      "attack": "malformed_timestamp",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "timestamp_invalid"
+      ]
+    },
+    {
+      "attack": "revoked_authorization",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "authorization_revoked"
+      ]
+    },
+    {
+      "attack": "missing_evidence",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "evidence_missing"
+      ]
+    },
+    {
+      "attack": "missing_rollback",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "rollback_contract_missing"
+      ]
+    },
+    {
+      "attack": "side_effect_conflict",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "side_effect_policy_conflict"
+      ]
+    },
+    {
+      "attack": "policy_version_mismatch",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "policy_version_mismatch"
+      ]
+    },
+    {
+      "attack": "worker_identity_mismatch",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "worker_id_mismatch"
+      ]
+    },
+    {
+      "attack": "invalid_worker_budgets",
+      "expected": "DENIED",
+      "observed": "DENIED",
+      "passed": true,
+      "reasons": [
+        "call_budget_invalid",
+        "runtime_budget_invalid"
+      ]
+    }
+  ]
+}
+exit=0
+date: 2026-08-19T01:11:10Z
+base_commit: 3a340f3a4c2ab28a5b85bb1a91845932b74c8b05

@@ -19,7 +19,7 @@ export const merchantCardStates = {
   partial: {
     href: '#fixture',
     name: 'Demonstration Delivery Co.',
-    type: 'delivery',
+    type: /** @type {'delivery'} */ ('delivery'),
     evidence: { dataStatus: 'AWAITING_VERIFICATION', isDemonstration: true },
   },
   zero: {

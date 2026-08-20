@@ -1,0 +1,196 @@
+{
+  "takenAt": "2026-08-18T11:29:44.587Z",
+  "results": [
+    {
+      "competitor": "leafly",
+      "surface": "robots",
+      "url": "https://www.leafly.com/robots.txt",
+      "kind": "text",
+      "status": 200,
+      "hash": "64e4eec21cd0e9c79e9a59b32cff8db3250ef9b467f8fb862d05955ca90c9fa8",
+      "bytes": 2647
+    },
+    {
+      "competitor": "leafly",
+      "surface": "llms-txt",
+      "url": "https://www.leafly.com/llms.txt",
+      "kind": "text",
+      "status": 404,
+      "hash": "42558fb596da3c2e1670166cb2654242af67cc8a5ca4d814a75cda40836ca4b4",
+      "bytes": 82960
+    },
+    {
+      "competitor": "leafly",
+      "surface": "sitemap-index",
+      "url": "https://www.leafly.com/leafly-sitemaps/sitemap-index.xml",
+      "kind": "sitemap",
+      "status": 200,
+      "childCount": 19,
+      "childrenHash": "6b510f8ae7a4a026360fdceaa65fad8674d3698585fe6eea252d1b5f1001e4ef",
+      "children": [
+        "/leafly-sitemaps/brand-products-sitemap-1.xml.gz",
+        "/leafly-sitemaps/brand-products-sitemap-2.xml.gz",
+        "/leafly-sitemaps/brand-products-sitemap-3.xml.gz",
+        "/leafly-sitemaps/brand-products-sitemap-4.xml.gz",
+        "/leafly-sitemaps/brand-products-sitemap-5.xml.gz",
+        "/leafly-sitemaps/brand-products-sitemap-6.xml.gz",
+        "/leafly-sitemaps/brand-products-sitemap-7.xml.gz",
+        "/leafly-sitemaps/brands-sitemap-1.xml.gz",
+        "/leafly-sitemaps/cbd-stores-sitemap-1.xml.gz",
+        "/leafly-sitemaps/deals-sitemap-1.xml.gz",
+        "/leafly-sitemaps/delivery-sitemap-1.xml.gz",
+        "/leafly-sitemaps/dispensaries-sitemap-1.xml.gz",
+        "/leafly-sitemaps/finder-sitemap-1.xml.gz",
+        "/leafly-sitemaps/medical-marijuana-doctors-sitemap-1.xml.gz",
+        "/leafly-sitemaps/product-categories-sitemap-1.xml.gz",
+        "/leafly-sitemaps/shop-sitemap-1.xml.gz",
+        "/leafly-sitemaps/static-sitemap-1.xml.gz",
+        "/leafly-sitemaps/strain-playlists-sitemap-1.xml.gz",
+        "/leafly-sitemaps/strains-sitemap-1.xml.gz"
+      ]
+    },
+    {
+      "competitor": "leafly",
+      "surface": "business-pitch",
+      "url": "https://success.leafly.com/retail",
+      "kind": "title",
+      "status": 200,
+      "title": "Retail Solutions For Your Dispensary | Leafly"
+    },
+    {
+      "competitor": "leafly",
+      "surface": "dc-listing-title",
+      "url": "https://www.leafly.com/dispensaries/district-of-columbia/washington",
+      "kind": "title",
+      "status": 200,
+      "title": "The Best Dispensaries Near Me in Washington, District of Columbia | Updated 2026 | Leafly"
+    },
+    {
+      "competitor": "weedmaps",
+      "surface": "robots",
+      "url": "https://weedmaps.com/robots.txt",
+      "kind": "text",
+      "status": 200,
+      "hash": "7506487fd5c4a47f9f825442473ffc80d5da424ebc3ee8fd670af89c70203e68",
+      "bytes": 2562
+    },
+    {
+      "competitor": "weedmaps",
+      "surface": "llm-txt",
+      "url": "https://weedmaps.com/llm.txt",
+      "kind": "text",
+      "status": 200,
+      "hash": "aae32c67a729186c1776f1a4e96b9ba082c1a0c436bea31d8dcdbde40c6d3108",
+      "bytes": 10295
+    },
+    {
+      "competitor": "weedmaps",
+      "surface": "sitemap-index",
+      "url": "https://weedmaps.com/sitemap.xml.gz",
+      "kind": "sitemap-gz",
+      "status": 200,
+      "childCount": 24,
+      "childrenHash": "c16b84f47cc781486532b8007c0002961bc32ff59eb4d1fcf4aa287c88eaa328",
+      "children": [
+        "/brand_product_categories.xml.gz",
+        "/brand_products.xml.gz",
+        "/brand_products1.xml.gz",
+        "/brand_products2.xml.gz",
+        "/brands.xml.gz",
+        "/business/sitemap_index.xml",
+        "/cbd_store.xml.gz",
+        "/cbd_store_regions.xml.gz",
+        "/deals.xml.gz",
+        "/deals_regions.xml.gz",
+        "/delivery.xml.gz",
+        "/delivery_product_categories.xml.gz",
+        "/delivery_regions.xml.gz",
+        "/dispensary.xml.gz",
+        "/dispensary_product_categories.xml.gz",
+        "/dispensary_regions.xml.gz",
+        "/doctor.xml.gz",
+        "/doctor_regions.xml.gz",
+        "/learn/sitemap_index.xml",
+        "/news/sitemap_index.xml",
+        "/products.xml.gz",
+        "/products_regions.xml.gz",
+        "/sitemap_additions.xml.gz",
+        "/strains.xml.gz"
+      ]
+    },
+    {
+      "competitor": "weedmaps",
+      "surface": "business-pitch",
+      "url": "https://weedmaps.com/business/",
+      "kind": "title",
+      "status": 200,
+      "title": "Weedmaps for Business | Cannabis Business Solutions"
+    },
+    {
+      "competitor": "weedmaps",
+      "surface": "dc-listing-status",
+      "url": "https://weedmaps.com/dispensaries/in/united-states/district-of-columbia/washington",
+      "kind": "status",
+      "status": 200
+    },
+    {
+      "competitor": "wheresweed",
+      "surface": "robots",
+      "url": "https://wheresweed.com/robots.txt",
+      "kind": "text",
+      "status": 200,
+      "hash": "5a48177d3e30ec536becffd7db20a729cf1ea9862ff2385f1a8a36eb648a7932",
+      "bytes": 210
+    },
+    {
+      "competitor": "wheresweed",
+      "surface": "sitemap-index",
+      "url": "https://wheresweed.com/sitemap.xml",
+      "kind": "sitemap",
+      "status": 200,
+      "childCount": 1,
+      "childrenHash": "fe065763e1a8b19bfe9b799cbea7fcd538f170f1b558f55f96bbd03b563f12e8",
+      "children": [
+        "/sitemap_index.xml"
+      ]
+    },
+    {
+      "competitor": "wheresweed",
+      "surface": "dc-hub",
+      "url": "https://wheresweed.com/washington-dc",
+      "kind": "title+jsonld",
+      "status": 200,
+      "title": "Cannabis in Washington DC | Dispensaries, Delivery &amp; Deals | Where&#x27;s Weed",
+      "jsonLdTypes": [
+        "AggregateRating",
+        "Answer",
+        "BreadcrumbList",
+        "FAQPage",
+        "GeoCoordinates",
+        "ImageObject",
+        "ItemList",
+        "ListItem",
+        "LocalBusiness",
+        "Organization",
+        "PostalAddress",
+        "Question",
+        "WebSite"
+      ]
+    },
+    {
+      "competitor": "wheresweed",
+      "surface": "add-business",
+      "url": "https://wheresweed.com/add-business",
+      "kind": "status",
+      "status": 404
+    },
+    {
+      "competitor": "wheresweed",
+      "surface": "advertising",
+      "url": "https://wheresweed.com/advertising",
+      "kind": "title",
+      "status": 200,
+      "title": "Digital Advertising Opportunities | Where&#x27;s Weed"
+    }
+  ]
+}

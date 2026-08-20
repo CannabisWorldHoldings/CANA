@@ -4,12 +4,19 @@
 const HELP = `usage: ./cana <command>
 
 Verification:
+  ./cana verify sovereign      the full composition: 15 stages, one receipt (see below)
   ./cana verify focused
   ./cana verify full
   ./cana verify clean-clone
   ./cana verify release
   ./cana verify maria
   ./cana verify cpanel
+  ./cana verify stages         print the sovereign stage table and exit
+
+Capability census (EC-0001):
+  ./cana census declare "<what you intend to build>"
+  ./cana census resolve <id> --as "<resolution>"
+  ./cana census status
 
 Durability:
   ./cana durability status
@@ -27,6 +34,19 @@ Technical promotion:
   ./cana promotion status
   ./cana promotion init
   ./cana promotion finalize --session <session.json> --verifier-dir <directory>
+
+\`verify sovereign\` runs, in order and failing closed:
+  01 clean-checkout       02 source-identity      03 capability-census
+  04 authority-court      05 migrations           06 deterministic-courts
+  07 federation-courts    08 post38-courts        09 web-courts
+  10 typescript-lint      11 production-build      12 browser-courts
+  13 security-adversarial 14 reconstruction       15 artifact-hashes
+Every stage is classified independently as one of
+  VERIFIED | REAL_REGRESSION | ENVIRONMENT_MISSING | HISTORICAL_CONTEXT_MISMATCH |
+  OWNERSHIP_MANIFEST_CONTEXT | LIVE_LEDGER_CONTEXT | NOT_RUN
+A stage whose environment is absent reports ENVIRONMENT_MISSING. It is never skipped
+and never counted as a pass. The verdict is SOVEREIGN_VERIFIED only when every stage
+is VERIFIED. CI environment: .github/workflows/cana-verify-sovereign.yml
 `;
 
 async function main() {
@@ -36,8 +56,31 @@ async function main() {
     return;
   }
   if (scope === 'verify') {
+    if (action === 'stages') {
+      // Print the sovereign stage table and exit — no census gate, no court run.
+      const { SOVEREIGN_STAGES } = await import('./tools/test-runner/sovereign.mjs');
+      process.stdout.write(`${JSON.stringify(SOVEREIGN_STAGES, null, 2)}\n`);
+      return;
+    }
+    // CENSUS GATE (EC-0001 promoted mutation): deterministic pre-court check.
+    // Registry integrity + holdout replay + unresolved duplicate declarations
+    // block verification BEFORE the court runs. The court itself is untouched.
+    // This gate guards `verify sovereign` exactly as it guards every other profile
+    // (the Phase G sovereign composition must NOT bypass the Federation census gate).
+    const { censusGateForVerify } = await import('./tools/federation/census-gate.mjs');
+    const gate = censusGateForVerify();
+    if (!gate.ok) {
+      process.stderr.write(`census gate refuses verification:\n${JSON.stringify(gate.findings, null, 2)}\n`);
+      process.exitCode = 1;
+      return;
+    }
     const { runVerification } = await import('./tools/test-runner/runner.mjs');
     await runVerification(action, rest);
+    return;
+  }
+  if (scope === 'census') {
+    const { runCensus } = await import('./tools/federation/census-gate.mjs');
+    await runCensus(action, rest);
     return;
   }
   if (scope === 'durability') {
