@@ -191,7 +191,7 @@ jobs:
 
       - name: Upload the sovereign receipt and artifact hashes
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: cana-sovereign-postgis-${{ github.run_id }}
           if-no-files-found: warn
@@ -337,7 +337,7 @@ jobs:
 
       - name: Upload the sovereign receipt and artifact hashes
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: cana-sovereign-h3-${{ github.run_id }}
           if-no-files-found: warn
