@@ -1,0 +1,88 @@
+{
+  "case_id": "ES-0002",
+  "scope": "promotion-identity-authorization",
+  "kind": "EvaluatorSuccessionCase (promotion-identity lane)",
+  "incumbent": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V1",
+    "version": "v1",
+    "mechanism": "branch-prefix promotion authorization: hard-asserts status.branch === 'integration/cana-technical-promotion-de4a497b'",
+    "file_retired_path": "tools/promotion-gate/promotion-receipt.test.mjs",
+    "file_historical_path": "tools/promotion-gate/historical/promotion-receipt.v1.replay.mjs",
+    "file_sha256": "ab0096009b6b6f77bf603da67585b6db303e52e521520dacd4ec82ccbda78240",
+    "status": "RETIRED_FOR_NEW_PROMOTIONS + REPLAYABLE_FOR_HISTORICAL_EVENT",
+    "original_event": "de4a497b integration-branch technical promotion (candidate de4a497b onto protected c953ebcd via integration merge d84486b3)",
+    "original_expected_branch": "integration/cana-technical-promotion-de4a497b",
+    "original_promotion_commit": "de4a497b6c039a5dccc9c3fb9a470dc0bf610318",
+    "original_protected_commit": "c953ebcd25c46ef33af0700d7913a899d839bce8",
+    "original_context_requirements": [
+      "a checkout on branch integration/cana-technical-promotion-de4a497b (tip cc24b17)",
+      "a ref recover/competitive-ui-day-night resolving to c953ebcd (404 on remote; commit is sufficient provenance)"
+    ]
+  },
+  "candidate": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V2",
+    "version": "v2",
+    "promotion_schema_version": 2,
+    "promotion_event_type": "successor-lane-promotion-v2",
+    "mechanism": "cryptographic-identity + proven-git-ancestry promotion authorization; branch/ref is EVIDENCE ONLY and NEVER part of the authorization predicate",
+    "file": "tools/promotion-gate/es-0002.mjs",
+    "file_sha256": "1e6e5c2303c210c8bff137b351fe23de7cd502cc782f1190f2ac5263dd79bcd1"
+  },
+  "candidate_author": "lane-implementation",
+  "adjudicator": "lane-verification (node:test harness over real executed runs of ES-0002 against live git ancestry) — never the candidate or its author",
+  "reason": "V1 authorizes by BRANCH NAME. That couples a promotion's identity to a mutable ref: moving or renaming a branch changes no bytes yet would change (or in the successor lane, break) V1's verdict. Blind-globbing V1 into sovereign stage 06 executed it against the successor lane it was never built for, producing a HISTORICAL_CONTEXT_MISMATCH refusal (the recover ref and integration branch do not exist there). ES-0002 authorizes by cryptographic identity + proven git ancestry, records branch/ref as evidence only, and is dispatched by explicit stable contract.",
+  "demonstrated_defects": [
+    {
+      "probe": "run V1 (promotion-receipt.test.mjs) at successor HEAD via node --test",
+      "incumbentVerdict": "REFUSED (HISTORICAL_CONTEXT_MISMATCH: git rev-parse recover/competitive-ui-day-night -> unknown revision)",
+      "correctVerdict": "the successor candidate's promotion identity is VALID; V1's branch-prefix assertion is simply inapplicable to a successor lane and must not be executed there"
+    },
+    {
+      "probe": "rename/move the branch a valid candidate sits on (same commit SHA)",
+      "incumbentVerdict": "would flip on status.branch equality (branch used as authority)",
+      "correctVerdict": "IDENTITY UNCHANGED — a branch move/rename changes no bytes (proven by ES-0002 court: branch relabel never changes the verdict)"
+    }
+  ],
+  "promotion_criteria": [
+    "P1: ACCEPT the correctly-bound successor candidate (identity by SHA + proven ancestry of canonical_base/POST38/Federation + sibling-merge parents), technical evidence complete, owner gate correctly PENDING",
+    "P2: REJECT every one of the 22 owner-listed adversarial cases, each naming the check it fires",
+    "P3: NEVER use branch/ref name as authority (branch relabel must not change the verdict)",
+    "P4: dispatch is explicit and deterministic; V1 and V2 own disjoint (schema, event) pairs; a foreign V1 event is never routed to V2",
+    "P5: never certify MERGED/CANONICAL/DEPLOYED/OWNER_APPROVED; distinguish TECHNICAL_PROMOTION_EVIDENCE=VERIFIED from OWNER_PROMOTION_GATE=PENDING; never launder PENDING into APPROVED"
+  ],
+  "criteria_fixed_before_candidate": true,
+  "freeze": {
+    "freeze_sha256": "4c6c2a5693d7bc7d99b1fedaa7f51493328f2165edd140428e9def89e74c5894",
+    "components": {
+      "judge:es-0002.mjs": "1e6e5c2303c210c8bff137b351fe23de7cd502cc782f1190f2ac5263dd79bcd1",
+      "positive:es-0002-positive.json": "1addeb2fd63e1eed5a845a9dde15de7b1e623331cb1025b971d8835b4d0c9f2c",
+      "corpus:es-0002-adversarial-corpus.mjs": "edefd64754583e4b7b867ed99b45e9f99a30f9143b6ed9d1a393ade7b4c7e29f",
+      "v1-historical:promotion-receipt.v1.replay.mjs": "ab0096009b6b6f77bf603da67585b6db303e52e521520dacd4ec82ccbda78240",
+      "v1-harness:replay-v1.mjs": "ea792f3219510903e8e844b4da1e2e40e3aaf0ba7a1d027df70952913d615e43"
+    }
+  },
+  "adversarial_corpus_size": 22,
+  "adversarial_corpus_result": "22/22 REJECTED (each fires its declared check)",
+  "positive_result": "ACCEPTED — verdicts PROMOTION_IDENTITY_VALID + PROMOTION_EVIDENCE_COMPLETE + CANONICAL_PR_ELIGIBLE; technical_promotion_evidence=VERIFIED; owner_promotion_gate=PENDING; branch_name_used_as_authority=false",
+  "dispatch_proof": {
+    "explicit": true,
+    "deterministic": true,
+    "v1_owns": { "promotion_schema_version": 1, "promotion_event_type": "technical-promotion-v1-historical", "lane": "historical-replay" },
+    "v2_owns": { "promotion_schema_version": 2, "promotion_event_type": "successor-lane-promotion-v2", "lane": "successor" },
+    "disjoint": true,
+    "foreign_event_never_routed_to_v2": true
+  },
+  "historical_replay": {
+    "lane_A_v1": "VERIFIED — V1 replays exactly as before inside a disposable local reconstruction (worktree on integration/cana-technical-promotion-de4a497b @ cc24b17 + LOCAL-ONLY recover ref -> c953ebcd; never pushed)",
+    "lane_B_v2": "V2 does NOT accept the historical de4a497b event — refused at dispatch (foreign event) AND at ancestry (historical SHA lacks the successor anchors)"
+  },
+  "criteria_fixed_before_candidate_note": "The frozen contract, positive fixture, negative corpus, judge source hash, evidence schema and pass/fail conditions were all pinned (freeze_sha256 above) before the candidate was contested; the court refuses any post-hoc edit.",
+  "distribution_shift_note": "ES-0002 governs promotion-identity authorization for the CANA successor lineage. Non-git promotion mechanisms (e.g. a future artifact-registry promotion) are OUT OF SCOPE and would require their own succession with corroborated evidence.",
+  "reversibility": "revert the ES-0002 commits (promotion-gate ES-0002 + the stage-06 dispatch commit); V1 remains byte-identically present under tools/promotion-gate/historical/ and independently replayable forever via replay-v1.mjs. No V1 assertion was changed.",
+  "verdict": "SUCCEED",
+  "succession_receipt": "tools/promotion-gate/es-0002.court.test.mjs (frozen court, 8/8) + tools/promotion-gate/historical/historical-replay.court.test.mjs (two-lane replay) + this record",
+  "verdict_vocabulary": {
+    "may_certify": ["PROMOTION_IDENTITY_VALID", "PROMOTION_EVIDENCE_COMPLETE", "CANONICAL_PR_ELIGIBLE"],
+    "must_not_claim": ["MERGED", "CANONICAL", "DEPLOYED", "OWNER_APPROVED"]
+  }
+}
