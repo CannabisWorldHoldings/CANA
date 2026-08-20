@@ -11,10 +11,65 @@ function read(rootDir, relative) {
   return fs.readFileSync(path.join(rootDir, relative), 'utf8');
 }
 
+
+// A15 — public-copy vocabulary. Extract string literals from the files whose
+// strings render on consumer surfaces, then scan for internal/system terms.
+// Case-sensitive entries protect proper-noun system terms (capital-R Reality)
+// without flagging legitimate lowercase English.
+const PUBLIC_COPY_FILES = [
+  'apps/web/src/components/customer-world-page.tsx',
+  'apps/web/src/components/cart-drawer.tsx',
+  'apps/web/src/app/[domain]/layout.tsx',
+  'apps/web/src/lib/customer-world.mjs',
+];
+const FORBIDDEN_PUBLIC_TERMS = [
+  { term: 'admitted market', cs: false },
+  { term: 'admitted Reality', cs: true },
+  { term: 'canonical Reality', cs: true },
+  { term: 'Reality contract', cs: true },
+  { term: 'Reality projection', cs: true },
+  { term: 'answerability', cs: false },
+  { term: 'market contract', cs: false },
+  { term: 'Customer World', cs: true },
+  { term: 'Directory prototype', cs: false },
+  { term: 'truth path', cs: false },
+  { term: 'state machine', cs: false },
+  { term: 'AWAITING_VERIFICATION', cs: true },
+  { term: 'staging', cs: false },
+];
+
+function collectPublicCopyViolations(rootDir) {
+  const violations = [];
+  for (const relative of PUBLIC_COPY_FILES) {
+    const source = read(rootDir, relative);
+    // Comment-stripped whole-source scan: string literals AND JSX text nodes
+    // are both rendered copy; comments are not. (A16 originally scanned only
+    // quoted literals and missed internal vocabulary in JSX text.)
+    const stripped = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ')
+      .replace(/([^:'"])\/\/[^\n]*$/gm, '$1 ');
+    for (const { term, cs } of FORBIDDEN_PUBLIC_TERMS) {
+      const haystack = cs ? stripped : stripped.toLowerCase();
+      const needle = cs ? term : term.toLowerCase();
+      const at = haystack.indexOf(needle);
+      if (at !== -1) {
+        violations.push({ file: relative, term, literal: stripped.slice(at, at + 80).replace(/\s+/g, ' ') });
+      }
+    }
+  }
+  return violations;
+}
+
 export function collectStaticInputs(rootDir) {
   const layout = read(rootDir, 'apps/web/src/app/[domain]/layout.tsx');
   const globals = read(rootDir, 'apps/web/src/app/globals.css');
   const rail = read(rootDir, 'apps/web/src/components/rail.tsx');
+  const home = read(rootDir, 'apps/web/src/components/customer-world-page.tsx');
+  const smartImage = read(rootDir, 'apps/web/src/components/smart-image.tsx');
+  const homeRoute = read(rootDir, 'apps/web/src/app/[domain]/page.tsx');
+  const assetRegistry = read(rootDir, 'apps/web/src/lib/asset-registry.mjs');
+  const proxy = read(rootDir, 'apps/web/src/proxy.ts');
 
   // Header height: the height class on the header's inner container.
   const headerBlock = layout.slice(layout.indexOf('<header'), layout.indexOf('</header>'));
@@ -54,6 +109,33 @@ export function collectStaticInputs(rootDir) {
   const hasMinRefusal = rail.includes('minItems') && rail.includes('return null');
   const paddlesPointerOnly = rail.includes('min-[1024px]:flex');
 
+  const heroBlock = globals.slice(
+    globals.indexOf('.owd-home-hero {'),
+    globals.indexOf('}', globals.indexOf('.owd-home-hero {')),
+  );
+  const heroMinHeightPx = Number(heroBlock.match(/min-height:\s*(\d+)px/)?.[1]);
+  const homeComposition = {
+    usesCanonicalRail: home.includes("from '@/components/rail'") && home.includes('<Rail'),
+    usesRailItem: home.includes('<RailItem'),
+    smartImageCount: (home.match(/<SmartImage/g) ?? []).length,
+    importsNextImage: home.includes("from 'next/image'"),
+    askUsesCanonicalSearch: home.includes('Ask ORDERWEEDDC') && home.includes('action="/search"'),
+    imagePolicyEnforced: smartImage.includes('resolveAssetUse')
+      && smartImage.includes('pendingRightsCapability')
+      && smartImage.includes('getAssetByPath')
+      && smartImage.includes('assertRegisteredImage'),
+    productionArtGate: homeRoute.includes('issuePendingRightsCapability(origin.hostname)')
+      && assetRegistry.includes("process.env.NODE_ENV === 'production'")
+      && assetRegistry.includes("hostname.endsWith('.localhost')")
+      && assetRegistry.includes('PENDING_RIGHTS_CAPABILITIES.has')
+      && proxy.includes('mayServePendingAssetPath(url.pathname, host)')
+      && proxy.includes('pendingAssetPlaceholderResponse'),
+    heroMinHeightPx,
+    campaignAsymmetric: globals.includes('minmax(0, 1.16fr) minmax(340px, 0.84fr)'),
+  };
+
+  const publicCopyViolations = collectPublicCopyViolations(rootDir);
+
   return {
     headerHeight: { desktopPx },
     navCensus: { navLinkCount, forbiddenPresent },
@@ -61,5 +143,7 @@ export function collectStaticInputs(rootDir) {
     typeTokens: { tokens },
     trioBreakpoints: { mediaBlocks },
     railContract: { hasSnap, hasMinRefusal, paddlesPointerOnly },
+    homeComposition,
+    publicCopyVocabulary: { violations: publicCopyViolations },
   };
 }

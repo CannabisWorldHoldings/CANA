@@ -42,7 +42,7 @@ export default function CartDrawer() {
         className="fixed bottom-6 right-6 z-40 bg-brand-primary-fill-strong text-white font-extrabold text-xs px-4 py-3 rounded-full shadow-2xl hover:brightness-110 transition-all flex items-center gap-2 border border-brand-border cursor-pointer active:scale-95"
       >
         <span>🛒</span>
-        <span>Order Staging</span>
+        <span>Your order</span>
         <span className="bg-white text-brand-primary-text font-black text-[10px] px-2 py-0.5 rounded-full">
           {items.reduce((sum, i) => sum + i.quantity, 0)}
         </span>
@@ -56,7 +56,7 @@ export default function CartDrawer() {
             <div className="flex items-center justify-between border-b border-brand-border pb-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-muted bg-brand-background border border-brand-border px-2 py-0.5 rounded">
-                  Order Staging
+                  Your order
                 </span>
                 <h2 className="text-xl font-extrabold text-brand-text mt-1">Your Shopping Cart</h2>
               </div>
@@ -72,7 +72,7 @@ export default function CartDrawer() {
             <div className="flex-grow overflow-y-auto py-6 space-y-4">
               {items.length === 0 ? (
                 <div className="text-center py-12 text-brand-muted space-y-2">
-                  <p className="font-bold text-brand-text text-sm">Your order staging cart is empty.</p>
+                  <p className="font-bold text-brand-text text-sm">Your order list is empty.</p>
                   <p className="text-xs max-w-xs mx-auto">
                     Browse dispensary profiles and add evidence-verified products to stage your order.
                   </p>
@@ -115,14 +115,14 @@ export default function CartDrawer() {
               )}
             </div>
 
-            {/* Footer Subtotal & Staging Handoff */}
+            {/* Footer subtotal & retailer handoff */}
             <div className="border-t border-brand-border pt-4 space-y-4">
               <div className="flex justify-between items-center text-sm font-extrabold text-brand-text">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
               </div>
               <p className="text-[10px] text-brand-muted">
-                Order staging calculates estimated totals. Actual availability and licensure are verified directly with retailer primary sources.
+                Totals here are estimates. Availability, pricing, and licensure are confirmed directly with the retailer before any purchase.
               </p>
               <button
                 disabled={items.length === 0}
