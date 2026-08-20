@@ -95,6 +95,41 @@ function tail(value, limit = 6000) {
   return text.length <= limit ? text : `...[${text.length - limit} bytes elided]...\n${text.slice(-limit)}`;
 }
 
+/**
+ * Diagnostic-only, complete error-level listing for the eslint court.
+ *
+ * The default (human) formatter is emitted longest-tail-first, so a large
+ * failure buries the error-level rules above the receipt's tail budget. This
+ * runs eslint ONCE MORE with the JSON formatter — purely to record evidence —
+ * and returns `path:line:col rule — message` for every severity-2 (error)
+ * result. It never influences a verdict: the gate is the human run's exit code.
+ * Returns '' if eslint cannot produce parseable JSON (then the caller falls
+ * back to the tailed human output, exactly as before).
+ */
+function eslintErrorListing() {
+  try {
+    const web = path.join(ROOT, 'apps', 'web');
+    const r = run('npx', ['--no-install', 'eslint', '.', '--format', 'json'], {
+      cwd: web, timeout: 900_000,
+    });
+    const start = r.stdout.indexOf('[');
+    if (start < 0) return '';
+    const files = JSON.parse(r.stdout.slice(start));
+    const lines = [];
+    for (const file of files) {
+      const rel = path.relative(ROOT, file.filePath) || file.filePath;
+      for (const m of file.messages ?? []) {
+        if (m.severity !== 2) continue; // errors only; warnings remain in the human tail
+        lines.push(`${rel}:${m.line}:${m.column}  ${m.ruleId ?? '(core)'} — ${String(m.message).replace(/\s+/g, ' ').trim()}`);
+      }
+    }
+    if (lines.length === 0) return '';
+    return `ESLINT ERRORS (${lines.length}, severity=2, full enumeration):\n${lines.join('\n')}`;
+  } catch {
+    return '';
+  }
+}
+
 function counts(output) {
   const pass = /^ℹ pass (\d+)$/m.exec(output);
   const fail = /^ℹ fail (\d+)$/m.exec(output);
@@ -603,9 +638,25 @@ const STAGES = [
         units.push({ unit: 'npm run lint -w apps/web', classification: 'ENVIRONMENT_MISSING', why: ctx.env.eslint.why });
       } else {
         const r = run('npm', ['run', 'lint', '-w', 'apps/web'], { timeout: 900_000 });
-        units.push(r.ok
-          ? { unit: 'npm run lint -w apps/web', classification: 'VERIFIED' }
-          : { unit: 'npm run lint -w apps/web', ...classify(r.combined), output: tail(r.combined, 3000) });
+        if (r.ok) {
+          units.push({ unit: 'npm run lint -w apps/web', classification: 'VERIFIED' });
+        } else {
+          // The human-formatted lint output is emitted longest-tail-first, so on a
+          // failure carrying more than ~3 KB the error-level rules (the ones that
+          // fail the gate) scroll off the top of the tailed receipt and are never
+          // recorded — the triage could not enumerate the 8 errors from any
+          // available evidence. Re-run eslint with the JSON formatter (a
+          // diagnostic-only second invocation; the GATE is still `r.ok` above) and
+          // append a complete, deterministic error-level listing so the receipt
+          // carries file:line:col:rule for every error. Warnings stay in the
+          // tailed human output. This changes NO verdict — it only surfaces the
+          // already-failing rules. (WEB_COURT_TRIAGE R6 enumeration.)
+          const errorListing = eslintErrorListing();
+          const output = errorListing
+            ? `${errorListing}\n--- human-formatted tail ---\n${tail(r.combined, 3000)}`
+            : tail(r.combined, 3000);
+          units.push({ unit: 'npm run lint -w apps/web', ...classify(r.combined), output });
+        }
       }
       return unitsToStage(units.map((u) => ({ why: u.reason, ...u })), 'typescript/lint');
     },

@@ -24,6 +24,16 @@ const assetRegistry = await import(
 const sponsorshipEntitlement = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/sponsorship-entitlement.mjs')).href
 );
+// customer-world-page.tsx imports chipLabel/publicWorldStateLabel from this
+// module (added at base 9d3bd70b). The .tsx require-hook resolves '@/' aliases
+// through Module._load, which does not understand tsconfig path aliases, so an
+// unmapped import throws MODULE_NOT_FOUND. Load the REAL module (a pure,
+// dependency-free vocabulary table) and return it below, mirroring the
+// directory-search/daypart-theme mappings — an infrastructure stub, not a
+// behavioral fake. (WEB_COURT_TRIAGE R5, PREEXISTING_TEST_DEFECT.)
+const labelVocabulary = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/label-vocabulary.mjs')).href
+);
 const originalLoad = Module._load;
 const originalTsxLoader = require.extensions['.tsx'];
 
@@ -89,6 +99,7 @@ Module._load = function loadMarketplaceDependency(request, parent, isMain) {
       customerWorldViewHref: (_world, view) => `/?view=${view}`,
     };
   }
+  if (request === '@/lib/label-vocabulary.mjs') return labelVocabulary;
   return originalLoad.call(this, request, parent, isMain);
 };
 require.extensions['.tsx'] = function compileTsx(module, filename) {
