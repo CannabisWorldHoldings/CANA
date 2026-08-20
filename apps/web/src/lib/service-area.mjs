@@ -85,11 +85,6 @@ function marketLocalWallClock(now) {
   };
 }
 
-/** Minutes since market-local midnight for the injected clock. */
-function minutesOfDay(now) {
-  return marketLocalWallClock(now).mins;
-}
-
 /**
  * Is the merchant open at `now` per verified hours?
  * hours: [{ day: 0-6 (Sun-Sat), open_minutes, close_minutes }] where

@@ -205,7 +205,7 @@ function CustomerHome({
           <h1 id="home-title" className="owd-display">What are you<br />looking for?</h1>
           <p className="owd-intro">
             Describe what you need in ordinary words. We check the verified
-            D.C. market and show what's known — and exactly what isn't.
+            D.C. market and show what{"'"}s known — and exactly what isn{"'"}t.
           </p>
           <MarketSearch marketId={world.request.market_id} />
           <p className="owd-home-search-examples">

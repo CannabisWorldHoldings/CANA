@@ -11,10 +11,20 @@ export function Lab({ theme: initial = 'day', children, label }: {
 }) {
   const [theme, setTheme] = useState<Theme>(initial);
   useEffect(() => {
+    // Sync the initial theme from the two external sources this shell honors
+    // (the ?theme= query and the persisted preference). Deferring the state
+    // sync off the synchronous effect body avoids the cascading-render the
+    // react-hooks/set-state-in-effect rule guards against; the resolved value
+    // is applied once, after mount, in a single microtask.
     const q = new URLSearchParams(window.location.search).get('theme');
-    if (q === 'day' || q === 'night') { setTheme(q); return; }
     const saved = window.localStorage.getItem('owd-lab-theme');
-    if (saved === 'day' || saved === 'night') setTheme(saved as Theme);
+    const resolved: Theme | null =
+      q === 'day' || q === 'night'
+        ? q
+        : saved === 'day' || saved === 'night'
+          ? (saved as Theme)
+          : null;
+    if (resolved) queueMicrotask(() => setTheme(resolved));
   }, []);
   useEffect(() => {
     window.localStorage.setItem('owd-lab-theme', theme);

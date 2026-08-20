@@ -15,11 +15,14 @@ const M = 'merchant_alpha';
 const future = new Date(Date.now() + 30 * 86400_000);
 const past = new Date(Date.now() - 86400_000);
 
-const issue = (o: any = {}) => ({ merchantId: M, kind: 'ISSUE', seq: 0, amount: 500, authorizationRef: 'PO-1', expiresAt: future, prevHash: 'genesis', entryHash: 'h0', ...o });
-const spend = (o: any = {}) => ({ merchantId: M, kind: 'SPEND', seq: 1, amount: -100, placement: 'FEATURED_CARD', disclosureLabel: 'Sponsored placement', affectsOrganicOrder: false, prevHash: 'h0', entryHash: 'h1', ...o });
-const refund = (o: any = {}) => ({ merchantId: M, kind: 'REFUND', seq: 2, amount: 100, originalSeq: 1, reason: 'under-delivered', prevHash: 'h1', entryHash: 'h2', ...o });
+type LedgerEntry = Record<string, unknown>;
+type ScenarioOptions = Record<string, unknown>;
 
-const SCENARIOS: Array<{ id: string; title: string; note: string; entries: any[]; opts?: any }> = [
+const issue = (o: LedgerEntry = {}) => ({ merchantId: M, kind: 'ISSUE', seq: 0, amount: 500, authorizationRef: 'PO-1', expiresAt: future, prevHash: 'genesis', entryHash: 'h0', ...o });
+const spend = (o: LedgerEntry = {}) => ({ merchantId: M, kind: 'SPEND', seq: 1, amount: -100, placement: 'FEATURED_CARD', disclosureLabel: 'Sponsored placement', affectsOrganicOrder: false, prevHash: 'h0', entryHash: 'h1', ...o });
+const refund = (o: LedgerEntry = {}) => ({ merchantId: M, kind: 'REFUND', seq: 2, amount: 100, originalSeq: 1, reason: 'under-delivered', prevHash: 'h1', entryHash: 'h2', ...o });
+
+const SCENARIOS: Array<{ id: string; title: string; note: string; entries: LedgerEntry[]; opts?: ScenarioOptions }> = [
   { id: 'active', title: 'Entitled placement', note: 'chain-linked, funded, unexpired', entries: [issue(), spend()] },
   { id: 'organic', title: 'Organic listing', note: 'no paid placement — no badge', entries: [] },
   { id: 'loading', title: 'Entitlement resolving', note: 'space reserved, no claim made', entries: [issue(), spend()], opts: { loading: true } },
