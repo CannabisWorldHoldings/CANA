@@ -229,6 +229,25 @@ function environmentMissing(why, extra = {}) {
   return { classification: 'ENVIRONMENT_MISSING', evidence: [why], detail: extra };
 }
 
+/**
+ * PROMOTION-GATE EXPLICIT CONTRACT DISPATCH (ES-0002, OWNER LAW #9).
+ *
+ * The promotion evaluator that judges the SUCCESSOR lineage is selected by an explicit,
+ * stable contract — never by a blind `tools/promotion-gate/*.test.mjs` glob. This returns the
+ * successor-lineage promotion courts, and DELIBERATELY excludes the `tools/promotion-gate/
+ * historical/` subtree: the byte-identical retired V1 promotion-receipt judge
+ * (CANA_PROMOTION_IDENTITY_V1) lives there and is invoked ONLY through its dedicated
+ * historical-replay lane, in a disposable local reconstruction of its own context. Running V1
+ * against the successor lane (where its historical branch/ref does not exist) was the
+ * jurisdiction bug this succession fixes. Only *.test.mjs directly under tools/promotion-gate
+ * (not the historical/ subtree) are successor-lineage judges.
+ */
+function promotionGateSuccessorCourts() {
+  // glob() lists only the immediate directory (fs.readdirSync, no recursion), so historical/
+  // is naturally excluded; the .replay.mjs V1 file is excluded by the .test.mjs predicate.
+  return glob('tools/promotion-gate', (n) => n.endsWith('.test.mjs'));
+}
+
 // ---------------------------------------------------------------------------
 // STAGES
 // ---------------------------------------------------------------------------
@@ -532,7 +551,13 @@ const STAGES = [
     proves:
       'The courts both sovereign lineages inherit from the common base still hold: the verifier '
       + 'itself, provenance sabotage, mission-2 lifecycle, market state, reality packets, github '
-      + 'import, durability, the promotion gate and the cPanel/MariaDB simulators.',
+      + 'import, durability, the promotion gate and the cPanel/MariaDB simulators. '
+      + 'PROMOTION-GATE DISPATCH (ES-0002): the promotion evaluator is selected by EXPLICIT '
+      + 'stable contract, not by a blind *.test.mjs glob. The SUCCESSOR lineage is judged by '
+      + 'CANA_PROMOTION_IDENTITY_V2 (es-0002.court.test.mjs) + the evidence-chain court; the '
+      + 'retired CANA_PROMOTION_IDENTITY_V1 promotion-receipt judge runs ONLY via the dedicated '
+      + 'historical-replay lane (tools/promotion-gate/historical/), never blind-globbed against '
+      + 'the successor lane — that foreign-context execution was the jurisdiction bug ES-0002 fixes.',
     run() {
       const files = [
         ...glob('tools/test-runner', (n) => n.endsWith('.test.mjs')),
@@ -542,12 +567,27 @@ const STAGES = [
         ...glob('tools/reality', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/github-import', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/durability', (n) => n.endsWith('.test.mjs')),
-        ...glob('tools/promotion-gate', (n) => n.endsWith('.test.mjs')),
+        // PROMOTION-GATE: EXPLICIT CONTRACT DISPATCH, not a blind glob (OWNER LAW #9).
+        // The successor lineage's promotion courts are enumerated by name; the historical/
+        // subtree (the byte-identical retired V1 judge + its replay harness) is deliberately
+        // NOT swept here — V1 is invoked only through its historical-replay lane, in its own
+        // disposable context, so a branch/ref that only exists in history can never fail the
+        // successor court. Every promotion court that is a successor-lineage judge is listed.
+        ...promotionGateSuccessorCourts(),
         ...glob('tools/cpanel-sim', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/mariadb-sim', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/growth-foundry/m001', (n) => n.endsWith('.test.mjs')),
       ];
-      return unitsToStage(files.map((f) => courtUnit(f)), 'deterministic courts');
+      const units = files.map((f) => courtUnit(f));
+      // Report the promotion-gate dispatch decision as its own evidence line so the receipt
+      // shows the successor court ran and V1 was routed to the historical lane, not globbed.
+      const stage = unitsToStage(units, 'deterministic courts');
+      stage.evidence.push(
+        `promotion-gate dispatch: successor lineage -> CANA_PROMOTION_IDENTITY_V2 `
+        + `(${promotionGateSuccessorCourts().join(', ')}); V1 promotion-receipt judge -> historical-replay `
+        + `lane only (tools/promotion-gate/historical/, NOT stage-06 globbed)`,
+      );
+      return stage;
     },
   },
 
