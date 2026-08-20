@@ -34,6 +34,10 @@ import {
 import {
   CAPABILITIES, OWNER_ONLY, makeGrant, sealPacket, makeReceipt,
 } from '../../skills-src/hermes-governed-packet.mjs';
+// PHASE D: the adapter no longer self-mints authority. It presents an authorization issued through
+// the REAL authorize() seat (in dev, by the DEV owner-root signer — never self-stamped). Authority
+// (minting) and the execution receipt no longer share a trust domain.
+import { issueAuthorizationForCycle } from './authority-bridge.mjs';
 
 export const LOOP_SCHEMA = 'cana-alive-loop/1';
 export const STATES = Object.freeze([
@@ -277,6 +281,7 @@ function withinAllowedPaths(touched, allowed) {
  */
 export async function runCycle({
   grant: rawGrant, facts, fixture, storeDir, now = new Date(), repoHead, repoTree, intentSubjects,
+  authorityContext,
 }) {
   const grant = validateMissionGrant(rawGrant, { now, repoHead, repoTree });
   const idemKey = grant.idempotency_key;
@@ -332,29 +337,54 @@ export async function runCycle({
     if (!candidate.valid) refuse('CANDIDATE_INVALID', candidate.errors.join('; '));
     mark('PROPOSED', { event_id: event.event_id, candidate_id: candidate.candidate_id });
 
-    // SEALED — bind context to authority; capability comes from the grant.
-    const capabilityGrant = makeGrant({
-      capability: grant.capabilities[0],
-      budgetUnits: Math.max(1, grant.max_attempts),
-      expiresAt: grant.expires_at,
-      issuedBy: `CANA mission ${grant.mission_id} v${grant.mission_version}`,
-      now,
-    });
-    if (!capabilityGrant.valid) refuse('CAPABILITY_GRANT_INVALID', capabilityGrant.errors.join('; '));
-    const sealed = sealPacket({
-      contextPacket: compiled.packet,
-      grant: capabilityGrant,
-      intent: {
-        description: grant.objective,
-        successTest: grant.metric,
-        rollback: 'discard candidate; the cycle store retains the full evidence chain',
+    // SEALED — bind context to authority. The capability grant is DERIVED FROM an authorization
+    // issued by the SINGLE authorize() seat (Phase D): the adapter presents an externally-signed
+    // authorization and can no longer forge `issuedBy` or mint authority in its own trust domain.
+    // Idempotent on resume: authority is minted EXACTLY ONCE per cycle (the seat refuses a replay),
+    // so a resumed cycle rebuilds its sealed packet from the persisted SEALED record instead of
+    // re-authorizing.
+    let sealed;
+    if (done.has('SEALED')) {
+      const sealedRecord = store.stateRecord('SEALED');
+      sealed = { valid: true, errors: [], packet: sealedRecord.payload.packet };
+    } else {
+      let authIssue;
+      try {
+        authIssue = authorityContext
+          ? authorityContext.issue({ grant, compiledPacket: compiled.packet, facts, storeDir, now })
+          : issueAuthorizationForCycle({ grant, compiledPacket: compiled.packet, facts, storeDir, now });
+      } catch (error) {
+        refuse('AUTHORITY_UNAVAILABLE', error?.message ?? String(error));
+      }
+      if (!authIssue?.decision?.admitted) {
+        refuse('AUTHORIZATION_REFUSED', `authorize() refused: ${authIssue?.decision?.code ?? 'UNKNOWN'}`);
+      }
+      // makeGrant VERIFIES the authorization under the owner-root PUBLIC key — the adapter cannot
+      // self-verify. It holds no signing oracle, so it cannot self-authorize either.
+      const capabilityGrant = makeGrant({
         capability: grant.capabilities[0],
-        subjects: intentSubjects ?? [grant.target],
-      },
-      now,
-    });
-    if (!sealed.valid) refuse('SEAL_REFUSED', sealed.errors.join('; '));
-    mark('SEALED', { packet_digest: sealed.packet.packet_digest, capability: grant.capabilities[0], route: grant.provider_route });
+        budgetUnits: Math.max(1, grant.max_attempts),
+        authorization: authIssue.authorization,
+        verifier: authIssue.verifier,
+        boundAction: authIssue.boundAction,
+        now,
+      });
+      if (!capabilityGrant.valid) refuse('CAPABILITY_GRANT_INVALID', capabilityGrant.errors.join('; '));
+      sealed = sealPacket({
+        contextPacket: compiled.packet,
+        grant: capabilityGrant,
+        intent: {
+          description: grant.objective,
+          successTest: grant.metric,
+          rollback: 'discard candidate; the cycle store retains the full evidence chain',
+          capability: grant.capabilities[0],
+          subjects: intentSubjects ?? [grant.target],
+        },
+        now,
+      });
+      if (!sealed.valid) refuse('SEAL_REFUSED', sealed.errors.join('; '));
+    }
+    mark('SEALED', { packet_digest: sealed.packet.packet_digest, capability: grant.capabilities[0], route: grant.provider_route, packet: sealed.packet });
 
     // EXECUTED_LOCAL — bounded fixture only; zero external effects; zero cost.
     const frozenPacket = deepFreeze(JSON.parse(JSON.stringify(sealed.packet)));

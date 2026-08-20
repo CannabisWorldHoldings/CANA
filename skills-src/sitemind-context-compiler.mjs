@@ -32,9 +32,17 @@
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 const has = (k) => process.argv.includes(`--${k}`);
 const arg = (k, d) => { const i = process.argv.indexOf(`--${k}`); return i > -1 ? process.argv[i + 1] : d; };
+// Fire the CLI self-test ONLY when this file is the process entry point — not when another module
+// (e.g. tools/mission-2/context.mjs, or the Hermes law selftest) imports it while `--selftest` is in
+// argv. Prevents an imported module from hijacking argv and calling process.exit mid-run.
+const isEntry = () => {
+  try { return !!process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href; }
+  catch { return false; }
+};
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const text = (v) => typeof v === 'string' && v.trim().length > 0;
@@ -269,7 +277,7 @@ export function compile({ objective, facts, now = new Date(), maxFacts = 40, req
 }
 
 // ---------------- self-test ----------------
-if (has('selftest')) {
+if (has('selftest') && isEntry()) {
   let pass = 0, fail = 0;
   const t = (n, c) => { c ? (pass++, console.log(`  ok   ${n}`)) : (fail++, console.log(`  FAIL ${n}`)); };
   const now = new Date('2026-07-26T12:00:00Z');
