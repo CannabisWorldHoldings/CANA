@@ -1,5 +1,16 @@
 {
   "provenance": "Compiled from the federation recovery ledger (_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md) at sovereign tip 9d3bd70 + federation slice. Every entry cites the canonical owner paths. Extend this registry when a new capability is admitted; never fork an owned job.",
+  "amendments": [
+    {
+      "id": "PHASE2-census-blindspot-closure",
+      "at": "2026-08-19",
+      "why": "The registry was compiled at sovereign tip 9d3bd70. Five mechanisms were built in the POST38 lineage AFTER that point and appeared in NO registry, so the anti-duplication census gate was structurally blind to them: a future agent could propose a second Governor / Cockpit / Console / Dual-Forecast / Layout-Kernel and be told CLEAR_TO_BUILD. Verified: `git cat-file -e 9d3bd70:<path>` fails for all five and succeeds at 190c990.",
+      "added_capabilities": ["metabolism-coordination", "owner-intelligence-cockpit", "governed-operator-console", "dual-prediction", "layout-intelligence"],
+      "lineage_note": "All five owner files originate in the POST38 lineage (commit 190c990), not the sovereign tip this registry was compiled at. They were converged into this tree as part of the CANA/ORDERWEEDDC convergence; each entry records `lineage` + `origin_commit`. An entry whose owner files have NOT yet been converged must carry `sibling_lineage_only: true` so the path-existence court can tell 'not yet merged' apart from 'fictional citation'.",
+      "architecture_note": "CAPABILITY OWNERSHIP IS NOT ROOT AUTHORITY. These entries record who owns a JOB, not who may authorize effects. tools/vanguard/governor.mjs is deliberately NOT filed under `authorization-governor`: an independent audit established its only export is pulse(n) (governor.mjs:42), which spawns subprocesses and appends a receipt — it orchestrates the metabolism, it does not authorize anything. Root authorization is UNSETTLED and is being decided separately; registry repair must not decide architecture.",
+      "verified_by": "tools/federation/census-blindspot.test.mjs"
+    }
+  ],
   "owners": [
     {
       "capability": "competitor-shadowing",
@@ -60,6 +71,57 @@
       "capability": "visual-court",
       "job_terms": ["visual court", "visual regression court", "design law court"],
       "owner_paths": ["tools/visual-court/checks.mjs", "tools/visual-court/run-static.mjs"]
+    },
+    {
+      "capability": "metabolism-coordination",
+      "what_it_owns": "The resident non-stop beat that DRIVES the governed metabolism: one PULSE = custody sweep -> flywheel cycle -> forecast watch -> TTRL -> cockpit rebuild -> chained pulse receipt. It coordinates existing mechanisms on an interval; it does not author code, contact the world, or authorize effects.",
+      "not_this_capability": "NOT authorization-governor. This owner grants nothing and validates no authority; its only export is pulse(n). Root authorization is a separate, unsettled question.",
+      "job_terms": ["metabolism pulse", "pulse receipt", "governed metabolism", "resident daemon", "governor daemon", "background daemon", "daemon pulse", "flywheel pulse", "interval pulse", "metabolism coordination", "pulse cycle", "non stop loop", "continuous pulse"],
+      "owner_paths": ["tools/vanguard/governor.mjs"],
+      "lineage": "post38",
+      "origin_commit": "190c990"
+    },
+    {
+      "capability": "owner-intelligence-cockpit",
+      "what_it_owns": "The owner's single compiled god's-eye view: every number read from a hash-chained ledger, court output or registry at build time and rendered as one stamped HTML page.",
+      "job_terms": ["owner cockpit", "owner dashboard", "cockpit dashboard", "cockpit html", "cockpit rebuild", "compile cockpit", "cockpit ledger", "ledger dashboard", "intelligence cockpit", "owner overview page", "owner dashboard page"],
+      "owner_paths": ["tools/vanguard/cockpit.mjs"],
+      "lineage": "post38",
+      "origin_commit": "190c990"
+    },
+    {
+      "capability": "governed-operator-console",
+      "what_it_owns": "The conversational operator surface: plain-word utterances compiled deterministically by an explicit intent grammar into governed commands, owner gates refused by name, every command a chained receipt. Unknown utterances return UNKNOWN — it never guesses.",
+      "job_terms": ["operator console", "command console", "console receipt", "compile utterance", "natural language command", "conversational command interface", "intent grammar", "console command", "plain words"],
+      "owner_paths": ["tools/vanguard/console.mjs"],
+      "lineage": "post38",
+      "origin_commit": "190c990"
+    },
+    {
+      "capability": "dual-prediction",
+      "what_it_owns": "Two independent predictors per target, both sealed against the SAME input snapshot before the outcome, both graded by reality (Brier), divergence beyond threshold flagged as MODEL_FAMILY_QUESTION. Absorbs into the existing ForecastLedger rather than forking a second prediction ledger.",
+      "extends": "forecast-prediction-ledger (one custody home for all prediction; this owns the DUEL layer, not a rival ledger)",
+      "job_terms": ["dual predictor", "dual forecast", "two predictors", "independent predictor", "predictor target", "champion baseline", "baseline brier", "predictor duel", "divergence signal", "two independent forecasts", "competing predictions"],
+      "owner_paths": ["tools/vanguard/dual-forecast.mjs"],
+      "lineage": "post38",
+      "origin_commit": "190c990"
+    },
+    {
+      "capability": "layout-intelligence",
+      "what_it_owns": "Layout as executable product state: a BSP LayoutGraph of panes with stable semantic ids, role-gated mounting, state-preserving relocation via the ResidualStore, utterances compiled deterministically to layout ops, and a concurrency court that quarantines rather than last-writer-wins.",
+      "extends": "tools/experience-fabric/kernel.mjs (composes the existing Experience Fabric IntentPatch court; adds the layout half)",
+      "job_terms": ["layout graph", "layout tree", "pane layout", "pane state", "tab panes", "workspace layout", "layout operation", "semantic pane id", "preserve pane state", "adaptive layout", "layout intelligence", "split pane"],
+      "owner_paths": ["tools/experience-fabric/layout-kernel.mjs"],
+      "lineage": "post38",
+      "origin_commit": "190c990"
+    },
+    {
+      "capability": "root-authorization",
+      "what_it_owns": "The CANA Authority single seat: the ONE module that mints an authorization object from an owner-signed decision, from which every Hermes grant is derived (single-seat proven in tools/authority/single-seat.test.mjs). Owning this JOB in the census means a builder proposing a SECOND authorization seat / rival grant minter is sent here to extend the seat rather than fork sovereignty across two authorizers.",
+      "reason": "CAPABILITY != AUTHORITY. This row RECORDS who owns the JOB of authorization so the anti-duplication census can refuse a second seat; it GRANTS NOTHING. The census reads inert data and mints no authorization — the authority plane (tools/authority + the Hermes grant path) is disjoint from the census (proven by capability-admission.test.mjs COURT 3/6). Registering this job does not make the registry an authorizer, and a registry entry is neither necessary nor sufficient for a grant.",
+      "not_this_capability": "NOT authorization-governor (the Python governor-kernel action-contract validator) and NOT metabolism-coordination (the governor daemon's pulse loop). This owns the authorization SEAT itself — the mint side, not the validate side and not the metabolism.",
+      "job_terms": ["authority single seat", "authorization seat", "single authorize seat", "mint authorization", "authorization minter", "second authority", "rival grant minter", "issue authorization object", "owner signed authorization", "root authorization", "authority sovereignty", "sovereign authorizer"],
+      "owner_paths": ["tools/authority/authority.mjs"]
     }
   ]
 }
