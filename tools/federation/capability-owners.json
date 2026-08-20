@@ -1,0 +1,65 @@
+{
+  "provenance": "Compiled from the federation recovery ledger (_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md) at sovereign tip 9d3bd70 + federation slice. Every entry cites the canonical owner paths. Extend this registry when a new capability is admitted; never fork an owned job.",
+  "owners": [
+    {
+      "capability": "competitor-shadowing",
+      "job_terms": ["competitor fingerprint", "competitor monitor", "competitor crawl", "shadow competitor", "fingerprint pages", "competitor drift", "watch weedmaps", "watch leafly"],
+      "owner_paths": ["apps/web/scripts/competitor-shadow.mjs", "tools/sentinel/bridge.mjs"]
+    },
+    {
+      "capability": "governed-improvement-cycle",
+      "job_terms": ["alive loop", "improvement cycle", "governed cycle", "self improvement loop", "flywheel cycle"],
+      "owner_paths": ["tools/alive-loop/run-cycle.mjs", "tools/alive-loop/flywheel.mjs"]
+    },
+    {
+      "capability": "durable-lesson-memory",
+      "job_terms": ["winner memory", "lesson store", "durable lessons", "memory store lessons"],
+      "owner_paths": ["tools/alive-loop/winner-memory.mjs", "tools/alive-loop/slow-memory.mjs"]
+    },
+    {
+      "capability": "memory-settlement",
+      "job_terms": ["memory settlement", "memory atom", "settle memory", "memory promotion path"],
+      "owner_paths": ["tools/federation/memory.mjs"]
+    },
+    {
+      "capability": "signal-to-fix-court",
+      "job_terms": ["change event", "signal to fix", "drift candidate", "competitor candidate court"],
+      "owner_paths": ["skills-src/cana-signal-to-fix.mjs"]
+    },
+    {
+      "capability": "authorization-governor",
+      "job_terms": ["authorization governor", "action contract", "authority validation", "signed grant validation"],
+      "owner_paths": ["packages/governor-kernel/sitemind-core/src/rsi_sitemind_core/governor.py", "packages/governor-kernel/standalone/runtime/rsi.py"]
+    },
+    {
+      "capability": "capability-genome",
+      "job_terms": ["capability gene", "donor genome", "gene complex", "capability dna"],
+      "owner_paths": ["tools/federation/genome.mjs"]
+    },
+    {
+      "capability": "agent-task-contracts",
+      "job_terms": ["agent passport", "task contract", "result contract", "typed delegation"],
+      "owner_paths": ["tools/federation/contracts.mjs"]
+    },
+    {
+      "capability": "evolution-case",
+      "job_terms": ["evolution case", "mutation surface", "candidate mutation court"],
+      "owner_paths": ["tools/federation/evolution.mjs"]
+    },
+    {
+      "capability": "forecast-prediction-ledger",
+      "job_terms": ["forecast ledger", "prediction ledger", "reality graded prediction"],
+      "owner_paths": ["tools/alive-loop/forecast-ledger.mjs"]
+    },
+    {
+      "capability": "economic-allocation",
+      "job_terms": ["advantage allocator", "regret ledger", "victory board", "economic layer allocation"],
+      "owner_paths": ["tools/vanguard/allocator.mjs", "tools/vanguard/regret-ledger.mjs", "tools/vanguard/victory-board.mjs"]
+    },
+    {
+      "capability": "visual-court",
+      "job_terms": ["visual court", "visual regression court", "design law court"],
+      "owner_paths": ["tools/visual-court/checks.mjs", "tools/visual-court/run-static.mjs"]
+    }
+  ]
+}

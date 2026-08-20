@@ -1,0 +1,27 @@
+{
+  "provenance": "Evaluator registry (Gate E). Succession is governed by EvaluatorSuccessionCase records under _mission/evolution/; an evaluator becomes INCUMBENT only through a valid succession case with a fully-passing bridge corpus and hidden holdout, judged by criteria fixed before the candidate existed. Rollback = restore the previous status fields (git revert).",
+  "evaluators": [
+    {
+      "evaluator_id": "census-term-v1",
+      "scope": "capability-census-term-matching",
+      "version": "v1",
+      "mechanism": "exact-word job-term matching (>=2 terms collide)",
+      "owner": "lane-verification",
+      "status": "RETIRED",
+      "since": "2026-08-19T03:00Z",
+      "retired_by": "ES-0001",
+      "known_blind_spots": ["morphological evasion: plural/gerund/past inflections of job terms slip through (proven by 3 live probes, 2026-08-19)"]
+    },
+    {
+      "evaluator_id": "census-term-v2",
+      "scope": "capability-census-term-matching",
+      "version": "v2",
+      "mechanism": "inflection-folded job-term matching (conservative suffix folding; >=2 terms collide)",
+      "owner": "lane-verification",
+      "status": "INCUMBENT",
+      "since": "2026-08-19T03:30Z",
+      "succession_case": "_mission/evolution/ES-0001-census-term-matching.json",
+      "known_blind_spots": ["synonym evasion (different words, same job) — folding is morphological only; semantic evasion needs a future succession with corroborated evidence", "multilingual proposals"]
+    }
+  ]
+}
