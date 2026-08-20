@@ -267,6 +267,21 @@ jobs:
           echo "CANA_SOVEREIGN_RECEIPT_COPY=$RUNNER_TEMP/cana-ci/verify-sovereign.json" >> "$GITHUB_ENV"
           echo "CANA_SOURCE_MIRROR=$RUNNER_TEMP/cana-ci/source-mirror.git" >> "$GITHUB_ENV"
 
+      - name: Resolve the tenant hosts to loopback for the rendered visual court
+        # WEB_COURT_TRIAGE R7/A1. The app routes '/' to the [domain] layout (which
+        # renders <header>) by REWRITING on the request Host: only a configured
+        # tenant host resolves; 127.0.0.1 does not, so the served '/' rendered no
+        # <header> and A1.header-height saw header=null at all 22 samples. Chromium
+        # special-cases the .localhost TLD to loopback, but the runner's own Node
+        # reachability probe (tools/test-runner/sovereign-env.mjs, unchanged) uses
+        # libc resolution, which does not. Map the canonical tenant host (and its
+        # siblings) to 127.0.0.1 so BOTH the probe and the browser reach the served
+        # build under the tenant Host — the layout then renders exactly as it does
+        # statically (static floor + visual-court.test.mjs already VERIFIED). This
+        # is environment resolution only; no court, threshold, or markup changed.
+        run: |
+          echo "127.0.0.1 orderweeddc.localhost deals.localhost luxury.localhost value.localhost flower.localhost edibles.localhost wellness.localhost accessories.localhost events.localhost biz.localhost" | sudo tee -a /etc/hosts
+
       - name: Set up Node with dependency caching
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
@@ -399,6 +414,17 @@ jobs:
           PORT: '3000'
           HOSTNAME: 127.0.0.1
           NODE_ENV: production
+          # WEB_COURT_TRIAGE handoff-grading fix (MISSING_SERVICE). The retailer
+          # render (src/app/[domain]/retailer/[id]/page.tsx) mints a page-bound
+          # challenge, and the handoff route (.../handoff/route.ts) + attribution
+          # API verify it, both reading process.env.CANA_INTERACTION_SECRET. With
+          # it unset the render embedded no challenge, so every valid-challenge
+          # handoff demoted to APPLICATION_HANDOFF_VERIFIED and no valued action
+          # was recorded (4 handoff-grading assertions failed). This is a served-app
+          # runtime secret the environment must supply; it is a disposable CI value,
+          # NOT a production credential, and it is deliberately deterministic so the
+          # render and the route derive the same signing key within this run.
+          CANA_INTERACTION_SECRET: cana-ci-disposable-interaction-secret-32341050682
         run: |
           npm start -- -H 127.0.0.1 -p 3000 > "${{ runner.temp }}/cana-ci/next-start.log" 2>&1 &
           echo $! > "${{ runner.temp }}/cana-ci/next.pid"
@@ -414,7 +440,11 @@ jobs:
 
       - name: ./cana verify sovereign
         env:
-          CANA_VISUAL_BASE_URL: http://127.0.0.1:3000
+          # Navigate the rendered visual court at the CANONICAL TENANT HOST so the
+          # Host-based rewrite resolves '/' to the [domain] layout and the <header>
+          # renders (A1). orderweeddc.localhost is mapped to 127.0.0.1 above; the
+          # served app listens on 127.0.0.1:3000. WEB_COURT_TRIAGE R7/A1.
+          CANA_VISUAL_BASE_URL: http://orderweeddc.localhost:3000
         run: ./cana verify sovereign
 
       - name: Tear down
