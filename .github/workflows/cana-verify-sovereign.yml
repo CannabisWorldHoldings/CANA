@@ -74,9 +74,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/cana_verify
       DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/cana_verify
-      CANA_RECEIPT_DIR: ${{ github.workspace }}/.cana-ci/receipts
-      CANA_SOVEREIGN_RECEIPT_COPY: ${{ github.workspace }}/.cana-ci/verify-sovereign.json
-      CANA_SOURCE_MIRROR: ${{ github.workspace }}/.cana-ci/source-mirror.git
+      CANA_RECEIPT_DIR: ${{ runner.temp }}/cana-ci/receipts
+      CANA_SOVEREIGN_RECEIPT_COPY: ${{ runner.temp }}/cana-ci/verify-sovereign.json
+      CANA_SOURCE_MIRROR: ${{ runner.temp }}/cana-ci/source-mirror.git
       CANA_VISUAL_BASE_URL: http://127.0.0.1:3000
       NEXT_TELEMETRY_DISABLED: '1'
 
@@ -95,7 +95,7 @@ jobs:
 
       - name: Prepare receipt and mirror directories
         run: |
-          install -d -m 0700 "${{ github.workspace }}/.cana-ci" "$CANA_RECEIPT_DIR"
+          install -d -m 0700 "${{ runner.temp }}/cana-ci" "$CANA_RECEIPT_DIR"
 
       - name: Provide the reference object database for stage 02 (source identity)
         # Stage 02 proves the three source SHAs and their common base against a real
@@ -148,8 +148,8 @@ jobs:
           HOSTNAME: 127.0.0.1
           NODE_ENV: production
         run: |
-          npm start -- -H 127.0.0.1 -p 3000 > "${{ github.workspace }}/.cana-ci/next-start.log" 2>&1 &
-          echo $! > "${{ github.workspace }}/.cana-ci/next.pid"
+          npm start -- -H 127.0.0.1 -p 3000 > "${{ runner.temp }}/cana-ci/next-start.log" 2>&1 &
+          echo $! > "${{ runner.temp }}/cana-ci/next.pid"
           for attempt in $(seq 1 60); do
             if curl -fsS -H 'Host: orderweeddc.localhost' http://127.0.0.1:3000/api/health > /dev/null; then
               echo "server healthy after ${attempt} attempts"
@@ -158,7 +158,7 @@ jobs:
             sleep 2
           done
           echo "the production server never became healthy" >&2
-          cat "${{ github.workspace }}/.cana-ci/next-start.log" >&2
+          cat "${{ runner.temp }}/cana-ci/next-start.log" >&2
           exit 1
 
       - name: ./cana verify sovereign
@@ -167,8 +167,8 @@ jobs:
       - name: Stop the production server
         if: always()
         run: |
-          if [ -f "${{ github.workspace }}/.cana-ci/next.pid" ]; then
-            kill "$(cat "${{ github.workspace }}/.cana-ci/next.pid")" 2>/dev/null || true
+          if [ -f "${{ runner.temp }}/cana-ci/next.pid" ]; then
+            kill "$(cat "${{ runner.temp }}/cana-ci/next.pid")" 2>/dev/null || true
           fi
 
       - name: Extract the artifact-hash manifest from the receipt
@@ -184,9 +184,9 @@ jobs:
             lines.push(`# manifest digest ${manifest.manifestDigest}`);
             lines.push(`# stages digest   ${receipt.stagesDigest}`);
             lines.push(`# verdict         ${receipt.verdict}`);
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/ARTIFACT_HASHES.txt`, `${lines.join("\n")}\n`);
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/cana-ci/ARTIFACT_HASHES.txt`, `${lines.join("\n")}\n`);
             const table = receipt.stages.map((s) => `${s.id}  ${s.key.padEnd(24)} ${s.classification}`);
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/STAGE_TABLE.txt`, `${table.join("\n")}\n`);
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/cana-ci/STAGE_TABLE.txt`, `${table.join("\n")}\n`);
           '
 
       - name: Upload the sovereign receipt and artifact hashes
@@ -197,11 +197,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 90
           path: |
-            .cana-ci/verify-sovereign.json
-            .cana-ci/ARTIFACT_HASHES.txt
-            .cana-ci/STAGE_TABLE.txt
-            .cana-ci/receipts/**
-            .cana-ci/next-start.log
+            ${{ runner.temp }}/cana-ci/verify-sovereign.json
+            ${{ runner.temp }}/cana-ci/ARTIFACT_HASHES.txt
+            ${{ runner.temp }}/cana-ci/STAGE_TABLE.txt
+            ${{ runner.temp }}/cana-ci/receipts/**
+            ${{ runner.temp }}/cana-ci/next-start.log
 
   # ---------------------------------------------------------------------------
   # SUPPLEMENT: the repository's own PostGIS + H3 image, so the geo_kernel
@@ -215,9 +215,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://postgres@127.0.0.1:5432/cana_verify
       DIRECT_URL: postgresql://postgres@127.0.0.1:5432/cana_verify
-      CANA_RECEIPT_DIR: ${{ github.workspace }}/.cana-ci/receipts
-      CANA_SOVEREIGN_RECEIPT_COPY: ${{ github.workspace }}/.cana-ci/verify-sovereign.json
-      CANA_SOURCE_MIRROR: ${{ github.workspace }}/.cana-ci/source-mirror.git
+      CANA_RECEIPT_DIR: ${{ runner.temp }}/cana-ci/receipts
+      CANA_SOVEREIGN_RECEIPT_COPY: ${{ runner.temp }}/cana-ci/verify-sovereign.json
+      CANA_SOURCE_MIRROR: ${{ runner.temp }}/cana-ci/source-mirror.git
       NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
@@ -235,7 +235,7 @@ jobs:
 
       - name: Prepare receipt and mirror directories
         run: |
-          install -d -m 0700 "${{ github.workspace }}/.cana-ci" "$CANA_RECEIPT_DIR"
+          install -d -m 0700 "${{ runner.temp }}/cana-ci" "$CANA_RECEIPT_DIR"
           git clone --mirror "${{ github.workspace }}" "$CANA_SOURCE_MIRROR"
 
       - name: Build the repository PostGIS + H3 database image
@@ -292,8 +292,8 @@ jobs:
           HOSTNAME: 127.0.0.1
           NODE_ENV: production
         run: |
-          npm start -- -H 127.0.0.1 -p 3000 > "${{ github.workspace }}/.cana-ci/next-start.log" 2>&1 &
-          echo $! > "${{ github.workspace }}/.cana-ci/next.pid"
+          npm start -- -H 127.0.0.1 -p 3000 > "${{ runner.temp }}/cana-ci/next-start.log" 2>&1 &
+          echo $! > "${{ runner.temp }}/cana-ci/next.pid"
           for attempt in $(seq 1 60); do
             if curl -fsS -H 'Host: orderweeddc.localhost' http://127.0.0.1:3000/api/health > /dev/null; then
               exit 0
@@ -301,7 +301,7 @@ jobs:
             sleep 2
           done
           echo "the production server never became healthy" >&2
-          cat "${{ github.workspace }}/.cana-ci/next-start.log" >&2
+          cat "${{ runner.temp }}/cana-ci/next-start.log" >&2
           exit 1
 
       - name: ./cana verify sovereign
@@ -312,8 +312,8 @@ jobs:
       - name: Tear down
         if: always()
         run: |
-          if [ -f "${{ github.workspace }}/.cana-ci/next.pid" ]; then
-            kill "$(cat "${{ github.workspace }}/.cana-ci/next.pid")" 2>/dev/null || true
+          if [ -f "${{ runner.temp }}/cana-ci/next.pid" ]; then
+            kill "$(cat "${{ runner.temp }}/cana-ci/next.pid")" 2>/dev/null || true
           fi
           docker rm --force cana-postgres-ci 2>/dev/null || true
 
@@ -330,9 +330,9 @@ jobs:
             lines.push(`# manifest digest ${manifest.manifestDigest}`);
             lines.push(`# stages digest   ${receipt.stagesDigest}`);
             lines.push(`# verdict         ${receipt.verdict}`);
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/ARTIFACT_HASHES.txt`, `${lines.join("\n")}\n`);
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/cana-ci/ARTIFACT_HASHES.txt`, `${lines.join("\n")}\n`);
             const table = receipt.stages.map((s) => `${s.id}  ${s.key.padEnd(24)} ${s.classification}`);
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/STAGE_TABLE.txt`, `${table.join("\n")}\n`);
+            fs.writeFileSync(`${process.env.RUNNER_TEMP}/cana-ci/STAGE_TABLE.txt`, `${table.join("\n")}\n`);
           '
 
       - name: Upload the sovereign receipt and artifact hashes
@@ -343,8 +343,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 90
           path: |
-            .cana-ci/verify-sovereign.json
-            .cana-ci/ARTIFACT_HASHES.txt
-            .cana-ci/STAGE_TABLE.txt
-            .cana-ci/receipts/**
-            .cana-ci/next-start.log
+            ${{ runner.temp }}/cana-ci/verify-sovereign.json
+            ${{ runner.temp }}/cana-ci/ARTIFACT_HASHES.txt
+            ${{ runner.temp }}/cana-ci/STAGE_TABLE.txt
+            ${{ runner.temp }}/cana-ci/receipts/**
+            ${{ runner.temp }}/cana-ci/next-start.log
