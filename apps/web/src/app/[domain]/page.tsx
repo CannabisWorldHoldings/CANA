@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
 import CustomerWorldPage from '@/components/customer-world-page';
 import { loadCustomerWorld } from '@/lib/customer-world.server';
+import { CANONICAL_TENANT_DOMAIN } from '@/lib/tenant-host.mjs';
+import { requestOrigin } from '@/lib/server-request-url';
+import { issuePendingRightsCapability } from '@/lib/asset-registry.mjs';
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
 
 type Props = {
@@ -22,7 +25,11 @@ export const metadata = {
 };
 
 export default async function TenantHomePage({ params, searchParams }: Props) {
-  const [{ domain }, filters] = await Promise.all([params, searchParams]);
+  const [{ domain }, filters, origin] = await Promise.all([
+    params,
+    searchParams,
+    requestOrigin(),
+  ]);
   const result = await loadCustomerWorld({
     journey: 'HOME',
     market: filters.market,
@@ -31,5 +38,11 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     tenantDomain: domain,
   });
   if (!result) return notFound();
-  return <CustomerWorldPage world={result.world} />;
+  return (
+    <CustomerWorldPage
+      world={result.world}
+      isCanonicalBrand={domain === CANONICAL_TENANT_DOMAIN}
+      illustrativeArtCapability={issuePendingRightsCapability(origin.hostname)}
+    />
+  );
 }

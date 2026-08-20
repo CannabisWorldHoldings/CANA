@@ -8,8 +8,10 @@ import path from 'node:path';
 
 import {
   checkChipVocabulary,
+  checkPublicCopyVocabulary,
   checkConsumerShellPurity,
   checkHeaderHeight,
+  checkHomeComposition,
   checkNavCensus,
   checkRailContract,
   checkTrioBreakpoints,
@@ -33,6 +35,8 @@ const checks = [
   checkTypeTokens(inputs.typeTokens),
   checkTrioBreakpoints(inputs.trioBreakpoints),
   checkRailContract(inputs.railContract),
+  checkHomeComposition(inputs.homeComposition),
+  checkPublicCopyVocabulary(inputs.publicCopyVocabulary),
   // Static mode proves the vocabulary MODULE is the closed 8-set; rendered
   // mode censuses actual chips on pages.
   checkChipVocabulary({ chipKindsInUse: [...CHIP_KINDS], allowedKinds: [...CHIP_KINDS] }),

@@ -70,6 +70,36 @@ export function checkImageRegistry({ unregistered }) {
   return result('A14.image-registry', ok, ok ? 'all imagery registered/attested' : `unregistered: ${unregistered.join(',')}`);
 }
 
+/** A15 — P1 home must consume P0 and preserve the production image gate. */
+export function checkHomeComposition({
+  usesCanonicalRail,
+  usesRailItem,
+  smartImageCount,
+  importsNextImage,
+  askUsesCanonicalSearch,
+  imagePolicyEnforced,
+  productionArtGate,
+  heroMinHeightPx,
+  campaignAsymmetric,
+}) {
+  const ok = usesCanonicalRail === true
+    && usesRailItem === true
+    && Number.isFinite(smartImageCount)
+    && smartImageCount >= 5
+    && importsNextImage === false
+    && askUsesCanonicalSearch === true
+    && imagePolicyEnforced === true
+    && productionArtGate === true
+    && Number.isFinite(heroMinHeightPx)
+    && heroMinHeightPx >= 630
+    && campaignAsymmetric === true;
+  return result(
+    'A15.p1-home-composition',
+    ok,
+    `rail=${usesCanonicalRail}/${usesRailItem} smartImages=${smartImageCount} nextImage=${importsNextImage} ask=${askUsesCanonicalSearch} policy=${imagePolicyEnforced} productionGate=${productionArtGate} hero=${heroMinHeightPx}px asymmetric=${campaignAsymmetric}`,
+  );
+}
+
 /** A7 — no horizontal document overflow at any mandated width (RENDERED mode). */
 export function checkOverflow({ overflowingWidths }) {
   const ok = (overflowingWidths ?? []).length === 0;
@@ -77,6 +107,16 @@ export function checkOverflow({ overflowingWidths }) {
 }
 
 /** Aggregate a verdict receipt. */
+/** A15 — consumer surfaces never leak internal/system vocabulary (owner
+ *  correction compiled to law: public UI must read as product, not engine).
+ *  Violations arrive from the collector as { file, term, literal } rows. */
+export function checkPublicCopyVocabulary({ violations }) {
+  const ok = (violations ?? []).length === 0;
+  return result('A16.public-copy-vocabulary', ok, ok
+    ? 'no internal vocabulary in public copy'
+    : (violations ?? []).slice(0, 6).map((v) => `${v.file}: "${v.term}"`).join('; '));
+}
+
 export function courtVerdict(checks, mode) {
   const failures = checks.filter((check) => check.status === 'FAIL');
   return {

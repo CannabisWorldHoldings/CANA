@@ -69,11 +69,127 @@
   --brand-gold-onwhite: #8c6206;
   --brand-primary-fill-strong: #08663c;
 
-  --font-family-display: "Geist", system-ui, sans-serif;
-  --font-family-body: "Geist", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* T6 APPLE TOKEN LAYER — font register (owner APPLE_STANDARD ruling,
+     2026-08-09: "use the same fonts as them"). SF system stack first: renders
+     real SF Pro on Apple devices with zero font files (CSP-safe); self-hosted
+     Geist remains the metric-compatible fallback everywhere else. */
+  --font-family-display: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "Geist", system-ui, sans-serif;
+  --font-family-body: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Geist", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-family-evidence: "Geist Mono", ui-monospace, SFMono-Regular,
     Menlo, monospace;
+}
+
+/* ============================================================
+   T6 APPLE TOKEN LAYER — transplanted from the forge's compiled-CSS
+   anatomy of apple.com (foundry/apple_standard_anatomy.md, owner
+   APPLE_STANDARD north-star law). Tokens are additive; consuming
+   surfaces adopt them incrementally. Grammar rules that ride along:
+   - type does the hierarchy work: weights cap at 600, no
+     uppercase-tracked label chrome (mono is for machine data only)
+   - overlays on imagery: SMALL + TRANSLUCENT (frosted) + OFF-SUBJECT —
+     the image must stay visible (owner overlay law)
+   ============================================================ */
+:root {
+  /* the shared reading column (apple.com: 980px + 22px gutters) */
+  --apple-column: 980px;
+  --apple-gutter: 22px;
+
+  /* SF type scale (compiled px from apple.com) */
+  --type-hero: 56px;
+  --type-display: 48px;
+  --type-title: 40px;
+  --type-headline: 32px;
+  --type-section: 28px;
+  --type-intro: 21px;
+  --type-body: 19px;
+  --type-caption: 14px;
+  --type-fine: 12px;
+
+  /* frosted chrome recipe (apple.com gnav, compiled) */
+  --frost-chrome-light: rgba(250, 250, 252, 0.8);
+  --frost-chrome-dark: rgba(22, 22, 23, 0.8);
+  --frost-filter: saturate(180%) blur(20px);
+
+  /* tech-specs anatomy */
+  --specs-label-size: 24px;   /* 24/600 section labels */
+  --specs-value-color: #a1a1a6;
+  --specs-hairline: #d2d2d7;  /* ONE hairline per section — padding is the table */
+
+  /* footer opacity hierarchy (apple.com footer, compiled) */
+  --footnote-strong: 0.88;
+  --footnote-mid: 0.72;
+  --footnote-soft: 0.56;
+  --footnote-faint: 0.48;
+}
+
+/* the apple.com frosted navigation material */
+.frosted-nav {
+  background: var(--frost-chrome-light);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+.frosted-nav-dark {
+  background: var(--frost-chrome-dark);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
+}
+
+/* tint-chip grammar: low-alpha brand tint, deep text, no border chrome */
+.tint-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 100px;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary-fill-strong);
+}
+
+/* tech-specs rows: 24/600 label + muted value + single hairline per section */
+.tech-specs {
+  max-width: 660px;
+  margin: 0 auto;
+  border-top: 1px solid var(--specs-hairline);
+  padding-top: 34px;
+}
+.tech-specs .spec-row {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 6px 34px;
+  padding: 14px 0;
+}
+.tech-specs .spec-label {
+  font-size: var(--specs-label-size);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.tech-specs .spec-value {
+  font-size: 14px;
+  color: var(--specs-value-color);
+  align-self: center;
+}
+@media (max-width: 600px) {
+  .tech-specs .spec-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* overlay law utility: anything layered over imagery stays small,
+   frosted, and off the subject — never a solid pill smothering the tile */
+.media-overlay {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: var(--frost-chrome-light);
+  -webkit-backdrop-filter: var(--frost-filter);
+  backdrop-filter: var(--frost-filter);
 }
 
 *,
@@ -172,8 +288,11 @@ h3 {
 
 /* Glassmorphism utility card styling */
 .glass-panel {
-  background: color-mix(in srgb, var(--brand-surface) 72%, transparent);
-  backdrop-filter: blur(14px);
+  /* T6: upgraded to the compiled apple.com material — 80% chrome,
+     saturate(180%) blur(20px) — from the forge anatomy extraction */
+  background: color-mix(in srgb, var(--brand-surface) 80%, transparent);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
   border: 1px solid var(--brand-border);
 }
 
@@ -1015,6 +1134,424 @@ html[data-daypart="night"] .canonical-tenant-shell {
   background: var(--frost-chrome-light);
   -webkit-backdrop-filter: var(--frost-filter);
   backdrop-filter: var(--frost-filter);
+}
+
+.owd-home {
+  --owd-home-ink: #1d1d1f;
+  --owd-home-muted: #6e6e73;
+  --owd-home-paper: #ffffff;
+  --owd-home-soft: #f5f5f7;
+  --owd-home-green: #075f38;
+  --owd-home-hero: #eee9df;
+  --owd-home-hero-media: #f2eee6;
+  --owd-home-copy: #ffffff;
+  --owd-home-copy-muted: #4b4b4f;
+  --owd-home-control: #ffffff;
+  --owd-home-placeholder: #77777c;
+  --owd-home-category-media: #eef1ed;
+  --owd-home-store: #eef1ed;
+  --owd-home-delivery: #f2e9df;
+  --owd-home-store-media: #e4e8e2;
+  --owd-home-delivery-media: #eadfd2;
+  --owd-home-card-muted: #55555a;
+  --owd-home-district: #f4f1eb;
+  --owd-home-district-media: #eee8da;
+  color: var(--owd-home-ink);
+  background: var(--owd-home-paper);
+}
+
+html[data-daypart="night"] .owd-home {
+  --owd-home-ink: #f5f5f7;
+  --owd-home-muted: #a1a1a6;
+  --owd-home-paper: #050806;
+  --owd-home-soft: #0c130e;
+  --owd-home-green: #57e49a;
+  --owd-home-hero: #111610;
+  --owd-home-hero-media: #151b14;
+  --owd-home-copy: #050806;
+  --owd-home-copy-muted: #bdc8bf;
+  --owd-home-control: #111813;
+  --owd-home-placeholder: #929b94;
+  --owd-home-category-media: #142019;
+  --owd-home-store: #0f1912;
+  --owd-home-delivery: #1b1510;
+  --owd-home-store-media: #142019;
+  --owd-home-delivery-media: #241b14;
+  --owd-home-card-muted: #b3bdb5;
+  --owd-home-district: #15130f;
+  --owd-home-district-media: #201c14;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-daypart]) .owd-home {
+    --owd-home-ink: #f5f5f7;
+    --owd-home-muted: #a1a1a6;
+    --owd-home-paper: #050806;
+    --owd-home-soft: #0c130e;
+    --owd-home-green: #57e49a;
+    --owd-home-hero: #111610;
+    --owd-home-hero-media: #151b14;
+    --owd-home-copy: #050806;
+    --owd-home-copy-muted: #bdc8bf;
+    --owd-home-control: #111813;
+    --owd-home-placeholder: #929b94;
+    --owd-home-category-media: #142019;
+    --owd-home-store: #0f1912;
+    --owd-home-delivery: #1b1510;
+    --owd-home-store-media: #142019;
+    --owd-home-delivery-media: #241b14;
+    --owd-home-card-muted: #b3bdb5;
+    --owd-home-district: #15130f;
+    --owd-home-district-media: #201c14;
+  }
+}
+
+.owd-home .owd-quiet { color: var(--owd-home-muted); }
+
+.owd-home-hero {
+  position: relative;
+  min-height: 690px;
+  max-width: var(--owd-content-hero-max);
+  margin-inline: auto;
+  overflow: hidden;
+  background: var(--owd-home-hero);
+}
+
+.owd-home-hero__media,
+.owd-home-hero__media img {
+  position: absolute;
+  inset: 0;
+}
+.owd-home-hero__media { background: var(--owd-home-hero-media); }
+.owd-home-hero__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(242, 238, 230, 0.88) 0%, rgba(242, 238, 230, 0.5) 48%, transparent 76%);
+}
+html[data-daypart="night"] .owd-home-hero__media::after {
+  background: linear-gradient(90deg, rgba(5, 8, 6, 0.86) 0%, rgba(5, 8, 6, 0.58) 52%, rgba(5, 8, 6, 0.08) 82%);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-daypart]) .owd-home-hero__media::after {
+    background: linear-gradient(90deg, rgba(5, 8, 6, 0.86) 0%, rgba(5, 8, 6, 0.58) 52%, rgba(5, 8, 6, 0.08) 82%);
+  }
+}
+
+.owd-home-hero__image {
+  object-fit: cover;
+  object-position: center;
+}
+
+.owd-home-hero__copy {
+  position: relative;
+  z-index: 1;
+  padding-top: 116px;
+  padding-bottom: 88px;
+}
+
+.owd-home-hero__copy > * { max-width: 650px; }
+.owd-home-hero__copy .owd-eyebrow { color: var(--owd-home-green); }
+.owd-home-hero__copy .owd-display { margin: 14px 0 0; }
+.owd-home-hero__copy .owd-intro {
+  max-width: 530px;
+  margin: 22px 0 0;
+  color: var(--owd-home-copy-muted);
+}
+
+.owd-home-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: min(100%, 620px);
+  margin-top: 34px;
+  padding: 6px;
+  border: 1px solid rgba(29, 29, 31, 0.16);
+  border-radius: var(--owd-radius-pill);
+  background: var(--owd-home-control);
+}
+
+.owd-home-search input {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  outline: 0;
+  color: var(--owd-home-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+}
+
+.owd-home-search input::placeholder { color: var(--owd-home-placeholder); }
+.owd-home-search:focus-within {
+  outline: 2px solid var(--owd-home-green);
+  outline-offset: 3px;
+}
+.owd-home-search button {
+  min-width: 166px;
+  min-height: 48px;
+  padding-inline: 22px;
+  border: 0;
+  border-radius: var(--owd-radius-pill);
+  color: #ffffff;
+  background: var(--brand-primary-fill-strong);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--owd-dur-fast) var(--owd-ease-standard);
+}
+
+.owd-home-search button:active { transform: scale(0.98); }
+.owd-home-search-examples {
+  max-width: 590px;
+  margin: 13px 0 0;
+  color: var(--owd-home-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.owd-home-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 26px;
+  margin-top: 22px;
+}
+
+.owd-home-hero__links a,
+.owd-home-district__copy > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--owd-home-green);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.owd-home-categories {
+  overflow: hidden;
+  padding-block: 42px 48px;
+  background: var(--owd-home-paper);
+}
+
+.owd-home-category {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 188px;
+  color: var(--owd-home-ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.owd-home-category__media {
+  position: relative;
+  display: block;
+  width: 112px;
+  height: 112px;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--owd-home-category-media);
+}
+.owd-home-category img {
+  object-fit: cover;
+  transition: transform var(--owd-dur-std) var(--owd-ease-standard);
+}
+
+.owd-home-category:hover img { transform: translateY(-3px); }
+.owd-home-program { padding-block: var(--owd-sect-pad-md) var(--owd-sect-pad-lg); }
+.owd-home-program > h2 { max-width: 900px; margin: 0 0 36px; }
+.owd-home-campaigns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.16fr) minmax(340px, 0.84fr);
+  gap: 14px;
+}
+
+.owd-home-campaign {
+  display: grid;
+  grid-template-rows: auto minmax(360px, 1fr);
+  min-height: 620px;
+  overflow: hidden;
+  border-radius: var(--owd-radius-tile);
+  color: var(--owd-home-ink);
+  text-decoration: none;
+}
+
+.owd-home-campaign--store { background: var(--owd-home-store); }
+.owd-home-campaign--delivery { background: var(--owd-home-delivery); }
+.owd-home-campaign__copy { display: grid; align-content: start; padding: 34px 36px 28px; }
+.owd-home-campaign__copy .owd-h3 { margin-top: 8px; }
+.owd-home-campaign__copy .owd-body-reduced { max-width: 390px; margin-top: 8px; color: var(--owd-home-card-muted); }
+.owd-home-campaign__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  color: var(--owd-home-green);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.owd-home-campaign__media { position: relative; min-height: 360px; overflow: hidden; background: var(--owd-home-store-media); }
+.owd-home-campaign--delivery .owd-home-campaign__media { background: var(--owd-home-delivery-media); }
+.owd-home-campaign__media img {
+  object-fit: cover;
+  transition: transform var(--owd-dur-slow) var(--owd-ease-standard);
+}
+.owd-home-campaign:hover .owd-home-campaign__media img { transform: scale(1.015); }
+
+.owd-home-district { overflow: hidden; background: var(--owd-home-district); }
+.owd-home-district__inner {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.78fr) minmax(0, 1.22fr);
+  min-height: 560px;
+  padding-inline: 0;
+}
+.owd-home-district__copy {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  padding: 70px 54px;
+  color: var(--owd-home-ink);
+}
+.owd-home-district__copy .owd-eyebrow { color: var(--owd-home-green); }
+.owd-home-district__copy .owd-h1 { max-width: 440px; margin: 12px 0 0; }
+.owd-home-district__copy .owd-intro { max-width: 470px; margin: 18px 0 0; color: var(--owd-home-muted); }
+.owd-home-district__copy > a {
+  margin-top: 28px;
+  color: var(--owd-home-green);
+}
+.owd-home-district__media { position: relative; min-height: 440px; background: var(--owd-home-district-media); }
+.owd-home-district__media img { object-fit: cover; object-position: center; }
+
+.owd-home-trust { padding-block: var(--owd-sect-pad-lg); }
+.owd-home-trust > h2 { margin: 0; }
+.owd-home-trust__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 42px;
+  margin-top: 48px;
+}
+.owd-home-trust__grid article { min-width: 0; }
+.owd-home-trust__grid svg { width: 25px; height: 25px; color: var(--owd-home-green); stroke-width: 1.6; }
+.owd-home-trust__grid h3 { margin: 18px 0 0; font-size: 20px; font-weight: 600; }
+.owd-home-trust__grid p { margin: 9px 0 0; color: var(--owd-home-muted); font-size: 15px; line-height: 1.5; }
+
+/* --- NULL-ASSET GRACEFUL REFLOW (round 3) --------------------------------------
+   In production every home art record is OWNED_PROVENANCE_REVIEW_PENDING, so
+   resolveAssetUse() returns null and <SmartImage> renders nothing. The reserved
+   media wrappers therefore become :empty in the DOM. These rules make the empty
+   state read as INTENTIONAL, rights-safe design (first-party token-derived CSS —
+   no imagery is fabricated) and, on mobile, recover the above-fold headline +
+   prompt by not reserving an art band that no art will fill.
+
+   HERO (desktop) — when no art painted, drop the flat neutral panel + art scrim
+   and lay a calm token-derived diagonal wash. Copy stays the focus; the band no
+   longer reads as a failed hero image. min-height:690px is untouched. */
+.owd-home-hero:has(.owd-home-hero__media:empty) .owd-home-hero__media {
+  background:
+    radial-gradient(120% 120% at 78% 18%, color-mix(in srgb, var(--owd-home-green) 12%, transparent) 0%, transparent 60%),
+    linear-gradient(135deg, var(--owd-home-hero) 0%, var(--owd-home-hero-media) 100%);
+}
+.owd-home-hero:has(.owd-home-hero__media:empty) .owd-home-hero__media::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--owd-home-hero) 78%, transparent) 0%, transparent 62%);
+}
+
+/* CATEGORY TILE — when no art painted, present a token-derived tinted field that
+   carries the category name typographically. No image-shaped empty box; the
+   label sits INSIDE the field as deliberate content, so it never reads as a
+   failed load. The category name comes from the adjacent label via a data attr
+   on the media span (set in the component); text-only fallback if absent. */
+.owd-home-category__media:empty {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--owd-home-green) 10%, var(--owd-home-category-media)) 0%, var(--owd-home-category-media) 100%);
+}
+.owd-home-category__media:empty::after {
+  content: attr(data-label);
+  color: var(--owd-home-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+/* CAMPAIGN + DISTRICT media panels — when no art painted, replace the flat
+   neutral fill (which reads as a broken image) with a calm token-derived wash so
+   the split panel reads as an intentional two-tone editorial block. */
+.owd-home-campaign__media:empty,
+.owd-home-district__media:empty {
+  background:
+    radial-gradient(140% 120% at 82% 20%, color-mix(in srgb, var(--owd-home-green) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--owd-home-green) 6%, var(--owd-home-store-media)) 0%, var(--owd-home-store-media) 100%);
+}
+.owd-home-campaign--delivery .owd-home-campaign__media:empty {
+  background:
+    radial-gradient(140% 120% at 82% 20%, color-mix(in srgb, var(--owd-home-green) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--owd-home-green) 6%, var(--owd-home-delivery-media)) 0%, var(--owd-home-delivery-media) 100%);
+}
+.owd-home-district__media:empty {
+  background:
+    radial-gradient(140% 120% at 82% 20%, color-mix(in srgb, var(--owd-home-green) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--owd-home-green) 6%, var(--owd-home-district-media)) 0%, var(--owd-home-district-media) 100%);
+}
+/* --- END NULL-ASSET GRACEFUL REFLOW -------------------------------------------- */
+
+@media (max-width: 1068px) {
+  .owd-home-hero { min-height: 630px; }
+  .owd-home-hero__copy { padding-top: 84px; }
+  .owd-home-hero__copy > * { max-width: 540px; }
+  .owd-home-campaigns { grid-template-columns: 1fr 1fr; }
+  .owd-home-district__inner { grid-template-columns: 0.86fr 1.14fr; }
+  .owd-home-district__copy { padding: 56px 38px; }
+}
+
+@media (max-width: 734px) {
+  .owd-home-hero {
+    display: grid;
+    min-height: 0;
+    padding-top: 320px;
+    background: var(--owd-home-hero);
+  }
+  .owd-home-hero__media { height: 320px; bottom: auto; }
+  .owd-home-hero__media::after { display: none; }
+  .owd-home-hero__image { object-position: 69% center; }
+  /* NULL-ASSET fold recovery (round 3): when no hero art painted, the reserved
+     320px art band would eat the mobile first viewport and push the headline +
+     prompt below the fold. Collapse the band so "What are you looking for?" and
+     the search input open at the top of the viewport. Mechanism A (collapse) for
+     the null case; the art band is fully restored when lawful art is present. */
+  .owd-home-hero:has(.owd-home-hero__media:empty) { padding-top: 0; }
+  .owd-home-hero__media:empty { display: none; }
+  .owd-home-hero__copy {
+    width: 100%;
+    max-width: none;
+    padding-top: 36px;
+    padding-bottom: 54px;
+    background: var(--owd-home-copy);
+  }
+  .owd-home-hero__copy > * { max-width: none; }
+  .owd-home-hero__copy .owd-intro { margin-top: 16px; }
+  .owd-home-search { grid-template-columns: 1fr; border-radius: 18px; }
+  .owd-home-search input { min-height: 50px; }
+  .owd-home-search button { width: 100%; border-radius: 13px; }
+  .owd-home-program { width: 100%; padding-inline: 22px; }
+  .owd-home-program > h2 { margin-bottom: 28px; }
+  .owd-home-campaigns { grid-template-columns: 1fr; }
+  .owd-home-campaign { grid-template-rows: auto 320px; min-height: 0; }
+  .owd-home-campaign__copy { padding: 28px 26px 24px; }
+  .owd-home-campaign__media { min-height: 320px; }
+  .owd-home-district__inner { width: 100%; grid-template-columns: 1fr; }
+  .owd-home-district__copy { padding: 56px 28px 48px; }
+  .owd-home-district__media { min-height: 310px; }
+  .owd-home-trust { width: 100%; padding-inline: 22px; }
+  .owd-home-trust__grid { grid-template-columns: 1fr; gap: 34px; margin-top: 36px; }
 }
 
 /* --- END P0.1 TOKEN LAYER --------------------------------------------------- */

@@ -8,8 +8,10 @@ import {
   checkChipVocabulary,
   checkConsumerShellPurity,
   checkHeaderHeight,
+  checkHomeComposition,
   checkImageRegistry,
   checkNavCensus,
+  checkPublicCopyVocabulary,
   checkOverflow,
   checkRailContract,
   checkTrioBreakpoints,
@@ -31,6 +33,8 @@ test('the current repository passes every static visual-court law', () => {
     checkTypeTokens(inputs.typeTokens),
     checkTrioBreakpoints(inputs.trioBreakpoints),
     checkRailContract(inputs.railContract),
+    checkHomeComposition(inputs.homeComposition),
+    checkPublicCopyVocabulary(inputs.publicCopyVocabulary),
   ];
   const verdict = courtVerdict(checks, 'STATIC');
   assert.equal(verdict.verdict, 'PASS', JSON.stringify(verdict.checks, null, 2));
@@ -51,6 +55,17 @@ test('the dashboard-regression tampers all fail closed', () => {
   // Rail loses snap or its minimum refusal → FAIL.
   assert.equal(checkRailContract({ hasSnap: false, hasMinRefusal: true, paddlesPointerOnly: true }).status, 'FAIL');
   assert.equal(checkRailContract({ hasSnap: true, hasMinRefusal: false, paddlesPointerOnly: true }).status, 'FAIL');
+  assert.equal(checkHomeComposition({
+    usesCanonicalRail: false,
+    usesRailItem: false,
+    smartImageCount: 0,
+    importsNextImage: true,
+    askUsesCanonicalSearch: false,
+    imagePolicyEnforced: false,
+    productionArtGate: false,
+    heroMinHeightPx: 400,
+    campaignAsymmetric: false,
+  }).status, 'FAIL');
 });
 
 test('the chip vocabulary law rejects alien badges and holds for the closed set', () => {
@@ -72,4 +87,13 @@ test('the verdict never claims taste — human gates are explicitly out of scope
   const verdict = courtVerdict([checkOverflow({ overflowingWidths: [] })], 'STATIC');
   assert.match(verdict.note, /Human gates C1–C5/);
   assert.equal(verdict.verdict, 'PASS');
+});
+
+test('A15 fails on internal vocabulary in public copy and passes when clean', () => {
+  assert.equal(checkPublicCopyVocabulary({ violations: [] }).status, 'PASS');
+  const fail = checkPublicCopyVocabulary({
+    violations: [{ file: 'apps/web/src/components/customer-world-page.tsx', term: 'canonical Reality', literal: "'canonical Reality projections'" }],
+  });
+  assert.equal(fail.status, 'FAIL');
+  assert.match(fail.detail, /canonical Reality/);
 });
