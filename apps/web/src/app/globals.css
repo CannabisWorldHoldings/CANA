@@ -1440,6 +1440,69 @@ html[data-daypart="night"] .owd-home-hero__media::after {
 .owd-home-trust__grid h3 { margin: 18px 0 0; font-size: 20px; font-weight: 600; }
 .owd-home-trust__grid p { margin: 9px 0 0; color: var(--owd-home-muted); font-size: 15px; line-height: 1.5; }
 
+/* --- NULL-ASSET GRACEFUL REFLOW (round 3) --------------------------------------
+   In production every home art record is OWNED_PROVENANCE_REVIEW_PENDING, so
+   resolveAssetUse() returns null and <SmartImage> renders nothing. The reserved
+   media wrappers therefore become :empty in the DOM. These rules make the empty
+   state read as INTENTIONAL, rights-safe design (first-party token-derived CSS —
+   no imagery is fabricated) and, on mobile, recover the above-fold headline +
+   prompt by not reserving an art band that no art will fill.
+
+   HERO (desktop) — when no art painted, drop the flat neutral panel + art scrim
+   and lay a calm token-derived diagonal wash. Copy stays the focus; the band no
+   longer reads as a failed hero image. min-height:690px is untouched. */
+.owd-home-hero:has(.owd-home-hero__media:empty) .owd-home-hero__media {
+  background:
+    radial-gradient(120% 120% at 78% 18%, color-mix(in srgb, var(--owd-home-green) 12%, transparent) 0%, transparent 60%),
+    linear-gradient(135deg, var(--owd-home-hero) 0%, var(--owd-home-hero-media) 100%);
+}
+.owd-home-hero:has(.owd-home-hero__media:empty) .owd-home-hero__media::after {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--owd-home-hero) 78%, transparent) 0%, transparent 62%);
+}
+
+/* CATEGORY TILE — when no art painted, present a token-derived tinted field that
+   carries the category name typographically. No image-shaped empty box; the
+   label sits INSIDE the field as deliberate content, so it never reads as a
+   failed load. The category name comes from the adjacent label via a data attr
+   on the media span (set in the component); text-only fallback if absent. */
+.owd-home-category__media:empty {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--owd-home-green) 10%, var(--owd-home-category-media)) 0%, var(--owd-home-category-media) 100%);
+}
+.owd-home-category__media:empty::after {
+  content: attr(data-label);
+  color: var(--owd-home-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+/* CAMPAIGN + DISTRICT media panels — when no art painted, replace the flat
+   neutral fill (which reads as a broken image) with a calm token-derived wash so
+   the split panel reads as an intentional two-tone editorial block. */
+.owd-home-campaign__media:empty,
+.owd-home-district__media:empty {
+  background:
+    radial-gradient(140% 120% at 82% 20%, color-mix(in srgb, var(--owd-home-green) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--owd-home-green) 6%, var(--owd-home-store-media)) 0%, var(--owd-home-store-media) 100%);
+}
+.owd-home-campaign--delivery .owd-home-campaign__media:empty {
+  background:
+    radial-gradient(140% 120% at 82% 20%, color-mix(in srgb, var(--owd-home-green) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--owd-home-green) 6%, var(--owd-home-delivery-media)) 0%, var(--owd-home-delivery-media) 100%);
+}
+.owd-home-district__media:empty {
+  background:
+    radial-gradient(140% 120% at 82% 20%, color-mix(in srgb, var(--owd-home-green) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(135deg, color-mix(in srgb, var(--owd-home-green) 6%, var(--owd-home-district-media)) 0%, var(--owd-home-district-media) 100%);
+}
+/* --- END NULL-ASSET GRACEFUL REFLOW -------------------------------------------- */
+
 @media (max-width: 1068px) {
   .owd-home-hero { min-height: 630px; }
   .owd-home-hero__copy { padding-top: 84px; }
@@ -1459,6 +1522,13 @@ html[data-daypart="night"] .owd-home-hero__media::after {
   .owd-home-hero__media { height: 320px; bottom: auto; }
   .owd-home-hero__media::after { display: none; }
   .owd-home-hero__image { object-position: 69% center; }
+  /* NULL-ASSET fold recovery (round 3): when no hero art painted, the reserved
+     320px art band would eat the mobile first viewport and push the headline +
+     prompt below the fold. Collapse the band so "What are you looking for?" and
+     the search input open at the top of the viewport. Mechanism A (collapse) for
+     the null case; the art band is fully restored when lawful art is present. */
+  .owd-home-hero:has(.owd-home-hero__media:empty) { padding-top: 0; }
+  .owd-home-hero__media:empty { display: none; }
   .owd-home-hero__copy {
     width: 100%;
     max-width: none;

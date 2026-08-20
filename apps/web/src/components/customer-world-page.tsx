@@ -229,7 +229,7 @@ function CustomerHome({
           {CATEGORIES.map((category) => (
             <RailItem key={category.href}>
               <Link href={category.href} className="owd-home-category">
-                <span className="owd-home-category__media" aria-hidden="true">
+                <span className="owd-home-category__media" data-label={category.label} aria-hidden="true">
                   <SmartImage
                     assetId={category.assetId}
                     context="category-navigation"
