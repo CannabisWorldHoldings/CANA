@@ -134,6 +134,37 @@ jobs:
         working-directory: apps/web
         run: npx --no-install prisma migrate deploy --schema prisma/schema.prisma
 
+      - name: Issue the disposable-database system identity (out of band)
+        # WEB_COURT_TRIAGE R2/R3-identity (postgis lane). Same contract as the H3
+        # job: read the connected cluster's immutable system_identifier out of band
+        # and export it (plus the benchmark server URL) for later steps. The
+        # service container is reachable on 127.0.0.1:5432; psql is already used
+        # above for the PostGIS probe. GITHUB_ENV, not job-level env.
+        run: |
+          system_identifier="$(PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d cana_verify -Atc \
+            'SELECT system_identifier FROM pg_control_system()')"
+          case "$system_identifier" in
+            ''|*[!0-9]*)
+              echo "disposable system identifier could not be read out of band: '$system_identifier'" >&2
+              exit 1 ;;
+          esac
+          if [ "${#system_identifier}" -lt 10 ]; then
+            echo "disposable system identifier is too short to be a cluster id: '$system_identifier'" >&2
+            exit 1
+          fi
+          echo "CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=$system_identifier" >> "$GITHUB_ENV"
+          echo "CANA_BENCHMARK_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/cana_verify" >> "$GITHUB_ENV"
+
+      - name: Seed the disposable tenant, brand and merchant fixtures
+        # WEB_COURT_TRIAGE R1 (postgis lane). Seed the orderweeddc.localhost tenant
+        # so the web courts' fixtures build and the served app resolves the tenant.
+        # seed.mjs is hard-gated by seed-safety against the verified loopback
+        # cluster identity; it writes ONLY DEMONSTRATION_ONLY rows; no override.
+        working-directory: apps/web
+        env:
+          NODE_ENV: development
+        run: node prisma/seed.mjs
+
       - name: Build apps/web for production
         working-directory: apps/web
         env:
@@ -256,16 +287,34 @@ jobs:
             tools/postgres-sim
 
       - name: Start the database and wait for health
+        # POSTMASTER-CRASH FIX (WEB_COURT_TRIAGE R3). The decisive run's
+        # next-start.log showed repeated SqlState 57P01 "terminating connection
+        # due to unexpected postmaster exit" (be-secure.c:235): the postmaster
+        # died mid-run and took stages 09/12 down with it. The stock container's
+        # /dev/shm defaults to 64 MB; PostgreSQL keeps parallel-query and hash/
+        # bitmap shared segments there, and PostGIS+H3 spatial work under the web
+        # courts exhausts it, crashing the postmaster. Give it a real shared-memory
+        # segment (--shm-size=1g) and bound its own memory so it cannot be OOM-
+        # killed: modest shared_buffers, capped connections, and parallelism off
+        # (the courts are correctness proofs, not a throughput benchmark). This
+        # changes the RUN CONFIGURATION only — no test, threshold, or court code.
         run: |
           docker run --detach --name cana-postgres-ci \
             --env POSTGRES_HOST_AUTH_METHOD=trust \
             --env POSTGRES_DB=cana_verify \
+            --shm-size=1g \
             --publish 127.0.0.1:5432:5432 \
             --health-cmd "pg_isready --username postgres --dbname cana_verify" \
             --health-interval 10s \
             --health-timeout 5s \
             --health-retries 20 \
-            cana-postgres-sim:ci
+            cana-postgres-sim:ci \
+            -c shared_buffers=256MB \
+            -c max_connections=100 \
+            -c max_parallel_workers_per_gather=0 \
+            -c max_parallel_workers=0 \
+            -c max_parallel_maintenance_workers=0 \
+            -c dynamic_shared_memory_type=posix
           for attempt in $(seq 1 60); do
             state=$(docker inspect --format '{{.State.Health.Status}}' cana-postgres-ci)
             if [ "$state" = "healthy" ]; then break; fi
@@ -285,6 +334,55 @@ jobs:
       - name: Apply the migration chain against PostGIS + H3
         working-directory: apps/web
         run: npx --no-install prisma migrate deploy --schema prisma/schema.prisma
+
+      - name: Issue the disposable-database system identity (out of band)
+        # WEB_COURT_TRIAGE R2/R3-identity. seed-safety.mjs (docs/adr/0001) and the
+        # postgres-semantics / tri-market / migration-court courts refuse a loopback
+        # PostgreSQL URL UNLESS a CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER,
+        # read OUT OF BAND from the cluster, is presented and matches
+        # pg_control_system().system_identifier of the connected server. This is
+        # exactly what tools/postgres-sim/runtime.mjs does for local verification;
+        # in CI the disposable cluster is the cana-postgres-ci container, so read
+        # its immutable system identifier straight from it and export it (plus the
+        # benchmark server URL that points at that same cluster) for every later
+        # step. GITHUB_ENV, not job-level env: the runner context is invalid there.
+        run: |
+          system_identifier="$(docker exec cana-postgres-ci \
+            psql -U postgres -d cana_verify -Atc \
+            'SELECT system_identifier FROM pg_control_system()')"
+          case "$system_identifier" in
+            ''|*[!0-9]*)
+              echo "disposable system identifier could not be read out of band: '$system_identifier'" >&2
+              exit 1 ;;
+          esac
+          if [ "${#system_identifier}" -lt 10 ]; then
+            echo "disposable system identifier is too short to be a cluster id: '$system_identifier'" >&2
+            exit 1
+          fi
+          echo "CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER=$system_identifier" >> "$GITHUB_ENV"
+          # The product benchmark provisions and drops its OWN isolated databases
+          # on this loopback cluster; it verifies the server identity against the
+          # same out-of-band identifier before any DDL. current_database() must
+          # equal the URL pathname, so it points at cana_verify.
+          echo "CANA_BENCHMARK_DATABASE_URL=postgresql://postgres@127.0.0.1:5432/cana_verify" >> "$GITHUB_ENV"
+
+      - name: Seed the disposable tenant, brand and merchant fixtures
+        # WEB_COURT_TRIAGE R1. The workflow applied migrations but never seeded, so
+        # the orderweeddc.localhost tenant/brand/merchant rows the web courts build
+        # their fixtures from were absent — createFixture() threw "tenant
+        # orderweeddc.localhost is not configured" and merchant() returned null,
+        # cascading ~106 assertion failures across api-v1-*, attribution-
+        # idempotency, handoff-grading, pilot-evidence-chain, and starving the
+        # served app's tenant resolution (release-gate G2/G6 421; rendered header
+        # null). prisma/seed.mjs is HARD-GATED by seed-safety: it only writes to a
+        # loopback cluster whose out-of-band system identity it can verify — which
+        # is exactly the disposable cana_verify cluster above. The seed introduces
+        # ONLY DEMONSTRATION_ONLY rows. No override flag is used; the gate passes on
+        # its merits. (.cana-local/ is gitignored, so this leaves the tree clean.)
+        working-directory: apps/web
+        env:
+          NODE_ENV: development
+        run: node prisma/seed.mjs
 
       - name: Build apps/web for production
         working-directory: apps/web
