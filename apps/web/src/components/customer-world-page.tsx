@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, BadgeDollarSign, Link2, Route } from 'lucide-react';
-import CustomerWorldResults, { type CustomerWorld } from '@/components/customer-world-results';
+import CustomerWorldResults, { type CustomerWorld, type HomeModule } from '@/components/customer-world-results';
 import Rail, { RailItem } from '@/components/rail';
 import SmartImage from '@/components/smart-image';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
@@ -72,7 +72,7 @@ function MarketSearch({ marketId }: { marketId: string }) {
   );
 }
 
-function homeModule(world: CustomerWorld, kind: string) {
+function homeModule(world: CustomerWorld, kind: string): HomeModule | null {
   const modules = world.home_modules?.modules;
   if (!Array.isArray(modules)) return null;
   const found = modules.find((m) => m?.kind === kind);
