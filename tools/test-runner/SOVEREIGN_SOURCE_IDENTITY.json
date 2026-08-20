@@ -1,0 +1,41 @@
+{
+  "schema": "cana.sovereign-source-identity/2",
+  "purpose": "The pin that stage 02 (exact source identity, by ancestry) checks. It names the four anchor commits the merged sovereign tree is built from and the ancestry that must hold between them, and requires the current HEAD to DESCEND FROM both lineage heads. Unlike the v1 pin, it does NOT demand the tip equal any anchor and does NOT carry a per-file composition manifest: the merged branch legitimately adds commits after both heads (the CANA Authority single seat / Hermes critical path, and the census convergence), so identity is proved by ancestry, which those new commits preserve, rather than by tip equality, which they necessarily break.",
+  "recordedAt": "2026-08-20T00:00:00.000Z",
+  "referenceObjectDatabase": "/agent/workspace/CANA.git",
+  "referenceObjectDatabaseNote": "Overridable with CANA_SOURCE_MIRROR. Stage 02 prefers this mirror (it also carries the canonical remote main) but will fall back to the local repository's own object database when the four anchors are already reachable from HEAD — a sovereign checkout that contains its own anchors needs no network fetch to prove its ancestry. If neither carries the anchors, stage 02 reports ENVIRONMENT_MISSING rather than assuming the pin holds.",
+  "sources": {
+    "ONLINE_MAIN": "3a340f3a4c2ab28a5b85bb1a91845932b74c8b05",
+    "COMMON_BASE": "9d3bd70abcdfa4442a15c735d680cfff80fa5761",
+    "POST38_HEAD": "190c99077b81142b7a67e127f39ec8d9c59fc554",
+    "FEDERATION_HEAD": "e63529e44f63698e421eeed2bf9380073ee2c4eb"
+  },
+  "sourceRoles": {
+    "ONLINE_MAIN": "CannabisWorldHoldings/CANA refs/heads/main — the canonical remote tip both sovereign lineages descend from",
+    "COMMON_BASE": "the unpushed sovereign base at which the two lineages diverge; merge-base(POST38_HEAD, FEDERATION_HEAD)",
+    "POST38_HEAD": "the POST38 sovereign head — vanguard governor/cockpit/console/dual-forecast, experience-fabric layout kernel",
+    "FEDERATION_HEAD": "the Federation head — capability census, EC-0001 evolution, ES-0001 evaluator succession, memory settlement, the verify-time census gate"
+  },
+  "mustHold": [
+    "every anchor SHA resolves to a commit in the anchor object database (mirror, or the local repo when it carries them)",
+    "merge-base(POST38_HEAD, FEDERATION_HEAD) === COMMON_BASE",
+    "ONLINE_MAIN is an ancestor of COMMON_BASE",
+    "COMMON_BASE is an ancestor of POST38_HEAD",
+    "COMMON_BASE is an ancestor of FEDERATION_HEAD",
+    "the current HEAD descends from POST38_HEAD",
+    "the current HEAD descends from FEDERATION_HEAD"
+  ],
+  "ancestry": [
+    ["COMMON_BASE", "ONLINE_MAIN"],
+    ["POST38_HEAD", "COMMON_BASE"],
+    ["FEDERATION_HEAD", "COMMON_BASE"]
+  ],
+  "ancestryNote": "each entry is [child, ancestor]; the ancestor must be reachable from the child",
+  "headMustDescendFrom": ["POST38_HEAD", "FEDERATION_HEAD"],
+  "headMustDescendFromNote": "The core of the merged-tree reconciliation. The convergence merge and every subsequent commit (authority facade, census port) sit ABOVE both lineage heads, so the tip cannot equal any single anchor; instead we require HEAD to descend from both. A tip that has moved forward passes; a tip that has abandoned a lineage cannot.",
+  "informationalOnly": {
+    "note": "recorded for provenance context; git bundle bytes are not reproducible across git versions, so stage 02 does NOT assert these",
+    "POST38_BUNDLE_SHA256": "dc6e37fe3154accf6ad1a8e5e3768fd59a832cd5802ac86038d105c6611055c4",
+    "FEDERATION_BUNDLE_SHA256": "6f760e167a611b631a7342172bddd56572fefa165ec37160e52f0c258fed0a0f"
+  }
+}

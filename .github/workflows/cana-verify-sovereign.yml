@@ -1,0 +1,350 @@
+# CANA SOVEREIGN VERIFICATION
+# ===========================
+# `./cana verify sovereign` is a fifteen-stage composition (see tools/test-runner/sovereign.mjs).
+# Eight of its stages need an environment that a plain agent container does not have:
+# a PostgreSQL/PostGIS server, an installed dependency tree, a production build and a
+# browser binary. Those stages report ENVIRONMENT_MISSING locally — never a pass — and
+# this workflow exists to supply exactly what is missing so they can report VERIFIED.
+#
+# Two jobs, deliberately:
+#   sovereign-postgis   the postgis/postgis service container with a health check.
+#                       Proves everything except the H3 geo DDL, which the stock
+#                       postgis/postgis image does not carry.
+#   sovereign-h3        builds the repository's OWN database image
+#                       (tools/postgres-sim/Dockerfile — PostGIS 3 + h3-pg pinned by
+#                       commit and sha256) so the geo_kernel migration's
+#                       `CREATE EXTENSION h3` can actually succeed.
+# Both upload the sovereign receipt and the artifact-hash manifest.
+#
+# ACTION PINNING: actions/checkout and actions/setup-node are pinned to the exact
+# commit SHAs already trusted by .github/workflows/cana-verify.yml in this repository.
+# actions/upload-artifact is pinned to the v4 release tag; replace it with the resolved
+# 40-hex commit SHA (`gh api repos/actions/upload-artifact/git/ref/tags/v4`) before this
+# workflow becomes a merge gate.
+
+name: CANA sovereign verification
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - hyperagent/cana-sovereign-successor
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cana-verify-sovereign-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 24.14.1
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: cana_verify
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # PRIMARY: postgis/postgis service container with a health check.
+  # ---------------------------------------------------------------------------
+  sovereign-postgis:
+    name: verify sovereign (postgis service container)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cana_verify
+          PGDATA: /var/lib/postgresql/data/pgdata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready --username postgres --dbname cana_verify"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+          --health-start-period 30s
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/cana_verify
+      DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:5432/cana_verify
+      CANA_RECEIPT_DIR: ${{ github.workspace }}/.cana-ci/receipts
+      CANA_SOVEREIGN_RECEIPT_COPY: ${{ github.workspace }}/.cana-ci/verify-sovereign.json
+      CANA_SOURCE_MIRROR: ${{ github.workspace }}/.cana-ci/source-mirror.git
+      CANA_VISUAL_BASE_URL: http://127.0.0.1:3000
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node with dependency caching
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.14.1
+          package-manager-cache: true
+          cache-dependency-path: package-lock.json
+
+      - name: Prepare receipt and mirror directories
+        run: |
+          install -d -m 0700 "${{ github.workspace }}/.cana-ci" "$CANA_RECEIPT_DIR"
+
+      - name: Provide the reference object database for stage 02 (source identity)
+        # Stage 02 proves the three source SHAs and their common base against a real
+        # object database. A --mirror clone of this checkout carries every commit the
+        # remote has; if a pinned SHA is unreachable the stage says ENVIRONMENT_MISSING
+        # rather than pretending the identity was proved.
+        run: git clone --mirror "${{ github.workspace }}" "$CANA_SOURCE_MIRROR"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate the Prisma client
+        working-directory: apps/web
+        run: npx --no-install prisma generate
+
+      - name: Wait for PostGIS and confirm the extension surface
+        run: |
+          for attempt in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d cana_verify; then break; fi
+            sleep 2
+          done
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres -d cana_verify
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d cana_verify \
+            -c "CREATE EXTENSION IF NOT EXISTS postgis;" \
+            -c "SELECT postgis_full_version();"
+          # Honest probe, not a gate: the stock postgis image has no h3.
+          PGPASSWORD=postgres psql -h 127.0.0.1 -U postgres -d cana_verify -tAc \
+            "SELECT count(*) FROM pg_available_extensions WHERE name IN ('h3','h3_postgis');"
+
+      - name: Apply the migration chain
+        working-directory: apps/web
+        run: npx --no-install prisma migrate deploy --schema prisma/schema.prisma
+
+      - name: Build apps/web for production
+        working-directory: apps/web
+        env:
+          CANA_RELEASE_SHA: ${{ github.sha }}
+        run: npm run build -- --webpack
+
+      - name: Install the Chromium binary for the rendered visual court
+        # Playwright is used ONLY as a browser provisioner. The rendered court
+        # (tools/visual-court/screenshot-harness.mjs) drives the binary over raw CDP
+        # and has no npm dependency on Playwright.
+        run: npx --yes playwright install --with-deps chromium
+
+      - name: Serve the production build for the rendered visual court
+        working-directory: apps/web
+        env:
+          PORT: '3000'
+          HOSTNAME: 127.0.0.1
+          NODE_ENV: production
+        run: |
+          npm start -- -H 127.0.0.1 -p 3000 > "${{ github.workspace }}/.cana-ci/next-start.log" 2>&1 &
+          echo $! > "${{ github.workspace }}/.cana-ci/next.pid"
+          for attempt in $(seq 1 60); do
+            if curl -fsS -H 'Host: orderweeddc.localhost' http://127.0.0.1:3000/api/health > /dev/null; then
+              echo "server healthy after ${attempt} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "the production server never became healthy" >&2
+          cat "${{ github.workspace }}/.cana-ci/next-start.log" >&2
+          exit 1
+
+      - name: ./cana verify sovereign
+        run: ./cana verify sovereign
+
+      - name: Stop the production server
+        if: always()
+        run: |
+          if [ -f "${{ github.workspace }}/.cana-ci/next.pid" ]; then
+            kill "$(cat "${{ github.workspace }}/.cana-ci/next.pid")" 2>/dev/null || true
+          fi
+
+      - name: Extract the artifact-hash manifest from the receipt
+        if: always()
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const file = process.env.CANA_SOVEREIGN_RECEIPT_COPY;
+            if (!fs.existsSync(file)) { console.error("no sovereign receipt was written"); process.exit(0); }
+            const receipt = JSON.parse(fs.readFileSync(file, "utf8"));
+            const manifest = receipt.artifactManifest ?? { artifacts: [], manifestDigest: null };
+            const lines = manifest.artifacts.map((a) => `${a.sha256}  ${a.path}`);
+            lines.push(`# manifest digest ${manifest.manifestDigest}`);
+            lines.push(`# stages digest   ${receipt.stagesDigest}`);
+            lines.push(`# verdict         ${receipt.verdict}`);
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/ARTIFACT_HASHES.txt`, `${lines.join("\n")}\n`);
+            const table = receipt.stages.map((s) => `${s.id}  ${s.key.padEnd(24)} ${s.classification}`);
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/STAGE_TABLE.txt`, `${table.join("\n")}\n`);
+          '
+
+      - name: Upload the sovereign receipt and artifact hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cana-sovereign-postgis-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 90
+          path: |
+            .cana-ci/verify-sovereign.json
+            .cana-ci/ARTIFACT_HASHES.txt
+            .cana-ci/STAGE_TABLE.txt
+            .cana-ci/receipts/**
+            .cana-ci/next-start.log
+
+  # ---------------------------------------------------------------------------
+  # SUPPLEMENT: the repository's own PostGIS + H3 image, so the geo_kernel
+  # migration's `CREATE EXTENSION h3` is genuinely exercised.
+  # ---------------------------------------------------------------------------
+  sovereign-h3:
+    name: verify sovereign (repository PostGIS + H3 image)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5432/cana_verify
+      DIRECT_URL: postgresql://postgres@127.0.0.1:5432/cana_verify
+      CANA_RECEIPT_DIR: ${{ github.workspace }}/.cana-ci/receipts
+      CANA_SOVEREIGN_RECEIPT_COPY: ${{ github.workspace }}/.cana-ci/verify-sovereign.json
+      CANA_SOURCE_MIRROR: ${{ github.workspace }}/.cana-ci/source-mirror.git
+      NEXT_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Checkout with full history
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node with dependency caching
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24.14.1
+          package-manager-cache: true
+          cache-dependency-path: package-lock.json
+
+      - name: Prepare receipt and mirror directories
+        run: |
+          install -d -m 0700 "${{ github.workspace }}/.cana-ci" "$CANA_RECEIPT_DIR"
+          git clone --mirror "${{ github.workspace }}" "$CANA_SOURCE_MIRROR"
+
+      - name: Build the repository PostGIS + H3 database image
+        run: |
+          docker build \
+            --tag cana-postgres-sim:ci \
+            --file tools/postgres-sim/Dockerfile \
+            tools/postgres-sim
+
+      - name: Start the database and wait for health
+        run: |
+          docker run --detach --name cana-postgres-ci \
+            --env POSTGRES_HOST_AUTH_METHOD=trust \
+            --env POSTGRES_DB=cana_verify \
+            --publish 127.0.0.1:5432:5432 \
+            --health-cmd "pg_isready --username postgres --dbname cana_verify" \
+            --health-interval 10s \
+            --health-timeout 5s \
+            --health-retries 20 \
+            cana-postgres-sim:ci
+          for attempt in $(seq 1 60); do
+            state=$(docker inspect --format '{{.State.Health.Status}}' cana-postgres-ci)
+            if [ "$state" = "healthy" ]; then break; fi
+            sleep 3
+          done
+          docker inspect --format '{{.State.Health.Status}}' cana-postgres-ci | grep -qx healthy
+          docker exec cana-postgres-ci psql -U postgres -d cana_verify -tAc \
+            "SELECT string_agg(name, ',') FROM pg_available_extensions WHERE name IN ('postgis','h3','h3_postgis');"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate the Prisma client
+        working-directory: apps/web
+        run: npx --no-install prisma generate
+
+      - name: Apply the migration chain against PostGIS + H3
+        working-directory: apps/web
+        run: npx --no-install prisma migrate deploy --schema prisma/schema.prisma
+
+      - name: Build apps/web for production
+        working-directory: apps/web
+        env:
+          CANA_RELEASE_SHA: ${{ github.sha }}
+        run: npm run build -- --webpack
+
+      - name: Install the Chromium binary for the rendered visual court
+        run: npx --yes playwright install --with-deps chromium
+
+      - name: Serve the production build for the rendered visual court
+        working-directory: apps/web
+        env:
+          PORT: '3000'
+          HOSTNAME: 127.0.0.1
+          NODE_ENV: production
+        run: |
+          npm start -- -H 127.0.0.1 -p 3000 > "${{ github.workspace }}/.cana-ci/next-start.log" 2>&1 &
+          echo $! > "${{ github.workspace }}/.cana-ci/next.pid"
+          for attempt in $(seq 1 60); do
+            if curl -fsS -H 'Host: orderweeddc.localhost' http://127.0.0.1:3000/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "the production server never became healthy" >&2
+          cat "${{ github.workspace }}/.cana-ci/next-start.log" >&2
+          exit 1
+
+      - name: ./cana verify sovereign
+        env:
+          CANA_VISUAL_BASE_URL: http://127.0.0.1:3000
+        run: ./cana verify sovereign
+
+      - name: Tear down
+        if: always()
+        run: |
+          if [ -f "${{ github.workspace }}/.cana-ci/next.pid" ]; then
+            kill "$(cat "${{ github.workspace }}/.cana-ci/next.pid")" 2>/dev/null || true
+          fi
+          docker rm --force cana-postgres-ci 2>/dev/null || true
+
+      - name: Extract the artifact-hash manifest from the receipt
+        if: always()
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const file = process.env.CANA_SOVEREIGN_RECEIPT_COPY;
+            if (!fs.existsSync(file)) { console.error("no sovereign receipt was written"); process.exit(0); }
+            const receipt = JSON.parse(fs.readFileSync(file, "utf8"));
+            const manifest = receipt.artifactManifest ?? { artifacts: [], manifestDigest: null };
+            const lines = manifest.artifacts.map((a) => `${a.sha256}  ${a.path}`);
+            lines.push(`# manifest digest ${manifest.manifestDigest}`);
+            lines.push(`# stages digest   ${receipt.stagesDigest}`);
+            lines.push(`# verdict         ${receipt.verdict}`);
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/ARTIFACT_HASHES.txt`, `${lines.join("\n")}\n`);
+            const table = receipt.stages.map((s) => `${s.id}  ${s.key.padEnd(24)} ${s.classification}`);
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/.cana-ci/STAGE_TABLE.txt`, `${table.join("\n")}\n`);
+          '
+
+      - name: Upload the sovereign receipt and artifact hashes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cana-sovereign-h3-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 90
+          path: |
+            .cana-ci/verify-sovereign.json
+            .cana-ci/ARTIFACT_HASHES.txt
+            .cana-ci/STAGE_TABLE.txt
+            .cana-ci/receipts/**
+            .cana-ci/next-start.log
