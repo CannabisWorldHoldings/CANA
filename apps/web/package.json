@@ -36,7 +36,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.0-canary.6",
-    "postcss": "8.5.19",
+    "postcss": "8.5.23",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.2",
     "typescript": "^5"
