@@ -264,6 +264,21 @@ export async function resolveCustomerWorld(prisma, options) {
     tenantDomain: options.tenantDomain,
     now: options.now,
   });
+  // A typed search is real first-party demand, but the public result must never
+  // depend on analytics storage. The injected recorder is the existing ASK
+  // work path, which minimizes the Intent IR and stores a digest instead of raw
+  // customer language. Default page views are not demand and stay silent.
+  if (request.customer_query && typeof options.recordAsk === 'function') {
+    try {
+      await options.recordAsk(Object.freeze({
+        answer: discovery.answer,
+        intent: discovery.intent,
+      }));
+    } catch {
+      // Observation is auxiliary. Canonical Reality still answers truthfully
+      // when its bounded instrumentation store is unavailable.
+    }
+  }
   return buildCustomerWorldView({ request, projection: discovery.projection });
 }
 
