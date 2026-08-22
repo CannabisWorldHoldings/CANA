@@ -1,3 +1,5 @@
+// @ts-check
+
 import { CUSTOMER_DISCOVERY_MARKETS } from './ask/customer-discovery-contract.mjs';
 import { compileMarketPage } from './market-page-compiler.mjs';
 import {
@@ -16,18 +18,195 @@ export {
   customerWorldViewHref,
 };
 
+/**
+ * @template T
+ * @typedef {Readonly<
+ *   | { status: 'KNOWN', value: T, matched_token: string | null }
+ *   | { status: 'UNKNOWN', value: null, matched_token: null }
+ * >} CustomerAskDimension
+ */
+
+/**
+ * @typedef {Readonly<{
+ *   schema_version: string,
+ *   tenant: string,
+ *   frontier_key: string,
+ *   evidence_digest: string,
+ *   intent_scope: Readonly<Partial<{
+ *     location: string,
+ *     category: string,
+ *     price_max_usd: number,
+ *     fulfillment: string,
+ *     open_now: boolean,
+ *   }>>,
+ *   required_predicates: ReadonlyArray<string>,
+ *   blocking_predicates: ReadonlyArray<string>,
+ *   stale_predicates: ReadonlyArray<string>,
+ *   contradicted_predicates: ReadonlyArray<string>,
+ * }>} CustomerAskFrontier
+ */
+
+/**
+ * @typedef {Readonly<{
+ *   kind: string,
+ *   retailerId: null,
+ *   hypothesizedValue: null,
+ *   confidence: null,
+ *   recommendedAction: string,
+ *   requiredAuthority: string,
+ *   risk: string,
+ *   rollback: string,
+ *   measurementPlan: string,
+ * }>} CustomerAskOpportunity
+ */
+
+/**
+ * @typedef {Readonly<{
+ *   market_id: string,
+ *   verified_candidate_count: number,
+ *   zero_verified_result: boolean,
+ *   zero_result_reason: string | null,
+ *   unsupported_known_dimensions: ReadonlyArray<string>,
+ *   answerability_frontier: CustomerAskFrontier,
+ *   opportunitySpec: CustomerAskOpportunity | null,
+ * }>} CustomerAskAnswer
+ */
+
+/**
+ * @typedef {Readonly<{
+ *   ir_version: number,
+ *   raw_query: string,
+ *   compiled_at: string,
+ *   compiler: string,
+ *   dimensions: Readonly<{
+ *     location: CustomerAskDimension<string>,
+ *     category: CustomerAskDimension<string>,
+ *     price_max_usd: CustomerAskDimension<number>,
+ *     fulfillment: CustomerAskDimension<string>,
+ *     open_now: CustomerAskDimension<boolean>,
+ *   }>,
+ *   unknown_dimensions: ReadonlyArray<string>,
+ * }>} CustomerAskIntent
+ */
+
+/** @typedef {Readonly<{ answer: CustomerAskAnswer, intent: CustomerAskIntent }>} CustomerAskObservation */
+
+/**
+ * @typedef {Readonly<{
+ *   journey?: 'HOME' | 'SEARCH' | 'DELIVERY' | 'DISPENSARIES',
+ *   market?: string | ReadonlyArray<string>,
+ *   query?: string | ReadonlyArray<string>,
+ *   view?: string | ReadonlyArray<string>,
+ *   tenantDomain: string,
+ *   now?: Date,
+ *   recordAsk?: (observation: CustomerAskObservation) => unknown,
+ * }>} CustomerWorldOptions
+ */
+
+/**
+ * @typedef {Readonly<{
+ *   merchantId: string,
+ *   market?: string | ReadonlyArray<string>,
+ *   query?: string | ReadonlyArray<string>,
+ *   tenantDomain: string,
+ *   now?: Date,
+ * }>} CustomerMerchantOptions
+ */
+
+/** @typedef {Readonly<{ state: 'UNKNOWN' | 'CAPABILITY_GAP', value: null, reason?: string }>} UnknownField */
+/** @template T @typedef {Readonly<{ state: 'KNOWN', value: T }>} KnownField */
+/** @template T @typedef {KnownField<T>|UnknownField} CustomerField */
+/** @typedef {Readonly<{ latitude: number, longitude: number }>} CustomerCoordinates */
+/** @typedef {Readonly<{ id?: string, title?: string, category?: string, price_usd?: number }>} CustomerDeal */
+/** @typedef {Readonly<{ verified_at: string, retrieved_at?: string, freshness_expires_at?: string }>} CustomerFreshness */
+/** @typedef {Readonly<{ source?: string, source_url?: string, data_status?: string, is_demonstration?: boolean }>} CustomerProvenance */
+/**
+ * @typedef {Readonly<{
+ *   address: CustomerField<string>,
+ *   city: CustomerField<string>,
+ *   region: CustomerField<string>,
+ *   postal_code: CustomerField<string>,
+ *   coordinates: CustomerField<CustomerCoordinates>,
+ * }>} CustomerLocation
+ */
+/**
+ * @typedef {Readonly<{
+ *   merchant_id: string,
+ *   customer_facing_name: CustomerField<string>,
+ *   business_type: CustomerField<unknown>,
+ *   regulatory_state: CustomerField<unknown>,
+ *   verification_state: KnownField<string>,
+ *   location: CustomerLocation,
+ *   distance: CustomerField<number>,
+ *   fulfillment_type: CustomerField<unknown>,
+ *   delivery_authority: CustomerField<unknown>,
+ *   delivery_eligibility: CustomerField<unknown>,
+ *   price: CustomerField<unknown>,
+ *   category: CustomerField<unknown>,
+ *   open_now: CustomerField<unknown>,
+ *   deal: CustomerField<CustomerDeal>,
+ *   freshness: CustomerField<CustomerFreshness>,
+ *   provenance: CustomerProvenance,
+ *   unknown_dimensions: ReadonlyArray<string>,
+ *   capability_gaps: unknown,
+ * }>} CustomerDiscoveryResult
+ */
+/**
+ * @typedef {Readonly<{
+ *   journey: 'HOME' | 'SEARCH' | 'DELIVERY' | 'DISPENSARIES',
+ *   market_id: string,
+ *   customer_query: string,
+ *   effective_query: string,
+ *   requested_view: 'list' | 'map',
+ * }>} CustomerWorldRequest
+ */
+/**
+ * @typedef {Readonly<{
+ *   truth: Readonly<{ zero_result_reason: string | null }>,
+ *   results: ReadonlyArray<CustomerDiscoveryResult>,
+ *   capability_gaps?: ReadonlyArray<Readonly<{ dimension: string }>>,
+ *   intent?: Readonly<{ unknown_dimensions?: ReadonlyArray<string> }>,
+ *   market?: Readonly<{ market_id?: string }>,
+ *   opportunity_signal?: unknown,
+ *   generated_at: string,
+ * }>} CustomerWorldProjection
+ */
+/**
+ * @typedef {{
+ *   merchant_id: string,
+ *   name: string,
+ *   kind: string,
+ *   license: { status: string, checked_at: string, authority?: string, source_url?: string },
+ *   distance_miles?: number,
+ * }} MarketPageMerchant
+ */
+
 const CUSTOMER_WORLD_VIEWS = new Set(['list', 'map']);
 const QUERY_LIMIT = 160;
 const MERCHANT_ID_LIMIT = 200;
 
+/** @param {string} value @returns {value is CustomerWorldRequest['journey']} */
+function isCustomerWorldJourney(value) {
+  return CUSTOMER_WORLD_JOURNEYS.includes(value);
+}
+
+/** @param {string} value @returns {value is CustomerWorldRequest['requested_view']} */
+function isCustomerWorldView(value) {
+  return CUSTOMER_WORLD_VIEWS.has(value);
+}
+
+/** @param {unknown} value */
 function first(value) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+/** @param {unknown} value @param {number} limit */
 function clean(value, limit) {
-  return typeof first(value) === 'string' ? first(value).trim().slice(0, limit) : '';
+  const candidate = first(value);
+  return typeof candidate === 'string' ? candidate.trim().slice(0, limit) : '';
 }
 
+/** @param {unknown} value */
 export function normalizeCustomerMerchantId(value) {
   if (typeof value !== 'string' || value.length === 0 || value.length > MERCHANT_ID_LIMIT) return null;
   try {
@@ -42,14 +221,17 @@ export function normalizeCustomerMerchantId(value) {
   }
 }
 
+/** @param {string} reason @returns {UnknownField} */
 function unknown(reason) {
   return Object.freeze({ state: 'UNKNOWN', value: null, reason });
 }
 
+/** @template T @param {CustomerField<T> | null | undefined} field @returns {T | null} */
 function knownValue(field) {
   return field?.state === 'KNOWN' ? field.value : null;
 }
 
+/** @param {{ merchant_id: string }} result @param {CustomerWorldRequest} request */
 function profileHref(result, request) {
   const params = new URLSearchParams({
     market: request.market_id,
@@ -58,6 +240,7 @@ function profileHref(result, request) {
   return `/merchant/${encodeURIComponent(result.merchant_id)}?${params}`;
 }
 
+/** @param {CustomerDiscoveryResult} result @param {CustomerWorldRequest} request */
 function customerCard(result, request) {
   return Object.freeze({
     id: result.merchant_id,
@@ -89,6 +272,7 @@ function customerCard(result, request) {
   });
 }
 
+/** @param {ReadonlyArray<ReturnType<typeof customerCard>>} results */
 function customerMap(results) {
   const markers = results.flatMap((result) => {
     const coordinates = knownValue(result.location.coordinates);
@@ -101,12 +285,13 @@ function customerMap(results) {
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
       profile_href: result.profile_href,
-      verification_state: knownValue(result.verification_state),
+      verification_state: result.verification_state.value,
     })];
   });
+  Object.freeze(markers);
   return Object.freeze({
     state: markers.length > 0 ? 'KNOWN' : 'UNKNOWN',
-    markers: Object.freeze(markers),
+    markers,
     result_count: results.length,
     unmappable_count: results.length - markers.length,
     explanation: markers.length > 0
@@ -115,6 +300,7 @@ function customerMap(results) {
   });
 }
 
+/** @type {Readonly<Record<string, string>>} */
 const HOME_MODULE_MARKET_LABELS = Object.freeze({
   'US-DC': 'Washington, D.C.',
   'US-MD': 'Maryland',
@@ -130,7 +316,9 @@ const HOME_MODULE_MARKET_LABELS = Object.freeze({
  * projection did not carry — empty inputs produce the compiler's honest
  * UNSOLD / absent states rather than filler.
  */
+/** @param {ReadonlyArray<ReturnType<typeof customerCard>>} cards */
 export function marketPageRecordsFromCards(cards) {
+  /** @type {MarketPageMerchant[]} */
   const merchants = [];
   const deals = [];
   for (const card of Array.isArray(cards) ? cards : []) {
@@ -144,6 +332,7 @@ export function marketPageRecordsFromCards(cards) {
       ? 'DELIVERY'
       : 'DISPENSARY';
     const provenance = card.provenance ?? null;
+    /** @type {MarketPageMerchant} */
     const merchant = {
       merchant_id: card.id,
       name,
@@ -175,6 +364,13 @@ export function marketPageRecordsFromCards(cards) {
   return { placements: [], merchants, deals, questions: [] };
 }
 
+/**
+ * @param {{
+ *   request: CustomerWorldRequest,
+ *   results: ReadonlyArray<ReturnType<typeof customerCard>>,
+ *   projection: CustomerWorldProjection,
+ * }} input
+ */
 function compileHomeModules({ request, results, projection }) {
   if (request.journey !== 'HOME' || results.length === 0) return null;
   const records = marketPageRecordsFromCards(results);
@@ -186,11 +382,15 @@ function compileHomeModules({ request, results, projection }) {
   });
 }
 
+/**
+ * @param {{ journey?: unknown, market?: unknown, query?: unknown, view?: unknown }} [input]
+ * @returns {CustomerWorldRequest}
+ */
 export function normalizeCustomerWorldRequest({
   journey = 'SEARCH', market, query, view,
 } = {}) {
   const normalizedJourney = clean(journey, 24).toUpperCase();
-  if (!CUSTOMER_WORLD_JOURNEYS.includes(normalizedJourney)) {
+  if (!isCustomerWorldJourney(normalizedJourney)) {
     throw new Error('CANA_CUSTOMER_WORLD_JOURNEY_UNSUPPORTED');
   }
   const marketId = clean(market, 16) || 'US-DC';
@@ -198,7 +398,8 @@ export function normalizeCustomerWorldRequest({
     throw new Error('CANA_CUSTOMER_WORLD_MARKET_UNSUPPORTED');
   }
   const customerQuery = clean(query, QUERY_LIMIT);
-  const requestedView = CUSTOMER_WORLD_VIEWS.has(clean(view, 8)) ? clean(view, 8) : 'list';
+  const normalizedView = clean(view, 8);
+  const requestedView = isCustomerWorldView(normalizedView) ? normalizedView : 'list';
   return Object.freeze({
     journey: normalizedJourney,
     market_id: marketId,
@@ -210,14 +411,20 @@ export function normalizeCustomerWorldRequest({
   });
 }
 
+/**
+ * @param {{ request: CustomerWorldRequest, projection: CustomerWorldProjection }} input
+ * @returns {import('../components/customer-world-results').CustomerWorld}
+ */
 export function buildCustomerWorldView({ request, projection }) {
   if (!projection?.truth || !Array.isArray(projection.results)) {
     throw new Error('CANA_CUSTOMER_WORLD_PROJECTION_INVALID');
   }
-  const results = Object.freeze(projection.results.map((result) => customerCard(result, request)));
-  const unsupportedDimensions = Object.freeze(
-    (projection.capability_gaps ?? []).map((gap) => gap.dimension),
-  );
+  const results = projection.results.map((result) => customerCard(result, request));
+  Object.freeze(results);
+  const unsupportedDimensions = (projection.capability_gaps ?? []).map((gap) => gap.dimension);
+  Object.freeze(unsupportedDimensions);
+  const unknownDimensions = [...(projection.intent?.unknown_dimensions ?? [])];
+  Object.freeze(unknownDimensions);
   const inputRequired = projection.truth.zero_result_reason === 'REQUIRED_INTENT_DIMENSION_UNKNOWN';
   const state = inputRequired
     ? 'INPUT_REQUIRED'
@@ -243,7 +450,7 @@ export function buildCustomerWorldView({ request, projection }) {
     results,
     map: customerMap(results),
     unsupported_dimensions: unsupportedDimensions,
-    unknown_dimensions: Object.freeze(projection.intent?.unknown_dimensions ?? []),
+    unknown_dimensions: unknownDimensions,
     delivery_eligibility: request.journey === 'DELIVERY'
       ? Object.freeze({
           state: 'CAPABILITY_GAP', value: null, dimension: 'fulfillment',
@@ -256,6 +463,7 @@ export function buildCustomerWorldView({ request, projection }) {
   });
 }
 
+/** @param {unknown} prisma @param {CustomerWorldOptions} options */
 export async function resolveCustomerWorld(prisma, options) {
   const request = normalizeCustomerWorldRequest(options);
   const discovery = await resolveCustomerDiscovery(prisma, {
@@ -270,10 +478,12 @@ export async function resolveCustomerWorld(prisma, options) {
   // customer language. Default page views are not demand and stay silent.
   if (request.customer_query && typeof options.recordAsk === 'function') {
     try {
-      await options.recordAsk(Object.freeze({
+      /** @type {CustomerAskObservation} */
+      const observation = Object.freeze({
         answer: discovery.answer,
         intent: discovery.intent,
-      }));
+      });
+      await options.recordAsk(observation);
     } catch {
       // Observation is auxiliary. Canonical Reality still answers truthfully
       // when its bounded instrumentation store is unavailable.
@@ -282,6 +492,7 @@ export async function resolveCustomerWorld(prisma, options) {
   return buildCustomerWorldView({ request, projection: discovery.projection });
 }
 
+/** @param {unknown} prisma @param {CustomerMerchantOptions} options */
 export async function resolveCustomerMerchant(prisma, options) {
   const merchantId = normalizeCustomerMerchantId(options.merchantId);
   if (!merchantId) throw new Error('CANA_CUSTOMER_MERCHANT_ID_INVALID');

@@ -41,6 +41,15 @@ export function resolveCustomerMerchantProfileFromReality({
   }) : null;
 }
 
+/**
+ * @param {unknown} prisma
+ * @param {{
+ *   merchantId: string,
+ *   marketId?: string | null,
+ *   tenantDomain: string,
+ *   now?: Date,
+ * }} options
+ */
 export async function resolveCustomerMerchantProfile(prisma, {
   merchantId,
   marketId = null,
