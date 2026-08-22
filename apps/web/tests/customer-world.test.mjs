@@ -1,17 +1,83 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   buildCustomerWorldView,
   marketPageRecordsFromCards,
   normalizeCustomerMerchantId,
   normalizeCustomerWorldRequest,
+  resolveCustomerMerchant,
   resolveCustomerWorld,
 } from '../src/lib/customer-world.mjs';
 import { resolveCustomerMerchantProfileFromReality } from '../src/lib/ask/customer-discovery.mjs';
 import { resolveCustomerMarketContext } from '../src/lib/ask/customer-discovery-contract.mjs';
+import { persistenceSafeIntent } from '../src/lib/ask/intent-ir.mjs';
 
 const NOW = new Date('2026-08-13T08:30:00.000Z');
+const require = createRequire(import.meta.url);
+const Module = require('node:module');
+const ts = require('typescript');
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const webRoot = path.resolve(testDirectory, '..');
+const serverBridgePath = path.join(webRoot, 'src/lib/customer-world.server.ts');
+
+function loadServerBridge({ prisma, recordAskWork }) {
+  const originalLoad = Module._load;
+  const originalTsLoader = require.extensions['.ts'];
+  Module._load = function loadCustomerWorldServerDependency(request, parent, isMain) {
+    if (request === '@/lib/prisma') return { prisma };
+    if (request === '@/lib/customer-world.mjs') {
+      return { resolveCustomerMerchant, resolveCustomerWorld };
+    }
+    if (request === '@/lib/ask/ask-work.mjs') return { recordAskWork };
+    return originalLoad.call(this, request, parent, isMain);
+  };
+  require.extensions['.ts'] = function compileTypeScript(module, filename) {
+    const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+      compilerOptions: {
+        esModuleInterop: true,
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+      },
+      fileName: filename,
+    });
+    module._compile(output.outputText, filename);
+  };
+  delete require.cache[serverBridgePath];
+  try {
+    return require(serverBridgePath).loadCustomerWorld;
+  } finally {
+    Module._load = originalLoad;
+    if (originalTsLoader) require.extensions['.ts'] = originalTsLoader;
+    else delete require.extensions['.ts'];
+    delete require.cache[serverBridgePath];
+  }
+}
+
+function typeFixtureDiagnostics(source) {
+  const fixtureDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-ask-boundary-'));
+  const fixturePath = path.join(fixtureDirectory, 'boundary-court.ts');
+  fs.writeFileSync(fixturePath, source);
+  try {
+    const configPath = path.join(webRoot, 'tsconfig.json');
+    const config = ts.readConfigFile(configPath, ts.sys.readFile);
+    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, webRoot);
+    const program = ts.createProgram({
+      rootNames: [fixturePath, serverBridgePath],
+      options: { ...parsed.options, incremental: false, noEmit: true },
+    });
+    return ts.getPreEmitDiagnostics(program)
+      .filter((diagnostic) => diagnostic.file?.fileName === fixturePath)
+      .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+  } finally {
+    fs.rmSync(fixtureDirectory, { force: true, recursive: true });
+  }
+}
 
 function field(state, value = null, reason = null) {
   return { state, value, ...(reason ? { reason } : {}) };
@@ -308,6 +374,79 @@ test('a typed Customer World search records one ASK observation; an empty view r
     tenantDomain: 'orderweeddc.localhost', now: NOW, recordAsk,
   });
   assert.equal(observations.length, 1, 'default and empty views are not customer demand');
+});
+
+test('the server bridge sends real Customer Discovery output across the ASK boundary', async () => {
+  const prisma = {
+    brand: { findUnique: async () => ({ name: 'ORDERWEEDDC' }) },
+    marketClaim: { findMany: async () => [] },
+    marketVerificationEvent: { findMany: async () => [] },
+    marketSourceAcquisitionEvent: { findMany: async () => [] },
+    marketSourceContentArtifact: { findMany: async () => [] },
+    marketSourceSnapshot: { findMany: async () => [] },
+    marketEvidenceRevocationEvent: { findMany: async () => [] },
+  };
+  const persisted = [];
+  let persistenceAvailable = true;
+  const loadCustomerWorld = loadServerBridge({
+    prisma,
+    recordAskWork: async (_client, input) => {
+      if (!persistenceAvailable) throw new Error('instrumentation unavailable');
+      persisted.push(input);
+      return { state: 'RECORDED' };
+    },
+  });
+
+  const searched = await loadCustomerWorld({
+    journey: 'SEARCH', market: 'US-MD', query: 'Bethesda flower under $45',
+    tenantDomain: 'orderweeddc.localhost', now: NOW,
+  });
+  assert.equal(searched.world.state, 'CAPABILITY_GAP');
+  assert.equal(persisted.length, 1);
+  assert.equal(persisted[0].domain, 'orderweeddc.localhost');
+  assert.equal(persisted[0].answer.market_id, 'US-MD');
+  assert.equal(persisted[0].answer.verified_candidate_count, 0);
+  assert.equal(persisted[0].answer.answerability_frontier.schema_version, 'cana-answerability-frontier/v1');
+  assert.equal(persisted[0].intent.ir_version, 1);
+  assert.equal(persisted[0].intent.raw_query, 'Bethesda flower under $45');
+  assert.equal(persistenceSafeIntent(persisted[0].intent).raw_query, undefined);
+
+  await loadCustomerWorld({
+    journey: 'SEARCH', market: 'US-MD', query: '',
+    tenantDomain: 'orderweeddc.localhost', now: NOW,
+  });
+  assert.equal(persisted.length, 1, 'the server bridge records no false demand for an empty view');
+
+  persistenceAvailable = false;
+  const truthful = await loadCustomerWorld({
+    journey: 'SEARCH', market: 'US-MD', query: 'Bethesda',
+    tenantDomain: 'orderweeddc.localhost', now: NOW,
+  });
+  assert.equal(truthful.world.state, 'EMPTY');
+  assert.match(truthful.world.state_explanation, /not proof/i);
+});
+
+test('the typed server boundary rejects required-field and field-type drift at compile time', () => {
+  const importPath = serverBridgePath.replaceAll('\\', '/');
+  const diagnostics = typeFixtureDiagnostics(`
+    import type { CustomerAskObservation } from ${JSON.stringify(importPath)};
+    declare const valid: CustomerAskObservation;
+    const wrongCount: CustomerAskObservation = {
+      ...valid,
+      answer: { ...valid.answer, verified_candidate_count: 'one' },
+    };
+    const missingIntent: CustomerAskObservation = { answer: valid.answer };
+    void wrongCount;
+    void missingIntent;
+  `);
+  assert.ok(
+    diagnostics.some((message) => message.includes("Type 'string' is not assignable to type 'number'")),
+    `field-type drift must fail compilation; received ${JSON.stringify(diagnostics)}`,
+  );
+  assert.ok(
+    diagnostics.some((message) => message.includes("Property 'intent' is missing")),
+    `required-field drift must fail compilation; received ${JSON.stringify(diagnostics)}`,
+  );
 });
 
 test('ASK observation failure never hides the truthful Customer World result', async () => {
