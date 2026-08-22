@@ -9,12 +9,15 @@ import { sha256File } from '../test-runner/receipt.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 // Owner-authorized prohibited-source baseline (OWNERSHIP_RESIGN_GO, see
 // out/OWNERSHIP_RESIGN_EVIDENCE.md). Re-anchored from the protected commit
-// c953ebcd to 3fd1f2f0 — the accepted-lineage commit that admitted the
-// court-reviewed demand-credits blob (c881bc44…, == manifest pr29 court_blob_sha256)
-// and at which the handoff route is still at its reviewed blob (6292b725…).
+// 3fd1f2f0 to a9222798 — the exact owner-authorized repair that recognizes a
+// duplicate attribution when PostgreSQL selects the entryHash constraint before
+// the eventIdentity constraint. The handoff route remains at its reviewed blob
+// (6292b725…), and the repair has a deterministic negative court plus three real
+// 50-request PostgreSQL concurrency runs. Owner authority is bound by source
+// packet SHA-256 14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565.
 // DATA constant only; the diff predicate below is unchanged and stays load-bearing:
 // any future drift of a prohibited business source from its reviewed baseline trips it.
-const BASE = '3fd1f2f0d10ad4a97cfb177f2fee4745ef010bce';
+const BASE = 'a92227989708e0f0a413fc5524efcb08a1a41614';
 const DEMAND_CREDITS = 'apps/web/src/lib/demand-credits.mjs';
 const HANDOFF_ROUTE = 'apps/web/src/app/[domain]/retailer/[id]/handoff/route.ts';
 const MARIA_RUNNER = 'tools/mariadb-sim/run.mjs';
