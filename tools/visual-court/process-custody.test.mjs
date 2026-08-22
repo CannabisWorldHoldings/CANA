@@ -130,6 +130,114 @@ test('partial proc visibility refuses false zero', async () => {
   } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
 });
 
+test('exact subreaper zero-exit proves cleanup without global proc visibility', async () => {
+  const f = fixture('subreaper-exact-exit');
+  const signals = [];
+  const boundary = Object.freeze({});
+  let snapshotCalled = false;
+  try {
+    writeRow(f.procRoot, { pid: 300, parentPid: 1, processGroup: 300, startTime: '3000', partial: true });
+    const custody = createBrowserProcessCustodian({
+      rootPid: 100,
+      runToken: f.runToken,
+      userDataDir: f.userDataDir,
+      platform: 'linux',
+      supervisorBoundary: boundary,
+      waitForSupervisorExit: async () => ({ exited: true, code: 0, signal: null }),
+      processController: {
+        bindSupervisor(input) {
+          assert.equal(input.supervisorBoundary, boundary);
+          assert.equal(input.pid, 100);
+          return { status: 'LIVE_EXACT', startTime: '1000' };
+        },
+        status() { return { status: 'LIVE_EXACT' }; },
+        signal(input) {
+          signals.push(input);
+          return { status: 'SIGNALLED_EXACT' };
+        },
+      },
+      snapshot() {
+        snapshotCalled = true;
+        throw new Error('global proc snapshot must not participate in subreaper proof');
+      },
+      samplerMs: 0,
+      graceMs: 0,
+    });
+    const receipt = await custody.cleanup();
+    assert.equal(snapshotCalled, false);
+    assert.deepEqual(signals, [{ pid: 100, startTime: '1000', signal: 'SIGTERM' }]);
+    assert.equal(receipt.failureClass, null);
+    assert.equal(receipt.proofAvailable, true);
+    assert.equal(receipt.proofBasis, 'LINUX_SUBREAPER_EXACT_ZERO_EXIT');
+    assert.equal(receipt.ownedBrowserProcessCountAfter, 0);
+    assert.equal(fs.existsSync(path.join(f.procRoot, '300')), true, 'unrelated process must remain untouched');
+  } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('subreaper boundary rejection fails before cleanup authority is created', () => {
+  const f = fixture('subreaper-boundary-rejected');
+  try {
+    assert.throws(() => createBrowserProcessCustodian({
+      rootPid: 100,
+      runToken: f.runToken,
+      userDataDir: f.userDataDir,
+      platform: 'linux',
+      supervisorBoundary: Object.freeze({}),
+      waitForSupervisorExit: async () => ({ exited: true, code: 0, signal: null }),
+      processController: {
+        bindSupervisor() { return { status: 'BOUNDARY_REJECTED' }; },
+        status() { return { status: 'LIVE_EXACT' }; },
+        signal() { return { status: 'SIGNALLED_EXACT' }; },
+      },
+    }), /SUBREAPER_BOUNDARY_REJECTED/);
+  } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('subreaper signal, timeout, and non-zero outcomes fail closed without SIGKILL', async (t) => {
+  for (const scenario of [
+    {
+      name: 'signal exit',
+      outcome: { exited: true, code: null, signal: 'SIGKILL' },
+      expectedError: 'SUPERVISOR_DRAIN_OUTCOME_INVALID',
+    },
+    {
+      name: 'timeout',
+      outcome: { exited: false, code: null, signal: null },
+      expectedError: 'SUPERVISOR_DRAIN_INCOMPLETE',
+    },
+  ]) {
+    await t.test(scenario.name, async () => {
+      const f = fixture(`subreaper-${scenario.name.replace(' ', '-')}`);
+      const signals = [];
+      try {
+        const custody = createBrowserProcessCustodian({
+          rootPid: 100,
+          runToken: f.runToken,
+          userDataDir: f.userDataDir,
+          platform: 'linux',
+          supervisorBoundary: Object.freeze({}),
+          waitForSupervisorExit: async () => scenario.outcome,
+          processController: {
+            bindSupervisor() { return { status: 'LIVE_EXACT', startTime: '1000' }; },
+            status() { return { status: 'LIVE_EXACT' }; },
+            signal(input) {
+              signals.push(input);
+              return { status: 'SIGNALLED_EXACT' };
+            },
+          },
+          graceMs: 0,
+        });
+        const receipt = await custody.cleanup();
+        assert.equal(receipt.failureClass, 'CHROMIUM_CLEANUP_PROOF_UNAVAILABLE');
+        assert.equal(receipt.proofAvailable, false);
+        assert.equal(receipt.ownedBrowserProcessCountAfter, null);
+        assert.equal(receipt.proofErrors.some((entry) => entry.type === scenario.expectedError), true);
+        assert.deepEqual(signals.map((entry) => entry.signal), ['SIGTERM']);
+      } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
+    });
+  }
+});
+
 test('escaped descendant with an observed stable identity is terminated exactly', async () => {
   const f = fixture('escaped');
   const signals = [];

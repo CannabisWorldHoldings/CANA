@@ -246,6 +246,10 @@ test('native helper launches from the exact retained workspace identity', { skip
       executable: '/bin/pwd',
       argv: [],
     });
+    assert.deepEqual(helper.bindSupervisor({
+      supervisorBoundary: Object.freeze({}),
+      pid: process.pid,
+    }), { status: 'BOUNDARY_REJECTED' });
     const result = fs.realpathSync(workspace);
     assert.equal(result, workspace);
     const launched = spawnSync(spec.command, spec.argv, { encoding: 'utf8', env: spec.env, stdio: spec.stdio });
@@ -323,6 +327,13 @@ test('native launch supervisor drains an adopted detached descendant before shut
   const supervisor = spawn(spec.command, spec.argv, { env: spec.env, stdio: spec.stdio });
   let adoptedPid = null;
   try {
+    const bound = helper.bindSupervisor({ supervisorBoundary: spec.supervisorBoundary, pid: supervisor.pid });
+    assert.equal(bound.status, 'LIVE_EXACT');
+    assert.match(bound.startTime, /^\d+$/);
+    assert.deepEqual(helper.bindSupervisor({
+      supervisorBoundary: spec.supervisorBoundary,
+      pid: supervisor.pid,
+    }), { status: 'BOUNDARY_REJECTED' }, 'launch boundary must be single-use');
     assert.equal(await waitUntil(() => fs.existsSync(pidFile)), true, 'fixture must publish the adopted child pid');
     adoptedPid = Number(fs.readFileSync(pidFile, 'utf8'));
     assert.equal(Number.isInteger(adoptedPid) && adoptedPid > 1, true);
@@ -333,6 +344,8 @@ test('native launch supervisor drains an adopted detached descendant before shut
       waitForExit(supervisor).then(() => true),
       new Promise((resolve) => setTimeout(() => resolve(false), 5_000)),
     ]), true, 'supervisor must settle after shutdown');
+    assert.equal(supervisor.exitCode, 0, 'zero exit attests that subreaper drain reached no remaining children');
+    assert.equal(supervisor.signalCode, null);
     assert.equal(await waitUntil(() => !processExists(adoptedPid)), true, 'supervisor must not orphan its adopted child');
   } finally {
     if (supervisor.exitCode === null && supervisor.signalCode === null) supervisor.kill('SIGKILL');

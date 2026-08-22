@@ -32,6 +32,115 @@ function readNullSeparated(file) {
   return readFileSync(file).toString('utf8').split('\0').filter(Boolean);
 }
 
+function createLinuxSubreaperCustodian({
+  rootPid,
+  processController,
+  supervisorBoundary,
+  waitForSupervisorExit,
+  graceMs,
+} = {}) {
+  if (!processController?.bindSupervisor || typeof waitForSupervisorExit !== 'function') {
+    throw processFailure('CHROMIUM_CLEANUP_PROOF_UNAVAILABLE', {
+      REASON: 'SUBREAPER_BOUNDARY_UNAVAILABLE',
+    });
+  }
+  const binding = processController.bindSupervisor({ supervisorBoundary, pid: rootPid });
+  if (!['LIVE_EXACT', 'EXITED_EXACT'].includes(binding.status)) {
+    throw processFailure('CHROMIUM_CLEANUP_PROOF_UNAVAILABLE', {
+      REASON: 'SUBREAPER_BOUNDARY_REJECTED',
+      STATUS: binding.status,
+    });
+  }
+  if (binding.status === 'LIVE_EXACT' && !/^\d+$/.test(binding.startTime ?? '')) {
+    throw processFailure('CHROMIUM_CLEANUP_PROOF_UNAVAILABLE', {
+      REASON: 'SUBREAPER_IDENTITY_UNAVAILABLE',
+    });
+  }
+  let closed = false;
+
+  async function cleanup({ requestBrowserClose = async () => false } = {}) {
+    if (closed) throw processFailure('CHROMIUM_CUSTODY_CLOSED');
+    let browserCloseRequested = false;
+    const signalFailures = [];
+    const proofErrors = [];
+    try {
+      browserCloseRequested = await requestBrowserClose();
+    } catch (error) {
+      signalFailures.push({ target: 'Browser.close', message: error.message });
+    }
+
+    if (binding.status === 'LIVE_EXACT') {
+      const status = processController.status({ pid: rootPid, startTime: binding.startTime });
+      if (status.status === 'LIVE_EXACT') {
+        const signalled = processController.signal({
+          pid: rootPid,
+          startTime: binding.startTime,
+          signal: 'SIGTERM',
+        });
+        if (!['SIGNALLED_EXACT', 'EXITED_EXACT', 'IDENTITY_REPLACED'].includes(signalled.status)) {
+          signalFailures.push({
+            target: 'subreaper-supervisor',
+            pid: rootPid,
+            signal: 'SIGTERM',
+            status: signalled.status,
+          });
+        }
+      } else if (!['EXITED_EXACT', 'IDENTITY_REPLACED'].includes(status.status)) {
+        proofErrors.push({
+          type: 'SUPERVISOR_STATUS_PROOF_UNAVAILABLE',
+          pid: rootPid,
+          status: status.status,
+        });
+      }
+    }
+
+    let outcome = null;
+    try {
+      outcome = await waitForSupervisorExit(graceMs);
+    } catch (error) {
+      proofErrors.push({ type: 'SUPERVISOR_EXIT_OBSERVATION_FAILED', message: error.message });
+    }
+    if (!outcome?.exited) {
+      proofErrors.push({ type: 'SUPERVISOR_DRAIN_INCOMPLETE', pid: rootPid });
+    } else if (outcome.code !== 0 || outcome.signal !== null) {
+      proofErrors.push({
+        type: 'SUPERVISOR_DRAIN_OUTCOME_INVALID',
+        pid: rootPid,
+        exitCode: outcome.code ?? null,
+        signal: outcome.signal ?? null,
+      });
+    }
+
+    const proofAvailable = proofErrors.length === 0 && signalFailures.length === 0;
+    closed = true;
+    return {
+      proofAvailable,
+      proofBasis: 'LINUX_SUBREAPER_EXACT_ZERO_EXIT',
+      failureClass: proofAvailable ? null : 'CHROMIUM_CLEANUP_PROOF_UNAVAILABLE',
+      platform: 'linux',
+      browserCloseRequested,
+      signalFailures,
+      proofErrors,
+      initiallyOwnedCount: binding.status === 'LIVE_EXACT' ? 1 : 0,
+      beforeKillCount: 0,
+      escapedChildDiscovered: false,
+      ownedBrowserProcessCountAfter: proofAvailable ? 0 : null,
+      residual: [],
+    };
+  }
+
+  return {
+    cleanup,
+    enumerateOwnedProcesses() {
+      return binding.status === 'LIVE_EXACT'
+        ? [{ pid: rootPid, startTime: binding.startTime, reasons: ['LINUX_SUBREAPER_BOUNDARY'] }]
+        : [];
+    },
+    get proofErrors() { return []; },
+    stopSampler() {},
+  };
+}
+
 export function readLinuxProcessSnapshot(procRoot = '/proc', {
   effectiveUid = process.geteuid?.() ?? null,
   ledger = new Map(),
@@ -137,6 +246,8 @@ export function createBrowserProcessCustodian({
   runToken,
   userDataDir,
   processController,
+  supervisorBoundary = null,
+  waitForSupervisorExit = null,
   platform = process.platform,
   procRoot = '/proc',
   effectiveUid = process.geteuid?.() ?? null,
@@ -154,6 +265,20 @@ export function createBrowserProcessCustodian({
   }
   if (platform === 'linux' && (!processController?.signal || !processController?.status)) {
     throw new Error('Linux browser custody requires an exact process controller');
+  }
+  if (supervisorBoundary !== null) {
+    if (platform !== 'linux') {
+      throw processFailure('CHROMIUM_CLEANUP_PROOF_UNAVAILABLE', {
+        REASON: 'SUBREAPER_BOUNDARY_REQUIRES_LINUX',
+      });
+    }
+    return createLinuxSubreaperCustodian({
+      rootPid,
+      processController,
+      supervisorBoundary,
+      waitForSupervisorExit,
+      graceMs,
+    });
   }
   const tokenMarker = `CANA_VISUAL_RUN_TOKEN=${runToken}`;
   const userDataMarker = `--user-data-dir=${userDataDir}`;

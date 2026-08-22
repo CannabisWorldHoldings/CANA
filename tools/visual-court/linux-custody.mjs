@@ -221,6 +221,29 @@ def exact_process(pid, expected_start, signal_number=None):
     finally:
         os.close(pidfd)
 
+def identify_process(pid):
+    try:
+        pidfd = os.pidfd_open(pid, 0)
+    except ProcessLookupError:
+        finish("EXITED_EXACT")
+    except OSError:
+        finish("PROOF_UNAVAILABLE", 4)
+    try:
+        try:
+            _, current_start = read_identity(pid)
+        except OSError:
+            poller = select.poll()
+            poller.register(pidfd, select.POLLIN)
+            ready = bool(poller.poll(0))
+            finish("EXITED_EXACT" if ready else "PROOF_UNAVAILABLE", 0 if ready else 4)
+        poller = select.poll()
+        poller.register(pidfd, select.POLLIN)
+        if poller.poll(0):
+            finish("EXITED_EXACT")
+        finish("LIVE_EXACT", startTime=str(current_start))
+    finally:
+        os.close(pidfd)
+
 shutdown_requested = False
 
 def request_shutdown(_signal_number, _frame):
@@ -311,11 +334,11 @@ def launch_process(arguments):
             browser_status = child_status
     if browser_status is None:
         finish("CHROMIUM_SUPERVISOR_FAILED", 4)
-    if os.WIFEXITED(browser_status):
-        raise SystemExit(os.WEXITSTATUS(browser_status))
-    if os.WIFSIGNALED(browser_status):
-        raise SystemExit(128 + os.WTERMSIG(browser_status))
-    raise SystemExit(4)
+    # Exit zero only after waitpid(-1) proves that the subreaper has no child
+    # left to reap. The harness treats any earlier/non-zero/signal exit as an
+    # unavailable cleanup proof; browser failure is reported by its unexpected
+    # supervisor exit before cleanup begins.
+    raise SystemExit(0)
 
 def probe():
     try:
@@ -341,6 +364,11 @@ if operation == "mkdir":
     create_directory(arguments)
 if operation == "launch":
     launch_process(arguments)
+if operation == "identify":
+    try:
+        identify_process(parse_uint(arguments[0]))
+    except (IndexError, ValueError):
+        finish("INVALID_REQUEST", 2)
 if operation in ("status", "signal"):
     try:
         pid = parse_uint(arguments[0])
@@ -425,6 +453,7 @@ export function prepareLinuxCustodyHelper({
   }
   const runtimeDigest = sha256(Buffer.from(PYTHON_CUSTODY_SCRIPT));
   const interpreterDigest = sha256(readFileSync(trustedExecutor));
+  const launchBoundaries = new WeakSet();
   const custodyArgv = (operation, argv = []) => [
     ...PYTHON_ISOLATION_ARGV,
     PYTHON_CUSTODY_SCRIPT,
@@ -509,12 +538,29 @@ export function prepareLinuxCustodyHelper({
         throw failure('CHROMIUM_EXEC_FAILED', { EXECUTABLE: executable });
       }
       if (closed) throw failure('LINUX_CUSTODY_HELPER_CLOSED', { OPERATION: 'launch' });
+      const supervisorBoundary = Object.freeze({});
+      launchBoundaries.add(supervisorBoundary);
       return {
         command: trustedExecutor,
         argv: custodyArgv('launch', [rootPath, String(device), String(inode), executable, ...argv]),
         env: environment,
         stdio: ['ignore', 'pipe', 'pipe'],
+        supervisorBoundary,
       };
+    },
+    bindSupervisor({ supervisorBoundary, pid }) {
+      if (!launchBoundaries.has(supervisorBoundary) || !Number.isInteger(pid) || pid <= 0) {
+        return { status: 'BOUNDARY_REJECTED' };
+      }
+      launchBoundaries.delete(supervisorBoundary);
+      const response = invoke('identify', [String(pid)]);
+      if (
+        response.status === 'LIVE_EXACT'
+        && (typeof response.startTime !== 'string' || !/^\d+$/.test(response.startTime))
+      ) {
+        throw failure('LINUX_CUSTODY_HELPER_MALFORMED', { OPERATION: 'identify', RESPONSE: response });
+      }
+      return response;
     },
     signal({ pid, startTime, signal }) {
       return invoke('signal', [String(pid), String(startTime), signal]);

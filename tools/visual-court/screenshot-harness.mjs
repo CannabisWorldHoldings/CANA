@@ -387,6 +387,29 @@ function waitForLoad(context) {
   });
 }
 
+function waitForChildExit(child, timeoutMs) {
+  if (child.exitCode !== null || child.signalCode !== null) {
+    return Promise.resolve({ exited: true, code: child.exitCode, signal: child.signalCode });
+  }
+  return new Promise((resolve) => {
+    let settled = false;
+    let timer = null;
+    const finish = (outcome) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      child.off('exit', onExit);
+      resolve(outcome);
+    };
+    const onExit = (code, signal) => finish({ exited: true, code, signal });
+    child.once('exit', onExit);
+    timer = setTimeout(() => finish({ exited: false, code: null, signal: null }), timeoutMs);
+    if (child.exitCode !== null || child.signalCode !== null) {
+      finish({ exited: true, code: child.exitCode, signal: child.signalCode });
+    }
+  });
+}
+
 async function cleanup() {
   if (cleanupPromise) return cleanupPromise;
   cleanupStarted = true;
@@ -421,8 +444,10 @@ async function cleanup() {
         if (browserCleanupReceipt.failureClass) {
           lifecycle.failLifecycle(browserCleanupReceipt.failureClass, {
             PLATFORM: browserCleanupReceipt.platform,
+            PROOF_BASIS: browserCleanupReceipt.proofBasis ?? null,
             OWNED_BROWSER_PROCESS_COUNT_AFTER: browserCleanupReceipt.ownedBrowserProcessCountAfter,
             SIGNAL_FAILURES: browserCleanupReceipt.signalFailures,
+            PROOF_ERRORS: browserCleanupReceipt.proofErrors ?? [],
             RESIDUAL: browserCleanupReceipt.residual,
           });
         }
@@ -577,6 +602,10 @@ try {
     runToken: browserRunToken,
     userDataDir: process.platform === 'linux' ? 'profile' : userDataDir,
     processController: linuxCustodyHelper,
+    supervisorBoundary: launch.supervisorBoundary ?? null,
+    waitForSupervisorExit: process.platform === 'linux'
+      ? (timeoutMs) => waitForChildExit(chrome, timeoutMs)
+      : null,
   });
   await delay(3000);
   if (lifecycle.terminalFailure) throw lifecycle.terminalFailure;
