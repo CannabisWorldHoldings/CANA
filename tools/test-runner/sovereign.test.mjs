@@ -205,6 +205,15 @@ test('Stage 13 and the authoritative H3 workflow require the exact Linux custody
   assert.match(workflow, /\.\/cana verify sovereign/);
 });
 
+test('Stage 06 dispatches only the current ES-0004 courts and freezes ES-0003', () => {
+  const sovereign = fs.readFileSync(path.join(ROOT, 'tools', 'test-runner', 'sovereign.mjs'), 'utf8');
+  const dispatch = /function promotionGateSuccessorCourts\(\) \{([\s\S]*?)\n\}/.exec(sovereign)?.[1] ?? '';
+  assert.match(dispatch, /es-0004\.court\.test\.mjs/);
+  assert.match(dispatch, /es-0004\.holdout\.court\.test\.mjs/);
+  assert.doesNotMatch(dispatch, /es-0003\.court\.test\.mjs/);
+  assert.match(sovereign, /V3 -> frozen 99ef replay only/);
+});
+
 test('the converged dispatcher keeps the Federation census gate ahead of every verify', () => {
   const dispatcher = fs.readFileSync(path.join(ROOT, 'cana'), 'utf8');
   const verifyIndex = dispatcher.indexOf("scope === 'verify'");

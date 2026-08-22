@@ -410,19 +410,18 @@ export function runLiveSabotageRestoreProbe({
 }
 
 /**
- * PROMOTION-GATE EXPLICIT CONTRACT DISPATCH (ES-0003, OWNER LAW #9).
+ * PROMOTION-GATE EXPLICIT CONTRACT DISPATCH (ES-0004, OWNER LAW #9).
  *
  * The promotion evaluator that judges the SUCCESSOR lineage is selected by an explicit,
  * stable contract — never by a blind `tools/promotion-gate/*.test.mjs` glob. This returns the
- * exact current courts. V1 runs only through historical replay and V2 runs only through the
- * byte-identical ES-0002 archive bridge inside the V3 court. Neither frozen evaluator is
- * blind-globbed against the current manifest-succession lane.
+ * exact current courts. V1/V2/V3 run only through their sealed replay chain inside the V4
+ * court. No frozen evaluator is blind-globbed against the current succession lane.
  */
 function promotionGateSuccessorCourts() {
   return [
     'tools/promotion-gate/evidence-chain.test.mjs',
-    'tools/promotion-gate/es-0003.court.test.mjs',
-    'tools/promotion-gate/es-0003.holdout.court.test.mjs',
+    'tools/promotion-gate/es-0004.court.test.mjs',
+    'tools/promotion-gate/es-0004.holdout.court.test.mjs',
   ];
 }
 
@@ -730,10 +729,10 @@ const STAGES = [
       'The courts both sovereign lineages inherit from the common base still hold: the verifier '
       + 'itself, provenance sabotage, mission-2 lifecycle, market state, reality packets, github '
       + 'import, durability, the promotion gate and the cPanel/MariaDB simulators. '
-      + 'PROMOTION-GATE DISPATCH (ES-0003): the current evaluator is selected by an EXPLICIT '
-      + 'V1/V2/V3 contract, never a *.test.mjs glob. V3 plus its independent holdout judge the '
-      + 'single manifest succession; frozen V2 runs only through the byte-identical e03 replay '
-      + 'bridge, and V1 runs only in its disposable historical replay context.',
+      + 'PROMOTION-GATE DISPATCH (ES-0004): the current evaluator is selected by an EXPLICIT '
+      + 'V1/V2/V3/V4 contract, never a *.test.mjs glob. V4 plus its independent holdout judge '
+      + 'the exact PR59 execution-scope manifest; frozen V3 replays in its exact archive and '
+      + 'retains the sealed V2 and V1 replay chain.',
     run() {
       const files = [
         ...glob('tools/test-runner', (n) => n.endsWith('.test.mjs')),
@@ -745,7 +744,7 @@ const STAGES = [
         ...glob('tools/durability', (n) => n.endsWith('.test.mjs')),
         // PROMOTION-GATE: EXPLICIT CONTRACT DISPATCH, not a blind glob (OWNER LAW #9).
         // Current promotion courts are exact-name enumerated. V1 and V2 execute only through
-        // the bridge lanes inside ES-0003; no frozen or future court can join by filename.
+        // the bridge lanes inside ES-0004; no frozen or future court can join by filename.
         ...promotionGateSuccessorCourts(),
         ...glob('tools/cpanel-sim', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/mariadb-sim', (n) => n.endsWith('.test.mjs')),
@@ -753,12 +752,12 @@ const STAGES = [
       ];
       const units = files.map((f) => courtUnit(f));
       // Report the promotion-gate dispatch decision as its own evidence line so the receipt
-      // shows V3 ran and both frozen evaluators were routed to replay, not current-globbed.
+      // shows V4 ran and all frozen evaluators were routed to replay, not current-globbed.
       const stage = unitsToStage(units, 'deterministic courts');
       stage.evidence.push(
-        `promotion-gate dispatch: current lineage -> CANA_PROMOTION_IDENTITY_V3 `
-        + `(${promotionGateSuccessorCourts().join(', ')}); V2 -> frozen e03 replay only; `
-        + `V1 -> disposable historical replay only; neither is stage-06 globbed`,
+        `promotion-gate dispatch: current lineage -> CANA_PROMOTION_IDENTITY_V4 `
+        + `(${promotionGateSuccessorCourts().join(', ')}); V3 -> frozen 99ef replay only; `
+        + `V2 -> frozen e03 replay only; V1 -> disposable historical replay only`,
       );
       return stage;
     },
