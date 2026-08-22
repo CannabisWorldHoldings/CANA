@@ -60,6 +60,28 @@ const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256 =
   '5cfdc920488db9935fb0fb905d255edc77d3416fb9255fd13194df7c5815bc73';
 const PR59_AUTONOMY_SOURCE_SHA256 =
   '14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565';
+export const PR59_ATTRIBUTION_COLLISION_REPAIR_PATH =
+  'apps/web/src/lib/demand-credits.mjs';
+export const PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256 =
+  '85248d15a922b70035fec99a7060203732d644ee7b07facf16f1ab806d656de7';
+export const PR59_ATTRIBUTION_COLLISION_REPAIR_ASSIGNMENT_SHA256 =
+  'adc5d9ce03b8ecbe76cf5711ee637222be47c3750871b393927a22b77bea7d9a';
+const PR59_ATTRIBUTION_COLLISION_REPAIR_ORIGINATING_COMMIT =
+  'a92227989708e0f0a413fc5524efcb08a1a41614';
+const PR59_ATTRIBUTION_COLLISION_REPAIR_ADMISSION = Object.freeze({
+  authorization: 'OWNER FULL EXECUTION AUTONOMY OVERRIDE — PR #59 mission',
+  authorization_source_sha256: PR59_AUTONOMY_SOURCE_SHA256,
+  scope: 'One exact existing product path at the exact reviewed attribution collision-repair blob; no wildcard, directory, neighboring-path, replacement-blob, deployment, credential, production, verification-bypass, or runtime-authority grant.',
+  authorization_effect: 'durability-court-blob-admission-only',
+  rationale: 'The exact candidate fixes an independently reproduced concurrent entry-hash race by distinguishing the canonical event-identity winner from unrelated chain-position contention. The path was already exactly owned but globally no-edit, so only this one content digest is admitted.',
+  originating_commit: PR59_ATTRIBUTION_COLLISION_REPAIR_ORIGINATING_COMMIT,
+  paths: Object.freeze([PR59_ATTRIBUTION_COLLISION_REPAIR_PATH]),
+  court_blob_sha256: Object.freeze({
+    [PR59_ATTRIBUTION_COLLISION_REPAIR_PATH]:
+      PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256,
+  }),
+  assignment_sha256: PR59_ATTRIBUTION_COLLISION_REPAIR_ASSIGNMENT_SHA256,
+});
 const PR57_INHERITED_MAIN_ASSIGNMENT =
   'pr57_inherited_main_reconciliation_2026_08_21';
 const PR57_INHERITED_MAIN_ASSIGNMENT_SHA256 =
@@ -1837,6 +1859,65 @@ export function courtEditAdmitted(relative, ownership, bytes, assignmentName) {
   return admittedDigest === sha256Bytes(content);
 }
 
+export function pr59AttributionCollisionRepairAdmission() {
+  return JSON.parse(JSON.stringify(PR59_ATTRIBUTION_COLLISION_REPAIR_ADMISSION));
+}
+
+export function pr59AttributionCollisionRepairAdmitted(
+  observation,
+  admission = PR59_ATTRIBUTION_COLLISION_REPAIR_ADMISSION,
+) {
+  if (
+    !exactKeys(admission, [
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'rationale',
+      'originating_commit',
+      'paths',
+      'court_blob_sha256',
+      'assignment_sha256',
+    ])
+    || !exactKeys(observation, [
+      'path',
+      'content_sha256',
+      'originating_commit_ancestor',
+    ])
+    || !Array.isArray(admission.paths)
+    || !exactKeys(admission.court_blob_sha256, [
+      PR59_ATTRIBUTION_COLLISION_REPAIR_PATH,
+    ])
+  ) {
+    return false;
+  }
+  const { assignment_sha256: recordedDigest, ...payload } = admission;
+  return (
+    recordedDigest === PR59_ATTRIBUTION_COLLISION_REPAIR_ASSIGNMENT_SHA256
+    && sha256Bytes(canonicalJson(payload))
+      === PR59_ATTRIBUTION_COLLISION_REPAIR_ASSIGNMENT_SHA256
+    && admission.authorization_source_sha256 === PR59_AUTONOMY_SOURCE_SHA256
+    && admission.authorization_effect === 'durability-court-blob-admission-only'
+    && admission.originating_commit
+      === PR59_ATTRIBUTION_COLLISION_REPAIR_ORIGINATING_COMMIT
+    && JSON.stringify(admission.paths)
+      === JSON.stringify([PR59_ATTRIBUTION_COLLISION_REPAIR_PATH])
+    && admission.paths.every(
+      (relative) => !relative.includes('*')
+        && !relative.includes('\\')
+        && !relative.startsWith('/')
+        && !relative.includes('..')
+        && path.posix.normalize(relative) === relative,
+    )
+    && admission.court_blob_sha256[PR59_ATTRIBUTION_COLLISION_REPAIR_PATH]
+      === PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256
+    && observation.path === PR59_ATTRIBUTION_COLLISION_REPAIR_PATH
+    && observation.content_sha256
+      === PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256
+    && observation.originating_commit_ancestor === true
+  );
+}
+
 function pr57InheritedMainEntry(ownership, relative) {
   const assignment = ownership.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT];
   const entry = assignment.entries.find((candidate) => candidate[0] === relative);
@@ -1941,10 +2022,26 @@ function prerequisites(source) {
     if (!ownership.global_no_edit.includes(file)) return false;
     if (!fs.existsSync(path.join(ROOT, file))) return true;
     const digest = sha256File(path.join(ROOT, file));
-    return !COURT_ADMITTING_ASSIGNMENTS.some(
+    const existingCourtAdmission = COURT_ADMITTING_ASSIGNMENTS.some(
       (assignmentName) => ownership.explicit_user_assignment[assignmentName]
         ?.court_blob_sha256?.[file] === digest,
     );
+    const attributionCollisionAdmission = pr59AttributionCollisionRepairAdmitted({
+      path: file,
+      content_sha256: digest,
+      originating_commit_ancestor:
+        command(
+          'git',
+          [
+            'merge-base',
+            '--is-ancestor',
+            PR59_ATTRIBUTION_COLLISION_REPAIR_ORIGINATING_COMMIT,
+            source.commit,
+          ],
+          { allowFailure: true },
+        ).status === 0,
+    });
+    return !existingCourtAdmission && !attributionCollisionAdmission;
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const pr57Ancestry = {

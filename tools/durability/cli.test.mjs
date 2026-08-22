@@ -22,10 +22,15 @@ import {
   mission3M001OwnershipAssignment,
   ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS,
   ownershipPatterns,
+  PR59_ATTRIBUTION_COLLISION_REPAIR_ASSIGNMENT_SHA256,
+  PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256,
+  PR59_ATTRIBUTION_COLLISION_REPAIR_PATH,
   PR59_SOVEREIGN_CUSTODY_PATHS,
   PR57_INHERITED_MAIN_ENTRY_SCHEMA,
   PR57_INHERITED_MAIN_PATHS,
   pr57InheritedMainObservationAdmitted,
+  pr59AttributionCollisionRepairAdmission,
+  pr59AttributionCollisionRepairAdmitted,
   PR35_AUTHORIZED_PATHS,
   PR2_AUTHORIZED_PATHS,
   pr29OwnershipAssignment,
@@ -584,6 +589,71 @@ test('PR #59 sovereign custody assignment rejects scope and authority broadening
       () => validateOwnershipManifest(manifest),
       /PR #59 (?:sovereign )?custody|changed-file ownership patterns/,
     );
+  }
+});
+
+test('PR #59 attribution collision repair admits only its exact owned global-no-edit blob', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const admission = pr59AttributionCollisionRepairAdmission();
+  assert.equal(admission.assignment_sha256, PR59_ATTRIBUTION_COLLISION_REPAIR_ASSIGNMENT_SHA256);
+  assert.deepEqual(admission.paths, [PR59_ATTRIBUTION_COLLISION_REPAIR_PATH]);
+  assert.equal(
+    admission.court_blob_sha256[PR59_ATTRIBUTION_COLLISION_REPAIR_PATH],
+    PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256,
+  );
+  assert.equal(manifest.global_no_edit.includes(PR59_ATTRIBUTION_COLLISION_REPAIR_PATH), true);
+  assert.equal(
+    manifest.owned_modify_paths.filter(
+      (relative) => relative === PR59_ATTRIBUTION_COLLISION_REPAIR_PATH,
+    ).length,
+    1,
+  );
+  assert.equal(pr59AttributionCollisionRepairAdmitted({
+    path: PR59_ATTRIBUTION_COLLISION_REPAIR_PATH,
+    content_sha256: PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  }), true);
+});
+
+test('PR #59 attribution collision repair rejects future blobs, neighbors and ancestry drift', () => {
+  const valid = {
+    path: PR59_ATTRIBUTION_COLLISION_REPAIR_PATH,
+    content_sha256: PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  };
+  assert.equal(pr59AttributionCollisionRepairAdmitted({
+    ...valid,
+    content_sha256: '0'.repeat(64),
+  }), false);
+  assert.equal(pr59AttributionCollisionRepairAdmitted({
+    ...valid,
+    path: `${PR59_ATTRIBUTION_COLLISION_REPAIR_PATH}.neighbor`,
+  }), false);
+  assert.equal(pr59AttributionCollisionRepairAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
+});
+
+test('PR #59 attribution collision repair metadata rejects scope and authority broadening', () => {
+  const valid = {
+    path: PR59_ATTRIBUTION_COLLISION_REPAIR_PATH,
+    content_sha256: PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  };
+  const mutations = [
+    (admission) => { admission.paths[0] = 'apps/web/src/lib/**'; },
+    (admission) => { admission.paths.push(`${PR59_ATTRIBUTION_COLLISION_REPAIR_PATH}.future`); },
+    (admission) => { admission.authorization_source_sha256 = '0'.repeat(64); },
+    (admission) => { admission.authorization_effect = 'runtime-authority'; },
+    (admission) => { admission.originating_commit = '0'.repeat(40); },
+    (admission) => { admission.assignment_sha256 = '0'.repeat(64); },
+  ];
+  for (const mutate of mutations) {
+    const admission = pr59AttributionCollisionRepairAdmission();
+    mutate(admission);
+    assert.equal(pr59AttributionCollisionRepairAdmitted(valid, admission), false);
   }
 });
 
