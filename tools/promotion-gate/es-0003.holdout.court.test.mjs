@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 import { validateOwnershipManifest } from '../durability/cli.mjs';
 import { dispatchEvaluator as dispatchV2 } from './es-0002.mjs';
+import { replayFrozenEs0002 } from './es-0002-frozen-replay.mjs';
 import {
   assessManifestSuccession,
   collectManifestSuccessionEvidence,
@@ -27,10 +28,10 @@ const ROOT = path.resolve(HERE, '..', '..');
 const EVALUATOR_PATH = 'tools/promotion-gate/es-0003.mjs';
 const OWNERSHIP_MANIFEST_PATH = 'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json';
 const PR57_ASSIGNMENT = 'pr57_inherited_main_reconciliation_2026_08_21';
-const SEALED_COMMIT = '5a31f6cc919f755762bf9e5c88f0e8d8d5787ec8';
-const SEALED_SOURCE_SHA256 = '7e68689e38183bf52c351286977e3f0e47939101409bca68782dde854fb4291b';
+const SEALED_COMMIT = '56fc7eae9e609f8321c08a891de4287c473e777c';
+const SEALED_SOURCE_SHA256 = '1c807acbccc707b8b871d86ed1b3aa2e4441c6ef270d8964550863e1cf2edcf2';
 const APPROVED_SUCCESSION_PAYLOAD_SHA256 = '9650b9555d573a046540b56d06b6d2f362ec4384692092b474bfc94a489df23e';
-const PLAN_SHA256 = 'e2e37b8f0bb501c3ff09fd1c4b8f1b679eacd543e013fcd0a09997edd23ee5e4';
+const PLAN_SHA256 = '85eecc0c62a21483e9d417359898d332b760442e51bddb673555e9c0e2956cac';
 
 const HOLDOUT_PLAN_LINES = [
   'ES-0003-INDEPENDENT-HOLDOUT-PLAN-V1',
@@ -48,7 +49,7 @@ const HOLDOUT_PLAN_LINES = [
   'H12|Clone the frozen V3 positive event; set assignment_name=unrelated_dependency_refresh_2026_08_21 and replace new_manifest_digest with 64x3 while retaining the approved payload digest; V3 must REFUSE.',
   'H13|Clone the live ownership manifest; locate originating_commit at entry_schema index 7, replace entries[0][7] with 40xf, require validateOwnershipManifest to refuse, feed assignment_schema_valid=false through real V3 policy; V3 must REFUSE.',
   'H14|Present the exact frozen V3 positive event to the frozen ES-0002 evaluator/dispatch; it must REFUSE_AT_V2_DISPATCH.',
-  'H15|Present the exact frozen ES-0002 positive fixture to the V3 evaluator/dispatch; it must REFUSE_AT_V3_DISPATCH or return a frozen-replay-only refusal with no V3 succession acceptance.',
+  'H15|Present the exact frozen ES-0002 positive fixture to V3 dispatch; require evaluator V2, lane=frozen-replay, and invoked_by=tools/promotion-gate/es-0002-frozen-replay.mjs; execute replayFrozenEs0002 and require classification VERIFIED, court 8/8, and adversarial bridge 22/22; V3 succession must not accept the V2 event.',
   'H16|Clone the frozen V3 positive event and remove owner_gate entirely; V3 must REFUSE.',
   'H17|Clone the frozen V3 positive event; change approved_succession_payload_sha256 last byte 3e->3f and nothing else; V3 must REFUSE.',
   'H18|Clone the frozen V3 positive event; set assignment_name=pr58_unknown_future_reconciliation_2026_08_22 while retaining all approved PR57 identities; V3 must REFUSE.',
@@ -263,7 +264,15 @@ test('H14 V3 event presented to frozen ES-0002 -> REFUSE_AT_V2_DISPATCH', () => 
 test('H15 V2 event presented to V3 -> frozen V2 replay route only', () => {
   const dispatch = dispatchV3(POSITIVE_V2);
   assert.equal(dispatch.dispatched?.evaluator_id, 'CANA_PROMOTION_IDENTITY_V2');
-  assert.equal(dispatch.dispatched?.lane, 'successor');
+  assert.equal(dispatch.dispatched?.lane, 'frozen-replay');
+  assert.equal(
+    dispatch.dispatched?.invoked_by,
+    'tools/promotion-gate/es-0002-frozen-replay.mjs',
+  );
+  const replay = replayFrozenEs0002({ mirror: process.env.CANA_SOURCE_MIRROR ?? ROOT });
+  assert.equal(replay.classification, 'VERIFIED', JSON.stringify(replay.evidence));
+  assert.deepEqual(replay.court, { tests: 8, pass: 8, fail: 0, skipped: 0 });
+  assert.deepEqual(replay.adversarial_bridge, { tests: 22, pass: 22, fail: 0 });
   assertRefused(POSITIVE_V2, ['dispatch.owned-by-v3', 'identity.evaluator-id']);
 });
 
