@@ -239,6 +239,46 @@ export function runLiveSabotageRestoreProbe({
     return { classification: 'NOT_RUN', why: `${relative} is not present, or HEAD is unknown` };
   }
 
+  const status = (pathspec = null) => gitOut([
+    'status', '--porcelain=v2', '--untracked-files=all', ...(pathspec ? ['--', pathspec] : []),
+  ], { cwd: root });
+  const beforeBytes = fs.readFileSync(target);
+  const before = sha256File(target);
+  const beforeMode = fs.statSync(target).mode;
+  const preSabotageStatus = status();
+  const preSabotageTargetStatus = status(relative);
+  if (preSabotageTargetStatus !== '') {
+    const after = sha256File(target);
+    const afterMode = fs.statSync(target).mode;
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'PRE_EXISTING_TARGET_DIRTINESS',
+      detail: {
+        relative,
+        before,
+        restored: after,
+        PRE_SABOTAGE_WHOLE_STATUS: preSabotageStatus,
+        PRE_SABOTAGE_STATUS: preSabotageStatus,
+        PRE_SABOTAGE_TARGET_STATUS: preSabotageTargetStatus,
+        PRE_SABOTAGE_TARGET_SHA: before,
+        PRE_SABOTAGE_TARGET_MODE: beforeMode,
+        POST_RESTORE_STATUS: preSabotageStatus,
+        POST_RESTORE_TARGET_STATUS: preSabotageTargetStatus,
+        POST_RESTORE_TARGET_SHA: after,
+        POST_RESTORE_TARGET_MODE: afterMode,
+        TARGET_BYTES_PRESERVED: after === before,
+        TARGET_MODE_PRESERVED: afterMode === beforeMode,
+        TARGET_MUTATION_DETECTED: false,
+        TARGET_RESTORED_EXACT: false,
+        PROBE_RESTORED_BASELINE: true,
+        REPOSITORY_CLEAN_BEFORE_SABOTAGE: false,
+        REPOSITORY_CLEAN_AFTER_RESTORE: false,
+        PROBE_SKIPPED: true,
+        FAILURE_CLASSES: ['PRE_EXISTING_TARGET_DIRTINESS'],
+      },
+    };
+  }
+
   const canonical = run('git', ['cat-file', 'blob', `${sourceCommit}:${relative}`], {
     cwd: root,
     maxBuffer: 32 * 1024 * 1024,
@@ -251,14 +291,9 @@ export function runLiveSabotageRestoreProbe({
     };
   }
 
-  const status = (pathspec = null) => gitOut([
-    'status', '--porcelain=v2', '--untracked-files=all', ...(pathspec ? ['--', pathspec] : []),
-  ], { cwd: root });
-  const before = sha256File(target);
-  const preSabotageStatus = status();
-  const preSabotageTargetStatus = status(relative);
   let sabotaged = null;
   let restored = null;
+  let restoredMode = null;
   let mutationTargetStatus = null;
 
   try {
@@ -266,14 +301,18 @@ export function runLiveSabotageRestoreProbe({
     sabotaged = sha256File(target);
     mutationTargetStatus = status(relative);
   } finally {
-    fs.writeFileSync(target, canonical.stdout);
+    fs.writeFileSync(target, beforeBytes);
+    fs.chmodSync(target, beforeMode & 0o7777);
     restored = sha256File(target);
+    restoredMode = fs.statSync(target).mode;
   }
 
   const postRestoreStatus = status();
   const postRestoreTargetStatus = status(relative);
   const targetMutationDetected = sabotaged !== before && mutationTargetStatus !== '';
-  const targetRestoredExact = restored === before && postRestoreTargetStatus === '';
+  const targetRestoredExact = restored === before
+    && restoredMode === beforeMode
+    && postRestoreTargetStatus === '';
   const probeRestoredBaseline = postRestoreStatus === preSabotageStatus;
   const repositoryCleanBeforeSabotage = preSabotageStatus === '';
   const repositoryCleanAfterRestore = postRestoreStatus === '';
@@ -283,7 +322,7 @@ export function runLiveSabotageRestoreProbe({
     && repositoryCleanBeforeSabotage
     && repositoryCleanAfterRestore;
   const failureClasses = [];
-  if (!repositoryCleanBeforeSabotage) failureClasses.push('PRE_EXISTING_DIRTINESS');
+  if (!repositoryCleanBeforeSabotage) failureClasses.push('PRE_EXISTING_REPOSITORY_DIRTINESS');
   if (!targetMutationDetected) failureClasses.push('TARGET_MUTATION_NOT_DETECTED');
   if (!targetRestoredExact) failureClasses.push('TARGET_RESTORE_FAILED');
   if (!probeRestoredBaseline) failureClasses.push('PROBE_INTRODUCED_DIRTINESS');
@@ -295,11 +334,18 @@ export function runLiveSabotageRestoreProbe({
     restored,
     dirty: mutationTargetStatus,
     cleanAgain: repositoryCleanAfterRestore,
+    PRE_SABOTAGE_WHOLE_STATUS: preSabotageStatus,
     PRE_SABOTAGE_STATUS: preSabotageStatus,
     PRE_SABOTAGE_TARGET_STATUS: preSabotageTargetStatus,
+    PRE_SABOTAGE_TARGET_SHA: before,
+    PRE_SABOTAGE_TARGET_MODE: beforeMode,
     POST_RESTORE_STATUS: postRestoreStatus,
     POST_RESTORE_TARGET_STATUS: postRestoreTargetStatus,
+    POST_RESTORE_TARGET_SHA: restored,
+    POST_RESTORE_TARGET_MODE: restoredMode,
     TARGET_MUTATION_STATUS: mutationTargetStatus,
+    TARGET_BYTES_PRESERVED: restored === before,
+    TARGET_MODE_PRESERVED: restoredMode === beforeMode,
     TARGET_MUTATION_DETECTED: targetMutationDetected,
     TARGET_RESTORED_EXACT: targetRestoredExact,
     PROBE_RESTORED_BASELINE: probeRestoredBaseline,
