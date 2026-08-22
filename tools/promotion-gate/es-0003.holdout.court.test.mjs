@@ -13,8 +13,11 @@ import { spawnSync } from 'node:child_process';
 import { before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { validateOwnershipManifest } from '../durability/cli.mjs';
 import { dispatchEvaluator as dispatchV2 } from './es-0002.mjs';
 import {
+  assessManifestSuccession,
+  collectManifestSuccessionEvidence,
   dispatchEvaluator as dispatchV3,
   evaluateManifestSuccession,
 } from './es-0003.mjs';
@@ -22,10 +25,12 @@ import {
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..', '..');
 const EVALUATOR_PATH = 'tools/promotion-gate/es-0003.mjs';
+const OWNERSHIP_MANIFEST_PATH = 'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json';
+const PR57_ASSIGNMENT = 'pr57_inherited_main_reconciliation_2026_08_21';
 const SEALED_COMMIT = '5a31f6cc919f755762bf9e5c88f0e8d8d5787ec8';
 const SEALED_SOURCE_SHA256 = '7e68689e38183bf52c351286977e3f0e47939101409bca68782dde854fb4291b';
 const APPROVED_SUCCESSION_PAYLOAD_SHA256 = '9650b9555d573a046540b56d06b6d2f362ec4384692092b474bfc94a489df23e';
-const PLAN_SHA256 = '803f7a83217b3b4a43aa733f1b783eab33b7e6b4c128b3924cd6e4275e784d76';
+const PLAN_SHA256 = 'e2e37b8f0bb501c3ff09fd1c4b8f1b679eacd543e013fcd0a09997edd23ee5e4';
 
 const HOLDOUT_PLAN_LINES = [
   'ES-0003-INDEPENDENT-HOLDOUT-PLAN-V1',
@@ -38,10 +43,10 @@ const HOLDOUT_PLAN_LINES = [
   'H07|Clone the frozen V3 positive event; replace both git_blob_sha and content_sha256 of tools/authority/authority.mjs with distinct valid-length lowercase hex identities; V3 must REFUSE.',
   'H08|Clone the frozen V3 positive event; set branch_evidence=main and remove candidate_commit_sha and candidate_tree_sha so a trusted-looking label lacks identity; V3 must REFUSE.',
   'H09|Clone the frozen V3 positive event; set candidate_commit_sha=40xa and candidate_tree_sha=40xb while leaving the approved files present, representing an ancestry fork outside approved lineage; V3 must REFUSE.',
-  'H10|Clone the frozen V3 positive event; add manifest_succession.assignment_classifications with two records for the same assignment_name, classified PR57_RECONCILIATION and UNKNOWN_FUTURE_RECONCILIATION; V3 must REFUSE.',
+  'H10|Clone the live ownership manifest; add a duplicate_assignment classification under the PR57 assignment with candidate_delta=E_GENUINE_NEW_SCOPE and genuine_new_scope=true conflicting with the approved inherited-main classification; require validateOwnershipManifest to refuse; feed assignment_schema_valid=false through real V3 policy; V3 must REFUSE.',
   'H11|Clone the frozen V3 positive event; swap entries[0] and entries[1] while retaining every value and approved_succession_payload_sha256, presenting alternate ordering/canonicalization; V3 must REFUSE.',
   'H12|Clone the frozen V3 positive event; set assignment_name=unrelated_dependency_refresh_2026_08_21 and replace new_manifest_digest with 64x3 while retaining the approved payload digest; V3 must REFUSE.',
-  'H13|Clone the frozen V3 positive event; change only manifest_succession.reality_closure_candidate_sha last byte 34->35; V3 must REFUSE.',
+  'H13|Clone the live ownership manifest; locate originating_commit at entry_schema index 7, replace entries[0][7] with 40xf, require validateOwnershipManifest to refuse, feed assignment_schema_valid=false through real V3 policy; V3 must REFUSE.',
   'H14|Present the exact frozen V3 positive event to the frozen ES-0002 evaluator/dispatch; it must REFUSE_AT_V2_DISPATCH.',
   'H15|Present the exact frozen ES-0002 positive fixture to the V3 evaluator/dispatch; it must REFUSE_AT_V3_DISPATCH or return a frozen-replay-only refusal with no V3 succession acceptance.',
   'H16|Clone the frozen V3 positive event and remove owner_gate entirely; V3 must REFUSE.',
@@ -59,6 +64,9 @@ const POSITIVE_V2 = JSON.parse(
 
 const sha256 = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const cloneV3 = () => structuredClone(POSITIVE_V3);
+const cloneLiveOwnershipManifest = () => JSON.parse(
+  fs.readFileSync(path.join(ROOT, OWNERSHIP_MANIFEST_PATH), 'utf8'),
+);
 
 function assertRefused(candidate, expectedFailedChecks) {
   const result = evaluateManifestSuccession(candidate);
@@ -69,6 +77,35 @@ function assertRefused(candidate, expectedFailedChecks) {
     assert.ok(result.failed_checks.includes(check), `${check}: ${JSON.stringify(result.failed_checks)}`);
   }
   return result;
+}
+
+function invalidManifestObservation(mutateManifest, expectedRefusal) {
+  const manifest = cloneLiveOwnershipManifest();
+  assert.doesNotThrow(() => validateOwnershipManifest(structuredClone(manifest)));
+  mutateManifest(manifest);
+
+  let validationError = null;
+  try {
+    validateOwnershipManifest(manifest);
+  } catch (error) {
+    validationError = error;
+  }
+  assert.ok(validationError instanceof Error, 'tampered live manifest was not refused');
+  assert.match(validationError.message, expectedRefusal);
+
+  const observed = collectManifestSuccessionEvidence(POSITIVE_V3);
+  observed.assignment_schema_valid = validationError == null;
+  observed.errors = [...observed.errors, `holdout manifest refusal: ${validationError.message}`];
+  assert.equal(observed.assignment_schema_valid, false);
+  return observed;
+}
+
+function assertObservationRefused(observed) {
+  const result = assessManifestSuccession(POSITIVE_V3, observed);
+  assert.equal(result.accepted, false, 'V3 accepted an invalid live-manifest observation');
+  assert.equal(result.technical_promotion_evidence, 'INCOMPLETE');
+  assert.deepEqual(result.certified_verdicts, []);
+  assert.ok(result.failed_checks.includes('lineage.assignment-schema-valid'));
 }
 
 before(() => {
@@ -180,15 +217,16 @@ test('H09 ancestry fork containing files but not approved lineage -> REFUSE', ()
 });
 
 test('H10 duplicate assignment with conflicting classification -> REFUSE', () => {
-  const candidate = cloneV3();
-  const assignmentName = candidate.manifest_succession.assignment_name;
-  candidate.manifest_succession.assignment_classifications = [
-    { assignment_name: assignmentName, classification: 'PR57_RECONCILIATION' },
-    { assignment_name: assignmentName, classification: 'UNKNOWN_FUTURE_RECONCILIATION' },
-  ];
-  // Materialize the conflicting second assignment through the frozen public entry projection.
-  candidate.manifest_succession.entries[1].path = candidate.manifest_succession.entries[0].path;
-  assertRefused(candidate, ['lineage.entry-paths-exact']);
+  const observed = invalidManifestObservation((manifest) => {
+    const classification =
+      manifest.explicit_user_assignment[PR57_ASSIGNMENT].common_entry_fields.classification;
+    classification.duplicate_assignment = {
+      ...structuredClone(classification),
+      candidate_delta: 'E_GENUINE_NEW_SCOPE',
+      genuine_new_scope: true,
+    };
+  }, /PR #57 inherited-main scope classification is malformed/);
+  assertObservationRefused(observed);
 });
 
 test('H11 reordered or alternate-canonicalization payload -> REFUSE', () => {
@@ -206,10 +244,14 @@ test('H12 manifest change unrelated to PR57 reconciliation -> REFUSE', () => {
 });
 
 test('H13 tampered originating commit -> REFUSE', () => {
-  const candidate = cloneV3();
-  candidate.manifest_succession.reality_closure_candidate_sha =
-    `${candidate.manifest_succession.reality_closure_candidate_sha.slice(0, -2)}35`;
-  assertRefused(candidate, ['lineage.reality-candidate-sha']);
+  const observed = invalidManifestObservation((manifest) => {
+    const assignment = manifest.explicit_user_assignment[PR57_ASSIGNMENT];
+    const originatingCommitIndex = assignment.entry_schema.indexOf('originating_commit');
+    assert.equal(originatingCommitIndex, 7);
+    assert.notEqual(assignment.entries[0][originatingCommitIndex], 'f'.repeat(40));
+    assignment.entries[0][originatingCommitIndex] = 'f'.repeat(40);
+  }, /PR #57 inherited-main assignment failed its owner-approval digest/);
+  assertObservationRefused(observed);
 });
 
 test('H14 V3 event presented to frozen ES-0002 -> REFUSE_AT_V2_DISPATCH', () => {
