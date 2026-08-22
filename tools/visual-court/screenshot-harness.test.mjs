@@ -2,10 +2,13 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 import {
   createBrowserProcessCustodian,
+  isTrustedVisualBaseUrl,
+  isTrustedVisualRequestUrl,
   prepareHarnessDirectories,
 } from './screenshot-harness.mjs';
 
@@ -87,6 +90,30 @@ function exactController(procRoot, signals) {
     },
   };
 }
+
+test('unsandboxed visual navigation accepts only an explicit loopback origin', () => {
+  assert.equal(isTrustedVisualBaseUrl('http://127.0.0.1:3000'), true);
+  assert.equal(isTrustedVisualBaseUrl('http://orderweeddc.localhost:3000'), true);
+  assert.equal(isTrustedVisualBaseUrl('https://localhost:3443'), true);
+  assert.equal(isTrustedVisualBaseUrl('https://example.com'), false);
+  assert.equal(isTrustedVisualBaseUrl('http://localhost.attacker.example'), false);
+  assert.equal(isTrustedVisualBaseUrl('http://user@localhost:3000'), false);
+  assert.equal(isTrustedVisualBaseUrl('file://localhost/tmp/page.html'), false);
+  assert.equal(isTrustedVisualRequestUrl('http://orderweeddc.localhost:3000/app.js', 'http://orderweeddc.localhost:3000'), true);
+  assert.equal(isTrustedVisualRequestUrl('data:image/png;base64,AA==', 'http://orderweeddc.localhost:3000'), true);
+  assert.equal(isTrustedVisualRequestUrl('https://example.com/redirect', 'http://orderweeddc.localhost:3000'), false);
+  assert.equal(isTrustedVisualRequestUrl('http://127.0.0.1:3001/other-service', 'http://127.0.0.1:3000'), false);
+});
+
+test('harness CLI refuses an external base before Chromium launch', () => {
+  const result = spawnSync(process.execPath, [
+    path.join(import.meta.dirname, 'screenshot-harness.mjs'),
+    '--base-url', 'https://example.com',
+    '--chromium', '/bin/true',
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 2, result.stderr || result.stdout);
+  assert.match(result.stderr, /UNTRUSTED_VISUAL_BASE_URL/);
+});
 
 test('output custody survives an ancestor swap without writing into source', () => {
   const root = makeRoot('output');

@@ -52,6 +52,36 @@ const CHROMIUM = args.chromium;
 const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CANONICAL_SOURCE_ROOT = realpathSync(SOURCE_ROOT);
 const IS_MAIN = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+export function isTrustedVisualBaseUrl(value) {
+  if (typeof value !== 'string' || value === '') return false;
+  try {
+    const parsed = new URL(value);
+    const hostname = parsed.hostname.toLowerCase();
+    const loopback = hostname === '127.0.0.1'
+      || hostname === '[::1]'
+      || hostname === 'localhost'
+      || hostname.endsWith('.localhost');
+    return loopback
+      && (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+      && parsed.username === ''
+      && parsed.password === '';
+  } catch {
+    return false;
+  }
+}
+
+export function isTrustedVisualRequestUrl(value, baseOrigin) {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === 'data:' || parsed.protocol === 'about:') return true;
+    if (parsed.protocol === 'blob:') return parsed.origin === baseOrigin;
+    return (parsed.protocol === 'http:' || parsed.protocol === 'https:')
+      && parsed.origin === baseOrigin;
+  } catch {
+    return false;
+  }
+}
 let OUT = args.out ? path.resolve(args.out) : null;
 const ROUTES = (args.routes ?? '/').split(',');
 const CDP_COMMAND_TIMEOUT_MS = 30_000;
@@ -417,6 +447,16 @@ async function runScreenshotHarness() {
     process.exitCode = 2;
     return;
   }
+  if (!isTrustedVisualBaseUrl(BASE)) {
+    process.stderr.write(`CANA_RENDERED_CDP_FAILURE ${JSON.stringify({
+      FAILURE_CLASS: 'UNTRUSTED_VISUAL_BASE_URL',
+      BASE_URL: BASE,
+      REQUIRED_ORIGIN: 'HTTP_OR_HTTPS_LOOPBACK',
+    })}\n`);
+    process.exitCode = 2;
+    return;
+  }
+  const trustedBaseOrigin = new URL(BASE).origin;
 
   try {
     linuxCustodyHelper = process.platform === 'linux' ? prepareLinuxCustodyHelper() : null;
@@ -453,6 +493,7 @@ async function runScreenshotHarness() {
   browserRunToken = randomBytes(32).toString('hex');
   terminalWaiters = new Set();
   timers = createTimerRegistry();
+  let networkCommandId = 1_000_000_000;
   lifecycle = createCdpLifecycle({
     timerRegistry: timers,
     sendJson(payload) {
@@ -464,6 +505,25 @@ async function runScreenshotHarness() {
       if (loadWait) loadWait.fail(error);
     },
     onEvent(message) {
+      if (message.method === 'Fetch.requestPaused') {
+        const requestId = message.params?.requestId;
+        const requestUrl = message.params?.request?.url;
+        const trusted = isTrustedVisualRequestUrl(requestUrl, trustedBaseOrigin);
+        if (requestId) {
+          try {
+            ws.send(JSON.stringify({
+              id: ++networkCommandId,
+              method: trusted ? 'Fetch.continueRequest' : 'Fetch.failRequest',
+              params: trusted ? { requestId } : { requestId, errorReason: 'BlockedByClient' },
+            }));
+          } catch (error) {
+            lifecycle.failLifecycle('WEBSOCKET_ERROR', { MESSAGE: error.message });
+          }
+        }
+        if (!trusted) {
+          lifecycle.failLifecycle('UNTRUSTED_VISUAL_REQUEST', { URL: requestUrl ?? null });
+        }
+      }
       if (message.method === 'Page.loadEventFired' && loadWait) loadWait.resolve('event');
       if (message.method === 'Inspector.targetCrashed' || message.method === 'Target.targetCrashed') {
         lifecycle.failLifecycle('TARGET_CRASH', { EVENT: message.method, PARAMS: message.params ?? null });
@@ -500,10 +560,12 @@ try {
     : { command: CHROMIUM, argv: browserArguments };
   chrome = spawn(launch.command, launch.argv, {
     cwd: process.platform === 'linux' ? '/' : chromiumCwd,
-    stdio: 'ignore',
+    stdio: launch.stdio ?? 'ignore',
     detached: process.platform !== 'win32',
     env: { ...process.env, CANA_VISUAL_RUN_TOKEN: browserRunToken },
   });
+  chrome.stdout?.resume();
+  chrome.stderr?.resume();
   chrome.once('error', (error) => {
     if (!cleanupStarted) lifecycle.failLifecycle('CHROMIUM_EXIT', { MESSAGE: error.message });
   });
@@ -563,6 +625,7 @@ try {
   ws.onerror = (event) => lifecycle.failLifecycle('WEBSOCKET_ERROR', { MESSAGE: String(event?.message ?? 'unknown WebSocket error') });
   ws.onmessage = (event) => lifecycle.handleMessage(event.data);
 
+  await send('Fetch.enable');
   await send('Page.enable');
   await send('Runtime.enable');
   await send('Inspector.enable');

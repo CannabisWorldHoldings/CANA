@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -64,6 +65,77 @@ test('native helper writes beneath retained binding and refuses a swapped root',
   }
 });
 
+test('supplied helper execution remains bound after its pathname is replaced', { skip: !linux }, async () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-linux-custody-binary-binding-'));
+  const binary = path.join(root, 'linux-custody-helper');
+  const output = path.join(root, 'output');
+  const sentinel = path.join(root, 'attacker-ran');
+  fs.mkdirSync(output, { mode: 0o700 });
+  const compiled = spawnSync(
+    process.env.CC ?? 'cc',
+    ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-o', binary,
+      path.join(import.meta.dirname, 'linux-custody-helper.c')],
+    { encoding: 'utf8' },
+  );
+  assert.equal(compiled.status, 0, compiled.stderr);
+  fs.chmodSync(binary, 0o700);
+  const expectedBinarySha256 = crypto.createHash('sha256').update(fs.readFileSync(binary)).digest('hex');
+  const helper = prepareLinuxCustodyHelper({ suppliedBinary: binary, expectedBinarySha256 });
+  const child = spawn(process.execPath, ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], {
+    stdio: 'ignore',
+  });
+  try {
+    fs.rmSync(binary);
+    fs.writeFileSync(binary, [
+      '#!/bin/sh',
+      `printf attacked >> ${JSON.stringify(sentinel)}`,
+      'case "$1" in',
+      "  write) printf '{\"protocol\":1,\"status\":\"WROTE\",\"bytes\":3}\\n' ;;",
+      "  signal) printf '{\"protocol\":1,\"status\":\"SIGNALLED_EXACT\"}\\n' ;;",
+      "  launch) printf '{\"protocol\":1,\"status\":\"READY\"}\\n' ;;",
+      "  *) printf '{\"protocol\":1,\"status\":\"READY\"}\\n' ;;",
+      'esac',
+    ].join('\n'), { mode: 0o700 });
+
+    const binding = fs.statSync(output, { bigint: true });
+    helper.write({
+      rootPath: output,
+      device: binding.dev,
+      inode: binding.ino,
+      relativePath: 'bound.txt',
+      bytes: Buffer.from('png'),
+    });
+
+    const stat = fs.readFileSync(`/proc/${child.pid}/stat`, 'utf8');
+    const startTime = stat.slice(stat.lastIndexOf(') ') + 2).split(' ')[19];
+    const signalled = helper.signal({ pid: child.pid, startTime, signal: 'SIGTERM' });
+    await Promise.race([waitForExit(child), new Promise((resolve) => setTimeout(resolve, 1_000))]);
+
+    const launch = helper.launchSpec({
+      rootPath: output,
+      device: binding.dev,
+      inode: binding.ino,
+      executable: '/bin/pwd',
+      argv: [],
+    });
+    const launched = spawnSync(launch.command, launch.argv, {
+      encoding: 'utf8',
+      stdio: launch.stdio,
+    });
+
+    assert.equal(fs.readFileSync(path.join(output, 'bound.txt'), 'utf8'), 'png');
+    assert.equal(signalled.status, 'SIGNALLED_EXACT');
+    assert.equal(child.exitCode !== null || child.signalCode !== null, true, 'verified helper must deliver the exact signal');
+    assert.equal(launched.status, 0);
+    assert.equal(launched.stdout.trim(), output);
+    assert.equal(fs.existsSync(sentinel), false, 'replacement helper pathname must never execute');
+  } finally {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    helper.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('native helper signals only the expected pid start time', { skip: !linux }, async () => {
   const helper = prepareLinuxCustodyHelper();
   const child = spawn(process.execPath, ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], {
@@ -101,7 +173,7 @@ test('native helper launches from the exact retained workspace identity', { skip
     });
     const result = fs.realpathSync(workspace);
     assert.equal(result, workspace);
-    const launched = spawnSync(spec.command, spec.argv, { encoding: 'utf8' });
+    const launched = spawnSync(spec.command, spec.argv, { encoding: 'utf8', stdio: spec.stdio });
     assert.equal(launched.status, 0);
     assert.equal(launched.stdout.trim(), workspace);
   } finally {
@@ -165,7 +237,7 @@ test('native launch supervisor drains an adopted detached descendant before shut
     executable: process.execPath,
     argv: [fixture, pidFile],
   });
-  const supervisor = spawn(spec.command, spec.argv, { stdio: 'ignore' });
+  const supervisor = spawn(spec.command, spec.argv, { stdio: spec.stdio });
   let adoptedPid = null;
   try {
     assert.equal(await waitUntil(() => fs.existsSync(pidFile)), true, 'fixture must publish the adopted child pid');

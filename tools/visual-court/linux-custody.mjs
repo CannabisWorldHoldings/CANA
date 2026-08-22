@@ -2,11 +2,14 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
+  closeSync,
+  constants,
   existsSync,
+  fstatSync,
   mkdtempSync,
+  openSync,
   readFileSync,
   rmSync,
-  statSync,
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 
 const PROTOCOL_VERSION = 1;
 const MAX_PAYLOAD_BYTES = 64 * 1024 * 1024;
+const CHILD_HELPER_FD = 3;
 const DEFAULT_SOURCE = fileURLToPath(new URL('./linux-custody-helper.c', import.meta.url));
 
 function sha256(bytes) {
@@ -91,35 +95,64 @@ export function prepareLinuxCustodyHelper({
     chmodSync(binaryPath, 0o700);
   }
 
-  const binaryStat = statSync(binaryPath);
+  let binaryFd = null;
+  try {
+    binaryFd = openSync(binaryPath, constants.O_RDONLY | constants.O_NOFOLLOW);
+  } catch (error) {
+    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+    throw failure('LINUX_CUSTODY_HELPER_UNTRUSTED', { BINARY: binaryPath, MESSAGE: error.message });
+  }
+  const closeBinary = () => {
+    if (binaryFd === null) return;
+    closeSync(binaryFd);
+    binaryFd = null;
+  };
+  const cleanFailure = () => {
+    closeBinary();
+    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+  };
+  const binaryStat = fstatSync(binaryFd);
   if (
     !binaryStat.isFile()
     || binaryStat.nlink !== 1
     || (binaryStat.mode & 0o022) !== 0
     || (typeof process.geteuid === 'function' && binaryStat.uid !== process.geteuid())
   ) {
-    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+    cleanFailure();
     throw failure('LINUX_CUSTODY_HELPER_UNTRUSTED', { BINARY: binaryPath });
   }
-  const binaryDigest = sha256(readFileSync(binaryPath));
+  const binaryDigest = sha256(readFileSync(binaryFd));
   if (expectedBinarySha256 && expectedBinarySha256 !== binaryDigest) {
-    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+    cleanFailure();
     throw failure('LINUX_CUSTODY_BINARY_MISMATCH', { EXPECTED: expectedBinarySha256, ACTUAL: binaryDigest });
   }
-  const probed = run(binaryPath, ['probe'], { encoding: 'utf8', timeout: 10_000 });
-  const probe = parseResponse(probed, 'probe');
+  const binaryExecutionPath = `/proc/self/fd/${CHILD_HELPER_FD}`;
+  const helperStdio = (input) => [input === null ? 'ignore' : 'pipe', 'pipe', 'pipe', binaryFd];
+  const probed = run(binaryExecutionPath, ['probe'], {
+    encoding: 'utf8',
+    timeout: 10_000,
+    stdio: helperStdio(null),
+  });
+  let probe;
+  try {
+    probe = parseResponse(probed, 'probe');
+  } catch (error) {
+    cleanFailure();
+    throw error;
+  }
   if (probed.status !== 0 || probe.status !== 'READY') {
-    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+    cleanFailure();
     throw failure('LINUX_CUSTODY_HELPER_UNAVAILABLE', { EXIT_CODE: probed.status, STATUS: probe.status });
   }
 
   let closed = false;
   function invoke(operation, argv, { input = null, timeout = 10_000 } = {}) {
     if (closed) throw failure('LINUX_CUSTODY_HELPER_CLOSED', { OPERATION: operation });
-    const result = run(binaryPath, [operation, ...argv], {
+    const result = run(binaryExecutionPath, [operation, ...argv], {
       encoding: input === null ? 'utf8' : undefined,
       input,
       maxBuffer: 4 * 1024 * 1024,
+      stdio: helperStdio(input),
       timeout,
     });
     const response = parseResponse(result, operation);
@@ -173,8 +206,9 @@ export function prepareLinuxCustodyHelper({
       }
       if (closed) throw failure('LINUX_CUSTODY_HELPER_CLOSED', { OPERATION: 'launch' });
       return {
-        command: binaryPath,
+        command: binaryExecutionPath,
         argv: ['launch', rootPath, String(device), String(inode), executable, ...argv],
+        stdio: ['ignore', 'pipe', 'pipe', binaryFd],
       };
     },
     signal({ pid, startTime, signal }) {
@@ -186,6 +220,7 @@ export function prepareLinuxCustodyHelper({
     close() {
       if (closed) return;
       closed = true;
+      closeBinary();
       if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
     },
   };
