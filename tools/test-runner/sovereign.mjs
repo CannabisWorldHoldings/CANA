@@ -235,39 +235,86 @@ export function runLiveSabotageRestoreProbe({
   relative = 'apps/web/src/lib/release-identity.mjs',
 } = {}) {
   const target = path.join(root, relative);
-  if (!sourceCommit || !fs.existsSync(target)) {
-    return { classification: 'NOT_RUN', why: `${relative} is not present, or HEAD is unknown` };
+  if (!sourceCommit) {
+    return { classification: 'NOT_RUN', why: 'SOURCE_COMMIT_UNKNOWN' };
   }
+
+  const canonicalExists = run('git', ['cat-file', '-e', `${sourceCommit}:${relative}`], { cwd: root });
+  if (!canonicalExists.ok) {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'TARGET_CANONICAL_BLOB_UNAVAILABLE',
+      detail: { relative, sourceCommit, canonicalError: tail(canonicalExists.combined, 1000) },
+    };
+  }
+  const canonicalEntry = run('git', ['ls-tree', sourceCommit, '--', relative], { cwd: root });
+  const entryMatch = canonicalEntry.stdout.match(/^(\d+)\s+(\S+)\s+([0-9a-f]{40,64})\t/);
+  if (!canonicalEntry.ok || !entryMatch || entryMatch[2] !== 'blob') {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'TARGET_CANONICAL_BLOB_UNAVAILABLE',
+      detail: { relative, sourceCommit, canonicalEntry: tail(canonicalEntry.combined, 1000) },
+    };
+  }
+  const [, canonicalMode, , canonicalBlob] = entryMatch;
 
   const status = (pathspec = null) => gitOut([
     'status', '--porcelain=v2', '--untracked-files=all', ...(pathspec ? ['--', pathspec] : []),
   ], { cwd: root });
-  const beforeBytes = fs.readFileSync(target);
-  const before = sha256File(target);
-  const beforeMode = fs.statSync(target).mode;
   const preSabotageStatus = status();
   const preSabotageTargetStatus = status(relative);
-  if (preSabotageTargetStatus !== '') {
-    const after = sha256File(target);
-    const afterMode = fs.statSync(target).mode;
+  let targetLstat = null;
+  let targetLstatError = null;
+  try {
+    targetLstat = fs.lstatSync(target);
+  } catch (error) {
+    targetLstatError = { code: error.code ?? null, message: error.message };
+  }
+  const targetType = targetLstat
+    ? targetLstat.isFile() ? 'regular-file'
+      : targetLstat.isSymbolicLink() ? 'symbolic-link'
+        : targetLstat.isDirectory() ? 'directory'
+          : 'other'
+    : 'missing';
+  const canonicalPermissions = Number.parseInt(canonicalMode.slice(-3), 8);
+  const targetPermissions = targetLstat ? targetLstat.mode & 0o777 : null;
+  const dirtinessReasons = [];
+  if (preSabotageTargetStatus !== '') dirtinessReasons.push('PORCELAIN_STATUS');
+  if (!targetLstat) dirtinessReasons.push('MISSING');
+  else if (!targetLstat.isFile()) dirtinessReasons.push('TYPE_CHANGED');
+  else if (targetPermissions !== canonicalPermissions) dirtinessReasons.push('MODE_CHANGED');
+
+  let worktreeBlob = null;
+  if (dirtinessReasons.length === 0) {
+    const hashed = run('git', ['hash-object', '--no-filters', '--', relative], { cwd: root });
+    worktreeBlob = hashed.stdout.trim();
+    if (!hashed.ok || worktreeBlob !== canonicalBlob) dirtinessReasons.push('CONTENT_CHANGED');
+  }
+
+  if (dirtinessReasons.length > 0) {
     return {
       classification: 'REAL_REGRESSION',
       why: 'PRE_EXISTING_TARGET_DIRTINESS',
       detail: {
         relative,
-        before,
-        restored: after,
+        sourceCommit,
+        CANONICAL_TARGET_MODE: canonicalMode,
+        CANONICAL_TARGET_BLOB: canonicalBlob,
+        WORKTREE_TARGET_BLOB: worktreeBlob,
+        TARGET_LSTAT_TYPE: targetType,
+        TARGET_LSTAT_MODE: targetLstat?.mode ?? null,
+        TARGET_LSTAT_ERROR: targetLstatError,
+        TARGET_DIRTINESS_REASONS: dirtinessReasons,
         PRE_SABOTAGE_WHOLE_STATUS: preSabotageStatus,
         PRE_SABOTAGE_STATUS: preSabotageStatus,
         PRE_SABOTAGE_TARGET_STATUS: preSabotageTargetStatus,
-        PRE_SABOTAGE_TARGET_SHA: before,
-        PRE_SABOTAGE_TARGET_MODE: beforeMode,
+        PRE_SABOTAGE_TARGET_MODE: targetLstat?.mode ?? null,
         POST_RESTORE_STATUS: preSabotageStatus,
         POST_RESTORE_TARGET_STATUS: preSabotageTargetStatus,
-        POST_RESTORE_TARGET_SHA: after,
-        POST_RESTORE_TARGET_MODE: afterMode,
-        TARGET_BYTES_PRESERVED: after === before,
-        TARGET_MODE_PRESERVED: afterMode === beforeMode,
+        POST_RESTORE_TARGET_MODE: targetLstat?.mode ?? null,
+        TARGET_BYTES_PRESERVED: targetLstat?.isFile() ? true : null,
+        TARGET_MODE_PRESERVED: targetLstat ? true : null,
+        TARGET_STATE_PRESERVED_BY_NO_MUTATION: true,
         TARGET_MUTATION_DETECTED: false,
         TARGET_RESTORED_EXACT: false,
         PROBE_RESTORED_BASELINE: true,
@@ -279,6 +326,9 @@ export function runLiveSabotageRestoreProbe({
     };
   }
 
+  const beforeBytes = fs.readFileSync(target);
+  const before = sha256File(target);
+  const beforeMode = fs.statSync(target).mode;
   const canonical = run('git', ['cat-file', 'blob', `${sourceCommit}:${relative}`], {
     cwd: root,
     maxBuffer: 32 * 1024 * 1024,

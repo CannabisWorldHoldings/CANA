@@ -21,7 +21,16 @@
 // PREREQUISITES (honest): a running `next build && next start` (or dev) of
 // apps/web and a Chromium binary. In environments without npm-registry
 // access this cannot self-run; execute it wherever the app builds.
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +44,7 @@ const args = Object.fromEntries(
 const BASE = args['base-url'];
 const CHROMIUM = args.chromium;
 const SOURCE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const CANONICAL_SOURCE_ROOT = realpathSync(SOURCE_ROOT);
 const IS_MAIN = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 let OUT = args.out ? path.resolve(args.out) : null;
 const ROUTES = (args.routes ?? '/').split(',');
@@ -59,18 +69,77 @@ const MEASURE = `(() => {
 const { spawn } = await import('node:child_process');
 
 function isInside(candidate, parent) {
-  const relative = path.relative(path.resolve(parent), path.resolve(candidate));
+  const relative = path.relative(parent, candidate);
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
 }
 
-export function resolveChromiumWorkingDirectory(outputRoot, {
-  sourceRoot = SOURCE_ROOT,
+function pathFailure(failureClass, detail) {
+  const error = new Error(`${failureClass} ${JSON.stringify(detail)}`);
+  error.failureClass = failureClass;
+  error.failureDetail = detail;
+  return error;
+}
+
+function canonicalProspectivePath(candidate) {
+  const missing = [];
+  let cursor = path.resolve(candidate);
+  while (!existsSync(cursor)) {
+    const parent = path.dirname(cursor);
+    if (parent === cursor) throw pathFailure('VISUAL_PATH_CANONICALIZATION_FAILED', { PATH: candidate });
+    missing.unshift(path.basename(cursor));
+    cursor = parent;
+  }
+  return path.join(realpathSync(cursor), ...missing);
+}
+
+function requireOutsideSource(candidate, sourceRoot, failureClass) {
+  if (isInside(candidate, sourceRoot)) {
+    throw pathFailure(failureClass, { CANONICAL_PATH: candidate, CANONICAL_SOURCE_ROOT: sourceRoot });
+  }
+  return candidate;
+}
+
+export function resolveChromiumWorkingDirectory(_outputRoot, {
+  sourceRoot = CANONICAL_SOURCE_ROOT,
   tempRoot = os.tmpdir(),
   makeTemp = mkdtempSync,
 } = {}) {
-  const candidate = path.join(path.resolve(outputRoot), 'chromium-workdir');
-  if (!isInside(candidate, sourceRoot)) return candidate;
-  return makeTemp(path.join(path.resolve(tempRoot), 'cana-chromium-cwd-'));
+  const canonicalSource = realpathSync(sourceRoot);
+  const canonicalTemp = canonicalProspectivePath(tempRoot);
+  requireOutsideSource(canonicalTemp, canonicalSource, 'BROWSER_WORKSPACE_INSIDE_SOURCE');
+  const candidate = makeTemp(path.join(canonicalTemp, 'cana-visual-browser-'));
+  return requireOutsideSource(realpathSync(candidate), canonicalSource, 'BROWSER_WORKSPACE_INSIDE_SOURCE');
+}
+
+export function prepareHarnessDirectories(outputRoot, {
+  sourceRoot = CANONICAL_SOURCE_ROOT,
+  tempRoot = os.tmpdir(),
+  makeTemp = mkdtempSync,
+} = {}) {
+  const canonicalSource = realpathSync(sourceRoot);
+  const requestedOutput = outputRoot
+    ? path.resolve(outputRoot)
+    : makeTemp(path.join(canonicalProspectivePath(tempRoot), 'cana-visual-court-'));
+  const prospectiveOutput = canonicalProspectivePath(requestedOutput);
+  requireOutsideSource(prospectiveOutput, canonicalSource, 'VISUAL_OUTPUT_INSIDE_SOURCE');
+  mkdirSync(requestedOutput, { recursive: true });
+  const output = requireOutsideSource(
+    realpathSync(requestedOutput),
+    canonicalSource,
+    'VISUAL_OUTPUT_INSIDE_SOURCE',
+  );
+  const browserWorkspace = resolveChromiumWorkingDirectory(output, { sourceRoot: canonicalSource, tempRoot, makeTemp });
+  const userDataDir = path.join(browserWorkspace, 'profile');
+  const crashDumpsDir = path.join(browserWorkspace, 'crashes');
+  mkdirSync(userDataDir);
+  mkdirSync(crashDumpsDir);
+  return {
+    sourceRoot: canonicalSource,
+    output,
+    browserWorkspace,
+    userDataDir: realpathSync(userDataDir),
+    crashDumpsDir: realpathSync(crashDumpsDir),
+  };
 }
 
 export function createTimerRegistry({
@@ -235,6 +304,196 @@ export function createCdpLifecycle({
   };
 }
 
+function readLinuxProcessTable(procRoot) {
+  const rows = [];
+  for (const name of readdirSync(procRoot)) {
+    if (!/^\d+$/.test(name)) continue;
+    try {
+      const pid = Number(name);
+      const stat = readFileSync(path.join(procRoot, name, 'stat'), 'utf8');
+      const fields = stat.slice(stat.lastIndexOf(') ') + 2).split(' ');
+      const [state, parentPid, processGroup] = fields;
+      let environment = [];
+      let argv = [];
+      try {
+        environment = readFileSync(path.join(procRoot, name, 'environ')).toString('utf8').split('\0').filter(Boolean);
+      } catch {
+        // Process identity remains partially available through stat/lineage.
+      }
+      try {
+        argv = readFileSync(path.join(procRoot, name, 'cmdline')).toString('utf8').split('\0').filter(Boolean);
+      } catch {
+        // Process identity remains partially available through stat/lineage.
+      }
+      rows.push({
+        pid,
+        state,
+        parentPid: Number(parentPid),
+        processGroup: Number(processGroup),
+        startTime: fields[19],
+        environment,
+        argv,
+      });
+    } catch {
+      // A process may exit, or become unreadable, between /proc reads.
+    }
+  }
+  return rows;
+}
+
+export function createBrowserProcessCustodian({
+  rootPid,
+  rootProcessGroup = rootPid,
+  runToken,
+  userDataDir,
+  platform = process.platform,
+  procRoot = '/proc',
+  signalProcess = (pid, signal) => process.kill(pid, signal),
+  signalProcessGroup = (group, signal) => process.kill(-group, signal),
+  sleep = (timeoutMs) => new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+  graceMs = CHROMIUM_EXIT_TIMEOUT_MS,
+  pollMs = 50,
+} = {}) {
+  if (!Number.isInteger(rootPid) || rootPid <= 0 || !runToken || !userDataDir) {
+    throw new Error('browser custody requires rootPid, runToken, and userDataDir');
+  }
+  const tokenMarker = `CANA_VISUAL_RUN_TOKEN=${runToken}`;
+  const userDataMarker = `--user-data-dir=${userDataDir}`;
+  const knownOwned = new Map();
+  const originalProcess = platform === 'linux'
+    ? readLinuxProcessTable(procRoot).find((row) => row.pid === rootPid)
+    : null;
+  const rootStartTime = originalProcess?.startTime ?? null;
+  if (rootStartTime) knownOwned.set(rootPid, rootStartTime);
+
+  function enumerateOwnedProcesses() {
+    if (platform !== 'linux') {
+      throw pathFailure('CHROMIUM_CLEANUP_PROOF_UNAVAILABLE', { PLATFORM: platform });
+    }
+    const rows = readLinuxProcessTable(procRoot);
+    const owned = new Map();
+    for (const row of rows) {
+      const knownStart = knownOwned.get(row.pid);
+      const reasons = [];
+      if (row.pid === rootPid && row.startTime === rootStartTime) reasons.push('ORIGINAL_PID_START_TIME');
+      if (rootStartTime && row.processGroup === rootProcessGroup) reasons.push('ORIGINAL_PROCESS_GROUP');
+      if (row.environment.includes(tokenMarker)) reasons.push('RUN_TOKEN');
+      if (row.argv.includes(userDataMarker)) reasons.push('USER_DATA_DIR');
+      if (knownStart && knownStart === row.startTime) reasons.push('KNOWN_PID_START_TIME');
+      if (reasons.length > 0) owned.set(row.pid, { ...row, reasons });
+    }
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const row of rows) {
+        if (owned.has(row.pid) || !owned.has(row.parentPid)) continue;
+        owned.set(row.pid, { ...row, reasons: ['OWNED_PARENT_LINEAGE'] });
+        changed = true;
+      }
+    }
+    for (const row of owned.values()) knownOwned.set(row.pid, row.startTime);
+    return [...owned.values()].sort((left, right) => left.pid - right.pid);
+  }
+
+  function signalOne(pid, signal, failures) {
+    try {
+      signalProcess(pid, signal);
+      return true;
+    } catch (error) {
+      if (error.code === 'ESRCH') return true;
+      failures.push({ target: 'process', pid, signal, code: error.code ?? null, message: error.message });
+      return false;
+    }
+  }
+
+  function signalGroup(signal, failures) {
+    try {
+      signalProcessGroup(rootProcessGroup, signal);
+      return true;
+    } catch (error) {
+      if (error.code === 'ESRCH') return true;
+      failures.push({ target: 'group', processGroup: rootProcessGroup, signal, code: error.code ?? null, message: error.message });
+      return false;
+    }
+  }
+
+  async function waitForZero() {
+    const deadline = Date.now() + graceMs;
+    let residual = enumerateOwnedProcesses();
+    while (residual.length > 0 && Date.now() < deadline) {
+      await sleep(Math.min(pollMs, Math.max(1, deadline - Date.now())));
+      residual = enumerateOwnedProcesses();
+    }
+    return residual;
+  }
+
+  async function cleanup({ requestBrowserClose = async () => false } = {}) {
+    const signalFailures = [];
+    let browserCloseRequested = false;
+    try {
+      browserCloseRequested = await requestBrowserClose();
+    } catch (error) {
+      signalFailures.push({ target: 'Browser.close', message: error.message });
+    }
+
+    if (platform !== 'linux') {
+      signalGroup('SIGTERM', signalFailures);
+      signalOne(rootPid, 'SIGTERM', signalFailures);
+      return {
+        proofAvailable: false,
+        failureClass: 'CHROMIUM_CLEANUP_PROOF_UNAVAILABLE',
+        platform,
+        browserCloseRequested,
+        signalFailures,
+        ownedBrowserProcessCountAfter: null,
+        residual: [],
+      };
+    }
+
+    const initiallyOwned = enumerateOwnedProcesses();
+    const escapedChildDiscovered = initiallyOwned.some((row) => (
+      row.pid !== rootPid
+      && row.processGroup !== rootProcessGroup
+      && (row.reasons.includes('RUN_TOKEN') || row.reasons.includes('USER_DATA_DIR'))
+    ));
+    if (initiallyOwned.some((row) => row.processGroup === rootProcessGroup)) {
+      signalGroup('SIGTERM', signalFailures);
+    }
+    if (initiallyOwned.some((row) => row.pid === rootPid)) {
+      signalOne(rootPid, 'SIGTERM', signalFailures);
+    }
+
+    const afterGroupSignal = enumerateOwnedProcesses();
+    for (const row of afterGroupSignal) signalOne(row.pid, 'SIGTERM', signalFailures);
+    let residual = await waitForZero();
+    const beforeKillCount = residual.length;
+    for (const row of residual) signalOne(row.pid, 'SIGKILL', signalFailures);
+    residual = await waitForZero();
+
+    return {
+      proofAvailable: true,
+      failureClass: residual.length > 0 ? 'CHROMIUM_CLEANUP_INCOMPLETE' : null,
+      platform,
+      browserCloseRequested,
+      signalFailures,
+      initiallyOwnedCount: initiallyOwned.length,
+      afterGroupSignalCount: afterGroupSignal.length,
+      beforeKillCount,
+      escapedChildDiscovered,
+      ownedBrowserProcessCountAfter: residual.length,
+      residual: residual.map((row) => ({
+        pid: row.pid,
+        state: row.state,
+        parentPid: row.parentPid,
+        processGroup: row.processGroup,
+        reasons: row.reasons,
+      })),
+    };
+  }
+
+  return { cleanup, enumerateOwnedProcesses };
+}
+
 let chrome = null;
 let ws = null;
 let lifecycle = null;
@@ -242,13 +501,13 @@ let timers = null;
 let loadWait = null;
 let cleanupStarted = false;
 let cleanupPromise = null;
-let chromeExited = false;
 let chromiumCwd = null;
+let browserCustodian = null;
+let browserCleanupReceipt = null;
+let browserRunToken = null;
+let userDataDir = null;
+let crashDumpsDir = null;
 let terminalWaiters = new Set();
-
-function resetChromeExit() {
-  chromeExited = false;
-}
 
 function delay(timeoutMs) {
   return new Promise((resolve, reject) => {
@@ -295,76 +554,6 @@ function waitForLoad(context) {
   });
 }
 
-function signalChromium(signal) {
-  if (!chrome) return true;
-  try {
-    if (process.platform === 'win32') {
-      if (!chromeExited) chrome.kill(signal);
-    }
-    else process.kill(-chrome.pid, signal);
-    return true;
-  } catch (error) {
-    if (error.code === 'ESRCH') return true;
-    try {
-      if (!chromeExited) chrome.kill(signal);
-      return true;
-    } catch (fallbackError) {
-      process.stderr.write(`CHROMIUM_CLEANUP_SIGNAL_FAILED ${signal} ${error.message}; ${fallbackError.message}\n`);
-      return false;
-    }
-  }
-}
-
-function chromiumProcessTreeAlive() {
-  if (!chrome) return false;
-  if (process.platform === 'win32') return !chromeExited;
-  if (process.platform === 'linux') {
-    for (const name of readdirSync('/proc')) {
-      if (!/^\d+$/.test(name)) continue;
-      try {
-        const stat = readFileSync(`/proc/${name}/stat`, 'utf8');
-        const fields = stat.slice(stat.lastIndexOf(') ') + 2).split(' ');
-        const [state, , processGroup] = fields;
-        if (Number(processGroup) === chrome.pid && state !== 'Z') return true;
-      } catch {
-        // Processes can exit between the directory listing and stat read.
-      }
-    }
-    return false;
-  }
-  try {
-    process.kill(-chrome.pid, 0);
-    return true;
-  } catch (error) {
-    if (error.code === 'ESRCH') return false;
-    return true;
-  }
-}
-
-function cleanupDelay(timeoutMs) {
-  return new Promise((resolve) => timers.set(resolve, timeoutMs));
-}
-
-async function waitForChromiumTreeExit(timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (chromiumProcessTreeAlive() && Date.now() < deadline) {
-    await cleanupDelay(Math.min(50, Math.max(1, deadline - Date.now())));
-  }
-  return !chromiumProcessTreeAlive();
-}
-
-async function terminateChromium() {
-  if (!chromiumProcessTreeAlive()) return;
-  signalChromium('SIGTERM');
-  const exitedAfterTerm = await waitForChromiumTreeExit(CHROMIUM_EXIT_TIMEOUT_MS);
-  if (exitedAfterTerm) return;
-  signalChromium('SIGKILL');
-  const exitedAfterKill = await waitForChromiumTreeExit(CHROMIUM_EXIT_TIMEOUT_MS);
-  if (!exitedAfterKill) {
-    lifecycle.failLifecycle('CHROMIUM_EXIT', { MESSAGE: 'Chromium did not exit after SIGKILL escalation' });
-  }
-}
-
 async function cleanup() {
   if (cleanupPromise) return cleanupPromise;
   cleanupStarted = true;
@@ -372,10 +561,38 @@ async function cleanup() {
     try {
       if (lifecycle?.pendingCount > 0) lifecycle.failLifecycle('HARNESS_CLEANUP');
       if (loadWait) loadWait.resolve('cleanup');
+      const requestBrowserClose = async () => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return false;
+        ws.send(JSON.stringify({ id: 2_147_483_647, method: 'Browser.close' }));
+        return true;
+      };
       if (ws) {
         ws.onmessage = null;
         ws.onerror = null;
         ws.onclose = null;
+      }
+      if (browserCustodian) {
+        try {
+          browserCleanupReceipt = await browserCustodian.cleanup({ requestBrowserClose });
+        } catch (error) {
+          browserCleanupReceipt = {
+            proofAvailable: false,
+            failureClass: error.failureClass ?? 'CHROMIUM_CLEANUP_PROOF_UNAVAILABLE',
+            platform: process.platform,
+            browserCloseRequested: false,
+            signalFailures: [{ target: 'custody-proof', message: error.message }],
+            ownedBrowserProcessCountAfter: null,
+            residual: [],
+          };
+        }
+        if (browserCleanupReceipt.failureClass) {
+          lifecycle.failLifecycle(browserCleanupReceipt.failureClass, {
+            PLATFORM: browserCleanupReceipt.platform,
+            OWNED_BROWSER_PROCESS_COUNT_AFTER: browserCleanupReceipt.ownedBrowserProcessCountAfter,
+            SIGNAL_FAILURES: browserCleanupReceipt.signalFailures,
+            RESIDUAL: browserCleanupReceipt.residual,
+          });
+        }
       }
       if (ws && ws.readyState < 2) {
         try {
@@ -384,7 +601,6 @@ async function cleanup() {
           process.stderr.write(`WEBSOCKET_CLEANUP_FAILED ${error.message}\n`);
         }
       }
-      await terminateChromium();
     } finally {
       timers?.clearAll();
     }
@@ -399,20 +615,36 @@ async function runScreenshotHarness() {
     return;
   }
 
-  OUT ??= mkdtempSync(path.join(os.tmpdir(), 'cana-visual-court-'));
-  mkdirSync(OUT, { recursive: true });
-  chromiumCwd = resolveChromiumWorkingDirectory(OUT);
-  mkdirSync(chromiumCwd, { recursive: true });
-  process.stdout.write(`VISUAL_COURT_OUT=${OUT}\nBROWSER_CWD=${chromiumCwd}\n`);
+  try {
+    const directories = prepareHarnessDirectories(OUT);
+    OUT = directories.output;
+    chromiumCwd = directories.browserWorkspace;
+    userDataDir = directories.userDataDir;
+    crashDumpsDir = directories.crashDumpsDir;
+  } catch (error) {
+    const detail = {
+      FAILURE_CLASS: error.failureClass ?? 'VISUAL_PATH_CANONICALIZATION_FAILED',
+      ...(error.failureDetail ?? {}),
+      MESSAGE: error.message,
+    };
+    process.stderr.write(`CANA_RENDERED_CDP_FAILURE ${JSON.stringify(detail)}\n`);
+    process.exitCode = 1;
+    return;
+  }
+  process.stdout.write(
+    `VISUAL_COURT_OUT=${OUT}\nBROWSER_CWD=${chromiumCwd}\nUSER_DATA_DIR=${userDataDir}\nCRASH_DUMPS_DIR=${crashDumpsDir}\n`,
+  );
 
   chrome = null;
   ws = null;
   loadWait = null;
   cleanupStarted = false;
   cleanupPromise = null;
+  browserCustodian = null;
+  browserCleanupReceipt = null;
+  browserRunToken = randomBytes(32).toString('hex');
   terminalWaiters = new Set();
   timers = createTimerRegistry();
-  resetChromeExit();
   lifecycle = createCdpLifecycle({
     timerRegistry: timers,
     sendJson(payload) {
@@ -445,15 +677,25 @@ try {
     '--headless',
     '--hide-scrollbars',
     '--remote-debugging-port=9224',
+    `--user-data-dir=${userDataDir}`,
+    `--crash-dumps-dir=${crashDumpsDir}`,
     'about:blank',
-  ], { cwd: chromiumCwd, stdio: 'ignore', detached: process.platform !== 'win32' });
+  ], {
+    cwd: chromiumCwd,
+    stdio: 'ignore',
+    detached: process.platform !== 'win32',
+    env: { ...process.env, CANA_VISUAL_RUN_TOKEN: browserRunToken },
+  });
   chrome.once('error', (error) => {
-    chromeExited = true;
     if (!cleanupStarted) lifecycle.failLifecycle('CHROMIUM_EXIT', { MESSAGE: error.message });
   });
   chrome.once('exit', (code, signal) => {
-    chromeExited = true;
     if (!cleanupStarted) lifecycle.failLifecycle('CHROMIUM_EXIT', { EXIT_CODE: code, SIGNAL: signal });
+  });
+  browserCustodian = createBrowserProcessCustodian({
+    rootPid: chrome.pid,
+    runToken: browserRunToken,
+    userDataDir,
   });
   await delay(3000);
   if (lifecycle.terminalFailure) throw lifecycle.terminalFailure;
@@ -579,6 +821,23 @@ try {
   await cleanup();
 }
 
+  if (browserCleanupReceipt) {
+    process.stdout.write(
+      `OWNED_BROWSER_PROCESS_COUNT_AFTER=${browserCleanupReceipt.ownedBrowserProcessCountAfter ?? 'UNPROVEN'}\n`,
+    );
+  }
+  if (browserCleanupReceipt?.failureClass) {
+    const primaryFailure = failureDetail;
+    failure = pathFailure(browserCleanupReceipt.failureClass, browserCleanupReceipt);
+    failureDetail = {
+      FAILURE_CLASS: browserCleanupReceipt.failureClass,
+      PLATFORM: browserCleanupReceipt.platform,
+      OWNED_BROWSER_PROCESS_COUNT_AFTER: browserCleanupReceipt.ownedBrowserProcessCountAfter,
+      SIGNAL_FAILURES: browserCleanupReceipt.signalFailures,
+      RESIDUAL: browserCleanupReceipt.residual,
+      PRIMARY_FAILURE: primaryFailure,
+    };
+  }
   failure ??= lifecycle.terminalFailure;
   if (failure) {
     failureDetail ??= failure.cdpFailure ?? { FAILURE_CLASS: 'HARNESS_ERROR', MESSAGE: failure.message };
@@ -588,6 +847,7 @@ try {
       PENDING_COUNT: lifecycle.pendingCount,
       ACTIVE_TIMER_COUNT: timers.activeCount,
       TERMINAL_FAILURE_COUNT: lifecycle.terminalFailureCount,
+      BROWSER_CLEANUP: browserCleanupReceipt,
     };
     writeFileSync(path.join(OUT, 'rendered-failure.json'), JSON.stringify(detail, null, 2));
     process.stderr.write(`CANA_RENDERED_CDP_FAILURE ${JSON.stringify(detail)}\n`);
