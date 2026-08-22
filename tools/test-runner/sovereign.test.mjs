@@ -184,6 +184,27 @@ test('the first three stages are HARD gates — identity and the census cannot b
   );
 });
 
+test('Stage 13 and the authoritative H3 workflow require the exact Linux custody courts', () => {
+  const sovereign = fs.readFileSync(path.join(ROOT, 'tools', 'test-runner', 'sovereign.mjs'), 'utf8');
+  for (const relative of [
+    'tools/visual-court/linux-custody.test.mjs',
+    'tools/visual-court/output-custody.test.mjs',
+    'tools/visual-court/process-custody.test.mjs',
+    'tools/visual-court/screenshot-harness.test.mjs',
+  ]) {
+    assert.ok(sovereign.includes(`'${relative}'`), `${relative} must be a Stage 13 unit`);
+  }
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify-sovereign.yml'),
+    'utf8',
+  );
+  assert.match(workflow, /node-version: 24\.14\.1/);
+  assert.match(workflow, /cc -std=c11 -O2 -Wall -Wextra -Werror/);
+  assert.match(workflow, /CANA_LINUX_CUSTODY_SOURCE_SHA256=/);
+  assert.match(workflow, /CANA_LINUX_CUSTODY_BINARY_SHA256=/);
+  assert.match(workflow, /\.\/cana verify sovereign/);
+});
+
 test('the converged dispatcher keeps the Federation census gate ahead of every verify', () => {
   const dispatcher = fs.readFileSync(path.join(ROOT, 'cana'), 'utf8');
   const verifyIndex = dispatcher.indexOf("scope === 'verify'");

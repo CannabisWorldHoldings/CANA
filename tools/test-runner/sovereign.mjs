@@ -976,7 +976,8 @@ const STAGES = [
     gate: 'SOFT',
     proves:
       'The boundary courts hold (security boundary, auth policy and throttle, education boundary, '
-      + 'dependency security, verification laundering, provenance sabotage), and a live '
+      + 'dependency security, verification laundering, descriptor-bound output custody, exact '
+      + 'process custody, provenance sabotage), and a live '
       + 'sabotage/restore probe shows the tree detects a one-line mutation of a tracked source '
       + 'file and restores it to the exact canonical blob.',
     run(ctx) {
@@ -989,6 +990,10 @@ const STAGES = [
         'apps/web/tests/verification-laundering.test.mjs',
         'apps/web/tests/interaction-proof.test.mjs',
         'tools/provenance-court/sabotage.test.mjs',
+        'tools/visual-court/linux-custody.test.mjs',
+        'tools/visual-court/output-custody.test.mjs',
+        'tools/visual-court/process-custody.test.mjs',
+        'tools/visual-court/screenshot-harness.test.mjs',
       ];
       const web = path.join(ROOT, 'apps', 'web');
       const units = files.map((f) => courtUnit(f, { cwd: f.startsWith('apps/web/') ? web : ROOT }));

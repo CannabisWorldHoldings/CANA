@@ -22,6 +22,7 @@ import {
   mission3M001OwnershipAssignment,
   ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS,
   ownershipPatterns,
+  PR59_SOVEREIGN_CUSTODY_PATHS,
   PR57_INHERITED_MAIN_ENTRY_SCHEMA,
   PR57_INHERITED_MAIN_PATHS,
   pr57InheritedMainObservationAdmitted,
@@ -49,6 +50,7 @@ const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08
 const CUSTOMER_FUNCTIONAL_ASSIGNMENT = 'customer_functional_convergence_2026_08_13';
 const ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT =
   'orderweeddc_home_composition_v1_2026_08_14';
+const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT = 'pr59_sovereign_custody_2026_08_22';
 const PR57_INHERITED_MAIN_ASSIGNMENT =
   'pr57_inherited_main_reconciliation_2026_08_21';
 const PR57_CANONICAL_MAIN_SHA = '4cc502cb317be157f1448e04ee296cb202829ed7';
@@ -530,6 +532,57 @@ test('ORDERWEEDDC Home Composition authority and paths fail closed', () => {
     assert.throws(
       () => validateOwnershipManifest(manifest),
       /ORDERWEEDDC Home Composition|changed-file ownership patterns/,
+    );
+  }
+});
+
+test('PR #59 sovereign custody owns exactly eight verification files without neighboring authority', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const assignment = manifest.explicit_user_assignment[PR59_SOVEREIGN_CUSTODY_ASSIGNMENT];
+  assert.deepEqual(assignment.paths, [...PR59_SOVEREIGN_CUSTODY_PATHS]);
+  assert.deepEqual(unownedPaths(PR59_SOVEREIGN_CUSTODY_PATHS, manifest), []);
+  for (const relative of PR59_SOVEREIGN_CUSTODY_PATHS) {
+    assert.equal(manifest.owned_create_paths.filter((entry) => entry === relative).length, 1);
+    assert.equal(manifest.owned_modify_paths.includes(relative), false);
+    assert.equal(manifest.planned_candidate_files.filter((entry) => entry === relative).length, 1);
+    assert.equal(manifest.global_no_edit.includes(relative), false);
+  }
+  assert.deepEqual(
+    unownedPaths([
+      'tools/visual-court/linux-custody-neighbor.mjs',
+      'tools/visual-court/process-custody.mjs.future',
+      'tools/visual-court/nested/output-custody.mjs',
+    ], manifest),
+    [
+      'tools/visual-court/linux-custody-neighbor.mjs',
+      'tools/visual-court/process-custody.mjs.future',
+      'tools/visual-court/nested/output-custody.mjs',
+    ],
+  );
+});
+
+test('PR #59 sovereign custody assignment rejects scope and authority broadening', () => {
+  const mutations = [
+    (manifest, assignment) => { assignment.paths[0] = 'tools/visual-court/**'; },
+    (manifest, assignment) => { assignment.paths[0] += '.neighbor'; },
+    (manifest, assignment) => { assignment.paths.pop(); },
+    (manifest, assignment) => { assignment.authorization_source_sha256 = '0'.repeat(64); },
+    (manifest, assignment) => { assignment.authorization_effect = 'runtime-authority'; },
+    (manifest, assignment) => { assignment.assignment_sha256 = '0'.repeat(64); },
+    (manifest) => {
+      manifest.owned_create_paths = manifest.owned_create_paths.filter(
+        (entry) => entry !== PR59_SOVEREIGN_CUSTODY_PATHS[0],
+      );
+    },
+    (manifest) => { manifest.owned_create_paths.push('tools/visual-court/**'); },
+  ];
+  for (const mutate of mutations) {
+    const manifest = ownership();
+    mutate(manifest, manifest.explicit_user_assignment[PR59_SOVEREIGN_CUSTODY_ASSIGNMENT]);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /PR #59 (?:sovereign )?custody|changed-file ownership patterns/,
     );
   }
 });

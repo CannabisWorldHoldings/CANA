@@ -55,10 +55,17 @@ const GOVERNOR_KERNEL_EXTRACTION_ASSIGNMENT = 'governor_kernel_extraction_2026_0
 const FEDERATION_GATES_AB_ASSIGNMENT = 'federation_gates_ab_2026_08_18';
 const FEDERATION_GATES_CD_ASSIGNMENT = 'federation_gates_cd_2026_08_18';
 const FEDERATION_GATE_E_ASSIGNMENT = 'federation_gate_e_2026_08_18';
+const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT = 'pr59_sovereign_custody_2026_08_22';
+const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256 =
+  '5cfdc920488db9935fb0fb905d255edc77d3416fb9255fd13194df7c5815bc73';
+const PR59_AUTONOMY_SOURCE_SHA256 =
+  '14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565';
 const PR57_INHERITED_MAIN_ASSIGNMENT =
   'pr57_inherited_main_reconciliation_2026_08_21';
 const PR57_INHERITED_MAIN_ASSIGNMENT_SHA256 =
   '545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed';
+const PR57_PRE_REPAIR_OWNERSHIP_SHA256 =
+  '4a368db5329998a2d1d983cf2822e40e417d2cc9474cc100a6e681f6a2e056f5';
 const PR57_CANONICAL_MAIN_SHA = '4cc502cb317be157f1448e04ee296cb202829ed7';
 const PR57_CANDIDATE_SHA = 'e03acd96ccfed958b0a21c76e32c2075038a4e34';
 const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
@@ -83,6 +90,7 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   FEDERATION_GATES_AB_ASSIGNMENT,
   FEDERATION_GATES_CD_ASSIGNMENT,
   FEDERATION_GATE_E_ASSIGNMENT,
+  PR59_SOVEREIGN_CUSTODY_ASSIGNMENT,
   PR57_INHERITED_MAIN_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
@@ -91,7 +99,18 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  '4a368db5329998a2d1d983cf2822e40e417d2cc9474cc100a6e681f6a2e056f5';
+  'f90dd4b29d4b7b40c95ee41f77026d47df4abc80c0c5744be98789af0733e40a';
+
+export const PR59_SOVEREIGN_CUSTODY_PATHS = Object.freeze([
+  'tools/visual-court/linux-custody-helper.c',
+  'tools/visual-court/linux-custody.mjs',
+  'tools/visual-court/linux-custody.test.mjs',
+  'tools/visual-court/output-custody.mjs',
+  'tools/visual-court/output-custody.test.mjs',
+  'tools/visual-court/process-custody.mjs',
+  'tools/visual-court/process-custody.test.mjs',
+  'tools/visual-court/screenshot-harness.test.mjs',
+]);
 
 export const PR57_INHERITED_MAIN_PATHS = Object.freeze([
   '_mission/evolution/ES-0002-promotion-identity.json',
@@ -673,6 +692,56 @@ export function validateOwnershipManifest(ownership) {
   const allOwnedPaths = [...ownership.owned_create_paths, ...ownership.owned_modify_paths];
   if (new Set(allOwnedPaths).size !== allOwnedPaths.length) {
     refusal('duplicate changed-file ownership is not allowed');
+  }
+
+  const pr59CustodyAssignment =
+    ownership.explicit_user_assignment[PR59_SOVEREIGN_CUSTODY_ASSIGNMENT];
+  if (
+    !exactKeys(pr59CustodyAssignment, [
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'rationale',
+      'paths',
+      'assignment_sha256',
+    ])
+    || !Array.isArray(pr59CustodyAssignment.paths)
+    || pr59CustodyAssignment.authorization_source_sha256 !== PR59_AUTONOMY_SOURCE_SHA256
+    || pr59CustodyAssignment.authorization_effect !== 'durability-path-ownership-only'
+    || typeof pr59CustodyAssignment.authorization !== 'string'
+    || pr59CustodyAssignment.authorization.length === 0
+    || typeof pr59CustodyAssignment.scope !== 'string'
+    || pr59CustodyAssignment.scope.length === 0
+    || typeof pr59CustodyAssignment.rationale !== 'string'
+    || pr59CustodyAssignment.rationale.length === 0
+    || JSON.stringify(pr59CustodyAssignment.paths)
+      !== JSON.stringify(PR59_SOVEREIGN_CUSTODY_PATHS)
+    || pr59CustodyAssignment.paths.some(
+      (relative) => relative.includes('*')
+        || relative.includes('\\')
+        || relative.startsWith('/')
+        || relative.includes('..')
+        || path.posix.normalize(relative) !== relative,
+    )
+  ) {
+    refusal('PR #59 sovereign custody ownership assignment is malformed');
+  }
+  for (const authorizedPath of PR59_SOVEREIGN_CUSTODY_PATHS) {
+    if (allOwnedPaths.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(`PR #59 custody path must have one exact ownership entry: ${authorizedPath}`);
+    }
+    if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPath).length !== 1) {
+      refusal(`PR #59 custody path must have one planned-candidate entry: ${authorizedPath}`);
+    }
+  }
+  const { assignment_sha256: pr59RecordedDigest, ...pr59Payload } =
+    pr59CustodyAssignment;
+  if (
+    pr59RecordedDigest !== PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256
+    || sha256Bytes(canonicalJson(pr59Payload)) !== PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256
+  ) {
+    refusal('PR #59 sovereign custody assignment failed its execution-scope digest');
   }
   for (const authorizedPath of STAGE_A_AUTHORIZED_PATHS) {
     const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
@@ -1573,7 +1642,7 @@ export function validateOwnershipManifest(ownership) {
     || pr57Evaluator.durability_base_commit !== BASE
     || pr57Evaluator.existing_assignment_semantics_change !== 'NONE'
     || pr57Evaluator.existing_changed_file_ownership_sha256
-      !== CHANGED_FILE_OWNERSHIP_SHA256
+      !== PR57_PRE_REPAIR_OWNERSHIP_SHA256
     || pr57Evaluator.existing_global_no_edit_change !== 'NONE'
     || pr57Evaluator.existing_owned_create_paths_change !== 'NONE'
     || pr57Evaluator.existing_owned_modify_paths_change !== 'NONE'
