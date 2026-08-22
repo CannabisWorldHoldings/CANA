@@ -952,6 +952,140 @@
         "cana",
         "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json"
       ]
+    },
+    "pr59_sovereign_custody_2026_08_22": {
+      "authorization": "OWNER FULL EXECUTION AUTONOMY OVERRIDE — PR #59 mission",
+      "authorization_source_sha256": "14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565",
+      "scope": "Eight exact new verification-only files for fail-closed rendered-browser filesystem and process custody; no wildcard, directory, neighboring-path, product, persistence, deployment, or runtime-product authority.",
+      "authorization_effect": "durability-path-ownership-only",
+      "rationale": "The V3 harness reopened mutable output paths and used heuristic process ownership. These exact helper, policy, and court files implement descriptor-bound openat2 writes plus stable pidfd/subreaper cleanup and prove hostile path, marker, process-group, partial-proc, recycled-identity, and escaped-descendant cases.",
+      "paths": [
+        "tools/visual-court/linux-custody-helper.c",
+        "tools/visual-court/linux-custody.mjs",
+        "tools/visual-court/linux-custody.test.mjs",
+        "tools/visual-court/output-custody.mjs",
+        "tools/visual-court/output-custody.test.mjs",
+        "tools/visual-court/process-custody.mjs",
+        "tools/visual-court/process-custody.test.mjs",
+        "tools/visual-court/screenshot-harness.test.mjs"
+      ],
+      "assignment_sha256": "5cfdc920488db9935fb0fb905d255edc77d3416fb9255fd13194df7c5815bc73"
+    },
+    "pr57_inherited_main_reconciliation_2026_08_21": {
+      "authorization": "OWNER_SCOPE_APPROVAL_REQUIRED_FOR_PR57_INHERITED_MAIN_RECONCILIATION",
+      "authorization_effect": "Durability admission for these 24 exact inherited PR57 canonical blobs only; no path-pattern ownership, neighboring path, runtime authority, deployment, production, verification bypass, self-promotion, product behavior, or unrelated judge authority.",
+      "candidate_actual_paths": [
+        "apps/web/src/lib/customer-world.mjs",
+        "apps/web/src/lib/customer-world.server.ts",
+        "apps/web/tests/customer-world.test.mjs"
+      ],
+      "candidate_sha": "e03acd96ccfed958b0a21c76e32c2075038a4e34",
+      "canonical_main_sha": "4cc502cb317be157f1448e04ee296cb202829ed7",
+      "classification_summary": {
+        "A_actual_candidate_failed_paths": [],
+        "A_actual_candidate_paths": [
+          "apps/web/src/lib/customer-world.mjs",
+          "apps/web/src/lib/customer-world.server.ts",
+          "apps/web/tests/customer-world.test.mjs"
+        ],
+        "B_inherited_main_failed_count": 24,
+        "C_traversal_only_failed_count": 24,
+        "D_stale_incomplete_metadata_failed_count": 24,
+        "E_genuine_new_scope_failed_count": 0
+      },
+      "common_entry_fields": {
+        "changed_by_candidate": false,
+        "classification": {
+          "candidate_delta": "B_INHERITED_MAIN",
+          "genuine_new_scope": false,
+          "metadata": "D_STALE_INCOMPLETE_METADATA",
+          "traversal": "C_BASE_TO_CANDIDATE_TRAVERSAL_ONLY"
+        },
+        "current_ownership_state": "UNOWNED_BY_CURRENT_HASH_BOUND_DURABILITY_METADATA",
+        "historical_authority_evidence": "PR57_OWNER_MERGE_GATE_APPROVED_FOR_PR_57",
+        "introduced_by_merge": "ad27c3a517ae76215584fbd2b62f904358301056",
+        "metadata_status": "PR57_MANIFEST_INCOMPLETE_AFTER_49BFCC71; NO_EVIDENCE_OF_PRIOR_ENTRY_LOSS",
+        "recommended_disposition": "BLOB_BOUND_PR57_INHERITED_MAIN_ADMISSION_ONLY",
+        "why_court_includes_it": "DURABILITY_BASE_c953ebcd25c46ef33af0700d7913a899d839bce8_TO_EVALUATED_COMMIT_DIFF_CONTAINS_PATH"
+      },
+      "entries": [
+        ["_mission/evolution/ES-0002-promotion-identity.json", "36662b90da2ea85e63973c772b85c4e0dbb4ccd0", "36662b90da2ea85e63973c772b85c4e0dbb4ccd0", "64cc18a97923efa4b71e1487b4844481d4c3898d560ea252ff7d1f0574da144a", "100644", "CREATE", "PR57_HISTORICAL_EVIDENCE_EVALUATOR_SUCCESSION", "fb66524f0151d1f0cc8db7e095163a4b0d1156f5", "Evidence-only promotion-identity succession record.", "MEDIUM_EVALUATOR_PROVENANCE"],
+        ["apps/web/src/app/lab/shell.tsx", "8036065f510580c4e590a7f15bfc63d52581e647", "8036065f510580c4e590a7f15bfc63d52581e647", "99fca5e5e65d0c333f4ca0436470d9155d8fa481782358459013ccc7d15eac9e", "100644", "MODIFY", "PR57_INTERNAL_LAB_MATRIX_AMENDMENT", "37425d21aee53274e45bca4724874581c2c126b5", "Internal lab theme synchronization lint repair.", "LOW_INTERNAL_LAB"],
+        ["apps/web/src/app/lab/sponsorship/page.tsx", "c57e48703704683abef4d9cda74e7a67b26b0db6", "c57e48703704683abef4d9cda74e7a67b26b0db6", "990b08d5733c3eb3cc8aff12b016ee11869b9a1ea2fab9da79e0cb7fa52494c2", "100644", "MODIFY", "PR57_INTERNAL_LAB_MATRIX_AMENDMENT", "37425d21aee53274e45bca4724874581c2c126b5", "Internal sponsorship-lab fixture typing.", "LOW_INTERNAL_LAB"],
+        ["apps/web/tests/workspace-integrity.test.mjs", "a21ec30a558b7231292ab60522db043c4bf5c823", "a21ec30a558b7231292ab60522db043c4bf5c823", "d3c555605dfa5472b0ffa99d405bbb2b7f704b57837f62061f1f40e79b1e270e", "100644", "MODIFY", "PR57_TEST_INFRASTRUCTURE_FEDERATION_WORKSPACE_COURT", "49bfcc714e3744fc90e56d9618d39d3b5d59e1f6", "Test-only governor-kernel package census.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["skills-src/hermes-governed-packet.mjs", "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8", "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8", "cb731f697193049b776322d64b705e481f31e8670f1df154b3a63728befdf7bc", "100644", "MODIFY", "PR57_SOVEREIGN_CORE_HERMES_AUTHORITY_BOUNDARY", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Externally verified CANA grant boundary.", "HIGH_AUTHORITY_CRITICAL"],
+        ["skills-src/sitemind-context-compiler.mjs", "3b4c64485c69aaefcb890b93805c06d7ec4c9426", "3b4c64485c69aaefcb890b93805c06d7ec4c9426", "7a3d1190cc6e3171f8cae96022d6eba632b1df8c2ab1ed007e4950353702d951", "100644", "MODIFY", "PR57_SOVEREIGN_CORE_CONTEXT_COMPILER_IMPORT_GUARD", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Imported self-test process-exit guard.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/alive-loop/authority-bridge.mjs", "9123c6441ab4a46524b90fa1ede5dc97c733ce73", "9123c6441ab4a46524b90fa1ede5dc97c733ce73", "fd71d2d037935b311dfb328d3a903893d1afe21792672da7c2719959df9eeb82", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_BRIDGE", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Alive-loop to single authority-seat bridge.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/authority-court.test.mjs", "d0dc865f5473611f8756d743f2add0ee8a688173", "d0dc865f5473611f8756d743f2add0ee8a688173", "e2bb85fd12a5f1a9ea4acaa2c215bf39d3cba46a7913655f2b31e3b06c268793", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Authorization admission and refusal courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/authority.mjs", "aedfbaa6e659c8bedc3c1567bc9b45cc64027612", "aedfbaa6e659c8bedc3c1567bc9b45cc64027612", "782e6dfb8450ca853d386b3a7dd4992a46191b9ab89cfca2819b41c70088c4d0", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Single authorization seat.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/canon.mjs", "050244dab8600fe82488dea3d003cac84dc5256e", "050244dab8600fe82488dea3d003cac84dc5256e", "6fb2cab0193c804fc43d5fdcb1cae841c997d11de8db7331d2fce469a36a1b81", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Authority canonicalization and hashing.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/containment.mjs", "9179bb3a7b5f34c4896089b5ddf7068c10489427", "9179bb3a7b5f34c4896089b5ddf7068c10489427", "04ac9c50b76525566ff16328348f1c8dc3a5f23552efe9742123477aeb71f56c", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Authority containment and budgets.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/court-fixtures.mjs", "77c8464458e1c5d0683712ad520747d6b07eb592", "77c8464458e1c5d0683712ad520747d6b07eb592", "90f8942a95e643a9961546fceaba18a20e74ec3929f87995e71ccdc9fbff8eb7", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Deterministic authority-court fixtures.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/gk-compat.test.mjs", "58a55723780c0982f69d0b3397709a0c32b91f1a", "58a55723780c0982f69d0b3397709a0c32b91f1a", "a4089fc681ba790f67a1a98f1a817fbbc5f87feafb93004e640ac0a7e5543982", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Node-Python governor compatibility court.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/gk_compat_bridge.py", "dca31ba1faa9e15400fea7a075481130b45ad11a", "dca31ba1faa9e15400fea7a075481130b45ad11a", "93445b4a8b9b469053d80061987fa01990fb03ca56f50c4453ab65ff9e478b83", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Python governor compatibility bridge.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/hermes-boundary.test.mjs", "7c3d72f1214ce538765aab07a01da8f81dd7774c", "7c3d72f1214ce538765aab07a01da8f81dd7774c", "e2665103fc02df195201ab8d24cdb01740f6da6bac59dabef97106f11f6fe5c1", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Hermes boundary courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/lease-reclaim.mjs", "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8", "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8", "7641bba7e1c0d0fc5bb38c9949f79d6bf8cbc9df289677dab2decf2f37bed599", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Lease reclaim and stale-holder fencing.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/nonce.mjs", "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2", "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2", "152d4d0b2f212ef27b350ddca2d1e6e078f08b8d1207a8f11d1f0750b07c1373", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Single-use authorization nonces.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/owner-gate.mjs", "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104", "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104", "41f3d07a349d316c1172671e245927f50109d0a78c52ab3866a6944b781846db", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Signed owner-gated action admission.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/receipts.mjs", "bf184e5b3826ebff561e3a1776eac294ac95f92e", "bf184e5b3826ebff561e3a1776eac294ac95f92e", "77379403be66795ef5d2a5078f58d799579f99a409a1cb8160acd839eee4137d", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Hash-chained decision receipts.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/signer.mjs", "44bdf776ee454cf6d0375cb104d6004f4cddddb4", "44bdf776ee454cf6d0375cb104d6004f4cddddb4", "ac3de2b908c76141e2eea9cef252aca27fa88111d86aeb213a1fd351e5bfd35e", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Owner-root signer and verifier boundary.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/single-seat.test.mjs", "55ecc6be678b010322932edd3c0026d5b1327667", "55ecc6be678b010322932edd3c0026d5b1327667", "5168bb1293293a6d090d3d5f9f824584bb258b1f0aec0f09f07b02039cfb52ee", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Single-seat uniqueness court.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/federation/capability-admission.test.mjs", "457de0c0b271502783ba1921cf52dd0214838376", "457de0c0b271502783ba1921cf52dd0214838376", "dfbee13b73d7a3de83cfedd10b4b0e4716bb152790bc50e9e8fd1dd3212c37d5", "100644", "CREATE", "PR57_SOVEREIGN_CORE_FEDERATION_ADMISSION_COURT", "0cec7b572720a9253ca5864420ec1d3242627dfc", "Census-to-authority separation courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/federation/census-blindspot.test.mjs", "c5f295622a7f3107c0b89b3423c21d00d107cd49", "c5f295622a7f3107c0b89b3423c21d00d107cd49", "75f26747ab68afd0d836de5554666e23eafd892b2dcd45feb3fc5df90b8989dc", "100644", "CREATE", "PR57_SOVEREIGN_CORE_FEDERATION_ADMISSION_COURT", "0cec7b572720a9253ca5864420ec1d3242627dfc", "Census blind-spot courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/postgres-sim/stock-postgis-diagnostic.mjs", "32cda3afbd9925fdbd0fc68212501b3fef38a876", "32cda3afbd9925fdbd0fc68212501b3fef38a876", "d1b6e269f1ef4452be887bfe03269d5b6c98b81bd948f9e9cd948fa4f691c0b9", "100644", "CREATE", "PR57_TEST_INFRASTRUCTURE_POSTGIS_DIAGNOSTIC", "c4d5ab9cdcaa7f73228f35b3bdb3f781fd566ecb", "Stock-PostGIS H3 limitation diagnostic.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"]
+      ],
+      "entry_schema": [
+        "path",
+        "current_canonical_blob_sha",
+        "candidate_blob_sha",
+        "canonical_content_sha256",
+        "canonical_git_mode",
+        "base_change_class",
+        "historical_owner_classification",
+        "originating_commit",
+        "runtime_behavior",
+        "risk"
+      ],
+      "evaluator_contract": {
+        "admission_predicate": [
+          "assignment_digest_matches_owner_approved_sha256",
+          "evaluated_commit_descends_from_canonical_main_sha",
+          "evaluated_commit_descends_from_candidate_sha",
+          "path_is_exact_entry",
+          "git_mode_matches",
+          "git_blob_matches",
+          "content_sha256_matches"
+        ],
+        "assignment_name": "pr57_inherited_main_reconciliation_2026_08_21",
+        "branch_name_used_as_authority": false,
+        "canonical_json": "RECURSIVE_OBJECT_KEY_SORT_ARRAY_ORDER_PRESERVED_UTF8",
+        "changed_path_enumeration": "git diff --name-only c953ebcd25c46ef33af0700d7913a899d839bce8..<evaluated_commit>",
+        "durability_base_commit": "c953ebcd25c46ef33af0700d7913a899d839bce8",
+        "evaluator_path": "tools/durability/cli.mjs",
+        "existing_assignment_semantics_change": "NONE",
+        "existing_changed_file_ownership_sha256": "4a368db5329998a2d1d983cf2822e40e417d2cc9474cc100a6e681f6a2e056f5",
+        "existing_global_no_edit_change": "NONE",
+        "existing_owned_create_paths_change": "NONE",
+        "existing_owned_modify_paths_change": "NONE",
+        "manifest_path": "tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json",
+        "required_evaluator_change": "ADD_EXACT_SCHEMA_DIGEST_AND_BLOB_BOUND_INHERITED_MAIN_ADMISSION_BEFORE_UNOWNED_REFUSAL",
+        "required_test_change": "ADD_POSITIVE_AND_NEGATIVE_COURTS_IN_tools/durability/cli.test.mjs",
+        "sha256": "LOWERCASE_HEX_SHA256_OF_THIS_CANONICAL_PAYLOAD"
+      },
+      "scope": "Twenty-four exact PR57 paths bound to current canonical mode, Git blob, and content SHA256; no wildcard, directory, neighbor, or replacement blob.",
+      "scope_effects": {
+        "authority_change": false,
+        "judge_change": true,
+        "product_behavior_change": false
+      },
+      "timestamp_semantics": "NO_WALL_CLOCK_FIELD; PAYLOAD_IDENTITY_IS_SHA_BOUND; OWNER_APPROVAL_TIME_IS_EXTERNAL_AND_NOT_DIGEST_INPUT",
+      "verification_evidence": {
+        "candidate_h3_status": "NOT_RUN_FOR_UNPUSHED_LOCAL_CANDIDATE; LOCAL_DOCKER_UNAVAILABLE",
+        "candidate_local_durability": "REFUSED_WITH_THE_SAME_24_PATHS",
+        "canonical_main_durability_run": "32414163266:FAILURE:DURABILITY_PROOF_ONLY",
+        "canonical_main_sovereign_h3_run": "32414163253:SUCCESS:VERIFY_SOVEREIGN_POSTGIS_H3"
+      },
+      "approval_sha256": "545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed"
     }
   },
   "owned_create_paths": [
@@ -1275,6 +1409,14 @@
     "tools/visual-court/static-collector.mjs",
     "tools/visual-court/run-static.mjs",
     "tools/visual-court/screenshot-harness.mjs",
+    "tools/visual-court/linux-custody-helper.c",
+    "tools/visual-court/linux-custody.mjs",
+    "tools/visual-court/linux-custody.test.mjs",
+    "tools/visual-court/output-custody.mjs",
+    "tools/visual-court/output-custody.test.mjs",
+    "tools/visual-court/process-custody.mjs",
+    "tools/visual-court/process-custody.test.mjs",
+    "tools/visual-court/screenshot-harness.test.mjs",
     "apps/web/tests/visual-court.test.mjs",
     "apps/web/src/app/lab/design/page.tsx",
     "_mission/CANA_SOVEREIGN_COGNITIVE_FEDERATION_CURRENT_STATE.md",
@@ -1521,6 +1663,14 @@
     "tools/durability/base-remote-receipt.json",
     "tools/durability/cli.mjs",
     "tools/durability/cli.test.mjs",
+    "tools/visual-court/linux-custody-helper.c",
+    "tools/visual-court/linux-custody.mjs",
+    "tools/visual-court/linux-custody.test.mjs",
+    "tools/visual-court/output-custody.mjs",
+    "tools/visual-court/output-custody.test.mjs",
+    "tools/visual-court/process-custody.mjs",
+    "tools/visual-court/process-custody.test.mjs",
+    "tools/visual-court/screenshot-harness.test.mjs",
     "tools/cpanel-sim/run.mjs",
     "tools/cpanel-sim/run.test.mjs",
     "tools/cpanel-sim/templates/**",

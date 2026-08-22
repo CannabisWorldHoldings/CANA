@@ -174,13 +174,13 @@ export function createDemandCredits(prisma) {
           decided_by: 'database uniqueness constraint',
         };
       }
-      // A seq collision means two writers raced for the same chain position. The
-      // event-identity constraint and the chain-position constraint can both
-      // reject the same duplicate race on PostgreSQL. If the canonical event
-      // already won, report that truthful duplicate and return its row. Only an
-      // unrelated writer remains genuine chain contention; silently renumbering
-      // that case would corrupt the hash chain.
-      if (isUnique && /seq/i.test(target)) {
+      // A seq or entry-hash collision means two writers raced for the same chain
+      // position/content. PostgreSQL may report either constraint before the
+      // event-identity constraint for an otherwise identical attribution. If the
+      // canonical event already won, report that truthful duplicate and return
+      // its row. Only an unrelated writer remains genuine chain contention;
+      // silently renumbering that case would corrupt the hash chain.
+      if (isUnique && /(seq|entryHash)/i.test(target)) {
         const winner = fields.eventIdentity
           ? await table.findFirst({ where: { merchantId, eventIdentity: fields.eventIdentity } })
           : null;

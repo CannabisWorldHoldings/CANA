@@ -229,23 +229,279 @@ function environmentMissing(why, extra = {}) {
   return { classification: 'ENVIRONMENT_MISSING', evidence: [why], detail: extra };
 }
 
+export function runLiveSabotageRestoreProbe({
+  root = ROOT,
+  sourceCommit,
+  relative = 'apps/web/src/lib/release-identity.mjs',
+  isolate = true,
+} = {}) {
+  const target = path.join(root, relative);
+  if (!sourceCommit) {
+    return { classification: 'NOT_RUN', why: 'SOURCE_COMMIT_UNKNOWN' };
+  }
+
+  const canonicalExists = run('git', ['cat-file', '-e', `${sourceCommit}:${relative}`], { cwd: root });
+  if (!canonicalExists.ok) {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'TARGET_CANONICAL_BLOB_UNAVAILABLE',
+      detail: { relative, sourceCommit, canonicalError: tail(canonicalExists.combined, 1000) },
+    };
+  }
+  const canonicalEntry = run('git', ['ls-tree', sourceCommit, '--', relative], { cwd: root });
+  const entryMatch = canonicalEntry.stdout.match(/^(\d+)\s+(\S+)\s+([0-9a-f]{40,64})\t/);
+  if (!canonicalEntry.ok || !entryMatch || entryMatch[2] !== 'blob') {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'TARGET_CANONICAL_BLOB_UNAVAILABLE',
+      detail: { relative, sourceCommit, canonicalEntry: tail(canonicalEntry.combined, 1000) },
+    };
+  }
+  const [, canonicalMode, , canonicalBlob] = entryMatch;
+
+  const status = (pathspec = null) => gitOut([
+    'status', '--porcelain=v2', '--untracked-files=all', ...(pathspec ? ['--', pathspec] : []),
+  ], { cwd: root });
+  const preSabotageStatus = status();
+  const preSabotageTargetStatus = status(relative);
+  let targetLstat = null;
+  let targetLstatError = null;
+  try {
+    targetLstat = fs.lstatSync(target);
+  } catch (error) {
+    targetLstatError = { code: error.code ?? null, message: error.message };
+  }
+  const targetType = targetLstat
+    ? targetLstat.isFile() ? 'regular-file'
+      : targetLstat.isSymbolicLink() ? 'symbolic-link'
+        : targetLstat.isDirectory() ? 'directory'
+          : 'other'
+    : 'missing';
+  const canonicalPermissions = Number.parseInt(canonicalMode.slice(-3), 8);
+  const targetPermissions = targetLstat ? targetLstat.mode & 0o777 : null;
+  const dirtinessReasons = [];
+  if (preSabotageTargetStatus !== '') dirtinessReasons.push('PORCELAIN_STATUS');
+  if (!targetLstat) dirtinessReasons.push('MISSING');
+  else if (!targetLstat.isFile()) dirtinessReasons.push('TYPE_CHANGED');
+  else if (targetPermissions !== canonicalPermissions) dirtinessReasons.push('MODE_CHANGED');
+
+  let worktreeBlob = null;
+  if (dirtinessReasons.length === 0) {
+    const hashed = run('git', ['hash-object', '--no-filters', '--', relative], { cwd: root });
+    worktreeBlob = hashed.stdout.trim();
+    if (!hashed.ok || worktreeBlob !== canonicalBlob) dirtinessReasons.push('CONTENT_CHANGED');
+  }
+
+  if (dirtinessReasons.length > 0) {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'PRE_EXISTING_TARGET_DIRTINESS',
+      detail: {
+        relative,
+        sourceCommit,
+        CANONICAL_TARGET_MODE: canonicalMode,
+        CANONICAL_TARGET_BLOB: canonicalBlob,
+        WORKTREE_TARGET_BLOB: worktreeBlob,
+        TARGET_LSTAT_TYPE: targetType,
+        TARGET_LSTAT_MODE: targetLstat?.mode ?? null,
+        TARGET_LSTAT_ERROR: targetLstatError,
+        TARGET_DIRTINESS_REASONS: dirtinessReasons,
+        PRE_SABOTAGE_WHOLE_STATUS: preSabotageStatus,
+        PRE_SABOTAGE_STATUS: preSabotageStatus,
+        PRE_SABOTAGE_TARGET_STATUS: preSabotageTargetStatus,
+        PRE_SABOTAGE_TARGET_MODE: targetLstat?.mode ?? null,
+        POST_RESTORE_STATUS: preSabotageStatus,
+        POST_RESTORE_TARGET_STATUS: preSabotageTargetStatus,
+        POST_RESTORE_TARGET_MODE: targetLstat?.mode ?? null,
+        TARGET_BYTES_PRESERVED: targetLstat?.isFile() ? true : null,
+        TARGET_MODE_PRESERVED: targetLstat ? true : null,
+        TARGET_STATE_PRESERVED_BY_NO_MUTATION: true,
+        TARGET_MUTATION_DETECTED: false,
+        TARGET_RESTORED_EXACT: false,
+        PROBE_RESTORED_BASELINE: true,
+        REPOSITORY_CLEAN_BEFORE_SABOTAGE: false,
+        REPOSITORY_CLEAN_AFTER_RESTORE: false,
+        PROBE_SKIPPED: true,
+        FAILURE_CLASSES: ['PRE_EXISTING_TARGET_DIRTINESS'],
+      },
+    };
+  }
+
+  if (isolate) {
+    const sourceStatBefore = fs.statSync(target, { bigint: true });
+    const sourceShaBefore = sha256File(target);
+    const isolationRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-sovereign-sabotage-'));
+    const isolatedCheckout = path.join(isolationRoot, 'checkout');
+    let isolatedResult = null;
+    let isolationFailure = null;
+    let cleanupFailure = null;
+    let isolatedCommit = null;
+    let isolatedTree = null;
+    try {
+      const cloned = run('git', [
+        'clone', '--quiet', '--no-hardlinks', '--no-checkout', root, isolatedCheckout,
+      ], { timeout: 120_000 });
+      if (!cloned.ok) throw new Error(`ISOLATED_CLONE_FAILED ${tail(cloned.combined, 1000)}`);
+      const checkedOut = run('git', ['checkout', '--quiet', '--detach', sourceCommit], {
+        cwd: isolatedCheckout,
+      });
+      if (!checkedOut.ok) throw new Error(`ISOLATED_CHECKOUT_FAILED ${tail(checkedOut.combined, 1000)}`);
+      isolatedCommit = gitOut(['rev-parse', 'HEAD'], { cwd: isolatedCheckout });
+      isolatedTree = gitOut(['rev-parse', 'HEAD^{tree}'], { cwd: isolatedCheckout });
+      if (isolatedCommit !== sourceCommit) throw new Error('ISOLATED_SOURCE_IDENTITY_MISMATCH');
+      isolatedResult = runLiveSabotageRestoreProbe({
+        root: isolatedCheckout,
+        sourceCommit,
+        relative,
+        isolate: false,
+      });
+    } catch (error) {
+      isolationFailure = error.message;
+    } finally {
+      try {
+        fs.rmSync(isolationRoot, { recursive: true, force: true });
+      } catch (error) {
+        cleanupFailure = error.message;
+      }
+    }
+
+    const sourceStatusAfter = status();
+    const sourceTargetStatusAfter = status(relative);
+    const sourceStatAfter = fs.statSync(target, { bigint: true });
+    const sourceShaAfter = sha256File(target);
+    const sourceCheckoutUntouched = sourceStatusAfter === preSabotageStatus
+      && sourceTargetStatusAfter === preSabotageTargetStatus
+      && sourceShaAfter === sourceShaBefore
+      && sourceStatAfter.mode === sourceStatBefore.mode
+      && sourceStatAfter.mtimeNs === sourceStatBefore.mtimeNs;
+    const isolationFailureClasses = [];
+    if (isolationFailure) isolationFailureClasses.push('SABOTAGE_ISOLATION_FAILED');
+    if (cleanupFailure) isolationFailureClasses.push('SABOTAGE_ISOLATION_CLEANUP_FAILED');
+    if (preSabotageStatus !== '') isolationFailureClasses.push('PRE_EXISTING_REPOSITORY_DIRTINESS');
+    if (!sourceCheckoutUntouched) isolationFailureClasses.push('SOURCE_CHECKOUT_MUTATED_DURING_PROBE');
+    if (isolatedResult?.classification !== 'VERIFIED') {
+      isolationFailureClasses.push(...(isolatedResult?.detail?.FAILURE_CLASSES ?? ['ISOLATED_SABOTAGE_FAILED']));
+    }
+    const detail = {
+      ...(isolatedResult?.detail ?? {}),
+      ISOLATED_CHECKOUT: true,
+      ISOLATED_COMMIT: isolatedCommit,
+      ISOLATED_TREE: isolatedTree,
+      SOURCE_CHECKOUT_STATUS_BEFORE: preSabotageStatus,
+      SOURCE_CHECKOUT_STATUS_AFTER: sourceStatusAfter,
+      SOURCE_CHECKOUT_TARGET_STATUS_BEFORE: preSabotageTargetStatus,
+      SOURCE_CHECKOUT_TARGET_STATUS_AFTER: sourceTargetStatusAfter,
+      SOURCE_CHECKOUT_SHA_BEFORE: sourceShaBefore,
+      SOURCE_CHECKOUT_SHA_AFTER: sourceShaAfter,
+      SOURCE_CHECKOUT_MTIME_NS_BEFORE: String(sourceStatBefore.mtimeNs),
+      SOURCE_CHECKOUT_MTIME_NS_AFTER: String(sourceStatAfter.mtimeNs),
+      SOURCE_CHECKOUT_UNTOUCHED: sourceCheckoutUntouched,
+      ISOLATION_FAILURE: isolationFailure,
+      ISOLATION_CLEANUP_FAILURE: cleanupFailure,
+      FAILURE_CLASSES: [...new Set(isolationFailureClasses)],
+    };
+    return isolationFailureClasses.length === 0
+      ? { classification: 'VERIFIED', detail }
+      : { classification: 'REAL_REGRESSION', why: detail.FAILURE_CLASSES.join(','), detail };
+  }
+
+  const beforeBytes = fs.readFileSync(target);
+  const before = sha256File(target);
+  const beforeMode = fs.statSync(target).mode;
+  const canonical = run('git', ['cat-file', 'blob', `${sourceCommit}:${relative}`], {
+    cwd: root,
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  if (!canonical.ok) {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'TARGET_CANONICAL_BLOB_UNAVAILABLE',
+      detail: { relative, canonicalError: tail(canonical.combined, 1000) },
+    };
+  }
+
+  let sabotaged = null;
+  let restored = null;
+  let restoredMode = null;
+  let mutationTargetStatus = null;
+
+  try {
+    fs.appendFileSync(target, '\n// CANA sovereign verification-only sabotage probe\n');
+    sabotaged = sha256File(target);
+    mutationTargetStatus = status(relative);
+  } finally {
+    fs.writeFileSync(target, beforeBytes);
+    fs.chmodSync(target, beforeMode & 0o7777);
+    restored = sha256File(target);
+    restoredMode = fs.statSync(target).mode;
+  }
+
+  const postRestoreStatus = status();
+  const postRestoreTargetStatus = status(relative);
+  const targetMutationDetected = sabotaged !== before && mutationTargetStatus !== '';
+  const targetRestoredExact = restored === before
+    && restoredMode === beforeMode
+    && postRestoreTargetStatus === '';
+  const probeRestoredBaseline = postRestoreStatus === preSabotageStatus;
+  const repositoryCleanBeforeSabotage = preSabotageStatus === '';
+  const repositoryCleanAfterRestore = postRestoreStatus === '';
+  const verified = targetMutationDetected
+    && targetRestoredExact
+    && probeRestoredBaseline
+    && repositoryCleanBeforeSabotage
+    && repositoryCleanAfterRestore;
+  const failureClasses = [];
+  if (!repositoryCleanBeforeSabotage) failureClasses.push('PRE_EXISTING_REPOSITORY_DIRTINESS');
+  if (!targetMutationDetected) failureClasses.push('TARGET_MUTATION_NOT_DETECTED');
+  if (!targetRestoredExact) failureClasses.push('TARGET_RESTORE_FAILED');
+  if (!probeRestoredBaseline) failureClasses.push('PROBE_INTRODUCED_DIRTINESS');
+  if (!repositoryCleanAfterRestore && repositoryCleanBeforeSabotage) failureClasses.push('REPOSITORY_NOT_CLEAN_AFTER_RESTORE');
+
+  const detail = {
+    before,
+    sabotaged,
+    restored,
+    dirty: mutationTargetStatus,
+    cleanAgain: repositoryCleanAfterRestore,
+    PRE_SABOTAGE_WHOLE_STATUS: preSabotageStatus,
+    PRE_SABOTAGE_STATUS: preSabotageStatus,
+    PRE_SABOTAGE_TARGET_STATUS: preSabotageTargetStatus,
+    PRE_SABOTAGE_TARGET_SHA: before,
+    PRE_SABOTAGE_TARGET_MODE: beforeMode,
+    POST_RESTORE_STATUS: postRestoreStatus,
+    POST_RESTORE_TARGET_STATUS: postRestoreTargetStatus,
+    POST_RESTORE_TARGET_SHA: restored,
+    POST_RESTORE_TARGET_MODE: restoredMode,
+    TARGET_MUTATION_STATUS: mutationTargetStatus,
+    TARGET_BYTES_PRESERVED: restored === before,
+    TARGET_MODE_PRESERVED: restoredMode === beforeMode,
+    TARGET_MUTATION_DETECTED: targetMutationDetected,
+    TARGET_RESTORED_EXACT: targetRestoredExact,
+    PROBE_RESTORED_BASELINE: probeRestoredBaseline,
+    REPOSITORY_CLEAN_BEFORE_SABOTAGE: repositoryCleanBeforeSabotage,
+    REPOSITORY_CLEAN_AFTER_RESTORE: repositoryCleanAfterRestore,
+    FAILURE_CLASSES: failureClasses,
+  };
+
+  return verified
+    ? { classification: 'VERIFIED', detail }
+    : { classification: 'REAL_REGRESSION', why: failureClasses.join(','), detail };
+}
+
 /**
- * PROMOTION-GATE EXPLICIT CONTRACT DISPATCH (ES-0002, OWNER LAW #9).
+ * PROMOTION-GATE EXPLICIT CONTRACT DISPATCH (ES-0004, OWNER LAW #9).
  *
  * The promotion evaluator that judges the SUCCESSOR lineage is selected by an explicit,
  * stable contract — never by a blind `tools/promotion-gate/*.test.mjs` glob. This returns the
- * successor-lineage promotion courts, and DELIBERATELY excludes the `tools/promotion-gate/
- * historical/` subtree: the byte-identical retired V1 promotion-receipt judge
- * (CANA_PROMOTION_IDENTITY_V1) lives there and is invoked ONLY through its dedicated
- * historical-replay lane, in a disposable local reconstruction of its own context. Running V1
- * against the successor lane (where its historical branch/ref does not exist) was the
- * jurisdiction bug this succession fixes. Only *.test.mjs directly under tools/promotion-gate
- * (not the historical/ subtree) are successor-lineage judges.
+ * exact current courts. V1/V2/V3 run only through their sealed replay chain inside the V4
+ * court. No frozen evaluator is blind-globbed against the current succession lane.
  */
 function promotionGateSuccessorCourts() {
-  // glob() lists only the immediate directory (fs.readdirSync, no recursion), so historical/
-  // is naturally excluded; the .replay.mjs V1 file is excluded by the .test.mjs predicate.
-  return glob('tools/promotion-gate', (n) => n.endsWith('.test.mjs'));
+  return [
+    'tools/promotion-gate/evidence-chain.test.mjs',
+    'tools/promotion-gate/es-0004.court.test.mjs',
+    'tools/promotion-gate/es-0004.holdout.court.test.mjs',
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -552,12 +808,10 @@ const STAGES = [
       'The courts both sovereign lineages inherit from the common base still hold: the verifier '
       + 'itself, provenance sabotage, mission-2 lifecycle, market state, reality packets, github '
       + 'import, durability, the promotion gate and the cPanel/MariaDB simulators. '
-      + 'PROMOTION-GATE DISPATCH (ES-0002): the promotion evaluator is selected by EXPLICIT '
-      + 'stable contract, not by a blind *.test.mjs glob. The SUCCESSOR lineage is judged by '
-      + 'CANA_PROMOTION_IDENTITY_V2 (es-0002.court.test.mjs) + the evidence-chain court; the '
-      + 'retired CANA_PROMOTION_IDENTITY_V1 promotion-receipt judge runs ONLY via the dedicated '
-      + 'historical-replay lane (tools/promotion-gate/historical/), never blind-globbed against '
-      + 'the successor lane — that foreign-context execution was the jurisdiction bug ES-0002 fixes.',
+      + 'PROMOTION-GATE DISPATCH (ES-0004): the current evaluator is selected by an EXPLICIT '
+      + 'V1/V2/V3/V4 contract, never a *.test.mjs glob. V4 plus its independent holdout judge '
+      + 'the exact PR59 execution-scope manifest; frozen V3 replays in its exact archive and '
+      + 'retains the sealed V2 and V1 replay chain.',
     run() {
       const files = [
         ...glob('tools/test-runner', (n) => n.endsWith('.test.mjs')),
@@ -568,11 +822,8 @@ const STAGES = [
         ...glob('tools/github-import', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/durability', (n) => n.endsWith('.test.mjs')),
         // PROMOTION-GATE: EXPLICIT CONTRACT DISPATCH, not a blind glob (OWNER LAW #9).
-        // The successor lineage's promotion courts are enumerated by name; the historical/
-        // subtree (the byte-identical retired V1 judge + its replay harness) is deliberately
-        // NOT swept here — V1 is invoked only through its historical-replay lane, in its own
-        // disposable context, so a branch/ref that only exists in history can never fail the
-        // successor court. Every promotion court that is a successor-lineage judge is listed.
+        // Current promotion courts are exact-name enumerated. V1 and V2 execute only through
+        // the bridge lanes inside ES-0004; no frozen or future court can join by filename.
         ...promotionGateSuccessorCourts(),
         ...glob('tools/cpanel-sim', (n) => n.endsWith('.test.mjs')),
         ...glob('tools/mariadb-sim', (n) => n.endsWith('.test.mjs')),
@@ -580,12 +831,12 @@ const STAGES = [
       ];
       const units = files.map((f) => courtUnit(f));
       // Report the promotion-gate dispatch decision as its own evidence line so the receipt
-      // shows the successor court ran and V1 was routed to the historical lane, not globbed.
+      // shows V4 ran and all frozen evaluators were routed to replay, not current-globbed.
       const stage = unitsToStage(units, 'deterministic courts');
       stage.evidence.push(
-        `promotion-gate dispatch: successor lineage -> CANA_PROMOTION_IDENTITY_V2 `
-        + `(${promotionGateSuccessorCourts().join(', ')}); V1 promotion-receipt judge -> historical-replay `
-        + `lane only (tools/promotion-gate/historical/, NOT stage-06 globbed)`,
+        `promotion-gate dispatch: current lineage -> CANA_PROMOTION_IDENTITY_V4 `
+        + `(${promotionGateSuccessorCourts().join(', ')}); V3 -> frozen 99ef replay only; `
+        + `V2 -> frozen e03 replay only; V1 -> disposable historical replay only`,
       );
       return stage;
     },
@@ -803,7 +1054,8 @@ const STAGES = [
     gate: 'SOFT',
     proves:
       'The boundary courts hold (security boundary, auth policy and throttle, education boundary, '
-      + 'dependency security, verification laundering, provenance sabotage), and a live '
+      + 'dependency security, verification laundering, descriptor-bound output custody, exact '
+      + 'process custody, provenance sabotage), and a live '
       + 'sabotage/restore probe shows the tree detects a one-line mutation of a tracked source '
       + 'file and restores it to the exact canonical blob.',
     run(ctx) {
@@ -816,41 +1068,16 @@ const STAGES = [
         'apps/web/tests/verification-laundering.test.mjs',
         'apps/web/tests/interaction-proof.test.mjs',
         'tools/provenance-court/sabotage.test.mjs',
+        'tools/visual-court/linux-custody.test.mjs',
+        'tools/visual-court/output-custody.test.mjs',
+        'tools/visual-court/process-custody.test.mjs',
+        'tools/visual-court/screenshot-harness.test.mjs',
       ];
       const web = path.join(ROOT, 'apps', 'web');
       const units = files.map((f) => courtUnit(f, { cwd: f.startsWith('apps/web/') ? web : ROOT }));
       // live sabotage / exact-restore probe
       const probe = { unit: 'sabotage/restore probe (live mutation of a tracked source file)' };
-      const relative = 'apps/web/src/lib/release-identity.mjs';
-      const target = path.join(ROOT, relative);
-      if (!ctx.source?.commit || !fs.existsSync(target)) {
-        Object.assign(probe, { classification: 'NOT_RUN', why: `${relative} is not present, or HEAD is unknown` });
-      } else {
-        const before = sha256File(target);
-        let restored = null;
-        let sabotaged = null;
-        let dirty = null;
-        try {
-          fs.appendFileSync(target, '\n// CANA sovereign verification-only sabotage probe\n');
-          sabotaged = sha256File(target);
-          dirty = gitOut(['status', '--porcelain', '--', relative]);
-          const canonical = run('git', ['cat-file', 'blob', `${ctx.source.commit}:${relative}`], { maxBuffer: 32 * 1024 * 1024 });
-          fs.writeFileSync(target, canonical.stdout);
-          restored = sha256File(target);
-        } finally {
-          if (restored !== before) {
-            const canonical = run('git', ['cat-file', 'blob', `${ctx.source.commit}:${relative}`], { maxBuffer: 32 * 1024 * 1024 });
-            if (canonical.ok) fs.writeFileSync(target, canonical.stdout);
-            restored = sha256File(target);
-          }
-        }
-        const cleanAgain = gitOut(['status', '--porcelain']) === '';
-        const detected = sabotaged !== before && dirty !== '';
-        const exact = restored === before && cleanAgain;
-        Object.assign(probe, detected && exact
-          ? { classification: 'VERIFIED', detail: { before, sabotaged, restored } }
-          : { classification: 'REAL_REGRESSION', why: `mutationDetected=${detected} restorationExact=${exact}`, detail: { before, sabotaged, restored, dirty, cleanAgain } });
-      }
+      Object.assign(probe, runLiveSabotageRestoreProbe({ root: ROOT, sourceCommit: ctx.source?.commit }));
       units.push(probe);
       return unitsToStage(units, 'security/adversarial courts');
     },

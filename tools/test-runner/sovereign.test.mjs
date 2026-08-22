@@ -6,7 +6,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -17,7 +19,7 @@ import {
   worstClassification,
   severityOf,
 } from './sovereign-classify.mjs';
-import { SOVEREIGN_STAGES } from './sovereign.mjs';
+import { runLiveSabotageRestoreProbe, SOVEREIGN_STAGES } from './sovereign.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -182,6 +184,65 @@ test('the first three stages are HARD gates — identity and the census cannot b
     SOVEREIGN_STAGES.filter((s) => s.gate === 'HARD').map((s) => s.key),
     ['clean-checkout', 'source-identity', 'capability-census'],
   );
+});
+
+test('Stage 13 and the authoritative H3 workflow require the exact Linux custody courts', () => {
+  const sovereign = fs.readFileSync(path.join(ROOT, 'tools', 'test-runner', 'sovereign.mjs'), 'utf8');
+  for (const relative of [
+    'tools/visual-court/linux-custody.test.mjs',
+    'tools/visual-court/output-custody.test.mjs',
+    'tools/visual-court/process-custody.test.mjs',
+    'tools/visual-court/screenshot-harness.test.mjs',
+  ]) {
+    assert.ok(sovereign.includes(`'${relative}'`), `${relative} must be a Stage 13 unit`);
+  }
+  const workflow = fs.readFileSync(
+    path.join(ROOT, '.github', 'workflows', 'cana-verify-sovereign.yml'),
+    'utf8',
+  );
+  assert.match(workflow, /node-version: 24\.14\.1/);
+  assert.match(workflow, /prepareLinuxCustodyHelper/);
+  assert.match(workflow, /inline:linux-custody-python/);
+  assert.doesNotMatch(workflow, /CANA_LINUX_CUSTODY_(?:HELPER|SOURCE_SHA256|BINARY_SHA256)=/);
+  assert.match(workflow, /\.\/cana verify sovereign/);
+});
+
+test('Stage 13 sabotage never writes the verifier source checkout', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-sovereign-sabotage-isolation-'));
+  const relative = 'tracked.mjs';
+  const target = path.join(root, relative);
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  try {
+    git('init', '--quiet');
+    git('config', 'user.name', 'CANA court');
+    git('config', 'user.email', 'court@example.invalid');
+    fs.writeFileSync(target, 'export const marker = 1;\n');
+    git('add', relative);
+    git('commit', '--quiet', '-m', 'fixture');
+    const sourceCommit = git('rev-parse', 'HEAD');
+    const fixedTime = new Date('2001-01-01T00:00:00.000Z');
+    fs.utimesSync(target, fixedTime, fixedTime);
+    const before = fs.statSync(target, { bigint: true });
+
+    const result = runLiveSabotageRestoreProbe({ root, sourceCommit, relative });
+    const after = fs.statSync(target, { bigint: true });
+
+    assert.equal(result.classification, 'VERIFIED');
+    assert.equal(result.detail.ISOLATED_CHECKOUT, true);
+    assert.equal(after.mtimeNs, before.mtimeNs, 'source checkout mtime proves it was never written');
+    assert.equal(git('status', '--porcelain=v2', '--untracked-files=all'), '');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('Stage 06 dispatches only the current ES-0004 courts and freezes ES-0003', () => {
+  const sovereign = fs.readFileSync(path.join(ROOT, 'tools', 'test-runner', 'sovereign.mjs'), 'utf8');
+  const dispatch = /function promotionGateSuccessorCourts\(\) \{([\s\S]*?)\n\}/.exec(sovereign)?.[1] ?? '';
+  assert.match(dispatch, /es-0004\.court\.test\.mjs/);
+  assert.match(dispatch, /es-0004\.holdout\.court\.test\.mjs/);
+  assert.doesNotMatch(dispatch, /es-0003\.court\.test\.mjs/);
+  assert.match(sovereign, /V3 -> frozen 99ef replay only/);
 });
 
 test('the converged dispatcher keeps the Federation census gate ahead of every verify', () => {

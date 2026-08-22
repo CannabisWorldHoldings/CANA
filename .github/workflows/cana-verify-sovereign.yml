@@ -202,6 +202,33 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Acquire and verify the exact V1 historical Git objects
+        # The remote ref is an object-acquisition hint only. It confers no authority: when the
+        # immutable object already exists this step performs no fetch, and any fetched ref must
+        # resolve to the exact frozen integration tip before the object can enter the mirror.
+        run: |
+          historical_tip=cc24b179d83d6a9ce8005e710f168986269230b1
+          historical_source_ref=refs/heads/integration/cana-technical-promotion-de4a497b
+          acquisition_ref=refs/cana/object-acquisition/v1-integration-tip
+          if ! git cat-file -e "$historical_tip^{commit}" 2>/dev/null; then
+            git fetch --no-tags --force origin \
+              "+$historical_source_ref:$acquisition_ref"
+            resolved="$(git rev-parse "$acquisition_ref^{commit}")"
+            if [ "$resolved" != "$historical_tip" ]; then
+              echo "historical acquisition ref resolved to $resolved, expected $historical_tip" >&2
+              exit 1
+            fi
+          fi
+          for immutable_commit in \
+            cc24b179d83d6a9ce8005e710f168986269230b1 \
+            c953ebcd25c46ef33af0700d7913a899d839bce8 \
+            de4a497b6c039a5dccc9c3fb9a470dc0bf610318 \
+            d84486b32fd424d196bc8b535d13396245875042
+          do
+            git cat-file -e "$immutable_commit^{commit}"
+          done
+          echo "historical ref used only for object acquisition; identity is exact commit SHA"
+
       - name: Route CI byproducts outside the verified tree
         # runner context is invalid in job-level env; RUNNER_TEMP is a plain
         # env var at step runtime, exported for every later step via GITHUB_ENV.
@@ -350,6 +377,24 @@ jobs:
 
       - name: Install the Chromium binary for the rendered visual court
         run: npx --yes playwright install --with-deps chromium
+
+      - name: Preflight the exact Linux custody helper
+        run: |
+          node --input-type=module <<'NODE'
+          import { prepareLinuxCustodyHelper } from './tools/visual-court/linux-custody.mjs';
+          const helper = prepareLinuxCustodyHelper();
+          try {
+            if (
+              helper.protocolVersion !== 1
+              || helper.sourcePath !== 'inline:linux-custody-python'
+              || !/^[0-9a-f]{64}$/.test(helper.sourceSha256)
+              || !/^[0-9a-f]{64}$/.test(helper.binarySha256)
+              || helper.compiler !== null
+            ) process.exit(1);
+          } finally {
+            helper.close();
+          }
+          NODE
 
       - name: Serve the production build for the rendered visual court
         working-directory: apps/web

@@ -230,6 +230,75 @@ test('a sequence-constraint race rechecks event identity before reporting conten
   assert.equal(identityLookups, 1, 'the seq-collision branch must read the canonical event winner');
 });
 
+test('an entry-hash race rechecks event identity before reporting ledger failure', async () => {
+  const { createDemandCredits, eventIdentityOf, IDENTITY_WINDOW_MS } =
+    await import('../src/lib/demand-credits.mjs');
+  const merchantId = 'forced-entry-hash-collision';
+  const input = {
+    merchantId,
+    actionKind: 'MENU_VIEW',
+    evidenceChain: [{ step: 'request', ref: 'forced-entry-hash-collision' }],
+    observedAt: new Date('2026-08-22T00:00:00Z'),
+  };
+  const eventIdentity = eventIdentityOf({
+    merchantId,
+    actionKind: input.actionKind,
+    evidenceChainSha256: createHash('sha256')
+      .update(JSON.stringify(input.evidenceChain))
+      .digest('hex'),
+    windowBucket: Math.floor(input.observedAt.getTime() / IDENTITY_WINDOW_MS),
+    idempotencyKey: null,
+  });
+  const winner = { id: 'winner', merchantId, eventIdentity, seq: 0 };
+  let identityLookups = 0;
+  const credits = createDemandCredits({
+    demandCreditEntry: {
+      findFirst: async (args) => {
+        if (args?.where?.eventIdentity === eventIdentity) {
+          identityLookups += 1;
+          return winner;
+        }
+        return null;
+      },
+      create: async () => {
+        const error = new Error('Unique constraint failed on entryHash');
+        error.code = 'P2002';
+        error.meta = { target: ['entryHash'] };
+        throw error;
+      },
+    },
+  });
+  const result = await credits.attribute(input);
+  assert.equal(result.accepted, false);
+  assert.equal(result.denial_code, 'DUPLICATE_ATTRIBUTION');
+  assert.equal(result.existing, winner);
+  assert.equal(identityLookups, 1, 'the entry-hash collision must read the canonical event winner');
+});
+
+test('an unrelated entry-hash collision remains honest chain contention', async () => {
+  const { createDemandCredits } = await import('../src/lib/demand-credits.mjs');
+  const credits = createDemandCredits({
+    demandCreditEntry: {
+      findFirst: async () => null,
+      create: async () => {
+        const error = new Error('Unique constraint failed on entryHash');
+        error.code = 'P2002';
+        error.meta = { target: ['entryHash'] };
+        throw error;
+      },
+    },
+  });
+  const result = await credits.attribute({
+    merchantId: 'unrelated-entry-hash-collision',
+    actionKind: 'MENU_VIEW',
+    evidenceChain: [{ step: 'request', ref: 'unrelated-entry-hash-collision' }],
+    observedAt: new Date('2026-08-22T00:00:00Z'),
+  });
+  assert.equal(result.accepted, false);
+  assert.equal(result.denial_code, 'CHAIN_POSITION_CONTENDED');
+  assert.equal(result.existing, undefined);
+});
+
 test('a refused duplicate returns the row that WON, not a bare error', async () => {
   // A retrying caller must be able to learn what actually happened.
   const rid = await mk('WINNER');

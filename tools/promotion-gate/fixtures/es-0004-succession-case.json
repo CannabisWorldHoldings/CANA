@@ -1,0 +1,92 @@
+{
+  "scope": "promotion-identity execution-scope succession only: preserve ES-0003 forever and admit only the exact PR59 custody ownership manifest at commit 50130a2",
+  "incumbent": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V3",
+    "case_id": "ES-0003",
+    "manifest_digest": "592c19aeda938f5d6b824559d77bcc21213d786815754505fbd5b7c5a9f97ded"
+  },
+  "candidate": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V4",
+    "sealed_commit_sha": "62676d914df0b371602248823b471de5c19ca15d",
+    "source_sha256": "35e171cc4f18a0a1a46c6c16e234ba9fb18909b3ba58d194b91f6b5a1e92b755",
+    "pre_candidate_freeze_sha256": "593b728512c940b4173a7d30d2a6db88a5e0c719e2b06e42f40cd43f59a3490d"
+  },
+  "candidateAuthor": "lane-implementation",
+  "reason": "ES-0003 correctly refuses every manifest after the single PR57 transition. The owner-authorized PR59 custody repair creates one later exact execution-scope manifest that requires a distinct evaluator event without altering ES-0003.",
+  "demonstratedDefects": [
+    {
+      "probe": "Evaluate the sealed ES-0003 positive in the PR59 custody manifest and in its pre-custody archive.",
+      "incumbentVerdict": "CURRENT_MANIFEST_REFUSED_ONLY_AT_lineage.new-manifest-digest; ARCHIVE_PUBLIC_9_OF_9_AND_HOLDOUT_18_OF_18_PASS",
+      "correctVerdict": "A distinct V4 event may accept only commit 50130a2, tree f76aa42, manifest 705465, assignment 5cfdc9, authorization source 14a355, and eight exact custody paths."
+    }
+  ],
+  "adjudicator": "lane-verification-independent-node-test-harness",
+  "promotionCriteria": [
+    "P1_REPLAY_SEALED_ES0003_PUBLIC_AND_HOLDOUT_COURTS_IN_THEIR_EXACT_ARCHIVE",
+    "P2_ACCEPT_ONLY_CANDIDATE_COMMIT_50130A2_AND_TREE_F76AA42",
+    "P3_REQUIRE_99EFAA9_TO_BE_THE_EXACT_PARENT_AND_ANCESTOR",
+    "P4_BIND_THE_592C19_TO_705465_MANIFEST_TRANSITION",
+    "P5_BIND_THE_EXECUTION_AUTHORIZATION_SOURCE_DIGEST_14A355",
+    "P6_BIND_PR59_ASSIGNMENT_DIGEST_5CFDC9",
+    "P7_BIND_CHANGED_SCOPE_DIGEST_F90DD4",
+    "P8_REQUIRE_THE_EIGHT_EXACT_CUSTODY_PATHS_IN_ORDER",
+    "P9_REJECT_WILDCARD_DIRECTORY_NEIGHBOR_AND_REORDERED_PATHS",
+    "P10_REQUIRE_LIVE_MANIFEST_VALIDATION_TO_PASS",
+    "P11_REQUIRE_CANDIDATE_MANIFEST_BLOB_TO_EQUAL_THE_LIVE_MANIFEST",
+    "P12_REQUIRE_ES0003_TO_REFUSE_THE_NEW_MANIFEST_ONLY_AT_ITS_EXPECTED_LINEAGE_PIN",
+    "P13_BRANCH_NAMES_ARE_EVIDENCE_ONLY",
+    "P14_NEVER_CERTIFY_MERGED_CANONICAL_DEPLOYED_OR_OWNER_APPROVED",
+    "P15_FAIL_CLOSED_ON_UNKNOWN_FUTURE_SUCCESSIONS"
+  ],
+  "criteriaFixedBeforeCandidate": true,
+  "bridgeCorpus": [
+    "B01_ES0003_PUBLIC_ARCHIVE",
+    "B02_ES0003_HOLDOUT_ARCHIVE",
+    "B03_ES0002_FROZEN_REPLAY",
+    "B04_V1_HISTORICAL_REPLAY",
+    "B05_BRANCH_RELABEL_AND_FORBIDDEN_VERDICTS"
+  ],
+  "bridgeResults": [
+    { "id": "B01", "agree": true },
+    { "id": "B02", "agree": true },
+    { "id": "B03", "agree": true },
+    { "id": "B04", "agree": true },
+    { "id": "B05", "agree": true }
+  ],
+  "hiddenHoldout": [
+    "H01_EXACT_POSITIVE",
+    "H02_FUTURE_COMMIT",
+    "H03_WILDCARD",
+    "H04_NEIGHBOR",
+    "H05_AUTHORIZATION_SOURCE",
+    "H06_ASSIGNMENT_DIGEST",
+    "H07_INVALID_MANIFEST",
+    "H08_CANDIDATE_MANIFEST_DRIFT",
+    "H09_PARENT_FAILURE",
+    "H10_V3_FROZEN_DISPATCH",
+    "H11_OWNER_LAUNDERING",
+    "H12_DEPLOYMENT_VERDICT"
+  ],
+  "holdoutResults": [
+    { "id": "H01", "incumbentCorrect": false, "candidateCorrect": true },
+    { "id": "H02", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H03", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H04", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H05", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H06", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H07", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H08", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H09", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H10", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H11", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H12", "incumbentCorrect": true, "candidateCorrect": true }
+  ],
+  "mutationTest": {
+    "description": "Nineteen fixed adversarial candidates and five independent observation failures make the V4 court red.",
+    "pass": true
+  },
+  "distributionShiftNote": "ES-0003 remains correct historical law; ES-0004 handles only the separately authorized PR59 execution-scope manifest.",
+  "reversibility": "Revert the ES-0004 dispatch commits and the PR59 custody ownership commit; ES-0003 resumes its honest refusal without any frozen-byte edit.",
+  "verdict": "SUCCEED",
+  "ownerPromotionGate": "EXECUTION_AUTHORIZED"
+}
