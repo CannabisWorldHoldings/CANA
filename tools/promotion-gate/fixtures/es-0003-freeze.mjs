@@ -138,7 +138,7 @@ export function computePreCandidateFreeze() {
 }
 
 export const RECORDED_PRE_CANDIDATE_FREEZE_SHA =
-  'ebdaaa30cedb351ca1ed406b55cb03e2eb0aa7dbbd9109a9dcf1913b543b6c43';
+  '87f0480fd10a22bf9856150bc1d89d0c647f9a23e32899ab6245f79874fa5ffa';
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   process.stdout.write(`${JSON.stringify(computePreCandidateFreeze(), null, 2)}\n`);

@@ -15,7 +15,7 @@
     },
     "sealed_commit_sha": "56fc7eae9e609f8321c08a891de4287c473e777c",
     "source_sha256": "1c807acbccc707b8b871d86ed1b3aa2e4441c6ef270d8964550863e1cf2edcf2",
-    "pre_candidate_freeze_sha256": "ebdaaa30cedb351ca1ed406b55cb03e2eb0aa7dbbd9109a9dcf1913b543b6c43"
+    "pre_candidate_freeze_sha256": "87f0480fd10a22bf9856150bc1d89d0c647f9a23e32899ab6245f79874fa5ffa"
   },
   "candidateAuthor": "lane-implementation",
   "reason": "ES0002 correctly freezes a historical whole-manifest identity, but the separately owner-approved blob-bound PR57 reconciliation creates one legitimate manifest-identity distribution shift that requires a distinct fail-closed lane.",
@@ -195,7 +195,7 @@
   "verdict": "SUCCEED",
   "successionReceipt": {
     "approved_payload_sha256": "9650b9555d573a046540b56d06b6d2f362ec4384692092b474bfc94a489df23e",
-    "pre_candidate_freeze_sha256": "ebdaaa30cedb351ca1ed406b55cb03e2eb0aa7dbbd9109a9dcf1913b543b6c43",
+    "pre_candidate_freeze_sha256": "87f0480fd10a22bf9856150bc1d89d0c647f9a23e32899ab6245f79874fa5ffa",
     "candidate_sealed_commit_sha": "56fc7eae9e609f8321c08a891de4287c473e777c",
     "candidate_source_sha256": "1c807acbccc707b8b871d86ed1b3aa2e4441c6ef270d8964550863e1cf2edcf2",
     "independent_holdout_commit_sha": "b9ec1cb36d9f6bc40418973c94de68ea0c512d1c",

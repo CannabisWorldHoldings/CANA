@@ -46,7 +46,7 @@ function run(command, args, options = {}) {
 }
 
 function testSummary(output) {
-  const value = (name) => Number(new RegExp(`^# ${name} (\\d+)$`, 'm').exec(output)?.[1] ?? -1);
+  const value = (name) => Number(new RegExp(`^(?:#|ℹ) ${name} (\\d+)$`, 'm').exec(output)?.[1] ?? -1);
   return { tests: value('tests'), pass: value('pass'), fail: value('fail'), skipped: value('skipped') };
 }
 
