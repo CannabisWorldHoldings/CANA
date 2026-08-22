@@ -562,7 +562,7 @@ try {
     cwd: process.platform === 'linux' ? '/' : chromiumCwd,
     stdio: launch.stdio ?? 'ignore',
     detached: process.platform !== 'win32',
-    env: { ...process.env, CANA_VISUAL_RUN_TOKEN: browserRunToken },
+    env: { ...(launch.env ?? process.env), CANA_VISUAL_RUN_TOKEN: browserRunToken },
   });
   chrome.stdout?.resume();
   chrome.stderr?.resume();

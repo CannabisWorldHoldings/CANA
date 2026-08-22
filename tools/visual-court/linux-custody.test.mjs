@@ -80,6 +80,10 @@ test('supplied helper execution remains content-bound after same-inode mutation 
   assert.equal(compiled.status, 0, compiled.stderr);
   fs.chmodSync(binary, 0o700);
   const expectedBinarySha256 = crypto.createHash('sha256').update(fs.readFileSync(binary)).digest('hex');
+  assert.throws(
+    () => prepareLinuxCustodyHelper({ suppliedBinary: binary, expectedBinarySha256: null }),
+    /LINUX_CUSTODY_BINARY_DIGEST_REQUIRED/,
+  );
   const helper = prepareLinuxCustodyHelper({ suppliedBinary: binary, expectedBinarySha256 });
   const child = spawn(process.execPath, ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], {
     stdio: 'ignore',
@@ -124,6 +128,7 @@ test('supplied helper execution remains content-bound after same-inode mutation 
     });
     const launched = spawnSync(launch.command, launch.argv, {
       encoding: 'utf8',
+      env: launch.env,
       stdio: launch.stdio,
     });
 
@@ -148,20 +153,84 @@ test('automatic compilation consumes the exact source bytes that were hashed', {
   fs.writeFileSync(sourcePath, sourceBytes);
   let compileObserved = false;
   const run = (command, argv, options) => {
-    if (argv.at(-1) === '-' && argv.includes('-x') && argv.includes('c')) {
+    if (argv.some((value) => value.includes('cana-linux-custody-build'))) {
       compileObserved = true;
       fs.writeFileSync(sourcePath, '#error attacker source must not compile\n');
       assert.deepEqual(options.input, sourceBytes);
+      assert.equal(argv.includes(sourcePath), false, 'hashed source pathname must not reach the compiler');
+      assert.equal(argv.some((value) => value.endsWith('/linux-custody-helper')), false,
+        'compiler output must never expose a substitutable pathname');
     }
     return spawnSync(command, argv, options);
   };
-  const helper = prepareLinuxCustodyHelper({ sourcePath, expectedSourceSha256, tempRoot: root, run });
+  const helper = prepareLinuxCustodyHelper({ sourcePath, expectedSourceSha256, run });
   try {
     assert.equal(compileObserved, true);
     assert.equal(helper.sourceSha256, expectedSourceSha256);
     assert.match(fs.readFileSync(sourcePath, 'utf8'), /attacker source must not compile/);
   } finally {
     helper.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('ambient dynamic-loader injection never reaches compiler, sealer, helper or launched process', { skip: !linux }, () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-linux-custody-loader-env-'));
+  const library = path.join(root, 'attacker.so');
+  const sentinel = path.join(root, 'attacker-ran');
+  const output = path.join(root, 'output');
+  fs.mkdirSync(output, { mode: 0o700 });
+  const compiled = spawnSync('/usr/bin/cc', ['-shared', '-fPIC', '-x', 'c', '-o', library, '-'], {
+    encoding: 'utf8',
+    input: [
+      '#include <fcntl.h>',
+      '#include <unistd.h>',
+      '__attribute__((constructor)) static void attack(void) {',
+      `  int fd = open(${JSON.stringify(sentinel)}, O_CREAT | O_WRONLY | O_APPEND, 0600);`,
+      '  if (fd >= 0) { (void)write(fd, "attacked", 8); (void)close(fd); }',
+      '}',
+    ].join('\n'),
+  });
+  assert.equal(compiled.status, 0, compiled.stderr);
+  const previousPreload = process.env.LD_PRELOAD;
+  const previousLibraryPath = process.env.LD_LIBRARY_PATH;
+  process.env.LD_PRELOAD = library;
+  process.env.LD_LIBRARY_PATH = root;
+  let helper;
+  try {
+    helper = prepareLinuxCustodyHelper();
+    const binding = fs.statSync(output, { bigint: true });
+    helper.write({
+      rootPath: output,
+      device: binding.dev,
+      inode: binding.ino,
+      relativePath: 'sealed.txt',
+      bytes: Buffer.from('safe'),
+    });
+    const launch = helper.launchSpec({
+      rootPath: output,
+      device: binding.dev,
+      inode: binding.ino,
+      executable: '/bin/pwd',
+      argv: [],
+    });
+    assert.equal(launch.env.LD_PRELOAD, undefined);
+    assert.equal(launch.env.LD_LIBRARY_PATH, undefined);
+    const launched = spawnSync(launch.command, launch.argv, {
+      encoding: 'utf8',
+      env: launch.env,
+      stdio: launch.stdio,
+    });
+    assert.equal(launched.status, 0, launched.stderr);
+    assert.equal(launched.stdout.trim(), output);
+    assert.equal(fs.readFileSync(path.join(output, 'sealed.txt'), 'utf8'), 'safe');
+    assert.equal(fs.existsSync(sentinel), false, 'ambient loader injection must never execute');
+  } finally {
+    helper?.close();
+    if (previousPreload === undefined) delete process.env.LD_PRELOAD;
+    else process.env.LD_PRELOAD = previousPreload;
+    if (previousLibraryPath === undefined) delete process.env.LD_LIBRARY_PATH;
+    else process.env.LD_LIBRARY_PATH = previousLibraryPath;
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
@@ -203,7 +272,7 @@ test('native helper launches from the exact retained workspace identity', { skip
     });
     const result = fs.realpathSync(workspace);
     assert.equal(result, workspace);
-    const launched = spawnSync(spec.command, spec.argv, { encoding: 'utf8', stdio: spec.stdio });
+    const launched = spawnSync(spec.command, spec.argv, { encoding: 'utf8', env: spec.env, stdio: spec.stdio });
     assert.equal(launched.status, 0);
     assert.equal(launched.stdout.trim(), workspace);
   } finally {
@@ -267,7 +336,7 @@ test('native launch supervisor drains an adopted detached descendant before shut
     executable: process.execPath,
     argv: [fixture, pidFile],
   });
-  const supervisor = spawn(spec.command, spec.argv, { stdio: spec.stdio });
+  const supervisor = spawn(spec.command, spec.argv, { env: spec.env, stdio: spec.stdio });
   let adoptedPid = null;
   try {
     assert.equal(await waitUntil(() => fs.existsSync(pidFile)), true, 'fixture must publish the adopted child pid');
