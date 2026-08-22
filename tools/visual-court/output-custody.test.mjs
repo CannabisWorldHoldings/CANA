@@ -6,8 +6,17 @@ import test from 'node:test';
 
 import { createOutputCustody } from './output-custody.mjs';
 
-function pathWriter() {
+function pathWriter({ beforeCreate = null } = {}) {
   return {
+    createDirectory({ parentPath, device, inode, name }) {
+      beforeCreate?.();
+      const binding = fs.statSync(parentPath, { bigint: true });
+      if (binding.dev !== device || binding.ino !== inode) {
+        throw new Error('DIRECTORY_CREATE_REFUSED');
+      }
+      fs.mkdirSync(path.join(parentPath, name), { mode: 0o700 });
+      return { status: 'CREATED' };
+    },
     write({ rootPath, relativePath, bytes }) {
       const target = path.join(rootPath, ...relativePath.split('/'));
       fs.mkdirSync(path.dirname(target), { recursive: true, mode: 0o700 });
@@ -84,6 +93,30 @@ test('an existing non-private output root is refused', () => {
       () => createOutputCustody(outputRoot, { sourceRoot, tempRoot: root, writer: pathWriter() }),
       /OUTPUT_ROOT_NOT_PRIVATE/,
     );
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a parent swap before output creation cannot enter source', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-output-custody-create-swap-'));
+  const sourceRoot = path.join(root, 'source');
+  const parent = path.join(root, 'outside');
+  const outputRoot = path.join(parent, 'court');
+  fs.mkdirSync(sourceRoot);
+  fs.mkdirSync(parent, { mode: 0o700 });
+  try {
+    assert.throws(() => createOutputCustody(outputRoot, {
+      sourceRoot,
+      tempRoot: root,
+      writer: pathWriter({
+        beforeCreate() {
+          fs.renameSync(parent, `${parent}.held`);
+          fs.symlinkSync(sourceRoot, parent, 'dir');
+        },
+      }),
+    }), /DIRECTORY_CREATE_REFUSED/);
+    assert.equal(fs.existsSync(path.join(sourceRoot, 'court')), false);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

@@ -47,6 +47,12 @@ function makeCustodianFixture(label) {
 
 function outputWriter() {
   return {
+    createDirectory({ parentPath, device, inode, name }) {
+      const binding = fs.statSync(parentPath, { bigint: true });
+      if (binding.dev !== device || binding.ino !== inode) throw new Error('DIRECTORY_CREATE_REFUSED');
+      fs.mkdirSync(path.join(parentPath, name), { mode: 0o700 });
+      return { status: 'CREATED' };
+    },
     write({ rootPath, relativePath, bytes }) {
       const target = path.join(rootPath, ...relativePath.split('/'));
       fs.mkdirSync(path.dirname(target), { recursive: true });

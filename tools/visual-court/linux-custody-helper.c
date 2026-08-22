@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include <errno.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdint.h>
@@ -9,6 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifdef __linux__
@@ -68,7 +70,8 @@ static int parse_u64(const char *value, unsigned long long *result) {
   return 0;
 }
 
-static int read_start_time(pid_t pid, unsigned long long *start_time) {
+static int read_process_identity(pid_t pid, pid_t *parent_pid,
+                                 unsigned long long *start_time) {
   char path[64];
   if (snprintf(path, sizeof(path), "/proc/%ld/stat", (long)pid) >= (int)sizeof(path)) return -1;
   int fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
@@ -88,18 +91,28 @@ static int read_start_time(pid_t pid, unsigned long long *start_time) {
   char *cursor = after_comm + 2;
   char *save = NULL;
   char *token = strtok_r(cursor, " ", &save);
-  for (int index = 0; index < 19; index += 1) {
-    if (token == NULL) {
-      errno = EINVAL;
-      return -1;
+  for (int index = 0; index <= 19; index += 1) {
+    if (token == NULL) { errno = EINVAL; return -1; }
+    if (index == 1 && parent_pid != NULL) {
+      unsigned long long parsed_parent = 0;
+      if (parse_u64(token, &parsed_parent) != 0 || parsed_parent > INT32_MAX) {
+        errno = EINVAL;
+        return -1;
+      }
+      *parent_pid = (pid_t)parsed_parent;
+    }
+    if (index == 19) {
+      if (parse_u64(token, start_time) != 0) { errno = EINVAL; return -1; }
+      return 0;
     }
     token = strtok_r(NULL, " ", &save);
   }
-  if (token == NULL || parse_u64(token, start_time) != 0) {
-    errno = EINVAL;
-    return -1;
-  }
-  return 0;
+  errno = EINVAL;
+  return -1;
+}
+
+static int read_start_time(pid_t pid, unsigned long long *start_time) {
+  return read_process_identity(pid, NULL, start_time);
 }
 
 static int validate_relative_path(const char *relative) {
@@ -239,6 +252,89 @@ static int write_artifact(const char *absolute_root, const char *dev_value,
   return 0;
 }
 
+static int create_directory(const char *absolute_parent, const char *dev_value,
+                            const char *ino_value, const char *name) {
+  unsigned long long expected_dev = 0;
+  unsigned long long expected_ino = 0;
+  if (parse_u64(dev_value, &expected_dev) != 0 || parse_u64(ino_value, &expected_ino) != 0
+      || validate_relative_path(name) != 0 || strchr(name, '/') != NULL || strlen(name) >= 256) {
+    return fail_status("INVALID_REQUEST", 2);
+  }
+  struct stat parent_stat;
+  int parent_fd = open_root(absolute_parent, expected_dev, expected_ino, &parent_stat);
+  if (parent_fd < 0) return fail_status("DIRECTORY_CREATE_REFUSED", 4);
+  if (mkdirat(parent_fd, name, 0700) != 0) {
+    close(parent_fd);
+    return fail_status("DIRECTORY_CREATE_REFUSED", 4);
+  }
+  int directory_fd = openat2_exact(parent_fd, name,
+    O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW, 0);
+  struct stat directory_stat;
+  int valid = directory_fd >= 0
+    && fstat(directory_fd, &directory_stat) == 0
+    && S_ISDIR(directory_stat.st_mode)
+    && directory_stat.st_nlink > 0
+    && directory_stat.st_uid == geteuid()
+    && fchmod(directory_fd, 0700) == 0
+    && fsync(directory_fd) == 0
+    && fsync(parent_fd) == 0;
+  if (directory_fd >= 0) close(directory_fd);
+  if (!valid) {
+    unlinkat(parent_fd, name, AT_REMOVEDIR);
+    close(parent_fd);
+    return fail_status("DIRECTORY_CREATE_REFUSED", 4);
+  }
+  close(parent_fd);
+  printf("{\"protocol\":%d,\"status\":\"CREATED\",\"device\":\"%llu\",\"inode\":\"%llu\"}\n",
+    PROTOCOL_VERSION, (unsigned long long)directory_stat.st_dev,
+    (unsigned long long)directory_stat.st_ino);
+  return 0;
+}
+
+static volatile sig_atomic_t supervisor_shutdown_requested = 0;
+
+static void request_supervisor_shutdown(int signal_number) {
+  (void)signal_number;
+  supervisor_shutdown_requested = 1;
+}
+
+static long long monotonic_milliseconds(void) {
+  struct timespec value;
+  if (clock_gettime(CLOCK_MONOTONIC, &value) != 0) return -1;
+  return (long long)value.tv_sec * 1000LL + (long long)value.tv_nsec / 1000000LL;
+}
+
+static void pause_supervisor(void) {
+  struct timespec delay = { .tv_sec = 0, .tv_nsec = 20 * 1000 * 1000 };
+  while (nanosleep(&delay, &delay) != 0 && errno == EINTR) {
+    if (supervisor_shutdown_requested) continue;
+  }
+}
+
+static void signal_direct_children(pid_t supervisor_pid, int signal_number) {
+  DIR *directory = opendir("/proc");
+  if (directory == NULL) return;
+  struct dirent *entry;
+  while ((entry = readdir(directory)) != NULL) {
+    unsigned long long parsed_pid = 0;
+    if (parse_u64(entry->d_name, &parsed_pid) != 0 || parsed_pid == 0
+        || parsed_pid > INT32_MAX || (pid_t)parsed_pid == supervisor_pid) continue;
+    pid_t parent_pid = 0;
+    unsigned long long observed_start = 0;
+    if (read_process_identity((pid_t)parsed_pid, &parent_pid, &observed_start) != 0
+        || parent_pid != supervisor_pid) continue;
+    int pidfd = pidfd_open_exact((pid_t)parsed_pid);
+    if (pidfd < 0) continue;
+    unsigned long long confirmed_start = 0;
+    if (read_start_time((pid_t)parsed_pid, &confirmed_start) == 0
+        && confirmed_start == observed_start) {
+      (void)pidfd_signal_exact(pidfd, signal_number);
+    }
+    close(pidfd);
+  }
+  closedir(directory);
+}
+
 static int launch_process(const char *absolute_root, const char *dev_value,
                           const char *ino_value, char **command_argv) {
   unsigned long long expected_dev = 0;
@@ -258,28 +354,60 @@ static int launch_process(const char *absolute_root, const char *dev_value,
     close(root_fd);
     return fail_status("CHROMIUM_SUPERVISOR_FAILED", 4);
   }
+  struct sigaction shutdown_action;
+  memset(&shutdown_action, 0, sizeof(shutdown_action));
+  shutdown_action.sa_handler = request_supervisor_shutdown;
+  sigemptyset(&shutdown_action.sa_mask);
+  if (sigaction(SIGTERM, &shutdown_action, NULL) != 0
+      || sigaction(SIGINT, &shutdown_action, NULL) != 0) {
+    close(root_fd);
+    return fail_status("CHROMIUM_SUPERVISOR_FAILED", 4);
+  }
   pid_t browser_pid = fork();
   if (browser_pid < 0) {
     close(root_fd);
     return fail_status("CHROMIUM_SUPERVISOR_FAILED", 4);
   }
   if (browser_pid == 0) {
+    (void)setpgid(0, 0);
     close(root_fd);
     execv(command_argv[0], command_argv);
     _exit(127);
+  }
+  if (setpgid(browser_pid, browser_pid) != 0 && errno != EACCES && errno != ESRCH) {
+    kill(browser_pid, SIGKILL);
+    close(root_fd);
+    return fail_status("CHROMIUM_SUPERVISOR_FAILED", 4);
   }
   close(root_fd);
 
   int browser_status = 0;
   int browser_status_seen = 0;
+  long long shutdown_started = -1;
+  int kill_escalated = 0;
   for (;;) {
+    if (supervisor_shutdown_requested) {
+      long long now = monotonic_milliseconds();
+      if (shutdown_started < 0) {
+        shutdown_started = now < 0 ? 0 : now;
+        (void)kill(-browser_pid, SIGTERM);
+      } else if (!kill_escalated && (now < 0 || now - shutdown_started >= 1000)) {
+        kill_escalated = 1;
+        (void)kill(-browser_pid, SIGKILL);
+      }
+      signal_direct_children(getpid(), kill_escalated ? SIGKILL : SIGTERM);
+    }
     int child_status = 0;
-    pid_t waited = waitpid(-1, &child_status, 0);
+    pid_t waited = waitpid(-1, &child_status, supervisor_shutdown_requested ? WNOHANG : 0);
     if (waited == browser_pid) {
       browser_status = child_status;
       browser_status_seen = 1;
     }
     if (waited > 0) continue;
+    if (waited == 0) {
+      pause_supervisor();
+      continue;
+    }
     if (waited < 0 && errno == EINTR) continue;
     if (waited < 0 && errno == ECHILD) break;
     return fail_status("CHROMIUM_SUPERVISOR_FAILED", 4);
@@ -356,6 +484,9 @@ static int probe(void) {
 
 int main(int argc, char **argv) {
   if (argc == 2 && strcmp(argv[1], "probe") == 0) return probe();
+  if (argc == 6 && strcmp(argv[1], "mkdir") == 0) {
+    return create_directory(argv[2], argv[3], argv[4], argv[5]);
+  }
   if (argc == 6 && strcmp(argv[1], "write") == 0) {
     return write_artifact(argv[2], argv[3], argv[4], argv[5]);
   }

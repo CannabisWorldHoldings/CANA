@@ -4,7 +4,6 @@ import {
   existsSync,
   fstatSync,
   lstatSync,
-  mkdirSync,
   mkdtempSync,
   openSync,
   readdirSync,
@@ -69,12 +68,32 @@ export function createOutputCustody(outputRoot, {
 } = {}) {
   if (!sourceRoot) throw new Error('output custody requires sourceRoot');
   const canonicalSource = realpathSync(sourceRoot);
-  const requestedOutput = outputRoot
+  let requestedOutput = outputRoot
     ? path.resolve(outputRoot)
     : makeTemp(path.join(canonicalProspectivePath(tempRoot), 'cana-visual-court-'));
   const prospectiveOutput = canonicalProspectivePath(requestedOutput);
   requireOutsideSource(prospectiveOutput, canonicalSource, 'VISUAL_OUTPUT_INSIDE_SOURCE');
-  mkdirSync(requestedOutput, { recursive: true, mode: 0o700 });
+  if (!existsSync(requestedOutput)) {
+    if (!outputRoot || !writer?.createDirectory) {
+      throw custodyFailure('OUTPUT_CUSTODY_PROOF_UNAVAILABLE', { OUTPUT: requestedOutput });
+    }
+    const parent = requireOutsideSource(
+      realpathSync(path.dirname(requestedOutput)),
+      canonicalSource,
+      'VISUAL_OUTPUT_INSIDE_SOURCE',
+    );
+    const parentStat = lstatSync(parent, { bigint: true });
+    if (!parentStat.isDirectory() || parentStat.isSymbolicLink() || parentStat.nlink === 0n) {
+      throw custodyFailure('OUTPUT_CUSTODY_PROOF_UNAVAILABLE', { PARENT: parent });
+    }
+    writer.createDirectory({
+      parentPath: parent,
+      device: parentStat.dev,
+      inode: parentStat.ino,
+      name: path.basename(requestedOutput),
+    });
+    requestedOutput = path.join(parent, path.basename(requestedOutput));
+  }
   const canonicalOutput = requireOutsideSource(
     realpathSync(requestedOutput),
     canonicalSource,

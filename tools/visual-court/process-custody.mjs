@@ -309,7 +309,16 @@ export function createBrowserProcessCustodian({
       current = await signalAndWait('SIGTERM', { includeRoot: true, signalFailures });
     }
     if (current.some((entry) => entry.status === 'LIVE_EXACT')) {
-      current = await signalAndWait('SIGKILL', { includeRoot: true, signalFailures });
+      current = await signalAndWait('SIGKILL', { includeRoot: false, signalFailures });
+      current = await waitForExit();
+    }
+    const supervisor = current.find((entry) => entry.pid === rootPid && entry.status === 'LIVE_EXACT');
+    if (supervisor) {
+      rememberProofError({
+        type: 'SUPERVISOR_DRAIN_INCOMPLETE',
+        pid: rootPid,
+        startTime: supervisor.startTime,
+      });
     }
     observe();
     current = await statuses();

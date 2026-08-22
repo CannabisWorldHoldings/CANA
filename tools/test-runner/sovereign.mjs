@@ -233,6 +233,7 @@ export function runLiveSabotageRestoreProbe({
   root = ROOT,
   sourceCommit,
   relative = 'apps/web/src/lib/release-identity.mjs',
+  isolate = true,
 } = {}) {
   const target = path.join(root, relative);
   if (!sourceCommit) {
@@ -324,6 +325,84 @@ export function runLiveSabotageRestoreProbe({
         FAILURE_CLASSES: ['PRE_EXISTING_TARGET_DIRTINESS'],
       },
     };
+  }
+
+  if (isolate) {
+    const sourceStatBefore = fs.statSync(target, { bigint: true });
+    const sourceShaBefore = sha256File(target);
+    const isolationRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-sovereign-sabotage-'));
+    const isolatedCheckout = path.join(isolationRoot, 'checkout');
+    let isolatedResult = null;
+    let isolationFailure = null;
+    let cleanupFailure = null;
+    let isolatedCommit = null;
+    let isolatedTree = null;
+    try {
+      const cloned = run('git', [
+        'clone', '--quiet', '--no-hardlinks', '--no-checkout', root, isolatedCheckout,
+      ], { timeout: 120_000 });
+      if (!cloned.ok) throw new Error(`ISOLATED_CLONE_FAILED ${tail(cloned.combined, 1000)}`);
+      const checkedOut = run('git', ['checkout', '--quiet', '--detach', sourceCommit], {
+        cwd: isolatedCheckout,
+      });
+      if (!checkedOut.ok) throw new Error(`ISOLATED_CHECKOUT_FAILED ${tail(checkedOut.combined, 1000)}`);
+      isolatedCommit = gitOut(['rev-parse', 'HEAD'], { cwd: isolatedCheckout });
+      isolatedTree = gitOut(['rev-parse', 'HEAD^{tree}'], { cwd: isolatedCheckout });
+      if (isolatedCommit !== sourceCommit) throw new Error('ISOLATED_SOURCE_IDENTITY_MISMATCH');
+      isolatedResult = runLiveSabotageRestoreProbe({
+        root: isolatedCheckout,
+        sourceCommit,
+        relative,
+        isolate: false,
+      });
+    } catch (error) {
+      isolationFailure = error.message;
+    } finally {
+      try {
+        fs.rmSync(isolationRoot, { recursive: true, force: true });
+      } catch (error) {
+        cleanupFailure = error.message;
+      }
+    }
+
+    const sourceStatusAfter = status();
+    const sourceTargetStatusAfter = status(relative);
+    const sourceStatAfter = fs.statSync(target, { bigint: true });
+    const sourceShaAfter = sha256File(target);
+    const sourceCheckoutUntouched = sourceStatusAfter === preSabotageStatus
+      && sourceTargetStatusAfter === preSabotageTargetStatus
+      && sourceShaAfter === sourceShaBefore
+      && sourceStatAfter.mode === sourceStatBefore.mode
+      && sourceStatAfter.mtimeNs === sourceStatBefore.mtimeNs;
+    const isolationFailureClasses = [];
+    if (isolationFailure) isolationFailureClasses.push('SABOTAGE_ISOLATION_FAILED');
+    if (cleanupFailure) isolationFailureClasses.push('SABOTAGE_ISOLATION_CLEANUP_FAILED');
+    if (preSabotageStatus !== '') isolationFailureClasses.push('PRE_EXISTING_REPOSITORY_DIRTINESS');
+    if (!sourceCheckoutUntouched) isolationFailureClasses.push('SOURCE_CHECKOUT_MUTATED_DURING_PROBE');
+    if (isolatedResult?.classification !== 'VERIFIED') {
+      isolationFailureClasses.push(...(isolatedResult?.detail?.FAILURE_CLASSES ?? ['ISOLATED_SABOTAGE_FAILED']));
+    }
+    const detail = {
+      ...(isolatedResult?.detail ?? {}),
+      ISOLATED_CHECKOUT: true,
+      ISOLATED_COMMIT: isolatedCommit,
+      ISOLATED_TREE: isolatedTree,
+      SOURCE_CHECKOUT_STATUS_BEFORE: preSabotageStatus,
+      SOURCE_CHECKOUT_STATUS_AFTER: sourceStatusAfter,
+      SOURCE_CHECKOUT_TARGET_STATUS_BEFORE: preSabotageTargetStatus,
+      SOURCE_CHECKOUT_TARGET_STATUS_AFTER: sourceTargetStatusAfter,
+      SOURCE_CHECKOUT_SHA_BEFORE: sourceShaBefore,
+      SOURCE_CHECKOUT_SHA_AFTER: sourceShaAfter,
+      SOURCE_CHECKOUT_MTIME_NS_BEFORE: String(sourceStatBefore.mtimeNs),
+      SOURCE_CHECKOUT_MTIME_NS_AFTER: String(sourceStatAfter.mtimeNs),
+      SOURCE_CHECKOUT_UNTOUCHED: sourceCheckoutUntouched,
+      ISOLATION_FAILURE: isolationFailure,
+      ISOLATION_CLEANUP_FAILURE: cleanupFailure,
+      FAILURE_CLASSES: [...new Set(isolationFailureClasses)],
+    };
+    return isolationFailureClasses.length === 0
+      ? { classification: 'VERIFIED', detail }
+      : { classification: 'REAL_REGRESSION', why: detail.FAILURE_CLASSES.join(','), detail };
   }
 
   const beforeBytes = fs.readFileSync(target);

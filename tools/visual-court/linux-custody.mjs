@@ -149,6 +149,24 @@ export function prepareLinuxCustodyHelper({
       }
       return response;
     },
+    createDirectory({ parentPath, device, inode, name }) {
+      if (
+        !path.isAbsolute(parentPath)
+        || typeof name !== 'string'
+        || name === ''
+        || name === '.'
+        || name === '..'
+        || name.includes('/')
+        || name.includes('\\')
+      ) {
+        throw failure('DIRECTORY_CREATE_REFUSED', { PARENT: parentPath, NAME: name });
+      }
+      const response = invoke('mkdir', [parentPath, String(device), String(inode), name]);
+      if (response.exitCode !== 0 || response.status !== 'CREATED') {
+        throw failure('DIRECTORY_CREATE_REFUSED', { STATUS: response.status, EXIT_CODE: response.exitCode });
+      }
+      return response;
+    },
     launchSpec({ rootPath, device, inode, executable, argv }) {
       if (!path.isAbsolute(executable) || !Array.isArray(argv)) {
         throw failure('CHROMIUM_EXEC_FAILED', { EXECUTABLE: executable });

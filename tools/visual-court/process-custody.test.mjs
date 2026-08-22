@@ -151,3 +151,33 @@ test('escaped descendant with an observed stable identity is terminated exactly'
     assert.equal(receipt.ownedBrowserProcessCountAfter, 0);
   } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
 });
+
+test('a supervisor that cannot drain is never SIGKILLed into a false zero receipt', async () => {
+  const f = fixture('supervisor-drain');
+  const signals = [];
+  try {
+    writeRow(f.procRoot, { pid: 100, parentPid: 1, processGroup: 100, startTime: '1000' });
+    const stubbornController = {
+      signal({ pid, startTime, signal }) {
+        signals.push({ pid, startTime, signal });
+        return { status: 'SIGNALLED_EXACT' };
+      },
+      status({ pid, startTime }) {
+        return fs.existsSync(path.join(f.procRoot, String(pid)))
+          ? { status: 'LIVE_EXACT', startTime }
+          : { status: 'EXITED_EXACT' };
+      },
+    };
+    const custody = createBrowserProcessCustodian({
+      rootPid: 100, runToken: f.runToken, userDataDir: f.userDataDir,
+      platform: 'linux', procRoot: f.procRoot, processController: stubbornController,
+      samplerMs: 0, graceMs: 0,
+    });
+    const receipt = await custody.cleanup();
+    assert.deepEqual(signals, [{ pid: 100, startTime: '1000', signal: 'SIGTERM' }]);
+    assert.equal(receipt.failureClass, 'CHROMIUM_CLEANUP_PROOF_UNAVAILABLE');
+    assert.equal(receipt.proofAvailable, false);
+    assert.equal(receipt.ownedBrowserProcessCountAfter, null);
+    assert.equal(receipt.proofErrors.some((entry) => entry.type === 'SUPERVISOR_DRAIN_INCOMPLETE'), true);
+  } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
+});
