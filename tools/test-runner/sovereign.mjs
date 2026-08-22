@@ -229,6 +229,90 @@ function environmentMissing(why, extra = {}) {
   return { classification: 'ENVIRONMENT_MISSING', evidence: [why], detail: extra };
 }
 
+export function runLiveSabotageRestoreProbe({
+  root = ROOT,
+  sourceCommit,
+  relative = 'apps/web/src/lib/release-identity.mjs',
+} = {}) {
+  const target = path.join(root, relative);
+  if (!sourceCommit || !fs.existsSync(target)) {
+    return { classification: 'NOT_RUN', why: `${relative} is not present, or HEAD is unknown` };
+  }
+
+  const canonical = run('git', ['cat-file', 'blob', `${sourceCommit}:${relative}`], {
+    cwd: root,
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  if (!canonical.ok) {
+    return {
+      classification: 'REAL_REGRESSION',
+      why: 'TARGET_CANONICAL_BLOB_UNAVAILABLE',
+      detail: { relative, canonicalError: tail(canonical.combined, 1000) },
+    };
+  }
+
+  const status = (pathspec = null) => gitOut([
+    'status', '--porcelain=v2', '--untracked-files=all', ...(pathspec ? ['--', pathspec] : []),
+  ], { cwd: root });
+  const before = sha256File(target);
+  const preSabotageStatus = status();
+  const preSabotageTargetStatus = status(relative);
+  let sabotaged = null;
+  let restored = null;
+  let mutationTargetStatus = null;
+
+  try {
+    fs.appendFileSync(target, '\n// CANA sovereign verification-only sabotage probe\n');
+    sabotaged = sha256File(target);
+    mutationTargetStatus = status(relative);
+  } finally {
+    fs.writeFileSync(target, canonical.stdout);
+    restored = sha256File(target);
+  }
+
+  const postRestoreStatus = status();
+  const postRestoreTargetStatus = status(relative);
+  const targetMutationDetected = sabotaged !== before && mutationTargetStatus !== '';
+  const targetRestoredExact = restored === before && postRestoreTargetStatus === '';
+  const probeRestoredBaseline = postRestoreStatus === preSabotageStatus;
+  const repositoryCleanBeforeSabotage = preSabotageStatus === '';
+  const repositoryCleanAfterRestore = postRestoreStatus === '';
+  const verified = targetMutationDetected
+    && targetRestoredExact
+    && probeRestoredBaseline
+    && repositoryCleanBeforeSabotage
+    && repositoryCleanAfterRestore;
+  const failureClasses = [];
+  if (!repositoryCleanBeforeSabotage) failureClasses.push('PRE_EXISTING_DIRTINESS');
+  if (!targetMutationDetected) failureClasses.push('TARGET_MUTATION_NOT_DETECTED');
+  if (!targetRestoredExact) failureClasses.push('TARGET_RESTORE_FAILED');
+  if (!probeRestoredBaseline) failureClasses.push('PROBE_INTRODUCED_DIRTINESS');
+  if (!repositoryCleanAfterRestore && repositoryCleanBeforeSabotage) failureClasses.push('REPOSITORY_NOT_CLEAN_AFTER_RESTORE');
+
+  const detail = {
+    before,
+    sabotaged,
+    restored,
+    dirty: mutationTargetStatus,
+    cleanAgain: repositoryCleanAfterRestore,
+    PRE_SABOTAGE_STATUS: preSabotageStatus,
+    PRE_SABOTAGE_TARGET_STATUS: preSabotageTargetStatus,
+    POST_RESTORE_STATUS: postRestoreStatus,
+    POST_RESTORE_TARGET_STATUS: postRestoreTargetStatus,
+    TARGET_MUTATION_STATUS: mutationTargetStatus,
+    TARGET_MUTATION_DETECTED: targetMutationDetected,
+    TARGET_RESTORED_EXACT: targetRestoredExact,
+    PROBE_RESTORED_BASELINE: probeRestoredBaseline,
+    REPOSITORY_CLEAN_BEFORE_SABOTAGE: repositoryCleanBeforeSabotage,
+    REPOSITORY_CLEAN_AFTER_RESTORE: repositoryCleanAfterRestore,
+    FAILURE_CLASSES: failureClasses,
+  };
+
+  return verified
+    ? { classification: 'VERIFIED', detail }
+    : { classification: 'REAL_REGRESSION', why: failureClasses.join(','), detail };
+}
+
 /**
  * PROMOTION-GATE EXPLICIT CONTRACT DISPATCH (ES-0003, OWNER LAW #9).
  *
@@ -814,36 +898,7 @@ const STAGES = [
       const units = files.map((f) => courtUnit(f, { cwd: f.startsWith('apps/web/') ? web : ROOT }));
       // live sabotage / exact-restore probe
       const probe = { unit: 'sabotage/restore probe (live mutation of a tracked source file)' };
-      const relative = 'apps/web/src/lib/release-identity.mjs';
-      const target = path.join(ROOT, relative);
-      if (!ctx.source?.commit || !fs.existsSync(target)) {
-        Object.assign(probe, { classification: 'NOT_RUN', why: `${relative} is not present, or HEAD is unknown` });
-      } else {
-        const before = sha256File(target);
-        let restored = null;
-        let sabotaged = null;
-        let dirty = null;
-        try {
-          fs.appendFileSync(target, '\n// CANA sovereign verification-only sabotage probe\n');
-          sabotaged = sha256File(target);
-          dirty = gitOut(['status', '--porcelain', '--', relative]);
-          const canonical = run('git', ['cat-file', 'blob', `${ctx.source.commit}:${relative}`], { maxBuffer: 32 * 1024 * 1024 });
-          fs.writeFileSync(target, canonical.stdout);
-          restored = sha256File(target);
-        } finally {
-          if (restored !== before) {
-            const canonical = run('git', ['cat-file', 'blob', `${ctx.source.commit}:${relative}`], { maxBuffer: 32 * 1024 * 1024 });
-            if (canonical.ok) fs.writeFileSync(target, canonical.stdout);
-            restored = sha256File(target);
-          }
-        }
-        const cleanAgain = gitOut(['status', '--porcelain']) === '';
-        const detected = sabotaged !== before && dirty !== '';
-        const exact = restored === before && cleanAgain;
-        Object.assign(probe, detected && exact
-          ? { classification: 'VERIFIED', detail: { before, sabotaged, restored } }
-          : { classification: 'REAL_REGRESSION', why: `mutationDetected=${detected} restorationExact=${exact}`, detail: { before, sabotaged, restored, dirty, cleanAgain } });
-      }
+      Object.assign(probe, runLiveSabotageRestoreProbe({ root: ROOT, sourceCommit: ctx.source?.commit }));
       units.push(probe);
       return unitsToStage(units, 'security/adversarial courts');
     },
