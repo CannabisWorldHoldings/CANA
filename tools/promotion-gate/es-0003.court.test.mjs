@@ -284,8 +284,12 @@ test('POST-MEASUREMENT SUCCESSION CASE follows federation law and keeps owner pr
   assert.equal(succession.mutationTest.pass, true);
   assert.match(succession.candidate.sealed_commit_sha, /^[0-9a-f]{40}$/);
   assert.match(succession.candidate.source_sha256, /^[0-9a-f]{64}$/);
-  const sealedSource = git(['show', `${succession.candidate.sealed_commit_sha}:tools/promotion-gate/es-0003.mjs`]);
-  assert.equal(sealedSource.ok, true, sealedSource.stderr);
+  const sealedSource = spawnSync(
+    'git',
+    ['show', `${succession.candidate.sealed_commit_sha}:tools/promotion-gate/es-0003.mjs`],
+    { cwd: ROOT, encoding: 'buffer', maxBuffer: 128 * 1024 * 1024 },
+  );
+  assert.equal(sealedSource.status, 0, sealedSource.stderr?.toString('utf8'));
   assert.equal(sha256(sealedSource.stdout), succession.candidate.source_sha256);
   assert.equal(sha256(fs.readFileSync(path.join(HERE, 'es-0003.mjs'))), succession.candidate.source_sha256);
   for (const forbidden of FORBIDDEN_VERDICTS) assert.ok(!CERTIFIABLE_VERDICTS.includes(forbidden));

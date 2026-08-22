@@ -1,0 +1,207 @@
+{
+  "scope": "promotion-identity manifest-lineage succession only: preserve V2 forever, add V3 for the single approved 6474bcec to 592c19ae transition, and reject all unknown future transitions",
+  "incumbent": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V2",
+    "case_id": "ES-0002",
+    "freeze_sha256": "4c6c2a5693d7bc7d99b1fedaa7f51493328f2165edd140428e9def89e74c5894",
+    "manifest_digest": "6474bcec25c6f135cb4520ba199a31bb58f39cc4dc361fec224e34d814d71810"
+  },
+  "candidate": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V3",
+    "event_schema": {
+      "promotion_schema_version": 3,
+      "promotion_event_type": "manifest-succession-promotion-v3",
+      "branch_name_used_as_authority": false
+    },
+    "sealed_commit_sha": "56fc7eae9e609f8321c08a891de4287c473e777c",
+    "source_sha256": "1c807acbccc707b8b871d86ed1b3aa2e4441c6ef270d8964550863e1cf2edcf2",
+    "pre_candidate_freeze_sha256": "ebdaaa30cedb351ca1ed406b55cb03e2eb0aa7dbbd9109a9dcf1913b543b6c43"
+  },
+  "candidateAuthor": "lane-implementation",
+  "reason": "ES0002 correctly freezes a historical whole-manifest identity, but the separately owner-approved blob-bound PR57 reconciliation creates one legitimate manifest-identity distribution shift that requires a distinct fail-closed lane.",
+  "demonstratedDefects": [
+    {
+      "probe": "Execute frozen ES0002 positive against the exact owner-approved PR57 reconciliation manifest, then execute the same frozen court inside an isolated e03 pre-reconciliation archive.",
+      "incumbentVerdict": "CURRENT_MANIFEST_REFUSED_ONLY_AT_evidence.ownership-manifest-digest; PRE_RECONCILIATION_ARCHIVE_8_OF_8_PASS",
+      "correctVerdict": "A_DISTINCT_V3_EVENT_MAY_BE_TECHNICALLY_ELIGIBLE_ONLY_WHEN_THE_COMPLETE_6474BCEC_TO_545DCAE7_TO_592C19AE_TRANSITION_IS_PROVEN_AND_OWNER_GATE_REMAINS_PENDING",
+      "whyCorrect": "The separately owner-approved reconciliation adds one blob-bound PR57 assignment while preserving every existing assignment, ownership array, global_no_edit entry, runtime authority, product behavior, and frozen evaluator byte.",
+      "boundaryOfDefect": "WHOLE_MANIFEST_IDENTITY_SUCCESSION_ONLY; EVERY_OTHER_ES0002_CHECK_VERDICT_VOCABULARY_AND_AUTHORITY_BOUNDARY_REMAINS_INCUMBENT_LAW"
+    }
+  ],
+  "adjudicator": "lane-verification-independent-node-test-harness",
+  "promotionCriteria": [
+    "P1_REPRODUCE_EVERY_APPLICABLE_ES0002_HISTORICAL_VERDICT",
+    "P2_ACCEPT_ONLY_THE_EXACT_6474BCEC_TO_592C19AE_MANIFEST_SUCCESSION_PROVEN_THROUGH_OWNER_APPROVED_SCOPE_545DCAE7",
+    "P3_REJECT_NEW_DIGEST_CLAIMS_WITHOUT_THE_COMPLETE_APPROVED_TRANSITION",
+    "P4_INTRODUCE_NO_WILDCARD_DIRECTORY_OR_PATH_PATTERN_OWNERSHIP",
+    "P5_REJECT_FUTURE_OR_REPLACEMENT_BLOBS_FOR_THE_24_RECONCILED_PATHS",
+    "P6_REJECT_CANDIDATE_PATH_LAUNDERING",
+    "P7_REJECT_NEIGHBORING_PATHS",
+    "P8_REJECT_GIT_MODE_DRIFT",
+    "P9_REJECT_GIT_BLOB_DRIFT",
+    "P10_REJECT_CONTENT_SHA256_DRIFT",
+    "P11_REJECT_CANONICAL_MAIN_ANCESTRY_FAILURE",
+    "P12_REJECT_REALITY_CLOSURE_CANDIDATE_ANCESTRY_FAILURE",
+    "P13_REJECT_OWNER_APPROVED_SCOPE_DIGEST_TAMPERING",
+    "P14_REJECT_ANY_NEW_MANIFEST_DIGEST_WITHOUT_A_NEW_OWNER_APPROVED_SUCCESSION",
+    "P15_BRANCH_AND_REF_NAMES_ARE_EVIDENCE_ONLY_NEVER_AUTHORITY",
+    "P16_NEVER_CERTIFY_MERGED_CANONICAL_DEPLOYED_OR_OWNER_APPROVED",
+    "P17_KEEP_TECHNICAL_PROMOTION_EVIDENCE_DISTINCT_FROM_OWNER_PROMOTION_APPROVAL",
+    "P18_PRESERVE_EXISTING_V1_HISTORICAL_REPLAY_BYTE_IDENTICALLY",
+    "P19_PRESERVE_ES0002_SOURCE_CONTRACT_FIXTURES_CORPUS_FREEZE_AND_REPLAY_BYTE_IDENTICALLY",
+    "P20_FAIL_CLOSED_ON_UNKNOWN_FUTURE_MANIFEST_SUCCESSIONS"
+  ],
+  "criteriaFixedBeforeCandidate": true,
+  "bridgeCorpus": [
+    "B01_ES0002_POSITIVE",
+    "B02_ES0002_ADVERSARIAL_22",
+    "B03_V1_HISTORICAL_REPLAY",
+    "B04_PRE_RECONCILIATION_MANIFEST",
+    "B05_BRANCH_RELABEL_INVARIANCE",
+    "B06_FOREIGN_EVENT_DISPATCH",
+    "B07_WRONG_ANCESTRY",
+    "B08_WRONG_CANDIDATE_TREE",
+    "B09_OWNER_STATE_LAUNDERING",
+    "B10_VERDICT_VOCABULARY"
+  ],
+  "bridgeResults": [
+    {
+      "id": "B01_ES0002_POSITIVE",
+      "incumbentVerdict": "ACCEPT_IN_E03_ARCHIVE",
+      "candidateVerdict": "ACCEPT_EXACT_PROVEN_TRANSITION",
+      "agree": true
+    },
+    {
+      "id": "B02_ES0002_ADVERSARIAL_22",
+      "incumbentVerdict": "22_OF_22_REFUSED",
+      "candidateVerdict": "22_OF_22_EQUIVALENT_DEFECTS_REFUSED",
+      "agree": true
+    },
+    {
+      "id": "B03_V1_HISTORICAL_REPLAY",
+      "incumbentVerdict": "5_OF_5_PASS_NO_SKIPS",
+      "candidateVerdict": "UNCHANGED_5_OF_5_PASS_NO_SKIPS",
+      "agree": true
+    },
+    {
+      "id": "B04_PRE_RECONCILIATION_MANIFEST",
+      "incumbentVerdict": "FROZEN_V2_CONTEXT_VALID",
+      "candidateVerdict": "FROZEN_V2_CONTEXT_NOT_RECLASSIFIED",
+      "agree": true
+    },
+    {
+      "id": "B05_BRANCH_RELABEL_INVARIANCE",
+      "incumbentVerdict": "BRANCH_IS_EVIDENCE_ONLY",
+      "candidateVerdict": "BRANCH_IS_EVIDENCE_ONLY",
+      "agree": true
+    },
+    {
+      "id": "B06_FOREIGN_EVENT_DISPATCH",
+      "incumbentVerdict": "DISJOINT_V1_V2",
+      "candidateVerdict": "DISJOINT_V1_V2_V3_WITH_V2_FROZEN_REPLAY",
+      "agree": true
+    },
+    {
+      "id": "B07_WRONG_ANCESTRY",
+      "incumbentVerdict": "REFUSE",
+      "candidateVerdict": "REFUSE",
+      "agree": true
+    },
+    {
+      "id": "B08_WRONG_CANDIDATE_TREE",
+      "incumbentVerdict": "REFUSE",
+      "candidateVerdict": "REFUSE",
+      "agree": true
+    },
+    {
+      "id": "B09_OWNER_STATE_LAUNDERING",
+      "incumbentVerdict": "REFUSE",
+      "candidateVerdict": "REFUSE",
+      "agree": true
+    },
+    {
+      "id": "B10_VERDICT_VOCABULARY",
+      "incumbentVerdict": "FORBIDDEN_VERDICTS_IMPOSSIBLE",
+      "candidateVerdict": "FORBIDDEN_VERDICTS_IMPOSSIBLE",
+      "agree": true
+    }
+  ],
+  "hiddenHoldout": [
+    "H01_WRONG_PRIOR_SCOPE_DIGEST",
+    "H02_ALTERED_ENTRY_BLOB",
+    "H03_WRONG_GIT_MODE",
+    "H04_DIFFERENT_CONTENT_SHA256",
+    "H05_ADDITIONAL_TWENTY_FIFTH_PATH",
+    "H06_APPROVED_PATH_REMOVED",
+    "H07_FUTURE_AUTHORITY_BLOB",
+    "H08_TRUSTED_BRANCH_WITHOUT_IDENTITY",
+    "H09_ANCESTRY_FORK",
+    "H10_CONFLICTING_CLASSIFICATION",
+    "H11_ALTERNATE_CANONICALIZATION",
+    "H12_UNRELATED_MANIFEST_CHANGE",
+    "H13_TAMPERED_ORIGINATING_COMMIT",
+    "H14_V3_EVENT_TO_V2",
+    "H15_V2_EVENT_TO_V3_FROZEN_REPLAY",
+    "H16_OWNER_APPROVAL_MISSING",
+    "H17_APPROVAL_DIGEST_ONE_BYTE_DRIFT",
+    "H18_UNKNOWN_FUTURE_RECONCILIATION"
+  ],
+  "holdoutResults": [
+    { "id": "H01", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H02", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H03", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H04", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H05", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H06", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H07", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H08", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H09", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H10", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H11", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H12", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H13", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H14", "incumbentCorrect": true, "candidateCorrect": true },
+    {
+      "id": "H15",
+      "incumbentCorrect": false,
+      "candidateCorrect": true,
+      "incumbentVerdict": "DIRECT_CURRENT_CONTEXT_REFUSAL_AT_FROZEN_MANIFEST_PIN",
+      "candidateVerdict": "ROUTE_TO_BYTE_IDENTICAL_E03_FROZEN_REPLAY_8_OF_8_AND_22_OF_22"
+    },
+    { "id": "H16", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H17", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H18", "incumbentCorrect": true, "candidateCorrect": true }
+  ],
+  "mutationTest": {
+    "description": "All twelve fixed source mutations changed a frozen expected verdict and made the succession court red.",
+    "pass": true,
+    "results": [
+      "M01_RED",
+      "M02_RED",
+      "M03_RED",
+      "M04_RED",
+      "M05_RED",
+      "M06_RED",
+      "M07_RED",
+      "M08_RED",
+      "M09_RED",
+      "M10_RED",
+      "M11_RED",
+      "M12_RED"
+    ]
+  },
+  "distributionShiftNote": "The incumbent remains correct historical law; V3 corrects only the separately approved whole-manifest identity succession.",
+  "reversibility": "Delete only the eight exact create paths and restore the two exact canonical integration blobs; preserve the separately authorized PR57 reconciliation and return to the honest ES0002 refusal.",
+  "verdict": "SUCCEED",
+  "successionReceipt": {
+    "approved_payload_sha256": "9650b9555d573a046540b56d06b6d2f362ec4384692092b474bfc94a489df23e",
+    "pre_candidate_freeze_sha256": "ebdaaa30cedb351ca1ed406b55cb03e2eb0aa7dbbd9109a9dcf1913b543b6c43",
+    "candidate_sealed_commit_sha": "56fc7eae9e609f8321c08a891de4287c473e777c",
+    "candidate_source_sha256": "1c807acbccc707b8b871d86ed1b3aa2e4441c6ef270d8964550863e1cf2edcf2",
+    "independent_holdout_commit_sha": "b9ec1cb36d9f6bc40418973c94de68ea0c512d1c",
+    "independent_holdout_file_sha256": "94210fb1626ed651fc32245185aa6f46208a4eed6993ac501cf3a4f7bc3edda8",
+    "independent_holdout_plan_sha256": "85eecc0c62a21483e9d417359898d332b760442e51bddb673555e9c0e2956cac",
+    "owner_promotion_gate": "PENDING"
+  },
+  "ownerPromotionGate": "PENDING"
+}
