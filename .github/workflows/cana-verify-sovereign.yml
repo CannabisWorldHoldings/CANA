@@ -380,21 +380,21 @@ jobs:
 
       - name: Preflight the exact Linux custody helper
         run: |
-          custody_binary="${{ runner.temp }}/cana-ci/linux-custody-helper"
-          cc -std=c11 -O2 -Wall -Wextra -Werror \
-            -o "$custody_binary" tools/visual-court/linux-custody-helper.c
-          chmod 0700 "$custody_binary"
-          "$custody_binary" probe | node -e '
-            let input = "";
-            process.stdin.on("data", (chunk) => { input += chunk; });
-            process.stdin.on("end", () => {
-              const receipt = JSON.parse(input);
-              if (receipt.protocol !== 1 || receipt.status !== "READY") process.exit(1);
-            });
-          '
-          echo "CANA_LINUX_CUSTODY_HELPER=$custody_binary" >> "$GITHUB_ENV"
-          echo "CANA_LINUX_CUSTODY_SOURCE_SHA256=$(sha256sum tools/visual-court/linux-custody-helper.c | cut -d' ' -f1)" >> "$GITHUB_ENV"
-          echo "CANA_LINUX_CUSTODY_BINARY_SHA256=$(sha256sum "$custody_binary" | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          node --input-type=module <<'NODE'
+          import { prepareLinuxCustodyHelper } from './tools/visual-court/linux-custody.mjs';
+          const helper = prepareLinuxCustodyHelper();
+          try {
+            if (
+              helper.protocolVersion !== 1
+              || helper.sourcePath !== 'inline:linux-custody-python'
+              || !/^[0-9a-f]{64}$/.test(helper.sourceSha256)
+              || !/^[0-9a-f]{64}$/.test(helper.binarySha256)
+              || helper.compiler !== null
+            ) process.exit(1);
+          } finally {
+            helper.close();
+          }
+          NODE
 
       - name: Serve the production build for the rendered visual court
         working-directory: apps/web

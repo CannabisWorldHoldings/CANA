@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -49,6 +48,15 @@ test('native helper writes beneath retained binding and refuses a swapped root',
       bytes: Buffer.from('png'),
     });
     assert.equal(fs.readFileSync(path.join(output, 'route/light/430.png'), 'utf8'), 'png');
+    assert.throws(() => helper.write({
+      rootPath: output,
+      device: binding.dev,
+      inode: binding.ino,
+      relativePath: 'route/light/430.png',
+      bytes: Buffer.from('replacement'),
+    }), /OUTPUT_WRITE_REFUSED/);
+    assert.equal(fs.readFileSync(path.join(output, 'route/light/430.png'), 'utf8'), 'png',
+      'exclusive refusal must preserve the existing artifact');
     fs.renameSync(output, `${output}.held`);
     fs.symlinkSync(protectedRoot, output, 'dir');
     assert.throws(() => helper.write({
@@ -65,43 +73,26 @@ test('native helper writes beneath retained binding and refuses a swapped root',
   }
 });
 
-test('supplied helper execution remains content-bound after same-inode mutation and pathname replacement', { skip: !linux }, async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-linux-custody-binary-binding-'));
-  const binary = path.join(root, 'linux-custody-helper');
+test('legacy helper and compiler environment paths never enter the inline custody runtime', { skip: !linux }, () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-linux-custody-legacy-env-'));
+  const attacker = path.join(root, 'attacker');
   const output = path.join(root, 'output');
   const sentinel = path.join(root, 'attacker-ran');
   fs.mkdirSync(output, { mode: 0o700 });
-  const compiled = spawnSync(
-    process.env.CC ?? 'cc',
-    ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror', '-o', binary,
-      path.join(import.meta.dirname, 'linux-custody-helper.c')],
-    { encoding: 'utf8' },
-  );
-  assert.equal(compiled.status, 0, compiled.stderr);
-  fs.chmodSync(binary, 0o700);
-  const expectedBinarySha256 = crypto.createHash('sha256').update(fs.readFileSync(binary)).digest('hex');
-  assert.throws(
-    () => prepareLinuxCustodyHelper({ suppliedBinary: binary, expectedBinarySha256: null }),
-    /LINUX_CUSTODY_BINARY_DIGEST_REQUIRED/,
-  );
-  const helper = prepareLinuxCustodyHelper({ suppliedBinary: binary, expectedBinarySha256 });
-  const child = spawn(process.execPath, ['-e', "process.on('SIGTERM',()=>process.exit(0));setInterval(()=>{},1000)"], {
-    stdio: 'ignore',
-  });
+  fs.writeFileSync(attacker, `#!/bin/sh\nprintf attacked >> ${JSON.stringify(sentinel)}\nexit 0\n`, { mode: 0o700 });
+  const previous = {
+    CC: process.env.CC,
+    CANA_LINUX_CUSTODY_HELPER: process.env.CANA_LINUX_CUSTODY_HELPER,
+    CANA_LINUX_CUSTODY_SOURCE_SHA256: process.env.CANA_LINUX_CUSTODY_SOURCE_SHA256,
+    CANA_LINUX_CUSTODY_BINARY_SHA256: process.env.CANA_LINUX_CUSTODY_BINARY_SHA256,
+  };
+  process.env.CC = attacker;
+  process.env.CANA_LINUX_CUSTODY_HELPER = attacker;
+  process.env.CANA_LINUX_CUSTODY_SOURCE_SHA256 = '0'.repeat(64);
+  process.env.CANA_LINUX_CUSTODY_BINARY_SHA256 = 'f'.repeat(64);
+  let helper;
   try {
-    const attacker = [
-      '#!/bin/sh',
-      `printf attacked >> ${JSON.stringify(sentinel)}`,
-      'case "$1" in',
-      "  write) printf '{\"protocol\":1,\"status\":\"WROTE\",\"bytes\":3}\\n' ;;",
-      "  signal) printf '{\"protocol\":1,\"status\":\"SIGNALLED_EXACT\"}\\n' ;;",
-      "  launch) printf '{\"protocol\":1,\"status\":\"READY\"}\\n' ;;",
-      "  *) printf '{\"protocol\":1,\"status\":\"READY\"}\\n' ;;",
-      'esac',
-    ].join('\n');
-
-    fs.writeFileSync(binary, attacker, { mode: 0o700 });
-
+    helper = prepareLinuxCustodyHelper();
     const binding = fs.statSync(output, { bigint: true });
     helper.write({
       rootPath: output,
@@ -110,15 +101,6 @@ test('supplied helper execution remains content-bound after same-inode mutation 
       relativePath: 'bound.txt',
       bytes: Buffer.from('png'),
     });
-
-    fs.rmSync(binary);
-    fs.writeFileSync(binary, attacker, { mode: 0o700 });
-
-    const stat = fs.readFileSync(`/proc/${child.pid}/stat`, 'utf8');
-    const startTime = stat.slice(stat.lastIndexOf(') ') + 2).split(' ')[19];
-    const signalled = helper.signal({ pid: child.pid, startTime, signal: 'SIGTERM' });
-    await Promise.race([waitForExit(child), new Promise((resolve) => setTimeout(resolve, 1_000))]);
-
     const launch = helper.launchSpec({
       rootPath: output,
       device: binding.dev,
@@ -131,50 +113,44 @@ test('supplied helper execution remains content-bound after same-inode mutation 
       env: launch.env,
       stdio: launch.stdio,
     });
-
     assert.equal(fs.readFileSync(path.join(output, 'bound.txt'), 'utf8'), 'png');
-    assert.equal(signalled.status, 'SIGNALLED_EXACT');
-    assert.equal(child.exitCode !== null || child.signalCode !== null, true, 'verified helper must deliver the exact signal');
     assert.equal(launched.status, 0);
     assert.equal(launched.stdout.trim(), output);
-    assert.equal(fs.existsSync(sentinel), false, 'mutated or replacement helper bytes must never execute');
+    assert.equal(fs.existsSync(sentinel), false, 'legacy compiler/helper paths must never execute');
   } finally {
-    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
-    helper.close();
+    helper?.close();
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('automatic compilation consumes the exact source bytes that were hashed', { skip: !linux }, () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-linux-custody-source-binding-'));
-  const sourcePath = path.join(root, 'linux-custody-helper.c');
-  const sourceBytes = fs.readFileSync(path.join(import.meta.dirname, 'linux-custody-helper.c'));
-  const expectedSourceSha256 = crypto.createHash('sha256').update(sourceBytes).digest('hex');
-  fs.writeFileSync(sourcePath, sourceBytes);
-  let compileObserved = false;
+test('inline custody invokes only isolated Python with three standard streams and a fixed environment', { skip: !linux }, () => {
+  const calls = [];
   const run = (command, argv, options) => {
-    if (argv.some((value) => value.includes('cana-linux-custody-build'))) {
-      compileObserved = true;
-      fs.writeFileSync(sourcePath, '#error attacker source must not compile\n');
-      assert.deepEqual(options.input, sourceBytes);
-      assert.equal(argv.includes(sourcePath), false, 'hashed source pathname must not reach the compiler');
-      assert.equal(argv.some((value) => value.endsWith('/linux-custody-helper')), false,
-        'compiler output must never expose a substitutable pathname');
-    }
+    calls.push({ command, argv, options });
     return spawnSync(command, argv, options);
   };
-  const helper = prepareLinuxCustodyHelper({ sourcePath, expectedSourceSha256, run });
+  const helper = prepareLinuxCustodyHelper({ run });
   try {
-    assert.equal(compileObserved, true);
-    assert.equal(helper.sourceSha256, expectedSourceSha256);
-    assert.match(fs.readFileSync(sourcePath, 'utf8'), /attacker source must not compile/);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].command, fs.realpathSync('/usr/bin/python3'));
+    assert.deepEqual(calls[0].argv.slice(0, 4), ['-I', '-S', '-E', '-c']);
+    assert.equal(calls[0].argv.at(-1), 'probe');
+    assert.deepEqual(Object.keys(calls[0].options.env).sort(), ['HOME', 'LANG', 'LC_ALL', 'PATH', 'TMPDIR', 'TZ']);
+    assert.equal(Object.isFrozen(calls[0].options.env), true, 'the fixed custody environment is immutable');
+    assert.equal(calls[0].options.stdio.length, 3, 'no inherited helper or compiler descriptor may exist');
+    assert.equal(helper.compiler, null);
+    assert.deepEqual(helper.compileArgv, []);
+    assert.match(helper.sourceSha256, /^[0-9a-f]{64}$/);
   } finally {
     helper.close();
-    fs.rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('ambient dynamic-loader injection never reaches compiler, sealer, helper or launched process', { skip: !linux }, () => {
+test('ambient dynamic-loader injection never reaches interpreter, helper operation or launched process', { skip: !linux }, () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-linux-custody-loader-env-'));
   const library = path.join(root, 'attacker.so');
   const sentinel = path.join(root, 'attacker-ran');
@@ -298,6 +274,14 @@ test('native helper creates an exclusive private directory beneath the retained 
     });
     assert.equal(created.status, 'CREATED');
     assert.equal(fs.statSync(path.join(parent, 'court')).mode & 0o777, 0o700);
+    assert.throws(() => helper.createDirectory({
+      parentPath: parent,
+      device: binding.dev,
+      inode: binding.ino,
+      name: 'court',
+    }), /DIRECTORY_CREATE_REFUSED/);
+    assert.equal(fs.statSync(path.join(parent, 'court')).isDirectory(), true,
+      'exclusive refusal must preserve the existing directory');
 
     fs.renameSync(parent, `${parent}.held`);
     fs.symlinkSync(protectedRoot, parent, 'dir');

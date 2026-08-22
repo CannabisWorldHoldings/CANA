@@ -201,9 +201,9 @@ test('Stage 13 and the authoritative H3 workflow require the exact Linux custody
     'utf8',
   );
   assert.match(workflow, /node-version: 24\.14\.1/);
-  assert.match(workflow, /cc -std=c11 -O2 -Wall -Wextra -Werror/);
-  assert.match(workflow, /CANA_LINUX_CUSTODY_SOURCE_SHA256=/);
-  assert.match(workflow, /CANA_LINUX_CUSTODY_BINARY_SHA256=/);
+  assert.match(workflow, /prepareLinuxCustodyHelper/);
+  assert.match(workflow, /inline:linux-custody-python/);
+  assert.doesNotMatch(workflow, /CANA_LINUX_CUSTODY_(?:HELPER|SOURCE_SHA256|BINARY_SHA256)=/);
   assert.match(workflow, /\.\/cana verify sovereign/);
 });
 
