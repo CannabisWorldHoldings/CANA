@@ -9,6 +9,7 @@ import {
   mkdtempSync,
   openSync,
   readFileSync,
+  realpathSync,
   rmSync,
 } from 'node:fs';
 import os from 'node:os';
@@ -17,7 +18,20 @@ import { fileURLToPath } from 'node:url';
 
 const PROTOCOL_VERSION = 1;
 const MAX_PAYLOAD_BYTES = 64 * 1024 * 1024;
-const CHILD_HELPER_FD = 3;
+const MAX_HELPER_ARG_BYTES = 120 * 1024;
+const PYTHON_EXECUTABLE = '/usr/bin/python3';
+const SEALED_EXEC_SCRIPT = [
+  'import base64, fcntl, hashlib, os, sys',
+  'payload = base64.b64decode(sys.argv[2], validate=True)',
+  'if hashlib.sha256(payload).hexdigest() != sys.argv[1]: raise SystemExit(126)',
+  'fd = os.memfd_create("cana-linux-custody-helper", os.MFD_CLOEXEC | os.MFD_ALLOW_SEALING)',
+  'view = memoryview(payload)',
+  'while view: view = view[os.write(fd, view):]',
+  'os.fchmod(fd, 0o500)',
+  'seals = fcntl.F_SEAL_SEAL | fcntl.F_SEAL_SHRINK | fcntl.F_SEAL_GROW | fcntl.F_SEAL_WRITE',
+  'fcntl.fcntl(fd, fcntl.F_ADD_SEALS, seals)',
+  'os.execve(f"/proc/self/fd/{fd}", ["cana-linux-custody-helper", *sys.argv[3:]], os.environ)',
+].join('\n');
 const DEFAULT_SOURCE = fileURLToPath(new URL('./linux-custody-helper.c', import.meta.url));
 
 function sha256(bytes) {
@@ -65,14 +79,13 @@ export function prepareLinuxCustodyHelper({
   if (expectedSourceSha256 && expectedSourceSha256 !== sourceDigest) {
     throw failure('LINUX_CUSTODY_SOURCE_MISMATCH', { EXPECTED: expectedSourceSha256, ACTUAL: sourceDigest });
   }
-  let runtimeDirectory = null;
+  const runtimeDirectory = mkdtempSync(path.join(tempRoot, 'cana-linux-custody-'));
+  chmodSync(runtimeDirectory, 0o700);
   let binaryPath = suppliedBinary ? path.resolve(suppliedBinary) : null;
   let compilerVersion = null;
   const compileArgv = ['-std=c11', '-O2', '-Wall', '-Wextra', '-Werror'];
 
   if (!binaryPath) {
-    runtimeDirectory = mkdtempSync(path.join(tempRoot, 'cana-linux-custody-'));
-    chmodSync(runtimeDirectory, 0o700);
     binaryPath = path.join(runtimeDirectory, 'linux-custody-helper');
     const version = run(compiler, ['--version'], { encoding: 'utf8', timeout: 10_000 });
     if (version.status !== 0) {
@@ -80,8 +93,9 @@ export function prepareLinuxCustodyHelper({
       throw failure('LINUX_CUSTODY_HELPER_BUILD_FAILED', { COMPILER: compiler });
     }
     compilerVersion = String(version.stdout).split('\n')[0];
-    const compiled = run(compiler, [...compileArgv, '-o', binaryPath, sourcePath], {
+    const compiled = run(compiler, [...compileArgv, '-x', 'c', '-o', binaryPath, '-'], {
       encoding: 'utf8',
+      input: sourceBytes,
       timeout: 30_000,
     });
     if (compiled.status !== 0 || !existsSync(binaryPath)) {
@@ -95,23 +109,22 @@ export function prepareLinuxCustodyHelper({
     chmodSync(binaryPath, 0o700);
   }
 
-  let binaryFd = null;
+  let sourceBinaryFd = null;
   try {
-    binaryFd = openSync(binaryPath, constants.O_RDONLY | constants.O_NOFOLLOW);
+    sourceBinaryFd = openSync(binaryPath, constants.O_RDONLY | constants.O_NOFOLLOW);
   } catch (error) {
-    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+    rmSync(runtimeDirectory, { recursive: true, force: true });
     throw failure('LINUX_CUSTODY_HELPER_UNTRUSTED', { BINARY: binaryPath, MESSAGE: error.message });
   }
   const closeBinary = () => {
-    if (binaryFd === null) return;
-    closeSync(binaryFd);
-    binaryFd = null;
+    if (sourceBinaryFd !== null) closeSync(sourceBinaryFd);
+    sourceBinaryFd = null;
   };
   const cleanFailure = () => {
     closeBinary();
-    if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+    rmSync(runtimeDirectory, { recursive: true, force: true });
   };
-  const binaryStat = fstatSync(binaryFd);
+  const binaryStat = fstatSync(sourceBinaryFd);
   if (
     !binaryStat.isFile()
     || binaryStat.nlink !== 1
@@ -121,14 +134,51 @@ export function prepareLinuxCustodyHelper({
     cleanFailure();
     throw failure('LINUX_CUSTODY_HELPER_UNTRUSTED', { BINARY: binaryPath });
   }
-  const binaryDigest = sha256(readFileSync(binaryFd));
+  const binaryBytes = readFileSync(sourceBinaryFd);
+  const binaryDigest = sha256(binaryBytes);
   if (expectedBinarySha256 && expectedBinarySha256 !== binaryDigest) {
     cleanFailure();
     throw failure('LINUX_CUSTODY_BINARY_MISMATCH', { EXPECTED: expectedBinarySha256, ACTUAL: binaryDigest });
   }
-  const binaryExecutionPath = `/proc/self/fd/${CHILD_HELPER_FD}`;
-  const helperStdio = (input) => [input === null ? 'ignore' : 'pipe', 'pipe', 'pipe', binaryFd];
-  const probed = run(binaryExecutionPath, ['probe'], {
+  closeBinary();
+  const encodedBinary = binaryBytes.toString('base64');
+  if (Buffer.byteLength(encodedBinary) > MAX_HELPER_ARG_BYTES) {
+    cleanFailure();
+    throw failure('LINUX_CUSTODY_HELPER_UNTRUSTED', {
+      BINARY: binaryPath,
+      REASON: 'CONTENT_STABLE_SNAPSHOT_TOO_LARGE',
+    });
+  }
+  let sealedExecutor;
+  try {
+    sealedExecutor = realpathSync(PYTHON_EXECUTABLE);
+    const executorFd = openSync(sealedExecutor, constants.O_RDONLY | constants.O_NOFOLLOW);
+    const executorStat = fstatSync(executorFd);
+    closeSync(executorFd);
+    if (!executorStat.isFile() || executorStat.uid !== 0 || (executorStat.mode & 0o022) !== 0) {
+      throw new Error('sealed executor is not a root-owned non-writable regular file');
+    }
+  } catch (error) {
+    cleanFailure();
+    throw failure('LINUX_CUSTODY_HELPER_UNTRUSTED', {
+      BINARY: binaryPath,
+      REASON: 'SEALED_EXECUTOR_UNAVAILABLE',
+      MESSAGE: error.message,
+    });
+  }
+  const sealedArgv = (operation, argv = []) => [
+    '-I',
+    '-S',
+    '-E',
+    '-c',
+    SEALED_EXEC_SCRIPT,
+    binaryDigest,
+    encodedBinary,
+    operation,
+    ...argv,
+  ];
+  const helperStdio = (input) => [input === null ? 'ignore' : 'pipe', 'pipe', 'pipe'];
+  const probed = run(sealedExecutor, sealedArgv('probe'), {
     encoding: 'utf8',
     timeout: 10_000,
     stdio: helperStdio(null),
@@ -148,7 +198,7 @@ export function prepareLinuxCustodyHelper({
   let closed = false;
   function invoke(operation, argv, { input = null, timeout = 10_000 } = {}) {
     if (closed) throw failure('LINUX_CUSTODY_HELPER_CLOSED', { OPERATION: operation });
-    const result = run(binaryExecutionPath, [operation, ...argv], {
+    const result = run(sealedExecutor, sealedArgv(operation, argv), {
       encoding: input === null ? 'utf8' : undefined,
       input,
       maxBuffer: 4 * 1024 * 1024,
@@ -206,9 +256,9 @@ export function prepareLinuxCustodyHelper({
       }
       if (closed) throw failure('LINUX_CUSTODY_HELPER_CLOSED', { OPERATION: 'launch' });
       return {
-        command: binaryExecutionPath,
-        argv: ['launch', rootPath, String(device), String(inode), executable, ...argv],
-        stdio: ['ignore', 'pipe', 'pipe', binaryFd],
+        command: sealedExecutor,
+        argv: sealedArgv('launch', [rootPath, String(device), String(inode), executable, ...argv]),
+        stdio: ['ignore', 'pipe', 'pipe'],
       };
     },
     signal({ pid, startTime, signal }) {
@@ -221,7 +271,7 @@ export function prepareLinuxCustodyHelper({
       if (closed) return;
       closed = true;
       closeBinary();
-      if (runtimeDirectory) rmSync(runtimeDirectory, { recursive: true, force: true });
+      rmSync(runtimeDirectory, { recursive: true, force: true });
     },
   };
 }
