@@ -282,6 +282,52 @@ test('resolver reads canonical Reality and never falls back to Retailer', async 
   assert.equal(retailerReads, 0);
 });
 
+test('a typed Customer World search records one ASK observation; an empty view records none', async () => {
+  const prisma = {
+    marketClaim: { findMany: async () => [] },
+    marketVerificationEvent: { findMany: async () => [] },
+    marketSourceAcquisitionEvent: { findMany: async () => [] },
+    marketSourceContentArtifact: { findMany: async () => [] },
+    marketSourceSnapshot: { findMany: async () => [] },
+    marketEvidenceRevocationEvent: { findMany: async () => [] },
+  };
+  const observations = [];
+  const recordAsk = async (observation) => observations.push(observation);
+
+  const searched = await resolveCustomerWorld(prisma, {
+    journey: 'SEARCH', market: 'US-MD', query: 'Bethesda flower under $45',
+    tenantDomain: 'orderweeddc.localhost', now: NOW, recordAsk,
+  });
+  assert.equal(searched.state, 'CAPABILITY_GAP');
+  assert.equal(observations.length, 1);
+  assert.equal(observations[0].answer.zero_verified_result, true);
+  assert.equal(observations[0].intent.raw_query, 'Bethesda flower under $45');
+
+  await resolveCustomerWorld(prisma, {
+    journey: 'SEARCH', market: 'US-MD', query: '',
+    tenantDomain: 'orderweeddc.localhost', now: NOW, recordAsk,
+  });
+  assert.equal(observations.length, 1, 'default and empty views are not customer demand');
+});
+
+test('ASK observation failure never hides the truthful Customer World result', async () => {
+  const prisma = {
+    marketClaim: { findMany: async () => [] },
+    marketVerificationEvent: { findMany: async () => [] },
+    marketSourceAcquisitionEvent: { findMany: async () => [] },
+    marketSourceContentArtifact: { findMany: async () => [] },
+    marketSourceSnapshot: { findMany: async () => [] },
+    marketEvidenceRevocationEvent: { findMany: async () => [] },
+  };
+  const world = await resolveCustomerWorld(prisma, {
+    journey: 'SEARCH', market: 'US-MD', query: 'Bethesda',
+    tenantDomain: 'orderweeddc.localhost', now: NOW,
+    recordAsk: async () => { throw new Error('instrumentation unavailable'); },
+  });
+  assert.equal(world.state, 'EMPTY');
+  assert.match(world.state_explanation, /not proof/i);
+});
+
 test('W-1 seam: HOME journey compiles evidence-bound home modules; other journeys never do', () => {
   const homeView = buildCustomerWorldView({
     request: normalizeCustomerWorldRequest({ journey: 'HOME', market: 'US-MD', query: 'bethesda' }),

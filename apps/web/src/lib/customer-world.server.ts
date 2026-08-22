@@ -1,5 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { resolveCustomerMerchant, resolveCustomerWorld } from '@/lib/customer-world.mjs';
+import { recordAskWork } from '@/lib/ask/ask-work.mjs';
+
+type CustomerAskObservation = {
+  answer: Record<string, unknown>;
+  intent: Record<string, unknown>;
+};
 
 export async function loadCustomerWorld(options: {
   journey: 'HOME' | 'SEARCH' | 'DELIVERY' | 'DISPENSARIES';
@@ -14,7 +20,15 @@ export async function loadCustomerWorld(options: {
     select: { name: true },
   });
   if (!brand) return null;
-  const world = await resolveCustomerWorld(prisma, options);
+  const world = await resolveCustomerWorld(prisma, {
+    ...options,
+    recordAsk: ({ answer, intent }: CustomerAskObservation) => recordAskWork(prisma, {
+      answer,
+      domain: options.tenantDomain,
+      intent,
+      now: options.now,
+    }),
+  });
   return { brand, world };
 }
 

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -21,6 +22,9 @@ import {
   mission3M001OwnershipAssignment,
   ORDERWEEDDC_HOME_COMPOSITION_AUTHORIZED_PATHS,
   ownershipPatterns,
+  PR57_INHERITED_MAIN_ENTRY_SCHEMA,
+  PR57_INHERITED_MAIN_PATHS,
+  pr57InheritedMainObservationAdmitted,
   PR35_AUTHORIZED_PATHS,
   PR2_AUTHORIZED_PATHS,
   pr29OwnershipAssignment,
@@ -45,6 +49,12 @@ const CUSTOMER_DISCOVERY_ASSIGNMENT = 'ask_customer_discovery_projection_2026_08
 const CUSTOMER_FUNCTIONAL_ASSIGNMENT = 'customer_functional_convergence_2026_08_13';
 const ORDERWEEDDC_HOME_COMPOSITION_ASSIGNMENT =
   'orderweeddc_home_composition_v1_2026_08_14';
+const PR57_INHERITED_MAIN_ASSIGNMENT =
+  'pr57_inherited_main_reconciliation_2026_08_21';
+const PR57_CANONICAL_MAIN_SHA = '4cc502cb317be157f1448e04ee296cb202829ed7';
+const PR57_CANDIDATE_SHA = 'e03acd96ccfed958b0a21c76e32c2075038a4e34';
+const PR57_APPROVED_SCOPE_SHA256 =
+  '545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed';
 const PHASE_B_SLICE2_BASE = 'e3139d960b837a8ea7ef7f01acfab5111dd96cc7';
 const PHASE_B_SLICE2_TREE = '5b6c4b85d613d1de71879bc7e27b63cb96ba7405';
 const PHASE_B_EXPECTED_PATHS = Object.freeze([
@@ -521,6 +531,174 @@ test('ORDERWEEDDC Home Composition authority and paths fail closed', () => {
       () => validateOwnershipManifest(manifest),
       /ORDERWEEDDC Home Composition|changed-file ownership patterns/,
     );
+  }
+});
+
+test('PR #57 inherited-main assignment admits exactly the 24 approved canonical blobs', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const assignment = manifest.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT];
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+  const canonicalJson = (value) => {
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+    if (value && typeof value === 'object') {
+      return `{${Object.keys(value)
+        .sort()
+        .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+        .join(',')}}`;
+    }
+    return JSON.stringify(value);
+  };
+  const actualDigest = createHash('sha256')
+    .update(canonicalJson(approvalPayload))
+    .digest('hex');
+
+  assert.equal(recordedDigest, PR57_APPROVED_SCOPE_SHA256);
+  assert.equal(actualDigest, PR57_APPROVED_SCOPE_SHA256);
+  assert.deepEqual(assignment.entry_schema, [...PR57_INHERITED_MAIN_ENTRY_SCHEMA]);
+  assert.deepEqual(
+    assignment.entries.map((entry) => entry[0]),
+    [...PR57_INHERITED_MAIN_PATHS],
+  );
+  assert.deepEqual(unownedPaths(PR57_INHERITED_MAIN_PATHS, manifest), [
+    ...PR57_INHERITED_MAIN_PATHS,
+  ]);
+
+  for (const entry of assignment.entries) {
+    const [relative, canonicalBlob, candidateBlob, contentSha256, gitMode] = entry;
+    const canonicalTree = execFileSync(
+      'git',
+      ['ls-tree', '--full-tree', PR57_CANONICAL_MAIN_SHA, '--', relative],
+      { cwd: ROOT, encoding: 'utf8' },
+    ).trim();
+    const candidateTree = execFileSync(
+      'git',
+      ['ls-tree', '--full-tree', PR57_CANDIDATE_SHA, '--', relative],
+      { cwd: ROOT, encoding: 'utf8' },
+    ).trim();
+    const canonicalMatch = canonicalTree.match(/^(\d{6})\s+blob\s+([0-9a-f]{40})\t/);
+    const candidateMatch = candidateTree.match(/^(\d{6})\s+blob\s+([0-9a-f]{40})\t/);
+    const bytes = execFileSync(
+      'git',
+      ['show', `${PR57_CANONICAL_MAIN_SHA}:${relative}`],
+      { cwd: ROOT, encoding: null },
+    );
+    assert.ok(canonicalMatch, relative);
+    assert.ok(candidateMatch, relative);
+    assert.equal(canonicalMatch[1], gitMode, relative);
+    assert.equal(candidateMatch[1], gitMode, relative);
+    assert.equal(canonicalMatch[2], canonicalBlob, relative);
+    assert.equal(candidateMatch[2], candidateBlob, relative);
+    assert.equal(canonicalBlob, candidateBlob, relative);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), contentSha256, relative);
+    assert.equal(
+      pr57InheritedMainObservationAdmitted(
+        relative,
+        manifest,
+        {
+          path: relative,
+          git_mode: gitMode,
+          git_blob_sha: canonicalBlob,
+          content_sha256: contentSha256,
+        },
+        { canonicalMainAncestor: true, candidateAncestor: true },
+      ),
+      true,
+      relative,
+    );
+  }
+});
+
+test('PR #57 inherited-main admission refuses future blobs, neighbors, mode drift, content drift and ancestry drift', () => {
+  const manifest = ownership();
+  const assignment = manifest.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT];
+  const [relative, canonicalBlob, , contentSha256, gitMode] = assignment.entries[0];
+  const observed = {
+    path: relative,
+    git_mode: gitMode,
+    git_blob_sha: canonicalBlob,
+    content_sha256: contentSha256,
+  };
+  const admitted = (candidateObserved, ancestry = {
+    canonicalMainAncestor: true,
+    candidateAncestor: true,
+  }) => pr57InheritedMainObservationAdmitted(
+    relative,
+    manifest,
+    candidateObserved,
+    ancestry,
+  );
+
+  assert.equal(admitted({ ...observed, git_blob_sha: '0'.repeat(40) }), false);
+  assert.equal(admitted({ ...observed, path: `${relative}.neighbor` }), false);
+  assert.equal(admitted({ ...observed, git_mode: '100755' }), false);
+  assert.equal(admitted({ ...observed, content_sha256: '0'.repeat(64) }), false);
+  assert.equal(admitted(observed, {
+    canonicalMainAncestor: false,
+    candidateAncestor: true,
+  }), false);
+  assert.equal(admitted(observed, {
+    canonicalMainAncestor: true,
+    candidateAncestor: false,
+  }), false);
+});
+
+test('PR #57 inherited-main metadata rejects scope, authority and evaluator-contract broadening', () => {
+  const mutations = [
+    (assignment) => { assignment.entries[0][0] = 'tools/authority/**'; },
+    (assignment) => { assignment.entries[0][0] += '.neighbor'; },
+    (assignment) => { assignment.entries[1][0] = assignment.entries[0][0]; },
+    (assignment) => { assignment.entries.pop(); },
+    (assignment) => { assignment.entries[0][1] = '0'.repeat(40); },
+    (assignment) => { assignment.entries[0][2] = '0'.repeat(40); },
+    (assignment) => { assignment.entries[0][3] = '0'.repeat(64); },
+    (assignment) => { assignment.entries[0][4] = '100755'; },
+    (assignment) => { assignment.entries[0][0] = assignment.candidate_actual_paths[0]; },
+    (assignment) => { assignment.common_entry_fields.changed_by_candidate = true; },
+    (assignment) => {
+      assignment.common_entry_fields.historical_authority_evidence =
+        'CANDIDATE_SELF_AUTHORIZED';
+    },
+    (assignment) => { assignment.scope_effects.authority_change = true; },
+    (assignment) => { assignment.scope_effects.product_behavior_change = true; },
+    (assignment) => { assignment.scope_effects.judge_change = false; },
+    (assignment) => { assignment.evaluator_contract.branch_name_used_as_authority = true; },
+    (assignment) => {
+      assignment.evaluator_contract.existing_owned_create_paths_change = 'APPEND_24';
+    },
+    (assignment) => { assignment.timestamp_semantics = 'CURRENT_TIME'; },
+    (assignment) => { assignment.approval_sha256 = '0'.repeat(64); },
+  ];
+  for (const mutate of mutations) {
+    const manifest = ownership();
+    mutate(manifest.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT]);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /PR #57 inherited-main/,
+    );
+  }
+
+  for (const key of ['owned_create_paths', 'owned_modify_paths']) {
+    const manifest = ownership();
+    manifest[key].push('tools/authority/**');
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /changed-file ownership patterns failed the owner-approved scope digest/,
+    );
+  }
+});
+
+test('PR #57 inherited-main repair neither owns candidate paths nor changes existing ownership surfaces', () => {
+  const manifest = ownership();
+  const assignment = manifest.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT];
+  assert.deepEqual(
+    unownedPaths(assignment.candidate_actual_paths, manifest),
+    [],
+  );
+  for (const relative of PR57_INHERITED_MAIN_PATHS) {
+    assert.equal(manifest.owned_create_paths.includes(relative), false, relative);
+    assert.equal(manifest.owned_modify_paths.includes(relative), false, relative);
+    assert.equal(manifest.global_no_edit.includes(relative), false, relative);
   }
 });
 

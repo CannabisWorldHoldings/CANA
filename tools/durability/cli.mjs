@@ -55,6 +55,12 @@ const GOVERNOR_KERNEL_EXTRACTION_ASSIGNMENT = 'governor_kernel_extraction_2026_0
 const FEDERATION_GATES_AB_ASSIGNMENT = 'federation_gates_ab_2026_08_18';
 const FEDERATION_GATES_CD_ASSIGNMENT = 'federation_gates_cd_2026_08_18';
 const FEDERATION_GATE_E_ASSIGNMENT = 'federation_gate_e_2026_08_18';
+const PR57_INHERITED_MAIN_ASSIGNMENT =
+  'pr57_inherited_main_reconciliation_2026_08_21';
+const PR57_INHERITED_MAIN_ASSIGNMENT_SHA256 =
+  '545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed';
+const PR57_CANONICAL_MAIN_SHA = '4cc502cb317be157f1448e04ee296cb202829ed7';
+const PR57_CANDIDATE_SHA = 'e03acd96ccfed958b0a21c76e32c2075038a4e34';
 const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   'root_dispatcher',
   'reason',
@@ -77,6 +83,7 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   FEDERATION_GATES_AB_ASSIGNMENT,
   FEDERATION_GATES_CD_ASSIGNMENT,
   FEDERATION_GATE_E_ASSIGNMENT,
+  PR57_INHERITED_MAIN_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PR29_ASSIGNMENT,
@@ -85,6 +92,45 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
   '4a368db5329998a2d1d983cf2822e40e417d2cc9474cc100a6e681f6a2e056f5';
+
+export const PR57_INHERITED_MAIN_PATHS = Object.freeze([
+  '_mission/evolution/ES-0002-promotion-identity.json',
+  'apps/web/src/app/lab/shell.tsx',
+  'apps/web/src/app/lab/sponsorship/page.tsx',
+  'apps/web/tests/workspace-integrity.test.mjs',
+  'skills-src/hermes-governed-packet.mjs',
+  'skills-src/sitemind-context-compiler.mjs',
+  'tools/alive-loop/authority-bridge.mjs',
+  'tools/authority/authority-court.test.mjs',
+  'tools/authority/authority.mjs',
+  'tools/authority/canon.mjs',
+  'tools/authority/containment.mjs',
+  'tools/authority/court-fixtures.mjs',
+  'tools/authority/gk-compat.test.mjs',
+  'tools/authority/gk_compat_bridge.py',
+  'tools/authority/hermes-boundary.test.mjs',
+  'tools/authority/lease-reclaim.mjs',
+  'tools/authority/nonce.mjs',
+  'tools/authority/owner-gate.mjs',
+  'tools/authority/receipts.mjs',
+  'tools/authority/signer.mjs',
+  'tools/authority/single-seat.test.mjs',
+  'tools/federation/capability-admission.test.mjs',
+  'tools/federation/census-blindspot.test.mjs',
+  'tools/postgres-sim/stock-postgis-diagnostic.mjs',
+]);
+export const PR57_INHERITED_MAIN_ENTRY_SCHEMA = Object.freeze([
+  'path',
+  'current_canonical_blob_sha',
+  'candidate_blob_sha',
+  'canonical_content_sha256',
+  'canonical_git_mode',
+  'base_change_class',
+  'historical_owner_classification',
+  'originating_commit',
+  'runtime_behavior',
+  'risk',
+]);
 
 export const CUSTOMER_DISCOVERY_AUTHORIZED_PATHS = Object.freeze([
   'apps/web/src/lib/ask/customer-discovery-contract.mjs',
@@ -1359,6 +1405,196 @@ export function validateOwnershipManifest(ownership) {
     }
   }
 
+  const pr57InheritedMainAssignment =
+    ownership.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT];
+  const pr57AssignmentKeys = [
+    'authorization',
+    'authorization_effect',
+    'candidate_actual_paths',
+    'candidate_sha',
+    'canonical_main_sha',
+    'classification_summary',
+    'common_entry_fields',
+    'entries',
+    'entry_schema',
+    'evaluator_contract',
+    'scope',
+    'scope_effects',
+    'timestamp_semantics',
+    'verification_evidence',
+    'approval_sha256',
+  ];
+  if (
+    !exactKeys(pr57InheritedMainAssignment, pr57AssignmentKeys)
+    || pr57InheritedMainAssignment.canonical_main_sha !== PR57_CANONICAL_MAIN_SHA
+    || pr57InheritedMainAssignment.candidate_sha !== PR57_CANDIDATE_SHA
+    || !Array.isArray(pr57InheritedMainAssignment.entries)
+    || !Array.isArray(pr57InheritedMainAssignment.entry_schema)
+    || JSON.stringify(pr57InheritedMainAssignment.entry_schema)
+      !== JSON.stringify(PR57_INHERITED_MAIN_ENTRY_SCHEMA)
+  ) {
+    refusal('PR #57 inherited-main ownership assignment is malformed');
+  }
+
+  const pr57CandidateActualPaths = [
+    'apps/web/src/lib/customer-world.mjs',
+    'apps/web/src/lib/customer-world.server.ts',
+    'apps/web/tests/customer-world.test.mjs',
+  ];
+  const pr57ClassificationSummary = pr57InheritedMainAssignment.classification_summary;
+  const pr57Common = pr57InheritedMainAssignment.common_entry_fields;
+  const pr57Evaluator = pr57InheritedMainAssignment.evaluator_contract;
+  const pr57Effects = pr57InheritedMainAssignment.scope_effects;
+  if (
+    JSON.stringify(pr57InheritedMainAssignment.candidate_actual_paths)
+      !== JSON.stringify(pr57CandidateActualPaths)
+    || !exactKeys(pr57ClassificationSummary, [
+      'A_actual_candidate_failed_paths',
+      'A_actual_candidate_paths',
+      'B_inherited_main_failed_count',
+      'C_traversal_only_failed_count',
+      'D_stale_incomplete_metadata_failed_count',
+      'E_genuine_new_scope_failed_count',
+    ])
+    || pr57ClassificationSummary.A_actual_candidate_failed_paths.length !== 0
+    || JSON.stringify(pr57ClassificationSummary.A_actual_candidate_paths)
+      !== JSON.stringify(pr57CandidateActualPaths)
+    || pr57ClassificationSummary.B_inherited_main_failed_count !== 24
+    || pr57ClassificationSummary.C_traversal_only_failed_count !== 24
+    || pr57ClassificationSummary.D_stale_incomplete_metadata_failed_count !== 24
+    || pr57ClassificationSummary.E_genuine_new_scope_failed_count !== 0
+    || !exactKeys(pr57Common, [
+      'changed_by_candidate',
+      'classification',
+      'current_ownership_state',
+      'historical_authority_evidence',
+      'introduced_by_merge',
+      'metadata_status',
+      'recommended_disposition',
+      'why_court_includes_it',
+    ])
+    || !exactKeys(pr57Common.classification, [
+      'candidate_delta',
+      'genuine_new_scope',
+      'metadata',
+      'traversal',
+    ])
+    || pr57Common.changed_by_candidate !== false
+    || pr57Common.classification.candidate_delta !== 'B_INHERITED_MAIN'
+    || pr57Common.classification.genuine_new_scope !== false
+    || pr57Common.classification.metadata !== 'D_STALE_INCOMPLETE_METADATA'
+    || pr57Common.classification.traversal !== 'C_BASE_TO_CANDIDATE_TRAVERSAL_ONLY'
+    || pr57Common.historical_authority_evidence
+      !== 'PR57_OWNER_MERGE_GATE_APPROVED_FOR_PR_57'
+    || pr57Common.introduced_by_merge !== 'ad27c3a517ae76215584fbd2b62f904358301056'
+    || !exactKeys(pr57Effects, [
+      'authority_change',
+      'judge_change',
+      'product_behavior_change',
+    ])
+    || pr57Effects.authority_change !== false
+    || pr57Effects.judge_change !== true
+    || pr57Effects.product_behavior_change !== false
+  ) {
+    refusal('PR #57 inherited-main scope classification is malformed');
+  }
+
+  const pr57EntryPaths = [];
+  for (const entry of pr57InheritedMainAssignment.entries) {
+    if (
+      !Array.isArray(entry)
+      || entry.length !== PR57_INHERITED_MAIN_ENTRY_SCHEMA.length
+      || typeof entry[0] !== 'string'
+      || entry[0].length === 0
+      || entry[0].startsWith('/')
+      || entry[0].includes('\\')
+      || entry[0].includes('*')
+      || entry[0].includes('..')
+      || path.posix.normalize(entry[0]) !== entry[0]
+      || !/^[0-9a-f]{40}$/.test(entry[1])
+      || entry[2] !== entry[1]
+      || !/^[0-9a-f]{64}$/.test(entry[3])
+      || entry[4] !== '100644'
+      || !['CREATE', 'MODIFY'].includes(entry[5])
+      || typeof entry[6] !== 'string'
+      || entry[6].length === 0
+      || !/^[0-9a-f]{40}$/.test(entry[7])
+      || typeof entry[8] !== 'string'
+      || entry[8].length === 0
+      || ![
+        'HIGH_AUTHORITY_CRITICAL',
+        'LOW_INTERNAL_LAB',
+        'MEDIUM_EVALUATOR_PROVENANCE',
+        'MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE',
+      ].includes(entry[9])
+    ) {
+      refusal(`malformed PR #57 inherited-main entry: ${entry?.[0] ?? '<missing path>'}`);
+    }
+    pr57EntryPaths.push(entry[0]);
+  }
+  if (
+    new Set(pr57EntryPaths).size !== pr57EntryPaths.length
+    || JSON.stringify(pr57EntryPaths) !== JSON.stringify(PR57_INHERITED_MAIN_PATHS)
+    || pr57CandidateActualPaths.some((candidatePath) => pr57EntryPaths.includes(candidatePath))
+  ) {
+    refusal('PR #57 inherited-main paths do not match the exact owner-approved set');
+  }
+
+  if (
+    !exactKeys(pr57Evaluator, [
+      'admission_predicate',
+      'assignment_name',
+      'branch_name_used_as_authority',
+      'canonical_json',
+      'changed_path_enumeration',
+      'durability_base_commit',
+      'evaluator_path',
+      'existing_assignment_semantics_change',
+      'existing_changed_file_ownership_sha256',
+      'existing_global_no_edit_change',
+      'existing_owned_create_paths_change',
+      'existing_owned_modify_paths_change',
+      'manifest_path',
+      'required_evaluator_change',
+      'required_test_change',
+      'sha256',
+    ])
+    || JSON.stringify(pr57Evaluator.admission_predicate) !== JSON.stringify([
+      'assignment_digest_matches_owner_approved_sha256',
+      'evaluated_commit_descends_from_canonical_main_sha',
+      'evaluated_commit_descends_from_candidate_sha',
+      'path_is_exact_entry',
+      'git_mode_matches',
+      'git_blob_matches',
+      'content_sha256_matches',
+    ])
+    || pr57Evaluator.assignment_name !== PR57_INHERITED_MAIN_ASSIGNMENT
+    || pr57Evaluator.branch_name_used_as_authority !== false
+    || pr57Evaluator.durability_base_commit !== BASE
+    || pr57Evaluator.existing_assignment_semantics_change !== 'NONE'
+    || pr57Evaluator.existing_changed_file_ownership_sha256
+      !== CHANGED_FILE_OWNERSHIP_SHA256
+    || pr57Evaluator.existing_global_no_edit_change !== 'NONE'
+    || pr57Evaluator.existing_owned_create_paths_change !== 'NONE'
+    || pr57Evaluator.existing_owned_modify_paths_change !== 'NONE'
+  ) {
+    refusal('PR #57 inherited-main evaluator contract is malformed');
+  }
+
+  const {
+    approval_sha256: pr57InheritedMainRecordedDigest,
+    ...pr57InheritedMainApprovalPayload
+  } = pr57InheritedMainAssignment;
+  const pr57InheritedMainActualDigest = sha256Bytes(
+    canonicalJson(pr57InheritedMainApprovalPayload),
+  );
+  if (
+    pr57InheritedMainRecordedDigest !== PR57_INHERITED_MAIN_ASSIGNMENT_SHA256
+    || pr57InheritedMainActualDigest !== PR57_INHERITED_MAIN_ASSIGNMENT_SHA256
+  ) {
+    refusal('PR #57 inherited-main assignment failed its owner-approval digest');
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -1532,6 +1768,82 @@ export function courtEditAdmitted(relative, ownership, bytes, assignmentName) {
   return admittedDigest === sha256Bytes(content);
 }
 
+function pr57InheritedMainEntry(ownership, relative) {
+  const assignment = ownership.explicit_user_assignment[PR57_INHERITED_MAIN_ASSIGNMENT];
+  const entry = assignment.entries.find((candidate) => candidate[0] === relative);
+  if (!entry) return null;
+  return Object.fromEntries(
+    assignment.entry_schema.map((field, index) => [field, entry[index]]),
+  );
+}
+
+function pr57InheritedMainObservationMatches(
+  ownership,
+  relative,
+  observed,
+  { canonicalMainAncestor, candidateAncestor },
+) {
+  if (
+    canonicalMainAncestor !== true
+    || candidateAncestor !== true
+    || !exactKeys(observed, [
+      'path',
+      'git_mode',
+      'git_blob_sha',
+      'content_sha256',
+    ])
+  ) {
+    return false;
+  }
+  const entry = pr57InheritedMainEntry(ownership, relative);
+  return Boolean(
+    entry
+    && observed.path === entry.path
+    && observed.git_mode === entry.canonical_git_mode
+    && observed.git_blob_sha === entry.current_canonical_blob_sha
+    && observed.git_blob_sha === entry.candidate_blob_sha
+    && observed.content_sha256 === entry.canonical_content_sha256,
+  );
+}
+
+export function pr57InheritedMainObservationAdmitted(
+  relative,
+  ownership,
+  observed,
+  ancestry,
+) {
+  validateOwnershipManifest(ownership);
+  return pr57InheritedMainObservationMatches(
+    ownership,
+    relative,
+    observed,
+    ancestry,
+  );
+}
+
+function pr57InheritedMainCommitAdmitted(relative, ownership, commit, ancestry) {
+  if (!ancestry.canonicalMainAncestor || !ancestry.candidateAncestor) return false;
+  const treeEntry = command(
+    'git',
+    ['ls-tree', '--full-tree', commit, '--', relative],
+    { allowFailure: true },
+  );
+  const match = treeEntry.stdout.trim().match(/^(\d{6})\s+blob\s+([0-9a-f]{40})\t/);
+  const absolute = path.join(ROOT, relative);
+  if (treeEntry.status !== 0 || !match || !fs.existsSync(absolute)) return false;
+  return pr57InheritedMainObservationMatches(
+    ownership,
+    relative,
+    {
+      path: relative,
+      git_mode: match[1],
+      git_blob_sha: match[2],
+      content_sha256: sha256File(absolute),
+    },
+    ancestry,
+  );
+}
+
 export function unownedPaths(changed, ownership) {
   const patterns = ownershipPatterns(ownership);
   return changed.filter((file) => !patterns.some((pattern) => matchOwned(file, pattern)));
@@ -1566,7 +1878,28 @@ function prerequisites(source) {
     );
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
-  const unowned = unownedPaths(changed, ownership);
+  const pr57Ancestry = {
+    canonicalMainAncestor:
+      command(
+        'git',
+        ['merge-base', '--is-ancestor', PR57_CANONICAL_MAIN_SHA, source.commit],
+        { allowFailure: true },
+      ).status === 0,
+    candidateAncestor:
+      command(
+        'git',
+        ['merge-base', '--is-ancestor', PR57_CANDIDATE_SHA, source.commit],
+        { allowFailure: true },
+      ).status === 0,
+  };
+  const unowned = unownedPaths(changed, ownership).filter(
+    (file) => !pr57InheritedMainCommitAdmitted(
+      file,
+      ownership,
+      source.commit,
+      pr57Ancestry,
+    ),
+  );
   if (unowned.length) refusal(`outgoing paths lack lane ownership:\n${unowned.join('\n')}`);
   return { changed, fsck: 'PASS', prohibited: [], unowned: [] };
 }

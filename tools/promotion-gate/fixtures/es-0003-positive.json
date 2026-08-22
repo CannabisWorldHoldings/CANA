@@ -1,0 +1,226 @@
+{
+  "_comment": "ES-0003 positive fixture frozen before candidate implementation. V3 may accept only this exact PR57 manifest lineage; owner promotion remains pending.",
+  "evaluator_id": "CANA_PROMOTION_IDENTITY_V3",
+  "promotion_schema_version": 3,
+  "promotion_event_type": "manifest-succession-promotion-v3",
+  "candidate_commit_sha": "06d4c04dca446908451fb4eb54db8852d6a4e76a",
+  "candidate_tree_sha": "f3c1a759c47ba4712d2b3e50e5d441f4dc39b6f8",
+  "branch_evidence": "codex/growth-reality-closure",
+  "promotion_target": "main",
+  "promotion_scope": "single-approved-pr57-manifest-succession",
+  "generated_at": "2026-08-21",
+  "observed_at": "2026-08-21",
+  "owner_gate": {
+    "state": "PENDING",
+    "claimed_owner_approved": false,
+    "note": "Technical evaluator succession only; owner promotion gate remains pending."
+  },
+  "claimed_verdict": null,
+  "manifest_succession": {
+    "assignment_name": "pr57_inherited_main_reconciliation_2026_08_21",
+    "approved_succession_payload_sha256": "9650b9555d573a046540b56d06b6d2f362ec4384692092b474bfc94a489df23e",
+    "canonical_main_sha": "4cc502cb317be157f1448e04ee296cb202829ed7",
+    "reality_closure_candidate_sha": "e03acd96ccfed958b0a21c76e32c2075038a4e34",
+    "prior_owner_approved_reconciliation_sha256": "545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed",
+    "incumbent_manifest_digest": "6474bcec25c6f135cb4520ba199a31bb58f39cc4dc361fec224e34d814d71810",
+    "new_manifest_digest": "592c19aeda938f5d6b824559d77bcc21213d786815754505fbd5b7c5a9f97ded",
+    "entry_count": 24,
+    "entry_schema": [
+      "path",
+      "git_mode",
+      "git_blob_sha",
+      "content_sha256"
+    ],
+    "entries": [
+      {
+        "path": "_mission/evolution/ES-0002-promotion-identity.json",
+        "git_mode": "100644",
+        "git_blob_sha": "36662b90da2ea85e63973c772b85c4e0dbb4ccd0",
+        "content_sha256": "64cc18a97923efa4b71e1487b4844481d4c3898d560ea252ff7d1f0574da144a"
+      },
+      {
+        "path": "apps/web/src/app/lab/shell.tsx",
+        "git_mode": "100644",
+        "git_blob_sha": "8036065f510580c4e590a7f15bfc63d52581e647",
+        "content_sha256": "99fca5e5e65d0c333f4ca0436470d9155d8fa481782358459013ccc7d15eac9e"
+      },
+      {
+        "path": "apps/web/src/app/lab/sponsorship/page.tsx",
+        "git_mode": "100644",
+        "git_blob_sha": "c57e48703704683abef4d9cda74e7a67b26b0db6",
+        "content_sha256": "990b08d5733c3eb3cc8aff12b016ee11869b9a1ea2fab9da79e0cb7fa52494c2"
+      },
+      {
+        "path": "apps/web/tests/workspace-integrity.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "a21ec30a558b7231292ab60522db043c4bf5c823",
+        "content_sha256": "d3c555605dfa5472b0ffa99d405bbb2b7f704b57837f62061f1f40e79b1e270e"
+      },
+      {
+        "path": "skills-src/hermes-governed-packet.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8",
+        "content_sha256": "cb731f697193049b776322d64b705e481f31e8670f1df154b3a63728befdf7bc"
+      },
+      {
+        "path": "skills-src/sitemind-context-compiler.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "3b4c64485c69aaefcb890b93805c06d7ec4c9426",
+        "content_sha256": "7a3d1190cc6e3171f8cae96022d6eba632b1df8c2ab1ed007e4950353702d951"
+      },
+      {
+        "path": "tools/alive-loop/authority-bridge.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "9123c6441ab4a46524b90fa1ede5dc97c733ce73",
+        "content_sha256": "fd71d2d037935b311dfb328d3a903893d1afe21792672da7c2719959df9eeb82"
+      },
+      {
+        "path": "tools/authority/authority-court.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "d0dc865f5473611f8756d743f2add0ee8a688173",
+        "content_sha256": "e2bb85fd12a5f1a9ea4acaa2c215bf39d3cba46a7913655f2b31e3b06c268793"
+      },
+      {
+        "path": "tools/authority/authority.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "aedfbaa6e659c8bedc3c1567bc9b45cc64027612",
+        "content_sha256": "782e6dfb8450ca853d386b3a7dd4992a46191b9ab89cfca2819b41c70088c4d0"
+      },
+      {
+        "path": "tools/authority/canon.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "050244dab8600fe82488dea3d003cac84dc5256e",
+        "content_sha256": "6fb2cab0193c804fc43d5fdcb1cae841c997d11de8db7331d2fce469a36a1b81"
+      },
+      {
+        "path": "tools/authority/containment.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "9179bb3a7b5f34c4896089b5ddf7068c10489427",
+        "content_sha256": "04ac9c50b76525566ff16328348f1c8dc3a5f23552efe9742123477aeb71f56c"
+      },
+      {
+        "path": "tools/authority/court-fixtures.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "77c8464458e1c5d0683712ad520747d6b07eb592",
+        "content_sha256": "90f8942a95e643a9961546fceaba18a20e74ec3929f87995e71ccdc9fbff8eb7"
+      },
+      {
+        "path": "tools/authority/gk-compat.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "58a55723780c0982f69d0b3397709a0c32b91f1a",
+        "content_sha256": "a4089fc681ba790f67a1a98f1a817fbbc5f87feafb93004e640ac0a7e5543982"
+      },
+      {
+        "path": "tools/authority/gk_compat_bridge.py",
+        "git_mode": "100644",
+        "git_blob_sha": "dca31ba1faa9e15400fea7a075481130b45ad11a",
+        "content_sha256": "93445b4a8b9b469053d80061987fa01990fb03ca56f50c4453ab65ff9e478b83"
+      },
+      {
+        "path": "tools/authority/hermes-boundary.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "7c3d72f1214ce538765aab07a01da8f81dd7774c",
+        "content_sha256": "e2665103fc02df195201ab8d24cdb01740f6da6bac59dabef97106f11f6fe5c1"
+      },
+      {
+        "path": "tools/authority/lease-reclaim.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8",
+        "content_sha256": "7641bba7e1c0d0fc5bb38c9949f79d6bf8cbc9df289677dab2decf2f37bed599"
+      },
+      {
+        "path": "tools/authority/nonce.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2",
+        "content_sha256": "152d4d0b2f212ef27b350ddca2d1e6e078f08b8d1207a8f11d1f0750b07c1373"
+      },
+      {
+        "path": "tools/authority/owner-gate.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104",
+        "content_sha256": "41f3d07a349d316c1172671e245927f50109d0a78c52ab3866a6944b781846db"
+      },
+      {
+        "path": "tools/authority/receipts.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "bf184e5b3826ebff561e3a1776eac294ac95f92e",
+        "content_sha256": "77379403be66795ef5d2a5078f58d799579f99a409a1cb8160acd839eee4137d"
+      },
+      {
+        "path": "tools/authority/signer.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "44bdf776ee454cf6d0375cb104d6004f4cddddb4",
+        "content_sha256": "ac3de2b908c76141e2eea9cef252aca27fa88111d86aeb213a1fd351e5bfd35e"
+      },
+      {
+        "path": "tools/authority/single-seat.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "55ecc6be678b010322932edd3c0026d5b1327667",
+        "content_sha256": "5168bb1293293a6d090d3d5f9f824584bb258b1f0aec0f09f07b02039cfb52ee"
+      },
+      {
+        "path": "tools/federation/capability-admission.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "457de0c0b271502783ba1921cf52dd0214838376",
+        "content_sha256": "dfbee13b73d7a3de83cfedd10b4b0e4716bb152790bc50e9e8fd1dd3212c37d5"
+      },
+      {
+        "path": "tools/federation/census-blindspot.test.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "c5f295622a7f3107c0b89b3423c21d00d107cd49",
+        "content_sha256": "75f26747ab68afd0d836de5554666e23eafd892b2dcd45feb3fc5df90b8989dc"
+      },
+      {
+        "path": "tools/postgres-sim/stock-postgis-diagnostic.mjs",
+        "git_mode": "100644",
+        "git_blob_sha": "32cda3afbd9925fdbd0fc68212501b3fef38a876",
+        "content_sha256": "d1b6e269f1ef4452be887bfe03269d5b6c98b81bd948f9e9cd948fa4f691c0b9"
+      }
+    ]
+  },
+  "evidence": {
+    "conservation": {
+      "required": 35,
+      "verified": 35,
+      "loss": 0
+    },
+    "authority_court": {
+      "green": true,
+      "receipt": "out/AUTHORITY_COURT_RECEIPTS/"
+    },
+    "single_authorize_seat": {
+      "count": 1,
+      "module": "tools/authority/authority.mjs"
+    },
+    "hermes_boundary": {
+      "pass": true,
+      "court": "tools/authority/hermes-boundary.test.mjs"
+    },
+    "capability_census": {
+      "ok": true,
+      "gate": "tools/federation/census-gate.mjs"
+    },
+    "sovereign_ci_workflow": {
+      "workflow_path": ".github/workflows/cana-verify-sovereign.yml",
+      "workflow_name": "CANA sovereign verification",
+      "job_name": "verify sovereign (repository PostGIS + H3 image)"
+    },
+    "sovereign_ci_run": {
+      "run_id": "32350042003",
+      "receipt_sha256": "edc290546ef26fc75a0d028b7d4a95c1dbe1f3032bb4096871694f458508edf5",
+      "self_reference": false
+    },
+    "required_stage_results": {
+      "clean-checkout": "VERIFIED",
+      "source-identity": "VERIFIED",
+      "capability-census": "VERIFIED",
+      "authority-court": "VERIFIED",
+      "deterministic-courts": "VERIFIED",
+      "federation-courts": "VERIFIED",
+      "post38-courts": "VERIFIED",
+      "security-adversarial": "VERIFIED",
+      "reconstruction": "VERIFIED",
+      "artifact-hashes": "VERIFIED"
+    }
+  }
+}
