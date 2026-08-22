@@ -57,7 +57,13 @@ export const CERTIFIABLE_VERDICTS = Object.freeze([...V2_CERTIFIABLE_VERDICTS]);
 export const FORBIDDEN_VERDICTS = Object.freeze([...V2_FORBIDDEN_VERDICTS]);
 
 export const DISPATCH_TABLE = Object.freeze([
-  ...V2_DISPATCH_TABLE,
+  ...V2_DISPATCH_TABLE.map((entry) => entry.evaluator_id === 'CANA_PROMOTION_IDENTITY_V2'
+    ? Object.freeze({
+      ...entry,
+      lane: 'frozen-replay',
+      invoked_by: 'tools/promotion-gate/es-0002-frozen-replay.mjs',
+    })
+    : entry),
   Object.freeze({
     evaluator_id: EVALUATOR_ID,
     promotion_schema_version: PROMOTION_SCHEMA_VERSION,
