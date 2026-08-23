@@ -88,6 +88,7 @@ const GEO_MIGRATION = '20260809100000_geo_kernel';
 const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
 const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
 const LIVE_REALITY_MIGRATION = '20260810200000_live_reality_acquisition';
+const CONTENT_STABILITY_MIGRATION = '20260823000000_content_stability_court';
 const REALITY_FIXTURE = path.join(
   WEB,
   'fixtures',
@@ -481,7 +482,9 @@ test('REALITY COMPILER: evidence records are present and append-only after migra
 
 test('LIVE REALITY: one content identity supports distinct append-only acquisition events across upgrade', async () => {
   const url = createDatabase('live_reality_identity');
-  const previous = stage('live-reality-previous', CANONICAL_MIGRATIONS.filter((name) => name !== LIVE_REALITY_MIGRATION));
+  const previous = stage('live-reality-previous', CANONICAL_MIGRATIONS.filter((name) => (
+    ![LIVE_REALITY_MIGRATION, CONTENT_STABILITY_MIGRATION].includes(name)
+  )));
   deploy(url, previous.schema);
   const p = await client(url);
   const snapshot = await p.marketSourceSnapshot.create({
@@ -1959,6 +1962,14 @@ test('provider classification fails closed and the reviewed migration manifest e
   });
   assert.deepEqual(
     verified.migrations.map((entry) => entry.name),
-    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION, LIVE_REALITY_MIGRATION],
+    [
+      BASELINE_MIGRATION_NAME,
+      SECOND_MIGRATION,
+      GEO_MIGRATION,
+      CONTINUATION_MIGRATION,
+      REALITY_MIGRATION,
+      LIVE_REALITY_MIGRATION,
+      CONTENT_STABILITY_MIGRATION,
+    ],
   );
 });
