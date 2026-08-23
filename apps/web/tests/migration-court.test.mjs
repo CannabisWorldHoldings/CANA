@@ -97,6 +97,12 @@ const REALITY_FIXTURE = path.join(
   'dc-abca-layer-31',
   '2026-06-05',
 );
+const ABCA_133578_FIXTURE_IDENTITY = Object.freeze({
+  name: 'Adegoke Holdings LLC',
+  address: '1710 Rhode Island Avenue NW 3rd Floor',
+  lat: 38.90600746,
+  lng: -77.03916077,
+});
 const CANONICAL_MIGRATIONS = loadCanonicalMigrationManifest().migrations.map((entry) => entry.name);
 const NEW_INDEX = 'DemandCreditEntry_merchantId_recordedAt_idx';
 
@@ -1066,13 +1072,13 @@ test('REALITY COMPILER: repeated court verification is an exact database no-op',
   await p.retailer.create({
     data: {
       id: 'reality-idempotency-retailer',
-      name: 'Capital City Care',
+      name: ABCA_133578_FIXTURE_IDENTITY.name,
       type: 'storefront',
-      address: '1115 U St NW',
+      address: ABCA_133578_FIXTURE_IDENTITY.address,
       city: 'Washington',
       state: 'DC',
-      lat: 38.916804,
-      lng: -77.027099,
+      lat: ABCA_133578_FIXTURE_IDENTITY.lat,
+      lng: ABCA_133578_FIXTURE_IDENTITY.lng,
       licenseNumber: 'ABCA-133578',
     },
   });
@@ -1138,13 +1144,13 @@ test('REALITY COMPILER: forged identity resolution cannot verify or project onto
   await p.retailer.createMany({ data: [
     {
       id: 'reality-right-retailer',
-      name: 'Capital City Care',
+      name: ABCA_133578_FIXTURE_IDENTITY.name,
       type: 'storefront',
-      address: '1115 U St NW',
+      address: ABCA_133578_FIXTURE_IDENTITY.address,
       city: 'Washington',
       state: 'DC',
-      lat: 38.916804,
-      lng: -77.027099,
+      lat: ABCA_133578_FIXTURE_IDENTITY.lat,
+      lng: ABCA_133578_FIXTURE_IDENTITY.lng,
       licenseNumber: 'ABCA-133578',
     },
     {
@@ -1247,22 +1253,22 @@ test('REALITY COMPILER: contradiction lineage uses stored observation IDs and de
   await p.retailer.create({
     data: {
       id: 'reality-contradiction-retailer',
-      name: 'Capital City Care',
+      name: ABCA_133578_FIXTURE_IDENTITY.name,
       type: 'storefront',
-      address: '1115 U St NW',
+      address: ABCA_133578_FIXTURE_IDENTITY.address,
       city: 'Washington',
       state: 'DC',
-      lat: 38.916804,
-      lng: -77.027099,
+      lat: ABCA_133578_FIXTURE_IDENTITY.lat,
+      lng: ABCA_133578_FIXTURE_IDENTITY.lng,
       licenseNumber: 'ABCA-133578',
     },
   });
   const geo = await p.geoEntity.create({
     data: {
       id: 'reality-contradiction-geo',
-      name: 'Capital City Care',
-      lat: 38.916804,
-      lng: -77.027099,
+      name: ABCA_133578_FIXTURE_IDENTITY.name,
+      lat: ABCA_133578_FIXTURE_IDENTITY.lat,
+      lng: ABCA_133578_FIXTURE_IDENTITY.lng,
       retailerId: 'reality-contradiction-retailer',
       source: 'hostile-test',
       observedAt: new Date('2026-06-05T00:00:00.000Z'),
@@ -2142,6 +2148,7 @@ test('provider classification fails closed and the reviewed migration manifest e
       REALITY_MIGRATION,
       LIVE_REALITY_MIGRATION,
       CONTENT_STABILITY_MIGRATION,
+      EXPERIENCE_REVIEW_MIGRATION,
     ],
   );
 });

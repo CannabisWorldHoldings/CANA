@@ -54,7 +54,7 @@ test('the committed canonical manifest exactly binds the complete repository mig
   assert.equal(verified.provider, 'postgresql');
 });
 
-test('the committed universe includes the reviewed additive live-reality migration', () => {
+test('the committed universe includes every reviewed additive migration', () => {
   const names = dbConfig.loadCanonicalMigrationManifest().migrations.map(({ name }) => name);
   assert.deepEqual(names, [
     '20260726000000_baseline',
@@ -63,6 +63,8 @@ test('the committed universe includes the reviewed additive live-reality migrati
     '20260809170000_continuation_kernel',
     '20260810000000_market_reality_compiler',
     '20260810200000_live_reality_acquisition',
+    '20260823000000_content_stability_court',
+    '20260823160000_experience_review_spine',
   ]);
 });
 
