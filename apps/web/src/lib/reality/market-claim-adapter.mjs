@@ -126,6 +126,7 @@ export async function loadCurrentClaimDecisions(prisma, {
       verification: true,
       decisionEligible: true,
       evidence: { select: { observationId: true } },
+      resolution: { select: { retailerId: true, geoEntityId: true } },
       verificationEvents: {
         where: { asOf: { lte: clock } },
         select: {
@@ -156,10 +157,12 @@ export async function loadCurrentClaimDecisions(prisma, {
   }
   const claims = currentClaimRows.map(({
     evidence,
+    resolution,
     verificationEvents,
     ...claim
   }) => ({
     ...claim,
+    subjectRef: resolution.retailerId ?? resolution.geoEntityId ?? null,
     observationIds: evidence.map((entry) => entry.observationId),
     latestVerificationEvent: verificationEvents[0] ?? null,
   }));

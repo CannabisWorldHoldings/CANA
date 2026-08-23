@@ -41,7 +41,10 @@ import {
   acquireLiveMarketReality,
   createPrismaAcquisitionStore,
 } from '../src/lib/reality/live-reality-acquisition.mjs';
-import { selectCurrentClaimDecisions } from '../src/lib/reality/market-claim-adapter.mjs';
+import {
+  loadCurrentClaimDecisions,
+  selectCurrentClaimDecisions,
+} from '../src/lib/reality/market-claim-adapter.mjs';
 
 /**
  * MIGRATION COURT — the machinery that takes this schema to a production
@@ -649,6 +652,16 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   });
   assert.ok(firstCourt.admitted_claims >= 4);
   assert.equal(firstCourt.public_cohorts, 1);
+  const currentDecisions = await loadCurrentClaimDecisions(p, {
+    tenant: 'orderweeddc.com',
+    sourceKey: 'dcgis_abca_retailers_layer_31',
+    asOf: new Date('2026-08-11T15:00:00.000Z'),
+  });
+  assert.ok(currentDecisions.length >= 5);
+  assert.deepEqual(
+    [...new Set(currentDecisions.map((decision) => decision.subject_ref))],
+    [admitted.retailer_id],
+  );
   assert.equal(await p.marketClaim.count(), claimCount, 'live court must not mutate immutable claims');
   const offlineClaim = await p.marketClaim.findFirstOrThrow({ where: { tenant: 'orderweeddc.com' } });
   const offlineEvidenceDigest = 'e'.repeat(64);
