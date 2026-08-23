@@ -201,8 +201,8 @@ export function buildC2Plan({ repo, expectedSha, expectedTree, workDir, opennext
     commands: [
       ['npm', ['install', '--no-save', '--package-lock=false', '--ignore-scripts', '--no-audit', '--no-fund', `@opennextjs/cloudflare@${pins.opennext}`, `wrangler@${pins.wrangler}`]],
       ['npm', ['run', 'prisma:generate', '--workspace', 'apps/web']],
-      ['npx', ['--no-install', 'opennextjs-cloudflare', 'build']],
-      ['npx', ['--no-install', 'wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
+      ['node', ['../../node_modules/@opennextjs/cloudflare/dist/cli/index.js', 'build']],
+      ['node', ['../../node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
     ],
   };
 }
@@ -362,8 +362,8 @@ async function terminate(child) {
 }
 
 async function runWorkerdPreview(plan, env) {
-  const previewArgs = ['--no-install', 'wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787'];
-  const child = spawn('npx', previewArgs, { cwd: plan.appDir, env, stdio: ['ignore', 'ignore', 'ignore'] });
+  const [previewCommand, previewArgs] = plan.commands[3];
+  const child = spawn(previewCommand, previewArgs, { cwd: plan.appDir, env, stdio: ['ignore', 'ignore', 'ignore'] });
   const routes = [];
   try {
     let ready = false;
@@ -379,12 +379,12 @@ async function runWorkerdPreview(plan, env) {
     }
     if (!ready) {
       return {
-        preview: { ok: false, code: 'C2_LOCAL_WORKERD_NOT_READY', command: ['npx', previewArgs], exitCode: child.exitCode },
+        preview: { ok: false, code: 'C2_LOCAL_WORKERD_NOT_READY', command: [previewCommand, previewArgs], exitCode: child.exitCode },
         routes,
       };
     }
     for (const route of ['/api/release', '/', '/admin']) routes.push(await fetchRoute(plan.previewUrl, route));
-    return { preview: { ok: true, command: ['npx', previewArgs] }, routes };
+    return { preview: { ok: true, command: [previewCommand, previewArgs] }, routes };
   } finally {
     await terminate(child);
   }
