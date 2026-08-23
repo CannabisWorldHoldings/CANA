@@ -1,0 +1,105 @@
+{
+  "scope": "promotion-identity execution-scope succession only: preserve ES-0004 forever and admit only the exact ZENITH/VANGUARD ownership manifest at commit 3d98fb3",
+  "incumbent": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V4",
+    "case_id": "ES-0004",
+    "manifest_digest": "7054655db82a5ffaf6b7cabd304ef8a9bd4c28c1c5f9def8ffaf581a27fc4908"
+  },
+  "candidate": {
+    "evaluator_id": "CANA_PROMOTION_IDENTITY_V5",
+    "sealed_commit_sha": "e8f3ffa5385da882a9d517c0801ac7dc0142258e",
+    "source_sha256": "2cd67c0bb5283f25dadc578fa8c808e4b928ad842955096a6c195ea06d1e7eee",
+    "pre_candidate_freeze_sha256": "dabfc97d07c91504d272823442e533878394e3026b20285b1a93fd9a411e4794"
+  },
+  "candidateAuthor": "lane-implementation",
+  "reason": "ES-0004 correctly refuses every manifest after the single PR59 transition. The separately bounded ZENITH/VANGUARD durability assignment creates one later exact execution-scope manifest and explicitly denies self-promotion and all production authority.",
+  "demonstratedDefects": [
+    {
+      "probe": "Evaluate the sealed ES-0004 positive in the ZENITH ownership manifest and in its pre-ZENITH archive.",
+      "incumbentVerdict": "CURRENT_MANIFEST_REFUSED_AT_THREE_EXPECTED_LINEAGE_CHECKS; ARCHIVE_PUBLIC_8_OF_8_AND_HOLDOUT_15_OF_15_PASS",
+      "correctVerdict": "A distinct V5 event may accept only commit 3d98fb3, tree be736e4, parent 21b9bd6, manifest ee91c81, assignment approval b77bb18, authorization source cac0851, 53 exact paths, and all-false authority boundaries."
+    }
+  ],
+  "adjudicator": "lane-verification-independent-node-test-harness",
+  "promotionCriteria": [
+    "P1_REPLAY_SEALED_ES0004_PUBLIC_AND_HOLDOUT_COURTS_AT_PRE_ZENITH_ARCHIVE",
+    "P2_ACCEPT_ONLY_CANDIDATE_COMMIT_3D98FB3_AND_TREE_BE736E4",
+    "P3_REQUIRE_21B9BD6_TO_BE_THE_EXACT_PARENT_AND_ANCESTOR",
+    "P4_REQUIRE_PROTECTED_BASE_75A0102_AND_TREE_FD6DCB2_TO_BE_ANCESTRAL",
+    "P5_BIND_THE_705465_TO_EE91C8_MANIFEST_TRANSITION",
+    "P6_BIND_THE_AUTHORIZATION_SOURCE_DIGEST_CAC0851",
+    "P7_BIND_THE_OWNER_APPROVAL_DIGEST_B77BB18",
+    "P8_BIND_CHANGED_SCOPE_DIGEST_6B2293A",
+    "P9_REQUIRE_THE_53_EXACT_ZENITH_PATHS_IN_ORDER",
+    "P10_REJECT_WILDCARD_DIRECTORY_NEIGHBOR_AND_REORDERED_PATHS",
+    "P11_BIND_THE_EXACT_MIGRATION_COURT_BLOB",
+    "P12_REQUIRE_ALL_AUTHORITY_BOUNDARIES_FALSE_INCLUDING_SELF_PROMOTION",
+    "P13_REQUIRE_LIVE_MANIFEST_VALIDATION_TO_PASS",
+    "P14_REQUIRE_CANDIDATE_MANIFEST_BLOB_TO_EQUAL_THE_LIVE_MANIFEST",
+    "P15_REQUIRE_ES0004_TO_REFUSE_ONLY_THE_THREE_EXPECTED_CURRENT_SUCCESSION_CHECKS",
+    "P16_BRANCH_NAMES_ARE_EVIDENCE_ONLY",
+    "P17_NEVER_CERTIFY_MERGED_CANONICAL_DEPLOYED_PRODUCTION_OR_OWNER_APPROVED",
+    "P18_FAIL_CLOSED_ON_UNKNOWN_FUTURE_SUCCESSIONS"
+  ],
+  "criteriaFixedBeforeCandidate": true,
+  "bridgeCorpus": [
+    "B01_ES0004_PUBLIC_ARCHIVE",
+    "B02_ES0004_HOLDOUT_ARCHIVE",
+    "B03_ES0003_FROZEN_REPLAY_CHAIN",
+    "B04_V2_AND_V1_HISTORICAL_REPLAY_CHAIN",
+    "B05_BRANCH_RELABEL_AND_FORBIDDEN_VERDICTS"
+  ],
+  "bridgeResults": [
+    { "id": "B01", "agree": true },
+    { "id": "B02", "agree": true },
+    { "id": "B03", "agree": true },
+    { "id": "B04", "agree": true },
+    { "id": "B05", "agree": true }
+  ],
+  "hiddenHoldout": [
+    "H01_EXACT_POSITIVE",
+    "H02_FUTURE_COMMIT",
+    "H03_WILDCARD",
+    "H04_NEIGHBOR",
+    "H05_AUTHORIZATION_SOURCE",
+    "H06_APPROVAL_DIGEST",
+    "H07_INVALID_MANIFEST",
+    "H08_CANDIDATE_MANIFEST_DRIFT",
+    "H09_PARENT_FAILURE",
+    "H10_PROTECTED_BASE_ANCESTRY",
+    "H11_V4_FROZEN_DISPATCH",
+    "H12_SELF_PROMOTION_LAUNDERING",
+    "H13_DEPLOYMENT_LAUNDERING",
+    "H14_OWNER_LAUNDERING",
+    "H15_FORBIDDEN_DEPLOYMENT_VERDICT",
+    "H16_OBSERVED_PATH_DRIFT",
+    "H17_V4_BRIDGE_DRIFT"
+  ],
+  "holdoutResults": [
+    { "id": "H01", "incumbentCorrect": false, "candidateCorrect": true },
+    { "id": "H02", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H03", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H04", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H05", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H06", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H07", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H08", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H09", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H10", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H11", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H12", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H13", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H14", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H15", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H16", "incumbentCorrect": true, "candidateCorrect": true },
+    { "id": "H17", "incumbentCorrect": true, "candidateCorrect": true }
+  ],
+  "mutationTest": {
+    "description": "Twenty-three fixed adversarial candidates and seven independent observation failures make the V5 public court red.",
+    "pass": true
+  },
+  "distributionShiftNote": "ES-0004 remains correct historical law; ES-0005 handles only the separately authorized ZENITH/VANGUARD durability manifest without granting self-promotion.",
+  "reversibility": "Revert the ES-0005 dispatch commits; ES-0004 resumes its honest refusal of the ZENITH manifest without any frozen-byte edit. The ZENITH ownership assignment itself remains a separate committed durability fact.",
+  "verdict": "SUCCEED",
+  "ownerPromotionGate": "EXECUTION_AUTHORIZED"
+}

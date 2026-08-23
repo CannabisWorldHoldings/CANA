@@ -236,12 +236,13 @@ test('Stage 13 sabotage never writes the verifier source checkout', () => {
   }
 });
 
-test('Stage 06 dispatches only the current ES-0004 courts and freezes ES-0003', () => {
+test('Stage 06 dispatches only the current ES-0005 courts and freezes ES-0004', () => {
   const sovereign = fs.readFileSync(path.join(ROOT, 'tools', 'test-runner', 'sovereign.mjs'), 'utf8');
   const dispatch = /function promotionGateSuccessorCourts\(\) \{([\s\S]*?)\n\}/.exec(sovereign)?.[1] ?? '';
-  assert.match(dispatch, /es-0004\.court\.test\.mjs/);
-  assert.match(dispatch, /es-0004\.holdout\.court\.test\.mjs/);
-  assert.doesNotMatch(dispatch, /es-0003\.court\.test\.mjs/);
+  assert.match(dispatch, /es-0005\.court\.test\.mjs/);
+  assert.match(dispatch, /es-0005\.holdout\.court\.test\.mjs/);
+  assert.doesNotMatch(dispatch, /es-0004\.court\.test\.mjs/);
+  assert.match(sovereign, /V4 -> frozen 21b9 replay only/);
   assert.match(sovereign, /V3 -> frozen 99ef replay only/);
 });
 
