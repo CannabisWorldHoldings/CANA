@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const EXPECTED_KIND = 'repository-postgis-h3';
 const REQUIRED_EXTENSIONS = Object.freeze(['postgis', 'h3', 'h3_postgis']);
@@ -15,6 +17,76 @@ const MANAGED_UNKNOWNS = Object.freeze({
   region: 'UNKNOWN',
   rollback: 'UNKNOWN',
 });
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const LOCAL_PROBE_TIMEOUT_MS = 30_000;
+const PRISMA_PROBE_PROGRAM = String.raw`
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+let exitCode = 0;
+try {
+  const [identity] = await prisma.$queryRawUnsafe(
+    "SELECT version() AS version, system_identifier::text AS system_identifier, current_database() AS database_name FROM pg_control_system()",
+  );
+  const [ssl = { ssl: false, version: null, cipher: null }] = await prisma.$queryRawUnsafe(
+    'SELECT ssl, version, cipher FROM pg_stat_ssl WHERE pid = pg_backend_pid()',
+  );
+  const extensionRows = await prisma.$queryRawUnsafe(
+    "SELECT name, default_version, installed_version FROM pg_available_extensions WHERE name IN ('postgis','h3','h3_postgis') ORDER BY name",
+  );
+  const functionRows = await prisma.$queryRawUnsafe(
+    "SELECT DISTINCT lower(proname) AS name FROM pg_proc WHERE lower(proname) IN ('st_contains','st_distance','h3_lat_lng_to_cell') ORDER BY name",
+  );
+  let readOnly = { enforced: false, failure_code: null, write_capable: null };
+  const marker = 'C3_EXPECTED_READ_ONLY_FAILURE:';
+  try {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.$executeRawUnsafe('SET TRANSACTION READ ONLY');
+      const [state] = await transaction.$queryRawUnsafe(
+        "SELECT current_setting('transaction_read_only') AS transaction_read_only",
+      );
+      readOnly.enforced = state?.transaction_read_only === 'on';
+      try {
+        await transaction.$executeRawUnsafe(
+          'CREATE TEMP TABLE cana_c3_read_only_probe (id integer) ON COMMIT DROP',
+        );
+        readOnly.write_capable = true;
+      } catch (error) {
+        const sqlState = error?.meta?.code ?? error?.code ?? 'UNKNOWN';
+        readOnly.failure_code = String(sqlState);
+        readOnly.write_capable = false;
+        throw new Error(marker + String(sqlState));
+      }
+    }, { timeout: 10_000 });
+  } catch (error) {
+    if (!String(error?.message ?? '').includes(marker)) throw error;
+  }
+  const available = {};
+  const installed = {};
+  for (const row of extensionRows) {
+    available[row.name] = row.default_version ?? '';
+    installed[row.name] = row.installed_version ?? '';
+  }
+  const functionNames = functionRows.map((row) => row.name);
+  process.stdout.write(JSON.stringify({
+    engine: 'postgresql',
+    extensions: { available, installed },
+    functions: {
+      h3: functionNames.filter((name) => name.startsWith('h3_')),
+      postgis: functionNames.filter((name) => name.startsWith('st_')),
+    },
+    prisma: { connected: true },
+    read_only: readOnly,
+    server_identity: [identity.version, identity.system_identifier, identity.database_name].join('|'),
+    tls: { active: ssl.ssl === true, cipher: ssl.cipher ?? null, protocol: ssl.version ?? null },
+  }));
+} catch {
+  exitCode = 1;
+} finally {
+  await prisma.$disconnect().catch(() => {});
+}
+process.exitCode = exitCode;
+`;
 
 function present(value) {
   return typeof value === 'string' && value.trim().length > 0;
@@ -93,11 +165,43 @@ function requiredFunctionsPresent(observed, family) {
   return REQUIRED_FUNCTIONS[family].every((name) => functions.has(name));
 }
 
-function validateLocalObservation(observed) {
+function canonicalEngine(value) {
+  if (typeof value !== 'string' || value.length > 16) return 'UNKNOWN';
+  const normalized = value.toLowerCase();
+  return ['postgresql', 'sqlite'].includes(normalized) ? normalized : 'UNKNOWN';
+}
+
+function canonicalExtensionVersion(value) {
+  return typeof value === 'string' && /^[0-9][0-9A-Za-z.+_-]{0,31}$/.test(value) ? value : '';
+}
+
+function canonicalFunctions(values, family) {
+  const allowed = new Set(REQUIRED_FUNCTIONS[family]);
+  return [...new Set(
+    (Array.isArray(values) ? values : [])
+      .filter((value) => typeof value === 'string' && value.length <= 64)
+      .map((value) => value.toLowerCase())
+      .filter((value) => allowed.has(value)),
+  )].sort();
+}
+
+function canonicalSqlState(value) {
+  return typeof value === 'string' && /^[0-9A-Z]{5}$/.test(value) ? value : 'UNKNOWN';
+}
+
+function validateLocalObservation(observed, urlClassification) {
   if (String(observed?.engine ?? '').toLowerCase() === 'sqlite') return 'C3_SQLITE_REJECTED';
   if (String(observed?.engine ?? '').toLowerCase() !== 'postgresql') return 'C3_POSTGRESQL_REQUIRED';
   if (!present(observed?.server_identity)) return 'C3_SERVER_IDENTITY_REQUIRED';
-  if (!present(observed?.tls?.mode) || observed?.tls?.verified !== true) return 'C3_TLS_VERIFICATION_REQUIRED';
+  const loopbackTls = urlClassification === 'LOOPBACK'
+    && observed?.tls?.active === false
+    && observed?.tls?.mode === 'DISABLED_LOOPBACK'
+    && observed?.tls?.verified === true;
+  const strictTls = observed?.tls?.active === true
+    && observed?.tls?.mode === 'verify-full'
+    && observed?.tls?.strict_certificate_semantics === true
+    && observed?.tls?.verified === true;
+  if (!loopbackTls && !strictTls) return 'C3_TLS_VERIFICATION_REQUIRED';
   if (!extensionVersion(observed, 'available', 'postgis') || !extensionVersion(observed, 'installed', 'postgis')) {
     return 'C3_POSTGIS_EXTENSION_REQUIRED';
   }
@@ -111,7 +215,88 @@ function validateLocalObservation(observed) {
   if (observed?.read_only?.enforced !== true || observed?.read_only?.write_capable !== false) {
     return 'C3_READ_ONLY_ENFORCEMENT_REQUIRED';
   }
+  if (observed?.read_only?.failure_code !== '25006') return 'C3_READ_ONLY_FAILURE_CODE_REQUIRED';
   return null;
+}
+
+function sanitizeProbeObservation(raw, databaseUrl) {
+  const classification = classifyDatabaseUrl(databaseUrl);
+  const tlsActive = raw?.tls?.active === true;
+  const loopbackTlsExplicitlyDisabled = classification === 'LOOPBACK' && raw?.tls?.active === false;
+  const strictCertificateSemantics = tlsActive && (
+    classification === 'NON_LOOPBACK'
+      ? new URL(databaseUrl).searchParams.get('sslmode') === 'verify-full'
+      : raw?.tls?.mode === 'verify-full' && raw?.tls?.strict_certificate_semantics === true
+  );
+  return {
+    engine: canonicalEngine(raw?.engine),
+    extensions: {
+      available: Object.fromEntries(REQUIRED_EXTENSIONS.map((name) => (
+        [name, canonicalExtensionVersion(raw?.extensions?.available?.[name])]
+      ))),
+      installed: Object.fromEntries(REQUIRED_EXTENSIONS.map((name) => (
+        [name, canonicalExtensionVersion(raw?.extensions?.installed?.[name])]
+      ))),
+    },
+    functions: {
+      h3: canonicalFunctions(raw?.functions?.h3, 'h3'),
+      postgis: canonicalFunctions(raw?.functions?.postgis, 'postgis'),
+    },
+    prisma: { connected: raw?.prisma?.connected === true },
+    read_only: {
+      enforced: raw?.read_only?.enforced === true,
+      failure_code: canonicalSqlState(raw?.read_only?.failure_code),
+      write_capable: raw?.read_only?.write_capable === false ? false : raw?.read_only?.write_capable === true,
+    },
+    server_identity: present(raw?.server_identity)
+      ? (/^sha256:[0-9a-f]{64}$/.test(raw.server_identity)
+          ? raw.server_identity
+          : `sha256:${crypto.createHash('sha256').update(raw.server_identity).digest('hex')}`)
+      : '',
+    tls: {
+      active: tlsActive,
+      mode: loopbackTlsExplicitlyDisabled
+        ? 'DISABLED_LOOPBACK'
+        : (strictCertificateSemantics ? 'verify-full' : 'UNVERIFIED'),
+      strict_certificate_semantics: strictCertificateSemantics,
+      verified: loopbackTlsExplicitlyDisabled ? true : tlsActive && strictCertificateSemantics,
+    },
+  };
+}
+
+export function probeLocalC3Database({
+  databaseUrl,
+  spawnCommand = spawnSync,
+  timeout = LOCAL_PROBE_TIMEOUT_MS,
+} = {}) {
+  const classification = classifyDatabaseUrl(databaseUrl);
+  if (!['LOOPBACK', 'NON_LOOPBACK'].includes(classification)) throw new Error('C3_LOCAL_PROBE_URL_REFUSED');
+  const childEnvironment = Object.fromEntries(
+    ['PATH', 'TMPDIR'].filter((key) => present(process.env[key])).map((key) => [key, process.env[key]]),
+  );
+  const child = spawnCommand(process.execPath, ['--input-type=module', '--eval', PRISMA_PROBE_PROGRAM], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: {
+      ...childEnvironment,
+      DATABASE_URL: databaseUrl,
+      DIRECT_URL: databaseUrl,
+      NODE_ENV: 'test',
+      PRODUCTION_EFFECTS: '0',
+    },
+    maxBuffer: 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    timeout,
+  });
+  if (child?.error || child?.status !== 0) throw new Error('C3_LOCAL_PROBE_CHILD_FAILED');
+  let raw;
+  try {
+    raw = JSON.parse(child.stdout);
+  } catch {
+    throw new Error('C3_LOCAL_PROBE_OUTPUT_INVALID');
+  }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('C3_LOCAL_PROBE_OUTPUT_INVALID');
+  return sanitizeProbeObservation(raw, databaseUrl);
 }
 
 export function evaluateLocalC3({
@@ -135,16 +320,20 @@ export function evaluateLocalC3({
 
   let observed;
   try {
-    observed = probe({ databaseUrl, expectedKind, readOnly: true });
+    observed = sanitizeProbeObservation(
+      probe({ databaseUrl, expectedKind, readOnly: true }),
+      databaseUrl,
+    );
   } catch {
     return blocked('C3_LOCAL_PROBE_FAILED', { mode: 'LOCAL_DISPOSABLE' });
   }
-  const failure = validateLocalObservation(observed);
+  const failure = validateLocalObservation(observed, urlClassification);
   if (failure) return blocked(failure, { mode: 'LOCAL_DISPOSABLE' });
   return {
     code: remoteAuthorized ? 'C3_MANAGED_READ_ONLY_CAPABILITY_OBSERVED' : 'C3_LOCAL_REFERENCE_CONFIRMED',
     datastore: 'POSTGRESQL_POSTGIS_H3',
     mode: remoteAuthorized ? 'MANAGED_READ_ONLY_OBSERVATION' : 'LOCAL_DISPOSABLE',
+    observation: canonicalize(observed),
     verdict: remoteAuthorized ? 'MANAGED_READ_ONLY_CAPABILITY_OBSERVED' : 'LOCAL_REFERENCE_GREEN',
   };
 }
@@ -245,20 +434,23 @@ function readAuthorizationReceipt(receiptPath, readFile) {
 }
 
 export function runC3DatabaseTargetCli({
-  argv = process.argv.slice(2), env = process.env, localProbe, admitAuthorization,
+  argv = process.argv.slice(2), env = process.env, localProbe, admitAuthorization, spawnCommand = spawnSync,
   readFile = fs.readFileSync, writeFile = fs.writeFileSync,
 } = {}) {
   const args = parseC3DatabaseTargetArgs(argv);
   const authorizationReceipt = args.authorizationReceiptPath
     ? readAuthorizationReceipt(args.authorizationReceiptPath, readFile)
     : null;
+  const resolvedLocalProbe = localProbe ?? (classifyDatabaseUrl(args.databaseUrl) === 'LOOPBACK'
+    ? ({ databaseUrl }) => probeLocalC3Database({ databaseUrl, spawnCommand })
+    : undefined);
   const receipt = runC3DatabaseTargetCourt({
     authorizationReceipt,
     admitAuthorization,
     databaseUrl: args.databaseUrl,
     env,
     expectedKind: args.expectedKind,
-    localProbe,
+    localProbe: resolvedLocalProbe,
     transports: args.transports,
   });
   if (args.out) writeFile(args.out, serializeC3DatabaseTargetReceipt(receipt), { encoding: 'utf8', mode: 0o600 });
