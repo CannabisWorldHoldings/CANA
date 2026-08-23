@@ -231,6 +231,7 @@ test('THE FIRST VERIFIED MARYLAND WORLD STATE: fixture acquisition → VERIFIED 
         claimKey: `${claim.entityIdentity}:${claim.claimType}`,
         version: 1,
         resolutionId: claim.entityIdentity,
+        resolution: { retailerId: null, geoEntityId: claim.entityIdentity },
         evidence: [],
         verificationEvents: verificationEvents.filter((item) => item.claimId === claim.id),
       }));

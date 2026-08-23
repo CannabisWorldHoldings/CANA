@@ -5,6 +5,7 @@ import test from 'node:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   CycleStore, Lease, LoopRefusal, idempotencyKey, runCycle,
@@ -287,7 +288,7 @@ test('court 12: improving and non-improving fixture outcomes take opposite gate 
 });
 
 test('court 13: the loop runtime is absent from the web application import graph', () => {
-  const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
   const webSrc = path.join(root, 'apps', 'web', 'src');
   const offenders = [];
   const walk = (dir) => {
