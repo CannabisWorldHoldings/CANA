@@ -11,12 +11,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { ContractError, writeExclusiveOutputs } from '../zenith/reconstruction-contracts.mjs';
+
 export const C2_SCHEMA_VERSION = 1;
 export const EXACT_NEXT_VERSION = '16.3.0-canary.6';
 export const EXACT_OPENNEXT_VERSION = '1.20.2';
 // A test pin, deliberately not an assertion that this version is production approved.
 export const EXACT_WRANGLER_VERSION = '4.86.0';
 export const COMPATIBILITY_DATE = '2024-09-23';
+export const OPENNEXT_CONFIG_SOURCE = "import { defineCloudflareConfig } from '@opennextjs/cloudflare';\n\nexport default defineCloudflareConfig();\n";
 export const VERDICTS = Object.freeze([
   'COMPATIBLE_LOCAL_PREVIEW',
   'BLOCKED_CANARY_INCOMPATIBILITY',
@@ -167,10 +170,6 @@ export function readExactSource({ repo, expectedSha, expectedTree }) {
   if (webPackage.dependencies?.next !== EXACT_NEXT_VERSION || webPackage.devDependencies?.['eslint-config-next'] !== EXACT_NEXT_VERSION) {
     throw new C2Refusal('C2_EXACT_VERSION_DRIFT', `C2 is pinned to Next and eslint-config-next ${EXACT_NEXT_VERSION}`);
   }
-  const openNextConfigPath = path.join(source, 'apps', 'web', 'open-next.config.ts');
-  if (!fs.existsSync(openNextConfigPath) || !fs.lstatSync(openNextConfigPath).isFile() || fs.lstatSync(openNextConfigPath).isSymbolicLink()) {
-    throw new C2Refusal('C2_OPENNEXT_CONFIG_REQUIRED', 'a committed non-symlink open-next.config.ts is required');
-  }
   return { repository: source, sha, tree, nextVersion: webPackage.dependencies.next };
 }
 
@@ -216,11 +215,30 @@ function copyCandidate(plan) {
       return !COPY_EXCLUDES.has(name) && !name.startsWith('.env.');
     },
   });
-  fs.writeFileSync(path.join(plan.appDir, 'wrangler.jsonc'), `${JSON.stringify({
+  const openNextConfigPath = path.join(plan.appDir, 'open-next.config.ts');
+  const wranglerPath = path.join(plan.appDir, 'wrangler.jsonc');
+  const wranglerBytes = `${JSON.stringify({
     name: 'c2-local-evidence-only', main: '.open-next/worker.js', compatibility_date: plan.compatibilityDate,
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     assets: { directory: '.open-next/assets', binding: 'ASSETS' },
-  }, null, 2)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+  }, null, 2)}\n`;
+  try {
+    writeExclusiveOutputs({
+      root: plan.workDir,
+      outputs: [
+        { outputPath: path.relative(plan.workDir, openNextConfigPath), bytes: OPENNEXT_CONFIG_SOURCE },
+        { outputPath: path.relative(plan.workDir, wranglerPath), bytes: wranglerBytes },
+      ],
+    });
+  } catch (error) {
+    if (error instanceof ContractError) {
+      throw new C2Refusal(
+        'C2_ISOLATED_OUTPUT_DESTINATION_REFUSED',
+        'isolated OpenNext and Wrangler outputs require fresh descriptor-bound destinations',
+      );
+    }
+    throw error;
+  }
 }
 
 export function classifyC2Results(results = {}) {

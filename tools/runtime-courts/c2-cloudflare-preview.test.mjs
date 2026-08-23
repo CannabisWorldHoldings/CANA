@@ -10,6 +10,7 @@ import {
   COMPATIBILITY_DATE,
   EXACT_OPENNEXT_VERSION,
   EXACT_WRANGLER_VERSION,
+  OPENNEXT_CONFIG_SOURCE,
   assertExactToolPins,
   assertIsolatedWorkDirectory,
   assertLoopbackPreviewUrl,
@@ -17,6 +18,7 @@ import {
   buildC2Plan,
   classifyC2Results,
   createC2Receipt,
+  executeLocalPreview,
   main,
   readExactSource,
 } from './c2-cloudflare-preview.mjs';
@@ -25,17 +27,23 @@ function tempDirectory(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
-function fixtureRepository({ next = '16.3.0-canary.6', openNextConfig = true } = {}) {
+function fixtureRepository({ next = '16.3.0-canary.6', openNextConfig = 'none' } = {}) {
   const root = tempDirectory('c2-source-');
   fs.mkdirSync(path.join(root, 'apps', 'web'), { recursive: true });
   fs.writeFileSync(path.join(root, 'apps', 'web', 'package.json'), JSON.stringify({
     dependencies: { next },
     devDependencies: { 'eslint-config-next': next },
   }));
-  if (openNextConfig) {
+  if (openNextConfig === 'file') {
     fs.writeFileSync(
       path.join(root, 'apps', 'web', 'open-next.config.ts'),
       "import { defineCloudflareConfig } from '@opennextjs/cloudflare';\nexport default defineCloudflareConfig();\n",
+    );
+  } else if (openNextConfig === 'symlink') {
+    fs.writeFileSync(path.join(root, 'court-config-target.ts'), 'untrusted destination\n');
+    fs.symlinkSync(
+      path.join('..', '..', 'court-config-target.ts'),
+      path.join(root, 'apps', 'web', 'open-next.config.ts'),
     );
   }
   execFileSync('git', ['init', '-q'], { cwd: root });
@@ -73,7 +81,7 @@ test('GREEN: only an empty task-owned directory outside the source tree is isola
   expectRefusal('C2_WORKDIR_NOT_ISOLATED', () => assertIsolatedWorkDirectory(source.root, workDir));
 });
 
-test('GREEN: candidate and tool pins fail closed on exact-version drift', () => {
+test('GREEN: config-free candidate and tool pins fail closed on exact-version drift', () => {
   const source = fixtureRepository();
   assert.deepEqual(readExactSource({ repo: source.root, expectedSha: source.sha, expectedTree: source.tree }), {
     repository: source.root, sha: source.sha, tree: source.tree, nextVersion: '16.3.0-canary.6',
@@ -83,8 +91,6 @@ test('GREEN: candidate and tool pins fail closed on exact-version drift', () => 
   expectRefusal('C2_EXACT_VERSION_DRIFT', () => assertExactToolPins({ opennext: EXACT_OPENNEXT_VERSION, wrangler: '0.0.0' }));
   const drifted = fixtureRepository({ next: '16.3.0' });
   expectRefusal('C2_EXACT_VERSION_DRIFT', () => readExactSource({ repo: drifted.root, expectedSha: drifted.sha, expectedTree: drifted.tree }));
-  const missingConfig = fixtureRepository({ openNextConfig: false });
-  expectRefusal('C2_OPENNEXT_CONFIG_REQUIRED', () => readExactSource({ repo: missingConfig.root, expectedSha: missingConfig.sha, expectedTree: missingConfig.tree }));
   const workDir = path.join(tempDirectory('c2-plan-parent-'), 'c2-opennext-plan');
   fs.mkdirSync(workDir);
   const plan = buildC2Plan({
@@ -93,6 +99,48 @@ test('GREEN: candidate and tool pins fail closed on exact-version drift', () => 
   });
   assert.deepEqual(plan.commands[0][1].slice(0, 2), ['install', '--workspaces=false']);
   assert.deepEqual(plan.commands[2], ['npm', ['exec', '--workspaces=false', '--', 'opennextjs-cloudflare', 'build']]);
+});
+
+test('RED/GREEN: local execution creates the exact OpenNext config only inside its isolated copy', async () => {
+  const source = fixtureRepository();
+  const workDir = path.join(tempDirectory('c2-copy-parent-'), 'c2-opennext-copy');
+  fs.mkdirSync(workDir);
+  const plan = buildC2Plan({
+    repo: source.root, expectedSha: source.sha, expectedTree: source.tree, workDir,
+    opennext: EXACT_OPENNEXT_VERSION, wrangler: EXACT_WRANGLER_VERSION, env: c2Env(),
+  });
+  const before = execFileSync('git', ['status', '--porcelain=v1'], { cwd: source.root, encoding: 'utf8' });
+  const result = await executeLocalPreview(plan, {
+    env: c2Env({ C2_EXECUTE_LOCAL_PREVIEW: '1' }),
+    executor: () => ({ ok: false, code: 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED' }),
+  });
+  assert.equal(result.install.code, 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED');
+  assert.equal(classifyC2Results(result).verdict, 'BLOCKED_CANARY_INCOMPATIBILITY');
+  assert.equal(fs.existsSync(path.join(source.root, 'apps', 'web', 'open-next.config.ts')), false);
+  const isolatedConfig = path.join(plan.appDir, 'open-next.config.ts');
+  assert.equal(fs.readFileSync(isolatedConfig, 'utf8'), OPENNEXT_CONFIG_SOURCE);
+  assert.equal(fs.statSync(isolatedConfig).mode & 0o777, 0o600);
+  assert.equal(execFileSync('git', ['status', '--porcelain=v1'], { cwd: source.root, encoding: 'utf8' }), before);
+});
+
+test('GREEN: isolated config creation refuses a pre-existing file or symlink destination', async () => {
+  for (const openNextConfig of ['file', 'symlink']) {
+    const source = fixtureRepository({ openNextConfig });
+    const workDir = path.join(tempDirectory(`c2-${openNextConfig}-parent-`), `c2-opennext-${openNextConfig}`);
+    fs.mkdirSync(workDir);
+    const plan = buildC2Plan({
+      repo: source.root, expectedSha: source.sha, expectedTree: source.tree, workDir,
+      opennext: EXACT_OPENNEXT_VERSION, wrangler: EXACT_WRANGLER_VERSION, env: c2Env(),
+    });
+    await assert.rejects(
+      executeLocalPreview(plan, {
+        env: c2Env({ C2_EXECUTE_LOCAL_PREVIEW: '1' }),
+        executor: () => ({ ok: false }),
+      }),
+      (error) => error instanceof C2Refusal && error.code === 'C2_ISOLATED_OUTPUT_DESTINATION_REFUSED',
+    );
+    assert.equal(fs.existsSync(path.join(plan.appDir, 'wrangler.jsonc')), false);
+  }
 });
 
 test('GREEN: exact source custody refuses both tracked and untracked candidate changes', () => {

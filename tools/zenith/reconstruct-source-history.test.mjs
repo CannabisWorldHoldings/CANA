@@ -239,6 +239,7 @@ test('CLI output custody rejects outside-root directories, symlink components/fi
   };
 
   const greenDir = path.join(outputRoot, 'green');
+  mkdirSync(greenDir);
   const green = invokeResult(greenDir);
   assert.equal(green.status, 0, green.stderr);
   assert.equal(readFileSync(path.join(greenDir, 'SOURCE_HISTORY_PROJECTION.json'), 'utf8').includes('zenith-source-history-projection/v1'), true);

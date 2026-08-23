@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -45,6 +46,9 @@ export const DESCENDANT_DISPOSITIONS = Object.freeze([
 const ID_PATTERN = /^(?:need|prc|shn|she|zrr)_[a-z0-9][a-z0-9_-]{1,127}$/;
 const HEX40 = /^[0-9a-f]{40}$/;
 const HEX40_OR_64 = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+const OUTPUT_COUNT_LIMIT = 16;
+const OUTPUT_BYTES_LIMIT = 256 * 1024 * 1024;
+const PYTHON_OUTPUT_CUSTODY_BINARY = '/usr/bin/python3';
 const HEX64 = /^[0-9a-f]{64}$/;
 const OWNER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9:_/-]{1,127}$/;
 
@@ -100,12 +104,12 @@ function requireOutputRoot(root) {
 
 function outputIsOutsideRoot(root, candidate) {
   const relative = path.relative(root, candidate);
-  return relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+  return relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
 }
 
 function requireSafeOutputParent(root, filename) {
   const relativeParent = path.relative(root, path.dirname(filename));
-  if (relativeParent === '' || relativeParent === '.') return;
+  if (relativeParent === '' || relativeParent === '.') return { parent: root, basename: path.basename(filename) };
   let cursor = root;
   for (const component of relativeParent.split(path.sep)) {
     cursor = path.join(cursor, component);
@@ -113,14 +117,20 @@ function requireSafeOutputParent(root, filename) {
     try {
       stat = fs.lstatSync(cursor);
     } catch (error) {
-      if (error?.code !== 'ENOENT') throw error;
-      fs.mkdirSync(cursor);
-      stat = fs.lstatSync(cursor);
+      if (error?.code === 'ENOENT') refuse('OUTPUT_PARENT_MISSING', `${cursor} must already exist`);
+      refuse('OUTPUT_CUSTODY_CHANGED', `${cursor} could not be inspected`);
     }
     if (stat.isSymbolicLink()) refuse('OUTPUT_SYMLINK_FORBIDDEN', `${cursor} is a symbolic link`);
     if (!stat.isDirectory()) refuse('OUTPUT_PARENT_NOT_DIRECTORY', `${cursor} is not a directory`);
-    if (outputIsOutsideRoot(root, fs.realpathSync(cursor))) refuse('OUTPUT_PATH_ESCAPES_ROOT', `${filename} escapes the output root`);
+    let real;
+    try {
+      real = fs.realpathSync(cursor);
+    } catch {
+      refuse('OUTPUT_CUSTODY_CHANGED', `${cursor} could not be resolved`);
+    }
+    if (outputIsOutsideRoot(root, real)) refuse('OUTPUT_PATH_ESCAPES_ROOT', `${filename} escapes the output root`);
   }
+  return { parent: path.dirname(filename), basename: path.basename(filename) };
 }
 
 /**
@@ -138,7 +148,7 @@ export function prepareExclusiveOutputPaths({ root, outputPaths }) {
       refuse('OUTPUT_PATH_INVALID', 'output path must be a non-empty string');
     }
     const filename = path.resolve(outputRoot, outputPath);
-    if (outputIsOutsideRoot(outputRoot, filename)) refuse('OUTPUT_PATH_ESCAPES_ROOT', `${outputPath} is outside the repository root`);
+    if (filename === outputRoot || outputIsOutsideRoot(outputRoot, filename)) refuse('OUTPUT_PATH_ESCAPES_ROOT', `${outputPath} is outside the repository root`);
     if (seen.has(filename)) refuse('OUTPUT_DUPLICATE_PATH', `${outputPath} is repeated`);
     seen.add(filename);
     requireSafeOutputParent(outputRoot, filename);
@@ -154,17 +164,184 @@ export function prepareExclusiveOutputPaths({ root, outputPaths }) {
   return prepared;
 }
 
+function outputBytes(value) {
+  if (typeof value === 'string' || Buffer.isBuffer(value)) return Buffer.from(value);
+  if (ArrayBuffer.isView(value)) return Buffer.from(value.buffer, value.byteOffset, value.byteLength);
+  refuse('OUTPUT_BYTES_INVALID', 'output bytes must be a string, Buffer, or typed array');
+}
+
+const PYTHON_OUTPUT_CUSTODY_WRITER = String.raw`
+import base64, json, os, sys, tempfile
+
+class Failure(Exception):
+    def __init__(self, code, detail):
+        self.code, self.detail = code, detail
+
+def fail(code, detail):
+    raise Failure(code, detail)
+
+def same(left, right):
+    right_dev = right.st_dev if hasattr(right, "st_dev") else int(right["st_dev"])
+    right_ino = right.st_ino if hasattr(right, "st_ino") else int(right["st_ino"])
+    return left.st_dev == right_dev and left.st_ino == right_ino
+
+def open_parent(root_fd, parts, flags):
+    fd = os.dup(root_fd)
+    try:
+        for part in parts:
+            next_fd = os.open(part, flags, dir_fd=fd)
+            os.close(fd)
+            fd = next_fd
+        return fd
+    except Exception:
+        os.close(fd)
+        raise
+
+def check(root, root_fd, root_identity, opened):
+    if not same(os.fstat(root_fd), root_identity):
+        fail("OUTPUT_CUSTODY_CHANGED", "output root identity changed")
+    for item in opened:
+        named = os.stat(item["name"], dir_fd=item["parent_fd"], follow_symlinks=False)
+        if not same(os.fstat(item["fd"]), item["identity"]) or not same(named, item["identity"]):
+            fail("OUTPUT_CUSTODY_CHANGED", "opened output inode changed")
+        resolved = os.path.realpath(os.path.join(root, *item["relative"].split("/")))
+        if os.path.commonpath([root, resolved]) != root or not same(os.lstat(resolved), item["identity"]):
+            fail("OUTPUT_CUSTODY_CHANGED", "opened output no longer resolves inside root")
+
+def cleanup(opened):
+    clean = True
+    for item in reversed(opened):
+        try:
+            os.ftruncate(item["fd"], 0)
+            os.fsync(item["fd"])
+            named = os.stat(item["name"], dir_fd=item["parent_fd"], follow_symlinks=False)
+            if same(named, os.fstat(item["fd"])):
+                os.unlink(item["name"], dir_fd=item["parent_fd"])
+        except Exception:
+            clean = False
+        for key in ("fd", "parent_fd"):
+            try: os.close(item[key])
+            except Exception: clean = False
+    return clean
+
+def main(data):
+    root = data["root"]
+    root_identity = data["root_identity"]
+    dir_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    file_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW
+    root_fd = os.open(root, dir_flags)
+    opened = []
+    swap = None
+    try:
+        if not same(os.fstat(root_fd), root_identity):
+            fail("OUTPUT_CUSTODY_CHANGED", "output root identity changed while opening")
+        hook = os.environ.get("CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK", "") if os.environ.get("NODE_ENV") == "test" else ""
+        for index, spec in enumerate(data["outputs"]):
+            parts = spec["relative"].split("/")
+            if not parts or any(not part or part in (".", "..") for part in parts):
+                fail("OUTPUT_CUSTODY_CHANGED", "unsafe relative output path")
+            parent_fd = open_parent(root_fd, parts[:-1], dir_flags)
+            try:
+                if hook == "RACE_LATER_OPEN" and index == 1:
+                    raced = os.open(parts[-1], file_flags, 0o600, dir_fd=parent_fd)
+                    os.close(raced)
+                fd = os.open(parts[-1], file_flags, 0o600, dir_fd=parent_fd)
+            except FileExistsError:
+                os.close(parent_fd)
+                fail("OUTPUT_ALREADY_EXISTS", "output appeared during exclusive open")
+            except Exception:
+                os.close(parent_fd)
+                raise
+            opened.append({"fd": fd, "parent_fd": parent_fd, "name": parts[-1], "relative": spec["relative"], "identity": os.fstat(fd), "bytes": base64.b64decode(spec["bytes_b64"])})
+        if hook == "SWAP_PARENT_DURING_WRITE":
+            first = opened[0]
+            parent_path = os.path.join(root, *first["relative"].split("/")[:-1])
+            parked = parent_path + ".output-custody-parked"
+            outside = tempfile.mkdtemp(prefix="zenith-output-custody-outside-")
+            os.rename(parent_path, parked)
+            os.symlink(outside, parent_path)
+            swap = (parent_path, parked, outside)
+        check(root, root_fd, root_identity, opened)
+        for item in opened:
+            check(root, root_fd, root_identity, opened)
+            offset = 0
+            while offset < len(item["bytes"]):
+                count = os.write(item["fd"], item["bytes"][offset:])
+                if count <= 0: fail("OUTPUT_CUSTODY_CHANGED", "output write made no progress")
+                offset += count
+            os.fsync(item["fd"])
+            check(root, root_fd, root_identity, opened)
+        for item in reversed(opened):
+            os.close(item["fd"]); os.close(item["parent_fd"])
+        opened = []
+        return {"ok": True}
+    except Failure:
+        if not cleanup(opened):
+            fail("OUTPUT_CUSTODY_CHANGED", "cleanup could not prove removal of every opened output")
+        raise
+    except FileExistsError:
+        if not cleanup(opened):
+            fail("OUTPUT_CUSTODY_CHANGED", "cleanup could not prove removal of every opened output")
+        fail("OUTPUT_ALREADY_EXISTS", "output appeared during exclusive open")
+    except Exception:
+        if not cleanup(opened):
+            fail("OUTPUT_CUSTODY_CHANGED", "cleanup could not prove removal of every opened output")
+        fail("OUTPUT_CUSTODY_CHANGED", "output custody changed during write")
+    finally:
+        if swap:
+            parent_path, parked, outside = swap
+            try:
+                if os.path.islink(parent_path): os.unlink(parent_path)
+                if os.path.isdir(parked): os.rename(parked, parent_path)
+                os.rmdir(outside)
+            except Exception:
+                pass
+        try: os.close(root_fd)
+        except Exception: pass
+
+try:
+    result = main(json.load(sys.stdin))
+except Failure as error:
+    result = {"ok": False, "code": error.code, "detail": error.detail}
+except Exception:
+    result = {"ok": False, "code": "OUTPUT_CUSTODY_CHANGED", "detail": "output custody helper failed"}
+print(json.dumps(result, separators=(",", ":")))
+`;
+
 export function writeExclusiveOutputs({ root, outputs }) {
   if (!Array.isArray(outputs) || outputs.length === 0) refuse('OUTPUT_PATH_REQUIRED', 'at least one output is required');
-  const filenames = prepareExclusiveOutputPaths({ root, outputPaths: outputs.map((entry) => entry?.outputPath) });
-  for (let index = 0; index < outputs.length; index += 1) {
-    try {
-      fs.writeFileSync(filenames[index], outputs[index].bytes, { flag: 'wx' });
-    } catch (error) {
-      if (error?.code === 'EEXIST') refuse('OUTPUT_ALREADY_EXISTS', `${outputs[index].outputPath} already exists`);
-      throw error;
-    }
+  if (outputs.length > OUTPUT_COUNT_LIMIT) refuse('OUTPUT_PATH_REQUIRED', `at most ${OUTPUT_COUNT_LIMIT} outputs are accepted per custody set`);
+  const normalized = outputs.map((entry) => ({ outputPath: entry?.outputPath, bytes: outputBytes(entry?.bytes) }));
+  const totalBytes = normalized.reduce((total, entry) => total + entry.bytes.length, 0);
+  if (!Number.isSafeInteger(totalBytes) || totalBytes > OUTPUT_BYTES_LIMIT) {
+    refuse('OUTPUT_BYTES_INVALID', `output custody set exceeds ${OUTPUT_BYTES_LIMIT} bytes`);
   }
+  const filenames = prepareExclusiveOutputPaths({ root, outputPaths: normalized.map((entry) => entry.outputPath) });
+  const outputRoot = requireOutputRoot(root);
+  const rootStat = fs.lstatSync(outputRoot, { bigint: true });
+  const testHook = process.env.NODE_ENV === 'test' ? process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK ?? '' : '';
+  const runner = spawnSync(PYTHON_OUTPUT_CUSTODY_BINARY, ['-c', PYTHON_OUTPUT_CUSTODY_WRITER], {
+    input: JSON.stringify({
+      root: outputRoot,
+      root_identity: { st_dev: String(rootStat.dev), st_ino: String(rootStat.ino) },
+      outputs: normalized.map((entry, index) => ({
+        relative: path.relative(outputRoot, filenames[index]).split(path.sep).join('/'),
+        bytes_b64: entry.bytes.toString('base64'),
+      })),
+    }),
+    encoding: 'utf8',
+    env: { NODE_ENV: process.env.NODE_ENV, CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK: testHook },
+    timeout: 30_000,
+    maxBuffer: 1024 * 1024,
+  });
+  if (runner.error || runner.status !== 0) refuse('OUTPUT_CUSTODY_CHANGED', 'output custody helper could not run');
+  let result;
+  try {
+    result = JSON.parse(runner.stdout);
+  } catch {
+    refuse('OUTPUT_CUSTODY_CHANGED', 'output custody helper returned invalid evidence');
+  }
+  if (!result?.ok) refuse(result?.code === 'OUTPUT_ALREADY_EXISTS' ? 'OUTPUT_ALREADY_EXISTS' : 'OUTPUT_CUSTODY_CHANGED', result?.detail ?? 'output custody helper refused write');
   return filenames;
 }
 

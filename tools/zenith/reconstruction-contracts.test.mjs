@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -11,6 +14,7 @@ import {
   canonicalizeSourceHistoryNode,
   canonicalizeZenithReconstructionReceipt,
   digestCanonical,
+  writeExclusiveOutputs,
 } from './reconstruction-contracts.mjs';
 
 const SHA1 = '1'.repeat(40);
@@ -19,6 +23,12 @@ const TREE = '3'.repeat(40);
 const DIGEST_A = 'a'.repeat(64);
 const DIGEST_B = 'b'.repeat(64);
 const DIGEST_C = 'c'.repeat(64);
+
+function outputRoot(t) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zenith-output-custody-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  return root;
+}
 
 const common = (id, overrides = {}) => ({
   schema_version: 'zenith-reconstruction/v1',
@@ -151,4 +161,67 @@ test('reconstruction contracts refuse duplicate ids, path escape, missing digest
   assert.throws(() => canonicalizeNeedItem(common('need_authority_laundering', {
     need_state: 'OPEN', need_kind: 'X', next_gate: 'Y', authority_effect: 'APPROVES_DEPLOYMENT', evidence_refs: [],
   })), (error) => error instanceof ContractError && error.code === 'AUTHORITY_EFFECT_FORBIDDEN');
+});
+
+test('exclusive output custody validates every payload before it creates a first artifact', (t) => {
+  const root = outputRoot(t);
+  assert.throws(() => writeExclusiveOutputs({
+    root,
+    outputs: [
+      { outputPath: 'first.json', bytes: 'first\n' },
+      { outputPath: 'invalid.json', bytes: { invalid: true } },
+    ],
+  }), (error) => error instanceof ContractError && error.code === 'OUTPUT_BYTES_INVALID');
+  assert.equal(fs.existsSync(path.join(root, 'first.json')), false);
+  assert.equal(fs.existsSync(path.join(root, 'invalid.json')), false);
+});
+
+test('exclusive output custody removes earlier placeholders when a later exclusive open races', (t) => {
+  const root = outputRoot(t);
+  const first = path.join(root, 'first.json');
+  const later = path.join(root, 'later.json');
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousHook = process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK;
+  process.env.NODE_ENV = 'test';
+  process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK = 'RACE_LATER_OPEN';
+  try {
+    assert.throws(() => writeExclusiveOutputs({
+      root,
+      outputs: [{ outputPath: 'first.json', bytes: 'first\n' }, { outputPath: 'later.json', bytes: 'later\n' }],
+    }), (error) => error instanceof ContractError && error.code === 'OUTPUT_ALREADY_EXISTS');
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousHook === undefined) delete process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK;
+    else process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK = previousHook;
+  }
+  assert.equal(fs.existsSync(first), false);
+  assert.equal(fs.existsSync(later), true);
+  assert.equal(fs.statSync(later).size, 0);
+});
+
+test('exclusive output custody cleans opened files when a parent swaps to an outside symlink during write', (t) => {
+  const root = outputRoot(t);
+  const parent = path.join(root, 'parent');
+  const parked = path.join(root, 'parked');
+  fs.mkdirSync(parent);
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousHook = process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK;
+  process.env.NODE_ENV = 'test';
+  process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK = 'SWAP_PARENT_DURING_WRITE';
+  try {
+    assert.throws(() => writeExclusiveOutputs({
+      root,
+      outputs: [{ outputPath: 'parent/first.json', bytes: 'first\n' }, { outputPath: 'parent/second.json', bytes: 'second\n' }],
+    }), (error) => error instanceof ContractError && error.code === 'OUTPUT_CUSTODY_CHANGED');
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousHook === undefined) delete process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK;
+    else process.env.CANA_ZENITH_OUTPUT_CUSTODY_TEST_HOOK = previousHook;
+  }
+  assert.equal(fs.existsSync(path.join(parent, 'first.json')), false);
+  assert.equal(fs.existsSync(path.join(parent, 'second.json')), false);
+  assert.equal(fs.existsSync(path.join(parked, 'first.json')), false);
+  assert.equal(fs.existsSync(path.join(parked, 'second.json')), false);
 });
