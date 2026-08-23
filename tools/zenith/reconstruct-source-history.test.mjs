@@ -4,12 +4,24 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   inspectArchive,
   inspectBundle,
   reconstructSourceHistory,
 } from './reconstruct-source-history.mjs';
+
+const MODULE_PATH = fileURLToPath(new URL('./reconstruct-source-history.mjs', import.meta.url));
+const REPO_ROOT = path.resolve(path.dirname(MODULE_PATH), '..', '..');
+let outputSequence = 0;
+
+function repoOutputDir(t, label) {
+  const dir = path.join(REPO_ROOT, '.omo', `zenith-source-output-${process.pid}-${label}-${outputSequence += 1}`);
+  mkdirSync(dir, { recursive: true });
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  return dir;
+}
 
 const git = (args, options = {}) => execFileSync('git', args, { encoding: 'utf8', ...options }).trim();
 
@@ -206,4 +218,54 @@ test('an exhausted scan budget keeps an unadvertised donor UNRESOLVED instead of
   const result = reconstructSourceHistory({ repo: f.mirror, artifactRoot: f.root, manifest });
   assert.equal(result.inspection.scan_complete, false);
   assert.equal(result.dispositions.donors[0].disposition, 'UNRESOLVED');
+});
+
+test('CLI output custody rejects outside-root directories, symlink components/finals, and overwrite', (t) => {
+  const f = fixture(t);
+  const manifest = {
+    schema_version: 'zenith-donor-scan-inputs/v1', observed_at: '2026-08-23T00:00:00.000Z', main_sha: f.second,
+    known_commits: [{ sha: f.first, expected_relation: 'ANCESTOR' }], non_ancestor_commits: [], wanted_donors: ['f'.repeat(40)],
+    scan_budget: { max_depth: 4, max_containers: 20, max_members: 200, max_total_uncompressed_bytes: 10000000, max_member_bytes: 5000000, max_text_member_bytes: 100000, max_total_text_bytes: 1000000 },
+    authority_effect: 'NONE', external_effects: { network: false, canonical_ref_writes: false, archive_code_execution: false },
+    containers: [{ logical_path: 'history.bundle', kind: 'BUNDLE' }],
+  };
+  const inputPath = path.join(f.root, 'scan-inputs.json');
+  writeFileSync(inputPath, JSON.stringify(manifest));
+  const outputRoot = repoOutputDir(t, 'custody');
+  const invoke = (outputDir) => execFileSync(process.execPath, [MODULE_PATH, '--repo', f.mirror, '--artifact-root', f.root, '--scan-inputs', inputPath, '--output-dir', outputDir], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const invokeResult = (outputDir) => {
+    try { return { status: 0, stdout: invoke(outputDir), stderr: '' }; }
+    catch (error) { return { status: error.status, stdout: error.stdout?.toString() ?? '', stderr: error.stderr?.toString() ?? '' }; }
+  };
+
+  const greenDir = path.join(outputRoot, 'green');
+  const green = invokeResult(greenDir);
+  assert.equal(green.status, 0, green.stderr);
+  assert.equal(readFileSync(path.join(greenDir, 'SOURCE_HISTORY_PROJECTION.json'), 'utf8').includes('zenith-source-history-projection/v1'), true);
+
+  const outside = path.join(f.root, 'outside-output');
+  const outsideResult = invokeResult(outside);
+  assert.equal(outsideResult.status, 1);
+  assert.match(outsideResult.stderr, /OUTPUT_PATH_ESCAPES_ROOT/);
+
+  const componentLink = path.join(outputRoot, 'component-link');
+  symlinkSync(f.root, componentLink);
+  const componentResult = invokeResult(path.join(componentLink, 'child'));
+  assert.equal(componentResult.status, 1);
+  assert.match(componentResult.stderr, /OUTPUT_SYMLINK_FORBIDDEN/);
+
+  const finalLink = path.join(outputRoot, 'final-link');
+  symlinkSync(f.root, finalLink);
+  const finalResult = invokeResult(finalLink);
+  assert.equal(finalResult.status, 1);
+  assert.match(finalResult.stderr, /OUTPUT_SYMLINK_FORBIDDEN/);
+
+  const existingDir = path.join(outputRoot, 'existing');
+  mkdirSync(existingDir);
+  const existing = path.join(existingDir, 'SOURCE_HISTORY_PROJECTION.json');
+  writeFileSync(existing, 'pre-existing bytes\n');
+  const overwrite = invokeResult(existingDir);
+  assert.equal(overwrite.status, 1);
+  assert.match(overwrite.stderr, /OUTPUT_ALREADY_EXISTS/);
+  assert.equal(readFileSync(existing, 'utf8'), 'pre-existing bytes\n');
 });

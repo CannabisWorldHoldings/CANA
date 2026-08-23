@@ -18,6 +18,7 @@ import {
   canonicalJson,
   canonicalizeNeedItem,
   digestCanonical,
+  writeExclusiveOutputs,
 } from './reconstruction-contracts.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -224,8 +225,10 @@ export function generateNeedLedger({ inputsPath, outputPath }) {
   const ledger = compileNeedLedger({ inputsPath });
   const canonical = canonicalJson(ledger);
   const digest = createHash('sha256').update(canonical).digest('hex');
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  fs.writeFileSync(outputPath, `${canonical}\n`);
+  writeExclusiveOutputs({
+    root: ROOT,
+    outputs: [{ outputPath, bytes: `${canonical}\n` }],
+  });
   return { ...ledger, digest };
 }
 

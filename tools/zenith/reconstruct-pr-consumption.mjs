@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { canonicalJson, canonicalizePrConsumption } from './reconstruction-contracts.mjs';
+import { canonicalJson, canonicalizePrConsumption, writeExclusiveOutputs } from './reconstruction-contracts.mjs';
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, '..', '..');
 const REQUIRED_PR_NUMBERS = Object.freeze([11, 21, 22, 23, 24, 25, 26, 27]);
 const LEDGER_SCHEMA_VERSION = 'zenith-pr-consumption-ledger/v1';
 const NORMALIZED_CAPTURE_SCHEMA_VERSION = 'zenith-pr-captured-input/v2';
@@ -377,8 +379,13 @@ async function main() {
   }
   const ledger = buildPrConsumptionLedger({ capture: normalized, captureBytes: captureOutputBytes, repo: args.repo });
   verifyPrConsumptionLedger({ capture: normalized, captureBytes: captureOutputBytes, repo: args.repo, ledger });
-  await writeFile(path.join(path.dirname(args.output), path.basename(CAPTURE_SOURCE_PATH)), captureOutputBytes);
-  await writeFile(args.output, stableJson(ledger));
+  writeExclusiveOutputs({
+    root: ROOT,
+    outputs: [
+      { outputPath: path.join(path.dirname(args.output), path.basename(CAPTURE_SOURCE_PATH)), bytes: captureOutputBytes },
+      { outputPath: args.output, bytes: stableJson(ledger) },
+    ],
+  });
   const counts = Object.fromEntries([...new Set(ledger.pr_consumptions.map((row) => row.disposition))].sort().map((disposition) => [
     disposition,
     ledger.pr_consumptions.filter((row) => row.disposition === disposition).length,

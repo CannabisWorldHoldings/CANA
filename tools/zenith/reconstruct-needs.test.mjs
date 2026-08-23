@@ -15,18 +15,21 @@ const INPUT_DIR = path.join(ROOT, 'docs/zenith/inputs');
 
 const withTempOutput = (fn) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zenith-needs-'));
+  const outputDir = fs.mkdtempSync(path.join(ROOT, '.omo', 'zenith-needs-output-'));
   try {
-    return fn(path.join(dir, 'NEED_ITEM_LEDGER.json'), dir);
+    return fn(path.join(outputDir, 'NEED_ITEM_LEDGER.json'), dir, outputDir);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
+    fs.rmSync(outputDir, { recursive: true, force: true });
   }
 };
 
-test('NeedItem generator emits the named gates with deterministic canonical bytes', () => withTempOutput((output) => {
+test('NeedItem generator emits the named gates with deterministic canonical bytes', () => withTempOutput((output, _dir, outputDir) => {
   const first = generateNeedLedger({ inputsPath: INPUTS, outputPath: output });
   const firstBytes = fs.readFileSync(output);
-  const second = generateNeedLedger({ inputsPath: INPUTS, outputPath: output });
-  const secondBytes = fs.readFileSync(output);
+  const secondPath = path.join(outputDir, 'NEED_ITEM_LEDGER_SECOND.json');
+  const second = generateNeedLedger({ inputsPath: INPUTS, outputPath: secondPath });
+  const secondBytes = fs.readFileSync(secondPath);
 
   assert.equal(first.digest, second.digest);
   assert.deepEqual(firstBytes, secondBytes);
@@ -67,7 +70,7 @@ test('NeedItem generator emits the named gates with deterministic canonical byte
   console.log(`need_ledger_sha256=${first.digest}`);
 }));
 
-test('unknown ownership preserves an evidence-bound need state, while missing evidence demotes it', () => withTempOutput((output, dir) => {
+test('unknown ownership preserves an evidence-bound need state, while missing evidence demotes it', () => withTempOutput((output, dir, outputDir) => {
   const fixture = JSON.parse(fs.readFileSync(INPUTS, 'utf8'));
   fixture.needs[0].owner = 'UNKNOWN';
   const preservedPath = path.join(dir, 'preserved-inputs.json');
@@ -81,7 +84,7 @@ test('unknown ownership preserves an evidence-bound need state, while missing ev
   const fixturePath = path.join(dir, 'unknown-inputs.json');
   fs.writeFileSync(fixturePath, `${JSON.stringify(fixture, null, 2)}\n`);
 
-  const result = generateNeedLedger({ inputsPath: fixturePath, outputPath: output });
+  const result = generateNeedLedger({ inputsPath: fixturePath, outputPath: path.join(outputDir, 'UNKNOWN_NEED_ITEM_LEDGER.json') });
   const item = result.need_items.find((candidate) => candidate.id === fixture.needs[0].id);
   assert.equal(item.need_state, 'UNKNOWN');
   assert.equal(item.decision_eligible, false);
@@ -146,4 +149,22 @@ test('generator refuses symlink inputs and fabricated capability owners', () => 
   ownerFixture.needs[0].owner = 'CANA_OWNER';
   fs.writeFileSync(fixturePath, `${JSON.stringify(ownerFixture, null, 2)}\n`);
   assert.throws(() => generateNeedLedger({ inputsPath: fixturePath, outputPath: output }), /OWNER_NOT_REGISTERED/);
+}));
+
+test('output writer fails closed for outside-root, symlink, and pre-existing destinations', () => withTempOutput((output, dir, outputDir) => {
+  const outside = path.join(dir, 'outside-ledger.json');
+  assert.throws(() => generateNeedLedger({ inputsPath: INPUTS, outputPath: outside }), /OUTPUT_PATH_ESCAPES_ROOT/);
+  assert.equal(fs.existsSync(outside), false);
+
+  const link = path.join(outputDir, 'linked-output');
+  fs.symlinkSync(dir, link);
+  assert.throws(() => generateNeedLedger({ inputsPath: INPUTS, outputPath: path.join(link, 'ledger.json') }), /OUTPUT_SYMLINK_FORBIDDEN/);
+
+  const finalLink = path.join(outputDir, 'linked-ledger.json');
+  fs.symlinkSync(path.join(dir, 'outside-ledger.json'), finalLink);
+  assert.throws(() => generateNeedLedger({ inputsPath: INPUTS, outputPath: finalLink }), /OUTPUT_SYMLINK_FORBIDDEN/);
+
+  fs.writeFileSync(output, 'pre-existing bytes\n');
+  assert.throws(() => generateNeedLedger({ inputsPath: INPUTS, outputPath: output }), /OUTPUT_ALREADY_EXISTS/);
+  assert.equal(fs.readFileSync(output, 'utf8'), 'pre-existing bytes\n');
 }));

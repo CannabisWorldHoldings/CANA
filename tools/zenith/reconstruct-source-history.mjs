@@ -2,13 +2,15 @@
 
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { lstatSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { lstatSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { canonicalJson, canonicalizeSourceHistoryEdge, canonicalizeSourceHistoryNode, digestCanonical } from './reconstruction-contracts.mjs';
+import { canonicalJson, canonicalizeSourceHistoryEdge, canonicalizeSourceHistoryNode, digestCanonical, writeExclusiveOutputs } from './reconstruction-contracts.mjs';
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, '..', '..');
 const SHA40 = /^[0-9a-f]{40}$/;
 const INPUT_SCHEMA = 'zenith-donor-scan-inputs/v1';
 const HISTORY_SCHEMA = 'zenith-source-history-projection/v1';
@@ -404,16 +406,20 @@ function parseArgs(argv) {
   return args;
 }
 
-const writeCanonical = (filename, value) => writeFileSync(filename, `${JSON.stringify(JSON.parse(canonicalJson(value)), null, 2)}\n`);
+const canonicalBytes = (value) => `${JSON.stringify(JSON.parse(canonicalJson(value)), null, 2)}\n`;
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const manifest = JSON.parse(readFileSync(args['scan-inputs'], 'utf8'));
   const result = reconstructSourceHistory({ repo: args.repo, artifactRoot: args['artifact-root'], manifest });
-  mkdirSync(args['output-dir'], { recursive: true });
-  writeCanonical(path.join(args['output-dir'], 'SOURCE_HISTORY_PROJECTION.json'), result.sourceHistory);
-  writeCanonical(path.join(args['output-dir'], 'DESCENDANT_DISPOSITION.json'), result.dispositions);
-  writeCanonical(path.join(args['output-dir'], 'DONOR_INSPECTION_MANIFEST.json'), result.inspection);
+  writeExclusiveOutputs({
+    root: ROOT,
+    outputs: [
+      { outputPath: path.join(args['output-dir'], 'SOURCE_HISTORY_PROJECTION.json'), bytes: canonicalBytes(result.sourceHistory) },
+      { outputPath: path.join(args['output-dir'], 'DESCENDANT_DISPOSITION.json'), bytes: canonicalBytes(result.dispositions) },
+      { outputPath: path.join(args['output-dir'], 'DONOR_INSPECTION_MANIFEST.json'), bytes: canonicalBytes(result.inspection) },
+    ],
+  });
   process.stdout.write(`${JSON.stringify({ schema_version: HISTORY_SCHEMA, observed_at: manifest.observed_at, scan_complete: result.inspection.scan_complete, containers_scanned: result.inspection.scan_counts.containers_seen, bundles_inspected: result.inspection.scan_counts.bundles_inspected, donors_resolved: result.dispositions.donors.filter((row) => row.disposition === 'CANDIDATE_EXACT').length, donors_absent: result.dispositions.donors.filter((row) => row.disposition === 'ABSENT').length, authority_effect: 'NONE', external_effects: EFFECTS })}\n`);
 }
 

@@ -163,6 +163,7 @@ export function resolveAbcaEntity({ record, retailers = [], aliases = [] }) {
     .sort((left, right) => String(left.geoEntityId ?? left.geo_entity_id ?? '').localeCompare(String(right.geoEntityId ?? right.geo_entity_id ?? '')));
   if (exactAliases.length === 1) {
     const alias = exactAliases[0];
+    const aliasCandidateId = alias.id ?? alias.geoEntityId ?? alias.geo_entity_id;
     const retailerId = alias.retailerId ?? alias.retailer_id ?? null;
     if (!retailerId) {
       return Object.freeze({
@@ -170,7 +171,41 @@ export function resolveAbcaEntity({ record, retailers = [], aliases = [] }) {
         method: 'EXACT_ALIAS_UNLINKED',
         reason: 'EXACT_ALIAS_HAS_NO_RETAILER_LINK',
         normalized_license: license,
-        candidate_ids: Object.freeze([alias.id ?? alias.geoEntityId ?? alias.geo_entity_id]),
+        candidate_ids: Object.freeze([aliasCandidateId]),
+        normalization_version: ENTITY_NORMALIZATION_VERSION,
+      });
+    }
+    const linkedRetailers = retailers.filter((candidate) => candidate?.id === retailerId);
+    if (linkedRetailers.length !== 1) {
+      return Object.freeze({
+        status: 'REVIEW_REQUIRED',
+        method: 'EXACT_ALIAS_RETAILER_LINK_UNVERIFIABLE',
+        reason: 'EXACT_ALIAS_RETAILER_LINK_NOT_UNIQUE',
+        normalized_license: license,
+        candidate_ids: Object.freeze([aliasCandidateId]),
+        location: Object.freeze({ state: 'UNKNOWN', public_eligible: false }),
+        public_eligible: false,
+        normalization_version: ENTITY_NORMALIZATION_VERSION,
+      });
+    }
+    const location = compareOfficialRetailerLocation({
+      record,
+      previous: linkedRetailers[0],
+    });
+    if (location.status === 'REVIEW_REQUIRED') {
+      return Object.freeze({
+        status: 'REVIEW_REQUIRED',
+        method: location.reason === 'OFFICIAL_LOCATION_CHANGED'
+          ? 'EXACT_ALIAS_LOCATION_CHANGED'
+          : 'EXACT_ALIAS_LOCATION_UNVERIFIABLE',
+        reason: location.reason,
+        normalized_license: license,
+        candidate_ids: Object.freeze([aliasCandidateId]),
+        changed_fields: location.changed_fields,
+        location: location.location,
+        previous_location: location.previous,
+        current_location: location.current,
+        public_eligible: false,
         normalization_version: ENTITY_NORMALIZATION_VERSION,
       });
     }
@@ -181,7 +216,7 @@ export function resolveAbcaEntity({ record, retailers = [], aliases = [] }) {
       normalized_license: license,
       retailer_id: retailerId,
       geo_entity_id: alias.geoEntityId ?? alias.geo_entity_id ?? null,
-      candidate_ids: Object.freeze([alias.id ?? alias.geoEntityId ?? alias.geo_entity_id]),
+      candidate_ids: Object.freeze([aliasCandidateId]),
       normalization_version: ENTITY_NORMALIZATION_VERSION,
     });
   }

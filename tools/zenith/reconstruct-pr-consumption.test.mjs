@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -16,6 +16,15 @@ import {
 
 const PR_NUMBERS = [11, 21, 22, 23, 24, 25, 26, 27];
 const modulePath = fileURLToPath(new URL('./reconstruct-pr-consumption.mjs', import.meta.url));
+const REPO_ROOT = path.resolve(path.dirname(modulePath), '..', '..');
+let outputSequence = 0;
+
+async function repoOutputDir(t, label) {
+  const dir = path.join(REPO_ROOT, '.omo', `zenith-pr-output-${process.pid}-${label}-${outputSequence += 1}`);
+  await mkdir(dir, { recursive: true });
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  return dir;
+}
 
 function runGit(cwd, args) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -157,8 +166,9 @@ test('forged capture bytes, capture identities, ledger source/head/tree/blob/con
 test('CLI requires a bare store and repeats normalized capture and ledger byte-identically', async (t) => {
   const { root, work, bare, capture } = await fixture(t);
   const inputPath = path.join(root, 'receipt.json');
-  const firstDir = path.join(root, 'first');
-  const secondDir = path.join(root, 'second');
+  const outputRoot = await repoOutputDir(t, 'cli');
+  const firstDir = path.join(outputRoot, 'first');
+  const secondDir = path.join(outputRoot, 'second');
   await mkdir(firstDir);
   await mkdir(secondDir);
   await writeFile(inputPath, JSON.stringify(capture));
@@ -179,4 +189,36 @@ test('CLI requires a bare store and repeats normalized capture and ledger byte-i
   const rejected = spawnSync(process.execPath, [modulePath, '--capture', inputPath, '--repo', work, '--output', path.join(firstDir, 'ledger.json')], { encoding: 'utf8' });
   assert.equal(rejected.status, 1);
   assert.match(rejected.stderr, /PR_CONSUMPTION_IDENTITY_MISMATCH/);
+});
+
+test('CLI output custody rejects outside-root paths, symlink components/finals, and overwrite', async (t) => {
+  const { root, bare, capture } = await fixture(t);
+  const inputPath = path.join(root, 'receipt.json');
+  await writeFile(inputPath, JSON.stringify(capture));
+  const outputRoot = await repoOutputDir(t, 'custody');
+  const invoke = (output) => spawnSync(process.execPath, [modulePath, '--capture', inputPath, '--repo', bare, '--output', output], { encoding: 'utf8' });
+
+  const outside = path.join(root, 'outside-ledger.json');
+  const outsideResult = invoke(outside);
+  assert.equal(outsideResult.status, 1);
+  assert.match(outsideResult.stderr, /OUTPUT_PATH_ESCAPES_ROOT/);
+
+  const componentLink = path.join(outputRoot, 'component-link');
+  await symlink(root, componentLink);
+  const componentResult = invoke(path.join(componentLink, 'ledger.json'));
+  assert.equal(componentResult.status, 1);
+  assert.match(componentResult.stderr, /OUTPUT_SYMLINK_FORBIDDEN/);
+
+  const finalLink = path.join(outputRoot, 'final-ledger.json');
+  await symlink(inputPath, finalLink);
+  const finalResult = invoke(finalLink);
+  assert.equal(finalResult.status, 1);
+  assert.match(finalResult.stderr, /OUTPUT_SYMLINK_FORBIDDEN/);
+
+  const existing = path.join(outputRoot, 'existing-ledger.json');
+  await writeFile(existing, 'pre-existing bytes\n');
+  const overwrite = invoke(existing);
+  assert.equal(overwrite.status, 1);
+  assert.match(overwrite.stderr, /OUTPUT_ALREADY_EXISTS/);
+  assert.equal(await readFile(existing, 'utf8'), 'pre-existing bytes\n');
 });

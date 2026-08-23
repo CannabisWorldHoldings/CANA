@@ -108,6 +108,68 @@ test('same-license moved capture is quarantined with UNKNOWN public location and
   assert.deepEqual(resolution.changed_fields, ['address', 'coordinates']);
 });
 
+test('a unique linked license alias cannot bypass moved-location review', () => {
+  const captureA = candidate(officialRecord());
+  const moved = officialRecord({
+    ADDRESS: '1500 East Capitol Street NE, Washington, DC 20003',
+    LATITUDE: 38.8899,
+    LONGITDUE: -76.9824,
+    geometry: { x: -76.9824, y: 38.8899 },
+  });
+  const resolution = resolveAbcaEntity({
+    record: moved,
+    retailers: [{
+      id: 'takoma',
+      licenseNumber: null,
+      address: captureA.retailer.address,
+      lat: captureA.geo.lat,
+      lng: captureA.geo.lng,
+    }],
+    aliases: [{
+      id: 'takoma-license-alias',
+      namespace: 'dc_abca_license',
+      externalId: captureA.license_number,
+      retailerId: 'takoma',
+      geoEntityId: 'takoma-geo',
+    }],
+  });
+
+  assert.equal(resolution.status, 'REVIEW_REQUIRED');
+  assert.equal(resolution.method, 'EXACT_ALIAS_LOCATION_CHANGED');
+  assert.equal(resolution.reason, 'OFFICIAL_LOCATION_CHANGED');
+  assert.equal(resolution.location.state, 'UNKNOWN');
+  assert.equal(resolution.location.public_eligible, false);
+  assert.equal(resolution.public_eligible, false);
+  assert.deepEqual(resolution.changed_fields, ['address', 'coordinates']);
+});
+
+test('a linked license alias fails closed without exactly one prior retailer', () => {
+  const alias = {
+    id: 'takoma-license-alias',
+    namespace: 'dc_abca_license',
+    externalId: 'ABCA-117361',
+    retailerId: 'takoma',
+    geoEntityId: 'takoma-geo',
+  };
+  for (const retailers of [
+    [],
+    [{ id: 'takoma' }, { id: 'takoma' }],
+  ]) {
+    const resolution = resolveAbcaEntity({
+      record: officialRecord(),
+      retailers,
+      aliases: [alias],
+    });
+
+    assert.equal(resolution.status, 'REVIEW_REQUIRED');
+    assert.equal(resolution.method, 'EXACT_ALIAS_RETAILER_LINK_UNVERIFIABLE');
+    assert.equal(resolution.reason, 'EXACT_ALIAS_RETAILER_LINK_NOT_UNIQUE');
+    assert.equal(resolution.location.state, 'UNKNOWN');
+    assert.equal(resolution.location.public_eligible, false);
+    assert.equal(resolution.public_eligible, false);
+  }
+});
+
 test('changed-license reissue is a separate unmatched identity, never a same-license movement decision', () => {
   const captureA = candidate(officialRecord());
   const reissued = officialRecord({ ABCA_NUMBER: 'ABCA-117362' });

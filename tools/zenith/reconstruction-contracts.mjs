@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import path from 'node:path';
 
 export const RECONSTRUCTION_SCHEMA_VERSION = 'zenith-reconstruction/v1';
@@ -83,6 +84,88 @@ export function canonicalJson(value) {
 
 export function digestCanonical(value) {
   return createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
+
+function requireOutputRoot(root) {
+  if (typeof root !== 'string' || root.length === 0) refuse('OUTPUT_ROOT_INVALID', 'output root is required');
+  let stat;
+  try {
+    stat = fs.lstatSync(root);
+  } catch {
+    refuse('OUTPUT_ROOT_INVALID', 'output root must exist');
+  }
+  if (stat.isSymbolicLink() || !stat.isDirectory()) refuse('OUTPUT_ROOT_INVALID', 'output root must be a real directory');
+  return fs.realpathSync(root);
+}
+
+function outputIsOutsideRoot(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative === '' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+}
+
+function requireSafeOutputParent(root, filename) {
+  const relativeParent = path.relative(root, path.dirname(filename));
+  if (relativeParent === '' || relativeParent === '.') return;
+  let cursor = root;
+  for (const component of relativeParent.split(path.sep)) {
+    cursor = path.join(cursor, component);
+    let stat;
+    try {
+      stat = fs.lstatSync(cursor);
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      fs.mkdirSync(cursor);
+      stat = fs.lstatSync(cursor);
+    }
+    if (stat.isSymbolicLink()) refuse('OUTPUT_SYMLINK_FORBIDDEN', `${cursor} is a symbolic link`);
+    if (!stat.isDirectory()) refuse('OUTPUT_PARENT_NOT_DIRECTORY', `${cursor} is not a directory`);
+    if (outputIsOutsideRoot(root, fs.realpathSync(cursor))) refuse('OUTPUT_PATH_ESCAPES_ROOT', `${filename} escapes the output root`);
+  }
+}
+
+/**
+ * Validates output destinations before any output is written. Each destination
+ * is constrained to a real repository root, has no symlink component/final,
+ * and must not already exist. Call writeExclusiveOutputs to create them.
+ */
+export function prepareExclusiveOutputPaths({ root, outputPaths }) {
+  const outputRoot = requireOutputRoot(root);
+  if (!Array.isArray(outputPaths) || outputPaths.length === 0) refuse('OUTPUT_PATH_REQUIRED', 'at least one output path is required');
+  const prepared = [];
+  const seen = new Set();
+  for (const outputPath of outputPaths) {
+    if (typeof outputPath !== 'string' || outputPath.length === 0 || outputPath.includes('\0')) {
+      refuse('OUTPUT_PATH_INVALID', 'output path must be a non-empty string');
+    }
+    const filename = path.resolve(outputRoot, outputPath);
+    if (outputIsOutsideRoot(outputRoot, filename)) refuse('OUTPUT_PATH_ESCAPES_ROOT', `${outputPath} is outside the repository root`);
+    if (seen.has(filename)) refuse('OUTPUT_DUPLICATE_PATH', `${outputPath} is repeated`);
+    seen.add(filename);
+    requireSafeOutputParent(outputRoot, filename);
+    try {
+      const stat = fs.lstatSync(filename);
+      if (stat.isSymbolicLink()) refuse('OUTPUT_SYMLINK_FORBIDDEN', `${outputPath} is a symbolic link`);
+      refuse('OUTPUT_ALREADY_EXISTS', `${outputPath} already exists`);
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+    }
+    prepared.push(filename);
+  }
+  return prepared;
+}
+
+export function writeExclusiveOutputs({ root, outputs }) {
+  if (!Array.isArray(outputs) || outputs.length === 0) refuse('OUTPUT_PATH_REQUIRED', 'at least one output is required');
+  const filenames = prepareExclusiveOutputPaths({ root, outputPaths: outputs.map((entry) => entry?.outputPath) });
+  for (let index = 0; index < outputs.length; index += 1) {
+    try {
+      fs.writeFileSync(filenames[index], outputs[index].bytes, { flag: 'wx' });
+    } catch (error) {
+      if (error?.code === 'EEXIST') refuse('OUTPUT_ALREADY_EXISTS', `${outputs[index].outputPath} already exists`);
+      throw error;
+    }
+  }
+  return filenames;
 }
 
 function requireObject(value, field) {
