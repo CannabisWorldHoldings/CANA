@@ -84,6 +84,14 @@ const PR59_ATTRIBUTION_COLLISION_REPAIR_ADMISSION = Object.freeze({
 });
 const PR57_INHERITED_MAIN_ASSIGNMENT =
   'pr57_inherited_main_reconciliation_2026_08_21';
+const ZENITH_VANGUARD_ASSIGNMENT =
+  'zenith_vanguard_surgical_convergence_2026_08_23';
+const ZENITH_VANGUARD_ASSIGNMENT_SHA256 =
+  'b77bb18f5871539fab856ff39ecb7cb5331c8318814d8f0acf7f49349752a74a';
+const ZENITH_VANGUARD_AUTHORIZATION_SOURCE_SHA256 =
+  'cac0851c69ff4e0ccbd4223c8f4c58290450950c97dd0f4a4792a3af8d47dc63';
+const ZENITH_VANGUARD_MIGRATION_COURT_SHA256 =
+  'e670bc17746ab70421fcef2c0774ade4a08ccf3d0df714e2326be14d3490f015';
 const PR57_INHERITED_MAIN_ASSIGNMENT_SHA256 =
   '545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed';
 const PR57_PRE_REPAIR_OWNERSHIP_SHA256 =
@@ -114,14 +122,16 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   FEDERATION_GATE_E_ASSIGNMENT,
   PR59_SOVEREIGN_CUSTODY_ASSIGNMENT,
   PR57_INHERITED_MAIN_ASSIGNMENT,
+  ZENITH_VANGUARD_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PR29_ASSIGNMENT,
   PR35_ASSIGNMENT,
   PHASE_B_SLICE2_ASSIGNMENT,
+  ZENITH_VANGUARD_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'f90dd4b29d4b7b40c95ee41f77026d47df4abc80c0c5744be98789af0733e40a';
+  '6b2293afbf277807a6c8033d12e2ba555f03b82b0d3882904eb8d2ca464a4c74';
 
 export const PR59_SOVEREIGN_CUSTODY_PATHS = Object.freeze([
   'tools/visual-court/linux-custody-helper.c',
@@ -1686,6 +1696,90 @@ export function validateOwnershipManifest(ownership) {
     refusal('PR #57 inherited-main assignment failed its owner-approval digest');
   }
 
+  const zenithVanguardAssignment =
+    ownership.explicit_user_assignment[ZENITH_VANGUARD_ASSIGNMENT];
+  if (
+    !exactKeys(zenithVanguardAssignment, [
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'protected_base',
+      'authorized_paths',
+      'court_blob_sha256',
+      'authority_boundaries',
+      'approval_sha256',
+    ])
+    || zenithVanguardAssignment.authorization !==
+      'ORDERWEEDDC x SITEMIND x CANA ZENITH / VANGUARD SINGULARITY TOTAL ACCOUNT RECONSTRUCTION -> SURGICAL CONVERGENCE -> FINAL BUILD DIRECTIVE'
+    || zenithVanguardAssignment.authorization_source_sha256 !==
+      ZENITH_VANGUARD_AUTHORIZATION_SOURCE_SHA256
+    || zenithVanguardAssignment.authorization_effect !==
+      'durability-path-ownership-only'
+    || !exactKeys(zenithVanguardAssignment.protected_base, ['commit', 'tree'])
+    || zenithVanguardAssignment.protected_base.commit !==
+      '75a01029a75c366fd3254be78cde71a286bafa1a'
+    || zenithVanguardAssignment.protected_base.tree !==
+      'fd6dcb24a5805b77aa36426e2bfe549e7c06676e'
+    || !Array.isArray(zenithVanguardAssignment.authorized_paths)
+    || !exactKeys(zenithVanguardAssignment.court_blob_sha256, [
+      'apps/web/tests/migration-court.test.mjs',
+    ])
+    || zenithVanguardAssignment.court_blob_sha256[
+      'apps/web/tests/migration-court.test.mjs'
+    ] !== ZENITH_VANGUARD_MIGRATION_COURT_SHA256
+    || !exactKeys(zenithVanguardAssignment.authority_boundaries, [
+      'credentials',
+      'deployment',
+      'production',
+      'external_effects',
+      'verification_bypass',
+      'self_promotion',
+    ])
+    || Object.values(zenithVanguardAssignment.authority_boundaries)
+      .some((value) => value !== false)
+    || !zenithVanguardAssignment.scope.includes('no wildcard')
+    || !zenithVanguardAssignment.scope.includes('production')
+  ) {
+    refusal('ZENITH/VANGUARD ownership assignment is malformed');
+  }
+  const zenithVanguardPaths = zenithVanguardAssignment.authorized_paths;
+  if (
+    zenithVanguardPaths.length !== 53
+    || new Set(zenithVanguardPaths).size !== zenithVanguardPaths.length
+    || zenithVanguardPaths.some(
+      (relative) => typeof relative !== 'string'
+        || relative.length === 0
+        || relative.includes('*')
+        || relative.includes('\\')
+        || relative.startsWith('/')
+        || relative.includes('..')
+        || path.posix.normalize(relative) !== relative,
+    )
+    || !zenithVanguardPaths.includes('apps/web/tests/migration-court.test.mjs')
+    || !zenithVanguardPaths.includes('tools/durability/cli.mjs')
+    || !zenithVanguardPaths.includes('tools/durability/cli.test.mjs')
+    || !zenithVanguardPaths.includes(
+      'tools/test-runner/CODEX_CHANGED_FILE_OWNERSHIP.json',
+    )
+    || zenithVanguardPaths.some(
+      (relative) => !allOwnedPaths.some((pattern) => matchOwned(relative, pattern)),
+    )
+  ) {
+    refusal('ZENITH/VANGUARD paths must be exact, bounded, and lane-owned');
+  }
+  const {
+    approval_sha256: zenithVanguardRecordedDigest,
+    ...zenithVanguardApprovalPayload
+  } = zenithVanguardAssignment;
+  if (
+    zenithVanguardRecordedDigest !== ZENITH_VANGUARD_ASSIGNMENT_SHA256
+    || sha256Bytes(canonicalJson(zenithVanguardApprovalPayload))
+      !== ZENITH_VANGUARD_ASSIGNMENT_SHA256
+  ) {
+    refusal('ZENITH/VANGUARD assignment failed its owner-directive digest');
+  }
+
   const ownershipDigest = sha256Bytes(canonicalJson({
     root_dispatcher: ownership.explicit_user_assignment.root_dispatcher,
     owned_create_paths: ownership.owned_create_paths,
@@ -1848,6 +1942,11 @@ export function phaseBRealityCompilerOwnershipAssignment(ownership) {
 export function phaseBSlice2OwnershipAssignment(ownership) {
   validateOwnershipManifest(ownership);
   return ownership.explicit_user_assignment[PHASE_B_SLICE2_ASSIGNMENT];
+}
+
+export function zenithVanguardOwnershipAssignment(ownership) {
+  validateOwnershipManifest(ownership);
+  return ownership.explicit_user_assignment[ZENITH_VANGUARD_ASSIGNMENT];
 }
 
 export function courtEditAdmitted(relative, ownership, bytes, assignmentName) {

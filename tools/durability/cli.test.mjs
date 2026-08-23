@@ -39,6 +39,7 @@ import {
   STAGE_A_AUTHORIZED_PATHS,
   unownedPaths,
   validateOwnershipManifest,
+  zenithVanguardOwnershipAssignment,
 } from './cli.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -238,6 +239,62 @@ function ownership() {
   return JSON.parse(fs.readFileSync(OWNERSHIP_FILE, 'utf8'));
 }
 
+test('ZENITH/VANGUARD ownership is exact, bounded, and grants no external authority', () => {
+  const manifest = ownership();
+  const assignment = zenithVanguardOwnershipAssignment(manifest);
+  assert.equal(assignment.authorized_paths.length, 53);
+  assert.ok(assignment.authorized_paths.every((relative) => !relative.includes('*')));
+  assert.deepEqual(unownedPaths(assignment.authorized_paths, manifest), []);
+  assert.deepEqual(
+    unownedPaths(['apps/web/src/lib/experience-review-neighbor.mjs'], manifest),
+    ['apps/web/src/lib/experience-review-neighbor.mjs'],
+  );
+  assert.deepEqual(assignment.authority_boundaries, {
+    credentials: false,
+    deployment: false,
+    production: false,
+    external_effects: false,
+    verification_bypass: false,
+    self_promotion: false,
+  });
+  const courtPath = 'apps/web/tests/migration-court.test.mjs';
+  assert.equal(
+    courtEditAdmitted(
+      courtPath,
+      manifest,
+      fs.readFileSync(path.join(ROOT, courtPath)),
+      'zenith_vanguard_surgical_convergence_2026_08_23',
+    ),
+    true,
+  );
+});
+
+test('ZENITH/VANGUARD ownership and court admission fail closed on tampering', () => {
+  const wildcard = ownership();
+  wildcard.explicit_user_assignment.zenith_vanguard_surgical_convergence_2026_08_23
+    .authorized_paths[0] = 'apps/web/**';
+  assert.throws(
+    () => validateOwnershipManifest(wildcard),
+    /exact, bounded, and lane-owned|owner-directive digest/,
+  );
+
+  const authority = ownership();
+  authority.explicit_user_assignment.zenith_vanguard_surgical_convergence_2026_08_23
+    .authority_boundaries.production = true;
+  assert.throws(
+    () => validateOwnershipManifest(authority),
+    /ownership assignment is malformed/,
+  );
+
+  const court = ownership();
+  court.explicit_user_assignment.zenith_vanguard_surgical_convergence_2026_08_23
+    .court_blob_sha256['apps/web/tests/migration-court.test.mjs'] = '0'.repeat(64);
+  assert.throws(
+    () => validateOwnershipManifest(court),
+    /ownership assignment is malformed/,
+  );
+});
+
 test('PR #29 recovery paths have exact ownership without neighboring authority', () => {
   const manifest = ownership();
   const assignment = pr29OwnershipAssignment(manifest);
@@ -390,12 +447,12 @@ test('Phase B Slice 2 live reality paths have exact ownership without neighborin
   );
 });
 
-test('Phase B Slice 2 court admission is bound to the exact reviewed bytes', () => {
+test('Phase B Slice 2 court admission refuses superseding and tampered bytes', () => {
   const manifest = ownership();
   const courtPath = 'apps/web/tests/migration-court.test.mjs';
   assert.equal(
     courtEditAdmitted(courtPath, manifest, undefined, PHASE_B_SLICE2_ASSIGNMENT),
-    true,
+    false,
   );
   assert.equal(
     courtEditAdmitted(courtPath, manifest, Buffer.from('tampered Slice 2 court'), PHASE_B_SLICE2_ASSIGNMENT),
