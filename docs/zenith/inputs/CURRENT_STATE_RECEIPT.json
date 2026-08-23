@@ -1,0 +1,176 @@
+{
+  "schema_version": "zenith-current-state-receipt/v1",
+  "captured_at": "2026-08-23T04:35:43Z",
+  "epistemic_status": "VERIFIED_LOCAL",
+  "repository": {
+    "name_with_owner": "CannabisWorldHoldings/CANA",
+    "url": "https://github.com/CannabisWorldHoldings/CANA",
+    "remote_origin": "https://github.com/CannabisWorldHoldings/CANA.git",
+    "default_branch": "main",
+    "default_branch_protected": true,
+    "required_status_checks": [
+      "verify sovereign (repository PostGIS + H3 image)"
+    ],
+    "local_checkout": "/Users/Apple/Documents/New project/.omo/zenith-singularity-7fca02e/repo",
+    "checkout_mode": "DETACHED_EXACT_REMOTE_MAIN"
+  },
+  "git": {
+    "commit": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+    "tree": "268c5313b3fb8d2a8e53bfdcf363e2287f9e13a4",
+    "parent": "4cc502cb317be157f1448e04ee296cb202829ed7",
+    "second_parent": "72b2634ae882a8e15a1480d76e243db8a261fdd4",
+    "remote_main": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+    "head_kind": "NORMAL_TWO_PARENT_MERGE",
+    "merged_pr": 59,
+    "tags": [],
+    "releases": []
+  },
+  "working_tree_state": "CLEAN",
+  "candidate": {
+    "branch": "codex/zenith-first-reality-cycle",
+    "commit": "75a01029a75c366fd3254be78cde71a286bafa1a",
+    "tree": "fd6dcb24a5805b77aa36426e2bfe549e7c06676e",
+    "base_main": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+    "ahead_by": 7,
+    "working_tree": "CLEAN",
+    "pushed": false,
+    "merged": false,
+    "deployed": false,
+    "canonical_new_owner": "official-retailer-identity-admission",
+    "verification": {
+      "focused": {
+        "status": "PASS",
+        "receipt": "outputs/evidence/candidate-focused-receipt.json",
+        "receipt_sha256": "ef355d6830fd4fc26da0a42e3909f28870c5435f1fb38aa907e96bf801d4322e"
+      },
+      "production_build": {
+        "status": "PASS",
+        "evidence": "outputs/evidence/candidate-build-final.log"
+      },
+      "first_reality_cycle": {
+        "status": "COMPLETED",
+        "receipt": "outputs/FIRST_REALITY_CYCLE_RECEIPT.json",
+        "receipt_sha256": "ee6a5149468d5f6f477421b8b88b78cc60919ab53fcfd0f6604e047e0734516f"
+      },
+      "rendered_customer_search": {
+        "status": "PASS_WITH_COMPLIANCE_GATE_INTACT",
+        "verified_candidate": "Takoma Wellness Center",
+        "browser_console_errors_or_warnings": 0,
+        "dom_evidence": "outputs/evidence/candidate-browser-dom.txt",
+        "screenshot_evidence": "outputs/evidence/candidate-browser-search.png"
+      },
+      "independent_heavy_review": {
+        "status": "APPROVED_UNCONDITIONALLY",
+        "blockers": 0,
+        "report": "outputs/evidence/independent-heavy-review.md",
+        "report_sha256": "01421a9955709c1215f423edd9d8e486fdedf5472d8d68300bfc6c261d6cf372"
+      }
+    }
+  },
+  "dependencies": {
+    "package_manager": "npm",
+    "lockfile": "package-lock.json",
+    "lockfile_version": 3,
+    "lockfile_sha256": "5ae1f1f399a194f1d71ca16d2d8ce540ba799bf79f5dfca8653ce9e55f93e8b3",
+    "workspace_versions": {
+      "next": "16.3.0-canary.6",
+      "react": "19.2.4",
+      "react_dom": "19.2.4",
+      "prisma_constraint": "^6.19.3",
+      "maplibre_gl": "^5.6.0",
+      "leaflet": "^1.9.4",
+      "tailwindcss": "^4.3.2",
+      "typescript": "^5"
+    },
+    "install_state_at_capture": "INSTALLED_FROM_LOCKFILE_FOR_VERIFICATION"
+  },
+  "runtime_targets": {
+    "repository_ci_node": "24.14.1",
+    "local_node": "v22.22.3",
+    "local_npm": "10.9.8",
+    "local_os": "Darwin 25.6.0 arm64",
+    "application": "Next.js",
+    "observed_public_host": "LiteSpeed",
+    "directive_target_preview": "Cloudflare Workers + OpenNext",
+    "directive_target_database": "Neon PostgreSQL through Prisma and Hyperdrive",
+    "compatibility_status": "NOT_ESTABLISHED"
+  },
+  "database_state": {
+    "canonical_model": "apps/web/prisma/schema.prisma",
+    "canonical_provider": "PostgreSQL + PostGIS + H3",
+    "migration_manifest": "apps/web/prisma/migration-manifest.json",
+    "migration_count": 7,
+    "local_database_url": "UNSET",
+    "local_direct_url": "UNSET",
+    "local_docker_server": "TASK_RUNTIME_CLEANED_AFTER_VERIFICATION",
+    "production_direct_access": "NOT_ATTEMPTED",
+    "public_health_observation": {
+      "status": "HEALTHY",
+      "database_status": "UP",
+      "brand_count": 1,
+      "total_retailers": 0,
+      "verified_retailers": 0,
+      "checked_at": "2026-08-23T04:35:09.745Z",
+      "evidence": "outputs/evidence/final-public-health-body.json"
+    },
+    "underlying_production_provider": "UNKNOWN"
+  },
+  "open_prs": [
+    {"number": 27, "base": "main", "head": "dependabot/npm_and_yarn/js-yaml-4.3.1", "head_sha": "eaff5dd4ac221541363b1fb7a9ec2aaaad08b94c", "draft": false, "merge_state": "BEHIND"},
+    {"number": 26, "base": "main", "head": "dependabot/npm_and_yarn/postcss-8.5.23", "head_sha": "1b66bab2dc04f040df319fe29d1925260d6c97ad", "draft": false, "merge_state": "BEHIND"},
+    {"number": 25, "base": "main", "head": "codex/sitemind-governed-dynamic-creative-foundation", "head_sha": "5384e8ac223c5566ce0aef0e020cc07a39a1e2c3", "draft": true, "merge_state": "DIRTY"},
+    {"number": 24, "base": "codex/orderweeddc-customer-side-sovereign-ui", "head": "feature/sitemind-creative-learning-bridge-pr21-certified", "head_sha": "88adc037a2e6eecbfe8903b5e2d58c2bc4cc1345", "draft": true, "merge_state": "UNSTABLE"},
+    {"number": 23, "base": "main", "head": "dependabot/npm_and_yarn/multi-5e81c1b34f", "head_sha": "b986549456c4b0d4085ef4e7eee1c973b840f153", "draft": false, "merge_state": "BEHIND"},
+    {"number": 22, "base": "codex/orderweeddc-customer-side-sovereign-ui", "head": "codex/sitemind-competitive-evolution-bridge", "head_sha": "af83c306f67a7b63d44c1b810dd660ea9deca8dc", "draft": true, "merge_state": "CLEAN"},
+    {"number": 21, "base": "main", "head": "codex/orderweeddc-customer-side-sovereign-ui", "head_sha": "fa16fd507ea79d42d914e314de3b825170ff9b97", "draft": false, "merge_state": "DIRTY"},
+    {"number": 11, "base": "main", "head": "codex/cana-gemini-creative-draft", "head_sha": "88e00d1ad1fa7fc85db2de45a8ba129e41d4652e", "draft": true, "merge_state": "DIRTY"}
+  ],
+  "verification_commands": [
+    "./cana verify focused",
+    "./cana verify sovereign",
+    "./cana verify maria",
+    "./cana verify cpanel",
+    "./cana durability build",
+    "./cana durability verify",
+    "./cana durability restore --target <empty-directory>",
+    "./cana github prepare"
+  ],
+  "verification_results": {
+    "exact_main_candidate_run": {"run_id": 32597636161, "status": "SUCCESS", "head_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18"},
+    "exact_main_sovereign_run": {"run_id": 32597636110, "status": "SUCCESS", "head_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18"},
+    "local_focused": {"status": "PASS", "head_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18", "receipt_sha256": "99f5e0ae4e1d7018b96f25b3d3fd55a70eb474160b50830104584feb2a606312", "evidence": "outputs/evidence/champion-focused.log"},
+    "local_sovereign": {"status": "SOVEREIGN_VERIFIED", "head_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18", "stages": "15/15 VERIFIED", "receipt_sha256": "e752832b06b8578f654f4f55bd2fed9e091bd5a8104cc58d0813b77767616f2b", "evidence": "outputs/evidence/champion-sovereign-receipt.json"}
+  },
+  "deployment_state": {
+    "github_deployments": [],
+    "github_releases": [],
+    "public_release_endpoint": {
+      "status": "RELEASE_SHA_PRESENT",
+      "git_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "built_at": "2026-08-22T20:55:08.163Z",
+      "artifact": "orderweeddc-7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "checked_at": "2026-08-23T04:35:09.430Z",
+      "http_status": 200,
+      "server": "LiteSpeed",
+      "evidence": ["outputs/evidence/final-public-release-headers.txt", "outputs/evidence/final-public-release-body.json"]
+    },
+    "cloudflare_workers_open_next": "NOT_ESTABLISHED",
+    "neon_hyperdrive": "NOT_ESTABLISHED"
+  },
+  "known_failures": [
+    {"status": "ESTABLISHED", "code": "PUBLIC_MARKET_EMPTY", "evidence": "Public health reports totalRetailers=0 and verifiedRetailers=0."},
+    {"status": "ESTABLISHED", "code": "EXACT_MAIN_LIVE_ACQUISITION_UNRESOLVED_IDENTITIES", "evidence": "Exact main still lacks the candidate's governed official identity-admission bridge; the local candidate closes one fixed Takoma frontier without changing the deployed runtime."},
+    {"status": "ESTABLISHED", "code": "DEPENDABOT_RUN_FAILED", "evidence": "GitHub run 32597644904 failed on exact main; candidate and sovereign verification succeeded separately."},
+    {"status": "ESTABLISHED", "code": "PRE_RELEASE_NEXT_RUNTIME", "evidence": "apps/web pins next and eslint-config-next 16.3.0-canary.6 while the directive requires security-patched stable for production."},
+    {"status": "SUPPORTED_INFERENCE", "code": "TARGET_RUNTIME_NOT_CONVERGED", "evidence": "Observed public server is LiteSpeed; Cloudflare Workers/OpenNext compatibility is not established."}
+  ],
+  "known_unknowns": [
+    "Underlying production PostgreSQL provider, schema identity, migration state, backup state, and data beyond public aggregate health.",
+    "Neon account, branch, Prisma/Hyperdrive compatibility, acceptable-use confirmation, rollback, and credentials.",
+    "Cloudflare account, preview project, Worker/OpenNext build compatibility, runtime identity, and rollback.",
+    "Real customer task completion, answer usefulness, retention, and trust comprehension.",
+    "Real merchant value, permission, economic outcome, willingness to pay, retention, and expansion.",
+    "Whether the local candidate will receive owner approval, be pushed, promoted, and deployed; none of those effects occurred in this run.",
+    "Latest stable dependency set that preserves all repository courts."
+  ]
+}

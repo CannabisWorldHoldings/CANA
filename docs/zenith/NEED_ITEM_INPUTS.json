@@ -1,0 +1,180 @@
+{
+  "schema_version": "zenith-need-inputs/v1",
+  "observed_at": "2026-08-23T04:35:43.000Z",
+  "inputs": [
+    {
+      "logical_path": "docs/zenith/inputs/CURRENT_STATE_RECEIPT.json",
+      "sha256": "bb801510319c998985229b613acea5acb657b52177ff55ec41f82789d0101122",
+      "source_kind": "RECEIPT"
+    },
+    {
+      "logical_path": "docs/zenith/inputs/ZENITH_GRADUATION_RECEIPT.json",
+      "sha256": "5400b71c9735e5c21e519a0e2cb44e4dd2d418319487db91050750f22b479bdd",
+      "source_kind": "RECEIPT"
+    },
+    {
+      "logical_path": "docs/CANA_TECHNICAL_STATE.md",
+      "sha256": "f212a472b87f1dbc1a614004e95b3d09994077d544cf4e3dd90b1c4fba990dfe",
+      "source_kind": "EXACT_FILE"
+    },
+    {
+      "logical_path": "docs/evidence/phase-b-slice2/CURRENT_VERIFIED_STATE.md",
+      "sha256": "4c04801e2a66b87f2fe3c87e6f8ea56470e9784c80a58fbbabcd85027e425d53",
+      "source_kind": "EXACT_FILE"
+    },
+    {
+      "logical_path": "docs/evidence/phase-b-slice2/SOURCE_CAPABILITY_RECEIPT.json",
+      "sha256": "58ca5aa03a5460dff364aace94b42c12487526e5d83a7f4fb52f27544f31467d",
+      "source_kind": "RECEIPT"
+    },
+    {
+      "logical_path": "docs/evidence/phase-b/CURRENT_VERIFIED_STATE.md",
+      "sha256": "f0d54bfffa394db8fc54c78dbcfebe613109757b6fd41cb2eb816511a925b545",
+      "source_kind": "EXACT_FILE"
+    },
+    {
+      "logical_path": "docs/vanguard/CAPABILITY_REGISTRY.json",
+      "sha256": "15b7cf9cf41dda50f3852ab09c9a6d549e7991b703e9a450c27330a7bf366b9d",
+      "source_kind": "EXACT_FILE"
+    },
+    {
+      "logical_path": "tools/federation/capability-owners.json",
+      "sha256": "6326226a366325a874b46d144f36bf584cc38d938421b2e1c43f91ed06f26ff2",
+      "source_kind": "EXACT_FILE"
+    }
+  ],
+  "needs": [
+    {
+      "id": "need_backup_rollback_proof",
+      "need_kind": "BACKUP_ROLLBACK_PROOF",
+      "need_state": "BLOCKED_EXTERNAL",
+      "next_gate": "OWNER_BACKUP_AND_ROLLBACK_RECEIPT",
+      "gate_kind": "BACKUP_ROLLBACK",
+      "owner": "UNKNOWN",
+      "epistemic_state": "BLOCKED",
+      "source_logical_path": "docs/zenith/inputs/ZENITH_GRADUATION_RECEIPT.json",
+      "evidence_logical_paths": ["docs/zenith/inputs/ZENITH_GRADUATION_RECEIPT.json"]
+    },
+    {
+      "id": "need_cloudflare_opennext_local_compatibility",
+      "need_kind": "CLOUDFLARE_OPENNEXT_LOCAL_COMPATIBILITY",
+      "need_state": "OPEN",
+      "next_gate": "LOCAL_WORKERD_COMPATIBILITY_COURT",
+      "gate_kind": "RUNTIME_COMPATIBILITY",
+      "owner": "UNKNOWN",
+      "epistemic_state": "PLANNED",
+      "source_logical_path": "docs/CANA_TECHNICAL_STATE.md",
+      "evidence_logical_paths": ["docs/CANA_TECHNICAL_STATE.md", "docs/zenith/inputs/CURRENT_STATE_RECEIPT.json"]
+    },
+    {
+      "id": "need_hyperdrive_neon_transport_decision",
+      "need_kind": "HYPERDRIVE_NEON_TRANSPORT_DECISION",
+      "need_state": "INPUT_REQUIRED",
+      "next_gate": "OWNER_SELECTS_SINGLE_DATABASE_TRANSPORT",
+      "gate_kind": "TRANSPORT_DECISION",
+      "owner": "UNKNOWN",
+      "epistemic_state": "INPUT_REQUIRED",
+      "source_logical_path": "docs/CANA_TECHNICAL_STATE.md",
+      "evidence_logical_paths": ["docs/CANA_TECHNICAL_STATE.md"]
+    },
+    {
+      "id": "need_managed_h3_provider_proof",
+      "need_kind": "MANAGED_H3_PROVIDER_PROOF",
+      "need_state": "BLOCKED_EXTERNAL",
+      "next_gate": "PROVE_TARGET_H3_EXTENSION_ON_OWNER_MANAGED_POSTGRES",
+      "gate_kind": "PROVIDER_CAPABILITY",
+      "owner": "UNKNOWN",
+      "epistemic_state": "BLOCKED",
+      "source_logical_path": "docs/evidence/phase-b-slice2/SOURCE_CAPABILITY_RECEIPT.json",
+      "evidence_logical_paths": ["docs/evidence/phase-b-slice2/SOURCE_CAPABILITY_RECEIPT.json"]
+    },
+    {
+      "id": "need_managed_postgres_owner_credentials",
+      "need_kind": "MANAGED_POSTGRES_OWNER_CREDENTIALS",
+      "need_state": "INPUT_REQUIRED",
+      "next_gate": "OWNER_PROVISIONS_POOL_AND_DIRECT_DATABASE_IDENTITIES",
+      "gate_kind": "CREDENTIAL",
+      "owner": "UNKNOWN",
+      "epistemic_state": "INPUT_REQUIRED",
+      "source_logical_path": "docs/CANA_TECHNICAL_STATE.md",
+      "evidence_logical_paths": ["docs/CANA_TECHNICAL_STATE.md"]
+    },
+    {
+      "id": "need_next_stable_security_patch_recourt",
+      "need_kind": "NEXT_STABLE_SECURITY_PATCH_RECOURT",
+      "need_state": "OPEN",
+      "next_gate": "SECURITY_PATCH_AVAILABLE_AND_EXACT_RECERTIFICATION",
+      "gate_kind": "SECURITY_RELEASE",
+      "owner": "UNKNOWN",
+      "epistemic_state": "UNVERIFIED",
+      "source_logical_path": "docs/zenith/inputs/CURRENT_STATE_RECEIPT.json",
+      "evidence_logical_paths": ["docs/zenith/inputs/CURRENT_STATE_RECEIPT.json"]
+    },
+    {
+      "id": "need_owner_cloudflare_credentials",
+      "need_kind": "OWNER_CLOUDFLARE_CREDENTIALS",
+      "need_state": "INPUT_REQUIRED",
+      "next_gate": "OWNER_PROVISIONS_CLOUDFLARE_IDENTITY_AND_LEAST_PRIVILEGE_CREDENTIALS",
+      "gate_kind": "CREDENTIAL",
+      "owner": "UNKNOWN",
+      "epistemic_state": "INPUT_REQUIRED",
+      "source_logical_path": "docs/CANA_TECHNICAL_STATE.md",
+      "evidence_logical_paths": ["docs/CANA_TECHNICAL_STATE.md"]
+    },
+    {
+      "id": "need_owner_draft_review_promotion_authority",
+      "need_kind": "OWNER_DRAFT_REVIEW_PROMOTION_AUTHORITY",
+      "need_state": "INPUT_REQUIRED",
+      "next_gate": "OWNER_AUTHORIZES_DRAFT_REVIEW_AND_ANY_PROMOTION_SEPARATELY",
+      "gate_kind": "AUTHORITY",
+      "owner": "root-authorization",
+      "epistemic_state": "INPUT_REQUIRED",
+      "source_logical_path": "docs/vanguard/CAPABILITY_REGISTRY.json",
+      "evidence_logical_paths": ["docs/vanguard/CAPABILITY_REGISTRY.json", "tools/federation/capability-owners.json"]
+    },
+    {
+      "id": "need_public_market_empty_live_acquisition_frontier",
+      "need_kind": "PUBLIC_MARKET_EMPTY_LIVE_ACQUISITION_FRONTIER",
+      "need_state": "OPEN",
+      "next_gate": "GOVERNED_ACQUISITION_AND_INDEPENDENT_MARKET_COURT",
+      "gate_kind": "EVIDENCE",
+      "owner": "UNKNOWN",
+      "epistemic_state": "PARTIALLY_IMPLEMENTED",
+      "source_logical_path": "docs/evidence/phase-b-slice2/SOURCE_CAPABILITY_RECEIPT.json",
+      "evidence_logical_paths": ["docs/evidence/phase-b-slice2/SOURCE_CAPABILITY_RECEIPT.json", "docs/evidence/phase-b-slice2/CURRENT_VERIFIED_STATE.md"]
+    },
+    {
+      "id": "need_real_customer_outcomes",
+      "need_kind": "REAL_CUSTOMER_OUTCOMES",
+      "need_state": "OPEN",
+      "next_gate": "AUTHORIZED_REAL_CUSTOMER_OUTCOME_MEASUREMENT",
+      "gate_kind": "CUSTOMER_OUTCOME",
+      "owner": "UNKNOWN",
+      "epistemic_state": "UNVERIFIED",
+      "source_logical_path": "docs/vanguard/CAPABILITY_REGISTRY.json",
+      "evidence_logical_paths": ["docs/vanguard/CAPABILITY_REGISTRY.json"]
+    },
+    {
+      "id": "need_real_merchant_outcomes",
+      "need_kind": "REAL_MERCHANT_OUTCOMES",
+      "need_state": "OPEN",
+      "next_gate": "AUTHORIZED_REAL_MERCHANT_OUTCOME_MEASUREMENT",
+      "gate_kind": "MERCHANT_OUTCOME",
+      "owner": "UNKNOWN",
+      "epistemic_state": "UNVERIFIED",
+      "source_logical_path": "docs/vanguard/CAPABILITY_REGISTRY.json",
+      "evidence_logical_paths": ["docs/vanguard/CAPABILITY_REGISTRY.json"]
+    },
+    {
+      "id": "need_source_input_completeness",
+      "need_kind": "SOURCE_INPUT_COMPLETENESS",
+      "need_state": "OPEN",
+      "next_gate": "RECONSTRUCTION_REVIEW_OF_DECLARED_INPUT_COVERAGE",
+      "gate_kind": "EVIDENCE",
+      "owner": "UNKNOWN",
+      "epistemic_state": "REVIEW_REQUIRED",
+      "source_logical_path": "docs/zenith/inputs/CURRENT_STATE_RECEIPT.json",
+      "evidence_logical_paths": ["docs/zenith/inputs/CURRENT_STATE_RECEIPT.json", "docs/evidence/phase-b/CURRENT_VERIFIED_STATE.md"]
+    }
+  ]
+}

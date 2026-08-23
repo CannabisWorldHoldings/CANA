@@ -1,0 +1,77 @@
+{
+  "schema_version": "cana-zenith-graduation/v1",
+  "state": "FIRST_EVIDENCE_BACKED_GRADUATION_COMPLETE",
+  "captured_at": "2026-08-23T04:35:43Z",
+  "baseline_main": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "candidate": {
+    "branch": "codex/zenith-first-reality-cycle",
+    "commit": "75a01029a75c366fd3254be78cde71a286bafa1a",
+    "tree": "fd6dcb24a5805b77aa36426e2bfe549e7c06676e",
+    "clean": true,
+    "pushed": false,
+    "merged": false,
+    "deployed": false
+  },
+  "champion": {
+    "focused": "PASS",
+    "sovereign": "15/15 VERIFIED"
+  },
+  "candidate_verification": {
+    "focused": "PASS",
+    "production_build": "PASS",
+    "typescript": "PASS",
+    "canonical_tenant_regression_court": "48/48 PASS",
+    "rendered_customer_search": "PASS_WITH_AGE_GATE_INTACT",
+    "browser_console_errors_or_warnings": 0,
+    "independent_heavy_review": "APPROVED_UNCONDITIONALLY"
+  },
+  "graduated_cycle": {
+    "intent": "licensed dispensary in takoma",
+    "market": "US-DC",
+    "tenant": "orderweeddc.com",
+    "before": "MARKET_GAP_OPEN",
+    "identity_red": "UNMATCHED/NO_EXACT_LICENSE_OR_ALIAS",
+    "official_records_observed": 74,
+    "selected_identity": "Takoma Wellness Center / ABCA-117361",
+    "after": "ANSWERABLE",
+    "verified_candidates": 1,
+    "durable_opportunity": "CLOSED",
+    "unmatched_identities_preserved": 73,
+    "private_origin": "REFUSED_BEFORE_IO"
+  },
+  "truth_preserved": {
+    "hours": "UNKNOWN",
+    "inventory": "UNKNOWN",
+    "price": "UNKNOWN",
+    "service_area": "UNKNOWN",
+    "popularity": "UNKNOWN",
+    "postal_code": "UNKNOWN",
+    "coordinates": "UNKNOWN"
+  },
+  "external_effects": {
+    "production_mutations": 0,
+    "public_runtime_mutations": 0,
+    "paid_calls": 0,
+    "spend_cents": 0,
+    "deployments": 0,
+    "merchant_writes": 0
+  },
+  "live_boundary": {
+    "remote_main": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+    "public_release": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+    "public_total_retailers": 0,
+    "public_verified_retailers": 0,
+    "production_changed": false
+  },
+  "evidence": {
+    "current_state": "CURRENT_STATE_RECEIPT.json",
+    "owner_map": "CANONICAL_OWNER_MAP.json",
+    "cycle": "FIRST_REALITY_CYCLE_RECEIPT.json",
+    "candidate_focused": "evidence/candidate-focused-receipt.json",
+    "candidate_build": "evidence/candidate-build-final.log",
+    "browser_dom": "evidence/candidate-browser-dom.txt",
+    "browser_screenshot": "evidence/candidate-browser-search.png",
+    "cleanup": "evidence/final-cleanup.json",
+    "independent_review": "evidence/independent-heavy-review.md"
+  }
+}
