@@ -1,0 +1,98 @@
+{
+  "schema_version": "zenith-pr-captured-input/v2",
+  "source_schema_version": "zenith-current-state-receipt/v1",
+  "captured_at": "2026-08-23T04:35:43.000Z",
+  "observed_at": "2026-08-23T04:35:43.000Z",
+  "authority_effect": "NONE",
+  "external_effects": [],
+  "original_capture": {
+    "schema_version": "zenith-current-state-receipt/v1",
+    "canonical_sha256": "f537589c3a671b42d14b95a0622887383274818bd7651947dc4c397e002566ab"
+  },
+  "repository": {
+    "name_with_owner": "CannabisWorldHoldings/CANA",
+    "remote_origin": "https://github.com/CannabisWorldHoldings/CANA.git"
+  },
+  "open_prs": [
+    {
+      "number": 11,
+      "base": "main",
+      "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "head": "codex/cana-gemini-creative-draft",
+      "head_sha": "88e00d1ad1fa7fc85db2de45a8ba129e41d4652e",
+      "head_tree": "c2a7f87d0e619569f893d69b72df5390f9c2b89b",
+      "draft": true,
+      "merge_state": "DIRTY"
+    },
+    {
+      "number": 21,
+      "base": "main",
+      "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "head": "codex/orderweeddc-customer-side-sovereign-ui",
+      "head_sha": "fa16fd507ea79d42d914e314de3b825170ff9b97",
+      "head_tree": "b829412f747661a19f004dd8a37901143393f04f",
+      "draft": false,
+      "merge_state": "DIRTY"
+    },
+    {
+      "number": 22,
+      "base": "codex/orderweeddc-customer-side-sovereign-ui",
+      "base_sha": "fa16fd507ea79d42d914e314de3b825170ff9b97",
+      "head": "codex/sitemind-competitive-evolution-bridge",
+      "head_sha": "af83c306f67a7b63d44c1b810dd660ea9deca8dc",
+      "head_tree": "a09ae33627743d835b1dca17d2732d0d2e407ec1",
+      "draft": true,
+      "merge_state": "CLEAN"
+    },
+    {
+      "number": 23,
+      "base": "main",
+      "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "head": "dependabot/npm_and_yarn/multi-5e81c1b34f",
+      "head_sha": "b986549456c4b0d4085ef4e7eee1c973b840f153",
+      "head_tree": "9b840a55e8073585391edcda2320d7b55462323a",
+      "draft": false,
+      "merge_state": "BEHIND"
+    },
+    {
+      "number": 24,
+      "base": "codex/orderweeddc-customer-side-sovereign-ui",
+      "base_sha": "fa16fd507ea79d42d914e314de3b825170ff9b97",
+      "head": "feature/sitemind-creative-learning-bridge-pr21-certified",
+      "head_sha": "88adc037a2e6eecbfe8903b5e2d58c2bc4cc1345",
+      "head_tree": "f97715a22c66f53894523c31483e408be139e5fd",
+      "draft": true,
+      "merge_state": "UNSTABLE"
+    },
+    {
+      "number": 25,
+      "base": "main",
+      "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "head": "codex/sitemind-governed-dynamic-creative-foundation",
+      "head_sha": "5384e8ac223c5566ce0aef0e020cc07a39a1e2c3",
+      "head_tree": "2efb00776be7f8ef0e6f40f3631488d160da19ee",
+      "draft": true,
+      "merge_state": "DIRTY"
+    },
+    {
+      "number": 26,
+      "base": "main",
+      "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "head": "dependabot/npm_and_yarn/postcss-8.5.23",
+      "head_sha": "1b66bab2dc04f040df319fe29d1925260d6c97ad",
+      "head_tree": "cea195bf214ee0cefe04ca6229d88f94dd5f514c",
+      "draft": false,
+      "merge_state": "BEHIND"
+    },
+    {
+      "number": 27,
+      "base": "main",
+      "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "head": "dependabot/npm_and_yarn/js-yaml-4.3.1",
+      "head_sha": "eaff5dd4ac221541363b1fb7a9ec2aaaad08b94c",
+      "head_tree": "f66826e058eea316927c78a6cc15dde4940714a6",
+      "draft": false,
+      "merge_state": "BEHIND"
+    }
+  ]
+}
