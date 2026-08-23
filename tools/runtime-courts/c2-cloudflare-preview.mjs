@@ -198,6 +198,7 @@ export function buildC2Plan({ repo, expectedSha, expectedTree, workDir, opennext
     compatibilityDate: COMPATIBILITY_DATE,
     commands: [
       ['npm', ['install', '--no-save', '--package-lock=false', '--ignore-scripts', '--no-audit', '--no-fund', `@opennextjs/cloudflare@${pins.opennext}`, `wrangler@${pins.wrangler}`]],
+      ['npm', ['run', 'prisma:generate', '--workspace', 'apps/web']],
       ['npx', ['--no-install', 'opennextjs-cloudflare', 'build']],
       ['npx', ['--no-install', 'wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
     ],
@@ -222,12 +223,13 @@ function copyCandidate(plan) {
 export function classifyC2Results(results = {}) {
   const attempted = Boolean(results.attempted);
   const installPassed = results.install?.ok === true;
+  const prismaGenerated = results.prismaGenerate?.ok === true;
   const allRoutesPassed = Array.isArray(results.routes) && results.routes.length > 0 && results.routes.every((route) => route.ok === true);
   const buildPassed = results.build?.ok === true;
   const previewPassed = results.preview?.ok === true;
   const verdict = !attempted
     ? 'ENVIRONMENT_MISSING'
-    : !installPassed
+    : !installPassed || !prismaGenerated
       ? 'ENVIRONMENT_MISSING'
       : buildPassed && previewPassed && allRoutesPassed
       ? 'COMPATIBLE_LOCAL_PREVIEW'
@@ -236,6 +238,8 @@ export function classifyC2Results(results = {}) {
     ? 'C2_LOCAL_EXECUTION_NOT_ATTEMPTED'
     : !installPassed
       ? (results.install?.code ?? 'C2_DEPENDENCY_INSTALL_FAILED')
+      : !prismaGenerated
+        ? (results.prismaGenerate?.code ?? 'C2_PRISMA_GENERATE_FAILED')
       : !buildPassed
         ? (results.build?.code ?? 'C2_OPENNEXT_BUILD_FAILED')
         : !previewPassed
@@ -245,7 +249,7 @@ export function classifyC2Results(results = {}) {
     verdict,
     executionStatus: !attempted
       ? 'BLOCKED_NOT_EXECUTED_BY_DEFAULT'
-      : !installPassed
+      : !installPassed || !prismaGenerated
         ? 'BLOCKED_ENVIRONMENT_SETUP'
         : verdict === 'COMPATIBLE_LOCAL_PREVIEW' ? 'LOCAL_PREVIEW_OBSERVED' : 'BLOCKED_LOCAL_PREVIEW_FAILURE',
     blockerCode,
@@ -399,14 +403,19 @@ export async function executeLocalPreview(plan, { env = process.env, executor = 
     CF_API_TOKEN: undefined,
     WRANGLER_API_TOKEN: undefined,
   };
-  const [installCommand, buildCommand, previewCommand] = plan.commands;
+  const [installCommand, prismaGenerateCommand, buildCommand, previewCommand] = plan.commands;
   const install = executor(installCommand[0], installCommand[1], { cwd: plan.copyDir, env: localEnv });
-  const build = install.ok ? executor(buildCommand[0], buildCommand[1], { cwd: plan.copyDir, env: localEnv }) : { ok: false, skipped: 'INSTALL_FAILED' };
-  if (!build.ok) return { attempted: true, install, build, workerSize: null, preview: { ok: false, skipped: 'BUILD_FAILED' }, routes: [] };
+  const prismaGenerate = install.ok
+    ? executor(prismaGenerateCommand[0], prismaGenerateCommand[1], { cwd: plan.copyDir, env: localEnv })
+    : { ok: false, skipped: 'INSTALL_FAILED' };
+  const build = prismaGenerate.ok
+    ? executor(buildCommand[0], buildCommand[1], { cwd: plan.copyDir, env: localEnv })
+    : { ok: false, skipped: 'PRISMA_GENERATE_FAILED' };
+  if (!build.ok) return { attempted: true, install, prismaGenerate, build, workerSize: null, preview: { ok: false, skipped: 'BUILD_FAILED' }, routes: [] };
   const workerSize = compressedWorkerSize(plan.copyDir);
-  if (!workerSize) return { attempted: true, install, build, workerSize: null, preview: { ok: false, code: 'C2_WORKER_ARTIFACT_MISSING', command: previewCommand }, routes: [] };
+  if (!workerSize) return { attempted: true, install, prismaGenerate, build, workerSize: null, preview: { ok: false, code: 'C2_WORKER_ARTIFACT_MISSING', command: previewCommand }, routes: [] };
   const { preview, routes } = await runWorkerdPreview(plan, localEnv);
-  return { attempted: true, install, build, workerSize, preview, routes };
+  return { attempted: true, install, prismaGenerate, build, workerSize, preview, routes };
 }
 
 export async function main(argv = process.argv.slice(2), env = process.env) {

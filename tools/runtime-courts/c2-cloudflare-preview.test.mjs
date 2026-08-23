@@ -108,14 +108,14 @@ test('GREEN: classification remains local-only and leaves stable Next recourt op
     productionReady: false, stableNextSecurityPatchedRecourt: 'OPEN',
   });
   const compatible = classifyC2Results({
-    attempted: true, install: { ok: true }, build: { ok: true }, preview: { ok: true },
+    attempted: true, install: { ok: true }, prismaGenerate: { ok: true }, build: { ok: true }, preview: { ok: true },
     routes: [{ ok: true, route: '/api/health' }, { ok: true, route: '/api/release' }, { ok: true, route: '/' }, { ok: true, route: '/admin' }],
   });
   assert.equal(compatible.verdict, 'COMPATIBLE_LOCAL_PREVIEW');
   assert.equal(compatible.blockerCode, null);
   assert.equal(compatible.productionReady, false);
   assert.equal(compatible.stableNextSecurityPatchedRecourt, 'OPEN');
-  assert.equal(classifyC2Results({ attempted: true, install: { ok: true }, build: { ok: false }, preview: { ok: false }, routes: [] }).verdict, 'BLOCKED_CANARY_INCOMPATIBILITY');
+  assert.equal(classifyC2Results({ attempted: true, install: { ok: true }, prismaGenerate: { ok: true }, build: { ok: false }, preview: { ok: false }, routes: [] }).verdict, 'BLOCKED_CANARY_INCOMPATIBILITY');
   assert.deepEqual(classifyC2Results({
     attempted: true,
     install: { ok: false, code: 'C2_NPM_DEPENDENCY_CONFLICT' },
@@ -124,6 +124,18 @@ test('GREEN: classification remains local-only and leaves stable Next recourt op
     verdict: 'ENVIRONMENT_MISSING',
     executionStatus: 'BLOCKED_ENVIRONMENT_SETUP',
     blockerCode: 'C2_NPM_DEPENDENCY_CONFLICT',
+    productionReady: false,
+    stableNextSecurityPatchedRecourt: 'OPEN',
+  });
+  assert.deepEqual(classifyC2Results({
+    attempted: true,
+    install: { ok: true },
+    prismaGenerate: { ok: false, code: 'C2_PRISMA_CLIENT_UNAVAILABLE' },
+    build: { ok: false }, preview: { ok: false }, routes: [],
+  }), {
+    verdict: 'ENVIRONMENT_MISSING',
+    executionStatus: 'BLOCKED_ENVIRONMENT_SETUP',
+    blockerCode: 'C2_PRISMA_CLIENT_UNAVAILABLE',
     productionReady: false,
     stableNextSecurityPatchedRecourt: 'OPEN',
   });
