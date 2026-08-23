@@ -14,6 +14,7 @@ import {
   assertIsolatedWorkDirectory,
   assertLoopbackPreviewUrl,
   assertNoExternalEffects,
+  buildC2Plan,
   classifyC2Results,
   createC2Receipt,
   main,
@@ -84,6 +85,14 @@ test('GREEN: candidate and tool pins fail closed on exact-version drift', () => 
   expectRefusal('C2_EXACT_VERSION_DRIFT', () => readExactSource({ repo: drifted.root, expectedSha: drifted.sha, expectedTree: drifted.tree }));
   const missingConfig = fixtureRepository({ openNextConfig: false });
   expectRefusal('C2_OPENNEXT_CONFIG_REQUIRED', () => readExactSource({ repo: missingConfig.root, expectedSha: missingConfig.sha, expectedTree: missingConfig.tree }));
+  const workDir = path.join(tempDirectory('c2-plan-parent-'), 'c2-opennext-plan');
+  fs.mkdirSync(workDir);
+  const plan = buildC2Plan({
+    repo: source.root, expectedSha: source.sha, expectedTree: source.tree, workDir,
+    opennext: EXACT_OPENNEXT_VERSION, wrangler: EXACT_WRANGLER_VERSION, env: c2Env(),
+  });
+  assert.deepEqual(plan.commands[0][1].slice(0, 2), ['install', '--workspaces=false']);
+  assert.deepEqual(plan.commands[2], ['npm', ['exec', '--workspaces=false', '--', 'opennextjs-cloudflare', 'build']]);
 });
 
 test('GREEN: exact source custody refuses both tracked and untracked candidate changes', () => {
@@ -124,6 +133,18 @@ test('GREEN: classification remains local-only and leaves stable Next recourt op
     verdict: 'ENVIRONMENT_MISSING',
     executionStatus: 'BLOCKED_ENVIRONMENT_SETUP',
     blockerCode: 'C2_NPM_DEPENDENCY_CONFLICT',
+    productionReady: false,
+    stableNextSecurityPatchedRecourt: 'OPEN',
+  });
+  assert.deepEqual(classifyC2Results({
+    attempted: true,
+    install: { ok: false, code: 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED' },
+    prismaGenerate: { ok: false, skipped: 'INSTALL_FAILED' },
+    build: { ok: false }, preview: { ok: false }, routes: [],
+  }), {
+    verdict: 'BLOCKED_CANARY_INCOMPATIBILITY',
+    executionStatus: 'BLOCKED_CANARY_INCOMPATIBILITY',
+    blockerCode: 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED',
     productionReady: false,
     stableNextSecurityPatchedRecourt: 'OPEN',
   });

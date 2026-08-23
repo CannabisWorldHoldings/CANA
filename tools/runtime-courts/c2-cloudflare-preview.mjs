@@ -199,10 +199,10 @@ export function buildC2Plan({ repo, expectedSha, expectedTree, workDir, opennext
     previewUrl: localPreviewUrl,
     compatibilityDate: COMPATIBILITY_DATE,
     commands: [
-      ['npm', ['install', '--no-save', '--package-lock=false', '--ignore-scripts', '--no-audit', '--no-fund', `@opennextjs/cloudflare@${pins.opennext}`, `wrangler@${pins.wrangler}`]],
+      ['npm', ['install', '--workspaces=false', '--no-save', '--package-lock=false', '--ignore-scripts', '--no-audit', '--no-fund', `@opennextjs/cloudflare@${pins.opennext}`, `wrangler@${pins.wrangler}`]],
       ['npm', ['run', 'prisma:generate', '--workspace', 'apps/web']],
-      ['npm', ['exec', '--', 'opennextjs-cloudflare', 'build']],
-      ['npm', ['exec', '--', 'wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
+      ['npm', ['exec', '--workspaces=false', '--', 'opennextjs-cloudflare', 'build']],
+      ['npm', ['exec', '--workspaces=false', '--', 'wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
     ],
   };
 }
@@ -226,12 +226,15 @@ function copyCandidate(plan) {
 export function classifyC2Results(results = {}) {
   const attempted = Boolean(results.attempted);
   const installPassed = results.install?.ok === true;
+  const canaryBlocked = results.install?.code === 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED';
   const prismaGenerated = results.prismaGenerate?.ok === true;
   const allRoutesPassed = Array.isArray(results.routes) && results.routes.length > 0 && results.routes.every((route) => route.ok === true);
   const buildPassed = results.build?.ok === true;
   const previewPassed = results.preview?.ok === true;
   const verdict = !attempted
     ? 'ENVIRONMENT_MISSING'
+    : canaryBlocked
+      ? 'BLOCKED_CANARY_INCOMPATIBILITY'
     : !installPassed || !prismaGenerated
       ? 'ENVIRONMENT_MISSING'
       : buildPassed && previewPassed && allRoutesPassed
@@ -252,6 +255,8 @@ export function classifyC2Results(results = {}) {
     verdict,
     executionStatus: !attempted
       ? 'BLOCKED_NOT_EXECUTED_BY_DEFAULT'
+      : canaryBlocked
+        ? 'BLOCKED_CANARY_INCOMPATIBILITY'
       : !installPassed || !prismaGenerated
         ? 'BLOCKED_ENVIRONMENT_SETUP'
         : verdict === 'COMPATIBLE_LOCAL_PREVIEW' ? 'LOCAL_PREVIEW_OBSERVED' : 'BLOCKED_LOCAL_PREVIEW_FAILURE',
@@ -286,6 +291,9 @@ export function writeC2Receipt(outFile, receipt) {
 
 function commandFailureCode(error) {
   const diagnostic = `${error?.code ?? ''}\n${String(error?.stdout ?? '')}\n${String(error?.stderr ?? '')}`;
+  if (/peer next@[^\n]+ from @opennextjs\/cloudflare/i.test(diagnostic)) {
+    return 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED';
+  }
   if (/\bERESOLVE\b/.test(diagnostic)) return 'C2_NPM_DEPENDENCY_CONFLICT';
   if (/\b(?:ENOTFOUND|EAI_AGAIN|ECONNRESET|ETIMEDOUT)\b|network request failed/i.test(diagnostic)) {
     return 'C2_DEPENDENCY_FETCH_UNAVAILABLE';
