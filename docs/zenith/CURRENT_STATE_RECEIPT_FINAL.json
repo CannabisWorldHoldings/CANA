@@ -1,0 +1,303 @@
+{
+  "artifacts": [
+    {
+      "byte_sha256": "89d738acf2dcdc713ce4c60f2124dc17fb73c647d2515c0384b575419d5ecaed",
+      "byte_size": 3519,
+      "canonical_sha256": "18da8cbe133fa3ca29ef8fc32ec7b304dc160777fa45801ad5f44ac978b3da90",
+      "logical_path": "docs/zenith/CURRENT_STATE_PR_CAPTURE.json",
+      "schema_version": "zenith-pr-captured-input/v2"
+    },
+    {
+      "byte_sha256": "ed3a3de7af7396a234415bc2013ec0ebc1b1f96387c5f60ff645eb05a72dbbbf",
+      "byte_size": 1666,
+      "canonical_sha256": "bdb758adecda9754937b59e3711a9d2fbdfb5f88942c41c7ab4eeda8443cb35c",
+      "logical_path": "docs/zenith/DESCENDANT_DISPOSITION.json",
+      "schema_version": "zenith-descendant-disposition/v1"
+    },
+    {
+      "byte_sha256": "d26c85cca901c817c4c97d574504a205e2d09962d0cc8d3d4bc3ad9994d9e80e",
+      "byte_size": 193178,
+      "canonical_sha256": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+      "logical_path": "docs/zenith/DONOR_INSPECTION_MANIFEST.json",
+      "schema_version": "zenith-donor-inspection/v2"
+    },
+    {
+      "byte_sha256": "6ee806836c7c81d54666d33d8a1f13bec9cec8b143fa4f0865f343bfef52b0cf",
+      "byte_size": 12760,
+      "canonical_sha256": "c33cfb5df7d985b2d1851912e55d982a68c746b9005f2c2196af90267c83ee13",
+      "logical_path": "docs/zenith/DONOR_SCAN_INPUTS.json",
+      "schema_version": "zenith-donor-scan-inputs/v1"
+    },
+    {
+      "byte_sha256": "961ac11e6239cce0fa82ff6ecee796ae8698bacb906dedf73998c4b68af4f113",
+      "byte_size": 7660,
+      "canonical_sha256": "65b027f8136fc717f03e4fb50e29372568aca4aa3020ef5d401fa988347bb685",
+      "logical_path": "docs/zenith/NEED_ITEM_INPUTS.json",
+      "schema_version": "zenith-need-inputs/v1"
+    },
+    {
+      "byte_sha256": "a2bc712c651405da243bc7a72dc9263ff9f264e280501ed7d2c7e10608a9361d",
+      "byte_size": 11543,
+      "canonical_sha256": "5c0f7181e2e52caabfd771bb920d79b2c4afb168ad364c9f273977d43f5ac477",
+      "logical_path": "docs/zenith/NEED_ITEM_LEDGER.json",
+      "schema_version": "zenith-need-ledger/v1"
+    },
+    {
+      "byte_sha256": "4b451be217ae5f436329d1e99dc943dcab95fd349730603de8cf908b5705261f",
+      "byte_size": 4616136,
+      "canonical_sha256": "be464bf2f95b512f2612a68431312875d2707dcf6d8caa7e351b878d1f7d3d27",
+      "logical_path": "docs/zenith/PR_CONSUMPTION_LEDGER.json",
+      "schema_version": "zenith-pr-consumption-ledger/v1"
+    },
+    {
+      "byte_sha256": "7fa361369f0df16724498c46b336de45033a6c888f5549d387bbdeaef9be94d7",
+      "byte_size": 11976,
+      "canonical_sha256": "868ff8472661d6fbdcda0fbf14c205ddf0c7cd7641749b23656ef7e407f2aca6",
+      "logical_path": "docs/zenith/SOURCE_HISTORY_PROJECTION.json",
+      "schema_version": "zenith-source-history-projection/v1"
+    },
+    {
+      "byte_sha256": "c15ecaae8730b6643eca9bc3608cb76e8c96106eb5a9aca83e9cd060e78bb65d",
+      "byte_size": 12185,
+      "logical_path": "tools/zenith/reconstruct-needs.mjs"
+    },
+    {
+      "byte_sha256": "d776aada4311a2f889569011232d36211e3b3df33373620b229cff24924c1ec9",
+      "byte_size": 7255,
+      "logical_path": "tools/zenith/reconstruct-needs.test.mjs"
+    },
+    {
+      "byte_sha256": "d11f490f2d3df3fd55652f9ed0e7272d23e4a245ea1fa15c8002aa21cb04f19a",
+      "byte_size": 18049,
+      "logical_path": "tools/zenith/reconstruct-pr-consumption.mjs"
+    },
+    {
+      "byte_sha256": "a9aafdba63c77cabc7c069386a0823f09ce199002399ca53ef8a7170a7dfa861",
+      "byte_size": 8794,
+      "logical_path": "tools/zenith/reconstruct-pr-consumption.test.mjs"
+    },
+    {
+      "byte_sha256": "637fc704e7349eeb09710b2925a159efdda92ff5c3b7df18f74c52ed271501dc",
+      "byte_size": 28745,
+      "logical_path": "tools/zenith/reconstruct-source-history.mjs"
+    },
+    {
+      "byte_sha256": "d12b3e80a982bc8d633fd609276b06afbbfb4291a3dafe4e49322924104b53b2",
+      "byte_size": 9936,
+      "logical_path": "tools/zenith/reconstruct-source-history.test.mjs"
+    },
+    {
+      "byte_sha256": "f46eaef2392f2701f8cd7b30f20b56f2c9518ffcd2552a6e5d3b326c19b98938",
+      "byte_size": 14755,
+      "logical_path": "tools/zenith/reconstruction-contracts.mjs"
+    },
+    {
+      "byte_sha256": "815eacf1b69afcc06189d84785b426f90612aaf927773d207157e06a0c68403f",
+      "byte_size": 6960,
+      "logical_path": "tools/zenith/reconstruction-contracts.test.mjs"
+    }
+  ],
+  "authority_effect": "NONE",
+  "completion_boundary": {
+    "declared_reconstruction_inputs_complete": true,
+    "global_project_completion_claimed": false,
+    "production_ready_claimed": false,
+    "promotion_authority_granted": false,
+    "unresolved_states_preserved": true
+  },
+  "external_effects": {
+    "credential_reads": 0,
+    "deployments": 0,
+    "dns_writes": 0,
+    "production_mutations": 0,
+    "public_mutations": 0,
+    "spend_cents": 0
+  },
+  "needs": {
+    "count": 12,
+    "epistemic_states": {
+      "BLOCKED": 2,
+      "INPUT_REQUIRED": 4,
+      "PARTIALLY_IMPLEMENTED": 1,
+      "PLANNED": 1,
+      "REVIEW_REQUIRED": 1,
+      "UNVERIFIED": 3
+    },
+    "open_gates": [
+      {
+        "epistemic_state": "BLOCKED",
+        "id": "need_backup_rollback_proof",
+        "need_kind": "BACKUP_ROLLBACK_PROOF",
+        "next_gate": "OWNER_BACKUP_AND_ROLLBACK_RECEIPT",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "PLANNED",
+        "id": "need_cloudflare_opennext_local_compatibility",
+        "need_kind": "CLOUDFLARE_OPENNEXT_LOCAL_COMPATIBILITY",
+        "next_gate": "LOCAL_WORKERD_COMPATIBILITY_COURT",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "INPUT_REQUIRED",
+        "id": "need_hyperdrive_neon_transport_decision",
+        "need_kind": "HYPERDRIVE_NEON_TRANSPORT_DECISION",
+        "next_gate": "OWNER_SELECTS_SINGLE_DATABASE_TRANSPORT",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "BLOCKED",
+        "id": "need_managed_h3_provider_proof",
+        "need_kind": "MANAGED_H3_PROVIDER_PROOF",
+        "next_gate": "PROVE_TARGET_H3_EXTENSION_ON_OWNER_MANAGED_POSTGRES",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "INPUT_REQUIRED",
+        "id": "need_managed_postgres_owner_credentials",
+        "need_kind": "MANAGED_POSTGRES_OWNER_CREDENTIALS",
+        "next_gate": "OWNER_PROVISIONS_POOL_AND_DIRECT_DATABASE_IDENTITIES",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "UNVERIFIED",
+        "id": "need_next_stable_security_patch_recourt",
+        "need_kind": "NEXT_STABLE_SECURITY_PATCH_RECOURT",
+        "next_gate": "SECURITY_PATCH_AVAILABLE_AND_EXACT_RECERTIFICATION",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "INPUT_REQUIRED",
+        "id": "need_owner_cloudflare_credentials",
+        "need_kind": "OWNER_CLOUDFLARE_CREDENTIALS",
+        "next_gate": "OWNER_PROVISIONS_CLOUDFLARE_IDENTITY_AND_LEAST_PRIVILEGE_CREDENTIALS",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "INPUT_REQUIRED",
+        "id": "need_owner_draft_review_promotion_authority",
+        "need_kind": "OWNER_DRAFT_REVIEW_PROMOTION_AUTHORITY",
+        "next_gate": "OWNER_AUTHORIZES_DRAFT_REVIEW_AND_ANY_PROMOTION_SEPARATELY",
+        "owner": "root-authorization"
+      },
+      {
+        "epistemic_state": "PARTIALLY_IMPLEMENTED",
+        "id": "need_public_market_empty_live_acquisition_frontier",
+        "need_kind": "PUBLIC_MARKET_EMPTY_LIVE_ACQUISITION_FRONTIER",
+        "next_gate": "GOVERNED_ACQUISITION_AND_INDEPENDENT_MARKET_COURT",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "UNVERIFIED",
+        "id": "need_real_customer_outcomes",
+        "need_kind": "REAL_CUSTOMER_OUTCOMES",
+        "next_gate": "AUTHORIZED_REAL_CUSTOMER_OUTCOME_MEASUREMENT",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "UNVERIFIED",
+        "id": "need_real_merchant_outcomes",
+        "need_kind": "REAL_MERCHANT_OUTCOMES",
+        "next_gate": "AUTHORIZED_REAL_MERCHANT_OUTCOME_MEASUREMENT",
+        "owner": "UNKNOWN"
+      },
+      {
+        "epistemic_state": "REVIEW_REQUIRED",
+        "id": "need_source_input_completeness",
+        "need_kind": "SOURCE_INPUT_COMPLETENESS",
+        "next_gate": "RECONSTRUCTION_REVIEW_OF_DECLARED_INPUT_COVERAGE",
+        "owner": "UNKNOWN"
+      }
+    ],
+    "owner_counts": {
+      "UNKNOWN": 11,
+      "root-authorization": 1
+    }
+  },
+  "observed_at": "2026-08-23T16:00:00.000Z",
+  "pr_consumption": {
+    "capture_sha256": "89d738acf2dcdc713ce4c60f2124dc17fb73c647d2515c0384b575419d5ecaed",
+    "discard_inference": false,
+    "dispositions": {
+      "CONSUMED_EXACT": 7,
+      "PENDING_REVIEW": 924,
+      "UNRESOLVED_OBJECT": 2318
+    },
+    "row_count": 3249
+  },
+  "production_effects": 0,
+  "receipt_sha256": "0618ef529c6a2b7543b0403402de3f5172d71e54d2f83291df08d38007192c59",
+  "repository": {
+    "ancestry": {
+      "protected_c1_is_ancestor_of_reconstruction": true,
+      "remote_main_is_ancestor_of_reconstruction": true
+    },
+    "name_with_owner": "CannabisWorldHoldings/CANA",
+    "protected_c1_sha": "75a01029a75c366fd3254be78cde71a286bafa1a",
+    "protected_c1_tree": "fd6dcb24a5805b77aa36426e2bfe549e7c06676e",
+    "reconstruction_head_sha": "8ba9ef094758b21ee1db00a0c7fd4093ed9b2571",
+    "reconstruction_head_tree": "a905754cb8bd24a0ca08adfd06fd5b9dbc33368a",
+    "remote_main_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18"
+  },
+  "schema_version": "zenith-reconstruction-receipt/v1",
+  "source_history": {
+    "archives_seen": 45,
+    "bundle_object_inspections_complete": 72,
+    "bundles_inspected": 72,
+    "containers_seen": 117,
+    "donors": [
+      {
+        "advertised_by": [],
+        "contained_by": [],
+        "disposition": "ABSENT",
+        "epistemic_state": "UNKNOWN",
+        "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "text_exact_sha_hits": []
+      },
+      {
+        "advertised_by": [],
+        "contained_by": [],
+        "disposition": "ABSENT",
+        "epistemic_state": "UNKNOWN",
+        "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "text_exact_sha_hits": []
+      },
+      {
+        "advertised_by": [],
+        "contained_by": [],
+        "disposition": "ABSENT",
+        "epistemic_state": "UNKNOWN",
+        "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51",
+        "text_exact_sha_hits": []
+      }
+    ],
+    "known_commits": [
+      {
+        "disposition": "REUSE_EXISTING",
+        "relation_to_main": "ANCESTOR",
+        "sha": "190c99077b81142b7a67e127f39ec8d9c59fc554"
+      },
+      {
+        "disposition": "UNRESOLVED",
+        "relation_to_main": "NON_ANCESTOR",
+        "sha": "73cca30661628f2ab8a3e0e7ff864e57ef78778a"
+      },
+      {
+        "disposition": "REUSE_EXISTING",
+        "relation_to_main": "ANCESTOR",
+        "sha": "9d3bd70abcdfa4442a15c735d680cfff80fa5761"
+      },
+      {
+        "disposition": "REUSE_EXISTING",
+        "relation_to_main": "ANCESTOR",
+        "sha": "e63529e44f63698e421eeed2bf9380073ee2c4eb"
+      }
+    ],
+    "limitations": [],
+    "main_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+    "quarantined_members": 42,
+    "rejected_members": 0,
+    "scan_complete": true
+  },
+  "status": "PARTIALLY_IMPLEMENTED"
+}
