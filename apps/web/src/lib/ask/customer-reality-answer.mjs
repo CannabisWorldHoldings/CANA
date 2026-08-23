@@ -61,12 +61,26 @@ function opportunity({ tenantDomain, intent, currentFrontier, unsupported, now }
 
 function address(value, jurisdiction) {
   if (typeof value !== 'string' || !value.trim()) return null;
-  const match = value.trim().match(/^(.*),\s*([^,]+),\s*(DC|MD|VA)\s+(\d{5})(?:-\d{4})?$/i);
-  if (!match || match[3].toUpperCase() !== jurisdiction) return null;
-  return Object.freeze({
-    address: match[1].trim(), city: match[2].trim(),
-    state: match[3].toUpperCase(), postal_code: match[4],
-  });
+  const normalized = value.trim();
+  const match = normalized.match(/^(.*),\s*([^,]+),\s*(DC|MD|VA)\s+(\d{5})(?:-\d{4})?$/i);
+  if (match && match[3].toUpperCase() === jurisdiction) {
+    return Object.freeze({
+      address: match[1].trim(), city: match[2].trim(),
+      state: match[3].toUpperCase(), postal_code: match[4],
+    });
+  }
+  if (
+    jurisdiction === 'DC'
+    && /^\d{1,6}\s+\S(?:.*\S)?\s+(?:NW|NE|SW|SE)$/i.test(normalized)
+  ) {
+    return Object.freeze({
+      address: normalized,
+      city: 'Washington',
+      state: 'DC',
+      postal_code: null,
+    });
+  }
+  return null;
 }
 
 function coordinates(value) {

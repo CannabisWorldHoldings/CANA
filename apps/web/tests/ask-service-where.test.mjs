@@ -273,6 +273,23 @@ test('canonical D.C. claim decisions project only a complete active public cohor
   assert.equal(active.results[0].regulatory_state.value, 'ACTIVE');
   assert.equal(active.truth.answerability_frontier.answerable, true);
 
+  const streetOnly = askService.answerCustomerDiscoveryFromReality({
+    rawQuery: 'dispensary in dupont',
+    marketId: 'US-DC',
+    tenantDomain: 'orderweeddc.com',
+    claimDecisions: verifiedRealityDecisions('US-DC', 'dc:dupont', facts.map(
+      ([predicate, value]) => [
+        predicate,
+        predicate === 'regulated_address' ? '100 Truth Ave NW' : value,
+      ],
+    )),
+    now: NOW,
+  });
+  assert.equal(streetOnly.results.length, 1);
+  assert.equal(streetOnly.results[0].location.city.value, 'Washington');
+  assert.equal(streetOnly.results[0].location.region.value, 'DC');
+  assert.equal(streetOnly.results[0].location.postal_code.state, 'UNKNOWN');
+
   const inactive = askService.answerCustomerDiscoveryFromReality({
     rawQuery: 'dispensary in dupont',
     marketId: 'US-DC',
