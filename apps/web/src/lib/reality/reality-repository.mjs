@@ -6,7 +6,11 @@ import {
   adjudicateMarketClaim,
   adjudicateZeroChangeReattestation,
 } from './market-claim-court.mjs';
-import { normalizeAbcaLicense, normalizeCoordinates } from './entity-resolution.mjs';
+import {
+  compareOfficialRetailerLocation,
+  normalizeAbcaLicense,
+  normalizeCoordinates,
+} from './entity-resolution.mjs';
 import { buildOfficialRetailerIdentityCandidate } from './market-identity-admission.mjs';
 import {
   loadOfficialSourceSnapshot,
@@ -191,7 +195,7 @@ export async function admitLiveMarketIdentity(prisma, {
       where: {
         licenseNumber: { equals: normalizedLicense, mode: 'insensitive' },
       },
-      select: { id: true },
+      select: { id: true, address: true, lat: true, lng: true },
       take: 3,
     });
     if (directRetailers.length > 1) throw new Error('CANA_REALITY_IDENTITY_RETAILER_CONFLICT');
@@ -211,6 +215,34 @@ export async function admitLiveMarketIdentity(prisma, {
     }
     const existingRetailerId = directRetailerId ?? aliasRetailerId;
     if (existingRetailerId) {
+      const existingRetailer = directRetailers[0] ?? await tx.retailer.findUnique({
+        where: { id: existingRetailerId },
+        select: { id: true, address: true, lat: true, lng: true },
+      });
+      if (!existingRetailer) throw new Error('CANA_REALITY_IDENTITY_RETAILER_MISSING');
+      const location = compareOfficialRetailerLocation({
+        record: matches[0],
+        previous: existingRetailer,
+      });
+      if (location.status === 'REVIEW_REQUIRED') {
+        return Object.freeze({
+          state: 'REVIEW_REQUIRED',
+          reason: location.reason,
+          tenant,
+          retailer_id: existingRetailerId,
+          geo_entity_id: aliases[0]?.geoEntity?.id ?? null,
+          license_number: normalizedLicense,
+          acquisition_event_id: acquisition.id,
+          snapshot_id: acquisition.snapshotId,
+          source_key: acquisition.sourceKey,
+          changed_fields: location.changed_fields,
+          previous_location: location.previous,
+          current_location: location.current,
+          location: location.location,
+          production_mutations: 0,
+          public_mutations: 0,
+        });
+      }
       return Object.freeze({
         state: 'EXISTING_IDENTITY',
         tenant,
@@ -340,7 +372,7 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
           licenseNumber: { equals: licenseNumber, mode: 'insensitive' },
         })),
       },
-      select: { id: true, licenseNumber: true, name: true },
+      select: { id: true, licenseNumber: true, name: true, address: true, lat: true, lng: true },
       take: MAX_IDENTITY_CANDIDATES + 1,
     });
     if (directRetailers.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
@@ -361,7 +393,7 @@ async function compileOfficialMarketSnapshotTransaction(prisma, {
       .filter((retailerId) => retailerId && !directIds.has(retailerId)))];
     const linkedRetailers = linkedRetailerIds.length === 0 ? [] : await tx.retailer.findMany({
       where: { id: { in: linkedRetailerIds } },
-      select: { id: true, licenseNumber: true, name: true },
+      select: { id: true, licenseNumber: true, name: true, address: true, lat: true, lng: true },
       take: MAX_IDENTITY_CANDIDATES + 1,
     });
     if (directRetailers.length + linkedRetailers.length > MAX_IDENTITY_CANDIDATES) {
@@ -643,7 +675,7 @@ async function loadCourtIdentityContext(tx, claims) {
         })),
       ],
     },
-    select: { id: true, licenseNumber: true },
+    select: { id: true, licenseNumber: true, address: true, lat: true, lng: true },
     take: MAX_IDENTITY_CANDIDATES + 1,
   });
   if (directRetailers.length > MAX_IDENTITY_CANDIDATES) throw new Error('CANA_REALITY_IDENTITY_BUDGET_EXCEEDED');
@@ -664,7 +696,7 @@ async function loadCourtIdentityContext(tx, claims) {
     .filter((retailerId) => retailerId && !directIds.has(retailerId)))];
   const linkedRetailers = linkedRetailerIds.length === 0 ? [] : await tx.retailer.findMany({
     where: { id: { in: linkedRetailerIds } },
-    select: { id: true, licenseNumber: true },
+    select: { id: true, licenseNumber: true, address: true, lat: true, lng: true },
     take: MAX_IDENTITY_CANDIDATES + 1,
   });
   if (directRetailers.length + linkedRetailers.length > MAX_IDENTITY_CANDIDATES) {

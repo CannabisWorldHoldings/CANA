@@ -1,4 +1,5 @@
 export const ENTITY_NORMALIZATION_VERSION = 'dc-abca-identity-v1';
+export const MATERIAL_COORDINATE_DELTA = 0.0001;
 
 function normalizeText(value) {
   return typeof value === 'string'
@@ -13,6 +14,88 @@ export function normalizeAbcaLicense(value) {
 
 function normalizedCandidateLicense(candidate) {
   return normalizeAbcaLicense(candidate?.licenseNumber ?? candidate?.license_number);
+}
+
+function normalizedAddress(value) {
+  return normalizeText(value?.ADDRESS ?? value?.address ?? value?.retailer?.address);
+}
+
+function comparableAddress(value) {
+  return normalizedAddress(value).toUpperCase();
+}
+
+function storedCoordinates(value) {
+  const lat = strictFiniteNumber(value?.lat ?? value?.geo?.lat ?? value?.retailer?.lat);
+  const lng = strictFiniteNumber(value?.lng ?? value?.geo?.lng ?? value?.retailer?.lng);
+  if (lat === null || lng === null) {
+    return Object.freeze({ state: 'UNKNOWN', reason: 'PREVIOUS_LOCATION_UNAVAILABLE' });
+  }
+  return normalizeCoordinates({ LATITUDE: lat, LONGITDUE: lng });
+}
+
+function hasStoredLocationBaseline(value) {
+  const stored = value?.retailer ?? value;
+  return ['address', 'lat', 'lng'].some((field) => Object.hasOwn(stored ?? {}, field));
+}
+
+export function compareOfficialRetailerLocation({ record, previous }) {
+  const previousAddress = normalizedAddress(previous);
+  const currentAddress = normalizedAddress(record);
+  const previousComparableAddress = comparableAddress(previous);
+  const currentComparableAddress = comparableAddress(record);
+  const previousCoordinates = storedCoordinates(previous);
+  const currentCoordinates = normalizeCoordinates(record);
+  const changedFields = [];
+
+  if (hasStoredLocationBaseline(previous)
+    && currentCoordinates.state === 'KNOWN'
+    && (!previousAddress || previousCoordinates.state !== 'KNOWN')) {
+    return Object.freeze({
+      status: 'REVIEW_REQUIRED',
+      reason: 'PREVIOUS_LOCATION_UNAVAILABLE',
+      changed_fields: Object.freeze([]),
+      previous: Object.freeze({ address: previousAddress || null, coordinates: previousCoordinates }),
+      current: Object.freeze({ address: currentAddress || null, coordinates: currentCoordinates }),
+      location: Object.freeze({ state: 'UNKNOWN', public_eligible: false }),
+    });
+  }
+  if (previousAddress && previousComparableAddress !== currentComparableAddress) changedFields.push('address');
+  if (previousCoordinates.state === 'KNOWN' && currentCoordinates.state !== 'KNOWN') {
+    return Object.freeze({
+      status: 'REVIEW_REQUIRED',
+      reason: 'CURRENT_COORDINATES_UNVERIFIABLE',
+      changed_fields: Object.freeze(changedFields),
+      previous: Object.freeze({ address: previousAddress || null, coordinates: previousCoordinates }),
+      current: Object.freeze({ address: currentAddress || null, coordinates: currentCoordinates }),
+      location: Object.freeze({ state: 'UNKNOWN', public_eligible: false }),
+    });
+  }
+  if (previousCoordinates.state === 'KNOWN' && currentCoordinates.state === 'KNOWN'
+    && (Math.abs(previousCoordinates.lat - currentCoordinates.lat) > MATERIAL_COORDINATE_DELTA
+      || Math.abs(previousCoordinates.lng - currentCoordinates.lng) > MATERIAL_COORDINATE_DELTA)) {
+    changedFields.push('coordinates');
+  }
+  if (changedFields.length > 0) {
+    return Object.freeze({
+      status: 'REVIEW_REQUIRED',
+      reason: 'OFFICIAL_LOCATION_CHANGED',
+      changed_fields: Object.freeze(changedFields),
+      previous: Object.freeze({ address: previousAddress || null, coordinates: previousCoordinates }),
+      current: Object.freeze({ address: currentAddress || null, coordinates: currentCoordinates }),
+      location: Object.freeze({ state: 'UNKNOWN', public_eligible: false }),
+    });
+  }
+  return Object.freeze({
+    status: 'UNCHANGED',
+    reason: 'OFFICIAL_LOCATION_UNCHANGED',
+    changed_fields: Object.freeze([]),
+    previous: Object.freeze({ address: previousAddress || null, coordinates: previousCoordinates }),
+    current: Object.freeze({ address: currentAddress || null, coordinates: currentCoordinates }),
+    location: Object.freeze({
+      state: currentCoordinates.state === 'KNOWN' ? 'KNOWN' : 'UNKNOWN',
+      public_eligible: false,
+    }),
+  });
 }
 
 export function resolveAbcaEntity({ record, retailers = [], aliases = [] }) {
@@ -32,6 +115,27 @@ export function resolveAbcaEntity({ record, retailers = [], aliases = [] }) {
     .filter((candidate) => normalizedCandidateLicense(candidate) === license)
     .sort((left, right) => String(left.id).localeCompare(String(right.id)));
   if (exactRetailers.length === 1) {
+    const location = compareOfficialRetailerLocation({
+      record,
+      previous: exactRetailers[0],
+    });
+    if (location.status === 'REVIEW_REQUIRED') {
+      return Object.freeze({
+        status: 'REVIEW_REQUIRED',
+        method: location.reason === 'OFFICIAL_LOCATION_CHANGED'
+          ? 'EXACT_LICENSE_LOCATION_CHANGED'
+          : 'EXACT_LICENSE_LOCATION_UNVERIFIABLE',
+        reason: location.reason,
+        normalized_license: license,
+        candidate_ids: Object.freeze([exactRetailers[0].id]),
+        changed_fields: location.changed_fields,
+        location: location.location,
+        previous_location: location.previous,
+        current_location: location.current,
+        public_eligible: false,
+        normalization_version: ENTITY_NORMALIZATION_VERSION,
+      });
+    }
     return Object.freeze({
       status: 'EXACT_MATCH',
       method: 'EXACT_LICENSE',

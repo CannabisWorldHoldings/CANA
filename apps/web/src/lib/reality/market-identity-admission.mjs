@@ -1,4 +1,8 @@
-import { normalizeAbcaLicense, normalizeCoordinates } from './entity-resolution.mjs';
+import {
+  compareOfficialRetailerLocation,
+  normalizeAbcaLicense,
+  normalizeCoordinates,
+} from './entity-resolution.mjs';
 import { ABCA_LAYER_URL, ABCA_SOURCE_ID } from './official-source-snapshot.mjs';
 
 export const OFFICIAL_RETAILER_IDENTITY_ADMISSION_VERSION =
@@ -92,5 +96,31 @@ export function buildOfficialRetailerIdentityCandidate({ record, fetchedAt }) {
       verification: 'UNKNOWN',
     }),
     aliases: Object.freeze(aliases),
+  });
+}
+
+export function compareOfficialRetailerIdentityCaptures({ captureA, captureB }) {
+  const previousLicense = normalizeAbcaLicense(captureA?.license_number);
+  const currentLicense = normalizeAbcaLicense(captureB?.license_number);
+  if (!previousLicense || !currentLicense) fail('CANA_REALITY_IDENTITY_LICENSE_REQUIRED');
+  if (previousLicense !== currentLicense) {
+    return Object.freeze({
+      status: 'REISSUED_LICENSE',
+      reason: 'OFFICIAL_LICENSE_CHANGED',
+      previous_license_number: previousLicense,
+      current_license_number: currentLicense,
+      changed_fields: Object.freeze(['license_number']),
+      previous: Object.freeze({ address: captureA.retailer.address, coordinates: captureA.geo }),
+      current: Object.freeze({ address: captureB.retailer.address, coordinates: captureB.geo }),
+      location: Object.freeze({ state: 'UNKNOWN', public_eligible: false }),
+    });
+  }
+  return compareOfficialRetailerLocation({
+    previous: captureA.retailer,
+    record: {
+      ADDRESS: captureB.retailer.address,
+      LATITUDE: captureB.geo.lat,
+      LONGITDUE: captureB.geo.lng,
+    },
   });
 }
