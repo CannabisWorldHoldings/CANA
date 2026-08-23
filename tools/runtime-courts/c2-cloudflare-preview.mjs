@@ -167,7 +167,7 @@ export function readExactSource({ repo, expectedSha, expectedTree }) {
   if (webPackage.dependencies?.next !== EXACT_NEXT_VERSION || webPackage.devDependencies?.['eslint-config-next'] !== EXACT_NEXT_VERSION) {
     throw new C2Refusal('C2_EXACT_VERSION_DRIFT', `C2 is pinned to Next and eslint-config-next ${EXACT_NEXT_VERSION}`);
   }
-  const openNextConfigPath = path.join(source, 'open-next.config.ts');
+  const openNextConfigPath = path.join(source, 'apps', 'web', 'open-next.config.ts');
   if (!fs.existsSync(openNextConfigPath) || !fs.lstatSync(openNextConfigPath).isFile() || fs.lstatSync(openNextConfigPath).isSymbolicLink()) {
     throw new C2Refusal('C2_OPENNEXT_CONFIG_REQUIRED', 'a committed non-symlink open-next.config.ts is required');
   }
@@ -188,12 +188,14 @@ export function buildC2Plan({ repo, expectedSha, expectedTree, workDir, opennext
   const pins = assertExactToolPins({ opennext, wrangler });
   const localPreviewUrl = assertLoopbackPreviewUrl(previewUrl ?? 'http://127.0.0.1:8787');
   const copyDir = path.join(isolatedWorkDir, 'source');
+  const appDir = path.join(copyDir, 'apps', 'web');
   return {
     source,
     effects,
     pins,
     workDir: isolatedWorkDir,
     copyDir,
+    appDir,
     previewUrl: localPreviewUrl,
     compatibilityDate: COMPATIBILITY_DATE,
     commands: [
@@ -214,9 +216,10 @@ function copyCandidate(plan) {
       return !COPY_EXCLUDES.has(name) && !name.startsWith('.env.');
     },
   });
-  fs.writeFileSync(path.join(plan.copyDir, 'wrangler.jsonc'), `${JSON.stringify({
+  fs.writeFileSync(path.join(plan.appDir, 'wrangler.jsonc'), `${JSON.stringify({
     name: 'c2-local-evidence-only', main: '.open-next/worker.js', compatibility_date: plan.compatibilityDate,
-    compatibility_flags: ['nodejs_compat'],
+    compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
+    assets: { directory: '.open-next/assets', binding: 'ASSETS' },
   }, null, 2)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
 }
 
@@ -322,8 +325,8 @@ function run(command, args, { cwd, env }) {
   }
 }
 
-function compressedWorkerSize(copyDir) {
-  const worker = path.join(copyDir, '.open-next', 'worker.js');
+function compressedWorkerSize(appDir) {
+  const worker = path.join(appDir, '.open-next', 'worker.js');
   if (!fs.existsSync(worker)) return null;
   return {
     path: '.open-next/worker.js',
@@ -360,7 +363,7 @@ async function terminate(child) {
 
 async function runWorkerdPreview(plan, env) {
   const previewArgs = ['--no-install', 'wrangler', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787'];
-  const child = spawn('npx', previewArgs, { cwd: plan.copyDir, env, stdio: ['ignore', 'ignore', 'ignore'] });
+  const child = spawn('npx', previewArgs, { cwd: plan.appDir, env, stdio: ['ignore', 'ignore', 'ignore'] });
   const routes = [];
   try {
     let ready = false;
@@ -404,15 +407,15 @@ export async function executeLocalPreview(plan, { env = process.env, executor = 
     WRANGLER_API_TOKEN: undefined,
   };
   const [installCommand, prismaGenerateCommand, buildCommand, previewCommand] = plan.commands;
-  const install = executor(installCommand[0], installCommand[1], { cwd: plan.copyDir, env: localEnv });
+  const install = executor(installCommand[0], installCommand[1], { cwd: plan.appDir, env: localEnv });
   const prismaGenerate = install.ok
     ? executor(prismaGenerateCommand[0], prismaGenerateCommand[1], { cwd: plan.copyDir, env: localEnv })
     : { ok: false, skipped: 'INSTALL_FAILED' };
   const build = prismaGenerate.ok
-    ? executor(buildCommand[0], buildCommand[1], { cwd: plan.copyDir, env: localEnv })
+    ? executor(buildCommand[0], buildCommand[1], { cwd: plan.appDir, env: localEnv })
     : { ok: false, skipped: 'PRISMA_GENERATE_FAILED' };
   if (!build.ok) return { attempted: true, install, prismaGenerate, build, workerSize: null, preview: { ok: false, skipped: 'BUILD_FAILED' }, routes: [] };
-  const workerSize = compressedWorkerSize(plan.copyDir);
+  const workerSize = compressedWorkerSize(plan.appDir);
   if (!workerSize) return { attempted: true, install, prismaGenerate, build, workerSize: null, preview: { ok: false, code: 'C2_WORKER_ARTIFACT_MISSING', command: previewCommand }, routes: [] };
   const { preview, routes } = await runWorkerdPreview(plan, localEnv);
   return { attempted: true, install, prismaGenerate, build, workerSize, preview, routes };

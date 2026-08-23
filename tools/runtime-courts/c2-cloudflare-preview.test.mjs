@@ -33,7 +33,7 @@ function fixtureRepository({ next = '16.3.0-canary.6', openNextConfig = true } =
   }));
   if (openNextConfig) {
     fs.writeFileSync(
-      path.join(root, 'open-next.config.ts'),
+      path.join(root, 'apps', 'web', 'open-next.config.ts'),
       "import { defineCloudflareConfig } from '@opennextjs/cloudflare';\nexport default defineCloudflareConfig();\n",
     );
   }
