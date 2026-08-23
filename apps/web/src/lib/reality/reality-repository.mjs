@@ -6,7 +6,8 @@ import {
   adjudicateMarketClaim,
   adjudicateZeroChangeReattestation,
 } from './market-claim-court.mjs';
-import { normalizeCoordinates } from './entity-resolution.mjs';
+import { normalizeAbcaLicense, normalizeCoordinates } from './entity-resolution.mjs';
+import { buildOfficialRetailerIdentityCandidate } from './market-identity-admission.mjs';
 import {
   loadOfficialSourceSnapshot,
   validateOfficialSourceSnapshotBytes,
@@ -149,6 +150,120 @@ async function createGeoIdentity(tx, { retailer, record, license, loaded }) {
   }
   retailer.geoEntityId = geoEntity.id;
   return { geoEntity, licenseAlias };
+}
+
+export async function admitLiveMarketIdentity(prisma, {
+  tenant,
+  acquisitionEventId,
+  licenseNumber,
+}) {
+  tenant = tenantKey(tenant);
+  if (typeof acquisitionEventId !== 'string' || !acquisitionEventId) {
+    throw new Error('CANA_REALITY_ACQUISITION_EVENT_REQUIRED');
+  }
+  const normalizedLicense = normalizeAbcaLicense(licenseNumber);
+  if (!normalizedLicense) throw new Error('CANA_REALITY_IDENTITY_LICENSE_REQUIRED');
+
+  return prisma.$transaction(async (tx) => {
+    const acquisition = await tx.marketSourceAcquisitionEvent.findUnique({
+      where: { id: acquisitionEventId },
+      include: { contentArtifact: true, snapshot: true },
+    });
+    assertAdmittedAcquisition(acquisition, {
+      tenant,
+      purpose: 'COMPILE',
+      asOf: acquisition?.completedAt,
+    });
+    const loaded = liveLoadedSnapshot(acquisition);
+    const matches = loaded.records.filter((record) => (
+      normalizeAbcaLicense(record.ABCA_NUMBER) === normalizedLicense
+    ));
+    if (matches.length !== 1) {
+      throw new Error(matches.length === 0
+        ? 'CANA_REALITY_IDENTITY_NOT_IN_ACQUISITION'
+        : 'CANA_REALITY_IDENTITY_SOURCE_CONFLICT');
+    }
+    const candidate = buildOfficialRetailerIdentityCandidate({
+      record: matches[0],
+      fetchedAt: acquisition.fetchedAt,
+    });
+    const directRetailers = await tx.retailer.findMany({
+      where: {
+        licenseNumber: { equals: normalizedLicense, mode: 'insensitive' },
+      },
+      select: { id: true },
+      take: 3,
+    });
+    if (directRetailers.length > 1) throw new Error('CANA_REALITY_IDENTITY_RETAILER_CONFLICT');
+    const aliases = await tx.geoEntityAlias.findMany({
+      where: {
+        namespace: 'dc_abca_license',
+        externalId: { equals: normalizedLicense, mode: 'insensitive' },
+      },
+      include: { geoEntity: { select: { id: true, retailerId: true } } },
+      take: 3,
+    });
+    if (aliases.length > 1) throw new Error('CANA_REALITY_IDENTITY_ALIAS_CONFLICT');
+    const directRetailerId = directRetailers[0]?.id ?? null;
+    const aliasRetailerId = aliases[0]?.geoEntity?.retailerId ?? null;
+    if (directRetailerId && aliasRetailerId && directRetailerId !== aliasRetailerId) {
+      throw new Error('CANA_REALITY_IDENTITY_SUBJECT_CONFLICT');
+    }
+    const existingRetailerId = directRetailerId ?? aliasRetailerId;
+    if (existingRetailerId) {
+      return Object.freeze({
+        state: 'EXISTING_IDENTITY',
+        tenant,
+        retailer_id: existingRetailerId,
+        geo_entity_id: aliases[0]?.geoEntity?.id ?? null,
+        license_number: normalizedLicense,
+        acquisition_event_id: acquisition.id,
+        snapshot_id: acquisition.snapshotId,
+        source_key: acquisition.sourceKey,
+        production_mutations: 0,
+        public_mutations: 0,
+      });
+    }
+    if (aliases.length > 0) throw new Error('CANA_REALITY_IDENTITY_ALIAS_UNLINKED');
+
+    const retailer = await tx.retailer.create({ data: candidate.retailer });
+    const created = await createGeoIdentity(tx, {
+      retailer,
+      record: matches[0],
+      license: normalizedLicense,
+      loaded,
+    });
+    await tx.auditLog.create({
+      data: {
+        action: 'ADMIT_OFFICIAL_RETAILER_IDENTITY_PENDING_COURT',
+        details: [
+          `retailerId=${retailer.id}`,
+          `geoEntityId=${created.geoEntity.id}`,
+          `licenseNumber=${normalizedLicense}`,
+          `acquisitionEventId=${acquisition.id}`,
+        ].join(' '),
+      },
+    });
+    return Object.freeze({
+      state: 'ADMITTED_PENDING_COURT',
+      tenant,
+      retailer_id: retailer.id,
+      geo_entity_id: created.geoEntity.id,
+      license_number: normalizedLicense,
+      acquisition_event_id: acquisition.id,
+      snapshot_id: acquisition.snapshotId,
+      content_artifact_id: acquisition.contentArtifactId,
+      source_key: acquisition.sourceKey,
+      data_status: retailer.dataStatus,
+      license_status: retailer.licenseStatus,
+      geo_verification: created.geoEntity.verification,
+      production_mutations: 0,
+      public_mutations: 0,
+      identity_rows_created: 4,
+      audit_rows_created: 1,
+      private_preview_rows_created: 5,
+    });
+  }, { isolationLevel: 'Serializable', timeout: 60_000 });
 }
 
 async function compileOfficialMarketSnapshotTransaction(prisma, {

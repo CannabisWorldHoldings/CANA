@@ -9,6 +9,14 @@
       "lineage_note": "All five owner files originate in the POST38 lineage (commit 190c990), not the sovereign tip this registry was compiled at. They were converged into this tree as part of the CANA/ORDERWEEDDC convergence; each entry records `lineage` + `origin_commit`. An entry whose owner files have NOT yet been converged must carry `sibling_lineage_only: true` so the path-existence court can tell 'not yet merged' apart from 'fictional citation'.",
       "architecture_note": "CAPABILITY OWNERSHIP IS NOT ROOT AUTHORITY. These entries record who owns a JOB, not who may authorize effects. tools/vanguard/governor.mjs is deliberately NOT filed under `authorization-governor`: an independent audit established its only export is pulse(n) (governor.mjs:42), which spawns subprocesses and appends a receipt — it orchestrates the metabolism, it does not authorize anything. Root authorization is UNSETTLED and is being decided separately; registry repair must not decide architecture.",
       "verified_by": "tools/federation/census-blindspot.test.mjs"
+    },
+    {
+      "id": "ZENITH-official-retailer-identity-admission",
+      "at": "2026-08-22",
+      "why": "The existing Reality Compiler could resolve and verify only pre-existing Retailer or linked GeoEntityAlias identities. Its retired legacy importers and merchant-submitted claim path could not honestly admit one regulator-backed identity from an already-admitted official acquisition, leaving every live D.C. record unmatched in an empty market.",
+      "added_capabilities": ["official-retailer-identity-admission"],
+      "architecture_note": "This is a private, disposable-database admission seam inside the existing Reality Compiler. It does not mint authority, publish a regulated claim, create a verified record, or touch production. A record remains PENDING/UNKNOWN until the independent market court verifies its evidence cohort.",
+      "verified_by": "tools/federation/official-retailer-identity-owner.test.mjs"
     }
   ],
   "owners": [
@@ -122,6 +130,13 @@
       "not_this_capability": "NOT authorization-governor (the Python governor-kernel action-contract validator) and NOT metabolism-coordination (the governor daemon's pulse loop). This owns the authorization SEAT itself — the mint side, not the validate side and not the metabolism.",
       "job_terms": ["authority single seat", "authorization seat", "single authorize seat", "mint authorization", "authorization minter", "second authority", "rival grant minter", "issue authorization object", "owner signed authorization", "root authorization", "authority sovereignty", "sovereign authorizer"],
       "owner_paths": ["tools/authority/authority.mjs"]
+    },
+    {
+      "capability": "official-retailer-identity-admission",
+      "what_it_owns": "The narrow owner-run bridge that admits one exact licensed-retailer identity from a previously captured, immutable, admitted official-source acquisition into pending Retailer plus UNKNOWN GeoEntity state so the existing compiler and independent court can evaluate it.",
+      "not_this_capability": "NOT source acquisition, automatic name/address matching, merchant claiming, public verification, authority minting, or production mutation. Exact normalized license selection is mandatory and the market court remains the only path to VERIFIED_CURRENT projection.",
+      "job_terms": ["identity admission", "retailer identity", "official retailer identity admission", "regulator backed retailer admission", "admit licensed retailer identity", "seed real licensed coverage", "market identity admission", "retailer identity bridge", "admit official merchant identity"],
+      "owner_paths": ["apps/web/src/lib/reality/market-identity-admission.mjs", "apps/web/src/lib/reality/reality-repository.mjs", "apps/web/scripts/admit-live-market-identity.mjs"]
     }
   ]
 }

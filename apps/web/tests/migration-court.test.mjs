@@ -26,6 +26,7 @@ import { environmentRefusalsForSeed, dataRefusalsForSeed } from '../prisma/seed-
 import { recordAskWork } from '../src/lib/ask/ask-work.mjs';
 import { buildAnswerabilityFrontier } from '../src/lib/ask/answerability-frontier.mjs';
 import {
+  admitLiveMarketIdentity,
   compileLiveMarketAcquisition,
   compileOfficialMarketSnapshot,
   revokeMarketEvidence,
@@ -605,17 +606,6 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   const url = createDatabase('live_reality_court');
   deploy(url);
   const p = await client(url);
-  await p.retailer.create({ data: {
-    id: 'live-reality-retailer',
-    name: 'Live Court Cannabis',
-    type: 'storefront',
-    address: '100 Live Court St NW',
-    city: 'Washington',
-    state: 'DC',
-    lat: 38.9,
-    lng: -77.03,
-    licenseNumber: 'ABRA-123456',
-  } });
   const store = createPrismaAcquisitionStore(p);
   const firstSource = liveRealitySource();
   const first = await acquireLiveMarketReality(store, liveRealityOptions(firstSource, {
@@ -624,6 +614,24 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   }));
   assert.equal(first.state, 'COMPLETED');
   assert.equal(first.outcome, 'SOURCE_CHANGED');
+  const admitted = await admitLiveMarketIdentity(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: first.acquisition_event_id,
+    licenseNumber: 'ABRA-123456',
+  });
+  assert.equal(admitted.state, 'ADMITTED_PENDING_COURT');
+  assert.equal(admitted.data_status, 'AWAITING_VERIFICATION');
+  assert.equal(admitted.license_status, 'PENDING');
+  assert.equal(admitted.geo_verification, 'UNKNOWN');
+  assert.equal(admitted.production_mutations, 0);
+  assert.equal(admitted.public_mutations, 0);
+  const repeatedAdmission = await admitLiveMarketIdentity(p, {
+    tenant: 'orderweeddc.com',
+    acquisitionEventId: first.acquisition_event_id,
+    licenseNumber: 'ABRA-123456',
+  });
+  assert.equal(repeatedAdmission.state, 'EXISTING_IDENTITY');
+  assert.equal(repeatedAdmission.retailer_id, admitted.retailer_id);
   const compiled = await compileLiveMarketAcquisition(p, {
     tenant: 'orderweeddc.com',
     acquisitionEventId: first.acquisition_event_id,
@@ -684,14 +692,14 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   });
   assert.equal(repeatedCourt.verification_events_created, 0);
 
-  const beforeOutage = await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } });
+  const beforeOutage = await p.retailer.findUnique({ where: { id: admitted.retailer_id } });
   const outageSource = liveRealitySource({ fail: true });
   const outage = await acquireLiveMarketReality(store, liveRealityOptions(outageSource, {
     attemptId: 'live-court-outage',
     asOf: '2026-08-19T15:00:00.000Z',
   }));
   assert.equal(outage.state, 'FAILED');
-  const afterOutage = await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } });
+  const afterOutage = await p.retailer.findUnique({ where: { id: admitted.retailer_id } });
   assert.equal(afterOutage.dataStatus, beforeOutage.dataStatus);
   assert.equal(afterOutage.verifiedAt.toISOString(), beforeOutage.verifiedAt.toISOString());
   assert.equal(await p.marketSourceContentArtifact.count(), 1);
@@ -825,7 +833,7 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   assert.equal(policyRevoked.state, 'REVOKED');
   assert.ok(policyRevoked.affected_claims > 0);
   assert.equal(policyRevoked.replacement_truth_created, 0);
-  assert.equal((await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } })).dataStatus, 'STALE');
+  assert.equal((await p.retailer.findUnique({ where: { id: admitted.retailer_id } })).dataStatus, 'STALE');
   const policyRevocations = await p.marketEvidenceRevocationEvent.findMany({
     where: { tenant: 'orderweeddc.com', targetKind: 'POLICY_VERSION' },
   });
@@ -859,7 +867,7 @@ test('LIVE REALITY: changed compilation and unchanged revalidation are acquisiti
   assert.ok(revoked.affected_claims > 0);
   assert.equal(revoked.replacement_truth_created, 0);
   assert.ok(await p.marketClaim.count() > claimCount);
-  assert.equal((await p.retailer.findUnique({ where: { id: 'live-reality-retailer' } })).dataStatus, 'STALE');
+  assert.equal((await p.retailer.findUnique({ where: { id: admitted.retailer_id } })).dataStatus, 'STALE');
   assert.equal(await p.marketSourceContentArtifact.count(), 1, 'revocation preserves immutable content history');
 });
 
