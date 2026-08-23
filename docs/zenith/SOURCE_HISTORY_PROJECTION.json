@@ -1,0 +1,286 @@
+{
+  "authority_effect": "NONE",
+  "edges": [
+    {
+      "authority_effect": "NONE",
+      "edge_kind": "ANCESTOR_OF",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "from_id": "shn_e63529e44f63698e421eeed2bf9380073ee2c4eb",
+      "id": "she_093e44593decbbdef65dbf518cc0e870",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "093e44593decbbdef65dbf518cc0e8700d368151c4d3a10674f4dbf122ea9a38",
+      "source_identity": "093e44593decbbdef65dbf518cc0e8700d368151c4d3a10674f4dbf122ea9a38",
+      "source_kind": "ARTIFACT",
+      "source_path": "docs/zenith/SOURCE_HISTORY_PROJECTION.json",
+      "to_id": "shn_7fca02ec2060c8153fdfc531bb6cca61a7525d18"
+    },
+    {
+      "authority_effect": "NONE",
+      "edge_kind": "ANCESTOR_OF",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "from_id": "shn_9d3bd70abcdfa4442a15c735d680cfff80fa5761",
+      "id": "she_602f35e6e1becf3d13f9b31c3497f84f",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "602f35e6e1becf3d13f9b31c3497f84f51d46f16abf7532c02265c6339a450f1",
+      "source_identity": "602f35e6e1becf3d13f9b31c3497f84f51d46f16abf7532c02265c6339a450f1",
+      "source_kind": "ARTIFACT",
+      "source_path": "docs/zenith/SOURCE_HISTORY_PROJECTION.json",
+      "to_id": "shn_7fca02ec2060c8153fdfc531bb6cca61a7525d18"
+    },
+    {
+      "authority_effect": "NONE",
+      "edge_kind": "NON_ANCESTOR_OF",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "from_id": "shn_73cca30661628f2ab8a3e0e7ff864e57ef78778a",
+      "id": "she_778f9e68e8ee6501e08f20860cc7662a",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "778f9e68e8ee6501e08f20860cc7662a7fe0d53cdf1fe0dcaedff77cccc8fdc2",
+      "source_identity": "778f9e68e8ee6501e08f20860cc7662a7fe0d53cdf1fe0dcaedff77cccc8fdc2",
+      "source_kind": "ARTIFACT",
+      "source_path": "docs/zenith/SOURCE_HISTORY_PROJECTION.json",
+      "to_id": "shn_7fca02ec2060c8153fdfc531bb6cca61a7525d18"
+    },
+    {
+      "authority_effect": "NONE",
+      "edge_kind": "ANCESTOR_OF",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "from_id": "shn_190c99077b81142b7a67e127f39ec8d9c59fc554",
+      "id": "she_8b249063625bc4b0f6c19ae39ba6821d",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "8b249063625bc4b0f6c19ae39ba6821d93a36c528dbacbb7d1d62a2a6438f3e0",
+      "source_identity": "8b249063625bc4b0f6c19ae39ba6821d93a36c528dbacbb7d1d62a2a6438f3e0",
+      "source_kind": "ARTIFACT",
+      "source_path": "docs/zenith/SOURCE_HISTORY_PROJECTION.json",
+      "to_id": "shn_7fca02ec2060c8153fdfc531bb6cca61a7525d18"
+    }
+  ],
+  "external_effects": {
+    "archive_code_execution": false,
+    "canonical_ref_writes": false,
+    "network": false,
+    "production_mutation": false
+  },
+  "main_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "nodes": [
+    {
+      "authority_effect": "NONE",
+      "content_digest": "694cf88f1a384f020ab73d9f676e6b85e7570fa7568e5b3da24f775824c64b07",
+      "descendant_disposition": "REUSE_EXISTING",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_190c99077b81142b7a67e127f39ec8d9c59fc554",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "694cf88f1a384f020ab73d9f676e6b85e7570fa7568e5b3da24f775824c64b07",
+      "source_identity": "190c99077b81142b7a67e127f39ec8d9c59fc554",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/190c99077b81142b7a67e127f39ec8d9c59fc554"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "57c6e804419bb701893c726d17c296b790c7c070aed5f9875f1075769fa2b1c7",
+      "descendant_disposition": "ABSENT",
+      "epistemic_state": "UNKNOWN",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "57c6e804419bb701893c726d17c296b790c7c070aed5f9875f1075769fa2b1c7",
+      "source_identity": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "877be578f1a61950ace4a112bcef0138f58167cfbb1bbaf3f7f705d948dbcf0e",
+      "descendant_disposition": "UNRESOLVED",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_73cca30661628f2ab8a3e0e7ff864e57ef78778a",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "877be578f1a61950ace4a112bcef0138f58167cfbb1bbaf3f7f705d948dbcf0e",
+      "source_identity": "73cca30661628f2ab8a3e0e7ff864e57ef78778a",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/73cca30661628f2ab8a3e0e7ff864e57ef78778a"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "a063ab8ea4c23041c0a4757f7a43600c64da70ea167ceb2054fbbbb6b0ea9885",
+      "descendant_disposition": "CANDIDATE_EXACT",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "a063ab8ea4c23041c0a4757f7a43600c64da70ea167ceb2054fbbbb6b0ea9885",
+      "source_identity": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/7fca02ec2060c8153fdfc531bb6cca61a7525d18"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "031fdea53d813427b72f4e977e817d05635008c21ffb1e55eddfce56f67cfc45",
+      "descendant_disposition": "REUSE_EXISTING",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_9d3bd70abcdfa4442a15c735d680cfff80fa5761",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "031fdea53d813427b72f4e977e817d05635008c21ffb1e55eddfce56f67cfc45",
+      "source_identity": "9d3bd70abcdfa4442a15c735d680cfff80fa5761",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/9d3bd70abcdfa4442a15c735d680cfff80fa5761"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "979f4ad695d1dfa0c7055c943bc81ddc77003c084dbd38992ae4396c44734168",
+      "descendant_disposition": "ABSENT",
+      "epistemic_state": "UNKNOWN",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "979f4ad695d1dfa0c7055c943bc81ddc77003c084dbd38992ae4396c44734168",
+      "source_identity": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "3a11321e3aa4bc5821f314148f2ea6439f26708ff85cfdee0b51bf9ceb886eb3",
+      "descendant_disposition": "REUSE_EXISTING",
+      "epistemic_state": "OBSERVED",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_e63529e44f63698e421eeed2bf9380073ee2c4eb",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "3a11321e3aa4bc5821f314148f2ea6439f26708ff85cfdee0b51bf9ceb886eb3",
+      "source_identity": "e63529e44f63698e421eeed2bf9380073ee2c4eb",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/e63529e44f63698e421eeed2bf9380073ee2c4eb"
+    },
+    {
+      "authority_effect": "NONE",
+      "content_digest": "061903e845d0c3cf0a53d22d0ce70c0275cd3258f3eb559a440cd9a3b8ba5d8e",
+      "descendant_disposition": "ABSENT",
+      "epistemic_state": "UNKNOWN",
+      "evidence_refs": [
+        {
+          "digest": "eebe6966d67d54c8f6933385530559158e25a6eafb3309e409bd9531883934f4",
+          "ref": "docs/zenith/DONOR_INSPECTION_MANIFEST.json"
+        }
+      ],
+      "id": "shn_ef98b7b89353a937e35b81db0ceda35191c8eb51",
+      "node_kind": "GIT_COMMIT",
+      "observed_at": "2026-08-23T16:00:00.000Z",
+      "owner": "UNKNOWN",
+      "schema_version": "zenith-reconstruction/v1",
+      "source_digest": "061903e845d0c3cf0a53d22d0ce70c0275cd3258f3eb559a440cd9a3b8ba5d8e",
+      "source_identity": "ef98b7b89353a937e35b81db0ceda35191c8eb51",
+      "source_kind": "GIT_COMMIT",
+      "source_path": "external-evidence/git-commits/ef98b7b89353a937e35b81db0ceda35191c8eb51"
+    }
+  ],
+  "observed_at": "2026-08-23T16:00:00.000Z",
+  "relations": [
+    {
+      "observed_relation": "ANCESTOR",
+      "sha": "190c99077b81142b7a67e127f39ec8d9c59fc554"
+    },
+    {
+      "observed_relation": "NON_ANCESTOR",
+      "sha": "73cca30661628f2ab8a3e0e7ff864e57ef78778a"
+    },
+    {
+      "observed_relation": "ANCESTOR",
+      "sha": "9d3bd70abcdfa4442a15c735d680cfff80fa5761"
+    },
+    {
+      "observed_relation": "ANCESTOR",
+      "sha": "e63529e44f63698e421eeed2bf9380073ee2c4eb"
+    }
+  ],
+  "schema_version": "zenith-source-history-projection/v1"
+}

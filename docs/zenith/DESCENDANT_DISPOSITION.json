@@ -1,0 +1,61 @@
+{
+  "authority_effect": "NONE",
+  "donors": [
+    {
+      "advertised_by": [],
+      "contained_by": [],
+      "disposition": "ABSENT",
+      "epistemic_state": "UNKNOWN",
+      "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+      "text_exact_sha_hits": []
+    },
+    {
+      "advertised_by": [],
+      "contained_by": [],
+      "disposition": "ABSENT",
+      "epistemic_state": "UNKNOWN",
+      "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+      "text_exact_sha_hits": []
+    },
+    {
+      "advertised_by": [],
+      "contained_by": [],
+      "disposition": "ABSENT",
+      "epistemic_state": "UNKNOWN",
+      "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51",
+      "text_exact_sha_hits": []
+    }
+  ],
+  "external_effects": {
+    "archive_code_execution": false,
+    "canonical_ref_writes": false,
+    "network": false,
+    "production_mutation": false
+  },
+  "known_commits": [
+    {
+      "disposition": "REUSE_EXISTING",
+      "relation_to_main": "ANCESTOR",
+      "sha": "190c99077b81142b7a67e127f39ec8d9c59fc554"
+    },
+    {
+      "disposition": "UNRESOLVED",
+      "relation_to_main": "NON_ANCESTOR",
+      "sha": "73cca30661628f2ab8a3e0e7ff864e57ef78778a"
+    },
+    {
+      "disposition": "REUSE_EXISTING",
+      "relation_to_main": "ANCESTOR",
+      "sha": "9d3bd70abcdfa4442a15c735d680cfff80fa5761"
+    },
+    {
+      "disposition": "REUSE_EXISTING",
+      "relation_to_main": "ANCESTOR",
+      "sha": "e63529e44f63698e421eeed2bf9380073ee2c4eb"
+    }
+  ],
+  "main_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "observed_at": "2026-08-23T16:00:00.000Z",
+  "scan_complete": true,
+  "schema_version": "zenith-descendant-disposition/v1"
+}

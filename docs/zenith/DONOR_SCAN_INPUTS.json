@@ -1,0 +1,347 @@
+{
+  "schema_version": "zenith-donor-scan-inputs/v1",
+  "observed_at": "2026-08-23T16:00:00.000Z",
+  "main_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "known_commits": [
+    {
+      "sha": "190c99077b81142b7a67e127f39ec8d9c59fc554",
+      "expected_relation": "ANCESTOR"
+    },
+    {
+      "sha": "9d3bd70abcdfa4442a15c735d680cfff80fa5761",
+      "expected_relation": "ANCESTOR"
+    },
+    {
+      "sha": "e63529e44f63698e421eeed2bf9380073ee2c4eb",
+      "expected_relation": "ANCESTOR"
+    }
+  ],
+  "non_ancestor_commits": [
+    {
+      "sha": "73cca30661628f2ab8a3e0e7ff864e57ef78778a",
+      "expected_relation": "NON_ANCESTOR"
+    }
+  ],
+  "wanted_donors": [
+    "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+    "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+    "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+  ],
+  "scan_budget": {
+    "max_depth": 6,
+    "max_containers": 512,
+    "max_members": 500000,
+    "max_total_uncompressed_bytes": 8589934592,
+    "max_member_bytes": 1073741824,
+    "max_text_member_bytes": 8388608,
+    "max_total_text_bytes": 536870912
+  },
+  "authority_effect": "NONE",
+  "external_effects": {
+    "network": false,
+    "canonical_ref_writes": false,
+    "archive_code_execution": false
+  },
+  "containers": [
+    {
+      "logical_path": ".omo/cana-ci-probe.33aPL3/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/2369962/state/artifacts/2369962fbb56d1fd90e1131ebd2f7e4c06ad0f1b/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/6db7184/durability-state/artifacts/6db7184449620604582394f85009aff818a8ae13/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/7fdaa72/durability-state/artifacts/7fdaa725f0f129c40ff1c6f776bb1ad9e15b4780/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/c39becd/durability-state/artifacts/c39becd6a58a5b5c751524fda6f995e0193db22c/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/durability-state-08fa3d1/artifacts/08fa3d14ea6a2d47de95e4919fc91c9fcc7e4afd/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/durability-state-232c6c8/artifacts/232c6c8e3d6e070dc05d1edaaff1633ce39cec9d/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/durability-state-8516e8e/artifacts/8516e8ee91ad7dfd38995bdb3679c553300323a5/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/durability-state/artifacts/666948f135be9acedf066890a79fbfd3206fe9b7/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/state-0ca8b40/artifacts/0ca8b4059f3a3ec64226e614bdf848f9f1480c4b/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/state-100f575/artifacts/100f5758df5b3191df80d215195cc656858afce1/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-cpanel-hotfix-evidence/state-618b809/artifacts/618b809ba10b43d35d55cbc17666d923f9b5c594/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-determinism-unit.zoi1g3/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-fabel-final-verify.sRxv72/extracted/git/CANA_M3_M001_FABEL_REREVIEW_c122d583.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-fabel-sealed-verify.2dJi6M/extracted/git/CANA_M3_M001_FABEL_REREVIEW_c122d583.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-foundation-cpanel-node24-docker-group.pVGxqm/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-foundation-cpanel-node24-dockercli.fKNrwH/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-foundation-cpanel-node24-nonroot.3MSHph/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-foundation-cpanel-node24.BmmxF0/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-foundation-durability-state.XCsdHn/artifacts/021e6085006ff1aed18e4e98fbcc2bd79d35098e/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state-2fbf52e/artifacts/2fbf52ec7dcf5b4959f5e9eed68f64025cbd3d39/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state-e3d4e71/artifacts/e3d4e7111d678dc40f01cd83204df6960b687b7a/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state-f4fba4d/artifacts/f4fba4d4bb3bae666970305c86e2f71c07c6c8d7/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state/artifacts/e8bf9b2d6038452ed903d60e7cb26f3adb4d659c/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-3eeb-gates.UWK6qj/cpanel-node24/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-3eeb-gates.UWK6qj/durability/state/artifacts/3eebd14b8f5cb0f95938701b0d255d2cd73bd7fb/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-be215-gates.9D1DXi/durability/state/artifacts/be21512d2583734db2ef741ae330369c6708d715/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-be215-gates.9D1DXi/linux-node24-source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-mariadb-diagnosis.s2HdIs/pr2-candidate-6e0b6c07.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-ownership-completion.CA3NoI/ownership-node24-source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-ownership-completion.CA3NoI/pr2-local-sync-a0b5d246.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-ownership-durability.wG9EwR/artifacts/61024ee1c39658fb38661e68dba9fbf264b1eaa3/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr2-sync.P1jEX3/pr2-original.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr29-recovery.nIqNNQ/evidence/pr35-2956c12-final/pr35-2956-audit.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr29-recovery.nIqNNQ/evidence/pr35-fable-c743753.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr3-canonical-merge.5uqyz4/fresh-node24-source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr3-durability-state.USvVv5/artifacts/8d24b1d6d3060684b036b39ca35322a69da9ac30/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr3-fresh-durability.ES5LY9/artifacts/f744c1ccea6a0ab3a473298ab7f94e2324fe3910/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-pr3-history-local.B6LwUy/node24-cpanel-source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-slice2-final-court-d353876/durability-state/artifacts/d3538760c9268e324655735f3bfc286a7ef70042/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-slice2-final-court-e73bad8/durability-state/artifacts/e73bad8e6fad6e7949b59ea243ca8c51cda1a739/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/cana-slice2-final-court-fb3fc46/state/artifacts/fb3fc468e257e09c1ee4fa2b23c5e6876442f0e1/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/cana-m3-fabel-rereview-c122d583/package/git/CANA_M3_M001_FABEL_REREVIEW_c122d583.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/cana-mission2-contract-export-c4d058f/CANA_CANONICAL_MAIN_c4d058f.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/durability-independent-a1/state/artifacts/ed9b32b4434f2916f90b83f52f892789db9929c4/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-artifact-final-9b9eeaa/state/artifacts/9b9eeaa7508a980b7267d229af9a3a4cee07cc8e/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-artifact-repair-3654a24/state/artifacts/3654a24ba9aca76f2207d1a164a0b07be903e6f7/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-artifact-repair-af09f83/state/artifacts/af09f83950ce249a69a07f38962e8b981da31c56/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-db-byte-finalization-057bdf1/durability-state/artifacts/057bdf10f5b8c6cc583c1a0006fa261b8978f913/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-db-byte-finalization-6933dc8/durability-state/artifacts/6933dc820bae7df9f1952117695b29d51512877a/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-structural-tar-court-repair/64f9415-local/state/artifacts/64f941546e3629528fba122f7e04f335f15a4a9e/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/evidence/orderweeddc-structural-tar-court-repair/d355b90-local/state/artifacts/d355b900b411e922f0a0f4fb81962e4b32182bbb/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/preservation/cana-ci-runner-temp-context-repair-c377ca832799.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/preservation/cana-mandatory-suite-determinism-42440e34722.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/preservation/orderweeddc-competitive-ui-28ffe9d/ORDERWEEDDC_COMPETITIVE_UI_28ffe9d.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".omo/review-evidence/88e00d1ad1fa7fc85db2de45a8ba129e41d4652e/durability-artifacts/88e00d1ad1fa7fc85db2de45a8ba129e41d4652e/repo.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".qa-cana-pr2-stage.e4aoxR/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-72b263.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-874354.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-8de432.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-995d31.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-e9fb94.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-final-59d8-pre-security-review.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-final-head-only-attempt1.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-final.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source-successor.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-harness-final/source.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-ir01-local/source-53e54d5d530a1ed09a3e65d93c017f984f1383f1-head.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-ir01-local/source-53e54d5d530a1ed09a3e65d93c017f984f1383f1-with-v1.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": ".verification-receipts/pr59-ir01-v3-source-af649f3403125e1e48eacc6f723aa74479e57326-with-v1.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": "evidence/ORDERWEEDDC_PRODUCTION_RELEASE_9b9eeaa_2026-08-01/CANA_CANONICAL_PRODUCTION_9b9eeaa.bundle",
+      "kind": "BUNDLE"
+    },
+    {
+      "logical_path": "ARENA AI FOR ORDERWEEDDC.zip",
+      "kind": "ZIP_ARCHIVE"
+    },
+    {
+      "logical_path": "CANA_PRODUCTION_CANDIDATE_B993A2D/orderweeddc-b993a2d5252380472b20ab4565ce07da9df1e61d.tar.gz",
+      "kind": "TAR_ARCHIVE"
+    },
+    {
+      "logical_path": "CANA_PROTECTED_MISSION2_BASE_EVIDENCE_70a7200f_2026-07-29.zip",
+      "kind": "ZIP_ARCHIVE"
+    },
+    {
+      "logical_path": "evidence/ORDERWEEDDC_PRODUCTION_RELEASE_9b9eeaa_2026-08-01.zip",
+      "kind": "ZIP_ARCHIVE"
+    }
+  ]
+}

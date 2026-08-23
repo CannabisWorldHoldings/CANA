@@ -1,0 +1,4829 @@
+{
+  "authority_effect": "NONE",
+  "containers": [
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "c377ca832799ec72c8b639d7d8fb0281459c6585"
+        }
+      ],
+      "byte_size": 4785275,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-ci-probe.33aPL3/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "6bbdd9764932b5dc458d9d79200f8b5d258904777d08afe80218940f484dcd96",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "2369962fbb56d1fd90e1131ebd2f7e4c06ad0f1b"
+        }
+      ],
+      "byte_size": 10092117,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/2369962/state/artifacts/2369962fbb56d1fd90e1131ebd2f7e4c06ad0f1b/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "625e9737065b6ea1023ba29f88db598f5d60910504035dd18055fc233393b09b",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "6db7184449620604582394f85009aff818a8ae13"
+        }
+      ],
+      "byte_size": 10098246,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/6db7184/durability-state/artifacts/6db7184449620604582394f85009aff818a8ae13/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8c7b004e7555c21e994a1ead9733ca2c6779719f38af17c21f81a02fc4585a13",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "7fdaa725f0f129c40ff1c6f776bb1ad9e15b4780"
+        }
+      ],
+      "byte_size": 10101645,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/7fdaa72/durability-state/artifacts/7fdaa725f0f129c40ff1c6f776bb1ad9e15b4780/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "df44940eafab8f35253420efdc36d2cc7c2a57fd330baecf6ab777055d42e639",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "c39becd6a58a5b5c751524fda6f995e0193db22c"
+        }
+      ],
+      "byte_size": 10102633,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/c39becd/durability-state/artifacts/c39becd6a58a5b5c751524fda6f995e0193db22c/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "87cfb15be95e03e32657888dea649828493a3e696916b3b1b920f746d3b24481",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "08fa3d14ea6a2d47de95e4919fc91c9fcc7e4afd"
+        }
+      ],
+      "byte_size": 10082508,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/durability-state-08fa3d1/artifacts/08fa3d14ea6a2d47de95e4919fc91c9fcc7e4afd/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "b4968f378fe68659c828b4413b8b464a2198c7b56b1a28086cacf9a5ee6fa1a6",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "232c6c8e3d6e070dc05d1edaaff1633ce39cec9d"
+        }
+      ],
+      "byte_size": 10080887,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/durability-state-232c6c8/artifacts/232c6c8e3d6e070dc05d1edaaff1633ce39cec9d/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "c71ea38eb7b38b270160fa6981b994e7b488668574c2357edeeb94422336f8a5",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "8516e8ee91ad7dfd38995bdb3679c553300323a5"
+        }
+      ],
+      "byte_size": 10081271,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/durability-state-8516e8e/artifacts/8516e8ee91ad7dfd38995bdb3679c553300323a5/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "b7f951b2687c46ba8d1b128cf5c1ef8442d8539606051b2063f7ffca17a3edb4",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "666948f135be9acedf066890a79fbfd3206fe9b7"
+        }
+      ],
+      "byte_size": 10070229,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/durability-state/artifacts/666948f135be9acedf066890a79fbfd3206fe9b7/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "2a297a4fa6c9b0219ff21b6d25a22629e1bfc45ac879dd2203872907550d429e",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "0ca8b4059f3a3ec64226e614bdf848f9f1480c4b"
+        }
+      ],
+      "byte_size": 10084865,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/state-0ca8b40/artifacts/0ca8b4059f3a3ec64226e614bdf848f9f1480c4b/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "f172ee43ffc5061fedc12c784f18d76aad46dd136bc63f4f21a5285ad228c234",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "100f5758df5b3191df80d215195cc656858afce1"
+        }
+      ],
+      "byte_size": 10089889,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/state-100f575/artifacts/100f5758df5b3191df80d215195cc656858afce1/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "981fc2dec28889d7cfe415573aa056dd21b33911ddf4c23bf368c5d1e34bfc1c",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "618b809ba10b43d35d55cbc17666d923f9b5c594"
+        }
+      ],
+      "byte_size": 10091870,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-cpanel-hotfix-evidence/state-618b809/artifacts/618b809ba10b43d35d55cbc17666d923f9b5c594/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "44a01fe1bd1b5415eec0d655a627055424fb53b3b0bed9365d6efa7b1ea351d4",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "42440e34722c76f063c8450c2eaf8770840e6370"
+        }
+      ],
+      "byte_size": 4788781,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-determinism-unit.zoi1g3/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "9ac4ef31c209cc5895cdb55e56e2a52e43217affb44e0df4ec771b060b2bca3d",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "c122d5837379eb358a5d1bb43c005b26744481c0"
+        },
+        {
+          "ref": "refs/tags/cana-m3-m001-merge",
+          "sha": "c122d5837379eb358a5d1bb43c005b26744481c0"
+        },
+        {
+          "ref": "refs/tags/cana-m2-protected",
+          "sha": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7"
+        },
+        {
+          "ref": "refs/heads/codex/cana-mission-3-m001-shadow-slice",
+          "sha": "c9d3b8a3a75c9e7b4629c4d287e051aa4b1a816a"
+        }
+      ],
+      "byte_size": 5089075,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-fabel-final-verify.sRxv72/extracted/git/CANA_M3_M001_FABEL_REREVIEW_c122d583.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "b2b0e6e939ae360625a076a078de1b2cd82b6b181061af9cbcdf3c8c409ab013",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "c122d5837379eb358a5d1bb43c005b26744481c0"
+        },
+        {
+          "ref": "refs/tags/cana-m3-m001-merge",
+          "sha": "c122d5837379eb358a5d1bb43c005b26744481c0"
+        },
+        {
+          "ref": "refs/tags/cana-m2-protected",
+          "sha": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7"
+        },
+        {
+          "ref": "refs/heads/codex/cana-mission-3-m001-shadow-slice",
+          "sha": "c9d3b8a3a75c9e7b4629c4d287e051aa4b1a816a"
+        }
+      ],
+      "byte_size": 5089075,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-fabel-sealed-verify.2dJi6M/extracted/git/CANA_M3_M001_FABEL_REREVIEW_c122d583.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "b2b0e6e939ae360625a076a078de1b2cd82b6b181061af9cbcdf3c8c409ab013",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "021e6085006ff1aed18e4e98fbcc2bd79d35098e"
+        }
+      ],
+      "byte_size": 4795486,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-foundation-cpanel-node24-docker-group.pVGxqm/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8e55f5392a1addcd23f19fba9b71a3f60d179f108ec28a0e9e0972e82ef372d0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "021e6085006ff1aed18e4e98fbcc2bd79d35098e"
+        }
+      ],
+      "byte_size": 4795486,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-foundation-cpanel-node24-dockercli.fKNrwH/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8e55f5392a1addcd23f19fba9b71a3f60d179f108ec28a0e9e0972e82ef372d0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "021e6085006ff1aed18e4e98fbcc2bd79d35098e"
+        }
+      ],
+      "byte_size": 4795486,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-foundation-cpanel-node24-nonroot.3MSHph/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8e55f5392a1addcd23f19fba9b71a3f60d179f108ec28a0e9e0972e82ef372d0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "021e6085006ff1aed18e4e98fbcc2bd79d35098e"
+        }
+      ],
+      "byte_size": 4795486,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-foundation-cpanel-node24.BmmxF0/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8e55f5392a1addcd23f19fba9b71a3f60d179f108ec28a0e9e0972e82ef372d0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "021e6085006ff1aed18e4e98fbcc2bd79d35098e"
+        }
+      ],
+      "byte_size": 4795486,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-foundation-durability-state.XCsdHn/artifacts/021e6085006ff1aed18e4e98fbcc2bd79d35098e/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8e55f5392a1addcd23f19fba9b71a3f60d179f108ec28a0e9e0972e82ef372d0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "2fbf52ec7dcf5b4959f5e9eed68f64025cbd3d39"
+        }
+      ],
+      "byte_size": 9891629,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state-2fbf52e/artifacts/2fbf52ec7dcf5b4959f5e9eed68f64025cbd3d39/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "28f4426cce4b30702a6d42370f5154eb3e944b00af5a4867c4349858104e43fa",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "e3d4e7111d678dc40f01cd83204df6960b687b7a"
+        }
+      ],
+      "byte_size": 9911866,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state-e3d4e71/artifacts/e3d4e7111d678dc40f01cd83204df6960b687b7a/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "aadc828e44eb1491ff6e7272a44dd43630c238e9148a590b58f36ea3487a88c5",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "f4fba4d4bb3bae666970305c86e2f71c07c6c8d7"
+        }
+      ],
+      "byte_size": 9888499,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state-f4fba4d/artifacts/f4fba4d4bb3bae666970305c86e2f71c07c6c8d7/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "0a873a8c34d4cedc6f7b47c70cae308659899fd2dab231e5554778d271c5ca3f",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "e8bf9b2d6038452ed903d60e7cb26f3adb4d659c"
+        }
+      ],
+      "byte_size": 9910937,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-phase-b-final-evidence-ec1f76a1.PTy3vK/durability-state/artifacts/e8bf9b2d6038452ed903d60e7cb26f3adb4d659c/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "2211e602fe05a499f7e1cc07f3aef8851e0f5eef4c1e6a1f746993c579aeee77",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "3eebd14b8f5cb0f95938701b0d255d2cd73bd7fb"
+        }
+      ],
+      "byte_size": 4814065,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-3eeb-gates.UWK6qj/cpanel-node24/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "a32f85714520e1e1008bd1bfc9bffef4fa33429afd4606d7ff3dd42c0cc902d2",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "3eebd14b8f5cb0f95938701b0d255d2cd73bd7fb"
+        }
+      ],
+      "byte_size": 4814065,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-3eeb-gates.UWK6qj/durability/state/artifacts/3eebd14b8f5cb0f95938701b0d255d2cd73bd7fb/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "a32f85714520e1e1008bd1bfc9bffef4fa33429afd4606d7ff3dd42c0cc902d2",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "be21512d2583734db2ef741ae330369c6708d715"
+        }
+      ],
+      "byte_size": 4819544,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-be215-gates.9D1DXi/durability/state/artifacts/be21512d2583734db2ef741ae330369c6708d715/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "9f123a13bd368cf6ae5a3405796cbebe42b887daa258baafa690697e71173dd8",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "be21512d2583734db2ef741ae330369c6708d715"
+        }
+      ],
+      "byte_size": 4819544,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-be215-gates.9D1DXi/linux-node24-source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "9f123a13bd368cf6ae5a3405796cbebe42b887daa258baafa690697e71173dd8",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/worktree1/HEAD",
+          "sha": "3deb9bc706bb7c065b0514f0c2847e9b9e43ef81"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "6e0b6c07ba768fa82923114aa5e3dc1712aadefa"
+        },
+        {
+          "ref": "refs/heads/codex/cana-build-database-determinism",
+          "sha": "6e0b6c07ba768fa82923114aa5e3dc1712aadefa"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-build-database-determinism",
+          "sha": "8be302b300921734019dc5d4b861611fe9c2186d"
+        },
+        {
+          "ref": "worktrees/repo4/HEAD",
+          "sha": "8be302b300921734019dc5d4b861611fe9c2186d"
+        },
+        {
+          "ref": "worktrees/worktree2/HEAD",
+          "sha": "913049e6844876e1b59760ae24795c2a4760e183"
+        },
+        {
+          "ref": "refs/heads/codex/cana-mission-1-integration",
+          "sha": "b6c54970ee0879e22fff443947aef26749bf4034"
+        },
+        {
+          "ref": "worktrees/CANA-mission1-integration/HEAD",
+          "sha": "b6c54970ee0879e22fff443947aef26749bf4034"
+        },
+        {
+          "ref": "worktrees/repo1/HEAD",
+          "sha": "b6c54970ee0879e22fff443947aef26749bf4034"
+        },
+        {
+          "ref": "main-worktree/HEAD",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/heads/codex/cana-stage-a-structured-data-stabilization",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-stage-a-structured-data-stabilization",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "worktrees/worktree3/HEAD",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/heads/codex/cana-convergence-mission-1",
+          "sha": "c05219c0b50ff02478168bf5619c85e467658153"
+        },
+        {
+          "ref": "worktrees/repo2/HEAD",
+          "sha": "c4b5229971f6b73880bf8f2fbc6e270c907ce4e9"
+        },
+        {
+          "ref": "worktrees/worktree/HEAD",
+          "sha": "c75e056a2447e02474d8ba80af667e432f63d59f"
+        },
+        {
+          "ref": "worktrees/repo3/HEAD",
+          "sha": "c832b43b8041b828d9cbae0e9a70f694abfd15e2"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-bottleneck-clearance",
+          "sha": "de4a497b6c039a5dccc9c3fb9a470dc0bf610318"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "ec278d2f98df40b150de48bc7a98533b4e37019d"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "ec278d2f98df40b150de48bc7a98533b4e37019d"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "ed9b32b4434f2916f90b83f52f892789db9929c4"
+        }
+      ],
+      "byte_size": 4877222,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-mariadb-diagnosis.s2HdIs/pr2-candidate-6e0b6c07.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "51ca2d0d04824afd603b8a78e078e2b89c28fe69b584e2ec791b20497ab739ff",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "61024ee1c39658fb38661e68dba9fbf264b1eaa3"
+        }
+      ],
+      "byte_size": 4805261,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-ownership-completion.CA3NoI/ownership-node24-source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "1c3e9f9ec67d9da37fab10428c32bb77259b81549927c2ca47accbd536c5ddd0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/codex/cana-build-database-determinism",
+          "sha": "a0b5d246c390bcf934fc23efa2488f32d6bb0989"
+        }
+      ],
+      "byte_size": 4804443,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-ownership-completion.CA3NoI/pr2-local-sync-a0b5d246.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "571e0778ff0464ede4357f4cc015146928190506fd036a43c119e6a440fae0e8",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "61024ee1c39658fb38661e68dba9fbf264b1eaa3"
+        }
+      ],
+      "byte_size": 4805261,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-ownership-durability.wG9EwR/artifacts/61024ee1c39658fb38661e68dba9fbf264b1eaa3/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "1c3e9f9ec67d9da37fab10428c32bb77259b81549927c2ca47accbd536c5ddd0",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/codex/cana-build-database-determinism",
+          "sha": "8be302b300921734019dc5d4b861611fe9c2186d"
+        }
+      ],
+      "byte_size": 4788626,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr2-sync.P1jEX3/pr2-original.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "004371f83261bc2d38516b1b58880cfee5ada1b708eecaf40fef2ec5727ba669",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/remotes/origin/transplant/t4-better-search",
+          "sha": "027749b85900bb947dac04d6b0a444be0269a3aa"
+        },
+        {
+          "ref": "refs/remotes/pull/32/head",
+          "sha": "027749b85900bb947dac04d6b0a444be0269a3aa"
+        },
+        {
+          "ref": "refs/remotes/pull/15/head",
+          "sha": "0a9e3e12dc77084a0d5f6a52872766207181ba56"
+        },
+        {
+          "ref": "refs/remotes/pull/5/head",
+          "sha": "13a7750d4076e06d3ce5c17820d05e0d435592ad"
+        },
+        {
+          "ref": "refs/remotes/pull/18/head",
+          "sha": "1b5211535aecbdc7d10a7bb757c4d83614a61d4d"
+        },
+        {
+          "ref": "refs/remotes/pull/7/head",
+          "sha": "1db4f3e7ab9d1b845c81b54c84ec727b4e797d33"
+        },
+        {
+          "ref": "refs/remotes/pull/17/head",
+          "sha": "235a53730bce7652d5df5e45450cc5e1c4644f0f"
+        },
+        {
+          "ref": "refs/remotes/origin/transplant/t5-merchant-fold",
+          "sha": "285275240bd0a8c73679956a4ef9b418cb472395"
+        },
+        {
+          "ref": "refs/remotes/pull/33/head",
+          "sha": "285275240bd0a8c73679956a4ef9b418cb472395"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "2956c12d5733c024ecfc1424babf6e0b00e83772"
+        },
+        {
+          "ref": "refs/remotes/origin/feat/sovereign-continuation-kernel",
+          "sha": "2956c12d5733c024ecfc1424babf6e0b00e83772"
+        },
+        {
+          "ref": "worktrees/cana-pr35-2956-audit/HEAD",
+          "sha": "2956c12d5733c024ecfc1424babf6e0b00e83772"
+        },
+        {
+          "ref": "main-worktree/HEAD",
+          "sha": "306d1cc8427c59e75c5fbb9e185e6d2ed632a459"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "306d1cc8427c59e75c5fbb9e185e6d2ed632a459"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "306d1cc8427c59e75c5fbb9e185e6d2ed632a459"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "306d1cc8427c59e75c5fbb9e185e6d2ed632a459"
+        },
+        {
+          "ref": "refs/remotes/pull/14/head",
+          "sha": "3654a24ba9aca76f2207d1a164a0b07be903e6f7"
+        },
+        {
+          "ref": "refs/remotes/pull/29/head",
+          "sha": "46da8dd4dfde33da4477d8f6204e425de7d4864f"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/sitemind-governed-dynamic-creative-foundation",
+          "sha": "5384e8ac223c5566ce0aef0e020cc07a39a1e2c3"
+        },
+        {
+          "ref": "refs/remotes/pull/25/head",
+          "sha": "5384e8ac223c5566ce0aef0e020cc07a39a1e2c3"
+        },
+        {
+          "ref": "refs/remotes/origin/transplant/t6-apple-token-layer",
+          "sha": "593be6303d0c3f281a4581982d41c8cad2754837"
+        },
+        {
+          "ref": "refs/remotes/pull/34/head",
+          "sha": "593be6303d0c3f281a4581982d41c8cad2754837"
+        },
+        {
+          "ref": "refs/remotes/pull/4/head",
+          "sha": "61024ee1c39658fb38661e68dba9fbf264b1eaa3"
+        },
+        {
+          "ref": "refs/remotes/pull/6/head",
+          "sha": "62901d3bf7c0313ba44a1f0fff09680ed529551e"
+        },
+        {
+          "ref": "refs/remotes/pull/20/head",
+          "sha": "64f941546e3629528fba122f7e04f335f15a4a9e"
+        },
+        {
+          "ref": "refs/remotes/pull/13/head",
+          "sha": "6933dc820bae7df9f1952117695b29d51512877a"
+        },
+        {
+          "ref": "refs/remotes/pull/19/head",
+          "sha": "6a6f37652f830a59c9cc22a30046668dfc71cbe8"
+        },
+        {
+          "ref": "refs/remotes/pull/16/head",
+          "sha": "6abfdabf9463594d6a66edd686cec3d3121f32a3"
+        },
+        {
+          "ref": "refs/heads/codex/pr29-release-gate-repair",
+          "sha": "77451edb8963c950d182b5c14f60a8a1fc17005c"
+        },
+        {
+          "ref": "refs/remotes/origin/feat/postgis-canonical-datastore",
+          "sha": "77451edb8963c950d182b5c14f60a8a1fc17005c"
+        },
+        {
+          "ref": "worktrees/pr29/HEAD",
+          "sha": "77451edb8963c950d182b5c14f60a8a1fc17005c"
+        },
+        {
+          "ref": "refs/remotes/origin/feature/sitemind-creative-learning-bridge-pr21-certified",
+          "sha": "88adc037a2e6eecbfe8903b5e2d58c2bc4cc1345"
+        },
+        {
+          "ref": "refs/remotes/pull/24/head",
+          "sha": "88adc037a2e6eecbfe8903b5e2d58c2bc4cc1345"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-gemini-creative-draft",
+          "sha": "88e00d1ad1fa7fc85db2de45a8ba129e41d4652e"
+        },
+        {
+          "ref": "refs/remotes/pull/11/head",
+          "sha": "88e00d1ad1fa7fc85db2de45a8ba129e41d4652e"
+        },
+        {
+          "ref": "refs/remotes/pull/3/head",
+          "sha": "8d24b1d6d3060684b036b39ca35322a69da9ac30"
+        },
+        {
+          "ref": "refs/remotes/pull/2/head",
+          "sha": "9daf9f61aca595fc9dd9467cab64b9346dfd3ef9"
+        },
+        {
+          "ref": "refs/remotes/origin/transplant/t2-market-graph-projection",
+          "sha": "a12263257dfc12437c355e5bad5ace0c807b3999"
+        },
+        {
+          "ref": "refs/remotes/pull/30/head",
+          "sha": "a12263257dfc12437c355e5bad5ace0c807b3999"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/sitemind-competitive-evolution-bridge",
+          "sha": "af83c306f67a7b63d44c1b810dd660ea9deca8dc"
+        },
+        {
+          "ref": "refs/remotes/pull/22/head",
+          "sha": "af83c306f67a7b63d44c1b810dd660ea9deca8dc"
+        },
+        {
+          "ref": "refs/heads/codex/pr35-sovereign-integration",
+          "sha": "b098f21659ac0f655f2213e50a6f74658d9e1892"
+        },
+        {
+          "ref": "worktrees/worktree/HEAD",
+          "sha": "b098f21659ac0f655f2213e50a6f74658d9e1892"
+        },
+        {
+          "ref": "refs/remotes/origin/dependabot/npm_and_yarn/postcss-8.5.23",
+          "sha": "b2f143f375a2159d1aeec6da4f4293b07f083164"
+        },
+        {
+          "ref": "refs/remotes/pull/26/head",
+          "sha": "b2f143f375a2159d1aeec6da4f4293b07f083164"
+        },
+        {
+          "ref": "refs/remotes/origin/dependabot/npm_and_yarn/multi-5e81c1b34f",
+          "sha": "b986549456c4b0d4085ef4e7eee1c973b840f153"
+        },
+        {
+          "ref": "refs/remotes/pull/23/head",
+          "sha": "b986549456c4b0d4085ef4e7eee1c973b840f153"
+        },
+        {
+          "ref": "refs/remotes/pull/9/head",
+          "sha": "bf2daa49fd2964e5aab1e9b85099f29b2d908dc9"
+        },
+        {
+          "ref": "refs/remotes/pull/1/head",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/heads/evidence/pr35-fable-c743753",
+          "sha": "c743753c9b36d0a96aa392ebb10700887ee70ebc"
+        },
+        {
+          "ref": "refs/remotes/origin/pr35-head",
+          "sha": "c743753c9b36d0a96aa392ebb10700887ee70ebc"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/orderweeddc-new-interface-recovery",
+          "sha": "c8d6b4581a5e1b1c2eb46acb3ba8f62939b2c149"
+        },
+        {
+          "ref": "refs/remotes/pull/8/head",
+          "sha": "c9d3b8a3a75c9e7b4629c4d287e051aa4b1a816a"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        },
+        {
+          "ref": "refs/remotes/pull/12/head",
+          "sha": "dc91a483a56866ab9d568f9afba5b93c3e18752b"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-bottleneck-clearance",
+          "sha": "de4a497b6c039a5dccc9c3fb9a470dc0bf610318"
+        },
+        {
+          "ref": "worktrees/review-pr35-e7957f3/HEAD",
+          "sha": "e7957f39c671d562cf0b99ba9d45848f50b147a4"
+        },
+        {
+          "ref": "refs/remotes/pull/10/head",
+          "sha": "ead24cd1cb39c763025d33581169866dfee9453a"
+        },
+        {
+          "ref": "refs/remotes/origin/transplant/t1-entity-genome",
+          "sha": "eae094ca9357283b105d48bfea28691287c61a46"
+        },
+        {
+          "ref": "refs/remotes/pull/28/head",
+          "sha": "eae094ca9357283b105d48bfea28691287c61a46"
+        },
+        {
+          "ref": "refs/remotes/origin/dependabot/npm_and_yarn/js-yaml-4.3.1",
+          "sha": "eaff5dd4ac221541363b1fb7a9ec2aaaad08b94c"
+        },
+        {
+          "ref": "refs/remotes/pull/27/head",
+          "sha": "eaff5dd4ac221541363b1fb7a9ec2aaaad08b94c"
+        },
+        {
+          "ref": "refs/remotes/origin/transplant/t3-market-truth",
+          "sha": "f7804ea6c699cd2ca0b650e166199609731b9215"
+        },
+        {
+          "ref": "refs/remotes/pull/31/head",
+          "sha": "f7804ea6c699cd2ca0b650e166199609731b9215"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/orderweeddc-customer-side-sovereign-ui",
+          "sha": "fa16fd507ea79d42d914e314de3b825170ff9b97"
+        },
+        {
+          "ref": "refs/remotes/pull/21/head",
+          "sha": "fa16fd507ea79d42d914e314de3b825170ff9b97"
+        }
+      ],
+      "byte_size": 37734762,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr29-recovery.nIqNNQ/evidence/pr35-2956c12-final/pr35-2956-audit.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "2a9c40fc453c5096ec18b7059fb5bf8f894ab6ca9d127e998203e506720beb0f",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/evidence/pr35-fable-c743753",
+          "sha": "c743753c9b36d0a96aa392ebb10700887ee70ebc"
+        }
+      ],
+      "byte_size": 10415834,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr29-recovery.nIqNNQ/evidence/pr35-fable-c743753.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "a2771b7c7d2f61d5d7a19ba66c8d6941fc78efc98e8f7a6c20e7d9fb53c1f039",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "f744c1ccea6a0ab3a473298ab7f94e2324fe3910"
+        }
+      ],
+      "byte_size": 4800592,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr3-canonical-merge.5uqyz4/fresh-node24-source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "9c0962cf93a976bbaec894f42cee036a842dd79c7c740678fb134cd923c378b6",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "8d24b1d6d3060684b036b39ca35322a69da9ac30"
+        }
+      ],
+      "byte_size": 4797476,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr3-durability-state.USvVv5/artifacts/8d24b1d6d3060684b036b39ca35322a69da9ac30/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "20d564a98e6bf3e8075c1bc132a9fd4f9dbc872d4dedfc4fb3bedcda4f1d85b2",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "f744c1ccea6a0ab3a473298ab7f94e2324fe3910"
+        }
+      ],
+      "byte_size": 4800581,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr3-fresh-durability.ES5LY9/artifacts/f744c1ccea6a0ab3a473298ab7f94e2324fe3910/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "3845d814a53e60e4f35376ea82880054c59df86eb3c5f797eeed9f7b110a2658",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/codex/cana-stage-a-foundation-integration",
+          "sha": "8d24b1d6d3060684b036b39ca35322a69da9ac30"
+        }
+      ],
+      "byte_size": 4797524,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-pr3-history-local.B6LwUy/node24-cpanel-source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "69bd89859de868ede36bbc7fae8271f67c4029c1b190202d93876115dd2f510e",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "d3538760c9268e324655735f3bfc286a7ef70042"
+        }
+      ],
+      "byte_size": 10062198,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-slice2-final-court-d353876/durability-state/artifacts/d3538760c9268e324655735f3bfc286a7ef70042/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "19de5f7f2aceadfcc3bdfc6076b2ea620682a98a3a5aae09ce4049ac3df9bada",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "e73bad8e6fad6e7949b59ea243ca8c51cda1a739"
+        }
+      ],
+      "byte_size": 10064348,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-slice2-final-court-e73bad8/durability-state/artifacts/e73bad8e6fad6e7949b59ea243ca8c51cda1a739/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "f22ea8a6cbb0e5d20dd66ed27e321a8f4a27340f771ae6d945debb2b22b35dee",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "fb3fc468e257e09c1ee4fa2b23c5e6876442f0e1"
+        }
+      ],
+      "byte_size": 10055173,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/cana-slice2-final-court-fb3fc46/state/artifacts/fb3fc468e257e09c1ee4fa2b23c5e6876442f0e1/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "9e0c1171fdcf42e4e247137507f0b2cf8c258c6910c5b53d99d6c3421c634ebf",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "c122d5837379eb358a5d1bb43c005b26744481c0"
+        },
+        {
+          "ref": "refs/tags/cana-m3-m001-merge",
+          "sha": "c122d5837379eb358a5d1bb43c005b26744481c0"
+        },
+        {
+          "ref": "refs/tags/cana-m2-protected",
+          "sha": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7"
+        },
+        {
+          "ref": "refs/heads/codex/cana-mission-3-m001-shadow-slice",
+          "sha": "c9d3b8a3a75c9e7b4629c4d287e051aa4b1a816a"
+        }
+      ],
+      "byte_size": 5089075,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/cana-m3-fabel-rereview-c122d583/package/git/CANA_M3_M001_FABEL_REREVIEW_c122d583.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "b2b0e6e939ae360625a076a078de1b2cd82b6b181061af9cbcdf3c8c409ab013",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7"
+        }
+      ],
+      "byte_size": 5057185,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/cana-mission2-contract-export-c4d058f/CANA_CANONICAL_MAIN_c4d058f.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "102ac3d0ca3d2244b5ad815c77c9d3de11595bfc80f8a34e4ca2981159c96494",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "ed9b32b4434f2916f90b83f52f892789db9929c4"
+        }
+      ],
+      "byte_size": 4782674,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/durability-independent-a1/state/artifacts/ed9b32b4434f2916f90b83f52f892789db9929c4/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "765d4933188ca3e57bcea9242df3be6af18596cbb32e8bd027266a2ab4cbc2c8",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "9b9eeaa7508a980b7267d229af9a3a4cee07cc8e"
+        }
+      ],
+      "byte_size": 5598948,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-artifact-final-9b9eeaa/state/artifacts/9b9eeaa7508a980b7267d229af9a3a4cee07cc8e/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "3d80b67e2218613f0b1851d5a374b48463406ccc1f9622c60a82e0fc3aac3db9",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "3654a24ba9aca76f2207d1a164a0b07be903e6f7"
+        }
+      ],
+      "byte_size": 5582130,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-artifact-repair-3654a24/state/artifacts/3654a24ba9aca76f2207d1a164a0b07be903e6f7/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8bc53117feb73a09c62b1bd17dab5129e8f147f8db248efd87c31562e4ce7a86",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "af09f83950ce249a69a07f38962e8b981da31c56"
+        }
+      ],
+      "byte_size": 5579669,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-artifact-repair-af09f83/state/artifacts/af09f83950ce249a69a07f38962e8b981da31c56/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "a8038c0922b4b3f6c53a36f6096b7b63c063ebb686e5a72e99f066b621ef8716",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "057bdf10f5b8c6cc583c1a0006fa261b8978f913"
+        }
+      ],
+      "byte_size": 5578928,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-db-byte-finalization-057bdf1/durability-state/artifacts/057bdf10f5b8c6cc583c1a0006fa261b8978f913/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8f4cdd4a73f0fa6ccbda21a6a6372a280a37a1fd98612d8d4bbc260f0ca8777d",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "6933dc820bae7df9f1952117695b29d51512877a"
+        }
+      ],
+      "byte_size": 5580811,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-db-byte-finalization-6933dc8/durability-state/artifacts/6933dc820bae7df9f1952117695b29d51512877a/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "3a9d50f5ed1a029630ead95566c6e40ab5038126342df98d21e92a0ac7dc9e2f",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "64f941546e3629528fba122f7e04f335f15a4a9e"
+        }
+      ],
+      "byte_size": 10085374,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-structural-tar-court-repair/64f9415-local/state/artifacts/64f941546e3629528fba122f7e04f335f15a4a9e/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "55f9c0fa7e0669e7dba0a75b01823075966eebc2dda2950d5bba773fe57ba15a",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "d355b900b411e922f0a0f4fb81962e4b32182bbb"
+        }
+      ],
+      "byte_size": 10082384,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/evidence/orderweeddc-structural-tar-court-repair/d355b90-local/state/artifacts/d355b900b411e922f0a0f4fb81962e4b32182bbb/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "4741575b77b4227509e98bf75019f7d34795e720aabcddcc0326709586c733d4",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/codex/cana-ci-runner-temp-context-repair",
+          "sha": "c377ca832799ec72c8b639d7d8fb0281459c6585"
+        }
+      ],
+      "byte_size": 4785322,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/preservation/cana-ci-runner-temp-context-repair-c377ca832799.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "acbac87806230bb24c4b17334a864c729385195ed73dc937ff129e04ee8040f9",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/codex/cana-mandatory-suite-determinism",
+          "sha": "42440e34722c76f063c8450c2eaf8770840e6370"
+        }
+      ],
+      "byte_size": 4788826,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/preservation/cana-mandatory-suite-determinism-42440e34722.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "83dad6504610207d7aac7ebfdab11c4cb809da8d97a0e52ec0b48920d4996290",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/recovery/competitive-ui-day-night",
+          "sha": "28ffe9dcaf3bc0deaff057a231fc91df2e4a8471"
+        }
+      ],
+      "byte_size": 2932500,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/preservation/orderweeddc-competitive-ui-28ffe9d/ORDERWEEDDC_COMPETITIVE_UI_28ffe9d.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "119e50a081b5bc34109b909025f7b5e6918d741c03ebf5fd04b1e37b47d3f8e8",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "88e00d1ad1fa7fc85db2de45a8ba129e41d4652e"
+        }
+      ],
+      "byte_size": 5595043,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".omo/review-evidence/88e00d1ad1fa7fc85db2de45a8ba129e41d4652e/durability-artifacts/88e00d1ad1fa7fc85db2de45a8ba129e41d4652e/repo.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "4bbff6a5c6ebaceac5bcc832159bea32d8de08034e55b60ffe270c14d33bd0ec",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/worktree1/HEAD",
+          "sha": "3deb9bc706bb7c065b0514f0c2847e9b9e43ef81"
+        },
+        {
+          "ref": "worktrees/repo6/HEAD",
+          "sha": "3eebd14b8f5cb0f95938701b0d255d2cd73bd7fb"
+        },
+        {
+          "ref": "worktrees/repo5/HEAD",
+          "sha": "6e0b6c07ba768fa82923114aa5e3dc1712aadefa"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-build-database-determinism",
+          "sha": "8be302b300921734019dc5d4b861611fe9c2186d"
+        },
+        {
+          "ref": "worktrees/repo4/HEAD",
+          "sha": "8be302b300921734019dc5d4b861611fe9c2186d"
+        },
+        {
+          "ref": "worktrees/worktree2/HEAD",
+          "sha": "913049e6844876e1b59760ae24795c2a4760e183"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "b10b1a15f8a662758941bbfd1ce6050881bf1401"
+        },
+        {
+          "ref": "refs/heads/codex/cana-build-database-determinism",
+          "sha": "b10b1a15f8a662758941bbfd1ce6050881bf1401"
+        },
+        {
+          "ref": "worktrees/repo/HEAD",
+          "sha": "b10b1a15f8a662758941bbfd1ce6050881bf1401"
+        },
+        {
+          "ref": "refs/heads/codex/cana-mission-1-integration",
+          "sha": "b6c54970ee0879e22fff443947aef26749bf4034"
+        },
+        {
+          "ref": "worktrees/CANA-mission1-integration/HEAD",
+          "sha": "b6c54970ee0879e22fff443947aef26749bf4034"
+        },
+        {
+          "ref": "worktrees/repo1/HEAD",
+          "sha": "b6c54970ee0879e22fff443947aef26749bf4034"
+        },
+        {
+          "ref": "worktrees/repo7/HEAD",
+          "sha": "be21512d2583734db2ef741ae330369c6708d715"
+        },
+        {
+          "ref": "main-worktree/HEAD",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/heads/codex/cana-stage-a-structured-data-stabilization",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-stage-a-structured-data-stabilization",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "worktrees/worktree3/HEAD",
+          "sha": "bf9127467e075d9e3348122cd8b5d849ff7674af"
+        },
+        {
+          "ref": "refs/heads/codex/cana-convergence-mission-1",
+          "sha": "c05219c0b50ff02478168bf5619c85e467658153"
+        },
+        {
+          "ref": "worktrees/repo2/HEAD",
+          "sha": "c4b5229971f6b73880bf8f2fbc6e270c907ce4e9"
+        },
+        {
+          "ref": "worktrees/worktree/HEAD",
+          "sha": "c75e056a2447e02474d8ba80af667e432f63d59f"
+        },
+        {
+          "ref": "worktrees/repo3/HEAD",
+          "sha": "c832b43b8041b828d9cbae0e9a70f694abfd15e2"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        },
+        {
+          "ref": "refs/remotes/origin/codex/cana-bottleneck-clearance",
+          "sha": "de4a497b6c039a5dccc9c3fb9a470dc0bf610318"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "ec278d2f98df40b150de48bc7a98533b4e37019d"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "ec278d2f98df40b150de48bc7a98533b4e37019d"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "ed9b32b4434f2916f90b83f52f892789db9929c4"
+        }
+      ],
+      "byte_size": 4892914,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".qa-cana-pr2-stage.e4aoxR/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "263cdec59a775dc9864b99af62b7f75aa369b8a7553f5aab56c68157d4b445d2",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/pr59-exact-review-0eb64/HEAD",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-59d8/HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "72b2634ae882a8e15a1480d76e243db8a261fdd4"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "72b2634ae882a8e15a1480d76e243db8a261fdd4"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "refs/remotes/origin/pr59-head",
+          "sha": "a42c3e0f99d306e288c88cca6d46d09c9b1a69b2"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11983916,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-72b263.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "5a0f5658401517995b6c5b95e25b03449c877fcc63c1ffbd9c737f389ceb604f",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/pr59-exact-review-0eb64/HEAD",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-59d8/HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "87435433b969b5fbc9dcc04cce5b7d0ea16ce995"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "87435433b969b5fbc9dcc04cce5b7d0ea16ce995"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11970103,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-874354.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "7302b3bc3bff46d41442ce846250410f321d2b531248716c4ee6dabed66969e1",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/pr59-exact-review-0eb64/HEAD",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-59d8/HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "8de432b19929b4eee9c3d02c8e2e51cc30305de3"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "8de432b19929b4eee9c3d02c8e2e51cc30305de3"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11972680,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-8de432.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "66c24aabca18b9a67be87c11de4eb7f16a132606656ffbdb8996467740ca76f2",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/pr59-exact-review-0eb64/HEAD",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-59d8/HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "995d31fa53f367ec57f0b044c501e083b2951bb2"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "995d31fa53f367ec57f0b044c501e083b2951bb2"
+        },
+        {
+          "ref": "refs/remotes/origin/pr59-head",
+          "sha": "a42c3e0f99d306e288c88cca6d46d09c9b1a69b2"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11980664,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-995d31.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "911871d6abec0e8d6b4314c4adeeb6159874e26e07bf3ceb65f287c4a37c8a30",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "worktrees/pr59-exact-review-0eb64/HEAD",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-59d8/HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "refs/remotes/origin/pr59-head",
+          "sha": "a42c3e0f99d306e288c88cca6d46d09c9b1a69b2"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "e9fb94aa9914e4dd6ebcff07d48a09def2fac561"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "e9fb94aa9914e4dd6ebcff07d48a09def2fac561"
+        }
+      ],
+      "byte_size": 11978685,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-e9fb94.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "01128adfa722de185e465b37f9a71c33c97f8319fc678bce279307978402f4bf",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11965195,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-final-59d8-pre-security-review.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "389b48b716be072de2a85ca165a10593cffd1599c0b9ee5e97abaf72263b14c7",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "a92227989708e0f0a413fc5524efcb08a1a41614"
+        }
+      ],
+      "byte_size": 11957499,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-final-head-only-attempt1.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "35bfbf54668e7887ac36aee39630dedd15e04210800cce2ee49a4d64546ad1c6",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "0eb64f21d857d4b44e9a572cc99fe11326be7273"
+        },
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-59d8/HEAD",
+          "sha": "59d8d953221ec437204587f07d5abccf95256a01"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11968198,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-final.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "294ae8e647a1e4aad1925f4e4b5b15a9d24759585a51f0e0ff231363bf116e5d",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "worktrees/pr59-exact-review-74cf/HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "9cb6791f70912e0860eddc549f33f970804255f6"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "9cb6791f70912e0860eddc549f33f970804255f6"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11967358,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source-successor.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "73764db268797264d7f8d4b00b358c86018c95ea27bf8d6376f648210190ac66",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/HEAD",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "refs/remotes/origin/main",
+          "sha": "4cc502cb317be157f1448e04ee296cb202829ed7"
+        },
+        {
+          "ref": "HEAD",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "refs/heads/codex/growth-reality-closure",
+          "sha": "74cfb672ac5cb1ea13be4996675cf68f5bcfcd36"
+        },
+        {
+          "ref": "refs/remotes/origin/integration/cana-technical-promotion-de4a497b",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11961600,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-harness-final/source.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "ac9b6df31f94a5c23b8dc23c074d3c85e5029ccb75658eccf2eca2e7a164aebc",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "53e54d5d530a1ed09a3e65d93c017f984f1383f1"
+        }
+      ],
+      "byte_size": 11895301,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-ir01-local/source-53e54d5d530a1ed09a3e65d93c017f984f1383f1-head.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "bc11191f1422d9059070e8d8b5d82b275465bf1cfae9b80a55884b7e646a7625",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "53e54d5d530a1ed09a3e65d93c017f984f1383f1"
+        },
+        {
+          "ref": "refs/cana/object-acquisition/v1-integration-tip",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11904539,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-ir01-local/source-53e54d5d530a1ed09a3e65d93c017f984f1383f1-with-v1.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "0d086e38267ad68a9d36a4805f9c1a8dfa7267051d29863c4e075cac4ede5489",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "HEAD",
+          "sha": "af649f3403125e1e48eacc6f723aa74479e57326"
+        },
+        {
+          "ref": "refs/cana/object-acquisition/v1-integration-tip",
+          "sha": "cc24b179d83d6a9ce8005e710f168986269230b1"
+        }
+      ],
+      "byte_size": 11909636,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": ".verification-receipts/pr59-ir01-v3-source-af649f3403125e1e48eacc6f723aa74479e57326-with-v1.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "8b7bef0546b5e1e6ead5a4e4734251aad876b64a5397dd70da85d5e946dd9cc5",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    },
+    {
+      "archive_safety": "SAFE_WITH_QUARANTINE",
+      "bundle_members": [],
+      "byte_size": 81522726,
+      "depth": 0,
+      "kind": "ZIP_ARCHIVE",
+      "label": "ARENA AI FOR ORDERWEEDDC.zip",
+      "matched_advertised_donors": [],
+      "member_count": 85,
+      "nested_containers": [
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 251886,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/GEMINI 3.7 FLASH ai-native-market-operating-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 93,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 52,
+          "scan_complete": true,
+          "sha256": "d4c69855eb8dcfaeeb4ecab0b229b22ba8dc56cd81a3368818ff2240dcf0c811",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 95217,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/inkling orderweeddc-cana-frontier-trial (1).zip",
+          "matched_advertised_donors": [],
+          "member_count": 55,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 37,
+          "scan_complete": true,
+          "sha256": "00b7fac9ae8d403dce34a7c352f079bafb6f509a4b788109d0622311514fce6f",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 232900,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/cannabis-market-operating-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 71,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 41,
+          "scan_complete": true,
+          "sha256": "b5f2f814f6033cd95e0dee85ad0b740c16525b2ceef24458c59957a3275432b8",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 250655,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/hunyuan-hy3-preview 2implementing-cana-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 59,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 39,
+          "scan_complete": true,
+          "sha256": "60f8d5da3f1dfbfc8cfb4e47896df7ba6dae066af3a44c95881b5c3a1235bb5e",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 216426,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/build-self-improving-agentic-system (1).zip",
+          "matched_advertised_donors": [],
+          "member_count": 46,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 29,
+          "scan_complete": true,
+          "sha256": "dd42ea9947166f1c3f43bfa391cb4f5b1d9a9107d3662b832affc191f8292787",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 10024327,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/cana (1).zip",
+          "matched_advertised_donors": [],
+          "member_count": 1031,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 847,
+          "scan_complete": true,
+          "sha256": "288b139ec1fba5ccd7338b11c3e7fe90e7d85589271486d67f7888ad33560269",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 372771,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS 5 HIGHorderweeddc-cana-capability-trial.zip",
+          "matched_advertised_donors": [],
+          "member_count": 98,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 53,
+          "scan_complete": true,
+          "sha256": "97a64f6f9e78b935d2c897d26fb65058230387819f9c46c45af49cec718c8b0d",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 90339,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/gpt-5.6-terra-xhigh 2 implementing-cana-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 24,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 16,
+          "scan_complete": true,
+          "sha256": "f7c89cdf1f0770b28993f4b24bb48550a4eb7ae9d5422ae2db429ca7029310f5",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 167740,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS 5 XHIGH 2cana-causal-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 48,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 31,
+          "scan_complete": true,
+          "sha256": "3605352b4a1c22da33be4887e573fcfd52b83e8db4380bbd8d2591a1ed1077a4",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 212388,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/integrated-marketplace-intelligence-os.zip",
+          "matched_advertised_donors": [],
+          "member_count": 77,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 44,
+          "scan_complete": true,
+          "sha256": "bf287a5118dbe4582d0a0197c661af12e4335221ff77090b1fc89806072b0e6b",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 114680,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/claude-opus-5-medium 2cana-causal-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 44,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 28,
+          "scan_complete": true,
+          "sha256": "1fdc04427e064ea9d0b254819283021af046cfdc92bcab7d7ef3abca72e4defb",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 65925,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/build-self-improving-intelligence-machine.zip",
+          "matched_advertised_donors": [],
+          "member_count": 39,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 26,
+          "scan_complete": true,
+          "sha256": "38d6af4ba467898850f6022115a5b91bb34958e213cbd6ffd0f6f559f222d4b8",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 167691,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/FABLE 5 orderweeddc-cana-capability-trial.zip",
+          "matched_advertised_donors": [],
+          "member_count": 51,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 33,
+          "scan_complete": true,
+          "sha256": "058f29431e29cbd792ca912e728edffb29f8c666fe28b8d10f37c61712fb83bc",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 56553289,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/AIARENA AGENT workspace-01a029d8-562b-764d-a912-7b342465d19b.zip",
+          "matched_advertised_donors": [],
+          "member_count": 1191,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 1191,
+          "scan_complete": true,
+          "sha256": "054e36fedd82cd5b8e3acc92cda8ac6d8886e1759372cf7c0e4f8f76f7fcd480",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 302897,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/opus 5 max agentic-market-intelligence-civilization.zip",
+          "matched_advertised_donors": [],
+          "member_count": 62,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 40,
+          "scan_complete": true,
+          "sha256": "da9681e09d94daa8edbe967364b4dbda53da27ea76d7efa3ff3753feb83c5ff2",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 297509,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS 5 HIGHai-native-market-operating-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 60,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 35,
+          "scan_complete": true,
+          "sha256": "e9235330909a2b437be3fe76b707546e73b0b3d655398189254efab2e520584a",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 157926,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/hunyuan-hy3-preview 2 cana-causal-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 45,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 30,
+          "scan_complete": true,
+          "sha256": "eb36c89f1303c9bf9d3316e5b718e946bbee50486cae8fbc3fc88cb4d19cea76",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 166454,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/CLAUDE FABLE 5 NICE UI initialize-coding-agent-environment.zip",
+          "matched_advertised_donors": [],
+          "member_count": 59,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 32,
+          "scan_complete": true,
+          "sha256": "a318db13e97f309898c2a03e7cdedee735318ecfc99714fd8cfb8e6c93af4b3a",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 133103,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/fabe 5 agentic-market-intelligence-civilization (1).zip",
+          "matched_advertised_donors": [],
+          "member_count": 57,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 32,
+          "scan_complete": true,
+          "sha256": "cebc96d06cbe1eb32bd3618f75ef33626b5bf778f20a7aa6da6b18089b4a1f51",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 10003946,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/cana.zip",
+          "matched_advertised_donors": [],
+          "member_count": 1031,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 847,
+          "scan_complete": true,
+          "sha256": "c086cb209b92566e9c37ef3991c9330e87684a663c076b9afc618b044695b1c2",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 175872,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/grok 4.6 xhighbuilding-self-improving-agentic-systems.zip",
+          "matched_advertised_donors": [],
+          "member_count": 91,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 56,
+          "scan_complete": true,
+          "sha256": "368ada6907c52772172a137b8eb98d28b5b2cb26b36d1126d6477e67717ffdb4",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 66917,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/orderweeddc-cana-frontier-trial.zip",
+          "matched_advertised_donors": [],
+          "member_count": 32,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 20,
+          "scan_complete": true,
+          "sha256": "11a5ea5c90dcb035a3bd11333791a36033cc1c84a8cc5ad52eb63699257db5df",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 350953,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS5HIGHorderweeddc-cana-capability-trial.zip",
+          "matched_advertised_donors": [],
+          "member_count": 103,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 60,
+          "scan_complete": true,
+          "sha256": "01b217b7de0746641e16deed9fec30233a23c83e0869767c7ca0dce24c3defa2",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 116421,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/integrated-intelligence-system-architecture.zip",
+          "matched_advertised_donors": [],
+          "member_count": 56,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 44,
+          "scan_complete": true,
+          "sha256": "64e89da7bb2657349c3d28ca8131d0b1554941996bc6f1e0794ff9a14a4b5bb0",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 181125,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/build-self-improving-agentic-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 100,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 69,
+          "scan_complete": true,
+          "sha256": "7b13fae824ba588d69e9375b48431640fac6a732dc277903ff2d6de1ee9cafef",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 291382,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/GPT 5.6SOL XHIGHcompetitor-capability-harvesting-strategy.zip",
+          "matched_advertised_donors": [],
+          "member_count": 40,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 28,
+          "scan_complete": true,
+          "sha256": "3de417c31c8e6a1f421351b8829d78b0af926315ae81121a6b36a3fd8994c814",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 136524,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/claude 4.8competitor-mechanism-abstraction-strategy.zip",
+          "matched_advertised_donors": [],
+          "member_count": 55,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 32,
+          "scan_complete": true,
+          "sha256": "1205aba9434f81892812046b8265a738b07bea1294dc4321641ccf4946407202",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 115632,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/FABLE 5build-self-improving-agentic-system-2.zip",
+          "matched_advertised_donors": [],
+          "member_count": 40,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 24,
+          "scan_complete": true,
+          "sha256": "156b219ebfbdb859da861c95dcf9e6ee8057ce806835452f071eb9428bcd6458",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 231083,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS 4.8 coding-agent-initialization-instructions.zip",
+          "matched_advertised_donors": [],
+          "member_count": 38,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 32,
+          "scan_complete": true,
+          "sha256": "7e14e75a99cabd4eb41e3d67a8a388c5dc4e323f4ba40ff1a4b9bf651006f376",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 265301,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/korrine 2implementing-cana-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 53,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 34,
+          "scan_complete": true,
+          "sha256": "16b2fb644cb8fe86f7ceac2c625e38aff1539786b676d5503937a766a4c2d6c8",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 264259,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/integrated-cana-operating-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 71,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 44,
+          "scan_complete": true,
+          "sha256": "176d3b73ba7bd09fc8c5582a23da9cdeb867a1d2bd4b61344cb02c42e4d39f1e",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 3364945,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/INCKLING orderweeddc-mockup-design-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 23,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 19,
+          "scan_complete": true,
+          "sha256": "20c9fb77cc5d28db717e70db61fea38b04701d42141e5699ab721e38fbee3944",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 271653,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS 5 MAX build-self-improving-agentic-systems.zip",
+          "matched_advertised_donors": [],
+          "member_count": 68,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 41,
+          "scan_complete": true,
+          "sha256": "53988d502ceee9894ab59575af7701ec14af217b72b60f220bfd972448f7538b",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 156901,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/qwen3.7-max 2implementing-cana-reality-closure.zip",
+          "matched_advertised_donors": [],
+          "member_count": 29,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 22,
+          "scan_complete": true,
+          "sha256": "3f2be99a28a6883b7c41af11542d51cb823ca1e31edd2689319192c01b623398",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 33693122,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/AIAGENTSworkspace-01a029e8-8e1e-7edd-93e3-3914bfd9355d.zip",
+          "matched_advertised_donors": [],
+          "member_count": 2049,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 2049,
+          "scan_complete": true,
+          "sha256": "a1acec75363d704b9a627aa31a0b0cb8493217ef38411398ecd434625270685a",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 599092,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/gpt5.5strategic-competitor-mechanism-analysis.zip",
+          "matched_advertised_donors": [],
+          "member_count": 47,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 29,
+          "scan_complete": true,
+          "sha256": "051a693f7c82235553987cc5c0c46f156046079402b4eda52c459c3989075b3c",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 340395,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPUS 5 HIGHlocal-commerce-transcendence-directive.zip",
+          "matched_advertised_donors": [],
+          "member_count": 51,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 33,
+          "scan_complete": true,
+          "sha256": "30ccba172124582aa577b34adc7fc0a6d509fb636cd96231fcbf10ee21d92c43",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 166576,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/claude-opus-5-max cana-axiom-convergence-laws.zip",
+          "matched_advertised_donors": [],
+          "member_count": 20,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 16,
+          "scan_complete": true,
+          "sha256": "f14bfad9f6e9620b89824b888215555307a5e401a097d69cd194f6d70b10a4e5",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 251872,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/OPU5 MEDIUMcompetitor-capability-harvesting-strategy.zip",
+          "matched_advertised_donors": [],
+          "member_count": 73,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 44,
+          "scan_complete": true,
+          "sha256": "5d340824ecb207378af48178316435d66c0f9ce760470260cae6ad1c8be49356",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 209176,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/dual-sovereign-intelligence-os.zip",
+          "matched_advertised_donors": [],
+          "member_count": 68,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 39,
+          "scan_complete": true,
+          "sha256": "2d4a953a22b45e4415fbbbc7c830244f565aaa73e4eb015876d51ad01e672080",
+          "text_sha_hits": []
+        },
+        {
+          "archive_safety": "SAFE_LISTING",
+          "bundle_members": [],
+          "byte_size": 318545,
+          "depth": 1,
+          "kind": "ZIP_ARCHIVE",
+          "label": "ARENA AI FOR ORDERWEEDDC.zip!/ARENA AI FOR ORDERWEEDDC/FLASH 3.7 orderweeddc-mockup-design-system.zip",
+          "matched_advertised_donors": [],
+          "member_count": 45,
+          "nested_containers": [],
+          "quarantined_members": [],
+          "rejected_members": [],
+          "safe_member_count": 38,
+          "scan_complete": true,
+          "sha256": "63a6722d3a653e741ac571cfda28d469eb35ab34b435a45dbe34def294c8b855",
+          "text_sha_hits": []
+        }
+      ],
+      "quarantined_members": [
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._GEMINI 3.7 FLASH ai-native-market-operating-system.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._inkling orderweeddc-cana-frontier-trial (1).zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._cannabis-market-operating-system.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._hunyuan-hy3-preview 2implementing-cana-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._build-self-improving-agentic-system (1).zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._cana (1).zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS 5 HIGHorderweeddc-cana-capability-trial.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._gpt-5.6-terra-xhigh 2 implementing-cana-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS 5 XHIGH 2cana-causal-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._integrated-marketplace-intelligence-os.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._claude-opus-5-medium 2cana-causal-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._build-self-improving-intelligence-machine.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._FABLE 5 orderweeddc-cana-capability-trial.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._AIARENA AGENT workspace-01a029d8-562b-764d-a912-7b342465d19b.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._opus 5 max agentic-market-intelligence-civilization.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS 5 HIGHai-native-market-operating-system.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._hunyuan-hy3-preview 2 cana-causal-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._CLAUDE FABLE 5 NICE UI initialize-coding-agent-environment.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._fabe 5 agentic-market-intelligence-civilization (1).zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._cana.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._grok 4.6 xhighbuilding-self-improving-agentic-systems.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._orderweeddc-cana-frontier-trial.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS5HIGHorderweeddc-cana-capability-trial.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._integrated-intelligence-system-architecture.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._build-self-improving-agentic-system.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._GPT 5.6SOL XHIGHcompetitor-capability-harvesting-strategy.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._claude 4.8competitor-mechanism-abstraction-strategy.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._FABLE 5build-self-improving-agentic-system-2.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS 4.8 coding-agent-initialization-instructions.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._korrine 2implementing-cana-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._integrated-cana-operating-system.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._CURRENT_REALITY.md",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._INCKLING orderweeddc-mockup-design-system.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS 5 MAX build-self-improving-agentic-systems.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._qwen3.7-max 2implementing-cana-reality-closure.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._AIAGENTSworkspace-01a029e8-8e1e-7edd-93e3-3914bfd9355d.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._gpt5.5strategic-competitor-mechanism-analysis.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPUS 5 HIGHlocal-commerce-transcendence-directive.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._claude-opus-5-max cana-axiom-convergence-laws.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._OPU5 MEDIUMcompetitor-capability-harvesting-strategy.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._dual-sovereign-intelligence-os.zip",
+          "reason": "APPLEDOUBLE"
+        },
+        {
+          "name": "__MACOSX/ARENA AI FOR ORDERWEEDDC/._FLASH 3.7 orderweeddc-mockup-design-system.zip",
+          "reason": "APPLEDOUBLE"
+        }
+      ],
+      "rejected_members": [],
+      "safe_member_count": 42,
+      "scan_complete": true,
+      "sha256": "23e9d2965d77bc0d8c40a412fb55341ec7b85bc1096ac30494d3453dc5128931",
+      "text_sha_hits": []
+    },
+    {
+      "archive_safety": "SAFE_LISTING",
+      "bundle_members": [],
+      "byte_size": 165753686,
+      "depth": 0,
+      "kind": "TAR_ARCHIVE",
+      "label": "CANA_PRODUCTION_CANDIDATE_B993A2D/orderweeddc-b993a2d5252380472b20ab4565ce07da9df1e61d.tar.gz",
+      "matched_advertised_donors": [],
+      "member_count": 6603,
+      "nested_containers": [],
+      "quarantined_members": [],
+      "rejected_members": [],
+      "safe_member_count": 5574,
+      "scan_complete": true,
+      "sha256": "0dd3e1a47d44f40bdd054beec4faee2daeb549df32a6831d2f35036570e2e4fa",
+      "text_sha_hits": []
+    },
+    {
+      "archive_safety": "SAFE_LISTING",
+      "bundle_members": [],
+      "byte_size": 248983,
+      "depth": 0,
+      "kind": "ZIP_ARCHIVE",
+      "label": "CANA_PROTECTED_MISSION2_BASE_EVIDENCE_70a7200f_2026-07-29.zip",
+      "matched_advertised_donors": [],
+      "member_count": 176,
+      "nested_containers": [],
+      "quarantined_members": [],
+      "rejected_members": [],
+      "safe_member_count": 152,
+      "scan_complete": true,
+      "sha256": "33990aa450fd98dcc12d981d3c5bec88b2f0d056a1a61d74f15b41c791f234b3",
+      "text_sha_hits": []
+    },
+    {
+      "archive_safety": "SAFE_LISTING",
+      "bundle_members": [
+        {
+          "advertised_heads": [
+            {
+              "ref": "refs/heads/main",
+              "sha": "9b9eeaa7508a980b7267d229af9a3a4cee07cc8e"
+            }
+          ],
+          "byte_size": 5598959,
+          "contained_non_advertised_wanted_shas": [],
+          "contained_wanted_shas": [],
+          "donor_dispositions": [
+            {
+              "admission": "REJECTED_NOT_CONTAINED",
+              "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+            },
+            {
+              "admission": "REJECTED_NOT_CONTAINED",
+              "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+            },
+            {
+              "admission": "REJECTED_NOT_CONTAINED",
+              "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+            }
+          ],
+          "label": "evidence/ORDERWEEDDC_PRODUCTION_RELEASE_9b9eeaa_2026-08-01.zip!/ORDERWEEDDC_PRODUCTION_RELEASE_9b9eeaa_2026-08-01/CANA_CANONICAL_PRODUCTION_9b9eeaa.bundle",
+          "matched_advertised_donors": [],
+          "non_advertised_wanted_shas": [
+            "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+            "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+            "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+          ],
+          "non_contained_wanted_shas": [
+            "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+            "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+            "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+          ],
+          "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+          "object_inspection_status": "COMPLETE",
+          "sha256": "3cb0c46ad89c5499fcfab45caf95fe8a13cd587e5bfe785ddf491a7d3b0ca86b",
+          "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+          "verification_status": "VERIFIED"
+        }
+      ],
+      "byte_size": 5599394,
+      "depth": 0,
+      "kind": "ZIP_ARCHIVE",
+      "label": "evidence/ORDERWEEDDC_PRODUCTION_RELEASE_9b9eeaa_2026-08-01.zip",
+      "matched_advertised_donors": [],
+      "member_count": 12,
+      "nested_containers": [],
+      "quarantined_members": [],
+      "rejected_members": [],
+      "safe_member_count": 11,
+      "scan_complete": true,
+      "sha256": "f554022f9e674b7dc94b4c2789e8866c9046a4f325bcca03f878b6b5b61e0785",
+      "text_sha_hits": []
+    },
+    {
+      "advertised_heads": [
+        {
+          "ref": "refs/heads/main",
+          "sha": "9b9eeaa7508a980b7267d229af9a3a4cee07cc8e"
+        }
+      ],
+      "byte_size": 5598959,
+      "contained_non_advertised_wanted_shas": [],
+      "contained_wanted_shas": [],
+      "donor_dispositions": [
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "1b41df9e9af2fe424f39eb45e9ed70c3b529af54"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e"
+        },
+        {
+          "admission": "REJECTED_NOT_CONTAINED",
+          "sha": "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+        }
+      ],
+      "kind": "BUNDLE",
+      "label": "evidence/ORDERWEEDDC_PRODUCTION_RELEASE_9b9eeaa_2026-08-01/CANA_CANONICAL_PRODUCTION_9b9eeaa.bundle",
+      "matched_advertised_donors": [],
+      "non_advertised_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "non_contained_wanted_shas": [
+        "1b41df9e9af2fe424f39eb45e9ed70c3b529af54",
+        "b9bd0f08f6f69efd6d982bfd13c1bd04183f8b9e",
+        "ef98b7b89353a937e35b81db0ceda35191c8eb51"
+      ],
+      "object_inspection_detail": "objects unbundled only into the fresh disposable bare Git store and queried with cat-file; no candidate or canonical refs or objects were touched",
+      "object_inspection_status": "COMPLETE",
+      "sha256": "3cb0c46ad89c5499fcfab45caf95fe8a13cd587e5bfe785ddf491a7d3b0ca86b",
+      "verification_detail": "bundle verified and object-inspected in a fresh disposable bare Git store; no candidate or canonical refs or objects were imported",
+      "verification_status": "VERIFIED"
+    }
+  ],
+  "external_effects": {
+    "archive_code_execution": false,
+    "canonical_ref_writes": false,
+    "network": false,
+    "production_mutation": false
+  },
+  "input_digest": "c33cfb5df7d985b2d1851912e55d982a68c746b9005f2c2196af90267c83ee13",
+  "input_manifest": "docs/zenith/DONOR_SCAN_INPUTS.json",
+  "limitations": [],
+  "main_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "observed_at": "2026-08-23T16:00:00.000Z",
+  "scan_budget": {
+    "max_containers": 512,
+    "max_depth": 6,
+    "max_member_bytes": 1073741824,
+    "max_members": 500000,
+    "max_text_member_bytes": 8388608,
+    "max_total_text_bytes": 536870912,
+    "max_total_uncompressed_bytes": 8589934592
+  },
+  "scan_complete": true,
+  "scan_counts": {
+    "archive_containers": 45,
+    "bundle_object_inspections_complete": 72,
+    "bundle_object_inspections_incomplete": 0,
+    "bundles_inspected": 72,
+    "containers_seen": 117,
+    "extracted_bytes": 151630017,
+    "listed_uncompressed_bytes": 655013327,
+    "members_listed": 14269,
+    "quarantined_members": 42,
+    "rejected_members": 0,
+    "safe_members": 12035,
+    "text_bytes_scanned": 24585243,
+    "text_members_scanned": 2064
+  },
+  "schema_version": "zenith-donor-inspection/v2"
+}
