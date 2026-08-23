@@ -22,13 +22,13 @@ export default async function AdminLoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[#0B0F12] text-brand-text flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#0B0F12] text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-2">
         <span className="text-brand-primary-text font-black text-xs border border-brand-primary/20 bg-brand-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">
           Authorized Staff
         </span>
         <h1 className="text-3xl font-extrabold">Administrator Sign In</h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-300">
           Administrative data and mutations require an active administrator session.
         </p>
       </div>
@@ -46,7 +46,7 @@ export default async function AdminLoginPage({
             )}
 
             <div>
-              <label htmlFor="email" className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+              <label htmlFor="email" className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                 Email
               </label>
               <input
@@ -61,7 +61,7 @@ export default async function AdminLoginPage({
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+              <label htmlFor="password" className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
                 Password
               </label>
               <input
@@ -84,7 +84,7 @@ export default async function AdminLoginPage({
           </form>
 
           <div className="mt-6 border-t border-white/5 pt-4 text-center">
-            <Link href="/business/login" className="text-xs text-slate-500 hover:text-brand-text">
+            <Link href="/business/login" className="text-xs text-slate-300 hover:text-white">
               Retailer manager sign in
             </Link>
           </div>
