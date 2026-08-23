@@ -323,6 +323,12 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         <div className="flex items-center gap-3">
           <span className="text-xs text-slate-600">{adminSession.email}</span>
           <Link
+            href="/admin/experience-review"
+            className="border border-brand-primary/40 bg-brand-primary/10 text-brand-primary-text text-xs font-bold px-4 py-2.5 rounded-md hover:bg-brand-primary/15 transition-all inline-block"
+          >
+            Experience reviews
+          </Link>
+          <Link
             href="/admin/site-intelligence"
             className="border border-brand-primary/40 bg-brand-primary/10 text-brand-primary-text text-xs font-bold px-4 py-2.5 rounded-md hover:bg-brand-primary/15 transition-all inline-block"
           >
