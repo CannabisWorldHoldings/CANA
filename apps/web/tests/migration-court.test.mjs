@@ -89,6 +89,7 @@ const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
 const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
 const LIVE_REALITY_MIGRATION = '20260810200000_live_reality_acquisition';
 const CONTENT_STABILITY_MIGRATION = '20260823000000_content_stability_court';
+const EXPERIENCE_REVIEW_MIGRATION = '20260823160000_experience_review_spine';
 const REALITY_FIXTURE = path.join(
   WEB,
   'fixtures',
@@ -367,6 +368,177 @@ test('APPLICATION ROOT: the migration court resolves apps/web from its module lo
   assert.equal(path.dirname(MIGRATIONS), path.join(WEB, 'prisma'));
   assert.ok(fs.existsSync(SCHEMA));
   assert.ok(fs.existsSync(MIGRATIONS));
+});
+
+test('experience review candidate: schema and migration expose only a draft-only authority-free review spine', () => {
+  const schema = fs.readFileSync(SCHEMA, 'utf8');
+  const candidate = schema.match(/^model ExperienceReviewCandidate \{([\s\S]*?)^\}/m)?.[1];
+  const receipt = schema.match(/^model ExperienceReviewReceipt \{([\s\S]*?)^\}/m)?.[1];
+  assert.ok(candidate, 'candidate model must be canonical Prisma state');
+  assert.ok(receipt, 'receipt model must be canonical Prisma state');
+  for (const field of [
+    'tenant', 'siteId', 'merchantId', 'sourceKind', 'sourceArtifact', 'sourceArtifactSha256', 'sourceRevision',
+    'sourceTreeSha', 'repositoryCommitSha', 'payloadSha256', 'evidenceRefs',
+    'rightsState', 'accessibilityState', 'policyState', 'uncertaintyState',
+    'idempotencyKey', 'version', 'lifecycle', 'createdAt',
+  ]) assert.match(candidate, new RegExp(`^\\s+${field}\\s`, 'm'), `candidate must bind ${field}`);
+  assert.match(candidate, /^\s+idempotencyKey\s+String\s+@unique/m);
+  for (const field of [
+    'candidateId', 'candidateVersion', 'sequence', 'actorId', 'decision', 'reasonCode',
+    'priorReceiptHash', 'receiptHash', 'evidenceRefs', 'evidenceSha256',
+    'executionAuthorized', 'publishAuthorized', 'deploymentAuthorized', 'createdAt',
+  ]) assert.match(receipt, new RegExp(`^\\s+${field}\\s`, 'm'), `receipt must bind ${field}`);
+  for (const forbidden of ['rawPayload', 'publicState', 'publishedState', 'action', 'cmsTarget', 'providerToken', 'executable']) {
+    assert.doesNotMatch(`${candidate}\n${receipt}`, new RegExp(`^\\s+${forbidden}\\s`, 'm'));
+  }
+  assert.match(receipt, /onDelete: Restrict/);
+
+  const sql = fs.readFileSync(path.join(MIGRATIONS, EXPERIENCE_REVIEW_MIGRATION, 'migration.sql'), 'utf8');
+  assert.match(sql, /ExperienceReviewCandidate_idempotencyKey_key/);
+  assert.match(sql, /ExperienceReviewReceipt_zero_authority/);
+  assert.match(sql, /CANA_EXPERIENCE_REVIEW_STALE_VERSION/);
+  assert.match(sql, /CANA_EXPERIENCE_REVIEW_LINEAGE_INVALID/);
+  assert.match(sql, /CANA_EXPERIENCE_REVIEW_RECEIPT_IMMUTABLE/);
+});
+
+test('experience review candidate: fresh storage refuses duplicate, stale, tampered, or authority-bearing review history', async () => {
+  const url = createDatabase('experience_review');
+  deploy(url);
+  const p = await client(url);
+  const candidateId = 'experience-review-candidate-1';
+  const rejectsWithStorageCode = async (operation, code, boundary) => assert.rejects(operation, (error) => {
+    const detail = `${error?.message ?? error}\n${JSON.stringify(error?.meta ?? {})}`;
+    assert.match(detail, new RegExp(code));
+    assert.match(detail, new RegExp(boundary));
+    return true;
+  });
+  const candidateInsert = `
+    INSERT INTO "ExperienceReviewCandidate" (
+      "id", "tenant", "siteId", "merchantId", "sourceKind", "sourceArtifact", "sourceArtifactSha256",
+      "sourceRevision", "sourceTreeSha", "repositoryCommitSha", "payloadSha256",
+      "evidenceRefs", "rightsState", "accessibilityState", "policyState",
+      "uncertaintyState", "idempotencyKey", "version", "lifecycle", "updatedAt"
+    ) VALUES (
+      '${candidateId}', 'orderweeddc.com', 'site-orderweeddc', NULL, 'SITEMIND',
+      'site-intelligence:court', '${'8'.repeat(64)}', 'revision-court-1', '${'a'.repeat(40)}',
+      '${'b'.repeat(40)}', '${'c'.repeat(64)}', '["sha256:${'d'.repeat(64)}"]',
+      'VERIFIED', 'VERIFIED', 'VERIFIED', 'UNKNOWN', 'experience-review-court-key',
+      1, 'PENDING_REVIEW', CURRENT_TIMESTAMP
+    )`;
+  await p.$executeRawUnsafe(candidateInsert);
+  await rejectsWithStorageCode(
+    p.$executeRawUnsafe(candidateInsert.replace(candidateId, 'experience-review-candidate-duplicate')),
+    '23505',
+    'ExperienceReviewCandidate_idempotencyKey_key|idempotencyKey',
+  );
+  await rejectsWithStorageCode(
+    p.$executeRawUnsafe(candidateInsert
+      .replace(candidateId, 'experience-review-candidate-source-kind')
+      .replace('experience-review-court-key', 'experience-review-court-source-kind')
+      .replace("'SITEMIND'", "'UNSUPPORTED_SOURCE'")),
+    '23514',
+    'ExperienceReviewCandidate_sourceKind_vocab',
+  );
+  await rejectsWithStorageCode(
+    p.$executeRawUnsafe(candidateInsert
+      .replace(candidateId, 'experience-review-candidate-artifact-sha')
+      .replace('experience-review-court-key', 'experience-review-court-artifact-sha')
+      .replace('8'.repeat(64), '8'.repeat(63))),
+    '23514',
+    'ExperienceReviewCandidate_sourceArtifactSha256_format',
+  );
+
+  await p.$executeRawUnsafe(`
+    UPDATE "ExperienceReviewCandidate"
+      SET "lifecycle" = 'APPROVED_FOR_DRAFT_ONLY', "updatedAt" = CURRENT_TIMESTAMP
+      WHERE "id" = '${candidateId}' AND "version" = 1 AND "lifecycle" = 'PENDING_REVIEW'`);
+  await p.$executeRawUnsafe(`
+    INSERT INTO "ExperienceReviewReceipt" (
+      "id", "candidateId", "candidateVersion", "sequence", "actorId", "decision",
+      "reasonCode", "priorReceiptHash", "receiptHash", "evidenceRefs", "evidenceSha256"
+    ) VALUES (
+      'experience-review-receipt-1', '${candidateId}', 1, 1, 'admin-court-actor',
+      'APPROVED_FOR_DRAFT_ONLY', 'COURT_DRAFT_ACCEPTED', '${'0'.repeat(64)}',
+      '${'e'.repeat(64)}', '["sha256:${'d'.repeat(64)}"]', '${'f'.repeat(64)}'
+    )`);
+
+  await assert.rejects(
+    p.$executeRawUnsafe(`UPDATE "ExperienceReviewReceipt" SET "reasonCode" = 'TAMPERED' WHERE "id" = 'experience-review-receipt-1'`),
+    /CANA_EXPERIENCE_REVIEW_RECEIPT_IMMUTABLE/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe(`DELETE FROM "ExperienceReviewReceipt" WHERE "id" = 'experience-review-receipt-1'`),
+    /CANA_EXPERIENCE_REVIEW_RECEIPT_IMMUTABLE/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe(`
+      INSERT INTO "ExperienceReviewReceipt" (
+        "id", "candidateId", "candidateVersion", "sequence", "actorId", "decision",
+        "reasonCode", "priorReceiptHash", "receiptHash", "evidenceRefs", "evidenceSha256"
+      ) VALUES (
+        'experience-review-receipt-bad-lineage', '${candidateId}', 1, 2, 'admin-court-actor',
+        'APPROVED_FOR_DRAFT_ONLY', 'COURT_REPLAY', '${'9'.repeat(64)}', '${'1'.repeat(64)}',
+        '[]', '${'2'.repeat(64)}'
+      )`),
+    /CANA_EXPERIENCE_REVIEW_LINEAGE_INVALID/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe(`
+      INSERT INTO "ExperienceReviewReceipt" (
+        "id", "candidateId", "candidateVersion", "sequence", "actorId", "decision",
+        "reasonCode", "priorReceiptHash", "receiptHash", "evidenceRefs", "evidenceSha256"
+      ) VALUES (
+        'experience-review-receipt-stale', '${candidateId}', 2, 2, 'admin-court-actor',
+        'APPROVED_FOR_DRAFT_ONLY', 'COURT_STALE', '${'e'.repeat(64)}', '${'3'.repeat(64)}',
+        '[]', '${'4'.repeat(64)}'
+      )`),
+    /CANA_EXPERIENCE_REVIEW_STALE_VERSION/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe(`
+      INSERT INTO "ExperienceReviewReceipt" (
+        "id", "candidateId", "candidateVersion", "sequence", "actorId", "decision",
+        "reasonCode", "priorReceiptHash", "receiptHash", "evidenceRefs", "evidenceSha256",
+        "executionAuthorized"
+      ) VALUES (
+        'experience-review-receipt-authority', '${candidateId}', 1, 2, 'admin-court-actor',
+        'APPROVED_FOR_DRAFT_ONLY', 'COURT_FORBIDDEN', '${'e'.repeat(64)}', '${'5'.repeat(64)}',
+        '[]', '${'6'.repeat(64)}', true
+      )`),
+    /CANA_EXPERIENCE_REVIEW_AUTHORITY_FORBIDDEN|ExperienceReviewReceipt_zero_authority/,
+  );
+  await assert.rejects(
+    p.$executeRawUnsafe(`UPDATE "ExperienceReviewCandidate" SET "payloadSha256" = '${'7'.repeat(64)}' WHERE "id" = '${candidateId}'`),
+    /CANA_EXPERIENCE_REVIEW_CANDIDATE_IMMUTABLE/,
+  );
+
+  const [stored] = await p.$queryRawUnsafe(`
+    SELECT candidate."tenant", candidate."lifecycle", receipt."candidateVersion",
+      receipt."priorReceiptHash", receipt."receiptHash", receipt."evidenceRefs",
+      receipt."executionAuthorized", receipt."publishAuthorized", receipt."deploymentAuthorized"
+    FROM "ExperienceReviewCandidate" candidate
+    JOIN "ExperienceReviewReceipt" receipt ON receipt."candidateId" = candidate."id"
+    WHERE candidate."id" = '${candidateId}'`);
+  assert.equal(stored.tenant, 'orderweeddc.com');
+  assert.equal(stored.lifecycle, 'APPROVED_FOR_DRAFT_ONLY');
+  assert.equal(stored.candidateVersion, 1);
+  assert.equal(stored.priorReceiptHash, '0'.repeat(64));
+  assert.equal(stored.receiptHash, 'e'.repeat(64));
+  assert.equal(stored.evidenceRefs, `["sha256:${'d'.repeat(64)}"]`);
+  assert.equal(stored.executionAuthorized, false);
+  assert.equal(stored.publishAuthorized, false);
+  assert.equal(stored.deploymentAuthorized, false);
+  assert.equal(await p.$queryRawUnsafe('SELECT 1 FROM "ExperienceReviewCandidate"').then((rows) => rows.length), 1);
+  assert.equal(await p.$queryRawUnsafe('SELECT 1 FROM "ExperienceReviewReceipt"').then((rows) => rows.length), 1);
+
+  const columns = await p.$queryRawUnsafe(`
+    SELECT "column_name" FROM information_schema.columns
+    WHERE "table_schema" = 'public'
+      AND "table_name" IN ('ExperienceReviewCandidate', 'ExperienceReviewReceipt')`);
+  const columnNames = new Set(columns.map((row) => row.column_name));
+  for (const forbidden of ['rawPayload', 'publicState', 'publishedState', 'action', 'cmsTarget', 'providerToken', 'executable']) {
+    assert.equal(columnNames.has(forbidden), false, `${forbidden} must not exist in durable review storage`);
+  }
 });
 
 /* ────────────────────────── 1. PORTABILITY CANARY ────────────────────────── */

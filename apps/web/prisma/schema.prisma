@@ -1271,3 +1271,73 @@ model AskIntentSignal {
 
   @@index([tenant, createdAt])
 }
+
+// ============================================================================
+// EXPERIENCE REVIEW SPINE
+//
+// Private source envelopes enter one authenticated Owner review queue. These
+// records carry only digests and evidence references, never source payloads or
+// personal data. A review decision remains draft-only and grants no execution,
+// publication, or deployment authority.
+// ============================================================================
+
+model ExperienceReviewCandidate {
+  id                 String   @id @default(uuid())
+  tenant             String
+  siteId             String?
+  merchantId         String?
+  /// SITEMIND | MERCHANT_MEDIA | EXPERIENCE_FABRIC
+  sourceKind         String
+  sourceArtifact     String
+  sourceArtifactSha256 String
+  sourceRevision     String
+  sourceTreeSha      String
+  repositoryCommitSha String
+  payloadSha256      String
+  /// JSON array of digest-addressed evidence references; never raw evidence.
+  evidenceRefs       String
+  rightsState        String
+  accessibilityState String
+  policyState        String
+  uncertaintyState   String
+  idempotencyKey     String   @unique
+  version            Int      @default(1)
+  /// PENDING_REVIEW | APPROVED_FOR_DRAFT_ONLY | REJECTED | RETURNED_FOR_EVIDENCE
+  lifecycle          String   @default("PENDING_REVIEW")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  receipts ExperienceReviewReceipt[]
+
+  @@index([tenant, lifecycle, createdAt])
+  @@index([siteId, lifecycle])
+  @@index([merchantId, lifecycle])
+}
+
+/// Append-only, hash-chained record of one closed Owner review decision. False
+/// authority flags are constitutional facts, not capabilities an actor can set.
+model ExperienceReviewReceipt {
+  id                   String   @id @default(uuid())
+  candidateId          String
+  candidateVersion     Int
+  sequence             Int
+  actorId              String
+  /// APPROVED_FOR_DRAFT_ONLY | REJECTED | RETURNED_FOR_EVIDENCE
+  decision             String
+  reasonCode           String
+  priorReceiptHash     String
+  receiptHash          String   @unique
+  /// Exact digest-addressed evidence considered for this decision.
+  evidenceRefs         String
+  evidenceSha256       String
+  executionAuthorized  Boolean  @default(false)
+  publishAuthorized    Boolean  @default(false)
+  deploymentAuthorized Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  candidate ExperienceReviewCandidate @relation(fields: [candidateId], references: [id], onDelete: Restrict)
+
+  @@unique([candidateId, sequence])
+  @@index([candidateId, createdAt])
+  @@index([actorId, createdAt])
+}
