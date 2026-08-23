@@ -201,8 +201,8 @@ export function buildC2Plan({ repo, expectedSha, expectedTree, workDir, opennext
     commands: [
       ['npm', ['install', '--no-save', '--package-lock=false', '--ignore-scripts', '--no-audit', '--no-fund', `@opennextjs/cloudflare@${pins.opennext}`, `wrangler@${pins.wrangler}`]],
       ['npm', ['run', 'prisma:generate', '--workspace', 'apps/web']],
-      ['node', ['../../node_modules/@opennextjs/cloudflare/dist/cli/index.js', 'build']],
-      ['node', ['../../node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
+      ['node', ['node_modules/@opennextjs/cloudflare/dist/cli/index.js', 'build']],
+      ['node', ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--ip', '127.0.0.1', '--port', '8787']],
     ],
   };
 }
