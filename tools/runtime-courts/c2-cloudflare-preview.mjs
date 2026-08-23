@@ -15,7 +15,7 @@ export const C2_SCHEMA_VERSION = 1;
 export const EXACT_NEXT_VERSION = '16.3.0-canary.6';
 export const EXACT_OPENNEXT_VERSION = '1.20.2';
 // A test pin, deliberately not an assertion that this version is production approved.
-export const EXACT_WRANGLER_VERSION = '4.64.0';
+export const EXACT_WRANGLER_VERSION = '4.86.0';
 export const COMPATIBILITY_DATE = '2024-09-23';
 export const VERDICTS = Object.freeze([
   'COMPATIBLE_LOCAL_PREVIEW',
@@ -217,19 +217,34 @@ function copyCandidate(plan) {
 
 export function classifyC2Results(results = {}) {
   const attempted = Boolean(results.attempted);
+  const installPassed = results.install?.ok === true;
   const allRoutesPassed = Array.isArray(results.routes) && results.routes.length > 0 && results.routes.every((route) => route.ok === true);
   const buildPassed = results.build?.ok === true;
   const previewPassed = results.preview?.ok === true;
   const verdict = !attempted
     ? 'ENVIRONMENT_MISSING'
-    : buildPassed && previewPassed && allRoutesPassed
+    : !installPassed
+      ? 'ENVIRONMENT_MISSING'
+      : buildPassed && previewPassed && allRoutesPassed
       ? 'COMPATIBLE_LOCAL_PREVIEW'
       : 'BLOCKED_CANARY_INCOMPATIBILITY';
+  const blockerCode = !attempted
+    ? 'C2_LOCAL_EXECUTION_NOT_ATTEMPTED'
+    : !installPassed
+      ? (results.install?.code ?? 'C2_DEPENDENCY_INSTALL_FAILED')
+      : !buildPassed
+        ? (results.build?.code ?? 'C2_OPENNEXT_BUILD_FAILED')
+        : !previewPassed
+          ? (results.preview?.code ?? 'C2_LOCAL_WORKERD_FAILED')
+          : !allRoutesPassed ? 'C2_ROUTE_PARITY_FAILED' : null;
   return {
     verdict,
     executionStatus: !attempted
       ? 'BLOCKED_NOT_EXECUTED_BY_DEFAULT'
-      : verdict === 'COMPATIBLE_LOCAL_PREVIEW' ? 'LOCAL_PREVIEW_OBSERVED' : 'BLOCKED_LOCAL_PREVIEW_FAILURE',
+      : !installPassed
+        ? 'BLOCKED_ENVIRONMENT_SETUP'
+        : verdict === 'COMPATIBLE_LOCAL_PREVIEW' ? 'LOCAL_PREVIEW_OBSERVED' : 'BLOCKED_LOCAL_PREVIEW_FAILURE',
+    blockerCode,
     productionReady: false,
     stableNextSecurityPatchedRecourt: 'OPEN',
   };
@@ -258,12 +273,41 @@ export function writeC2Receipt(outFile, receipt) {
   return output;
 }
 
+function commandFailureCode(error) {
+  const diagnostic = `${error?.code ?? ''}\n${String(error?.stdout ?? '')}\n${String(error?.stderr ?? '')}`;
+  if (/\bERESOLVE\b/.test(diagnostic)) return 'C2_NPM_DEPENDENCY_CONFLICT';
+  if (/\b(?:ENOTFOUND|EAI_AGAIN|ECONNRESET|ETIMEDOUT)\b|network request failed/i.test(diagnostic)) {
+    return 'C2_DEPENDENCY_FETCH_UNAVAILABLE';
+  }
+  if (/Prisma Client did not initialize|\.prisma\/client|Cannot find module ['"]@prisma\/client/i.test(diagnostic)) {
+    return 'C2_PRISMA_CLIENT_UNAVAILABLE';
+  }
+  if (/unsupported Next(?:\.js)? version|peer next@/i.test(diagnostic)) return 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED';
+  if (/BUILD_DATABASE_[A-Z_]+|DATABASE_(?:MIGRATION_FAILED|NOT_READY)/.test(diagnostic)) {
+    return 'C2_BUILD_DATABASE_GATE_FAILED';
+  }
+  if (/Module not found|ERR_MODULE_NOT_FOUND/.test(diagnostic)) return 'C2_BUILD_MODULE_NOT_FOUND';
+  return 'C2_COMMAND_FAILED';
+}
+
 function run(command, args, { cwd, env }) {
   try {
-    execFileSync(command, args, { cwd, env, stdio: 'ignore' });
+    execFileSync(command, args, {
+      cwd,
+      env,
+      encoding: 'utf8',
+      maxBuffer: 16 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     return { ok: true, command, args };
   } catch (error) {
-    return { ok: false, command, args, exitCode: error.status ?? null };
+    return {
+      ok: false,
+      command,
+      args,
+      exitCode: error.status ?? null,
+      code: commandFailureCode(error),
+    };
   }
 }
 

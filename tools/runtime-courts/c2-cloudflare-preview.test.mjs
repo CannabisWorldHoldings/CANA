@@ -96,17 +96,31 @@ test('GREEN: classification remains local-only and leaves stable Next recourt op
   const blocked = classifyC2Results({ attempted: false });
   assert.deepEqual(blocked, {
     verdict: 'ENVIRONMENT_MISSING', executionStatus: 'BLOCKED_NOT_EXECUTED_BY_DEFAULT',
+    blockerCode: 'C2_LOCAL_EXECUTION_NOT_ATTEMPTED',
     productionReady: false, stableNextSecurityPatchedRecourt: 'OPEN',
   });
   const compatible = classifyC2Results({
-    attempted: true, build: { ok: true }, preview: { ok: true },
+    attempted: true, install: { ok: true }, build: { ok: true }, preview: { ok: true },
     routes: [{ ok: true, route: '/api/health' }, { ok: true, route: '/api/release' }, { ok: true, route: '/' }, { ok: true, route: '/admin' }],
   });
   assert.equal(compatible.verdict, 'COMPATIBLE_LOCAL_PREVIEW');
+  assert.equal(compatible.blockerCode, null);
   assert.equal(compatible.productionReady, false);
   assert.equal(compatible.stableNextSecurityPatchedRecourt, 'OPEN');
-  assert.equal(classifyC2Results({ attempted: true, build: { ok: false }, preview: { ok: false }, routes: [] }).verdict, 'BLOCKED_CANARY_INCOMPATIBILITY');
+  assert.equal(classifyC2Results({ attempted: true, install: { ok: true }, build: { ok: false }, preview: { ok: false }, routes: [] }).verdict, 'BLOCKED_CANARY_INCOMPATIBILITY');
+  assert.deepEqual(classifyC2Results({
+    attempted: true,
+    install: { ok: false, code: 'C2_NPM_DEPENDENCY_CONFLICT' },
+    build: { ok: false }, preview: { ok: false }, routes: [],
+  }), {
+    verdict: 'ENVIRONMENT_MISSING',
+    executionStatus: 'BLOCKED_ENVIRONMENT_SETUP',
+    blockerCode: 'C2_NPM_DEPENDENCY_CONFLICT',
+    productionReady: false,
+    stableNextSecurityPatchedRecourt: 'OPEN',
+  });
   assert.equal(COMPATIBILITY_DATE, '2024-09-23');
+  assert.equal(EXACT_WRANGLER_VERSION, '4.86.0');
 });
 
 test('GREEN: default invocation preserves the production source and never installs or deploys', async () => {
