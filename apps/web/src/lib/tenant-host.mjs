@@ -23,6 +23,18 @@ export function tenantDomainForRequestHostname(hostname) {
   return TENANT_ALIASES[hostname] || hostname;
 }
 
+/**
+ * Brand routing uses the internal canonical tenant path while public Reality
+ * decisions are intentionally scoped to the public ORDERWEEDDC origin. Keep
+ * those identities separate at the server boundary so a host rewrite never
+ * makes verified public claims disappear from the customer projection.
+ */
+export function realityProjectionTenantForRouteDomain(routeDomain) {
+  return tenantDomainForRequestHostname(routeDomain) === CANONICAL_TENANT_DOMAIN
+    ? CANONICAL_PUBLIC_HOSTNAME
+    : routeDomain;
+}
+
 export function originForRequestHost(requestHost) {
   const protocol = isLocalPlatformHostname(requestHost.hostname)
     ? 'http'

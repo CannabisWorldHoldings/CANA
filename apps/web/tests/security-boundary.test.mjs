@@ -10,6 +10,7 @@ import {
 import {
   canonicalOriginForRequestHost,
   originForRequestHost,
+  realityProjectionTenantForRouteDomain,
   tenantDomainForRequestHostname,
 } from '../src/lib/tenant-host.mjs';
 import {
@@ -86,6 +87,18 @@ test('public canonical and local development hosts resolve to one tenant', () =>
   assert.equal(
     tenantDomainForRequestHostname('orderweeddc.localhost'),
     'orderweeddc.localhost',
+  );
+  assert.equal(
+    realityProjectionTenantForRouteDomain('orderweeddc.com'),
+    'orderweeddc.com',
+  );
+  assert.equal(
+    realityProjectionTenantForRouteDomain('orderweeddc.localhost'),
+    'orderweeddc.com',
+  );
+  assert.equal(
+    realityProjectionTenantForRouteDomain('wellness.localhost'),
+    'wellness.localhost',
   );
   assert.equal(
     originForRequestHost({

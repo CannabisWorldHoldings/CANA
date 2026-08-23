@@ -30,6 +30,7 @@ const webRoot = path.resolve(testDirectory, '..');
 const serverBridgePath = path.join(webRoot, 'src/lib/customer-world.server.ts');
 const producerPath = path.join(webRoot, 'src/lib/customer-world.mjs');
 const customerDiscoveryPath = path.join(webRoot, 'src/lib/ask/customer-discovery.mjs');
+const tenantHostPath = path.join(webRoot, 'src/lib/tenant-host.mjs');
 
 async function loadServerBridge() {
   const fixtureDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-server-bridge-'));
@@ -40,7 +41,8 @@ async function loadServerBridge() {
   const serverSource = fs.readFileSync(serverBridgePath, 'utf8')
     .replace("from '@/lib/prisma'", "from './prisma.mjs'")
     .replace("from '@/lib/customer-world.mjs'", "from './customer-world.mjs'")
-    .replace("from '@/lib/ask/ask-work.mjs'", "from './ask-work.mjs'");
+    .replace("from '@/lib/ask/ask-work.mjs'", "from './ask-work.mjs'")
+    .replace("from '@/lib/tenant-host.mjs'", `from ${JSON.stringify(pathToFileURL(tenantHostPath).href)}`);
   const output = ts.transpileModule(serverSource, {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
     fileName: serverBridgePath,
@@ -475,7 +477,7 @@ test('the server bridge sends real Customer Discovery output across the ASK boun
     });
     assert.equal(searched.world.state, 'CAPABILITY_GAP');
     assert.equal(bridge.askWork.persisted.length, 1);
-    assert.equal(bridge.askWork.persisted[0].domain, 'orderweeddc.localhost');
+    assert.equal(bridge.askWork.persisted[0].domain, 'orderweeddc.com');
     assert.equal(bridge.askWork.persisted[0].answer.market_id, 'US-MD');
     assert.equal(bridge.askWork.persisted[0].answer.verified_candidate_count, 0);
     assert.equal(

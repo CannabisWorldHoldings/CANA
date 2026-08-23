@@ -454,6 +454,8 @@ test('customer discovery orchestration preserves market intent and avoids store 
 test('the public ASK route invokes canonical Reality orchestration and never the legacy Retailer answer path', () => {
   const route = readFileSync(new URL('../src/app/api/v1/ask/route.ts', import.meta.url), 'utf8');
   assert.match(route, /resolveCustomerDiscovery\(prisma/);
+  assert.match(route, /tenantDomainForRequestHostname\(domain\)/);
+  assert.match(route, /realityProjectionTenantForRouteDomain\(domain\)/);
   assert.match(route, /searchParams\.get\('market'\)/);
   assert.doesNotMatch(route, /answerIntent|prisma\.retailer|currentPublicRecordWhere/);
   assert.match(route, /selectCurrentClaimDecisions \+ buildAnswerabilityFrontier/);

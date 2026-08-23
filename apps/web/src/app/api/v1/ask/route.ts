@@ -5,6 +5,10 @@ import {
   resolveCustomerMarketContext,
 } from '@/lib/ask/ask-service.mjs';
 import { recordAskWork } from '@/lib/ask/ask-work.mjs';
+import {
+  realityProjectionTenantForRouteDomain,
+  tenantDomainForRequestHostname,
+} from '@/lib/tenant-host.mjs';
 
 /**
  * PUBLIC API v1 — ASK ORDERWEEDDC (Track A vertical slice).
@@ -40,6 +44,8 @@ export async function GET(request: NextRequest) {
   const marketId = (url.searchParams.get('market') ?? 'US-DC').slice(0, 16);
   const host = request.headers.get('host') ?? '';
   const domain = host.split(':')[0];
+  const brandDomain = tenantDomainForRequestHostname(domain);
+  const realityTenant = realityProjectionTenantForRouteDomain(domain);
 
   if (q.trim().length === 0) {
     return NextResponse.json(
@@ -60,7 +66,7 @@ export async function GET(request: NextRequest) {
   let brand;
   const now = new Date();
   try {
-    brand = await prisma.brand.findUnique({ where: { domain }, select: { name: true } });
+    brand = await prisma.brand.findUnique({ where: { domain: brandDomain }, select: { name: true } });
   } catch {
     return NextResponse.json(
       { api_version: API_VERSION, error: 'STORE_UNAVAILABLE', detail: 'evidence-gated store could not be read' },
@@ -79,7 +85,7 @@ export async function GET(request: NextRequest) {
     discovery = await resolveCustomerDiscovery(prisma, {
       rawQuery: q,
       marketId,
-      tenantDomain: domain,
+      tenantDomain: realityTenant,
       now,
     });
   } catch {
@@ -92,7 +98,7 @@ export async function GET(request: NextRequest) {
 
   const recording = await recordAskWork(prisma, {
     answer,
-    domain,
+    domain: realityTenant,
     intent,
     now,
   });
