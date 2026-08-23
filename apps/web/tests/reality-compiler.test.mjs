@@ -247,9 +247,10 @@ test('only the Verification Court admits supported current official claims', () 
 
   assert.ok(decisions.some((entry) => entry.predicate === 'license_number'));
   assert.ok(decisions.some((entry) => entry.predicate === 'license_status'));
+  assert.ok(decisions.some((entry) => entry.predicate === 'facility_name'));
   assert.ok(decisions.some((entry) => entry.predicate === 'regulated_address'));
   assert.ok(decisions.filter((entry) => entry.decision_eligible).every(
-    (entry) => ['license_number', 'license_status', 'regulated_address', 'operating_status'].includes(entry.predicate),
+    (entry) => ['facility_name', 'license_number', 'license_status', 'regulated_address', 'operating_status'].includes(entry.predicate),
   ));
   assert.ok(decisions.filter((entry) => entry.decision_eligible).every(
     (entry) => entry.verification === 'VERIFIED' && entry.court_version,

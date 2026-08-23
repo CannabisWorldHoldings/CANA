@@ -12,6 +12,7 @@ export const DC_ABCA_SOURCE = Object.freeze({
   source_catalog_modified_date: '2026-06-05',
   max_age_ms: OFFICIAL_MARKET_TTL_MS,
   authoritative_predicates: Object.freeze([
+    'facility_name',
     'license_number',
     'license_status',
     'regulated_address',
