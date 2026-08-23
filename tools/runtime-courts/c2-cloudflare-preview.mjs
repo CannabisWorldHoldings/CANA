@@ -167,6 +167,10 @@ export function readExactSource({ repo, expectedSha, expectedTree }) {
   if (webPackage.dependencies?.next !== EXACT_NEXT_VERSION || webPackage.devDependencies?.['eslint-config-next'] !== EXACT_NEXT_VERSION) {
     throw new C2Refusal('C2_EXACT_VERSION_DRIFT', `C2 is pinned to Next and eslint-config-next ${EXACT_NEXT_VERSION}`);
   }
+  const openNextConfigPath = path.join(source, 'open-next.config.ts');
+  if (!fs.existsSync(openNextConfigPath) || !fs.lstatSync(openNextConfigPath).isFile() || fs.lstatSync(openNextConfigPath).isSymbolicLink()) {
+    throw new C2Refusal('C2_OPENNEXT_CONFIG_REQUIRED', 'a committed non-symlink open-next.config.ts is required');
+  }
   return { repository: source, sha, tree, nextVersion: webPackage.dependencies.next };
 }
 
@@ -283,6 +287,9 @@ function commandFailureCode(error) {
     return 'C2_PRISMA_CLIENT_UNAVAILABLE';
   }
   if (/unsupported Next(?:\.js)? version|peer next@/i.test(diagnostic)) return 'C2_OPENNEXT_NEXT_VERSION_UNSUPPORTED';
+  if (/No `open-next\.config\.ts` file was found|open-next\.config\.ts.*required/i.test(diagnostic)) {
+    return 'C2_OPENNEXT_CONFIG_REQUIRED';
+  }
   if (/BUILD_DATABASE_[A-Z_]+|DATABASE_(?:MIGRATION_FAILED|NOT_READY)/.test(diagnostic)) {
     return 'C2_BUILD_DATABASE_GATE_FAILED';
   }

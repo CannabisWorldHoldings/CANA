@@ -24,13 +24,19 @@ function tempDirectory(prefix) {
   return fs.mkdtempSync(path.join(os.tmpdir(), prefix));
 }
 
-function fixtureRepository({ next = '16.3.0-canary.6' } = {}) {
+function fixtureRepository({ next = '16.3.0-canary.6', openNextConfig = true } = {}) {
   const root = tempDirectory('c2-source-');
   fs.mkdirSync(path.join(root, 'apps', 'web'), { recursive: true });
   fs.writeFileSync(path.join(root, 'apps', 'web', 'package.json'), JSON.stringify({
     dependencies: { next },
     devDependencies: { 'eslint-config-next': next },
   }));
+  if (openNextConfig) {
+    fs.writeFileSync(
+      path.join(root, 'open-next.config.ts'),
+      "import { defineCloudflareConfig } from '@opennextjs/cloudflare';\nexport default defineCloudflareConfig();\n",
+    );
+  }
   execFileSync('git', ['init', '-q'], { cwd: root });
   execFileSync('git', ['add', '.'], { cwd: root });
   execFileSync('git', ['-c', 'user.name=C2 test', '-c', 'user.email=c2@example.invalid', 'commit', '-qm', 'fixture'], { cwd: root });
@@ -76,6 +82,8 @@ test('GREEN: candidate and tool pins fail closed on exact-version drift', () => 
   expectRefusal('C2_EXACT_VERSION_DRIFT', () => assertExactToolPins({ opennext: EXACT_OPENNEXT_VERSION, wrangler: '0.0.0' }));
   const drifted = fixtureRepository({ next: '16.3.0' });
   expectRefusal('C2_EXACT_VERSION_DRIFT', () => readExactSource({ repo: drifted.root, expectedSha: drifted.sha, expectedTree: drifted.tree }));
+  const missingConfig = fixtureRepository({ openNextConfig: false });
+  expectRefusal('C2_OPENNEXT_CONFIG_REQUIRED', () => readExactSource({ repo: missingConfig.root, expectedSha: missingConfig.sha, expectedTree: missingConfig.tree }));
 });
 
 test('GREEN: exact source custody refuses both tracked and untracked candidate changes', () => {
