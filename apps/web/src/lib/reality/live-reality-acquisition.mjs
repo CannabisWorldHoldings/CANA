@@ -170,6 +170,10 @@ function eventContext({
     source_revision: detail.post_revision ?? detail.pre_revision ?? persisted?.post_revision ?? 'UNKNOWN',
     pre_revision: detail.pre_revision ?? persisted?.pre_revision ?? null,
     post_revision: detail.post_revision ?? persisted?.post_revision ?? null,
+    pre_content_sha256: detail.pre_content_sha256 ?? persisted?.pre_content_sha256 ?? null,
+    post_content_sha256: detail.post_content_sha256 ?? persisted?.post_content_sha256 ?? null,
+    stability_probe_state:
+      detail.stability_probe_state ?? persisted?.stability_probe_state ?? 'NOT_OBSERVED',
     pre_count: detail.pre_count ?? persisted?.pre_count ?? null,
     post_count: detail.post_count ?? persisted?.post_count ?? null,
     request_digest: ABCA_LIVE_CONTRACT_DIGEST,
@@ -312,11 +316,20 @@ export async function acquireLiveMarketReality(store, {
 
       const outcome = changed ? 'SOURCE_CHANGED' : 'SOURCE_UNCHANGED';
       const revisionBound = capture.pre_revision !== null && capture.post_revision !== null;
-      const disposition = classifyAcquisitionTerminal({ outcome, revisionBound });
+      const contentStabilityBound = capture.stability_probe_state === 'CONTENT_STABLE'
+        && /^[a-f0-9]{64}$/.test(capture.pre_content_sha256 ?? '')
+        && capture.post_content_sha256 === capture.pre_content_sha256;
+      const disposition = classifyAcquisitionTerminal({
+        outcome,
+        revisionBound: revisionBound || contentStabilityBound,
+      });
       const terminal = await move('COMPLETED', {
         content_sha256: capture.content_sha256,
         pre_revision: capture.pre_revision,
         post_revision: capture.post_revision,
+        pre_content_sha256: capture.pre_content_sha256,
+        post_content_sha256: capture.post_content_sha256,
+        stability_probe_state: capture.stability_probe_state,
         pre_count: capture.pre_count,
         post_count: capture.post_count,
         record_count: capture.record_count,
@@ -354,6 +367,7 @@ export async function acquireLiveMarketReality(store, {
         completed_at: terminal.event.at,
         ...disposition,
         revision_bound: revisionBound,
+        content_stability_bound: contentStabilityBound,
         acquisition_event_id: terminal.row.id,
         content_artifact_id: persisted.contentArtifactId,
         snapshot_id: persisted.snapshotId,
@@ -433,7 +447,13 @@ function prismaEventData(event, context) {
     sourceRevision: context.source_revision,
     preSourceRevision: context.pre_revision,
     postSourceRevision: context.post_revision,
-    revisionState: context.source_revision === 'UNKNOWN' ? 'UNKNOWN' : 'OBSERVED',
+    preContentSha256: context.pre_content_sha256,
+    postContentSha256: context.post_content_sha256,
+    revisionState: context.source_revision !== 'UNKNOWN'
+      ? 'OBSERVED'
+      : context.stability_probe_state === 'CONTENT_STABLE'
+        ? 'CONTENT_STABLE'
+        : 'UNKNOWN',
     etag: response.etag,
     lastModified: response.last_modified,
     httpStatus: response.http_status,
@@ -521,6 +541,7 @@ function transactionStore(tx) {
           sourceUrl: capture.source_url,
           requestContractDigest: capture.request_digest,
           contentSha256: capture.content_sha256,
+          sourceResponseSha256: capture.pre_content_sha256,
           payloadBytes: capture.snapshot_bytes.length,
           recordCount: capture.record_count,
           schemaVersion: capture.manifest.schema_version,

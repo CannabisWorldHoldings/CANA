@@ -25,6 +25,10 @@
     {
       "name": "20260810200000_live_reality_acquisition",
       "sha256": "bdc41027d78bc2b42f56dcbb2586becd9e0e6e1c9e3493e2eb3f2c85d552d545"
+    },
+    {
+      "name": "20260823000000_content_stability_court",
+      "sha256": "6ca5128a4c99d0ad0ee0f2fa128c3acd87424a49d3bf0af9f33a84777f7ca4ee"
     }
   ]
 }

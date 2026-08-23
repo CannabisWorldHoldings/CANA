@@ -41,6 +41,7 @@ export const ABCA_LIVE_CONTRACT = Object.freeze({
   connectTimeoutMs: CONNECT_TIMEOUT_MS,
   bodyTimeoutMs: BODY_TIMEOUT_MS,
   runTimeoutMs: RUN_TIMEOUT_MS,
+  unversionedContentStabilityReads: 2,
 });
 
 function canonicalJson(value) {
@@ -53,6 +54,10 @@ function canonicalJson(value) {
 
 function digest(value) {
   return createHash('sha256').update(typeof value === 'string' ? value : canonicalJson(value)).digest('hex');
+}
+
+function bytesDigest(value) {
+  return createHash('sha256').update(value).digest('hex');
 }
 
 export const ABCA_LIVE_CONTRACT_DIGEST = digest(ABCA_LIVE_CONTRACT);
@@ -478,10 +483,33 @@ export async function captureAbcaReality({
     if (recordsResponse.body?.error || !Array.isArray(features)) fail('CANA_LIVE_REALITY_RECORDS_INVALID');
     if (recordsResponse.body.exceededTransferLimit === true) fail('CANA_LIVE_REALITY_PARTIAL_REFUSED');
     if (features.length !== preCount) fail('CANA_LIVE_REALITY_RECORD_COUNT_MISMATCH');
+    const primaryContentSha256 = bytesDigest(recordsResponse.bytes);
+    let confirmationContentSha256 = null;
+    if (preRevision === null) {
+      const confirmationResponse = await read(urls.records);
+      const confirmationFeatures = confirmationResponse.body?.features;
+      if (confirmationResponse.body?.error || !Array.isArray(confirmationFeatures)) {
+        fail('CANA_LIVE_REALITY_RECORDS_INVALID');
+      }
+      if (confirmationResponse.body.exceededTransferLimit === true) {
+        fail('CANA_LIVE_REALITY_PARTIAL_REFUSED');
+      }
+      if (confirmationFeatures.length !== preCount) {
+        fail('CANA_LIVE_REALITY_RECORD_COUNT_MISMATCH');
+      }
+      confirmationContentSha256 = bytesDigest(confirmationResponse.bytes);
+      if (confirmationContentSha256 !== primaryContentSha256) {
+        fail('CANA_LIVE_REALITY_CONTENT_STABILITY_DRIFT');
+      }
+    }
+    const stabilityProbeState = preRevision === null ? 'CONTENT_STABLE' : 'NOT_REQUIRED';
     const fetchedAt = new Date(clock()).toISOString();
     await onStage('CAPTURED', {
       fetched_at: fetchedAt,
       pre_revision: preRevision === null ? null : String(preRevision),
+      pre_content_sha256: primaryContentSha256,
+      post_content_sha256: confirmationContentSha256,
+      stability_probe_state: stabilityProbeState,
       pre_count: preCount,
       record_count: features.length,
       payload_bytes: totalBytes,
@@ -512,7 +540,7 @@ export async function captureAbcaReality({
       schema_version: 'cana-live-reality-source-capability/v1',
       source_key: ABCA_LIVE_CONTRACT.sourceKey,
       revision: preRevision === null ? 'UNKNOWN' : String(preRevision),
-      revision_state: preRevision === null ? 'UNKNOWN' : 'OBSERVED',
+      revision_state: preRevision === null ? 'CONTENT_STABLE' : 'OBSERVED',
       current_version: preMetadata.body.currentVersion,
       capabilities: preMetadata.body.capabilities,
       pagination: true,
@@ -524,12 +552,17 @@ export async function captureAbcaReality({
         adapter_max_records: MAX_RECORDS,
         response_bytes: MAX_RESPONSE_BYTES,
         run_bytes: MAX_RUN_BYTES,
+        unversioned_content_stability_reads:
+          ABCA_LIVE_CONTRACT.unversionedContentStabilityReads,
       },
     };
     await onStage('POSTFLIGHT_VALIDATED', {
       fetched_at: fetchedAt,
       pre_revision: preRevision === null ? null : String(preRevision),
       post_revision: postRevision === null ? null : String(postRevision),
+      pre_content_sha256: primaryContentSha256,
+      post_content_sha256: confirmationContentSha256,
+      stability_probe_state: stabilityProbeState,
       pre_count: preCount,
       post_count: postCount,
       payload_bytes: totalBytes,
@@ -548,6 +581,9 @@ export async function captureAbcaReality({
       source_modified_at: preRevision === null ? null : new Date(preRevision).toISOString(),
       pre_revision: preRevision === null ? null : String(preRevision),
       post_revision: postRevision === null ? null : String(postRevision),
+      pre_content_sha256: primaryContentSha256,
+      post_content_sha256: confirmationContentSha256,
+      stability_probe_state: stabilityProbeState,
       pre_count: preCount,
       post_count: postCount,
       record_count: preCount,

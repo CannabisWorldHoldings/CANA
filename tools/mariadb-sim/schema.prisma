@@ -928,6 +928,7 @@ model MarketSourceContentArtifact {
   sourceUrl             String
   requestContractDigest String
   contentSha256         String
+  sourceResponseSha256  String?
   payloadBytes          Int
   recordCount           Int
   schemaVersion         String
@@ -962,7 +963,9 @@ model MarketSourceAcquisitionEvent {
   sourceRevision           String
   preSourceRevision        String?
   postSourceRevision       String?
-  /// OBSERVED | UNKNOWN
+  preContentSha256         String?
+  postContentSha256        String?
+  /// OBSERVED | CONTENT_STABLE | UNKNOWN
   revisionState            String    @default("UNKNOWN")
   etag                     String?
   lastModified             String?

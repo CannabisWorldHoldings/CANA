@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -176,6 +177,49 @@ test('UNKNOWN revision may be compiled as observation evidence but cannot revali
       revisionState: 'OBSERVED',
       outcome: 'SOURCE_CHANGED',
     } }),
+    tenant: 'orderweeddc.com',
+    purpose: 'REVALIDATE',
+    asOf: AS_OF,
+  }).reason, 'ACQUISITION_REVISION_UNBOUND');
+});
+
+test('byte-identical unversioned content is independently bound and tamper-evident', () => {
+  const responseBytes = Buffer.from('{"features":[{"attributes":{"OBJECTID":1}}]}');
+  const responseSha256 = createHash('sha256').update(responseBytes).digest('hex');
+  const contentStable = evidence({
+    event: {
+      sourceRevision: 'UNKNOWN',
+      preSourceRevision: null,
+      postSourceRevision: null,
+      preContentSha256: responseSha256,
+      postContentSha256: responseSha256,
+      revisionState: 'CONTENT_STABLE',
+      outcome: 'SOURCE_CHANGED',
+    },
+    artifact: {
+      sourceResponseSha256: responseSha256,
+    },
+  });
+  const admitted = court.adjudicateAcquisitionEvidence({
+    ...contentStable,
+    tenant: 'orderweeddc.com',
+    purpose: 'REVALIDATE',
+    asOf: AS_OF,
+  });
+  assert.equal(admitted.decision, 'ALLOW');
+  assert.equal(admitted.revision_bound, false);
+  assert.equal(admitted.content_stability_bound, true);
+
+  assert.equal(court.adjudicateAcquisitionEvidence({
+    ...contentStable,
+    event: { ...contentStable.event, postContentSha256: 'f'.repeat(64) },
+    tenant: 'orderweeddc.com',
+    purpose: 'REVALIDATE',
+    asOf: AS_OF,
+  }).reason, 'ACQUISITION_REVISION_UNBOUND');
+  assert.equal(court.adjudicateAcquisitionEvidence({
+    ...contentStable,
+    artifact: { ...contentStable.artifact, sourceResponseSha256: 'e'.repeat(64) },
     tenant: 'orderweeddc.com',
     purpose: 'REVALIDATE',
     asOf: AS_OF,

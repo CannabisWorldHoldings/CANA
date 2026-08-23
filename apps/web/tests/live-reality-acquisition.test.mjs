@@ -62,6 +62,7 @@ function scriptedSource(options = {}) {
     preCount = 1,
     postCount = preCount,
     features = [record()],
+    confirmationFeatures = features,
     fields = ABCA_FIELDS,
     metadataOptions,
     failureAt = null,
@@ -73,13 +74,27 @@ function scriptedSource(options = {}) {
     : false;
   let call = 0;
   const calls = [];
-  const bodies = [
-    metadata(preRevision, fields, metadataOptions),
-    { count: preCount },
-    exceededTransferLimit === undefined ? { features } : { features, exceededTransferLimit },
-    metadata(postRevision, fields, metadataOptions),
-    { count: postCount },
-  ];
+  const recordBody = exceededTransferLimit === undefined
+    ? { features }
+    : { features, exceededTransferLimit };
+  const bodies = metadataOptions?.omitEditingInfo
+    ? [
+        metadata(preRevision, fields, metadataOptions),
+        { count: preCount },
+        recordBody,
+        exceededTransferLimit === undefined
+          ? { features: confirmationFeatures }
+          : { features: confirmationFeatures, exceededTransferLimit },
+        metadata(postRevision, fields, metadataOptions),
+        { count: postCount },
+      ]
+    : [
+        metadata(preRevision, fields, metadataOptions),
+        { count: preCount },
+        recordBody,
+        metadata(postRevision, fields, metadataOptions),
+        { count: postCount },
+      ];
   return {
     calls,
     lookup: async () => [{ address: '23.48.99.80', family: 4 }],
@@ -253,7 +268,7 @@ test('changed then unchanged acquisition keeps one content identity and two inde
   assert.equal(store.capabilities.length, 2);
 });
 
-test('current live metadata shape stays complete while unavailable source revision remains UNKNOWN', async () => {
+test('unversioned live metadata requires two byte-identical content reads before revalidation', async () => {
   const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
   const store = new MemoryAcquisitionStore();
   const source = scriptedSource({
@@ -264,17 +279,36 @@ test('current live metadata shape stays complete while unavailable source revisi
   assert.equal(result.state, 'COMPLETED');
   assert.equal(result.outcome, 'SOURCE_CHANGED');
   assert.equal(result.revision_bound, false);
+  assert.equal(result.content_stability_bound, true);
   assert.equal(result.may_compile, true);
-  assert.equal(result.may_revalidate, false);
-  assert.equal(source.calls.length, 5);
+  assert.equal(result.may_revalidate, true);
+  assert.equal(source.calls.length, 6);
   const terminal = store.events.at(-1).context;
   assert.equal(terminal.source_revision, 'UNKNOWN');
   assert.equal(terminal.pre_revision, null);
   assert.equal(terminal.post_revision, null);
+  assert.equal(terminal.stability_probe_state, 'CONTENT_STABLE');
+  assert.match(terminal.pre_content_sha256, /^[a-f0-9]{64}$/);
+  assert.equal(terminal.post_content_sha256, terminal.pre_content_sha256);
   assert.equal(store.capabilities[0].capabilities.revision, 'UNKNOWN');
-  assert.equal(store.capabilities[0].capabilities.revision_state, 'UNKNOWN');
+  assert.equal(store.capabilities[0].capabilities.revision_state, 'CONTENT_STABLE');
   assert.equal(store.captures[0].source_modified_at, null);
   assert.equal(store.captures[0].manifest.source_modified_at, null);
+});
+
+test('unversioned live metadata refuses a changed confirmation read before persistence', async () => {
+  const { acquireLiveMarketReality } = await import(ACQUISITION_MODULE);
+  const store = new MemoryAcquisitionStore();
+  const source = scriptedSource({
+    metadataOptions: { omitTopLevelPagination: true, omitEditingInfo: true },
+    exceededTransferLimit: undefined,
+    confirmationFeatures: [record(3276)],
+  });
+  const result = await acquireLiveMarketReality(store, acquisitionOptions(source));
+  assert.equal(result.state, 'FAILED');
+  assert.equal(result.error_code, 'CANA_LIVE_REALITY_CONTENT_STABILITY_DRIFT');
+  assert.equal(result.content_artifacts_created, 0);
+  assert.equal(store.contents.size, 0);
 });
 
 test('revision drift and count drift fail closed before any content artifact exists', async () => {

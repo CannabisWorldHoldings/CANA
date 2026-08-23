@@ -1,6 +1,10 @@
 import { isEvidenceRevoked } from './evidence-revocation.mjs';
 import { marketContractForSourceKey } from './market-contract-registry.mjs';
-import { adjudicateExecutionProvenance, MARKET_CLAIM_COURT_VERSION } from './market-claim-court.mjs';
+import {
+  adjudicateExecutionProvenance,
+  contentStabilityBound,
+  MARKET_CLAIM_COURT_VERSION,
+} from './market-claim-court.mjs';
 
 const MAX_CURRENT_CLAIM_HISTORY = 5_000;
 
@@ -183,6 +187,11 @@ export async function loadCurrentClaimDecisions(prisma, {
       snapshotId: true,
       contentArtifactId: true,
       fetchedAt: true,
+      sourceRevision: true,
+      preSourceRevision: true,
+      postSourceRevision: true,
+      preContentSha256: true,
+      postContentSha256: true,
       revisionState: true,
       repositoryCommitSha: true,
       repositoryTreeSha: true,
@@ -223,6 +232,7 @@ export async function loadCurrentClaimDecisions(prisma, {
         sourceUrl: true,
         requestContractDigest: true,
         contentSha256: true,
+        sourceResponseSha256: true,
         payloadBytes: true,
         recordCount: true,
         schemaVersion: true,
@@ -311,6 +321,7 @@ function admittedAcquisition(claim, event, acquisition, artifact, snapshot, even
   const courtVersion = field(acquisition, 'verificationCourtVersion', 'verification_court_version');
   const outcome = acquisition?.outcome;
   const revisionState = field(acquisition, 'revisionState', 'revision_state');
+  const contentStable = contentStabilityBound(acquisition, artifact);
   const lineageVersions = [
     field(acquisition, 'adapterVersion', 'adapter_version'),
     field(acquisition, 'parserVersion', 'parser_version'),
@@ -363,8 +374,9 @@ function admittedAcquisition(claim, event, acquisition, artifact, snapshot, even
     && courtVersion === MARKET_CLAIM_COURT_VERSION
     && evaluatorVersion === courtVersion
     && adjudicateExecutionProvenance(acquisition).decision === 'ALLOW'
-    && ['OBSERVED', 'UNKNOWN'].includes(revisionState)
-    && (outcome !== 'SOURCE_UNCHANGED' || revisionState === 'OBSERVED');
+    && ['OBSERVED', 'CONTENT_STABLE', 'UNKNOWN'].includes(revisionState)
+    && (revisionState !== 'CONTENT_STABLE' || contentStable)
+    && (outcome !== 'SOURCE_UNCHANGED' || revisionState === 'OBSERVED' || contentStable);
 }
 
 export function selectCurrentClaimDecisions({

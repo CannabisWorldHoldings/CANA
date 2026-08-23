@@ -126,6 +126,19 @@ export function adjudicateExecutionProvenance(event) {
   });
 }
 
+export function contentStabilityBound(event, artifact) {
+  if (
+    event?.revisionState !== 'CONTENT_STABLE'
+    || event?.sourceRevision !== 'UNKNOWN'
+    || event?.preSourceRevision !== null
+    || event?.postSourceRevision !== null
+    || !/^[a-f0-9]{64}$/.test(event?.preContentSha256 ?? '')
+    || event.postContentSha256 !== event.preContentSha256
+    || artifact?.sourceResponseSha256 !== event.preContentSha256
+  ) return false;
+  return true;
+}
+
 function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
 }
@@ -237,7 +250,8 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
     && exactRevisionToken(preRevision)
     && postRevision === preRevision
     && event.sourceRevision === preRevision;
-  if (purpose === 'REVALIDATE' && !revisionBound) {
+  const contentStable = contentStabilityBound(event, artifact);
+  if (purpose === 'REVALIDATE' && !revisionBound && !contentStable) {
     return acquisitionDecision({ reason: 'ACQUISITION_REVISION_UNBOUND' });
   }
   if (!Number.isInteger(event.preObservedRecordCount)
@@ -267,6 +281,7 @@ export function adjudicateAcquisitionEvidence({ event, artifact, snapshot, tenan
     acquired_at: acquiredAt.toISOString(),
     zero_change: event.outcome === 'SOURCE_UNCHANGED',
     revision_bound: revisionBound,
+    content_stability_bound: contentStable,
   });
 }
 
