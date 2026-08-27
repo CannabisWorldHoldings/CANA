@@ -297,6 +297,12 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
       `the pinned-Next webpack build contract must be admitted exactly: ${webpackPath}`,
     );
   }
+  for (const linuxDependencyPath of ['package-lock.json', 'package.json']) {
+    assert.ok(
+      durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(linuxDependencyPath),
+      `the cross-platform Lightning CSS lock contract must be admitted exactly: ${linuxDependencyPath}`,
+    );
+  }
   assert.deepEqual(
     Object.keys(admission.blobs),
     [...durabilityCli.STAGE1_CONVERGENCE_PATHS],

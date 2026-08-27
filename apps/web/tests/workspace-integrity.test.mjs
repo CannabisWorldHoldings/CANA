@@ -18,6 +18,22 @@ test('the release workspace names only executable, verified packages', () => {
     'packages/ad-creative',
     'packages/ai',
   ]);
+  assert.deepEqual(rootPackage.optionalDependencies, {
+    'lightningcss-linux-arm64-gnu': '1.32.0',
+    'lightningcss-linux-x64-gnu': '1.32.0',
+  });
+  const rootLock = JSON.parse(
+    fs.readFileSync(path.join(repositoryRoot, 'package-lock.json'), 'utf8'),
+  );
+  for (const architecture of ['arm64', 'x64']) {
+    const locked = rootLock.packages[
+      `node_modules/lightningcss-linux-${architecture}-gnu`
+    ];
+    assert.equal(locked.version, '1.32.0');
+    assert.deepEqual(locked.os, ['linux']);
+    assert.deepEqual(locked.cpu, [architecture]);
+    assert.equal(locked.optional, true);
+  }
   const webPackage = JSON.parse(
     fs.readFileSync(path.join(webRoot, 'package.json'), 'utf8'),
   );

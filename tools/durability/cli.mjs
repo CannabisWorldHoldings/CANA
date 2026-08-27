@@ -84,14 +84,16 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'deploy/namecheap/build-artifact.mjs',
   'deploy/namecheap/failure-signatures.json',
   'docs/postmortems/2026-07-23-namecheap-next16-prisma-artifact-incident.md',
+  'package-lock.json',
+  'package.json',
   'tools/test-runner/container-verify.sh',
   'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  'e6c94a7928f51212b99f7ed86854bc50914151a29f26d82c55bda6414afa49f5';
+  'a79809f681a9a6aed37a518e650556102eccecbec297bb7c1f04c495395d46f4';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Twenty-five exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  scope: 'Twenty-seven exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -159,7 +161,7 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/tests/workspace-integrity.test.mjs': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: '8ac9fcb095c2d95fc03a6437c34a7b9fb42584c0',
+      git_blob_sha: 'fb43f2c90b107490b06d8f4e11b4e0960706a5f3',
     }),
     'apps/web/tsconfig.json': Object.freeze({
       git_mode: '100644',
@@ -188,6 +190,14 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'docs/postmortems/2026-07-23-namecheap-next16-prisma-artifact-incident.md': Object.freeze({
       git_mode: '100644',
       git_blob_sha: 'e56152a1f3bb494d4762fe24ad45ee659dc561e9',
+    }),
+    'package-lock.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '57e3e22f47cb376ca0945677132763a7fdd285ce',
+    }),
+    'package.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'c626d7ceeac129582bd9846a19e7694b9a9683ac',
     }),
     'tools/test-runner/container-verify.sh': Object.freeze({
       git_mode: '100755',
