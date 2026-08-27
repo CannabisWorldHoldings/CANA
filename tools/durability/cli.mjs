@@ -68,13 +68,14 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'apps/web/open-next.config.ts',
   'apps/web/src/app/admin/console/page.tsx',
   'apps/web/src/lib/prisma-cloudflare.ts',
+  'apps/web/tests/workspace-integrity.test.mjs',
   'apps/web/wrangler.jsonc',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '29865ffa9a3d5e2d7b326380d623b7b8f531b61eeca25c676d498b27110a652c';
+  '0b65b9d184faecb214f50ed608340b435e94c73d9d204c880c87c906f060f542';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Eight exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  scope: 'Nine exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -107,6 +108,10 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'apps/web/src/lib/prisma-cloudflare.ts': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '58bb9ac64549f78679445ed78105da6c93770541',
+    }),
+    'apps/web/tests/workspace-integrity.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'bdb8f18371c539585ce703c456df82e64074154b',
     }),
     'apps/web/wrangler.jsonc': Object.freeze({
       git_mode: '100644',

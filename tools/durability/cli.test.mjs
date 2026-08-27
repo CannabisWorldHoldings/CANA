@@ -252,6 +252,12 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
   );
 
   const admission = durabilityCli.stage1ConvergenceAdmission();
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(
+      'apps/web/tests/workspace-integrity.test.mjs',
+    ),
+    'the compatibility court must be admitted only at its reviewed replacement blob',
+  );
   assert.deepEqual(
     Object.keys(admission.blobs),
     [...durabilityCli.STAGE1_CONVERGENCE_PATHS],
