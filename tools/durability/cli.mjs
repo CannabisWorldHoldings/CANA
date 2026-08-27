@@ -64,6 +64,7 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'BASELINE_TEST_RECEIPT.json',
   'CLASS_D_BASELINE_RECEIPT.json',
   'CLASS_D_CONVERGENCE_RECEIPT.json',
+  'NAMECHEAP_CPANEL_DEPLOYMENT.md',
   'P0_STACK_DECOMPOSITION.json',
   'apps/web/eslint.config.mjs',
   'apps/web/open-next.config.ts',
@@ -72,16 +73,25 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'apps/web/src/app/api/release/route.ts',
   'apps/web/src/middleware.ts',
   'apps/web/src/lib/prisma-cloudflare.ts',
+  'apps/web/tests/build-database-gate.test.mjs',
+  'apps/web/tests/deployment-integrity.test.mjs',
   'apps/web/tests/release-sha.test.mjs',
   'apps/web/tests/workspace-integrity.test.mjs',
   'apps/web/tsconfig.json',
   'apps/web/wrangler.jsonc',
+  'deploy/namecheap/CAPABILITIES.md',
+  'deploy/namecheap/PRODUCTION_RELEASE_GATES.md',
+  'deploy/namecheap/build-artifact.mjs',
+  'deploy/namecheap/failure-signatures.json',
+  'docs/postmortems/2026-07-23-namecheap-next16-prisma-artifact-incident.md',
+  'tools/test-runner/container-verify.sh',
+  'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '834b8f5260d9288321bf07a38818afadba6a7235775a1e197e73bc510c7eaa0e';
+  'e6c94a7928f51212b99f7ed86854bc50914151a29f26d82c55bda6414afa49f5';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Fifteen exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  scope: 'Twenty-five exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -98,6 +108,10 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'CLASS_D_CONVERGENCE_RECEIPT.json': Object.freeze({
       git_mode: '100644',
       git_blob_sha: 'a352868a05ab860d239fea627bd8509c753a5590',
+    }),
+    'NAMECHEAP_CPANEL_DEPLOYMENT.md': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '514fcaa9d8d78deea4458bddbb75cd352756314b',
     }),
     'P0_STACK_DECOMPOSITION.json': Object.freeze({
       git_mode: '100644',
@@ -131,6 +145,14 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
       git_mode: '100644',
       git_blob_sha: '58bb9ac64549f78679445ed78105da6c93770541',
     }),
+    'apps/web/tests/build-database-gate.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '3b431c23aa8fe9681f88f66a7035585821e7c40f',
+    }),
+    'apps/web/tests/deployment-integrity.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'ce2f7c38e74ad0a36bb5e2c3275dee08f49a636f',
+    }),
     'apps/web/tests/release-sha.test.mjs': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '463808176ff059d5f5c0d067c6451d06407e2ca6',
@@ -146,6 +168,34 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'apps/web/wrangler.jsonc': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '02b63688b97407c25528591e059a3dc75dd07b56',
+    }),
+    'deploy/namecheap/CAPABILITIES.md': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '9fdae15bbd9878a82ce392aa5448ed63fc236a40',
+    }),
+    'deploy/namecheap/PRODUCTION_RELEASE_GATES.md': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'a829bc822af2c2b450b5e3cec7067f4d9179559e',
+    }),
+    'deploy/namecheap/build-artifact.mjs': Object.freeze({
+      git_mode: '100755',
+      git_blob_sha: 'bc48a9af102616cf0084314dbd828c8c8682d0f0',
+    }),
+    'deploy/namecheap/failure-signatures.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '82d06b1951d47bc686b440cb3b5edaa21c2e1fea',
+    }),
+    'docs/postmortems/2026-07-23-namecheap-next16-prisma-artifact-incident.md': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'e56152a1f3bb494d4762fe24ad45ee659dc561e9',
+    }),
+    'tools/test-runner/container-verify.sh': Object.freeze({
+      git_mode: '100755',
+      git_blob_sha: '7b44883e275383f79d99ea71af9bb0f9c7d711e4',
+    }),
+    'tools/test-runner/sovereign.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '5389f55a7010bfa2e2ed3b09c9271c1e410790f2',
     }),
   }),
   assignment_sha256: STAGE1_CONVERGENCE_ASSIGNMENT_SHA256,

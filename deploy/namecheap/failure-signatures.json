@@ -33,7 +33,7 @@
       "signature": "Cannot find module '@prisma/client-<hex>' (Failed to load external module)",
       "layer": "compiled-artifact (Turbopack hashed external)",
       "confidence": "PROVEN (incident 2026-07-23)",
-      "safeDiagnostic": "Confirm via receipt.json bundler field and the unresolved-external scan. Rebuild with next build --webpack; re-prove in true isolation.",
+      "safeDiagnostic": "Confirm via receipt.json bundler field and the unresolved-external scan. Rebuild with next build under the exact pinned Next 15.5.24 release; re-prove in true isolation.",
       "prohibitedAction": "npm install on shared hosting; symlink hacks as permanent fix; touching the database.",
       "rollbackTrigger": "Yes — roll back to last-known-good code release.",
       "ownerActionRequired": "Replace code release with the fixed artifact (one block)."

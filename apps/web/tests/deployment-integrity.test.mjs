@@ -576,9 +576,11 @@ test('contamination regression: parent node_modules falsely satisfies an incompl
   }
 });
 
-test('builder contract: webpack-only, unresolved-external scan, out-of-repo isolation', () => {
+test('builder contract: pinned-Next webpack-only, unresolved-external scan, out-of-repo isolation', () => {
   const builder = read('deploy/namecheap/build-artifact.mjs');
-  assert.match(builder, /next build --webpack/, 'Namecheap artifact must build with webpack');
+  assert.match(builder, /run\('npx next build'/, 'Namecheap artifact must use the pinned Next 15 webpack build');
+  assert.match(read('apps/web/package.json'), /"next": "15\.5\.24"/,
+    'the no-flag webpack contract must stay bound to the exact Next 15 release');
   assert.doesNotMatch(builder, /next build --turbo/, 'Turbopack must not build this artifact');
   assert.match(builder, /@prisma\\\/client-\[0-9a-f\]\{8,\}/, 'hashed-external scan pattern must exist');
   assert.match(builder, /mkdtempSync\(path\.join\(os\.tmpdir\(\)/, 'isolation must extract outside the repository');

@@ -165,7 +165,7 @@ test('production build ignores an arbitrary existing database and never mutates 
     `SELECT count(*)||':'||coalesce(string_agg(name, ',' ORDER BY name),'') FROM "Organization"`],
     { encoding: 'utf8' }).trim();
 
-  const result = spawnSync(process.execPath, [npmCli, 'run', 'build', '--', '--webpack'], {
+  const result = spawnSync(process.execPath, [npmCli, 'run', 'build'], {
     cwd: webRoot,
     env: {
       ...process.env,

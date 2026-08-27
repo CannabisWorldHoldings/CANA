@@ -280,6 +280,23 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
       `the bundled release-identity path must be admitted exactly: ${releasePath}`,
     );
   }
+  for (const webpackPath of [
+    'NAMECHEAP_CPANEL_DEPLOYMENT.md',
+    'apps/web/tests/build-database-gate.test.mjs',
+    'apps/web/tests/deployment-integrity.test.mjs',
+    'deploy/namecheap/CAPABILITIES.md',
+    'deploy/namecheap/PRODUCTION_RELEASE_GATES.md',
+    'deploy/namecheap/build-artifact.mjs',
+    'deploy/namecheap/failure-signatures.json',
+    'docs/postmortems/2026-07-23-namecheap-next16-prisma-artifact-incident.md',
+    'tools/test-runner/container-verify.sh',
+    'tools/test-runner/sovereign.mjs',
+  ]) {
+    assert.ok(
+      durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(webpackPath),
+      `the pinned-Next webpack build contract must be admitted exactly: ${webpackPath}`,
+    );
+  }
   assert.deepEqual(
     Object.keys(admission.blobs),
     [...durabilityCli.STAGE1_CONVERGENCE_PATHS],

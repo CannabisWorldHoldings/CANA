@@ -56,7 +56,7 @@ success; the release candidate is the exact final archive bytes.
 
 | Control | Location |
 |---|---|
-| Webpack-only artifact builds (`next build --webpack`) | `deploy/namecheap/build-artifact.mjs` |
+| Webpack-only artifact builds (`next build` under pinned Next 15.5.24) | `deploy/namecheap/build-artifact.mjs` |
 | Unresolved hashed-external hard-stop scan (all `.next/server` JS) | builder, `unresolvedExternalScan` in receipt |
 | True-isolation runtime test before any artifact is kept (extract outside repo, no parent `node_modules`, cleared env, copied test DB, health/pages/boundaries/restart/rollback) | builder phase 5 |
 | Release gates doctrine | `deploy/namecheap/PRODUCTION_RELEASE_GATES.md` |

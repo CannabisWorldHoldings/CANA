@@ -970,7 +970,7 @@ const STAGES = [
       const web = path.join(ROOT, 'apps', 'web');
       const started = Math.floor(Date.now() / 1000);
       fs.rmSync(path.join(web, '.next'), { recursive: true, force: true });
-      const build = run('npm', ['run', 'build', '--', '--webpack'], {
+      const build = run('npm', ['run', 'build'], {
         cwd: web,
         timeout: 1_800_000,
         env: { ...process.env, CANA_RELEASE_SHA: ctx.source?.commit ?? '' },

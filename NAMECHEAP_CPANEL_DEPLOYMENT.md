@@ -136,8 +136,9 @@ CANA_VERIFIED_NODE=$HOME/.nvm/versions/node/v20.20.2/bin/node \
   SERVER_OPENSSL=1.1 CLEAN_INSTALL=1 ./deploy/namecheap/build-artifact.mjs
 # → dist/namecheap/orderweeddc-<full-40-char-sha>.tar.gz (+ .sha256)
 ```
-The builder is **webpack-only** (`next build --webpack` — Turbopack standalone
-is banned for this target; see `deploy/namecheap/PRODUCTION_RELEASE_GATES.md`),
+The builder is **webpack-only** (`next build` under the repository-pinned Next
+15.5.24; Turbopack standalone is banned for this target; see
+`deploy/namecheap/PRODUCTION_RELEASE_GATES.md`),
 runs `npm ci` from the exact lockfile, restores brand assets, generates the
 Prisma client with RHEL engines, scans every compiled server file for
 unresolved hashed externals, bakes the schema-template database, and — before

@@ -5,8 +5,8 @@
  * Builds the Namecheap/cPanel deployment artifact OFF-SERVER — and proves it
  * runs in TRUE ISOLATION before publishing.
  *
- * Bundler: WEBPACK (`next build --webpack`), permanently. Next 16 defaults to
- * Turbopack, whose standalone output externalizes hashed package references
+ * Bundler: WEBPACK (`next build` under the repository-pinned Next 15.5.24),
+ * permanently. Next 16 defaults to Turbopack, whose standalone output externalizes hashed package references
  * (e.g. @prisma/client-<hex>) that are unresolvable outside the build tree —
  * proven in production on business194 (2026-07-23). The webpack standalone
  * path traces real, self-contained node_modules.
@@ -14,7 +14,8 @@
  * Phases:
  *   1. Clean: remove .next + old artifact; optional CLEAN_INSTALL=1 npm ci;
  *      record working-tree state in the receipt.
- *   2. Restore brand assets, prisma generate (RHEL engines), build --webpack.
+ *   2. Restore brand assets, prisma generate (RHEL engines), build with the
+ *      pinned Next 15 Webpack default.
  *   3. Assemble artifact (server, static, public, prisma tooling) and prune
  *      server-mismatched binaries when
  *      SERVER_OPENSSL=1.1.
@@ -539,7 +540,7 @@ const buildPostgres = startDisposablePostgres({
 let buildError;
 let buildDatabaseCleanup = false;
 try {
-  run('npx next build --webpack', {
+  run('npx next build', {
     cwd: webRoot,
     env: releaseChildEnvironment({
       CANA_BUILD_DATABASE_URL: buildPostgres.databaseUrl,
