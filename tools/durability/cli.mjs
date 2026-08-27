@@ -58,6 +58,29 @@ const FEDERATION_GATE_E_ASSIGNMENT = 'federation_gate_e_2026_08_18';
 const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT = 'pr59_sovereign_custody_2026_08_22';
 const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256 =
   '5cfdc920488db9935fb0fb905d255edc77d3416fb9255fd13194df7c5815bc73';
+
+export const STAGE1_CONVERGENCE_PARENT_SHA = 'a60e242761f4c5f8a5d5be98ef31a5871501c196';
+export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
+  'BASELINE_TEST_RECEIPT.json',
+  'CLASS_D_BASELINE_RECEIPT.json',
+  'CLASS_D_CONVERGENCE_RECEIPT.json',
+  'P0_STACK_DECOMPOSITION.json',
+  'apps/web/open-next.config.ts',
+  'apps/web/src/app/admin/console/page.tsx',
+  'apps/web/src/lib/prisma-cloudflare.ts',
+  'apps/web/wrangler.jsonc',
+]);
+
+function stage1ConvergenceAdmitted(relative, commit) {
+  if (!STAGE1_CONVERGENCE_PATHS.includes(relative)) return false;
+  const isAncestor = command(
+    'git',
+    ['merge-base', '--is-ancestor', STAGE1_CONVERGENCE_PARENT_SHA, commit],
+    { allowFailure: true },
+  ).status === 0;
+  return isAncestor;
+}
+
 const PR59_AUTONOMY_SOURCE_SHA256 =
   '14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565';
 export const PR59_ATTRIBUTION_COLLISION_REPAIR_PATH =
@@ -2064,7 +2087,7 @@ function prerequisites(source) {
       ownership,
       source.commit,
       pr57Ancestry,
-    ),
+    ) && !stage1ConvergenceAdmitted(file, source.commit),
   );
   if (unowned.length) refusal(`outgoing paths lack lane ownership:\n${unowned.join('\n')}`);
   return { changed, fsck: 'PASS', prohibited: [], unowned: [] };
