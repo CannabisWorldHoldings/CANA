@@ -4,6 +4,9 @@ import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { tenantRewriteRules } from "./src/lib/tenant-rewrite.mjs";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const isCloudflareBuild = process.env.CANA_CLOUDFLARE_BUILD === "1";
+const nodePrismaRuntime = path.resolve(process.cwd(), "src/lib/prisma.ts");
+const cloudflarePrismaRuntime = path.resolve(process.cwd(), "src/lib/prisma-cloudflare.ts");
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""}`,
@@ -117,6 +120,17 @@ const nextConfig: NextConfig = {
   // Webpack standalone builds (the Namecheap artifact path) need the same
   // monorepo root for file tracing that turbopack.root provides in dev.
   outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
+  serverExternalPackages: ["@cana/prisma-worker"],
+  webpack(config) {
+    if (isCloudflareBuild) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@/lib/prisma$": cloudflarePrismaRuntime,
+        [nodePrismaRuntime]: cloudflarePrismaRuntime,
+      };
+    }
+    return config;
+  },
   async rewrites() {
     return tenantRewriteRules().map((rewrite) => ({
       ...rewrite,
