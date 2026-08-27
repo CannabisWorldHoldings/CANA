@@ -65,17 +65,20 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'CLASS_D_BASELINE_RECEIPT.json',
   'CLASS_D_CONVERGENCE_RECEIPT.json',
   'P0_STACK_DECOMPOSITION.json',
+  'apps/web/eslint.config.mjs',
   'apps/web/open-next.config.ts',
   'apps/web/src/app/admin/console/page.tsx',
+  'apps/web/src/middleware.ts',
   'apps/web/src/lib/prisma-cloudflare.ts',
   'apps/web/tests/workspace-integrity.test.mjs',
+  'apps/web/tsconfig.json',
   'apps/web/wrangler.jsonc',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '0b65b9d184faecb214f50ed608340b435e94c73d9d204c880c87c906f060f542';
+  'a966dedb46fda2ec81c8691ca467bd9396edc60f1037fb3827eaef061b3a2b1b';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Nine exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  scope: 'Twelve exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -97,13 +100,21 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
       git_mode: '100644',
       git_blob_sha: '749e9d181bdcbb2a59da55e15be83d904e8ca712',
     }),
+    'apps/web/eslint.config.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'e355e304807ed361b5909349be6df1abc22d7da0',
+    }),
     'apps/web/open-next.config.ts': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: '7a3d17172639d491312e829dbd1ffbf24eef3008',
+      git_blob_sha: '478c82e50c46db39733a00554cbbfb1d2b71c438',
     }),
     'apps/web/src/app/admin/console/page.tsx': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '4562ac43056a757c3ae3e40ad8f4984a0a888ada',
+    }),
+    'apps/web/src/middleware.ts': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'c67ae82189b9c4c0938064252f86c9bff0108598',
     }),
     'apps/web/src/lib/prisma-cloudflare.ts': Object.freeze({
       git_mode: '100644',
@@ -111,7 +122,11 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/tests/workspace-integrity.test.mjs': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: 'bdb8f18371c539585ce703c456df82e64074154b',
+      git_blob_sha: '8ac9fcb095c2d95fc03a6437c34a7b9fb42584c0',
+    }),
+    'apps/web/tsconfig.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'f25d51daf2245d9e956a5808aa45981cb9fe07b3',
     }),
     'apps/web/wrangler.jsonc': Object.freeze({
       git_mode: '100644',

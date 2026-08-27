@@ -258,6 +258,18 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
     ),
     'the compatibility court must be admitted only at its reviewed replacement blob',
   );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/src/middleware.ts'),
+    'the supported Edge middleware bridge must be admitted only at its reviewed blob',
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/eslint.config.mjs'),
+    'the Next 15 flat-config import repair must be admitted only at its reviewed blob',
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/tsconfig.json'),
+    'the Next 15 JSX compiler contract must be admitted only at its reviewed blob',
+  );
   assert.deepEqual(
     Object.keys(admission.blobs),
     [...durabilityCli.STAGE1_CONVERGENCE_PATHS],
@@ -309,6 +321,11 @@ test('Stage 1 Cloudflare build generates the Worker client and avoids connectivi
     packageJson.scripts['build:cloudflare'],
     'prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build',
   );
+  const openNextConfig = fs.readFileSync(
+    path.join(ROOT, 'apps/web/open-next.config.ts'),
+    'utf8',
+  );
+  assert.match(openNextConfig, /buildCommand:\s*'npm run build'/);
   const adapter = fs.readFileSync(
     path.join(ROOT, 'apps/web/src/lib/prisma-cloudflare.ts'),
     'utf8',

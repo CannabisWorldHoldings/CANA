@@ -22,10 +22,10 @@ test('the release workspace names only executable, verified packages', () => {
     fs.readFileSync(path.join(webRoot, 'package.json'), 'utf8'),
   );
   assert.equal(webPackage.devDependencies.postcss, '8.5.19');
-  assert.equal(webPackage.dependencies.next, '16.3.3');
+  assert.equal(webPackage.dependencies.next, '15.5.24');
   assert.equal(
     webPackage.devDependencies['eslint-config-next'],
-    '16.3.3',
+    '15.5.24',
   );
   const packageDirectories = fs
     .readdirSync(path.join(repositoryRoot, 'packages'), {

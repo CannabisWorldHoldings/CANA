@@ -15,6 +15,7 @@ test('critical application entry points are present', () => {
     'src/app/[domain]/page.tsx',
     'src/app/api/health/route.ts',
     'src/proxy.ts',
+    'src/middleware.ts',
   ];
 
   for (const relativePath of requiredFiles) {
