@@ -51,9 +51,16 @@ test('the root dispatcher refuses an unknown verification profile', () => {
 });
 
 test('production verifiers use the exact pinned Next build and source-identity contracts', () => {
-  const next = path.join(ROOT, 'node_modules', '.bin', 'next');
-  const version = spawnSync(next, ['--version'], { cwd: WEB, encoding: 'utf8' });
-  const help = spawnSync(next, ['build', '--help'], { cwd: WEB, encoding: 'utf8' });
+  const version = spawnSync(
+    'npm',
+    ['exec', '--workspace', 'apps/web', '--', 'next', '--version'],
+    { cwd: ROOT, encoding: 'utf8' },
+  );
+  const help = spawnSync(
+    'npm',
+    ['exec', '--workspace', 'apps/web', '--', 'next', 'build', '--help'],
+    { cwd: ROOT, encoding: 'utf8' },
+  );
   assert.equal(version.status, 0, version.stderr);
   assert.equal(version.stdout.trim(), 'Next.js v15.5.24');
   assert.equal(help.status, 0, help.stderr);
