@@ -1,0 +1,34 @@
+{
+  "convergence_id": "CLASS_D_CONVERGENCE_20260827",
+  "base_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "base_tree": "268c5313b3fb8d2a8e53bfdcf363e2287f9e13a4",
+  "worktree": "/Users/Apple/Documents/New project/.omo/class-d-convergence-1787808285",
+  "production_effects": 0,
+  "capabilities_converged": [
+    {
+      "capability": "Cloudflare OpenNext & PrismaPg Adapter",
+      "source_donor": "140f7d4ce096b5310cba9cffa897ee9e8dc737fd",
+      "files": [
+        "apps/web/src/lib/prisma-cloudflare.ts",
+        "apps/web/open-next.config.ts",
+        "apps/web/wrangler.jsonc"
+      ],
+      "status": "CONVERGED_VERIFIED"
+    },
+    {
+      "capability": "Owner CANA Web Action Bridge",
+      "source_donor": "tools/vanguard/console.mjs",
+      "files": [
+        "apps/web/src/app/admin/console/page.tsx"
+      ],
+      "status": "CONVERGED_VERIFIED"
+    }
+  ],
+  "invariants_enforced": [
+    "ONE CANA CANONICAL IDENTITY",
+    "ZERO PAY-TO-RANK RANKING ISOLATION",
+    "7-AXIS VISUAL RIGHTS DECOUPLING",
+    "PRODUCTION_EFFECTS = 0 (NO LIVE WRITES/DEPLOYMENTS)"
+  ],
+  "final_court_verdict": "CLASS_D_CANDIDATE = READY_FOR_OWNER_REVIEW"
+}
