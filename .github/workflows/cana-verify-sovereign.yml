@@ -373,7 +373,7 @@ jobs:
         working-directory: apps/web
         env:
           CANA_RELEASE_SHA: ${{ github.sha }}
-        run: npm run build -- --webpack
+        run: npm run build
 
       - name: Install the Chromium binary for the rendered visual court
         run: npx --yes playwright install --with-deps chromium

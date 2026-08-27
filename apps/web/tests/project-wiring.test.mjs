@@ -7,6 +7,7 @@ import { tenantDomainForRequestHostname } from '../src/lib/tenant-host.mjs';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(testDirectory, '..');
+const repositoryRoot = path.resolve(webRoot, '../..');
 
 test('critical application entry points are present', () => {
   const requiredFiles = [
@@ -133,4 +134,13 @@ test('tenant rewrite logic preserves infrastructure and admin routes', () => {
   assert.equal(rewriteHost('luxury.localhost:3000', '/admin'), '/admin');
   assert.equal(rewriteHost('luxury.localhost:3000', '/business/login'), '/business/login');
   assert.equal(rewriteHost('luxury.localhost:3000', '/api/health'), '/api/health');
+});
+
+test('the sovereign workflow uses the pinned Next 15 webpack default', () => {
+  const workflow = fs.readFileSync(
+    path.join(repositoryRoot, '.github/workflows/cana-verify-sovereign.yml'),
+    'utf8',
+  );
+  assert.match(workflow, /run: npm run build\n/);
+  assert.doesNotMatch(workflow, /npm run build -- --webpack/);
 });

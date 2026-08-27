@@ -90,7 +90,7 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  'ff54cea1defc685b44101aa9a09c9860daa315a41b89f7f348356f99b703d963';
+  'd76ac7b3537d7caaa301972275c4f60bd620444cdad1a177adbe216814481f7b';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
   scope: 'Twenty-seven exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
@@ -153,7 +153,7 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/tests/project-wiring.test.mjs': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: '797b4232678a6e16c2e9186f1f4be7b2779dc6e5',
+      git_blob_sha: 'b0bc1b67ecf4b91d078a99a72ddbf9249d64340e',
     }),
     'apps/web/tests/release-sha.test.mjs': Object.freeze({
       git_mode: '100644',
