@@ -40,6 +40,7 @@ import {
   unownedPaths,
   validateOwnershipManifest,
 } from './cli.mjs';
+import * as durabilityCli from './cli.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OWNERSHIP_FILE = path.join(
@@ -237,6 +238,112 @@ function cana(args, env = {}) {
 function ownership() {
   return JSON.parse(fs.readFileSync(OWNERSHIP_FILE, 'utf8'));
 }
+
+test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift', () => {
+  assert.equal(
+    typeof durabilityCli.stage1ConvergenceAdmission,
+    'function',
+    'Stage 1 needs an inspectable exact-byte admission contract',
+  );
+  assert.equal(
+    typeof durabilityCli.stage1ConvergenceObservationAdmitted,
+    'function',
+    'Stage 1 needs a pure adversarial admission seam',
+  );
+
+  const admission = durabilityCli.stage1ConvergenceAdmission();
+  assert.deepEqual(
+    Object.keys(admission.blobs),
+    [...durabilityCli.STAGE1_CONVERGENCE_PATHS],
+  );
+  const relative = durabilityCli.STAGE1_CONVERGENCE_PATHS[0];
+  const expected = admission.blobs[relative];
+  const valid = {
+    path: relative,
+    git_mode: expected.git_mode,
+    git_blob_sha: expected.git_blob_sha,
+    originating_commit_ancestor: true,
+  };
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted(valid), true);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    git_blob_sha: '0'.repeat(40),
+  }), false);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    git_mode: '100755',
+  }), false);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    path: `${relative}.neighbor`,
+  }), false);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
+});
+
+test('Stage 1 Owner console is authenticated and truthfully UI-only', () => {
+  const source = fs.readFileSync(
+    path.join(ROOT, 'apps/web/src/app/admin/console/page.tsx'),
+    'utf8',
+  );
+  assert.match(source, /await requireAdmin\(\)/);
+  assert.match(source, /OWNER_CONSOLE_UI_ONLY/);
+  assert.doesNotMatch(source, /Vanguard sensors active/);
+  assert.doesNotMatch(source, /AUTHORITY: OWNER/);
+  assert.match(source, /<button[^>]*disabled/s);
+});
+
+test('Stage 1 Cloudflare build generates the Worker client and avoids connectivity claims', () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'apps/web/package.json'), 'utf8'),
+  );
+  assert.equal(
+    packageJson.scripts['build:cloudflare'],
+    'prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build',
+  );
+  const adapter = fs.readFileSync(
+    path.join(ROOT, 'apps/web/src/lib/prisma-cloudflare.ts'),
+    'utf8',
+  );
+  assert.match(adapter, /classification: 'POSTGRESQL_CONFIGURATION_DECLARED'/);
+  assert.match(adapter, /connectivity: 'NOT_ESTABLISHED'/);
+  assert.doesNotMatch(adapter, /classification: 'POSTGRESQL_POSTGIS_CANONICAL'/);
+});
+
+test('Stage 1 receipts distinguish inventory, UI foundation, and runtime verification', () => {
+  const baseline = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'BASELINE_TEST_RECEIPT.json'), 'utf8'),
+  );
+  const inventory = execFileSync(
+    'git',
+    ['ls-tree', '-r', '--name-only', baseline.baseline_sha],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).split('\n').filter((relative) => relative.endsWith('.test.mjs'));
+  assert.equal(baseline.test_file_inventory.selector, '**/*.test.mjs');
+  assert.equal(baseline.test_file_inventory.count, inventory.length);
+  assert.equal(baseline.verification_status, 'INVENTORY_ONLY_NOT_EXECUTION_PROOF');
+  assert.equal('test_suites_count' in baseline, false);
+
+  const convergence = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'CLASS_D_CONVERGENCE_RECEIPT.json'), 'utf8'),
+  );
+  const owner = convergence.capabilities_converged.find(
+    (entry) => entry.capability === 'Owner CANA Web Surface Foundation',
+  );
+  const cloudflare = convergence.capabilities_converged.find(
+    (entry) => entry.capability === 'Cloudflare OpenNext & PrismaPg Adapter',
+  );
+  assert.equal(owner.status, 'CONVERGED_UI_ONLY_NOT_EXECUTION_BRIDGE');
+  assert.equal(cloudflare.status, 'CONVERGED_BUILD_FOUNDATION_RUNTIME_NOT_VERIFIED');
+  assert.equal(
+    convergence.capabilities_converged.some(
+      (entry) => entry.capability === 'Owner CANA Web Action Bridge',
+    ),
+    false,
+  );
+});
 
 test('PR #29 recovery paths have exact ownership without neighboring authority', () => {
   const manifest = ownership();

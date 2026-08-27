@@ -47,5 +47,6 @@ export const databaseConfigured = Promise.resolve({
   applied: [],
   failures: [],
   mismatches: [],
-  classification: 'POSTGRESQL_POSTGIS_CANONICAL',
+  classification: 'POSTGRESQL_CONFIGURATION_DECLARED',
+  connectivity: 'NOT_ESTABLISHED',
 });

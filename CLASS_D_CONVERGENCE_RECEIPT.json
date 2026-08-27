@@ -13,15 +13,15 @@
         "apps/web/open-next.config.ts",
         "apps/web/wrangler.jsonc"
       ],
-      "status": "CONVERGED_VERIFIED"
+      "status": "CONVERGED_BUILD_FOUNDATION_RUNTIME_NOT_VERIFIED"
     },
     {
-      "capability": "Owner CANA Web Action Bridge",
+      "capability": "Owner CANA Web Surface Foundation",
       "source_donor": "tools/vanguard/console.mjs",
       "files": [
         "apps/web/src/app/admin/console/page.tsx"
       ],
-      "status": "CONVERGED_VERIFIED"
+      "status": "CONVERGED_UI_ONLY_NOT_EXECUTION_BRIDGE"
     }
   ],
   "invariants_enforced": [

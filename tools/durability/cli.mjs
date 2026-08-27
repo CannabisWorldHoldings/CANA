@@ -70,15 +70,124 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'apps/web/src/lib/prisma-cloudflare.ts',
   'apps/web/wrangler.jsonc',
 ]);
+const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
+  '29865ffa9a3d5e2d7b326380d623b7b8f531b61eeca25c676d498b27110a652c';
+const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
+  authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
+  scope: 'Eight exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  authorization_effect: 'durability-exact-blob-admission-only',
+  rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
+  originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
+  paths: STAGE1_CONVERGENCE_PATHS,
+  blobs: Object.freeze({
+    'BASELINE_TEST_RECEIPT.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '65ad3919ab7454e874d049fb33523a84882ea76a',
+    }),
+    'CLASS_D_BASELINE_RECEIPT.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '38d20612a6174ab6b305519b39d5fb8701e074b6',
+    }),
+    'CLASS_D_CONVERGENCE_RECEIPT.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'a352868a05ab860d239fea627bd8509c753a5590',
+    }),
+    'P0_STACK_DECOMPOSITION.json': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '749e9d181bdcbb2a59da55e15be83d904e8ca712',
+    }),
+    'apps/web/open-next.config.ts': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '7a3d17172639d491312e829dbd1ffbf24eef3008',
+    }),
+    'apps/web/src/app/admin/console/page.tsx': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '4562ac43056a757c3ae3e40ad8f4984a0a888ada',
+    }),
+    'apps/web/src/lib/prisma-cloudflare.ts': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '58bb9ac64549f78679445ed78105da6c93770541',
+    }),
+    'apps/web/wrangler.jsonc': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '02b63688b97407c25528591e059a3dc75dd07b56',
+    }),
+  }),
+  assignment_sha256: STAGE1_CONVERGENCE_ASSIGNMENT_SHA256,
+});
 
-function stage1ConvergenceAdmitted(relative, commit) {
-  if (!STAGE1_CONVERGENCE_PATHS.includes(relative)) return false;
-  const isAncestor = command(
+export function stage1ConvergenceAdmission() {
+  return JSON.parse(JSON.stringify(STAGE1_CONVERGENCE_ADMISSION));
+}
+
+export function stage1ConvergenceObservationAdmitted(
+  observation,
+  admission = STAGE1_CONVERGENCE_ADMISSION,
+) {
+  if (
+    !exactKeys(admission, [
+      'authorization',
+      'scope',
+      'authorization_effect',
+      'rationale',
+      'originating_commit',
+      'paths',
+      'blobs',
+      'assignment_sha256',
+    ])
+    || !exactKeys(observation, [
+      'path',
+      'git_mode',
+      'git_blob_sha',
+      'originating_commit_ancestor',
+    ])
+    || !Array.isArray(admission.paths)
+    || JSON.stringify(admission.paths) !== JSON.stringify(STAGE1_CONVERGENCE_PATHS)
+    || !exactKeys(admission.blobs, STAGE1_CONVERGENCE_PATHS)
+    || admission.paths.some(
+      (relative) => relative.includes('*')
+        || relative.includes('\\')
+        || relative.startsWith('/')
+        || relative.includes('..')
+        || path.posix.normalize(relative) !== relative,
+    )
+  ) {
+    return false;
+  }
+  const { assignment_sha256: recordedDigest, ...payload } = admission;
+  const expected = admission.blobs[observation.path];
+  return Boolean(
+    recordedDigest === STAGE1_CONVERGENCE_ASSIGNMENT_SHA256
+    && sha256Bytes(canonicalJson(payload)) === STAGE1_CONVERGENCE_ASSIGNMENT_SHA256
+    && admission.authorization_effect === 'durability-exact-blob-admission-only'
+    && admission.originating_commit === STAGE1_CONVERGENCE_PARENT_SHA
+    && expected
+    && exactKeys(expected, ['git_mode', 'git_blob_sha'])
+    && observation.git_mode === expected.git_mode
+    && observation.git_blob_sha === expected.git_blob_sha
+    && observation.originating_commit_ancestor === true
+  );
+}
+
+function stage1ConvergenceCommitAdmitted(relative, commit) {
+  const originatingCommitAncestor = command(
     'git',
     ['merge-base', '--is-ancestor', STAGE1_CONVERGENCE_PARENT_SHA, commit],
     { allowFailure: true },
   ).status === 0;
-  return isAncestor;
+  const treeEntry = command(
+    'git',
+    ['ls-tree', '--full-tree', commit, '--', relative],
+    { allowFailure: true },
+  );
+  const match = treeEntry.stdout.trim().match(/^(\d{6})\s+blob\s+([0-9a-f]{40})\t/);
+  if (treeEntry.status !== 0 || !match) return false;
+  return stage1ConvergenceObservationAdmitted({
+    path: relative,
+    git_mode: match[1],
+    git_blob_sha: match[2],
+    originating_commit_ancestor: originatingCommitAncestor,
+  });
 }
 
 const PR59_AUTONOMY_SOURCE_SHA256 =
@@ -2087,7 +2196,7 @@ function prerequisites(source) {
       ownership,
       source.commit,
       pr57Ancestry,
-    ) && !stage1ConvergenceAdmitted(file, source.commit),
+    ) && !stage1ConvergenceCommitAdmitted(file, source.commit),
   );
   if (unowned.length) refusal(`outgoing paths lack lane ownership:\n${unowned.join('\n')}`);
   return { changed, fsck: 'PASS', prohibited: [], unowned: [] };
