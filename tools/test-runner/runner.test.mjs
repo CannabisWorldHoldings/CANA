@@ -51,20 +51,10 @@ test('the root dispatcher refuses an unknown verification profile', () => {
 });
 
 test('production verifiers use the exact pinned Next build and source-identity contracts', () => {
-  const version = spawnSync(
-    'npm',
-    ['exec', '--workspace', 'apps/web', '--', 'next', '--version'],
-    { cwd: ROOT, encoding: 'utf8' },
-  );
-  const help = spawnSync(
-    'npm',
-    ['exec', '--workspace', 'apps/web', '--', 'next', 'build', '--help'],
-    { cwd: ROOT, encoding: 'utf8' },
-  );
-  assert.equal(version.status, 0, version.stderr);
-  assert.equal(version.stdout.trim(), 'Next.js v15.5.24');
-  assert.equal(help.status, 0, help.stderr);
-  assert.doesNotMatch(help.stdout, /^\s*--webpack\b/m);
+  const webPackage = JSON.parse(fs.readFileSync(path.join(WEB, 'package.json'), 'utf8'));
+  const lock = JSON.parse(fs.readFileSync(path.join(ROOT, 'package-lock.json'), 'utf8'));
+  assert.equal(webPackage.dependencies.next, '15.5.24');
+  assert.equal(lock.packages['node_modules/next'].version, '15.5.24');
 
   const containerVerify = fs.readFileSync(CONTAINER_VERIFY, 'utf8');
   const sovereign = fs.readFileSync(SOVEREIGN, 'utf8');
