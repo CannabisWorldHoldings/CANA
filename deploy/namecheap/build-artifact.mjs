@@ -9,10 +9,8 @@
  * permanently. Next 16 defaults to Turbopack, whose standalone output externalizes hashed package references
  * (e.g. @prisma/client-<hex>) that are unresolvable outside the build tree —
  * proven in production on business194 (2026-07-23). The webpack standalone
- * path traces real, self-contained node_modules. The incident control was
- * originally expressed as `next build --webpack`; pinned Next 15 provides the
- * same Webpack contract with plain `next build` because that newer flag does
- * not exist in Next 15.
+ * path traces real, self-contained node_modules. Pinned Next 15 provides that
+ * Webpack contract with plain `next build`.
  *
  * Phases:
  *   1. Clean: remove .next + old artifact; optional CLEAN_INSTALL=1 npm ci;

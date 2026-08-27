@@ -8,6 +8,11 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256,
+  BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+  boundedCertificationGateRepairAdmission,
+  boundedCertificationGateRepairAdmitted,
   CUSTOMER_DISCOVERY_AUTHORIZED_PATHS,
   CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS,
   courtEditAdmitted,
@@ -252,6 +257,10 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
   );
 
   const admission = durabilityCli.stage1ConvergenceAdmission();
+  assert.equal(
+    admission.authorization_source_sha256,
+    durabilityCli.STAGE1_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256,
+  );
   assert.ok(
     durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(
       'apps/web/tests/workspace-integrity.test.mjs',
@@ -319,6 +328,12 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
     originating_commit_ancestor: true,
   };
   assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted(valid), true);
+  const unauthorized = durabilityCli.stage1ConvergenceAdmission();
+  unauthorized.authorization_source_sha256 = '0'.repeat(64);
+  assert.equal(
+    durabilityCli.stage1ConvergenceObservationAdmitted(valid, unauthorized),
+    false,
+  );
   assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
     ...valid,
     git_blob_sha: '0'.repeat(40),
@@ -355,7 +370,7 @@ test('Stage 1 Cloudflare build generates the Worker client and avoids connectivi
   );
   assert.equal(
     packageJson.scripts['build:cloudflare'],
-    'prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build',
+    'node scripts/assert-release-build-identity.mjs && prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build',
   );
   const openNextConfig = fs.readFileSync(
     path.join(ROOT, 'apps/web/open-next.config.ts'),
@@ -756,6 +771,65 @@ test('PR #59 sovereign custody assignment rejects scope and authority broadening
       /PR #59 (?:sovereign )?custody|changed-file ownership patterns/,
     );
   }
+});
+
+test('bounded certification-gate repair admits only the externally authorized immutable court blob', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const admission = boundedCertificationGateRepairAdmission();
+  assert.equal(
+    admission.assignment_sha256,
+    BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256,
+  );
+  assert.deepEqual(admission.paths, [BOUNDED_CERTIFICATION_GATE_REPAIR_PATH]);
+  assert.equal(
+    admission.court_blob_sha256[BOUNDED_CERTIFICATION_GATE_REPAIR_PATH],
+    BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  );
+  assert.equal(manifest.global_no_edit.includes(BOUNDED_CERTIFICATION_GATE_REPAIR_PATH), true);
+  assert.equal(
+    createHash('sha256')
+      .update(fs.readFileSync(path.join(ROOT, BOUNDED_CERTIFICATION_GATE_REPAIR_PATH)))
+      .digest('hex'),
+    BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  );
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    path: BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+    content_sha256: BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  }), true);
+});
+
+test('bounded certification-gate repair rejects drift, neighbors, ancestry and metadata broadening', () => {
+  const valid = {
+    path: BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+    content_sha256: BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  };
+  for (const mutate of [
+    (admission) => { admission.paths[0] = 'apps/web/tests/**'; },
+    (admission) => { admission.paths.push(`${BOUNDED_CERTIFICATION_GATE_REPAIR_PATH}.future`); },
+    (admission) => { admission.authorization_source_sha256 = '0'.repeat(64); },
+    (admission) => { admission.authorization_effect = 'runtime-authority'; },
+    (admission) => { admission.originating_commit = '0'.repeat(40); },
+    (admission) => { admission.assignment_sha256 = '0'.repeat(64); },
+  ]) {
+    const admission = boundedCertificationGateRepairAdmission();
+    mutate(admission);
+    assert.equal(boundedCertificationGateRepairAdmitted(valid, admission), false);
+  }
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    content_sha256: '0'.repeat(64),
+  }), false);
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    path: `${BOUNDED_CERTIFICATION_GATE_REPAIR_PATH}.neighbor`,
+  }), false);
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
 });
 
 test('PR #59 attribution collision repair admits only its exact owned global-no-edit blob', () => {

@@ -60,6 +60,8 @@ const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256 =
   '5cfdc920488db9935fb0fb905d255edc77d3416fb9255fd13194df7c5815bc73';
 
 export const STAGE1_CONVERGENCE_PARENT_SHA = 'a60e242761f4c5f8a5d5be98ef31a5871501c196';
+export const STAGE1_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256 =
+  '79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9';
 export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'BASELINE_TEST_RECEIPT.json',
   'CLASS_D_BASELINE_RECEIPT.json',
@@ -68,13 +70,17 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'P0_STACK_DECOMPOSITION.json',
   'apps/web/eslint.config.mjs',
   'apps/web/open-next.config.ts',
+  'apps/web/scripts/assert-release-build-identity.mjs',
   'apps/web/src/app/admin/console/page.tsx',
   'apps/web/src/app/api/release/release-identity.mjs',
   'apps/web/src/app/api/release/route.ts',
   'apps/web/src/middleware.ts',
   'apps/web/src/lib/prisma-cloudflare.ts',
+  'apps/web/src/lib/prisma-cloudflare-database-url.mjs',
   'apps/web/tests/build-database-gate.test.mjs',
   'apps/web/tests/project-wiring.test.mjs',
+  'apps/web/tests/prisma-cloudflare-database-url.test.mjs',
+  'apps/web/tests/release-build-identity.test.mjs',
   'apps/web/tests/release-sha.test.mjs',
   'apps/web/tests/workspace-integrity.test.mjs',
   'apps/web/tsconfig.json',
@@ -90,10 +96,11 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  'd76ac7b3537d7caaa301972275c4f60bd620444cdad1a177adbe216814481f7b';
+  '7bdf710c7e5d6f5abf6b75d72bc8ea1bbe81c2a0cf1b54e8953433e57dc071d2';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Twenty-seven exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  authorization_source_sha256: STAGE1_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256,
+  scope: 'Thirty-one exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -127,6 +134,10 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
       git_mode: '100644',
       git_blob_sha: '478c82e50c46db39733a00554cbbfb1d2b71c438',
     }),
+    'apps/web/scripts/assert-release-build-identity.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '784616eb299994a2987c3d60e28b38b6391f6bcf',
+    }),
     'apps/web/src/app/admin/console/page.tsx': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '4562ac43056a757c3ae3e40ad8f4984a0a888ada',
@@ -145,7 +156,11 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/src/lib/prisma-cloudflare.ts': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: '58bb9ac64549f78679445ed78105da6c93770541',
+      git_blob_sha: '294742cc33562651e7c411e679cff1400f87c80e',
+    }),
+    'apps/web/src/lib/prisma-cloudflare-database-url.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '02e2e25cca29dddbbf2b32025569a255809aa64a',
     }),
     'apps/web/tests/build-database-gate.test.mjs': Object.freeze({
       git_mode: '100644',
@@ -154,6 +169,14 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'apps/web/tests/project-wiring.test.mjs': Object.freeze({
       git_mode: '100644',
       git_blob_sha: 'b0bc1b67ecf4b91d078a99a72ddbf9249d64340e',
+    }),
+    'apps/web/tests/prisma-cloudflare-database-url.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '8687e1c625f0e17d20c63bc74013e9fd84e4ff71',
+    }),
+    'apps/web/tests/release-build-identity.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'c0e969e757d347f845db970c5773f572b92731ec',
     }),
     'apps/web/tests/release-sha.test.mjs': Object.freeze({
       git_mode: '100644',
@@ -181,7 +204,7 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'deploy/namecheap/build-artifact.mjs': Object.freeze({
       git_mode: '100755',
-      git_blob_sha: '792f2734a9410938478a7db253223e5be093a947',
+      git_blob_sha: 'bff610c65f16211a3c7f199a3f002a31ef55f2d9',
     }),
     'deploy/namecheap/failure-signatures.json': Object.freeze({
       git_mode: '100644',
@@ -222,6 +245,7 @@ export function stage1ConvergenceObservationAdmitted(
   if (
     !exactKeys(admission, [
       'authorization',
+      'authorization_source_sha256',
       'scope',
       'authorization_effect',
       'rationale',
@@ -254,6 +278,8 @@ export function stage1ConvergenceObservationAdmitted(
   return Boolean(
     recordedDigest === STAGE1_CONVERGENCE_ASSIGNMENT_SHA256
     && sha256Bytes(canonicalJson(payload)) === STAGE1_CONVERGENCE_ASSIGNMENT_SHA256
+    && admission.authorization_source_sha256
+      === STAGE1_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256
     && admission.authorization_effect === 'durability-exact-blob-admission-only'
     && admission.originating_commit === STAGE1_CONVERGENCE_PARENT_SHA
     && expected
@@ -287,6 +313,30 @@ function stage1ConvergenceCommitAdmitted(relative, commit) {
 
 const PR59_AUTONOMY_SOURCE_SHA256 =
   '14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565';
+const BOUNDED_CERTIFICATION_GATE_REPAIR_SOURCE_SHA256 =
+  'f665b2c91ded771dd83aefad7a44a59f187e983f8a759e32235225ca03b34513';
+export const BOUNDED_CERTIFICATION_GATE_REPAIR_PATH =
+  'apps/web/tests/deployment-integrity.test.mjs';
+export const BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256 =
+  '8db0b18fdc24541a71d4707bd8c0f73c3a7358913c7748f944b624e3e614d6a2';
+export const BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256 =
+  'e2fa52db80c7c86003f49de1f5f5cd4fde2b64e1ba271f509a20695908f2c140';
+const BOUNDED_CERTIFICATION_GATE_REPAIR_ORIGINATING_COMMIT =
+  'a4cabd917a849240d18b79f14e2a72c075b0a68e';
+const BOUNDED_CERTIFICATION_GATE_REPAIR_ADMISSION = Object.freeze({
+  authorization: 'AUTHORIZE BOUNDED CERTIFICATION-GATE REPAIR',
+  authorization_source_sha256: BOUNDED_CERTIFICATION_GATE_REPAIR_SOURCE_SHA256,
+  scope: 'One exact immutable deployment-integrity court at its reviewed content SHA-256 only; no wildcard, directory, neighboring-path, replacement-blob, deployment, credential, production, runtime-authority, verification-bypass, or future-edit authority.',
+  authorization_effect: 'durability-court-blob-admission-only',
+  rationale: 'The court previously matched an obsolete build command in commentary and could pass while executable production builders used a different contract. The reviewed replacement binds the pinned Next 15 executable command and rejects the unsupported flag.',
+  originating_commit: BOUNDED_CERTIFICATION_GATE_REPAIR_ORIGINATING_COMMIT,
+  paths: Object.freeze([BOUNDED_CERTIFICATION_GATE_REPAIR_PATH]),
+  court_blob_sha256: Object.freeze({
+    [BOUNDED_CERTIFICATION_GATE_REPAIR_PATH]:
+      BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  }),
+  assignment_sha256: BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256,
+});
 export const PR59_ATTRIBUTION_COLLISION_REPAIR_PATH =
   'apps/web/src/lib/demand-credits.mjs';
 export const PR59_ATTRIBUTION_COLLISION_REPAIR_CONTENT_SHA256 =
@@ -2086,6 +2136,66 @@ export function courtEditAdmitted(relative, ownership, bytes, assignmentName) {
   return admittedDigest === sha256Bytes(content);
 }
 
+export function boundedCertificationGateRepairAdmission() {
+  return JSON.parse(JSON.stringify(BOUNDED_CERTIFICATION_GATE_REPAIR_ADMISSION));
+}
+
+export function boundedCertificationGateRepairAdmitted(
+  observation,
+  admission = BOUNDED_CERTIFICATION_GATE_REPAIR_ADMISSION,
+) {
+  if (
+    !exactKeys(admission, [
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'rationale',
+      'originating_commit',
+      'paths',
+      'court_blob_sha256',
+      'assignment_sha256',
+    ])
+    || !exactKeys(observation, [
+      'path',
+      'content_sha256',
+      'originating_commit_ancestor',
+    ])
+    || !Array.isArray(admission.paths)
+    || !exactKeys(admission.court_blob_sha256, [
+      BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+    ])
+  ) {
+    return false;
+  }
+  const { assignment_sha256: recordedDigest, ...payload } = admission;
+  return (
+    recordedDigest === BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256
+    && sha256Bytes(canonicalJson(payload))
+      === BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256
+    && admission.authorization_source_sha256
+      === BOUNDED_CERTIFICATION_GATE_REPAIR_SOURCE_SHA256
+    && admission.authorization_effect === 'durability-court-blob-admission-only'
+    && admission.originating_commit
+      === BOUNDED_CERTIFICATION_GATE_REPAIR_ORIGINATING_COMMIT
+    && JSON.stringify(admission.paths)
+      === JSON.stringify([BOUNDED_CERTIFICATION_GATE_REPAIR_PATH])
+    && admission.paths.every(
+      (relative) => !relative.includes('*')
+        && !relative.includes('\\')
+        && !relative.startsWith('/')
+        && !relative.includes('..')
+        && path.posix.normalize(relative) === relative,
+    )
+    && admission.court_blob_sha256[BOUNDED_CERTIFICATION_GATE_REPAIR_PATH]
+      === BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256
+    && observation.path === BOUNDED_CERTIFICATION_GATE_REPAIR_PATH
+    && observation.content_sha256
+      === BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256
+    && observation.originating_commit_ancestor === true
+  );
+}
+
 export function pr59AttributionCollisionRepairAdmission() {
   return JSON.parse(JSON.stringify(PR59_ATTRIBUTION_COLLISION_REPAIR_ADMISSION));
 }
@@ -2268,7 +2378,24 @@ function prerequisites(source) {
           { allowFailure: true },
         ).status === 0,
     });
-    return !existingCourtAdmission && !attributionCollisionAdmission;
+    const certificationGateRepairAdmission = boundedCertificationGateRepairAdmitted({
+      path: file,
+      content_sha256: digest,
+      originating_commit_ancestor:
+        command(
+          'git',
+          [
+            'merge-base',
+            '--is-ancestor',
+            BOUNDED_CERTIFICATION_GATE_REPAIR_ORIGINATING_COMMIT,
+            source.commit,
+          ],
+          { allowFailure: true },
+        ).status === 0,
+    });
+    return !existingCourtAdmission
+      && !attributionCollisionAdmission
+      && !certificationGateRepairAdmission;
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const pr57Ancestry = {

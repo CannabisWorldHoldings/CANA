@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:cloudflare": "prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build",
+    "build:cloudflare": "node scripts/assert-release-build-identity.mjs && prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",
     "test": "node --test tests/*.test.mjs",

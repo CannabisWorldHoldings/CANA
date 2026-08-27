@@ -96,6 +96,14 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Bind verification to the checked-out source
+        run: |
+          expected='${{ github.event.pull_request.head.sha || github.sha }}'
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$expected"
+          echo "CANA_RELEASE_SHA=$actual" >> "$GITHUB_ENV"
 
       - name: Route CI byproducts outside the verified tree
         # runner context is invalid in job-level env; RUNNER_TEMP is a plain
@@ -201,6 +209,14 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Bind verification to the checked-out source
+        run: |
+          expected='${{ github.event.pull_request.head.sha || github.sha }}'
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$expected"
+          echo "CANA_RELEASE_SHA=$actual" >> "$GITHUB_ENV"
 
       - name: Acquire and verify the exact V1 historical Git objects
         # The remote ref is an object-acquisition hint only. It confers no authority: when the
@@ -371,8 +387,6 @@ jobs:
 
       - name: Build apps/web for production
         working-directory: apps/web
-        env:
-          CANA_RELEASE_SHA: ${{ github.sha }}
         run: npm run build
 
       - name: Install the Chromium binary for the rendered visual court
