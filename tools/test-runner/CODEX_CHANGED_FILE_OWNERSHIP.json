@@ -126,7 +126,7 @@
       ]
     },
     "pr2_exact_ownership_2026_07_28": {
-      "authorization": "AUTHORIZE CANA PR #2 — EXACT OWNERSHIP RECONCILIATION AND COMPLETION",
+      "authorization": "AUTHORIZE CANA PR #2 \u2014 EXACT OWNERSHIP RECONCILIATION AND COMPLETION",
       "scope": "Five owner-approved exact PR #2 paths only, including the narrow immutable read-only database-config boundary repair; no wildcard, recursive, neighboring-path, execution, deployment, credential, production, provider, schema, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability changed-file ownership only; no runtime execution, provider, credential, deployment, production, schema, external-effect, verification-bypass or self-promotion authority.",
       "approval_sha256": "bd0659b9aae3db694661e1c8f4b6ccc6c4df473a3e518c5d55c8b032be4b3c02",
@@ -247,7 +247,7 @@
       ]
     },
     "mission1_integration_2026_07_29": {
-      "authorization": "CONTINUE CANA STAGE A AUTONOMOUS COMPLETION — DO NOT RETURN FOR THIS BLOCKER",
+      "authorization": "CONTINUE CANA STAGE A AUTONOMOUS COMPLETION \u2014 DO NOT RETURN FOR THIS BLOCKER",
       "scope": "The thirteen exact approved Mission 1 evidence paths and three exact convergence-census validator paths only; no wildcard, recursive, neighboring-path, runtime, provider, credential, deployment, production, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability changed-file ownership only; no runtime execution, provider, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "candidate_commit": "c05219c0b50ff02478168bf5619c85e467658153",
@@ -275,7 +275,7 @@
       "approval_sha256": "3fa119b9e88c1c1cfadf76c751258e8d48325afa4899986715a6a11b8afa7f02"
     },
     "mission2_minimum_alive_loop_2026_07_29": {
-      "authorization": "ACTIVATE CANA MISSION 2 — MINIMUM ALIVE LOOP AND AUTONOMY FOUNDATION",
+      "authorization": "ACTIVATE CANA MISSION 2 \u2014 MINIMUM ALIVE LOOP AND AUTONOMY FOUNDATION",
       "scope": "The thirty-three exact Mission 2 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability changed-file ownership only; no provider authority, no Hermes authority, no credential authority, no deployment authority, no production authority, no external-effect authority, no verification-bypass authority and no self-promotion authority.",
       "base_commit": "70a7200fbdbfd46bdcef7143863e33caf6f9d6fe",
@@ -318,7 +318,7 @@
       "approval_sha256": "ce8c4822fe0046139f29d2b3537aab3ccd6a5ed5af6d86e94306937d69595970"
     },
     "mission3_m001_shadow_slice_2026_07_29": {
-      "authorization": "ACTIVATE CANA MISSION 3 — M001 CANONICAL SHADOW SLICE",
+      "authorization": "ACTIVATE CANA MISSION 3 \u2014 M001 CANONICAL SHADOW SLICE",
       "scope": "The thirteen exact Mission 3 M001 implementation, test, workflow, evidence and durability-ownership paths only; no wildcard, recursive, neighboring-path, live-data, provider, Hermes, credential, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability changed-file ownership only; no live-data authority, no provider authority, no Hermes authority, no credential authority, no deployment authority, no production authority, no external-effect authority, no verification-bypass authority and no self-promotion authority.",
       "base_commit": "c4d058f5602e6db2196cccba782e1daeaa3a3ce7",
@@ -453,7 +453,7 @@
       "approval_sha256": "5c3e7f196d9b6f214db76f296f4376fe07c196628aecd38ef4d7fe096716c8a2"
     },
     "pr35_sovereign_continuation_integration_2026_08_09": {
-      "authorization": "CANA Ω∞ — CODEX SOVEREIGN INTEGRATION & CONTINUATION MISSION",
+      "authorization": "CANA \u03a9\u221e \u2014 CODEX SOVEREIGN INTEGRATION & CONTINUATION MISSION",
       "scope": "The fifty-two exact PR #35 continuation, ASK, provenance, migration-integration, portability, deployment-proof, workflow, court, benchmark-integration, documentation and durability-ownership paths only; no wildcard, neighboring-path, provider, credential, paid-call, deployment, production, verification-bypass or self-promotion authority.",
       "authorization_effect": "Durability path ownership and exact reviewed-court-blob admission only; no runtime execution, provider, credential, paid-call, deployment, production, external-effect, verification-bypass or self-promotion authority.",
       "authorized_paths": [
@@ -694,7 +694,7 @@
       "approval_sha256": "93a98630b1b46199fdc678bd591d1bd1c35fb1f4c0abbc02dc2fca20e05d6869"
     },
     "ask_customer_discovery_projection_2026_08_13": {
-      "authorization": "CANA × ORDERWEEDDC — PR45 CANONICALIZATION + THREE-FACE CONVERGENCE IGNITION",
+      "authorization": "CANA \u00d7 ORDERWEEDDC \u2014 PR45 CANONICALIZATION + THREE-FACE CONVERGENCE IGNITION",
       "scope": "The five exact ASK customer-discovery module paths required to implement the owner-authorized ASK_INTENT_TO_CUSTOMER_DISCOVERY_PROJECTION slice; no wildcard or neighboring-path authority.",
       "authorization_effect": "Durability path ownership only; no live acquisition, provider, credential, paid-call, spending, publishing, deployment, production, database mutation, DNS, outreach, verification-bypass or self-promotion authority.",
       "base_commit": "c436e3742929af71ee6cd45acc47fb2cabd55fef",
@@ -923,7 +923,7 @@
     "federation_gates_cd_2026_08_18": {
       "authorization": "SOVEREIGN COGNITIVE FEDERATION continuation, Gates C+D (owner instruction, thread cmszd6rop03o107adbvhnh6f3).",
       "scope": "Additive only: tools/federation/ (6 new files), _mission/evolution/EC-0001, ledger update, this registry.",
-      "reason": "Gate C: MemoryAtom + settlement composing winner-memory/slow-memory (9/9 court incl. full §63 lifecycle). Gate D: EvolutionCase engine + EC-0001 on the real sentinel-duplication failure — 3 diagnoses, 2 candidates, 6-case measured holdout, PROMOTE C2 capability-census court, C1 retained as L1 residue, negative evidence preserved.",
+      "reason": "Gate C: MemoryAtom + settlement composing winner-memory/slow-memory (9/9 court incl. full \u00a763 lifecycle). Gate D: EvolutionCase engine + EC-0001 on the real sentinel-duplication failure \u2014 3 diagnoses, 2 candidates, 6-case measured holdout, PROMOTE C2 capability-census court, C1 retained as L1 residue, negative evidence preserved.",
       "paths": [
         "tools/federation/memory.mjs",
         "tools/federation/memory.test.mjs",
@@ -1009,294 +1009,30 @@
         "why_court_includes_it": "DURABILITY_BASE_c953ebcd25c46ef33af0700d7913a899d839bce8_TO_EVALUATED_COMMIT_DIFF_CONTAINS_PATH"
       },
       "entries": [
-        [
-          "_mission/evolution/ES-0002-promotion-identity.json",
-          "36662b90da2ea85e63973c772b85c4e0dbb4ccd0",
-          "36662b90da2ea85e63973c772b85c4e0dbb4ccd0",
-          "64cc18a97923efa4b71e1487b4844481d4c3898d560ea252ff7d1f0574da144a",
-          "100644",
-          "CREATE",
-          "PR57_HISTORICAL_EVIDENCE_EVALUATOR_SUCCESSION",
-          "fb66524f0151d1f0cc8db7e095163a4b0d1156f5",
-          "Evidence-only promotion-identity succession record.",
-          "MEDIUM_EVALUATOR_PROVENANCE"
-        ],
-        [
-          "apps/web/src/app/lab/shell.tsx",
-          "8036065f510580c4e590a7f15bfc63d52581e647",
-          "8036065f510580c4e590a7f15bfc63d52581e647",
-          "99fca5e5e65d0c333f4ca0436470d9155d8fa481782358459013ccc7d15eac9e",
-          "100644",
-          "MODIFY",
-          "PR57_INTERNAL_LAB_MATRIX_AMENDMENT",
-          "37425d21aee53274e45bca4724874581c2c126b5",
-          "Internal lab theme synchronization lint repair.",
-          "LOW_INTERNAL_LAB"
-        ],
-        [
-          "apps/web/src/app/lab/sponsorship/page.tsx",
-          "c57e48703704683abef4d9cda74e7a67b26b0db6",
-          "c57e48703704683abef4d9cda74e7a67b26b0db6",
-          "990b08d5733c3eb3cc8aff12b016ee11869b9a1ea2fab9da79e0cb7fa52494c2",
-          "100644",
-          "MODIFY",
-          "PR57_INTERNAL_LAB_MATRIX_AMENDMENT",
-          "37425d21aee53274e45bca4724874581c2c126b5",
-          "Internal sponsorship-lab fixture typing.",
-          "LOW_INTERNAL_LAB"
-        ],
-        [
-          "apps/web/tests/workspace-integrity.test.mjs",
-          "a21ec30a558b7231292ab60522db043c4bf5c823",
-          "a21ec30a558b7231292ab60522db043c4bf5c823",
-          "d3c555605dfa5472b0ffa99d405bbb2b7f704b57837f62061f1f40e79b1e270e",
-          "100644",
-          "MODIFY",
-          "PR57_TEST_INFRASTRUCTURE_FEDERATION_WORKSPACE_COURT",
-          "49bfcc714e3744fc90e56d9618d39d3b5d59e1f6",
-          "Test-only governor-kernel package census.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "skills-src/hermes-governed-packet.mjs",
-          "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8",
-          "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8",
-          "cb731f697193049b776322d64b705e481f31e8670f1df154b3a63728befdf7bc",
-          "100644",
-          "MODIFY",
-          "PR57_SOVEREIGN_CORE_HERMES_AUTHORITY_BOUNDARY",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Externally verified CANA grant boundary.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "skills-src/sitemind-context-compiler.mjs",
-          "3b4c64485c69aaefcb890b93805c06d7ec4c9426",
-          "3b4c64485c69aaefcb890b93805c06d7ec4c9426",
-          "7a3d1190cc6e3171f8cae96022d6eba632b1df8c2ab1ed007e4950353702d951",
-          "100644",
-          "MODIFY",
-          "PR57_SOVEREIGN_CORE_CONTEXT_COMPILER_IMPORT_GUARD",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Imported self-test process-exit guard.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/alive-loop/authority-bridge.mjs",
-          "9123c6441ab4a46524b90fa1ede5dc97c733ce73",
-          "9123c6441ab4a46524b90fa1ede5dc97c733ce73",
-          "fd71d2d037935b311dfb328d3a903893d1afe21792672da7c2719959df9eeb82",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_BRIDGE",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Alive-loop to single authority-seat bridge.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/authority-court.test.mjs",
-          "d0dc865f5473611f8756d743f2add0ee8a688173",
-          "d0dc865f5473611f8756d743f2add0ee8a688173",
-          "e2bb85fd12a5f1a9ea4acaa2c215bf39d3cba46a7913655f2b31e3b06c268793",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_COURT",
-          "2f1af2790c56d88155d482d9cac5d636455f33ad",
-          "Authorization admission and refusal courts.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/authority/authority.mjs",
-          "aedfbaa6e659c8bedc3c1567bc9b45cc64027612",
-          "aedfbaa6e659c8bedc3c1567bc9b45cc64027612",
-          "782e6dfb8450ca853d386b3a7dd4992a46191b9ab89cfca2819b41c70088c4d0",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Single authorization seat.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/canon.mjs",
-          "050244dab8600fe82488dea3d003cac84dc5256e",
-          "050244dab8600fe82488dea3d003cac84dc5256e",
-          "6fb2cab0193c804fc43d5fdcb1cae841c997d11de8db7331d2fce469a36a1b81",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Authority canonicalization and hashing.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/containment.mjs",
-          "9179bb3a7b5f34c4896089b5ddf7068c10489427",
-          "9179bb3a7b5f34c4896089b5ddf7068c10489427",
-          "04ac9c50b76525566ff16328348f1c8dc3a5f23552efe9742123477aeb71f56c",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Authority containment and budgets.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/court-fixtures.mjs",
-          "77c8464458e1c5d0683712ad520747d6b07eb592",
-          "77c8464458e1c5d0683712ad520747d6b07eb592",
-          "90f8942a95e643a9961546fceaba18a20e74ec3929f87995e71ccdc9fbff8eb7",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_COURT",
-          "2f1af2790c56d88155d482d9cac5d636455f33ad",
-          "Deterministic authority-court fixtures.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/authority/gk-compat.test.mjs",
-          "58a55723780c0982f69d0b3397709a0c32b91f1a",
-          "58a55723780c0982f69d0b3397709a0c32b91f1a",
-          "a4089fc681ba790f67a1a98f1a817fbbc5f87feafb93004e640ac0a7e5543982",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_COURT",
-          "2f1af2790c56d88155d482d9cac5d636455f33ad",
-          "Node-Python governor compatibility court.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/authority/gk_compat_bridge.py",
-          "dca31ba1faa9e15400fea7a075481130b45ad11a",
-          "dca31ba1faa9e15400fea7a075481130b45ad11a",
-          "93445b4a8b9b469053d80061987fa01990fb03ca56f50c4453ab65ff9e478b83",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_COURT",
-          "2f1af2790c56d88155d482d9cac5d636455f33ad",
-          "Python governor compatibility bridge.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/authority/hermes-boundary.test.mjs",
-          "7c3d72f1214ce538765aab07a01da8f81dd7774c",
-          "7c3d72f1214ce538765aab07a01da8f81dd7774c",
-          "e2665103fc02df195201ab8d24cdb01740f6da6bac59dabef97106f11f6fe5c1",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_COURT",
-          "2f1af2790c56d88155d482d9cac5d636455f33ad",
-          "Hermes boundary courts.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/authority/lease-reclaim.mjs",
-          "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8",
-          "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8",
-          "7641bba7e1c0d0fc5bb38c9949f79d6bf8cbc9df289677dab2decf2f37bed599",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Lease reclaim and stale-holder fencing.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/nonce.mjs",
-          "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2",
-          "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2",
-          "152d4d0b2f212ef27b350ddca2d1e6e078f08b8d1207a8f11d1f0750b07c1373",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Single-use authorization nonces.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/owner-gate.mjs",
-          "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104",
-          "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104",
-          "41f3d07a349d316c1172671e245927f50109d0a78c52ab3866a6944b781846db",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Signed owner-gated action admission.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/receipts.mjs",
-          "bf184e5b3826ebff561e3a1776eac294ac95f92e",
-          "bf184e5b3826ebff561e3a1776eac294ac95f92e",
-          "77379403be66795ef5d2a5078f58d799579f99a409a1cb8160acd839eee4137d",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Hash-chained decision receipts.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/signer.mjs",
-          "44bdf776ee454cf6d0375cb104d6004f4cddddb4",
-          "44bdf776ee454cf6d0375cb104d6004f4cddddb4",
-          "ac3de2b908c76141e2eea9cef252aca27fa88111d86aeb213a1fd351e5bfd35e",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT",
-          "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4",
-          "Owner-root signer and verifier boundary.",
-          "HIGH_AUTHORITY_CRITICAL"
-        ],
-        [
-          "tools/authority/single-seat.test.mjs",
-          "55ecc6be678b010322932edd3c0026d5b1327667",
-          "55ecc6be678b010322932edd3c0026d5b1327667",
-          "5168bb1293293a6d090d3d5f9f824584bb258b1f0aec0f09f07b02039cfb52ee",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_AUTHORITY_COURT",
-          "2f1af2790c56d88155d482d9cac5d636455f33ad",
-          "Single-seat uniqueness court.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/federation/capability-admission.test.mjs",
-          "457de0c0b271502783ba1921cf52dd0214838376",
-          "457de0c0b271502783ba1921cf52dd0214838376",
-          "dfbee13b73d7a3de83cfedd10b4b0e4716bb152790bc50e9e8fd1dd3212c37d5",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_FEDERATION_ADMISSION_COURT",
-          "0cec7b572720a9253ca5864420ec1d3242627dfc",
-          "Census-to-authority separation courts.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/federation/census-blindspot.test.mjs",
-          "c5f295622a7f3107c0b89b3423c21d00d107cd49",
-          "c5f295622a7f3107c0b89b3423c21d00d107cd49",
-          "75f26747ab68afd0d836de5554666e23eafd892b2dcd45feb3fc5df90b8989dc",
-          "100644",
-          "CREATE",
-          "PR57_SOVEREIGN_CORE_FEDERATION_ADMISSION_COURT",
-          "0cec7b572720a9253ca5864420ec1d3242627dfc",
-          "Census blind-spot courts.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ],
-        [
-          "tools/postgres-sim/stock-postgis-diagnostic.mjs",
-          "32cda3afbd9925fdbd0fc68212501b3fef38a876",
-          "32cda3afbd9925fdbd0fc68212501b3fef38a876",
-          "d1b6e269f1ef4452be887bfe03269d5b6c98b81bd948f9e9cd948fa4f691c0b9",
-          "100644",
-          "CREATE",
-          "PR57_TEST_INFRASTRUCTURE_POSTGIS_DIAGNOSTIC",
-          "c4d5ab9cdcaa7f73228f35b3bdb3f781fd566ecb",
-          "Stock-PostGIS H3 limitation diagnostic.",
-          "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"
-        ]
+        ["_mission/evolution/ES-0002-promotion-identity.json", "36662b90da2ea85e63973c772b85c4e0dbb4ccd0", "36662b90da2ea85e63973c772b85c4e0dbb4ccd0", "64cc18a97923efa4b71e1487b4844481d4c3898d560ea252ff7d1f0574da144a", "100644", "CREATE", "PR57_HISTORICAL_EVIDENCE_EVALUATOR_SUCCESSION", "fb66524f0151d1f0cc8db7e095163a4b0d1156f5", "Evidence-only promotion-identity succession record.", "MEDIUM_EVALUATOR_PROVENANCE"],
+        ["apps/web/src/app/lab/shell.tsx", "8036065f510580c4e590a7f15bfc63d52581e647", "8036065f510580c4e590a7f15bfc63d52581e647", "99fca5e5e65d0c333f4ca0436470d9155d8fa481782358459013ccc7d15eac9e", "100644", "MODIFY", "PR57_INTERNAL_LAB_MATRIX_AMENDMENT", "37425d21aee53274e45bca4724874581c2c126b5", "Internal lab theme synchronization lint repair.", "LOW_INTERNAL_LAB"],
+        ["apps/web/src/app/lab/sponsorship/page.tsx", "c57e48703704683abef4d9cda74e7a67b26b0db6", "c57e48703704683abef4d9cda74e7a67b26b0db6", "990b08d5733c3eb3cc8aff12b016ee11869b9a1ea2fab9da79e0cb7fa52494c2", "100644", "MODIFY", "PR57_INTERNAL_LAB_MATRIX_AMENDMENT", "37425d21aee53274e45bca4724874581c2c126b5", "Internal sponsorship-lab fixture typing.", "LOW_INTERNAL_LAB"],
+        ["apps/web/tests/workspace-integrity.test.mjs", "a21ec30a558b7231292ab60522db043c4bf5c823", "a21ec30a558b7231292ab60522db043c4bf5c823", "d3c555605dfa5472b0ffa99d405bbb2b7f704b57837f62061f1f40e79b1e270e", "100644", "MODIFY", "PR57_TEST_INFRASTRUCTURE_FEDERATION_WORKSPACE_COURT", "49bfcc714e3744fc90e56d9618d39d3b5d59e1f6", "Test-only governor-kernel package census.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["skills-src/hermes-governed-packet.mjs", "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8", "29e2f278b3b5b05da8ab1b5648558c6e7e1e1fd8", "cb731f697193049b776322d64b705e481f31e8670f1df154b3a63728befdf7bc", "100644", "MODIFY", "PR57_SOVEREIGN_CORE_HERMES_AUTHORITY_BOUNDARY", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Externally verified CANA grant boundary.", "HIGH_AUTHORITY_CRITICAL"],
+        ["skills-src/sitemind-context-compiler.mjs", "3b4c64485c69aaefcb890b93805c06d7ec4c9426", "3b4c64485c69aaefcb890b93805c06d7ec4c9426", "7a3d1190cc6e3171f8cae96022d6eba632b1df8c2ab1ed007e4950353702d951", "100644", "MODIFY", "PR57_SOVEREIGN_CORE_CONTEXT_COMPILER_IMPORT_GUARD", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Imported self-test process-exit guard.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/alive-loop/authority-bridge.mjs", "9123c6441ab4a46524b90fa1ede5dc97c733ce73", "9123c6441ab4a46524b90fa1ede5dc97c733ce73", "fd71d2d037935b311dfb328d3a903893d1afe21792672da7c2719959df9eeb82", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_BRIDGE", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Alive-loop to single authority-seat bridge.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/authority-court.test.mjs", "d0dc865f5473611f8756d743f2add0ee8a688173", "d0dc865f5473611f8756d743f2add0ee8a688173", "e2bb85fd12a5f1a9ea4acaa2c215bf39d3cba46a7913655f2b31e3b06c268793", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Authorization admission and refusal courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/authority.mjs", "aedfbaa6e659c8bedc3c1567bc9b45cc64027612", "aedfbaa6e659c8bedc3c1567bc9b45cc64027612", "782e6dfb8450ca853d386b3a7dd4992a46191b9ab89cfca2819b41c70088c4d0", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Single authorization seat.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/canon.mjs", "050244dab8600fe82488dea3d003cac84dc5256e", "050244dab8600fe82488dea3d003cac84dc5256e", "6fb2cab0193c804fc43d5fdcb1cae841c997d11de8db7331d2fce469a36a1b81", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Authority canonicalization and hashing.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/containment.mjs", "9179bb3a7b5f34c4896089b5ddf7068c10489427", "9179bb3a7b5f34c4896089b5ddf7068c10489427", "04ac9c50b76525566ff16328348f1c8dc3a5f23552efe9742123477aeb71f56c", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Authority containment and budgets.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/court-fixtures.mjs", "77c8464458e1c5d0683712ad520747d6b07eb592", "77c8464458e1c5d0683712ad520747d6b07eb592", "90f8942a95e643a9961546fceaba18a20e74ec3929f87995e71ccdc9fbff8eb7", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Deterministic authority-court fixtures.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/gk-compat.test.mjs", "58a55723780c0982f69d0b3397709a0c32b91f1a", "58a55723780c0982f69d0b3397709a0c32b91f1a", "a4089fc681ba790f67a1a98f1a817fbbc5f87feafb93004e640ac0a7e5543982", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Node-Python governor compatibility court.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/gk_compat_bridge.py", "dca31ba1faa9e15400fea7a075481130b45ad11a", "dca31ba1faa9e15400fea7a075481130b45ad11a", "93445b4a8b9b469053d80061987fa01990fb03ca56f50c4453ab65ff9e478b83", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Python governor compatibility bridge.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/hermes-boundary.test.mjs", "7c3d72f1214ce538765aab07a01da8f81dd7774c", "7c3d72f1214ce538765aab07a01da8f81dd7774c", "e2665103fc02df195201ab8d24cdb01740f6da6bac59dabef97106f11f6fe5c1", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Hermes boundary courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/authority/lease-reclaim.mjs", "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8", "15cb5200c8578d855bb756fdf470c7c4fe2bf0c8", "7641bba7e1c0d0fc5bb38c9949f79d6bf8cbc9df289677dab2decf2f37bed599", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Lease reclaim and stale-holder fencing.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/nonce.mjs", "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2", "8e49c5e49ea1fc9ff8906b3b085b9031f7cae5d2", "152d4d0b2f212ef27b350ddca2d1e6e078f08b8d1207a8f11d1f0750b07c1373", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Single-use authorization nonces.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/owner-gate.mjs", "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104", "6e939c5bf3259ce3c9e68aec1958d6fe6d6b6104", "41f3d07a349d316c1172671e245927f50109d0a78c52ab3866a6944b781846db", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Signed owner-gated action admission.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/receipts.mjs", "bf184e5b3826ebff561e3a1776eac294ac95f92e", "bf184e5b3826ebff561e3a1776eac294ac95f92e", "77379403be66795ef5d2a5078f58d799579f99a409a1cb8160acd839eee4137d", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Hash-chained decision receipts.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/signer.mjs", "44bdf776ee454cf6d0375cb104d6004f4cddddb4", "44bdf776ee454cf6d0375cb104d6004f4cddddb4", "ac3de2b908c76141e2eea9cef252aca27fa88111d86aeb213a1fd351e5bfd35e", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_SINGLE_SEAT", "c3ecba3dfa6377b8eb1e33f47dd0a8aea7ee50c4", "Owner-root signer and verifier boundary.", "HIGH_AUTHORITY_CRITICAL"],
+        ["tools/authority/single-seat.test.mjs", "55ecc6be678b010322932edd3c0026d5b1327667", "55ecc6be678b010322932edd3c0026d5b1327667", "5168bb1293293a6d090d3d5f9f824584bb258b1f0aec0f09f07b02039cfb52ee", "100644", "CREATE", "PR57_SOVEREIGN_CORE_AUTHORITY_COURT", "2f1af2790c56d88155d482d9cac5d636455f33ad", "Single-seat uniqueness court.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/federation/capability-admission.test.mjs", "457de0c0b271502783ba1921cf52dd0214838376", "457de0c0b271502783ba1921cf52dd0214838376", "dfbee13b73d7a3de83cfedd10b4b0e4716bb152790bc50e9e8fd1dd3212c37d5", "100644", "CREATE", "PR57_SOVEREIGN_CORE_FEDERATION_ADMISSION_COURT", "0cec7b572720a9253ca5864420ec1d3242627dfc", "Census-to-authority separation courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/federation/census-blindspot.test.mjs", "c5f295622a7f3107c0b89b3423c21d00d107cd49", "c5f295622a7f3107c0b89b3423c21d00d107cd49", "75f26747ab68afd0d836de5554666e23eafd892b2dcd45feb3fc5df90b8989dc", "100644", "CREATE", "PR57_SOVEREIGN_CORE_FEDERATION_ADMISSION_COURT", "0cec7b572720a9253ca5864420ec1d3242627dfc", "Census blind-spot courts.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"],
+        ["tools/postgres-sim/stock-postgis-diagnostic.mjs", "32cda3afbd9925fdbd0fc68212501b3fef38a876", "32cda3afbd9925fdbd0fc68212501b3fef38a876", "d1b6e269f1ef4452be887bfe03269d5b6c98b81bd948f9e9cd948fa4f691c0b9", "100644", "CREATE", "PR57_TEST_INFRASTRUCTURE_POSTGIS_DIAGNOSTIC", "c4d5ab9cdcaa7f73228f35b3bdb3f781fd566ecb", "Stock-PostGIS H3 limitation diagnostic.", "MEDIUM_GOVERNANCE_OR_TEST_INFRASTRUCTURE"]
       ],
       "entry_schema": [
         "path",
@@ -1350,24 +1086,6 @@
         "canonical_main_sovereign_h3_run": "32414163253:SUCCESS:VERIFY_SOVEREIGN_POSTGIS_H3"
       },
       "approval_sha256": "545dcae796ebb8ad8913bee392705f28cb234f990dde20fbf2fa1423dd3d55ed"
-    },
-    "stage1_convergence_2026_08_27": {
-      "authorization": "OWNER FULL EXECUTION AUTONOMY OVERRIDE — Stage 1 Convergence",
-      "authorization_source_sha256": "14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565",
-      "scope": "Eight exact new files for Stage 1 Cloudflare Edge foundation and Owner CANA console UI shell; no wildcard, directory, neighboring-path, deployment, production, or runtime-product authority.",
-      "authorization_effect": "durability-path-ownership-only",
-      "rationale": "Ports validated zero-Rust Cloudflare OpenNext adapter from 140f7d4 lineage and adds sovereign operator console UI shell.",
-      "paths": [
-        "BASELINE_TEST_RECEIPT.json",
-        "CLASS_D_BASELINE_RECEIPT.json",
-        "CLASS_D_CONVERGENCE_RECEIPT.json",
-        "P0_STACK_DECOMPOSITION.json",
-        "apps/web/open-next.config.ts",
-        "apps/web/src/app/admin/console/page.tsx",
-        "apps/web/src/lib/prisma-cloudflare.ts",
-        "apps/web/wrangler.jsonc"
-      ],
-      "assignment_sha256": "5234576df614521c41fa4018426cd7566d7273f03a13ee4e68bae07472641436"
     }
   },
   "owned_create_paths": [
@@ -1801,15 +1519,7 @@
     "tools/vanguard/regret-ledger.mjs",
     "tools/vanguard/ttrl.mjs",
     "tools/vanguard/victory-board.mjs",
-    "tools/vanguard/victory-board.test.mjs",
-    "BASELINE_TEST_RECEIPT.json",
-    "CLASS_D_BASELINE_RECEIPT.json",
-    "CLASS_D_CONVERGENCE_RECEIPT.json",
-    "P0_STACK_DECOMPOSITION.json",
-    "apps/web/open-next.config.ts",
-    "apps/web/src/app/admin/console/page.tsx",
-    "apps/web/src/lib/prisma-cloudflare.ts",
-    "apps/web/wrangler.jsonc"
+    "tools/vanguard/victory-board.test.mjs"
   ],
   "owned_modify_paths": [
     "apps/web/benchmarks/discovery-tasks.json",
@@ -2247,15 +1957,7 @@
     "apps/web/tests/customer-world.test.mjs",
     "apps/web/tests/customer-world-routes.test.mjs",
     "apps/web/tests/tenant-rewrite.test.mjs",
-    "apps/web/tests/retailer-detail-search.test.mjs",
-    "BASELINE_TEST_RECEIPT.json",
-    "CLASS_D_BASELINE_RECEIPT.json",
-    "CLASS_D_CONVERGENCE_RECEIPT.json",
-    "P0_STACK_DECOMPOSITION.json",
-    "apps/web/open-next.config.ts",
-    "apps/web/src/app/admin/console/page.tsx",
-    "apps/web/src/lib/prisma-cloudflare.ts",
-    "apps/web/wrangler.jsonc"
+    "apps/web/tests/retailer-detail-search.test.mjs"
   ],
   "global_no_edit": [
     "apps/web/src/lib/handoff.mjs",

@@ -70,6 +70,12 @@ generator client {
   binaryTargets   = ["native", "rhel-openssl-3.0.x", "rhel-openssl-1.1.x", "debian-openssl-1.1.x"]
 }
 
+generator workerClient {
+  provider   = "prisma-client-js"
+  output     = "../../../node_modules/@cana/prisma-worker"
+  engineType = "client"
+}
+
 // Parent Holdings Organization
 model Organization {
   id        String   @id @default(uuid())

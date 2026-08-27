@@ -58,22 +58,6 @@ const FEDERATION_GATE_E_ASSIGNMENT = 'federation_gate_e_2026_08_18';
 const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT = 'pr59_sovereign_custody_2026_08_22';
 const PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256 =
   '5cfdc920488db9935fb0fb905d255edc77d3416fb9255fd13194df7c5815bc73';
-const STAGE1_CONVERGENCE_ASSIGNMENT = 'stage1_convergence_2026_08_27';
-const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '5234576df614521c41fa4018426cd7566d7273f03a13ee4e68bae07472641436';
-const STAGE1_AUTONOMY_SOURCE_SHA256 =
-  '14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565';
-export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
-  'BASELINE_TEST_RECEIPT.json',
-  'CLASS_D_BASELINE_RECEIPT.json',
-  'CLASS_D_CONVERGENCE_RECEIPT.json',
-  'P0_STACK_DECOMPOSITION.json',
-  'apps/web/open-next.config.ts',
-  'apps/web/src/app/admin/console/page.tsx',
-  'apps/web/src/lib/prisma-cloudflare.ts',
-  'apps/web/wrangler.jsonc',
-]);
-
 const PR59_AUTONOMY_SOURCE_SHA256 =
   '14a3554ec2eb809c98e82b0ee6b57ac30668c6b8f7290dc95712afd63a323565';
 export const PR59_ATTRIBUTION_COLLISION_REPAIR_PATH =
@@ -129,7 +113,6 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   FEDERATION_GATES_CD_ASSIGNMENT,
   FEDERATION_GATE_E_ASSIGNMENT,
   PR59_SOVEREIGN_CUSTODY_ASSIGNMENT,
-  STAGE1_CONVERGENCE_ASSIGNMENT,
   PR57_INHERITED_MAIN_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
@@ -138,7 +121,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'f16bf61d303876156b5c2612a84a56fd846fb645772153a292f15fc3135f3dc3';
+  'f90dd4b29d4b7b40c95ee41f77026d47df4abc80c0c5744be98789af0733e40a';
 
 export const PR59_SOVEREIGN_CUSTODY_PATHS = Object.freeze([
   'tools/visual-court/linux-custody-helper.c',
@@ -781,55 +764,6 @@ export function validateOwnershipManifest(ownership) {
     || sha256Bytes(canonicalJson(pr59Payload)) !== PR59_SOVEREIGN_CUSTODY_ASSIGNMENT_SHA256
   ) {
     refusal('PR #59 sovereign custody assignment failed its execution-scope digest');
-  }
-  const stage1Assignment =
-    ownership.explicit_user_assignment[STAGE1_CONVERGENCE_ASSIGNMENT];
-  if (
-    !exactKeys(stage1Assignment, [
-      'authorization',
-      'authorization_source_sha256',
-      'scope',
-      'authorization_effect',
-      'rationale',
-      'paths',
-      'assignment_sha256',
-    ])
-    || !Array.isArray(stage1Assignment.paths)
-    || stage1Assignment.authorization_source_sha256 !== STAGE1_AUTONOMY_SOURCE_SHA256
-    || stage1Assignment.authorization_effect !== 'durability-path-ownership-only'
-    || typeof stage1Assignment.authorization !== 'string'
-    || stage1Assignment.authorization.length === 0
-    || typeof stage1Assignment.scope !== 'string'
-    || stage1Assignment.scope.length === 0
-    || typeof stage1Assignment.rationale !== 'string'
-    || stage1Assignment.rationale.length === 0
-    || JSON.stringify(stage1Assignment.paths)
-      !== JSON.stringify(STAGE1_CONVERGENCE_PATHS)
-    || stage1Assignment.paths.some(
-      (relative) => relative.includes('*')
-        || relative.includes('\\')
-        || relative.startsWith('/')
-        || relative.includes('..')
-        || path.posix.normalize(relative) !== relative,
-    )
-  ) {
-    refusal('Stage 1 convergence ownership assignment is malformed');
-  }
-  for (const authorizedPath of STAGE1_CONVERGENCE_PATHS) {
-    if (allOwnedPaths.filter((pattern) => pattern === authorizedPath).length !== 1) {
-      refusal(`Stage 1 path must have one exact ownership entry: ${authorizedPath}`);
-    }
-    if (ownership.planned_candidate_files.filter((pattern) => pattern === authorizedPath).length !== 1) {
-      refusal(`Stage 1 path must have one planned-candidate entry: ${authorizedPath}`);
-    }
-  }
-  const { assignment_sha256: stage1RecordedDigest, ...stage1Payload } =
-    stage1Assignment;
-  if (
-    stage1RecordedDigest !== STAGE1_CONVERGENCE_ASSIGNMENT_SHA256
-    || sha256Bytes(canonicalJson(stage1Payload)) !== STAGE1_CONVERGENCE_ASSIGNMENT_SHA256
-  ) {
-    refusal('Stage 1 convergence assignment failed its execution-scope digest');
   }
   for (const authorizedPath of STAGE_A_AUTHORIZED_PATHS) {
     const exactOccurrences = allOwnedPaths.filter((pattern) => pattern === authorizedPath).length;
