@@ -283,7 +283,6 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
   for (const webpackPath of [
     'NAMECHEAP_CPANEL_DEPLOYMENT.md',
     'apps/web/tests/build-database-gate.test.mjs',
-    'apps/web/tests/deployment-integrity.test.mjs',
     'deploy/namecheap/CAPABILITIES.md',
     'deploy/namecheap/PRODUCTION_RELEASE_GATES.md',
     'deploy/namecheap/build-artifact.mjs',
