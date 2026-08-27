@@ -263,6 +263,10 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
     'the supported Edge middleware bridge must be admitted only at its reviewed blob',
   );
   assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/tests/project-wiring.test.mjs'),
+    'the supported Edge middleware court must be admitted only at its reviewed blob',
+  );
+  assert.ok(
     durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/eslint.config.mjs'),
     'the Next 15 flat-config import repair must be admitted only at its reviewed blob',
   );

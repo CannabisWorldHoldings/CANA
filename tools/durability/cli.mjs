@@ -74,6 +74,7 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'apps/web/src/middleware.ts',
   'apps/web/src/lib/prisma-cloudflare.ts',
   'apps/web/tests/build-database-gate.test.mjs',
+  'apps/web/tests/project-wiring.test.mjs',
   'apps/web/tests/release-sha.test.mjs',
   'apps/web/tests/workspace-integrity.test.mjs',
   'apps/web/tsconfig.json',
@@ -89,10 +90,10 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '1ee48eef37631bb6ec26d3978abc2ef7980c9eaffb33c52c991e490d7d237dd4';
+  'ff54cea1defc685b44101aa9a09c9860daa315a41b89f7f348356f99b703d963';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Twenty-six exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  scope: 'Twenty-seven exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -149,6 +150,10 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'apps/web/tests/build-database-gate.test.mjs': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '3b431c23aa8fe9681f88f66a7035585821e7c40f',
+    }),
+    'apps/web/tests/project-wiring.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '797b4232678a6e16c2e9186f1f4be7b2779dc6e5',
     }),
     'apps/web/tests/release-sha.test.mjs': Object.freeze({
       git_mode: '100644',
