@@ -270,6 +270,16 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
     durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/tsconfig.json'),
     'the Next 15 JSX compiler contract must be admitted only at its reviewed blob',
   );
+  for (const releasePath of [
+    'apps/web/src/app/api/release/release-identity.mjs',
+    'apps/web/src/app/api/release/route.ts',
+    'apps/web/tests/release-sha.test.mjs',
+  ]) {
+    assert.ok(
+      durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(releasePath),
+      `the bundled release-identity path must be admitted exactly: ${releasePath}`,
+    );
+  }
   assert.deepEqual(
     Object.keys(admission.blobs),
     [...durabilityCli.STAGE1_CONVERGENCE_PATHS],

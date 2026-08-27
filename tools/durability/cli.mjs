@@ -68,17 +68,20 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'apps/web/eslint.config.mjs',
   'apps/web/open-next.config.ts',
   'apps/web/src/app/admin/console/page.tsx',
+  'apps/web/src/app/api/release/release-identity.mjs',
+  'apps/web/src/app/api/release/route.ts',
   'apps/web/src/middleware.ts',
   'apps/web/src/lib/prisma-cloudflare.ts',
+  'apps/web/tests/release-sha.test.mjs',
   'apps/web/tests/workspace-integrity.test.mjs',
   'apps/web/tsconfig.json',
   'apps/web/wrangler.jsonc',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  'a966dedb46fda2ec81c8691ca467bd9396edc60f1037fb3827eaef061b3a2b1b';
+  '834b8f5260d9288321bf07a38818afadba6a7235775a1e197e73bc510c7eaa0e';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
-  scope: 'Twelve exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
+  scope: 'Fifteen exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
   authorization_effect: 'durability-exact-blob-admission-only',
   rationale: 'The historical ownership manifest is retained byte-for-byte for sealed prior courts while this Stage 1 candidate receives a replacement-resistant admission for only its reviewed artifacts.',
   originating_commit: STAGE1_CONVERGENCE_PARENT_SHA,
@@ -112,6 +115,14 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
       git_mode: '100644',
       git_blob_sha: '4562ac43056a757c3ae3e40ad8f4984a0a888ada',
     }),
+    'apps/web/src/app/api/release/release-identity.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'ba95e97db94694896d3f3b921ccf81e274733968',
+    }),
+    'apps/web/src/app/api/release/route.ts': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: 'dbd4640d99c27bee07c735d9a6116ef8841cfcdc',
+    }),
     'apps/web/src/middleware.ts': Object.freeze({
       git_mode: '100644',
       git_blob_sha: 'c67ae82189b9c4c0938064252f86c9bff0108598',
@@ -119,6 +130,10 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     'apps/web/src/lib/prisma-cloudflare.ts': Object.freeze({
       git_mode: '100644',
       git_blob_sha: '58bb9ac64549f78679445ed78105da6c93770541',
+    }),
+    'apps/web/tests/release-sha.test.mjs': Object.freeze({
+      git_mode: '100644',
+      git_blob_sha: '463808176ff059d5f5c0d067c6451d06407e2ca6',
     }),
     'apps/web/tests/workspace-integrity.test.mjs': Object.freeze({
       git_mode: '100644',

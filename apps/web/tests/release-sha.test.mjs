@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   resolveReleaseIdentity,
+  resolveReleaseIdentityWithBundledSha,
   releaseResponseBody,
   RELEASE_STATES,
   FULL_SHA_PATTERN,
@@ -223,6 +224,54 @@ test('runtime env vars carrying SHAs are NEVER consulted — only the build-time
   }
 });
 
+test('a platform build may carry an exact bundled SHA when no artifact file exists', () => {
+  const dir = scratchDir();
+  try {
+    const identity = resolveReleaseIdentityWithBundledSha({
+      cwd: dir,
+      env: {},
+      bundledSha: VALID_SHA,
+    });
+    assert.equal(identity.state, RELEASE_STATES.PRESENT);
+    assert.equal(identity.httpStatus, 200);
+    assert.equal(identity.gitSha, VALID_SHA);
+    assert.equal(identity.source, 'bundled:CANA_RELEASE_SHA');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('artifact identity wins over a bundled SHA and malformed bundled identity fails visibly', () => {
+  const dir = scratchDir();
+  try {
+    writeIdentity(dir, 'release.json', { gitSha: VALID_SHA });
+    const fileIdentity = resolveReleaseIdentityWithBundledSha({
+      cwd: dir,
+      env: {},
+      bundledSha: 'b'.repeat(40),
+    });
+    assert.equal(fileIdentity.gitSha, VALID_SHA);
+    assert.equal(fileIdentity.source, 'release.json');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  const empty = scratchDir();
+  try {
+    const malformed = resolveReleaseIdentityWithBundledSha({
+      cwd: empty,
+      env: {},
+      bundledSha: 'short-sha',
+    });
+    assert.equal(malformed.state, RELEASE_STATES.INVALID);
+    assert.equal(malformed.httpStatus, 503);
+    assert.equal(malformed.gitSha, null);
+    assert.equal(malformed.source, 'bundled:CANA_RELEASE_SHA');
+  } finally {
+    fs.rmSync(empty, { recursive: true, force: true });
+  }
+});
+
 test('the resolver reports only what the file says: PRESENT body SHA equals the file SHA byte-for-byte', () => {
   const dir = scratchDir();
   try {
@@ -285,6 +334,10 @@ test('route.ts: force-dynamic, no-store, resolver-backed, and NEVER shells out t
     'release identity must never be served from a build-time page cache');
   assert.match(code, /no-store/, 'a cached SHA is a false claim about what is running');
   assert.match(code, /resolveReleaseIdentity/, 'the route must use the tested resolver');
+  assert.match(code, /resolveReleaseIdentityWithBundledSha/,
+    'platform artifacts must carry the SHA injected by the exact build court');
+  assert.match(code, /process\.env\.CANA_RELEASE_SHA/,
+    'the platform SHA must be captured by Next at build time');
   assert.doesNotMatch(code, /child_process|execSync|spawnSync|execFile|spawn\(/,
     'the route must not shell out — a deployed artifact has no .git to ask');
   assert.doesNotMatch(code, /git rev-parse|\.git\b/,
