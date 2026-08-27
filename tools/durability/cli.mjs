@@ -90,7 +90,7 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  'a79809f681a9a6aed37a518e650556102eccecbec297bb7c1f04c495395d46f4';
+  '821caa5502388419564aba69f5cc43cd53dfb27d6ba34d4ead32b88ee9144003';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
   scope: 'Twenty-seven exact Stage 1 convergence paths at their reviewed Git modes and blob identities only; no wildcard, neighbor, replacement blob, runtime, deployment, credential, production, verification-bypass, or self-promotion authority.',
@@ -161,7 +161,7 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/tests/workspace-integrity.test.mjs': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: 'fb43f2c90b107490b06d8f4e11b4e0960706a5f3',
+      git_blob_sha: 'd0e2784cadef2e6a20480ba74d8ccaa5a68d4f1f',
     }),
     'apps/web/tsconfig.json': Object.freeze({
       git_mode: '100644',
@@ -193,11 +193,11 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'package-lock.json': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: '57e3e22f47cb376ca0945677132763a7fdd285ce',
+      git_blob_sha: '93df842a166916c8e3d579d62105de7c8806890b',
     }),
     'package.json': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: 'c626d7ceeac129582bd9846a19e7694b9a9683ac',
+      git_blob_sha: '0b7d6bb45b9820a2da9bb4efe5c6ed873adda23d',
     }),
     'tools/test-runner/container-verify.sh': Object.freeze({
       git_mode: '100755',
