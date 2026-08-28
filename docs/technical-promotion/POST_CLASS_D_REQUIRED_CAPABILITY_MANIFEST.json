@@ -7,8 +7,8 @@
     "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
     "authorization_effect": "exact-reviewed-court-bytes-only",
     "paths": {
-      "tools/promotion-gate/post-class-d-ledger.court.mjs": "06d71dbf908aae5658c0229e55a55ce2ed20fd48455cbc1a7fe95d839f253ff8",
-      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "57f68747c6bc71e355c78563d4a026bd414d743836cc4d84e3e4ae922dd8430a",
+      "tools/promotion-gate/post-class-d-ledger.court.mjs": "a616fb003cf8f3ba5df900eb9fc7a7f6b32b13463899691f4346dbbe4d64d4b6",
+      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "d251f74a3be236cac4e8d8069fdd956d2ed490012133d4ebd16f78a7fb0c3d91",
       "tools/promotion-gate/github-web-flow-signing-key.asc": "c135dfc1e3add3eb84e6119af7095dec97e0e92730a468d234f925a72bacaf74"
     }
   },

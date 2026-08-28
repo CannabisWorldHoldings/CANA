@@ -327,7 +327,8 @@ export function validateGithubCustody(manifest) {
   assert.deepEqual(gitText(['diff-tree', '--no-commit-id', '--name-only', '-r', receiptCommit]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
   assert.deepEqual(gitText(['diff-tree', '-m', '--no-commit-id', '--name-only', '-r', head]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
   const signature = validateGithubCommitSignature(head);
-  return { state: 'GITHUB_CUSTODY_RECEIPT_PRESENT', externallyVerified: signature === 'SIGNATURE_VERIFIED', signature, commit: head };
+  assert.equal(signature, 'SIGNATURE_VERIFIED', 'exact-head GitHub signature must be independently verified');
+  return { state: 'GITHUB_CUSTODY_RECEIPT_PRESENT', externallyVerified: true, signature, commit: head };
 }
 
 function gpgExecutable() {

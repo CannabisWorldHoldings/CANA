@@ -51,7 +51,8 @@ test('GitHub custody and exact-head external verification receipts are validated
   const custody = validateGithubCustody(manifest);
   assert.equal(['PENDING_GITHUB_VERIFIED_COMMIT', 'GITHUB_CUSTODY_RECEIPT_PRESENT'].includes(custody.state), true);
   if (custody.state === 'GITHUB_CUSTODY_RECEIPT_PRESENT') {
-    assert.equal(['SIGNATURE_VERIFIED', 'EXTERNAL_SIGNATURE_REQUIRED'].includes(custody.signature), true);
+    assert.equal(custody.signature, 'SIGNATURE_VERIFIED');
+    assert.equal(custody.externallyVerified, true);
   }
   const receipts = validateExternalReceipts(manifest);
   assert.equal(Number.isInteger(receipts.exactReceipts) && receipts.exactReceipts >= 0, true);
