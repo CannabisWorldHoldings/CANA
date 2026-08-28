@@ -306,7 +306,7 @@ export function assertExactAssessmentDrift(manifest) {
 export function validateGithubCustody(manifest) {
   if (!fs.existsSync(GITHUB_CUSTODY)) return { state: manifest.github_custody.state, externallyVerified: false };
   const receipt = JSON.parse(fs.readFileSync(GITHUB_CUSTODY, 'utf8'));
-  assert.deepEqual(Object.keys(receipt).sort(), ['authorization_source_sha256', 'court_sha256', 'kind', 'manifest_sha256', 'parent_commit', 'parent_tree', 'production_effects', 'schema', 'signature_verification_requirement', 'verifier_sha256']);
+  assert.deepEqual(Object.keys(receipt).sort(), ['authorization_source_sha256', 'court_sha256', 'github_web_flow_key_sha256', 'kind', 'manifest_sha256', 'parent_commit', 'parent_tree', 'production_effects', 'schema', 'signature_verification_requirement', 'verifier_sha256']);
   const head = gitText(['rev-parse', 'HEAD']);
   const parents = gitText(['show', '-s', '--format=%P', head]).split(' ').filter(Boolean);
   assert.equal(parents.length, 2, 'GitHub custody head must be a two-parent authenticated merge');
@@ -318,6 +318,7 @@ export function validateGithubCustody(manifest) {
   assert.equal(receipt.manifest_sha256, sha256(git(['show', `${parent}:${rel(MANIFEST)}`], { encoding: null })));
   assert.equal(receipt.verifier_sha256, sha256(git(['show', `${parent}:tools/promotion-gate/post-class-d-ledger.court.mjs`], { encoding: null })));
   assert.equal(receipt.court_sha256, sha256(git(['show', `${parent}:tools/promotion-gate/post-class-d-ledger.court.test.mjs`], { encoding: null })));
+  assert.equal(receipt.github_web_flow_key_sha256, sha256(git(['show', `${parent}:tools/promotion-gate/github-web-flow-signing-key.asc`], { encoding: null })));
   assert.equal(receipt.authorization_source_sha256, manifest.owner_authorization_source_sha256);
   assert.equal(receipt.signature_verification_requirement, manifest.github_custody.verification_requirement);
   assert.equal(receipt.production_effects, 0);
