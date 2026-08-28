@@ -33,6 +33,13 @@ establish.
 | `rsi_cross_repository_evaluation` | SUPERSEDED | Four-file wrapper is covered by embedded attack court and exact-main sovereign security stage. | None. |
 | `rsi_hermes_runtime_wholesale` | REJECTED_WITH_REASON | 7,197-file external runtime owns tools, secrets, memories, providers and control surfaces, creating a second machine sovereign. | Only typed bounded adapters may be reconsidered. |
 | `orderweeddc_rsi_standalone_runtime` | REJECTED_WITH_REASON | Standalone API, DB, worker, router and launch path duplicate canonical owners; selected mechanisms are already extracted. | No wholesale import. |
+| `orderweeddcrsi_mission_lease_idempotency` | CANONICAL | Deterministic idempotency, lease reclaim and stale-holder fencing are reimplemented behind CANA authority. | Regression only; no second mission store. |
+| `orderweeddcrsi_receipt_chain` | CANONICAL | Append-only hash-bound receipts and crash reconstruction are owned by CANA durable authority. | Preserve one evidence system. |
+| `orderweeddcrsi_evidence_envelope` | CANONICAL | The untrusted-evidence envelope and no-authority checks are retained under CANA evidence semantics. | Evidence never grants authority. |
+| `orderweeddcrsi_provider_validation_circuit_breaker` | CANONICAL | Strict output validation, none/mock routing and circuit-breaker mechanics remain zero-spend bounded seams; live provider authority is excluded. | Use the existing model gateway for product adapters. |
+| `orderweeddcrsi_deterministic_pipeline` | CANONICAL | Deterministic content identity and change-event/candidate mechanics are canonical; donor policy functions remain excluded. | Search may emit observations only. |
+| `orderweeddcrsi_crash_restart_fixtures` | CANONICAL | Mission-2 and authority courts cover crash windows, restart reconstruction and stale-worker fencing. | Durability regression only. |
+| `orderweeddcrsi_gated_lesson_persistence` | CANONICAL | Winner Memory persists only measured, admitted lessons with hash-chain custody and idempotent dedupe. | Preserve the measured-outcome gate. |
 | `merchant_intelligence_core` | CANONICAL | Merchant dashboard, Growth OS, claims, evidence and commercial truth boundaries are canonical. | Add scoped assistant without authority widening. |
 | `merchant_ai_tenant_productization` | DEFERRED_WITH_REASON | Complete merchant conversational assistance and explicit Owner/cross-merchant/deploy denials are absent. | Merchant AI scope PR. |
 | `customer_ask_world` | CANONICAL | Distinct delivery/dispensary journeys, Search, Ask, PostGIS/H3 truth and unknown-state law pass exact-main sovereign court. | Regression protection. |
