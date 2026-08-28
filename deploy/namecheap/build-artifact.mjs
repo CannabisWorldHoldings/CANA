@@ -46,7 +46,10 @@ import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
   auditArtifactExclusions,
+  normalizeNextStandaloneOutput,
+  normalizePrismaGeneratedClient,
   PINNED_ARTIFACT_EXECUTABLE_SHA256,
+  portableReleaseReproducibility,
 } from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
@@ -505,6 +508,18 @@ const releaseRepro = assertReleaseReproducible({
   gitSha,
   allowDirty: process.env.ALLOW_DIRTY === '1',
 });
+const gitExecutable = fs.realpathSync(capture('command -v git', { cwd: repoRoot }));
+const machineRoots = [
+  ['CURRENT_CHECKOUT_ROOT', repoRoot],
+  ['CURRENT_WEB_ROOT', webRoot],
+  ['CURRENT_HOME', process.env.HOME],
+  ['CURRENT_TMPDIR', process.env.TMPDIR],
+  ['CURRENT_OS_TEMP_ROOT', os.tmpdir()],
+  ['CURRENT_NODE_EXECUTABLE', process.execPath],
+  ['CURRENT_GIT_EXECUTABLE', gitExecutable],
+]
+  .filter(([, value]) => typeof value === 'string' && value.length > 1)
+  .map(([label, value]) => ({ label, value: value.replace(/[\\/]$/, '') }));
 
 const artifactName = `orderweeddc-${gitSha}`;
 const distRoot = path.join(repoRoot, 'dist/namecheap');
@@ -534,6 +549,30 @@ run('npx prisma generate', {
     DIRECT_URL: 'postgresql://postgres@127.0.0.1:5432/cana_build_only',
   }),
 });
+const prismaPathNormalization = [];
+for (const [clientDirectory, expectedOutputPath, portableOutputPath] of [
+  [
+    path.join(repoRoot, 'node_modules/.prisma/client'),
+    path.join(repoRoot, 'node_modules/@prisma/client'),
+    'node_modules/@prisma/client',
+  ],
+  [
+    path.join(repoRoot, 'node_modules/@cana/prisma-worker'),
+    path.join(repoRoot, 'node_modules/@cana/prisma-worker'),
+    'node_modules/@cana/prisma-worker',
+  ],
+]) {
+  for (const generatedFile of ['index.js', 'edge.js', 'wasm.js']) {
+    prismaPathNormalization.push(normalizePrismaGeneratedClient(
+      path.join(clientDirectory, generatedFile),
+      {
+        expectedOutputPath,
+        expectedSchemaPath: path.join(webRoot, 'prisma/schema.prisma'),
+        portableOutputPath,
+      },
+    ));
+  }
+}
 const buildPostgres = startDisposablePostgres({
   label: 'artifact-build',
   publishLoopback: true,
@@ -569,6 +608,12 @@ const serverDir = fs.existsSync(path.join(nestedWeb, 'server.js'))
   ? nestedWeb
   : standaloneRoot;
 assertExists(path.join(serverDir, 'server.js'), 'standalone server.js');
+const nextPathNormalization = normalizeNextStandaloneOutput({
+  standaloneRoot,
+  serverFile: path.join(serverDir, 'server.js'),
+  requiredServerFiles: path.join(serverDir, '.next/required-server-files.json'),
+  buildRoot: repoRoot,
+});
 
 copyDir(serverDir, artifactRoot);
 const hoistedModules = path.join(standaloneRoot, 'node_modules');
@@ -641,12 +686,42 @@ fs.copyFileSync(migrationVerifierPath, path.join(artifactRoot, 'prisma/migration
 const packagedMigrationPackages = [...copyInstalledPackageClosure('prisma')]
   .map((packageRoot) => path.relative(path.join(repoRoot, 'node_modules'), packageRoot))
   .sort();
-for (const packageRoot of packagedMigrationPackages) {
+const packagedWorkerRuntimeClosure = new Set();
+copyInstalledPackageClosure('@cana/prisma-worker', packagedWorkerRuntimeClosure);
+copyInstalledPackageClosure('@prisma/adapter-pg', packagedWorkerRuntimeClosure);
+const packagedWorkerRuntimePackages = [...packagedWorkerRuntimeClosure]
+  .map((packageRoot) => path.relative(path.join(repoRoot, 'node_modules'), packageRoot))
+  .sort();
+for (const packageRoot of new Set([
+  ...packagedMigrationPackages,
+  ...packagedWorkerRuntimePackages,
+])) {
   const destination = path.join(artifactRoot, 'node_modules', packageRoot);
   for (const file of walkFiles(destination)) {
     if (/^readme.*\.md$/i.test(path.basename(file))) fs.rmSync(file);
   }
 }
+const nextLaunchEditor = path.join(
+  artifactRoot,
+  'node_modules/next/dist/next-devtools/server/launch-editor.js',
+);
+const localWindowsPathComment =
+  '// form "C:\\Users\\myusername\\Downloads\\& curl 172.21.93.52". Use an access list';
+const portableWindowsPathComment =
+  '// Windows paths containing shell metacharacters are rejected by this access list';
+const nextLaunchEditorSource = fs.readFileSync(nextLaunchEditor, 'utf8');
+if (!nextLaunchEditorSource.includes(localWindowsPathComment)) {
+  throw new Error('NEXT_DEBUG_PATH_COMMENT_UNEXPECTED');
+}
+fs.writeFileSync(
+  nextLaunchEditor,
+  nextLaunchEditorSource.replace(localWindowsPathComment, portableWindowsPathComment),
+);
+const diagnosticPathNormalization = Object.freeze({
+  file: 'node_modules/next/dist/next-devtools/server/launch-editor.js',
+  classification: 'DEBUG_DIAGNOSTIC_RESIDUE',
+  runtimeSemanticsChanged: false,
+});
 const packagedPrismaCliSha256 = sha256File(
   path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
 );
@@ -713,6 +788,15 @@ checks['artwork restored'] = fs.existsSync(
 );
 checks['@prisma/client package present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/@prisma/client/package.json'),
+);
+checks['@cana/prisma-worker package present'] = fs.existsSync(
+  path.join(artifactRoot, 'node_modules/@cana/prisma-worker/package.json'),
+);
+checks['@cana/prisma-worker compiler WASM present'] = fs.existsSync(
+  path.join(artifactRoot, 'node_modules/@cana/prisma-worker/query_compiler_bg.wasm'),
+);
+checks['@prisma/adapter-pg package present'] = fs.existsSync(
+  path.join(artifactRoot, 'node_modules/@prisma/adapter-pg/package.json'),
 );
 checks['artifact-local prisma migration CLI present'] = fs.existsSync(
   path.join(artifactRoot, 'node_modules/prisma/build/index.js'),
@@ -808,11 +892,15 @@ function writeReceipt(extra = {}) {
   const receipt = {
     artifact: artifactName,
     gitSha,
-    releaseRepro,
+    releaseRepro: portableReleaseReproducibility(releaseRepro),
     workingTree: workingTree === '' ? 'clean' : workingTree.split('\n'),
     builtAt: new Date().toISOString(),
     nodeVersion: process.version,
-    nodePath: process.execPath,
+    nodeRuntime: {
+      executable: path.basename(process.execPath),
+      version: process.version,
+      secureLaunchVerified: true,
+    },
     // Hoisted monorepo: resolve through Node so root node_modules works.
     nextVersion: JSON.parse(
       fs.readFileSync(
@@ -850,8 +938,16 @@ function writeReceipt(extra = {}) {
       },
       migrationUniverse,
       packagedMigrationPackages,
+      packagedWorkerRuntimePackages,
       packagedPrismaCliSha256,
       packagedSchemaEngines,
+    },
+    pathPortability: {
+      prismaGeneratedClients: prismaPathNormalization,
+      nextStandalone: nextPathNormalization,
+      diagnosticResidue: diagnosticPathNormalization,
+      machineSpecificExecutablePathsRecorded: false,
+      machineSpecificCheckoutPathsRecorded: false,
     },
     checks,
     ...extra,
@@ -873,6 +969,74 @@ function packageTar() {
   return tarPath;
 }
 
+function createRelocationGuard(isolationRoot) {
+  const guardFile = path.join(isolationRoot, 'deny-original-build-root.cjs');
+  const accessLog = path.join(isolationRoot, 'original-build-root-access.log');
+  const guardSource = String.raw`'use strict';
+const fs = require('node:fs');
+const Module = require('node:module');
+const path = require('node:path');
+const { fileURLToPath } = require('node:url');
+const forbiddenRoot = path.resolve(process.env.CANA_FORBIDDEN_BUILD_ROOT);
+const accessLog = process.env.CANA_ORIGINAL_ROOT_ACCESS_LOG;
+function normalized(candidate) {
+  if (Buffer.isBuffer(candidate)) candidate = candidate.toString();
+  if (candidate instanceof URL) candidate = fileURLToPath(candidate);
+  if (typeof candidate !== 'string' || candidate.length === 0) return null;
+  if (candidate.startsWith('file:')) candidate = fileURLToPath(candidate);
+  return path.resolve(candidate);
+}
+function deny(candidate) {
+  const resolved = normalized(candidate);
+  if (resolved !== forbiddenRoot && !resolved?.startsWith(forbiddenRoot + path.sep)) return;
+  fs.appendFileSync(accessLog, 'blocked\n');
+  const error = new Error('ORIGINAL_BUILD_ROOT_ACCESS_BLOCKED');
+  error.code = 'ORIGINAL_BUILD_ROOT_ACCESS_BLOCKED';
+  throw error;
+}
+for (const method of [
+  'access', 'accessSync', 'existsSync', 'lstat', 'lstatSync', 'open', 'openSync',
+  'readFile', 'readFileSync', 'readdir', 'readdirSync', 'realpath', 'realpathSync',
+  'stat', 'statSync',
+]) {
+  const original = fs[method];
+  const guarded = function(candidate, ...args) {
+    deny(candidate);
+    return original.call(this, candidate, ...args);
+  };
+  if (typeof original.native === 'function') {
+    guarded.native = function(candidate, ...args) {
+      deny(candidate);
+      return original.native.call(this, candidate, ...args);
+    };
+  }
+  fs[method] = guarded;
+}
+for (const method of ['access', 'lstat', 'open', 'readFile', 'readdir', 'realpath', 'stat']) {
+  const original = fs.promises[method];
+  fs.promises[method] = async function(candidate, ...args) {
+    deny(candidate);
+    return original.call(this, candidate, ...args);
+  };
+}
+const resolveFilename = Module._resolveFilename;
+Module._resolveFilename = function(request, parent, ...args) {
+  deny(request);
+  return resolveFilename.call(this, request, parent, ...args);
+};
+`;
+  fs.writeFileSync(guardFile, guardSource);
+  return Object.freeze({
+    guardFile,
+    accessLog,
+    environment: {
+      NODE_OPTIONS: `--require=${guardFile}`,
+      CANA_FORBIDDEN_BUILD_ROOT: repoRoot,
+      CANA_ORIGINAL_ROOT_ACCESS_LOG: accessLog,
+    },
+  });
+}
+
 writeReceipt({ isolatedRuntimeTest: 'pending' });
 let tarPath = packageTar();
 
@@ -888,7 +1052,12 @@ async function isolatedRuntimeTest() {
   console.log(`\nIsolated runtime test in ${isoRoot} (outside the repository):`);
   run(`tar -xzf ${JSON.stringify(tarPath)} -C ${JSON.stringify(isoRoot)}`);
   const appRoot = path.join(isoRoot, artifactName);
+  const relocationGuard = createRelocationGuard(isoRoot);
   record('artifact extracted outside repo', fs.existsSync(path.join(appRoot, 'server.js')));
+  record(
+    'relocated artifact does not share the checkout prefix',
+    !appRoot.startsWith(`${repoRoot}${path.sep}`),
+  );
   record(
     'no parent node_modules can leak',
     !fs.existsSync(path.join(isoRoot, 'node_modules')) &&
@@ -918,8 +1087,9 @@ async function isolatedRuntimeTest() {
   try {
   const disposableBackupReceipt = path.join(isoRoot, 'disposable-backup-receipt.json');
   fs.writeFileSync(disposableBackupReceipt, JSON.stringify({ scope: 'isolated-build-court' }));
-  run('sh migrate.sh --initialize', {
+  execFileSync('/bin/sh', ['migrate.sh', '--initialize'], {
     cwd: appRoot,
+    stdio: 'inherit',
     env: {
       PATH: process.env.PATH,
       OWD_NODE: process.execPath,
@@ -928,18 +1098,21 @@ async function isolatedRuntimeTest() {
       CANA_PRE_MIGRATION_BACKUP_RECEIPT: disposableBackupReceipt,
       CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER: postgres.systemIdentifier,
       PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+      ...relocationGuard.environment,
     },
   });
   const inspect = JSON.parse(
-    capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
+    execFileSync(process.execPath, ['scripts/db-inspect.mjs'], {
       cwd: appRoot,
+      encoding: 'utf8',
       env: {
         PATH: process.env.PATH,
         DATABASE_URL: postgres.databaseUrl,
         DIRECT_URL: postgres.databaseUrl,
         PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+        ...relocationGuard.environment,
       },
-    }),
+    }).trim(),
   );
   results.productionBootstrap = inspect.counts;
   record(
@@ -956,6 +1129,32 @@ async function isolatedRuntimeTest() {
   const runtimeWriteCountersBefore = databaseWriteCounters(postgres);
   results.productionBootstrapDataSha256 = initializedDatabaseSha256;
 
+  const workerProbeSource = String.raw`
+const { PrismaClient } = require('@cana/prisma-worker');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 1 });
+const prisma = new PrismaClient({ adapter });
+prisma.$queryRawUnsafe('SELECT current_database()::text AS database')
+  .then((rows) => {
+    process.stdout.write(JSON.stringify({ healthy: Array.isArray(rows) && rows.length === 1 }));
+  })
+  .finally(() => prisma.$disconnect());
+`;
+  const workerProbe = JSON.parse(execFileSync(process.execPath, ['-e', workerProbeSource], {
+    cwd: appRoot,
+    encoding: 'utf8',
+    env: {
+      PATH: process.env.PATH,
+      DATABASE_URL: postgres.databaseUrl,
+      DIRECT_URL: postgres.databaseUrl,
+      ...relocationGuard.environment,
+    },
+  }));
+  record(
+    'relocated @cana/prisma-worker executes through PrismaPg',
+    workerProbe.healthy === true,
+  );
+
   // Start app.js with a minimal, NODE_PATH-free environment.
   const port = await availableLoopbackPort();
   const serverEnv = {
@@ -969,6 +1168,7 @@ async function isolatedRuntimeTest() {
     // Test-only: app.js keeps its production RHEL pin when this is UNSET; here we
     // supply the machine-native engine so the isolated app starts on macOS too.
     PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+    ...relocationGuard.environment,
   };
   let serverLog = '';
   const startServer = () => {
@@ -1123,15 +1323,17 @@ async function isolatedRuntimeTest() {
       capture(`curl -s -H "Host: orderweeddc.com" http://127.0.0.1:${port}/api/health`),
     );
     const inspectAfterRestart = JSON.parse(
-      capture(`${JSON.stringify(process.execPath)} scripts/db-inspect.mjs`, {
+      execFileSync(process.execPath, ['scripts/db-inspect.mjs'], {
         cwd: appRoot,
+        encoding: 'utf8',
         env: {
           PATH: process.env.PATH,
           DATABASE_URL: postgres.databaseUrl,
           DIRECT_URL: postgres.databaseUrl,
           PRISMA_QUERY_ENGINE_LIBRARY: testEnginePath,
+          ...relocationGuard.environment,
         },
-      }),
+      }).trim(),
     );
     await stopServer(child);
     child = null;
@@ -1176,11 +1378,26 @@ async function isolatedRuntimeTest() {
     } catch {}
   }
 
-  const exclusionAudit = auditArtifactExclusions(appRoot);
+  const originalRootAccessAttempts = fs.existsSync(relocationGuard.accessLog)
+    ? fs.readFileSync(relocationGuard.accessLog, 'utf8').trim().split('\n').filter(Boolean).length
+    : 0;
   record(
-    'no forbidden secret files or credential patterns in artifact',
+    'relocated runtime made no request for the original checkout',
+    originalRootAccessAttempts === 0,
+    `${originalRootAccessAttempts} blocked attempts`,
+  );
+  results.relocation = {
+    differentRoot: true,
+    originalRootUnavailableToNodeProcesses: true,
+    originalRootAccessAttempts,
+    prismaWorkerPrismaPg: workerProbe.healthy === true,
+  };
+
+  const exclusionAudit = auditArtifactExclusions(appRoot, { machineRoots });
+  record(
+    'no forbidden files, credentials, or machine-local paths in artifact',
     exclusionAudit.passed,
-    `${exclusionAudit.filesScanned} files scanned`,
+    `${exclusionAudit.filesScanned} files scanned, ${exclusionAudit.machinePathOccurrences} path findings`,
   );
   results.artifactExclusionAudit = exclusionAudit;
 
@@ -1234,18 +1451,27 @@ try {
   writeReceipt({
     isolatedRuntimeTest: {
       passed: true,
-      isolationDir: isolatedResults.isolationDir,
       nodeUsed: process.version,
       productionBootstrap: isolatedResults.productionBootstrap,
       productionBootstrapDataSha256: isolatedResults.productionBootstrapDataSha256,
       health: isolatedResults.health,
       restart: isolatedResults.restart,
       rollback: isolatedResults.rollback,
+      relocation: isolatedResults.relocation,
+      artifactExclusionAudit: isolatedResults.artifactExclusionAudit,
       steps: Object.fromEntries(
         Object.entries(isolatedResults.steps).map(([k, v]) => [k, v.ok]),
       ),
     },
   });
+  const finalArtifactAudit = auditArtifactExclusions(artifactRoot, { machineRoots });
+  if (!finalArtifactAudit.passed) {
+    throw new Error(
+      `Final artifact portability audit failed: ${finalArtifactAudit.machinePathOccurrences} machine paths, `
+        + `${finalArtifactAudit.credentialFindings.length} credential findings, `
+        + `${finalArtifactAudit.forbiddenFiles.length} forbidden files`,
+    );
+  }
   tarPath = packageTar();
   const fakeHome = path.join(isolatedResults.isolationDir, 'delivery-home');
   fs.mkdirSync(path.join(fakeHome, 'uploads'), { recursive: true });
