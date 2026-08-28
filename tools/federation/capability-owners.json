@@ -122,6 +122,27 @@
       "not_this_capability": "NOT authorization-governor (the Python governor-kernel action-contract validator) and NOT metabolism-coordination (the governor daemon's pulse loop). This owns the authorization SEAT itself — the mint side, not the validate side and not the metabolism.",
       "job_terms": ["authority single seat", "authorization seat", "single authorize seat", "mint authorization", "authorization minter", "second authority", "rival grant minter", "issue authorization object", "owner signed authorization", "root authorization", "authority sovereignty", "sovereign authorizer"],
       "owner_paths": ["tools/authority/authority.mjs"]
+    },
+    {
+      "capability": "causal-experiment-design",
+      "what_it_owns": "Compiling a falsifiable causal question into a typed experiment contract: an explicit experimental unit, population, assignment mechanism, counterfactual, preregistered primary/guardrail/diagnostic metrics, baseline, power, stop conditions, frozen analysis plan, and a COMPUTED claim ceiling the settlement layer may not exceed. It judges whether a design can identify an effect; it refuses or downgrades designs that cannot.",
+      "not_this_capability": "NOT an authorizer (tools/authority owns the single seat), NOT an executor, NOT the lesson/memory store (tools/alive-loop/winner-memory.mjs), and NOT the outcome settler (independent evaluators settle). It mints no authority and certifies nothing.",
+      "job_terms": [
+        "causal design compiler",
+        "experiment design contract",
+        "claim ceiling",
+        "identification requirements",
+        "counterfactual design",
+        "treatment assignment design",
+        "causal identification",
+        "preregistered experiment",
+        "causal inference design"
+      ],
+      "owner_paths": [
+        "tools/causal-design/compiler.mjs",
+        "tools/causal-design/contract.mjs",
+        "tools/causal-design/evidence-realm.mjs"
+      ]
     }
   ]
 }
