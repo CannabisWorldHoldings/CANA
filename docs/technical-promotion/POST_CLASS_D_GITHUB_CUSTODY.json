@@ -1,0 +1,12 @@
+{
+  "schema": "orderweeddc.post-class-d-github-custody.v1",
+  "kind": "GITHUB_VERIFIED_RECEIPT_COMMIT",
+  "parent_commit": "a65f45a255abcc8d2dbe23e8826faa28685d52bc",
+  "parent_tree": "f6087a4de003669ca827d60bca595972d3bf2f67",
+  "manifest_sha256": "f3da15be7e5929c5e592f709fae7c67ec808113820df6e63fdcf7eccf88de608",
+  "verifier_sha256": "08966bf33c11ae32fa536fd3e38e1af6c90ff65f791a6224198717ea81f5806b",
+  "court_sha256": "82a673514b3c065382d4ce68595927b26c22150aae6b332c6c440ab71b22464b",
+  "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
+  "signature_verification_requirement": "GitHub commit verification API must report verified=true and reason=valid for the receipt-adding commit.",
+  "production_effects": 0
+}
