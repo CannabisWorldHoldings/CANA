@@ -18,6 +18,7 @@
       "authorization_effect": "Durability changed-file ownership for this bounded Task 4 descendant only; it grants no runtime or external authority.",
       "paths": [
         "apps/web/prisma/migrations/20260824120000_cana_evidence_bridge/migration.sql",
+        "apps/web/prisma/migration-manifest.json",
         "apps/web/prisma/schema.prisma",
         "apps/web/src/lib/cana-intelligence/achievement-debt.mjs",
         "apps/web/src/lib/cana-intelligence/adaptation-decision.mjs",
@@ -62,6 +63,7 @@
         "apps/web/tests/cana-intelligence-kernel.test.mjs",
         "apps/web/tests/cana-intelligence-postgres.test.mjs",
         "apps/web/tests/cana-intelligence-v3-adversarial.test.mjs",
+        "apps/web/tests/migration-manifest.test.mjs",
         "docs/armada/IMPLEMENTATION_NOTES.md",
         "tools/cana-armada/apply-overlay.sh",
         "tools/cana-armada/armada-runner.mjs",
