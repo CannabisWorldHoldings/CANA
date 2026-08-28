@@ -251,7 +251,9 @@ export function validateGithubCustody(manifest) {
   const receipt = JSON.parse(fs.readFileSync(GITHUB_CUSTODY, 'utf8'));
   assert.deepEqual(Object.keys(receipt).sort(), ['authorization_source_sha256', 'court_sha256', 'kind', 'manifest_sha256', 'parent_commit', 'parent_tree', 'production_effects', 'schema', 'signature_verification_requirement', 'verifier_sha256']);
   const head = gitText(['rev-parse', 'HEAD']);
-  const parent = gitText(['rev-parse', `${head}^`]);
+  const parents = gitText(['show', '-s', '--format=%P', head]).split(' ').filter(Boolean);
+  assert.equal(parents.length, 2, 'GitHub custody head must be a two-parent authenticated merge');
+  const [parent, receiptCommit] = parents;
   assert.equal(receipt.schema, 'orderweeddc.post-class-d-github-custody.v1');
   assert.equal(receipt.kind, 'GITHUB_VERIFIED_RECEIPT_COMMIT');
   assert.equal(receipt.parent_commit, parent);
@@ -262,7 +264,10 @@ export function validateGithubCustody(manifest) {
   assert.equal(receipt.authorization_source_sha256, manifest.owner_authorization_source_sha256);
   assert.equal(receipt.signature_verification_requirement, manifest.github_custody.verification_requirement);
   assert.equal(receipt.production_effects, 0);
-  assert.deepEqual(gitText(['diff-tree', '--no-commit-id', '--name-only', '-r', head]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
+  assert.equal(gitText(['rev-parse', `${receiptCommit}^`]), parent, 'receipt-side parent drift');
+  assert.equal(gitText(['show', '-s', '--format=%T', receiptCommit]), gitText(['show', '-s', '--format=%T', head]), 'signed merge tree differs from receipt tree');
+  assert.deepEqual(gitText(['diff-tree', '--no-commit-id', '--name-only', '-r', receiptCommit]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
+  assert.deepEqual(gitText(['diff-tree', '-m', '--no-commit-id', '--name-only', '-r', head]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
   return { state: 'GITHUB_CUSTODY_RECEIPT_PRESENT', externallyVerified: false, commit: head };
 }
 
