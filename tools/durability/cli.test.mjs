@@ -8,6 +8,11 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import {
+  BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256,
+  BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+  boundedCertificationGateRepairAdmission,
+  boundedCertificationGateRepairAdmitted,
   CUSTOMER_DISCOVERY_AUTHORIZED_PATHS,
   CUSTOMER_FUNCTIONAL_AUTHORIZED_PATHS,
   courtEditAdmitted,
@@ -40,6 +45,7 @@ import {
   unownedPaths,
   validateOwnershipManifest,
 } from './cli.mjs';
+import * as durabilityCli from './cli.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OWNERSHIP_FILE = path.join(
@@ -237,6 +243,181 @@ function cana(args, env = {}) {
 function ownership() {
   return JSON.parse(fs.readFileSync(OWNERSHIP_FILE, 'utf8'));
 }
+
+test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift', () => {
+  assert.equal(
+    typeof durabilityCli.stage1ConvergenceAdmission,
+    'function',
+    'Stage 1 needs an inspectable exact-byte admission contract',
+  );
+  assert.equal(
+    typeof durabilityCli.stage1ConvergenceObservationAdmitted,
+    'function',
+    'Stage 1 needs a pure adversarial admission seam',
+  );
+
+  const admission = durabilityCli.stage1ConvergenceAdmission();
+  assert.equal(
+    admission.authorization_source_sha256,
+    durabilityCli.STAGE1_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256,
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(
+      'apps/web/tests/workspace-integrity.test.mjs',
+    ),
+    'the compatibility court must be admitted only at its reviewed replacement blob',
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/src/middleware.ts'),
+    'the supported Edge middleware bridge must be admitted only at its reviewed blob',
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/tests/project-wiring.test.mjs'),
+    'the supported Edge middleware court must be admitted only at its reviewed blob',
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/eslint.config.mjs'),
+    'the Next 15 flat-config import repair must be admitted only at its reviewed blob',
+  );
+  assert.ok(
+    durabilityCli.STAGE1_CONVERGENCE_PATHS.includes('apps/web/tsconfig.json'),
+    'the Next 15 JSX compiler contract must be admitted only at its reviewed blob',
+  );
+  for (const releasePath of [
+    'apps/web/src/app/api/release/release-identity.mjs',
+    'apps/web/src/app/api/release/route.ts',
+    'apps/web/tests/release-sha.test.mjs',
+  ]) {
+    assert.ok(
+      durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(releasePath),
+      `the bundled release-identity path must be admitted exactly: ${releasePath}`,
+    );
+  }
+  for (const webpackPath of [
+    'NAMECHEAP_CPANEL_DEPLOYMENT.md',
+    'apps/web/tests/build-database-gate.test.mjs',
+    'deploy/namecheap/CAPABILITIES.md',
+    'deploy/namecheap/PRODUCTION_RELEASE_GATES.md',
+    'deploy/namecheap/build-artifact.mjs',
+    'deploy/namecheap/failure-signatures.json',
+    'docs/postmortems/2026-07-23-namecheap-next16-prisma-artifact-incident.md',
+    'tools/test-runner/container-verify.sh',
+    'tools/test-runner/sovereign.mjs',
+  ]) {
+    assert.ok(
+      durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(webpackPath),
+      `the pinned-Next webpack build contract must be admitted exactly: ${webpackPath}`,
+    );
+  }
+  for (const linuxDependencyPath of ['package-lock.json', 'package.json']) {
+    assert.ok(
+      durabilityCli.STAGE1_CONVERGENCE_PATHS.includes(linuxDependencyPath),
+      `the cross-platform Lightning CSS lock contract must be admitted exactly: ${linuxDependencyPath}`,
+    );
+  }
+  assert.deepEqual(
+    Object.keys(admission.blobs),
+    [...durabilityCli.STAGE1_CONVERGENCE_PATHS],
+  );
+  const relative = durabilityCli.STAGE1_CONVERGENCE_PATHS[0];
+  const expected = admission.blobs[relative];
+  const valid = {
+    path: relative,
+    git_mode: expected.git_mode,
+    git_blob_sha: expected.git_blob_sha,
+    originating_commit_ancestor: true,
+  };
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted(valid), true);
+  const unauthorized = durabilityCli.stage1ConvergenceAdmission();
+  unauthorized.authorization_source_sha256 = '0'.repeat(64);
+  assert.equal(
+    durabilityCli.stage1ConvergenceObservationAdmitted(valid, unauthorized),
+    false,
+  );
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    git_blob_sha: '0'.repeat(40),
+  }), false);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    git_mode: '100755',
+  }), false);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    path: `${relative}.neighbor`,
+  }), false);
+  assert.equal(durabilityCli.stage1ConvergenceObservationAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
+});
+
+test('Stage 1 Owner console is authenticated and truthfully UI-only', () => {
+  const source = fs.readFileSync(
+    path.join(ROOT, 'apps/web/src/app/admin/console/page.tsx'),
+    'utf8',
+  );
+  assert.match(source, /await requireAdmin\(\)/);
+  assert.match(source, /OWNER_CONSOLE_UI_ONLY/);
+  assert.doesNotMatch(source, /Vanguard sensors active/);
+  assert.doesNotMatch(source, /AUTHORITY: OWNER/);
+  assert.match(source, /<button[^>]*disabled/s);
+});
+
+test('Stage 1 Cloudflare build generates the Worker client and avoids connectivity claims', () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'apps/web/package.json'), 'utf8'),
+  );
+  assert.equal(
+    packageJson.scripts['build:cloudflare'],
+    'node scripts/assert-release-build-identity.mjs && prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build',
+  );
+  const openNextConfig = fs.readFileSync(
+    path.join(ROOT, 'apps/web/open-next.config.ts'),
+    'utf8',
+  );
+  assert.match(openNextConfig, /buildCommand:\s*'npm run build'/);
+  const adapter = fs.readFileSync(
+    path.join(ROOT, 'apps/web/src/lib/prisma-cloudflare.ts'),
+    'utf8',
+  );
+  assert.match(adapter, /classification: 'POSTGRESQL_CONFIGURATION_DECLARED'/);
+  assert.match(adapter, /connectivity: 'NOT_ESTABLISHED'/);
+  assert.doesNotMatch(adapter, /classification: 'POSTGRESQL_POSTGIS_CANONICAL'/);
+});
+
+test('Stage 1 receipts distinguish inventory, UI foundation, and runtime verification', () => {
+  const baseline = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'BASELINE_TEST_RECEIPT.json'), 'utf8'),
+  );
+  const inventory = execFileSync(
+    'git',
+    ['ls-tree', '-r', '--name-only', baseline.baseline_sha],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).split('\n').filter((relative) => relative.endsWith('.test.mjs'));
+  assert.equal(baseline.test_file_inventory.selector, '**/*.test.mjs');
+  assert.equal(baseline.test_file_inventory.count, inventory.length);
+  assert.equal(baseline.verification_status, 'INVENTORY_ONLY_NOT_EXECUTION_PROOF');
+  assert.equal('test_suites_count' in baseline, false);
+
+  const convergence = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'CLASS_D_CONVERGENCE_RECEIPT.json'), 'utf8'),
+  );
+  const owner = convergence.capabilities_converged.find(
+    (entry) => entry.capability === 'Owner CANA Web Surface Foundation',
+  );
+  const cloudflare = convergence.capabilities_converged.find(
+    (entry) => entry.capability === 'Cloudflare OpenNext & PrismaPg Adapter',
+  );
+  assert.equal(owner.status, 'CONVERGED_UI_ONLY_NOT_EXECUTION_BRIDGE');
+  assert.equal(cloudflare.status, 'CONVERGED_BUILD_FOUNDATION_RUNTIME_NOT_VERIFIED');
+  assert.equal(
+    convergence.capabilities_converged.some(
+      (entry) => entry.capability === 'Owner CANA Web Action Bridge',
+    ),
+    false,
+  );
+});
 
 test('PR #29 recovery paths have exact ownership without neighboring authority', () => {
   const manifest = ownership();
@@ -590,6 +771,65 @@ test('PR #59 sovereign custody assignment rejects scope and authority broadening
       /PR #59 (?:sovereign )?custody|changed-file ownership patterns/,
     );
   }
+});
+
+test('bounded certification-gate repair admits only the externally authorized immutable court blob', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const admission = boundedCertificationGateRepairAdmission();
+  assert.equal(
+    admission.assignment_sha256,
+    BOUNDED_CERTIFICATION_GATE_REPAIR_ASSIGNMENT_SHA256,
+  );
+  assert.deepEqual(admission.paths, [BOUNDED_CERTIFICATION_GATE_REPAIR_PATH]);
+  assert.equal(
+    admission.court_blob_sha256[BOUNDED_CERTIFICATION_GATE_REPAIR_PATH],
+    BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  );
+  assert.equal(manifest.global_no_edit.includes(BOUNDED_CERTIFICATION_GATE_REPAIR_PATH), true);
+  assert.equal(
+    createHash('sha256')
+      .update(fs.readFileSync(path.join(ROOT, BOUNDED_CERTIFICATION_GATE_REPAIR_PATH)))
+      .digest('hex'),
+    BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+  );
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    path: BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+    content_sha256: BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  }), true);
+});
+
+test('bounded certification-gate repair rejects drift, neighbors, ancestry and metadata broadening', () => {
+  const valid = {
+    path: BOUNDED_CERTIFICATION_GATE_REPAIR_PATH,
+    content_sha256: BOUNDED_CERTIFICATION_GATE_REPAIR_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  };
+  for (const mutate of [
+    (admission) => { admission.paths[0] = 'apps/web/tests/**'; },
+    (admission) => { admission.paths.push(`${BOUNDED_CERTIFICATION_GATE_REPAIR_PATH}.future`); },
+    (admission) => { admission.authorization_source_sha256 = '0'.repeat(64); },
+    (admission) => { admission.authorization_effect = 'runtime-authority'; },
+    (admission) => { admission.originating_commit = '0'.repeat(40); },
+    (admission) => { admission.assignment_sha256 = '0'.repeat(64); },
+  ]) {
+    const admission = boundedCertificationGateRepairAdmission();
+    mutate(admission);
+    assert.equal(boundedCertificationGateRepairAdmitted(valid, admission), false);
+  }
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    content_sha256: '0'.repeat(64),
+  }), false);
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    path: `${BOUNDED_CERTIFICATION_GATE_REPAIR_PATH}.neighbor`,
+  }), false);
+  assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
 });
 
 test('PR #59 attribution collision repair admits only its exact owned global-no-edit blob', () => {

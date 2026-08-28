@@ -1,0 +1,56 @@
+[
+  {
+    "sha": "41d45be2974f76b97bca355d349b27b4073f2376",
+    "message": "feat(recovery): add isolated Cloudflare preview adapter",
+    "classification": "FUNCTIONAL_REQUIREMENT",
+    "stat_summary": " 9 files changed, 10330 insertions(+), 5073 deletions(-)"
+  },
+  {
+    "sha": "d553cec2a96c371bbe3ea4d8ad0c52d2dce85185",
+    "message": "fix(recovery): align lint adapter with Next 15",
+    "classification": "FUNCTIONAL_REQUIREMENT",
+    "stat_summary": " 3 files changed, 9 insertions(+), 4 deletions(-)"
+  },
+  {
+    "sha": "cf5c9e5431585382843fcfa8f7b190d2e4e9cfe4",
+    "message": "fix(recovery): bind courts to OpenNext runtime files",
+    "classification": "SUPERSEDED_OR_VERIFIER_ONLY",
+    "stat_summary": " 3 files changed, 5 insertions(+), 3 deletions(-)"
+  },
+  {
+    "sha": "1597d4f02784800e7d19a2e4b4d432e6ef390564",
+    "message": "fix(recovery): bind Worker host and release identity",
+    "classification": "FUNCTIONAL_REQUIREMENT",
+    "stat_summary": " 5 files changed, 55 insertions(+), 24 deletions(-)"
+  },
+  {
+    "sha": "469dc466e3af0f0afffd470e4dd1c35bd88e8815",
+    "message": "fix(worker): use Rust-free Prisma adapter",
+    "classification": "FUNCTIONAL_REQUIREMENT",
+    "stat_summary": " 6 files changed, 293 insertions(+), 3 deletions(-)"
+  },
+  {
+    "sha": "3cf20674d746112f5f4509cf9e1007fe57acae02",
+    "message": "fix(certification): settle build-only dependency findings",
+    "classification": "BUILD_OR_DEPENDENCY_FIX",
+    "stat_summary": " 6 files changed, 199 insertions(+), 13 deletions(-)"
+  },
+  {
+    "sha": "7b899605d3b6819fa373b93dd1336470cc72fe9e",
+    "message": "fix(verifier): embed candidate identity before build",
+    "classification": "BUILD_OR_DEPENDENCY_FIX",
+    "stat_summary": " 3 files changed, 14 insertions(+), 4 deletions(-)"
+  },
+  {
+    "sha": "f580260a71570953bd8f10191f08efeaa0703e45",
+    "message": "fix(build): use pinned Next production command",
+    "classification": "BUILD_OR_DEPENDENCY_FIX",
+    "stat_summary": " 5 files changed, 22 insertions(+), 10 deletions(-)"
+  },
+  {
+    "sha": "140f7d4ce096b5310cba9cffa897ee9e8dc737fd",
+    "message": "fix(benchmark): reuse installed Prisma graph",
+    "classification": "FUNCTIONAL_REQUIREMENT",
+    "stat_summary": " 2 files changed, 47 insertions(+), 20 deletions(-)"
+  }
+]

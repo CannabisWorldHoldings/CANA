@@ -1,0 +1,28 @@
+{
+  "baseline_sha": "7fca02ec2060c8153fdfc531bb6cca61a7525d18",
+  "worktree": "/Users/Apple/Documents/New project/.omo/class-d-convergence-1787808285",
+  "test_file_inventory": {
+    "selector": "**/*.test.mjs",
+    "command": "git ls-tree -r --name-only 7fca02ec2060c8153fdfc531bb6cca61a7525d18 | grep '\\.test\\.mjs$'",
+    "count": 160
+  },
+  "test_file_sample": [
+    "packages/ad-creative/tests/ad-creative.test.mjs",
+    "packages/ai/tests/gateway.test.mjs",
+    "apps/web/tests/legacy-abca-etl.test.mjs",
+    "apps/web/tests/evidence-spill.test.mjs",
+    "apps/web/tests/market-page-compiler.test.mjs",
+    "apps/web/tests/product-benchmark.test.mjs",
+    "apps/web/tests/ask-intent-ir.test.mjs",
+    "apps/web/tests/pilot-evidence-chain.test.mjs",
+    "apps/web/tests/sponsorship-entitlement.test.mjs",
+    "apps/web/tests/continuation-core.test.mjs",
+    "apps/web/tests/release-identity.test.mjs",
+    "apps/web/tests/node-runtime-compatibility.test.mjs",
+    "apps/web/tests/growth-os.test.mjs",
+    "apps/web/tests/tenant-retailer.test.mjs",
+    "apps/web/tests/merchant-mutations.test.mjs"
+  ],
+  "execution_evidence": "NOT_INCLUDED_IN_THIS_INVENTORY_RECEIPT",
+  "verification_status": "INVENTORY_ONLY_NOT_EXECUTION_PROOF"
+}

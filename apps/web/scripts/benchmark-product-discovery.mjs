@@ -18,6 +18,7 @@ const require = createRequire(import.meta.url);
 const scriptPath = fileURLToPath(import.meta.url);
 const webRoot = path.resolve(path.dirname(scriptPath), '..');
 const repositoryRoot = path.resolve(webRoot, '..', '..');
+const repositoryNodeModules = path.join(repositoryRoot, 'node_modules');
 const corpusPath = path.join(webRoot, 'benchmarks', 'discovery-tasks.json');
 const schemaPath = path.join(webRoot, 'prisma', 'schema.prisma');
 const prismaClientGeneratorPath = path.join(
@@ -201,30 +202,36 @@ function isolatedPrismaSchema(value) {
   // (e.g. binaryTargets for CloudLinux/RHEL hosting). The benchmark only
   // requires the prisma-client-js provider; it substitutes its own
   // isolated generator block regardless of those extra directives.
-  const generatorPattern =
-    /generator client \{\s*provider\s*=\s*"prisma-client-js"[\s\S]*?\n\}/;
+  const generatorPattern = /generator\s+\w+\s*\{[\s\S]*?\n\}/g;
+  const generatorBlocks = source.match(generatorPattern) ?? [];
   if (
-    !generatorPattern.test(source) ||
-    !/provider\s*=\s*"prisma-client-js"/.test(source)
+    !generatorBlocks.some(
+      (block) => /generator\s+client\s*\{/.test(block)
+        && /provider\s*=\s*"prisma-client-js"/.test(block),
+    )
   ) {
     throw new TypeError('The Prisma client generator contract has changed.');
   }
-  return source.replace(
-    generatorPattern,
-    [
-      'generator client {',
-      `  provider = ${JSON.stringify(
-        `${process.execPath} ${prismaClientGeneratorPath}`,
-      )}`,
-      '  output   = "./client"',
-      '  engineType = "binary"',
-      // The production datasource declares extensions = [postgis], which
-      // requires this preview feature to remain enabled in the isolated
-      // schema as well.
-      '  previewFeatures = ["postgresqlExtensions"]',
-      '}',
-    ].join('\n'),
-  );
+  const providerCommand = [process.execPath, prismaClientGeneratorPath]
+    .map((argument) => JSON.stringify(argument))
+    .join(' ');
+  const isolatedGenerator = [
+    'generator client {',
+    `  provider = ${JSON.stringify(providerCommand)}`,
+    '  output   = "./client"',
+    '  engineType = "binary"',
+    // The production datasource declares extensions = [postgis], which
+    // requires this preview feature to remain enabled in the isolated
+    // schema as well.
+    '  previewFeatures = ["postgresqlExtensions"]',
+    '}',
+  ].join('\n');
+  let inserted = false;
+  return source.replace(generatorPattern, () => {
+    if (inserted) return '';
+    inserted = true;
+    return isolatedGenerator;
+  });
 }
 
 function unique(values, label) {
@@ -351,6 +358,7 @@ function runPrisma(arguments_, databaseUrl, temporaryRoot) {
         // disposable benchmark database has no pooler, so both point at the
         // same isolated database.
         DIRECT_URL: databaseUrl,
+        PRISMA_GENERATE_SKIP_AUTOINSTALL: '1',
       }),
       windowsHide: true,
     },
@@ -758,6 +766,11 @@ async function runBenchmark({ mutation = 'none' } = {}) {
   startCleanupWatchdog(temporaryRoot);
   const temporarySchemaPath = path.join(temporaryRoot, 'schema.prisma');
   const temporaryClientPath = path.join(temporaryRoot, 'client', 'index.js');
+  fs.symlinkSync(
+    repositoryNodeModules,
+    path.join(temporaryRoot, 'node_modules'),
+    process.platform === 'win32' ? 'junction' : 'dir',
+  );
   // Disposable PostgreSQL database (replaces the historical benchmark.sqlite
   // file — the canonical datastore is PostgreSQL, ADR-0001).
   const receiptPath = path.join(temporaryRoot, 'receipt.json');

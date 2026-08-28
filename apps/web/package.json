@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cloudflare": "node scripts/assert-release-build-identity.mjs && prisma generate && CANA_CLOUDFLARE_BUILD=1 opennextjs-cloudflare build",
     "start": "next start",
     "lint": "eslint",
     "test": "node --test tests/*.test.mjs",
@@ -19,26 +20,30 @@
     "test:pgsem": "node --test tests/postgres-semantics.test.mjs"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",
-    "next": "16.3.0-canary.6",
+    "maplibre-gl": "^5.6.0",
+    "next": "15.5.24",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-leaflet": "^5.0.0",
-    "maplibre-gl": "^5.6.0"
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.4",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0-canary.6",
+    "eslint-config-next": "15.5.24",
     "postcss": "8.5.19",
+    "pg-connection-string": "2.14.0",
     "prisma": "^6.19.3",
     "tailwindcss": "^4.3.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "4.125.0"
   }
 }

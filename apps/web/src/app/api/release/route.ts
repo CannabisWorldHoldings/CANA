@@ -4,12 +4,12 @@
  * Purpose: let the repository and the runtime be compared. `git rev-parse` in
  * the repo names what SHOULD be deployed; this endpoint names what IS
  * deployed. The SHA comes from a build-time identity file written by
- * deploy/namecheap/build-artifact.mjs (release.json, receipt.json fallback) —
- * never from shelling out to git (a deployed artifact has no .git directory)
- * and never from a runtime environment variable (operator-typed values drift
- * from the running bytes).
+ * deploy/namecheap/build-artifact.mjs (release.json, receipt.json fallback).
+ * Platform artifacts that cannot retain those root files use the SHA Next
+ * compiled into the Worker bytes during the exact-source build court. Neither
+ * path shells out to git or trusts an operator-typed runtime SHA.
  *
- * Absence is explicit and VISIBLE: a deployment without its identity file
+ * Absence is explicit and VISIBLE: a deployment without either identity form
  * answers 503 RELEASE_SHA_MISSING, because an artifact whose provenance
  * cannot be stated is a deployment defect (incident 2026-07-23: a live
  * artifact built from a commit unreachable in the remote). A 200 "unknown"
@@ -21,14 +21,16 @@
  */
 import { NextResponse } from 'next/server';
 import {
-  resolveReleaseIdentity,
+  resolveReleaseIdentityWithBundledSha,
   releaseResponseBody,
 } from './release-identity.mjs';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const identity = resolveReleaseIdentity();
+  const identity = resolveReleaseIdentityWithBundledSha({
+    bundledSha: process.env.CANA_RELEASE_SHA,
+  });
   return NextResponse.json(releaseResponseBody(identity), {
     status: identity.httpStatus,
     headers: {

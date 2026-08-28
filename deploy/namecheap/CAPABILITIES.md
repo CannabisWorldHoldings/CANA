@@ -104,8 +104,9 @@ evidence tiers — do not silently promote a claim to a higher tier:
 1. **Turbopack standalone is banned for this target.** Its standalone output
    externalizes hashed package references (`@prisma/client-<hex>`) that are
    unresolvable outside the build tree. FIRST-PARTY VERIFIED production
-   incident (2026-07-23, host business194). Webpack (`next build --webpack`)
-   only. Enforced by `build-artifact.mjs` + `deployment-integrity.test.mjs`.
+   incident (2026-07-23, host business194). Webpack (`next build` under the
+   exact pinned Next 15.5.24 release) only. Enforced by `build-artifact.mjs` +
+   `deployment-integrity.test.mjs`.
 2. **Prisma auto-detection lies under CageFS.** Pin the engine (see §5).
 3. **A 502 is not necessarily your app.** The provider's Pingora edge 502'd
    zone-wide on 2026-07-23. Diagnose host-side first

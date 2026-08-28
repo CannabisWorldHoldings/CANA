@@ -13,9 +13,10 @@ approvals.
 2. **Clean state** — `.next` and the prior artifact directory removed;
    `CLEAN_INSTALL=1` runs `npm ci` against the exact committed lockfile; the
    working-tree state is recorded verbatim in `receipt.json`.
-3. **Webpack standalone build** — `next build --webpack` with
-   `NEXT_OUTPUT=standalone`. Turbopack standalone output is BANNED for this
-   target (hashed externals incident, 2026-07-23).
+3. **Webpack standalone build** — `next build` with `NEXT_OUTPUT=standalone`
+   under the exact repository-pinned Next 15.5.24 release (where Webpack is the
+   default). Turbopack standalone output is BANNED for this target (hashed
+   externals incident, 2026-07-23).
 4. **Unresolved hashed-external scan** — every compiled `.next/server` JS file
    is scanned for `@prisma/client-[hex]`-class references without a matching
    package inside the artifact. Any hit fails the build.

@@ -18,14 +18,37 @@ test('the release workspace names only executable, verified packages', () => {
     'packages/ad-creative',
     'packages/ai',
   ]);
+  assert.deepEqual(rootPackage.optionalDependencies, {
+    '@tailwindcss/oxide-linux-arm64-gnu': '4.3.2',
+    '@tailwindcss/oxide-linux-x64-gnu': '4.3.2',
+    'lightningcss-linux-arm64-gnu': '1.32.0',
+    'lightningcss-linux-x64-gnu': '1.32.0',
+  });
+  const rootLock = JSON.parse(
+    fs.readFileSync(path.join(repositoryRoot, 'package-lock.json'), 'utf8'),
+  );
+  for (const [packageName, version] of [
+    ['@tailwindcss/oxide', '4.3.2'],
+    ['lightningcss', '1.32.0'],
+  ]) {
+    for (const architecture of ['arm64', 'x64']) {
+      const locked = rootLock.packages[
+        `node_modules/${packageName}-linux-${architecture}-gnu`
+      ];
+      assert.equal(locked.version, version);
+      assert.deepEqual(locked.os, ['linux']);
+      assert.deepEqual(locked.cpu, [architecture]);
+      assert.equal(locked.optional, true);
+    }
+  }
   const webPackage = JSON.parse(
     fs.readFileSync(path.join(webRoot, 'package.json'), 'utf8'),
   );
   assert.equal(webPackage.devDependencies.postcss, '8.5.19');
-  assert.equal(webPackage.dependencies.next, '16.3.0-canary.6');
+  assert.equal(webPackage.dependencies.next, '15.5.24');
   assert.equal(
     webPackage.devDependencies['eslint-config-next'],
-    '16.3.0-canary.6',
+    '15.5.24',
   );
   const packageDirectories = fs
     .readdirSync(path.join(repositoryRoot, 'packages'), {

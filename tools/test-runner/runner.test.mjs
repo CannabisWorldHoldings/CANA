@@ -17,8 +17,11 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const WEB = path.join(ROOT, 'apps', 'web');
 const MIGRATION_COURT = path.join(WEB, 'tests', 'migration-court.test.mjs');
 const VERIFY_WORKFLOW = path.join(ROOT, '.github', 'workflows', 'cana-verify.yml');
+const SOVEREIGN_WORKFLOW = path.join(ROOT, '.github', 'workflows', 'cana-verify-sovereign.yml');
 const RUNNER = path.join(ROOT, 'tools', 'test-runner', 'runner.mjs');
 const POSTGRES_RUNTIME = path.join(ROOT, 'tools', 'postgres-sim', 'runtime.mjs');
+const CONTAINER_VERIFY = path.join(ROOT, 'tools', 'test-runner', 'container-verify.sh');
+const SOVEREIGN = path.join(ROOT, 'tools', 'test-runner', 'sovereign.mjs');
 
 function cana(...args) {
   const env = {
@@ -45,6 +48,26 @@ test('the root dispatcher refuses an unknown verification profile', () => {
   const result = cana('verify', 'not-a-profile');
   assert.equal(result.status, 2);
   assert.match(result.stderr, /unknown verification profile/i);
+});
+
+test('production verifiers use the exact pinned Next build and source-identity contracts', () => {
+  const webPackage = JSON.parse(fs.readFileSync(path.join(WEB, 'package.json'), 'utf8'));
+  const lock = JSON.parse(fs.readFileSync(path.join(ROOT, 'package-lock.json'), 'utf8'));
+  assert.equal(webPackage.dependencies.next, '15.5.24');
+  assert.equal(lock.packages['node_modules/next'].version, '15.5.24');
+
+  const containerVerify = fs.readFileSync(CONTAINER_VERIFY, 'utf8');
+  const sovereign = fs.readFileSync(SOVEREIGN, 'utf8');
+  const workflow = fs.readFileSync(SOVEREIGN_WORKFLOW, 'utf8');
+  assert.match(containerVerify, /^\s*npm run build 2>&1 \| tee "\$build_log"$/m);
+  assert.match(sovereign, /run\('npm', \['run', 'build'\], \{/);
+  assert.match(workflow, /^\s*run: npm run build$/m);
+  assert.match(workflow, /ref: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
+  assert.match(workflow, /actual="\$\(git rev-parse HEAD\)"/);
+  assert.doesNotMatch(workflow, /CANA_RELEASE_SHA: \$\{\{ github\.sha \}\}/);
+  for (const source of [containerVerify, sovereign, workflow]) {
+    assert.doesNotMatch(source, /npm run build[^\n]*--webpack/);
+  }
 });
 
 test('the focused CI envelope exceeds the complete bounded path plus its safety margin', () => {

@@ -1,12 +1,12 @@
 /**
  * RELEASE IDENTITY — resolve the deployed Git SHA from a BUILD-TIME artifact.
  *
- * Why a file and not `git rev-parse`: the deployed artifact has no `.git`
- * directory (it is a tar of the standalone build), so shelling out to git at
- * runtime can only ever fabricate or fail. Why not an env var: a runtime
- * environment variable is operator-typed, not build-derived — it can drift
- * from the bytes actually running. The ONLY trusted source is a file the
- * release builder wrote next to `server.js` at build time:
+ * Why not `git rev-parse`: the deployed artifact has no `.git` directory, so
+ * shelling out at runtime can only fabricate or fail. Artifact-root identity
+ * files remain the strongest source. OpenNext Workers cannot retain those
+ * files at process.cwd(), so they may fall back to the SHA Next substituted
+ * into the compiled Worker during the exact-source build court. A runtime
+ * operator variable is never consulted.
  *
  *   release.json  — slim identity contract written by
  *                   deploy/namecheap/build-artifact.mjs: { gitSha, builtAt,
@@ -25,9 +25,9 @@
  *   RELEASE_SHA_INVALID  -> 503, identity file exists but its SHA is not a
  *                            full 40-hex commit — never echoed as if valid
  *
- * NEVER FABRICATED. gitSha in the result is either the exact validated file
- * value or null. No fallback to env vars (VERCEL_GIT_COMMIT_SHA etc.), no
- * "dev", no "unknown" masquerading as a SHA. Tests:
+ * NEVER FABRICATED. gitSha is an exact validated file value, the exact bundled
+ * build value, or null. No runtime env fallback, no "dev", and no "unknown"
+ * masquerading as a SHA. Tests:
  * apps/web/tests/release-sha.test.mjs.
  */
 
@@ -120,6 +120,44 @@ export function resolveReleaseIdentity({ cwd = process.cwd(), env = process.env 
     problem:
       'no release identity file (release.json/receipt.json) exists in this deployment — ' +
       'the artifact was not produced by the release builder, or it was tampered with after build',
+  };
+}
+
+/**
+ * Platform builds do not necessarily retain artifact-root files. In that
+ * environment Next replaces CANA_RELEASE_SHA while compiling the exact source
+ * tree, so the resulting literal is part of the Worker bytes rather than a
+ * runtime operator setting. File identity remains authoritative whenever it is
+ * present; the bundled value is only the missing-file fallback.
+ *
+ * @param {{ cwd?: string, env?: Record<string, string|undefined>,
+ *           bundledSha?: string }} options
+ */
+export function resolveReleaseIdentityWithBundledSha({
+  cwd = process.cwd(),
+  env = process.env,
+  bundledSha,
+} = {}) {
+  const artifactIdentity = resolveReleaseIdentity({ cwd, env });
+  if (artifactIdentity.state !== RELEASE_STATES.MISSING) return artifactIdentity;
+  if (bundledSha === undefined || bundledSha === null || bundledSha === '') {
+    return artifactIdentity;
+  }
+  if (typeof bundledSha !== 'string' || !FULL_SHA_PATTERN.test(bundledSha)) {
+    return invalid(
+      'bundled:CANA_RELEASE_SHA',
+      'bundled gitSha is not a full 40-hex commit SHA',
+    );
+  }
+  return {
+    state: RELEASE_STATES.PRESENT,
+    httpStatus: 200,
+    gitSha: bundledSha,
+    shortSha: bundledSha.slice(0, 7),
+    builtAt: null,
+    artifact: 'opennext-cloudflare',
+    source: 'bundled:CANA_RELEASE_SHA',
+    problem: null,
   };
 }
 
