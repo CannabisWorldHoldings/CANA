@@ -34,6 +34,9 @@ const sponsorshipEntitlement = await import(
 const labelVocabulary = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/label-vocabulary.mjs')).href
 );
+const experienceManifest = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/experience/manifest.mjs')).href
+);
 const originalLoad = Module._load;
 const originalTsxLoader = require.extensions['.tsx'];
 
@@ -100,6 +103,7 @@ Module._load = function loadMarketplaceDependency(request, parent, isMain) {
     };
   }
   if (request === '@/lib/label-vocabulary.mjs') return labelVocabulary;
+  if (request === '@/lib/experience/manifest.mjs') return experienceManifest;
   return originalLoad.call(this, request, parent, isMain);
 };
 require.extensions['.tsx'] = function compileTsx(module, filename) {
