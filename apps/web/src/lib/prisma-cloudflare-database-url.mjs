@@ -74,3 +74,27 @@ export function assertCloudflareDatabaseUrl(value) {
   url.searchParams.set('sslmode', 'verify-full');
   return url.toString();
 }
+
+export function assertCloudflareHyperdriveConnection(env) {
+  const hyperdrive = env?.HYPERDRIVE;
+  if (!hyperdrive || typeof hyperdrive !== 'object') {
+    throw new Error('C3_HYPERDRIVE_BINDING_REQUIRED');
+  }
+
+  const connectionString = hyperdrive.connectionString;
+  if (typeof connectionString !== 'string' || connectionString.length === 0) {
+    throw new Error('C3_HYPERDRIVE_CONNECTION_STRING_REQUIRED');
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(connectionString);
+  } catch {
+    throw new Error('C3_HYPERDRIVE_CONNECTION_STRING_INVALID');
+  }
+  if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
+    throw new Error('C3_HYPERDRIVE_POSTGRESQL_REQUIRED');
+  }
+
+  return connectionString;
+}

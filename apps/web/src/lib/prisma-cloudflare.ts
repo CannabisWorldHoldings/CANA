@@ -1,7 +1,7 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@cana/prisma-worker/wasm';
-import { assertCloudflareDatabaseUrl } from './prisma-cloudflare-database-url.mjs';
+import { assertCloudflareHyperdriveConnection } from './prisma-cloudflare-database-url.mjs';
 
 const requestClients = new WeakMap<object, PrismaClient>();
 
@@ -13,16 +13,13 @@ function currentPrisma(): PrismaClient {
     throw new Error('CLOUDFLARE_REQUEST_CONTEXT_REQUIRED');
   }
 
-  const databaseUrl = (context.env as typeof context.env & {
-    DATABASE_URL?: string;
-  }).DATABASE_URL;
-  const verifiedDatabaseUrl = assertCloudflareDatabaseUrl(databaseUrl);
+  const connectionString = assertCloudflareHyperdriveConnection(context.env);
 
   const requestKey = context as object;
   const existing = requestClients.get(requestKey);
   if (existing) return existing;
 
-  const adapter = new PrismaPg({ connectionString: verifiedDatabaseUrl, max: 1 });
+  const adapter = new PrismaPg({ connectionString, max: 1 });
   const client = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'production' ? ['error'] : ['error', 'warn'],
