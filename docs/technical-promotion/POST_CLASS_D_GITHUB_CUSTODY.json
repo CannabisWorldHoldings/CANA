@@ -1,11 +1,12 @@
 {
   "schema": "orderweeddc.post-class-d-github-custody.v1",
   "kind": "GITHUB_VERIFIED_RECEIPT_COMMIT",
-  "parent_commit": "25bed5d9a9d5ac8192af5cadfd6cf8b9ce0d7e15",
-  "parent_tree": "8b0cd212ee760912893de57d102c08b5f1c6502d",
-  "manifest_sha256": "948ef16ca3bd30df9c37fb14641b43f5d39aab7bb6e82b0ff84045728f18b082",
-  "verifier_sha256": "de71d0a77d20da2af9af3d58d5444b0cdd1534465bf7f9e247392f33573b8f77",
-  "court_sha256": "82a673514b3c065382d4ce68595927b26c22150aae6b332c6c440ab71b22464b",
+  "parent_commit": "ff57d665b49030a2ddc696d34dfb893d59373e41",
+  "parent_tree": "20af384a0efa95e723eeebe5c6b55375951caa6c",
+  "manifest_sha256": "56d3673cecd607487ff40387c60df59a0bf9150b914cc88575c102f16bb5bdd3",
+  "verifier_sha256": "218b8f6176128e5685b844f1c23156dd4caefe112ee0625881680ab6e29a46bd",
+  "court_sha256": "57f68747c6bc71e355c78563d4a026bd414d743836cc4d84e3e4ae922dd8430a",
+  "github_web_flow_key_sha256": "c135dfc1e3add3eb84e6119af7095dec97e0e92730a468d234f925a72bacaf74",
   "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
   "signature_verification_requirement": "GitHub commit verification API must report verified=true and reason=valid for the receipt-adding commit.",
   "production_effects": 0
