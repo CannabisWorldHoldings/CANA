@@ -302,16 +302,22 @@ export function createCanonicalWeldHost({
     return deepFreeze(ledger);
   }
 
+  async function loadExperiment(experimentId) {
+    return loadRecord(RECORD_TYPES.EXPERIMENT, experimentId);
+  }
+
   async function persistPromotionReceipt(payload) {
     const receipt = makeReceipt({
       kind: 'PROMOTION',
       subjectDigest: payload?.candidateDigest,
-      realm: 'VERIFIED_LOCAL',
+      realm: payload?.evidenceRealm ?? 'VERIFIED_LOCAL',
       issuer: 'canonical-experience-promotion-court',
       payload,
       parentDigests: [
         payload?.principalReceiptDigest,
+        payload?.merchantAuthorizationReceiptDigest,
         payload?.previewReceiptDigest,
+        payload?.browserObservationReceiptDigest,
         payload?.browserCourtReceiptDigest,
         payload?.realityCourtReceiptDigest,
         payload?.rollbackReceiptDigest,
@@ -319,6 +325,30 @@ export function createCanonicalWeldHost({
     });
     await persistReceipt(receipt);
     return receipt;
+  }
+
+  async function claimPromotionExecution({ promotion, candidate, principal }) {
+    validateReceiptShape(promotion, { kind: 'PROMOTION', subjectDigest: candidate?.candidateDigest });
+    const claim = makeReceipt({
+      kind: 'EXPERIENCE_EXECUTION',
+      subjectDigest: promotion.receiptDigest,
+      realm: promotion.realm,
+      issuer: 'canonical-experience-execution-claim',
+      issuedAt: promotion.issuedAt,
+      parentDigests: [promotion.receiptDigest, principal?.principalReceiptDigest].filter(Boolean),
+      payload: {
+        promotionReceiptDigest: promotion.receiptDigest,
+        candidateDigest: candidate?.candidateDigest,
+        principalReceiptDigest: principal?.principalReceiptDigest,
+      },
+    });
+    try {
+      await receiptStore.create({ data: receiptData(tenant, claim) });
+      return true;
+    } catch (error) {
+      if (error?.code === 'P2002') return false;
+      throw error;
+    }
   }
 
   const requireExperience = (name) => {
@@ -340,8 +370,10 @@ export function createCanonicalWeldHost({
     loadReceipt,
     loadLesson,
     loadExperimentLedger,
+    loadExperiment,
     resolveVerifiedPrincipalReceipt,
     persistPromotionReceipt,
+    claimPromotionExecution,
     enumerateExperienceSurfaces: (...args) => (
       typeof experience.enumerateExperienceSurfaces === 'function'
         ? experience.enumerateExperienceSurfaces(...args)

@@ -5,7 +5,7 @@ export const EVIDENCE_REALMS = sealPlain([
 ]);
 export const RECEIPT_KINDS = sealPlain([
   'PRINCIPAL','BROWSER_OBSERVATION','PRIVATE_PREVIEW','COURT','ROLLBACK','PROMOTION','ASSIGNMENT','EXPOSURE','OUTCOME','PREDICTION_OUTCOME',
-  'EXPERIMENT_SETTLEMENT','VALUE','ECONOMIC_OBSERVATION','INFORMATION_GAP','LESSON_ADMISSION','MODEL_TRIAL','HARNESS_TRIAL','SKILL_RUN','VERIFIER','SUPREMACY_BENCHMARK',
+  'MERCHANT_AUTHORIZATION','EXPERIENCE_EXECUTION','EXPERIMENT_SETTLEMENT','VALUE','ECONOMIC_OBSERVATION','INFORMATION_GAP','LESSON_ADMISSION','MODEL_TRIAL','HARNESS_TRIAL','SKILL_RUN','VERIFIER','SUPREMACY_BENCHMARK',
 ]);
 
 export function makeReceipt({kind,subjectDigest,realm='VERIFIED_LOCAL',issuer,payload={},issuedAt=new Date(),expiresAt=null,parentDigests=[]}) {
@@ -22,6 +22,8 @@ export function validateReceiptShape(receipt,{kind=null,subjectDigest=null,minim
   assert(EVIDENCE_REALMS.includes(receipt.realm),'receipt realm invalid','RECEIPT_REALM_INVALID');
   if(kind) assert(receipt.kind===kind,`expected ${kind} receipt`,'RECEIPT_KIND_MISMATCH');
   if(subjectDigest) assert(receipt.subjectDigest===subjectDigest,'receipt subject mismatch','RECEIPT_SUBJECT_MISMATCH');
+  assert(Number.isFinite(new Date(receipt.issuedAt).getTime()),'receipt issuedAt invalid','RECEIPT_ISSUED_AT_INVALID');
+  assert(Array.isArray(receipt.parentDigests),'receipt parentDigests invalid','RECEIPT_PARENTS_INVALID');
   if(receipt.expiresAt) assert(new Date(receipt.expiresAt).getTime()>=new Date(now).getTime(),'receipt expired','RECEIPT_EXPIRED');
   const {receiptDigest,...body}=receipt;
   assert(receiptDigest===digest(body,`receipt-${receipt.kind.toLowerCase()}`),'receipt digest mismatch','RECEIPT_DIGEST_MISMATCH');
@@ -29,6 +31,12 @@ export function validateReceiptShape(receipt,{kind=null,subjectDigest=null,minim
     const rank=new Map(EVIDENCE_REALMS.map((r,i)=>[r,EVIDENCE_REALMS.length-i]));
     assert((rank.get(receipt.realm)??0)>=(rank.get(minimumRealm)??Infinity),`receipt realm below ${minimumRealm}`,'RECEIPT_REALM_TOO_LOW');
   }
+  return receipt;
+}
+
+export function requireExactEvidenceRealm(receipt, realm) {
+  assert(EVIDENCE_REALMS.includes(realm), `unsupported evidence realm ${realm}`, 'RECEIPT_REALM_INVALID');
+  assert(receipt?.realm === realm, `receipt must be in ${realm}`, 'RECEIPT_REALM_MISMATCH');
   return receipt;
 }
 
