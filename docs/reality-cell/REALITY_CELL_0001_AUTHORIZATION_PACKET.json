@@ -1,0 +1,99 @@
+{
+  "schemaVersion": "cana.reality-cell-authorization-packet/1.0.0",
+  "experimentId": "REALITY_CELL_0001",
+  "packetState": "AWAITING_MERCHANT_AUTHORIZATION",
+  "canonicalSha": "ab2d73008deaa061b91df760fbda98bb05503c5f",
+  "canonicalTree": "0cfe6f101e238a2cc0a9e38b8dc1a7e47c63a118",
+  "canonicalStatus": "PENDING_RECONCILIATION_PROMOTION",
+  "rebindRequiredAfterCanonicalPromotion": true,
+  "namedMerchantCandidate": {
+    "state": "NOT_SELECTED",
+    "merchantId": null,
+    "tenantId": null,
+    "legalName": null
+  },
+  "authorizedRepresentativeRequirement": {
+    "required": true,
+    "minimumEvidence": [
+      "representative legal name",
+      "merchant legal entity and tenant",
+      "representative authority to consent",
+      "exact experiment and treatment digests",
+      "signed authorization timestamp and expiry"
+    ],
+    "currentEvidence": "ABSENT"
+  },
+  "bindings": {
+    "preregistrationDigest": null,
+    "treatmentCandidateDigest": null,
+    "actionContractDigest": null,
+    "baselineDigest": null,
+    "idempotencyKey": null,
+    "rollbackTarget": null
+  },
+  "effectSet": [
+    "PRIVATE_PREVIEW",
+    "INDEPENDENT_BROWSER_OBSERVATION",
+    "REVERSIBLE_ROLLBACK"
+  ],
+  "allowedSurfaces": [
+    "ISOLATED_PRIVATE_PREVIEW"
+  ],
+  "prohibitedEffects": [
+    "PUBLICATION",
+    "PRODUCTION_DEPLOYMENT",
+    "DNS_CHANGE",
+    "PRODUCTION_DATABASE_WRITE",
+    "CUSTOMER_EXPOSURE",
+    "MERCHANT_TREATMENT",
+    "OUTREACH",
+    "PAYMENT_ACTIVATION",
+    "AD_SPEND"
+  ],
+  "maxExposure": 0,
+  "startWindow": null,
+  "expiry": null,
+  "rollbackTrigger": [
+    "merchant revocation",
+    "guardrail harm",
+    "authority expiry",
+    "candidate digest mismatch",
+    "observer evidence failure"
+  ],
+  "stopConditions": [
+    "owner authority missing or invalid",
+    "merchant authority missing or invalid",
+    "any required binding digest absent",
+    "actual exposure exceeds authorized maximum",
+    "Goodhart guardrail harm",
+    "tenant or assignment mismatch",
+    "independent observer unavailable"
+  ],
+  "claimCeiling": "CAPABILITY_READINESS_ONLY",
+  "measurementPlan": {
+    "state": "TEMPLATE_ONLY",
+    "assignmentNotExposure": true,
+    "exposureNotOutcome": true,
+    "outcomeNotCausation": true,
+    "economicInputsRequiredForEconomicClaim": true,
+    "syntheticEvidenceMayEnterRealSettlement": false
+  },
+  "independentObserver": {
+    "required": true,
+    "state": "NOT_APPOINTED",
+    "mustBeDistinctFromTreatmentExecutor": true
+  },
+  "valueReceiptSchema": "cana.value-receipt/1.0.0",
+  "authority": {
+    "ownerAuthorizationGranted": false,
+    "merchantAuthorizationGranted": false,
+    "executionAuthorized": false,
+    "realWorldExecutionAllowed": false
+  },
+  "effects": {
+    "realCustomerExposure": 0,
+    "realMerchantExposure": 0,
+    "productionEffects": 0,
+    "spendUsd": 0
+  }
+}
