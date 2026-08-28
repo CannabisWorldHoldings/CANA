@@ -5,37 +5,21 @@ import Rail, { RailItem } from '@/components/rail';
 import SmartImage from '@/components/smart-image';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
 import { chipLabel, publicWorldStateLabel } from '@/lib/label-vocabulary.mjs';
+import { presentationFor } from '@/lib/experience/manifest.mjs';
 
-const JOURNEY_COPY = {
-  HOME: {
-    eyebrow: 'Local discovery',
-    title: 'Cannabis discovery without the guesswork.',
-    description: 'Find dispensaries, delivery, and current deals — every result backed by a named source, every unknown labeled honestly.',
-    action: '/search',
-    placeholder: 'City or neighborhood',
-  },
-  SEARCH: {
-    eyebrow: 'Search',
-    title: 'Search verified cannabis businesses.',
-    description: 'Ask in your own words. Results come only from current, verified records — sources and freshness included.',
-    action: '/search',
-    placeholder: 'City, neighborhood, or what you are looking for',
-  },
-  DELIVERY: {
-    eyebrow: 'Delivery',
-    title: 'See who actually delivers to you.',
-    description: "A verified business record doesn't prove delivery range, fees, minimums, stock, or timing. We show what's verified and label the rest unknown.",
-    action: '/delivery',
-    placeholder: 'City or neighborhood for delivery',
-  },
-  DISPENSARIES: {
-    eyebrow: 'Dispensaries',
-    title: 'Find licensed dispensaries near you.',
-    description: 'Every result carries its source and when it was last checked. Hours, stock, and popularity stay unknown until proven.',
-    action: '/dispensaries',
-    placeholder: 'City or neighborhood for dispensaries',
-  },
-} as const;
+/**
+ * Structural shape of a courted manifest as this component consumes it. The canonical
+ * definition and its validator live in lib/experience/manifest.mjs, which is the owner.
+ */
+type ExperienceManifestLike = {
+  manifestVersion: 1;
+  presentation: {
+    copy: { eyebrow: string; title: string; description: string; action: string; placeholder: string };
+    assets: { hero: string; storefront: string; delivery: string; dc: string };
+    moduleOrder: string[];
+    density: 'comfortable' | 'compact';
+  };
+};
 
 const HOME_ASSETS = {
   hero: 'marketplace.hero.v2',
@@ -349,10 +333,21 @@ export default function CustomerWorldPage({
   world,
   isCanonicalBrand = false,
   illustrativeArtCapability = null,
+  manifest = null,
+  tenant = 'orderweeddc.com',
 }: {
   world: CustomerWorld;
   isCanonicalBrand?: boolean;
   illustrativeArtCapability?: object | null;
+  /**
+   * Courted presentation state from the Experience Fabric kernel. When present it is
+   * the source of copy, assets and module order. When absent, `presentationFor` builds
+   * the same state from the canonical registry — so there is exactly ONE place
+   * presentation comes from, even during incremental adoption. The old behaviour was a
+   * module-level `const`, which no court could reach.
+   */
+  manifest?: ExperienceManifestLike | null;
+  tenant?: string;
 }) {
   if (world.request.journey === 'HOME' && isCanonicalBrand) {
     return (
@@ -363,7 +358,11 @@ export default function CustomerWorldPage({
     );
   }
 
-  const copy = JOURNEY_COPY[world.request.journey];
+  const presentation = presentationFor(manifest, {
+    tenant,
+    journey: world.request.journey,
+  });
+  const copy = presentation.copy;
   const mapView = world.request.requested_view === 'map';
   return (
     <div className="flex-grow">
