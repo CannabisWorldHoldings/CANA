@@ -1274,3 +1274,46 @@ model AskIntentSignal {
 
   @@index([tenant, createdAt])
 }
+// ============================================================================
+// CANONICAL CANA EVIDENCE BRIDGE
+//
+// WELD mechanisms may propose evidence-addressed work, but these two append-only
+// tables are the canonical persistence boundary. They do not create a second
+// truth, auth, Experience Fabric, causal authority, or route.
+// ============================================================================
+
+model CanaEvidenceReceipt {
+  tenant            String
+  receiptDigest     String
+  kind              String
+  subjectDigest     String
+  realm             String
+  issuer            String
+  payloadJson       String
+  issuedAt          DateTime
+  expiresAt         DateTime?
+  parentDigestsJson String
+  createdAt         DateTime  @default(now())
+
+  @@id([tenant, receiptDigest])
+  @@index([tenant, kind, subjectDigest, issuedAt])
+  @@index([tenant, subjectDigest, issuedAt])
+  @@index([tenant, expiresAt])
+}
+
+/// Append-only versions of governed lesson, prediction and experiment state.
+/// `recordType + recordId` identifies the canonical owner object; `sequence`
+/// selects its latest immutable version without rewriting prior evidence.
+model CanaIntelligenceRecord {
+  sequence     BigInt   @id @default(autoincrement())
+  tenant       String
+  recordDigest String   @unique
+  recordType   String
+  recordId     String
+  status       String
+  bodyJson     String
+  createdAt    DateTime @default(now())
+
+  @@index([tenant, recordType, recordId, sequence])
+  @@index([tenant, status, createdAt])
+}

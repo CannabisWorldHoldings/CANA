@@ -1,0 +1,37 @@
+{
+  "mission": "Design the strongest bounded implementation of one CANA capability without weakening canonical truth or authority",
+  "lane": "architecture",
+  "timeoutMs": 180000,
+  "receiptPath": "./INTELLIGENCE_ALLOCATION_RECEIPT.json",
+  "agents": [
+    {
+      "id": "architect-a",
+      "provider": "YOUR_PROVIDER",
+      "model": "YOUR_STRONG_MODEL_A",
+      "command": "/absolute/path/to/your-agent-cli",
+      "args": ["--json"]
+    },
+    {
+      "id": "architect-b",
+      "provider": "YOUR_PROVIDER",
+      "model": "YOUR_STRONG_MODEL_B",
+      "command": "/absolute/path/to/your-agent-cli",
+      "args": ["--json"]
+    }
+  ],
+  "verifier": {
+    "id": "independent-verifier",
+    "command": "/absolute/path/to/a-different-verifier-cli",
+    "args": ["--json"]
+  },
+  "trials": [
+    {
+      "id": "microtrial-1",
+      "task": "Propose a bounded design with invariants, brittle point, decisive test, and executable change set."
+    },
+    {
+      "id": "microtrial-2",
+      "task": "Attack the same requirement from security, evidence, and failure-recovery perspectives."
+    }
+  ]
+}

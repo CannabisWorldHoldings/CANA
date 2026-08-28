@@ -1,0 +1,9 @@
+import { assert, newId, sealPlain } from './core.mjs';
+import { makeReceipt, resolveCanonicalReceipt } from './receipts.mjs';
+export async function issueValueReceipt({settlement,economics,evidenceAdapter,issuer='canonical-economic-settlement'}){
+  assert(settlement?.status==='SETTLED','settled experiment required');const causalSupported=settlement.causalStatus==='CAUSALLY_SUPPORTED';let aov=null,aovReceipt=null;
+  if(economics?.attributedAovReceiptDigest){aovReceipt=await resolveCanonicalReceipt(evidenceAdapter,economics.attributedAovReceiptDigest,{kind:'ECONOMIC_OBSERVATION',minimumRealm:'VERIFIED_LOCAL'});assert(aovReceipt.payload?.metric==='AOV_USD','AOV receipt metric mismatch','AOV_RECEIPT_INVALID');aov=Number(aovReceipt.payload?.valueUsd);assert(Number.isFinite(aov),'AOV receipt value invalid','AOV_RECEIPT_INVALID');}
+  const incrementalConversions=settlement.stats?settlement.stats.lift*settlement.outcome.treatmentN:null;const revenueImpactUsd=causalSupported&&aov!==null&&incrementalConversions!==null?incrementalConversions*aov:null;
+  const payload={receiptId:newId('value'),experimentId:settlement.experimentId,settlementDigest:settlement.settlementDigest,estimatedEffect:settlement.stats,causalStatus:settlement.causalStatus,revenueImpactUsd,costUsd:Number.isFinite(economics?.costUsd)?economics.costUsd:null,economicStatus:revenueImpactUsd===null?'UNMEASURED_OR_UNSUPPORTED':'MEASURED_WITH_CAUSAL_SUPPORT',uncertainty:settlement.sufficient?'BOUNDED_BY_EXPERIMENT':'HIGH',attributedAovReceiptDigest:aovReceipt?.receiptDigest??null,createdAt:new Date().toISOString()};
+  const receipt=makeReceipt({kind:'VALUE',subjectDigest:settlement.settlementDigest,realm:revenueImpactUsd===null?'IMPLEMENTED_UNVERIFIED':'VERIFIED_LOCAL',issuer,payload});return sealPlain({...payload,receiptDigest:receipt.receiptDigest,receipt});
+}
