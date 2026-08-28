@@ -80,11 +80,14 @@ export function validateCourtCustody(manifest) {
     [expectedPaths[1], 'Ledger-Court-SHA256'],
   ]) {
     const digest = admission.paths[courtPath];
+    const pathCommit = gitText(['log', '-1', '--format=%H', '--', courtPath]);
+    const pathTrailers = trailers(pathCommit);
     assert.match(digest, /^[0-9a-f]{64}$/, courtPath);
-    assert.equal(gitText(['log', '-1', '--format=%H', '--', courtPath]), custodyCommit, courtPath);
+    assert.match(pathCommit, /^[0-9a-f]{40}$/, `${courtPath} custody commit missing`);
     assert.equal(sha256(fs.readFileSync(path.join(ROOT, courtPath))), digest, courtPath);
-    assert.equal(sha256(git(['show', `${custodyCommit}:${courtPath}`], { encoding: null })), digest, courtPath);
-    assert.equal(recorded.get(trailer), digest, trailer);
+    assert.equal(sha256(git(['show', `${pathCommit}:${courtPath}`], { encoding: null })), digest, courtPath);
+    assert.equal(pathTrailers.get(trailer), digest, trailer);
+    assert.equal(pathTrailers.get('Ledger-Authorization-SHA256'), manifest.owner_authorization_source_sha256);
   }
 }
 

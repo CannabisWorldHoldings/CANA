@@ -7,7 +7,7 @@
     "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
     "authorization_effect": "exact-reviewed-court-bytes-only",
     "paths": {
-      "tools/promotion-gate/post-class-d-ledger.court.mjs": "2bfec5f68c88ee57a1c290ba6ebc8b6c42bb1d2d2f15196724347fdab274c5b2",
+      "tools/promotion-gate/post-class-d-ledger.court.mjs": "de71d0a77d20da2af9af3d58d5444b0cdd1534465bf7f9e247392f33573b8f77",
       "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "82a673514b3c065382d4ce68595927b26c22150aae6b332c6c440ab71b22464b"
     }
   },
