@@ -571,12 +571,12 @@ test('Phase B Slice 2 live reality paths have exact ownership without neighborin
   );
 });
 
-test('Phase B Slice 2 court admission is bound to the exact reviewed bytes', () => {
+test('Phase B Slice 2 court admission refuses superseding and tampered bytes', () => {
   const manifest = ownership();
   const courtPath = 'apps/web/tests/migration-court.test.mjs';
   assert.equal(
     courtEditAdmitted(courtPath, manifest, undefined, PHASE_B_SLICE2_ASSIGNMENT),
-    true,
+    false,
   );
   assert.equal(
     courtEditAdmitted(courtPath, manifest, Buffer.from('tampered Slice 2 court'), PHASE_B_SLICE2_ASSIGNMENT),
