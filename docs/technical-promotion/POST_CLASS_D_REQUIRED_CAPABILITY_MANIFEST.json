@@ -3,10 +3,19 @@
   "assessed_against_sha": "e0466894121a4c92f0512cfa47e649815c7a3948",
   "assessed_against_tree": "e9acea54e94d437c4e0728d724b3ad8ffb8661b6",
   "owner_authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
+  "court_admission": {
+    "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
+    "authorization_effect": "exact-reviewed-court-bytes-only",
+    "paths": {
+      "tools/promotion-gate/post-class-d-ledger.court.mjs": "6383493d270ae14ab5ebd0c322469cf5f41a3fdd9e8e1cc1be0aa0784a737a20",
+      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "a4fe60fce4653bc01b74ca6e6edbf2469d6c3e9e61a011e2419824882d5827a1"
+    }
+  },
   "assessment_diff_paths": [
     "docs/technical-promotion/CANONICAL_CAPABILITY_SUPERSESSION_LEDGER.md",
     "docs/technical-promotion/POST_CLASS_D_REMAINING_CAPABILITY_LEDGER.jsonl",
     "docs/technical-promotion/POST_CLASS_D_REQUIRED_CAPABILITY_MANIFEST.json",
+    "tools/promotion-gate/post-class-d-ledger.court.mjs",
     "tools/promotion-gate/post-class-d-ledger.court.test.mjs"
   ],
   "proofs": {
@@ -37,9 +46,31 @@
     "git.postgis_adr": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"docs/adr/0001-postgresql-postgis-canonical-datastore.md"},
     "observation.search_sensor_donor": {"type":"assessment_observation","commit":"86f78c0ca573897d1c336461a4504fc764e03f60","tree":"8e01b3e14c0cb51737a0542e89732c6dd66d92bc","parent":"7d618141a8033ac3667d1770ed350b0268140ac9","changed_path_count":13,"patch_sha256":"f9de68be9c013dcc13eb82368c20d09e5f97ff2d6ea6fed71d9d2f24bd6b8c2c","path_list_sha256":"3a3d9c5f7d54b7aa6270469bc99b8c81576f5ca32da7ac3dece7b51f02f96d48","object_optional":true},
     "observation.vanguard_donor": {"type":"assessment_observation","commit":"7f68c6c2d1ed9d008cf61021499ca74dea822dba","tree":"fb14522d55fbfab5e8fe0c5c5ed1d82b6797ebcb","parent":"9e0419a260bf8d3e7c81de3ab663d97d1868ab48","changed_path_count":7,"patch_sha256":"7001656a7703bbc1b931819c95806600d7bf7a7cb5b54fcb520c5f0ebc501da4","path_list_sha256":"7726b9e8f3589d94fccfc944e191fd31f8f4803eeb3ca76935009c51bc42a6be","object_optional":true},
-    "external.search_console_access": {"type":"external_boundary","boundary":"Owner-granted provider property visibility is not repository-verifiable."},
-    "external.live_postgis_identity": {"type":"external_boundary","boundary":"Production database identity is outside the authorized zero-effect court."}
+    "external.search_console_access": {"type":"external_boundary","boundary":"Owner-granted provider property visibility is not repository-verifiable.","authority":"NONE","may_execute":false,"may_query_provider":false,"may_access_credentials":false,"may_mutate_production":false},
+    "external.live_postgis_identity": {"type":"external_boundary","boundary":"Production database identity is outside the authorized zero-effect court.","authority":"NONE","may_execute":false,"may_query_provider":false,"may_access_credentials":false,"may_mutate_production":false}
   },
+  "inventory_sources": [
+    {
+      "inventory_id": "owner_post_class_d_canonicalization_requirement_inventory",
+      "type": "owner_authorization_digest",
+      "source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
+      "capability_ids": [
+        "owner_cana_console_surface","owner_cana_governed_transport","owner_cana_whole_system_query","owner_cockpit_vanguard_cli","experience_fabric_core","owner_experience_web_bridge","asset_registry_rights_core","homepage_image_acceptance_workflow","search_console_demand_sensor","search_console_property_access","vanguard_output_adapter_isolation","vanguard_zenith_wholesale_candidate","rsi_sitemind_core","rsi_cross_repository_evaluation","rsi_hermes_runtime_wholesale","orderweeddc_rsi_standalone_runtime","orderweeddcrsi_mission_lease_idempotency","orderweeddcrsi_receipt_chain","orderweeddcrsi_evidence_envelope","orderweeddcrsi_provider_validation_circuit_breaker","orderweeddcrsi_deterministic_pipeline","orderweeddcrsi_crash_restart_fixtures","orderweeddcrsi_gated_lesson_persistence","merchant_intelligence_core","merchant_ai_tenant_productization","customer_ask_world","growth_intelligence_core","cloudflare_edge_foundation","final_nonprod_cloudflare_release","live_postgis_identity"
+      ]
+    },
+    {
+      "inventory_id": "preexisting_mission1_orderweeddcrsi_inventory",
+      "type": "git_blob_inventory",
+      "proof_id": "git.os_recovery_inventory",
+      "capability_ids": ["orderweeddc_rsi_standalone_runtime","orderweeddcrsi_mission_lease_idempotency","orderweeddcrsi_receipt_chain","orderweeddcrsi_evidence_envelope","orderweeddcrsi_provider_validation_circuit_breaker","orderweeddcrsi_deterministic_pipeline","orderweeddcrsi_crash_restart_fixtures","orderweeddcrsi_gated_lesson_persistence"]
+    },
+    {
+      "inventory_id": "preexisting_canonical_capability_conservation_inventory",
+      "type": "git_blob_inventory",
+      "proof_id": "git.component_disposition",
+      "capability_ids": ["rsi_sitemind_core","rsi_cross_repository_evaluation","rsi_hermes_runtime_wholesale","merchant_intelligence_core","customer_ask_world","growth_intelligence_core"]
+    }
+  ],
   "required_capabilities": [
     {"capability_id":"owner_cana_console_surface","expected_disposition":"CANONICAL","proof_ids":["git.owner_console"]},
     {"capability_id":"owner_cana_governed_transport","expected_disposition":"DEFERRED_WITH_REASON","proof_ids":["git.owner_console","git.authority"]},
@@ -57,13 +88,13 @@
     {"capability_id":"rsi_cross_repository_evaluation","expected_disposition":"SUPERSEDED","proof_ids":["git.source_ledger","git.sitemind_core"]},
     {"capability_id":"rsi_hermes_runtime_wholesale","expected_disposition":"REJECTED_WITH_REASON","proof_ids":["git.component_disposition","git.hermes_boundary"]},
     {"capability_id":"orderweeddc_rsi_standalone_runtime","expected_disposition":"REJECTED_WITH_REASON","proof_ids":["git.os_recovery_inventory","git.component_disposition"]},
-    {"capability_id":"orderweeddcrsi_mission_lease_idempotency","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.alive_loop_adapter","git.authority"]},
-    {"capability_id":"orderweeddcrsi_receipt_chain","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.authority_receipts"]},
-    {"capability_id":"orderweeddcrsi_evidence_envelope","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.evidence_envelope"]},
-    {"capability_id":"orderweeddcrsi_provider_validation_circuit_breaker","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.provider_boundary"]},
-    {"capability_id":"orderweeddcrsi_deterministic_pipeline","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.change_pipeline"]},
-    {"capability_id":"orderweeddcrsi_crash_restart_fixtures","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.restart_court"]},
-    {"capability_id":"orderweeddcrsi_gated_lesson_persistence","expected_disposition":"CANONICAL","proof_ids":["git.os_recovery_inventory","git.winner_memory"]},
+    {"capability_id":"orderweeddcrsi_mission_lease_idempotency","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.alive_loop_adapter","git.authority"]},
+    {"capability_id":"orderweeddcrsi_receipt_chain","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.authority_receipts"]},
+    {"capability_id":"orderweeddcrsi_evidence_envelope","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.evidence_envelope"]},
+    {"capability_id":"orderweeddcrsi_provider_validation_circuit_breaker","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.provider_boundary"]},
+    {"capability_id":"orderweeddcrsi_deterministic_pipeline","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.change_pipeline"]},
+    {"capability_id":"orderweeddcrsi_crash_restart_fixtures","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.restart_court"]},
+    {"capability_id":"orderweeddcrsi_gated_lesson_persistence","expected_disposition":"CANONICAL","expected_inclusion":{"canonical_source":"VERIFIED_PRESENT","product_import":"NOT_INCLUDED","artifact_inclusion":"NOT_INCLUDED","hosted_execution":"NOT_VERIFIED","production_authority":"NONE"},"proof_ids":["git.os_recovery_inventory","git.winner_memory"]},
     {"capability_id":"merchant_intelligence_core","expected_disposition":"CANONICAL","proof_ids":["git.merchant_core"]},
     {"capability_id":"merchant_ai_tenant_productization","expected_disposition":"DEFERRED_WITH_REASON","proof_ids":["git.merchant_ai","git.merchant_core"]},
     {"capability_id":"customer_ask_world","expected_disposition":"CANONICAL","proof_ids":["git.customer_delivery"]},
