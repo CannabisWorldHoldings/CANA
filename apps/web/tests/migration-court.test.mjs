@@ -84,6 +84,7 @@ const GEO_MIGRATION = '20260809100000_geo_kernel';
 const CONTINUATION_MIGRATION = '20260809170000_continuation_kernel';
 const REALITY_MIGRATION = '20260810000000_market_reality_compiler';
 const LIVE_REALITY_MIGRATION = '20260810200000_live_reality_acquisition';
+const CANA_EVIDENCE_BRIDGE_MIGRATION = '20260824120000_cana_evidence_bridge';
 const REALITY_FIXTURE = path.join(
   WEB,
   'fixtures',
@@ -1938,6 +1939,14 @@ test('provider classification fails closed and the reviewed migration manifest e
   });
   assert.deepEqual(
     verified.migrations.map((entry) => entry.name),
-    [BASELINE_MIGRATION_NAME, SECOND_MIGRATION, GEO_MIGRATION, CONTINUATION_MIGRATION, REALITY_MIGRATION, LIVE_REALITY_MIGRATION],
+    [
+      BASELINE_MIGRATION_NAME,
+      SECOND_MIGRATION,
+      GEO_MIGRATION,
+      CONTINUATION_MIGRATION,
+      REALITY_MIGRATION,
+      LIVE_REALITY_MIGRATION,
+      CANA_EVIDENCE_BRIDGE_MIGRATION,
+    ],
   );
 });

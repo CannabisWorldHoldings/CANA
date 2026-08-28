@@ -63,6 +63,7 @@
         "apps/web/tests/cana-intelligence-kernel.test.mjs",
         "apps/web/tests/cana-intelligence-postgres.test.mjs",
         "apps/web/tests/cana-intelligence-v3-adversarial.test.mjs",
+        "apps/web/tests/migration-court.test.mjs",
         "apps/web/tests/migration-manifest.test.mjs",
         "docs/armada/IMPLEMENTATION_NOTES.md",
         "tools/cana-armada/apply-overlay.sh",
