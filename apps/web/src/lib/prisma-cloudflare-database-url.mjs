@@ -28,8 +28,12 @@ export function assertCloudflareDatabaseUrl(value) {
     throw new Error('CLOUDFLARE_DATABASE_URL_POSTGRESQL_REQUIRED');
   }
 
-  for (const key of url.searchParams.keys()) {
+  const normalizedParameters = new Map();
+  for (const [key, parameterValue] of url.searchParams.entries()) {
     const normalizedKey = key.toLowerCase();
+    const values = normalizedParameters.get(normalizedKey) ?? [];
+    values.push(parameterValue);
+    normalizedParameters.set(normalizedKey, values);
     if (CONNECTION_OVERRIDE_PARAMETERS.has(normalizedKey)) {
       throw new Error('CLOUDFLARE_DATABASE_URL_CONNECTION_OVERRIDE_FORBIDDEN');
     }
@@ -48,10 +52,10 @@ export function assertCloudflareDatabaseUrl(value) {
   if (
     !LOOPBACK_HOSTS.has(url.hostname)
     && (
-      url.searchParams.getAll('sslmode').length !== 1
-      || url.searchParams.get('sslmode') !== 'require'
-      || url.searchParams.getAll('sslaccept').length !== 1
-      || url.searchParams.get('sslaccept') !== 'strict'
+      normalizedParameters.get('sslmode')?.length !== 1
+      || normalizedParameters.get('sslmode')?.[0] !== 'require'
+      || normalizedParameters.get('sslaccept')?.length !== 1
+      || normalizedParameters.get('sslaccept')?.[0] !== 'strict'
     )
   ) {
     throw new Error('CLOUDFLARE_DATABASE_URL_STRICT_TLS_REQUIRED');
@@ -62,7 +66,11 @@ export function assertCloudflareDatabaseUrl(value) {
   // The owner-facing Neon URL contract uses require + strict. Normalize that
   // declaration to the effective pg driver mode whose current and announced
   // future semantics both verify the CA and server identity.
-  url.searchParams.delete('sslaccept');
+  for (const key of [...url.searchParams.keys()]) {
+    if (['sslmode', 'sslaccept'].includes(key.toLowerCase())) {
+      url.searchParams.delete(key);
+    }
+  }
   url.searchParams.set('sslmode', 'verify-full');
   return url.toString();
 }

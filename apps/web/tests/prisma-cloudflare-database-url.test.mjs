@@ -24,6 +24,8 @@ test('Cloudflare PostgreSQL URLs fail closed unless remote TLS is strict', () =>
     'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=accept_invalid_certs',
     'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict&uselibpqcompat=true',
     'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict&sslmode=disable',
+    'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict&SSLMODE=disable',
+    'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict&SSLACCEPT=accept_invalid_certs',
     'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict&ssl=0',
     'postgresql://user:secret@localhost/db?host=example.invalid',
   ]) {

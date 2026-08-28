@@ -96,7 +96,7 @@ export const STAGE1_CONVERGENCE_PATHS = Object.freeze([
   'tools/test-runner/sovereign.mjs',
 ]);
 const STAGE1_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '3afb36a025a89993e17dd985566894b74b978e286be9c7c57c9c909bab5177a5';
+  '7f121c9245ce9ee7c9542ac62dd005c7366af9c84a136d304d7f0f061d22dfdb';
 const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
   authorization: 'ORDERWEEDDC × CANA post-forensic canonicalization owner instruction',
   authorization_source_sha256: STAGE1_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256,
@@ -160,7 +160,7 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/src/lib/prisma-cloudflare-database-url.mjs': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: 'c71f56cd0ad4f2417eaabe0c5fc4de4a5afaf3ac',
+      git_blob_sha: '0945dc445cf815d3fb84b249539b5aeea9934d5f',
     }),
     'apps/web/tests/build-database-gate.test.mjs': Object.freeze({
       git_mode: '100644',
@@ -172,7 +172,7 @@ const STAGE1_CONVERGENCE_ADMISSION = Object.freeze({
     }),
     'apps/web/tests/prisma-cloudflare-database-url.test.mjs': Object.freeze({
       git_mode: '100644',
-      git_blob_sha: '6e84b6b14b4332b0f8a9830ef6e033ff834c20c7',
+      git_blob_sha: '3be6345d36532f4281a352642a3070579c9af5f5',
     }),
     'apps/web/tests/release-build-identity.test.mjs': Object.freeze({
       git_mode: '100644',
