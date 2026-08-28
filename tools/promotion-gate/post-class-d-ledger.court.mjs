@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +11,38 @@ export const LEDGER = path.join(ROOT, 'docs/technical-promotion/POST_CLASS_D_REM
 export const MANIFEST = path.join(ROOT, 'docs/technical-promotion/POST_CLASS_D_REQUIRED_CAPABILITY_MANIFEST.json');
 export const SUPERSESSION = path.join(ROOT, 'docs/technical-promotion/CANONICAL_CAPABILITY_SUPERSESSION_LEDGER.md');
 export const GITHUB_CUSTODY = path.join(ROOT, 'docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json');
+export const GITHUB_WEB_FLOW_KEY = path.join(ROOT, 'tools/promotion-gate/github-web-flow-signing-key.asc');
+const GITHUB_WEB_FLOW_FINGERPRINT = '968479A1AFF927E37D1A566BB5690EEEBB952194';
+const DURABILITY_BASE = 'c953ebcd25c46ef33af0700d7913a899d839bce8';
+const ASSESSMENT_COMMIT = 'e0466894121a4c92f0512cfa47e649815c7a3948';
+const GIT_BLOB_PROOF_PATHS = Object.freeze({
+  'git.owner_console': 'apps/web/src/app/admin/console/page.tsx',
+  'git.authority': 'tools/authority/authority.mjs',
+  'git.vanguard_console': 'tools/vanguard/console.mjs',
+  'git.experience_fabric': 'tools/experience-fabric/layout-kernel.mjs',
+  'git.asset_registry': 'apps/web/src/lib/asset-registry.mjs',
+  'git.homepage_hero': 'apps/web/src/components/marketplace-home-hero.tsx',
+  'git.os_recovery_inventory': 'docs/convergence/mission-1/INTELLIGENCE_OS_RECOVERY_STATUS.md',
+  'git.component_disposition': 'docs/convergence/mission-1/COMPONENT_DISPOSITION.md',
+  'git.source_ledger': 'docs/convergence/mission-1/SOURCE_LEDGER.md',
+  'git.local_verification': 'docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json',
+  'git.runtime_inclusion_manifest': 'docs/convergence/mission-1/RUNTIME_INCLUSION_MANIFEST.json',
+  'git.alive_loop_adapter': 'tools/alive-loop/adapter.mjs',
+  'git.authority_receipts': 'tools/authority/receipts.mjs',
+  'git.evidence_envelope': 'packages/governor-kernel/standalone/runtime/evidence.py',
+  'git.provider_boundary': 'packages/governor-kernel/standalone/runtime/model_router.py',
+  'git.change_pipeline': 'skills-src/cana-signal-to-fix.mjs',
+  'git.restart_court': 'tools/mission-2/mission-2.test.mjs',
+  'git.winner_memory': 'tools/alive-loop/winner-memory.mjs',
+  'git.sitemind_core': 'packages/governor-kernel/sitemind-core/ATTACK_COURT_RECEIPT.json',
+  'git.hermes_boundary': 'tools/authority/hermes-boundary.test.mjs',
+  'git.merchant_core': 'apps/web/src/lib/growth-os.mjs',
+  'git.merchant_ai': 'packages/ai/package.json',
+  'git.customer_delivery': 'apps/web/src/app/[domain]/delivery/page.tsx',
+  'git.growth_core': 'tools/growth-foundry/m001/claim-graph.mjs',
+  'git.cloudflare_foundation': 'apps/web/open-next.config.ts',
+  'git.postgis_adr': 'docs/adr/0001-postgresql-postgis-canonical-datastore.md',
+});
 const ALLOWED_DISPOSITIONS = new Set(['CANONICAL', 'SUPERSEDED', 'REJECTED_WITH_REASON', 'DEFERRED_WITH_REASON', 'BOUNDED_UNKNOWN']);
 const BASE_KEYS = ['schema', 'capability_id', 'high_value', 'domain', 'source', 'current_canonical', 'disposition', 'reason', 'evidence', 'next_gate', 'production_effects', 'assessed_at', 'assessed_against_sha', 'assessed_against_tree'].sort();
 const INCLUSION_KEYS = ['artifact_inclusion', 'canonical_source', 'hosted_execution', 'product_import', 'production_authority'].sort();
@@ -35,6 +68,12 @@ const git = (args, options = {}) => execFileSync('git', args, { cwd: ROOT, encod
 const gitText = (args) => git(args).trimEnd();
 const objectExists = (object) => spawnSync('git', ['cat-file', '-e', object], { cwd: ROOT }).status === 0;
 const rel = (absolute) => path.relative(ROOT, absolute).split(path.sep).join('/');
+const sha256File = (file) => sha256(fs.readFileSync(file));
+const gitLargeText = (args) => {
+  const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 });
+  assert.equal(result.status, 0, result.stderr || `git ${args.join(' ')} failed`);
+  return result.stdout.trim();
+};
 
 export function readLedger() {
   assert.equal(fs.existsSync(LEDGER), true, 'remaining capability ledger is missing');
@@ -68,6 +107,7 @@ export function validateCourtCustody(manifest) {
   const expectedPaths = [
     'tools/promotion-gate/post-class-d-ledger.court.mjs',
     'tools/promotion-gate/post-class-d-ledger.court.test.mjs',
+    'tools/promotion-gate/github-web-flow-signing-key.asc',
   ];
   exactSet(Object.keys(admission.paths), expectedPaths, 'court custody path drift');
   const custodyCommit = gitText(['log', '-1', '--format=%H', '--', rel(MANIFEST)]);
@@ -78,6 +118,7 @@ export function validateCourtCustody(manifest) {
   for (const [courtPath, trailer] of [
     [expectedPaths[0], 'Ledger-Verifier-SHA256'],
     [expectedPaths[1], 'Ledger-Court-SHA256'],
+    [expectedPaths[2], 'Ledger-Github-Key-SHA256'],
   ]) {
     const digest = admission.paths[courtPath];
     const pathCommit = gitText(['log', '-1', '--format=%H', '--', courtPath]);
@@ -88,6 +129,18 @@ export function validateCourtCustody(manifest) {
     assert.equal(sha256(git(['show', `${pathCommit}:${courtPath}`], { encoding: null })), digest, courtPath);
     assert.equal(pathTrailers.get(trailer), digest, trailer);
     assert.equal(pathTrailers.get('Ledger-Authorization-SHA256'), manifest.owner_authorization_source_sha256);
+  }
+}
+
+export function validateProofAllowlist(manifest) {
+  const actualGitProofs = Object.entries(manifest.proofs)
+    .filter(([, proof]) => proof.type === 'git_blob')
+    .map(([proofId]) => proofId);
+  exactSet(actualGitProofs, Object.keys(GIT_BLOB_PROOF_PATHS), 'git blob proof identity drift');
+  for (const [proofId, expectedPath] of Object.entries(GIT_BLOB_PROOF_PATHS)) {
+    const proof = manifest.proofs[proofId];
+    assert.equal(proof.commit, ASSESSMENT_COMMIT, `${proofId}.commit semantic drift`);
+    assert.equal(proof.path, expectedPath, `${proofId}.path semantic drift`);
   }
 }
 
@@ -144,6 +197,7 @@ export function validateManifest(manifest) {
   assert.deepEqual(Object.keys(manifest.verification_receipt_policy).sort(), ['durability_secret_scan_required_when_receipts_present', 'evidence_root', 'exact_source_required']);
   assert.deepEqual(manifest.verification_receipt_policy, { evidence_root: '.omo/evidence', exact_source_required: true, durability_secret_scan_required_when_receipts_present: true });
   validateCourtCustody(manifest);
+  validateProofAllowlist(manifest);
   for (const [proofId, proof] of Object.entries(manifest.proofs)) validateProof(proofId, proof);
 
   const ids = manifest.required_capabilities.map((entry) => entry.capability_id);
@@ -271,7 +325,110 @@ export function validateGithubCustody(manifest) {
   assert.equal(gitText(['show', '-s', '--format=%T', receiptCommit]), gitText(['show', '-s', '--format=%T', head]), 'signed merge tree differs from receipt tree');
   assert.deepEqual(gitText(['diff-tree', '--no-commit-id', '--name-only', '-r', receiptCommit]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
   assert.deepEqual(gitText(['diff-tree', '-m', '--no-commit-id', '--name-only', '-r', head]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
-  return { state: 'GITHUB_CUSTODY_RECEIPT_PRESENT', externallyVerified: false, commit: head };
+  const signature = validateGithubCommitSignature(head);
+  return { state: 'GITHUB_CUSTODY_RECEIPT_PRESENT', externallyVerified: signature === 'SIGNATURE_VERIFIED', signature, commit: head };
+}
+
+function gpgExecutable() {
+  for (const candidate of ['/opt/homebrew/bin/gpg', '/usr/local/bin/gpg', '/usr/bin/gpg']) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+export function validateGithubCommitSignature(commit = gitText(['rev-parse', 'HEAD'])) {
+  assert.equal(fs.existsSync(GITHUB_WEB_FLOW_KEY), true, 'pinned GitHub web-flow signing key is missing');
+  const gpg = gpgExecutable();
+  if (!gpg) return 'EXTERNAL_SIGNATURE_REQUIRED';
+  const gpgHome = fs.mkdtempSync(path.join(os.tmpdir(), 'cana-github-signature-'));
+  fs.chmodSync(gpgHome, 0o700);
+  try {
+    const show = spawnSync(gpg, ['--batch', '--with-colons', '--import-options', 'show-only', '--import', GITHUB_WEB_FLOW_KEY], {
+      env: { ...process.env, GNUPGHOME: gpgHome }, encoding: 'utf8', maxBuffer: 1024 * 1024,
+    });
+    assert.equal(show.status, 0, show.stderr || 'unable to inspect pinned GitHub signing key');
+    const fingerprints = `${show.stdout}\n${show.stderr}`.split('\n')
+      .filter((line) => line.startsWith('fpr:'))
+      .map((line) => line.split(':')[9]);
+    assert.equal(fingerprints.includes(GITHUB_WEB_FLOW_FINGERPRINT), true, 'pinned GitHub signing key fingerprint drift');
+    const imported = spawnSync(gpg, ['--batch', '--import', GITHUB_WEB_FLOW_KEY], {
+      env: { ...process.env, GNUPGHOME: gpgHome }, encoding: 'utf8', maxBuffer: 1024 * 1024,
+    });
+    assert.equal(imported.status, 0, imported.stderr || 'unable to import pinned GitHub signing key');
+    const verified = spawnSync('git', ['-c', `gpg.program=${gpg}`, 'verify-commit', commit], {
+      cwd: ROOT, env: { ...process.env, GNUPGHOME: gpgHome }, encoding: 'utf8', maxBuffer: 1024 * 1024,
+    });
+    assert.equal(verified.status, 0, `exact-head GitHub signature verification failed: ${verified.stderr || verified.stdout}`);
+    assert.match(`${verified.stdout}\n${verified.stderr}`, /GitHub <noreply@github\.com>/, 'exact-head signature was not made by the pinned GitHub identity');
+    return 'SIGNATURE_VERIFIED';
+  } finally {
+    fs.rmSync(gpgHome, { recursive: true, force: true });
+  }
+}
+
+function validateDurabilityArtifact(head, tree, build, verify) {
+  assert.equal(build.artifact, verify.artifact, 'durability receipt artifact path mismatch');
+  const artifact = fs.realpathSync(build.artifact);
+  assert.equal(path.basename(artifact), head, 'durability artifact is not named for the exact head');
+  const artifactManifestPath = path.join(artifact, 'manifest.json');
+  const checksumsPath = path.join(artifact, 'SHA256SUMS.txt');
+  for (const required of [artifactManifestPath, checksumsPath, path.join(artifact, 'repo.bundle'), path.join(artifact, 'outgoing.patch'), path.join(artifact, 'commits.mbox')]) {
+    assert.equal(fs.statSync(required).isFile(), true, `durability artifact file missing: ${path.basename(required)}`);
+  }
+  const artifactManifest = JSON.parse(fs.readFileSync(artifactManifestPath, 'utf8'));
+  assert.equal(artifactManifest.schemaVersion, 1);
+  assert.equal(artifactManifest.kind, 'CANA candidate durability artifact');
+  assert.deepEqual(
+    { commit: artifactManifest.source.commit, tree: artifactManifest.source.tree, status: artifactManifest.source.status },
+    { commit: head, tree, status: '' },
+    'durability artifact source drift',
+  );
+  assert.equal(artifactManifest.baseCommit, DURABILITY_BASE, 'durability base drift');
+  assert.equal(gitText(['show', '-s', '--format=%T', DURABILITY_BASE]), artifactManifest.baseTree, 'durability base tree drift');
+  assert.equal(spawnSync('git', ['merge-base', '--is-ancestor', DURABILITY_BASE, head], { cwd: ROOT }).status, 0, 'durability base is not an ancestor');
+
+  const checksumEntries = fs.readFileSync(checksumsPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => {
+    const match = line.match(/^([0-9a-f]{64})  ([^/]+)$/);
+    assert.equal(Boolean(match), true, `invalid durability checksum line: ${line}`);
+    return { digest: match[1], name: match[2] };
+  });
+  exactSet(checksumEntries.map(({ name }) => name), ['repo.bundle', 'outgoing.patch', 'commits.mbox', 'manifest.json'], 'durability checksum inventory drift');
+  assert.equal(checksumEntries.length, 4, 'durability checksum entries must be unique');
+  for (const { digest, name } of checksumEntries) assert.equal(sha256File(path.join(artifact, name)), digest, `durability checksum failed: ${name}`);
+
+  const bundle = path.join(artifact, 'repo.bundle');
+  assert.equal(sha256File(bundle), build.bundleSha256, 'durability bundle receipt digest drift');
+  const bundleVerify = spawnSync('git', ['bundle', 'verify', bundle], { cwd: ROOT, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+  assert.equal(bundleVerify.status, 0, bundleVerify.stderr || 'durability bundle verification failed');
+  const bundleHeads = gitText(['bundle', 'list-heads', bundle]);
+  assert.equal(bundleHeads.split('\n').some((line) => line.startsWith(`${head} `)), true, 'durability bundle does not contain exact head');
+
+  const expectedPatch = gitLargeText(['diff', '--binary', DURABILITY_BASE, head]);
+  assert.equal(fs.readFileSync(path.join(artifact, 'outgoing.patch'), 'utf8').trim(), expectedPatch, 'durability binary patch does not reproduce exact source diff');
+  const historyPatch = gitLargeText(['log', '--format=commit %H%nAuthor: %an <%ae>%nDate: %aI%n', '-p', '--binary', `${DURABILITY_BASE}..${head}`]);
+  assert.equal(artifactManifest.secretScan.scope, `all outgoing commit patches ${DURABILITY_BASE}..${head}`);
+  assert.equal(artifactManifest.secretScan.status, 'PASS');
+  assert.deepEqual(artifactManifest.secretScan.findings, []);
+  assert.equal(artifactManifest.secretScan.historyPatchSha256, sha256(historyPatch), 'durability history secret-scan input drift');
+  const secretPatterns = [
+    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g,
+    /\bAKIA[0-9A-Z]{16}\b/g,
+    /\bgh[pousr]_[A-Za-z0-9]{36,255}\b/g,
+    /\bsk-[A-Za-z0-9_-]{32,255}\b/g,
+    /\bAIza[0-9A-Za-z_-]{35}\b/g,
+    /\b(?:sk|rk)_live_[0-9A-Za-z]{16,255}\b/g,
+  ];
+  for (const pattern of secretPatterns) assert.doesNotMatch(historyPatch, pattern, 'outgoing-history secret scan failed');
+
+  const tarball = `${artifact}.tar.gz`;
+  assert.equal(build.tarball, tarball, 'durability tarball path drift');
+  assert.equal(fs.statSync(tarball).size, build.tarballBytes, 'durability tarball size drift');
+  assert.equal(sha256File(tarball), build.tarballSha256, 'durability tarball receipt digest drift');
+  assert.deepEqual(
+    { checksumCount: verify.checksumCount, bundle: verify.bundle, gitFsck: verify.gitFsck, bundleReconstructionTree: verify.bundleReconstructionTree, binaryPatchReconstructionTree: verify.binaryPatchReconstructionTree, focusedStatus: verify.focusedExecution?.status },
+    { checksumCount: 4, bundle: 'PASS', gitFsck: 'PASS', bundleReconstructionTree: tree, binaryPatchReconstructionTree: tree, focusedStatus: 'PASS' },
+    'durability verification receipt drift',
+  );
 }
 
 export function validateExternalReceipts(manifest) {
@@ -280,16 +437,20 @@ export function validateExternalReceipts(manifest) {
   const head = gitText(['rev-parse', 'HEAD']);
   const tree = gitText(['show', '-s', '--format=%T', head]);
   const receipts = [];
+  const expectedKinds = new Set(['verify-focused', 'durability-build', 'durability-verify']);
   for (const name of fs.readdirSync(evidenceRoot)) {
     if (!name.endsWith('.json')) continue;
     try {
       const body = JSON.parse(fs.readFileSync(path.join(evidenceRoot, name), 'utf8'));
-      if (body?.source?.commit === head && body?.source?.tree === tree && body?.source?.status === '' && body?.overall === 'PASS') receipts.push(body);
+      if (expectedKinds.has(body?.kind) && body?.source?.commit === head && body?.source?.tree === tree && body?.source?.status === '' && body?.overall === 'PASS') receipts.push(body);
     } catch { /* reviewer reports and unrelated evidence are not source receipts */ }
   }
   if (receipts.length === 0) return { exactReceipts: 0, durabilitySecretScan: 'NOT_PRESENT' };
+  exactSet(receipts.map((body) => body.kind), expectedKinds, 'exact-head verification receipt set drift');
+  assert.equal(receipts.length, expectedKinds.size, 'duplicate exact-head verification receipt kind');
   const durabilityBuild = receipts.find((body) => body.kind === 'durability-build');
-  assert.equal(Boolean(durabilityBuild), true, 'exact-head durability-build receipt missing');
+  const durabilityVerify = receipts.find((body) => body.kind === 'durability-verify');
   assert.equal(durabilityBuild.secretScan, 'PASS', 'exact-head durability secret scan did not pass');
-  return { exactReceipts: receipts.length, durabilitySecretScan: 'PASS' };
+  validateDurabilityArtifact(head, tree, durabilityBuild, durabilityVerify);
+  return { exactReceipts: receipts.length, durabilitySecretScan: 'PASS', artifactVerification: 'PASS' };
 }

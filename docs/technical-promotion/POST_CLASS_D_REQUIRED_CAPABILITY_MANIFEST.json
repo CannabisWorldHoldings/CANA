@@ -7,8 +7,9 @@
     "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
     "authorization_effect": "exact-reviewed-court-bytes-only",
     "paths": {
-      "tools/promotion-gate/post-class-d-ledger.court.mjs": "de71d0a77d20da2af9af3d58d5444b0cdd1534465bf7f9e247392f33573b8f77",
-      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "82a673514b3c065382d4ce68595927b26c22150aae6b332c6c440ab71b22464b"
+      "tools/promotion-gate/post-class-d-ledger.court.mjs": "218b8f6176128e5685b844f1c23156dd4caefe112ee0625881680ab6e29a46bd",
+      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "57f68747c6bc71e355c78563d4a026bd414d743836cc4d84e3e4ae922dd8430a",
+      "tools/promotion-gate/github-web-flow-signing-key.asc": "c135dfc1e3add3eb84e6119af7095dec97e0e92730a468d234f925a72bacaf74"
     }
   },
   "assessment_diff_paths": [
@@ -17,6 +18,7 @@
     "docs/technical-promotion/POST_CLASS_D_REQUIRED_CAPABILITY_MANIFEST.json",
     "tools/promotion-gate/post-class-d-ledger.court.mjs",
     "tools/promotion-gate/post-class-d-ledger.court.test.mjs",
+    "tools/promotion-gate/github-web-flow-signing-key.asc",
     "docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json"
   ],
   "github_custody": {
