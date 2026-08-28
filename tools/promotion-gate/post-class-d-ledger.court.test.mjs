@@ -15,6 +15,8 @@ import {
   readLedger,
   readManifest,
   validateCourtCustody,
+  validateExternalReceipts,
+  validateGithubCustody,
   validateLedger,
   validateManifest,
 } from './post-class-d-ledger.court.mjs';
@@ -40,6 +42,15 @@ test('normal evidence receipts do not invalidate tracked-source custody', () => 
   } finally {
     fs.rmSync(artifact, { force: true });
   }
+});
+
+test('GitHub custody and exact-head external verification receipts are validated when present', () => {
+  const manifest = readManifest();
+  const custody = validateGithubCustody(manifest);
+  assert.equal(['PENDING_GITHUB_VERIFIED_COMMIT', 'GITHUB_CUSTODY_RECEIPT_PRESENT'].includes(custody.state), true);
+  const receipts = validateExternalReceipts(manifest);
+  assert.equal(Number.isInteger(receipts.exactReceipts) && receipts.exactReceipts >= 0, true);
+  assert.equal(['NOT_PRESENT', 'PASS'].includes(receipts.durabilitySecretScan), true);
 });
 
 test('every required mechanism has one manifest-bound disposition, proof set, and inclusion state', () => {
@@ -95,4 +106,8 @@ test('laundering, omissions, evidence drift, credentials, inclusion drift, and c
   const courtDrift = structuredClone(manifest);
   courtDrift.court_admission.paths['tools/promotion-gate/post-class-d-ledger.court.test.mjs'] = '0'.repeat(64);
   assert.throws(() => validateCourtCustody(courtDrift));
+
+  const inclusionEvidence = structuredClone(manifest);
+  inclusionEvidence.independent_inclusion_evidence.pop();
+  assert.throws(() => validateManifest(inclusionEvidence), /inclusion evidence drift|Ledger-Manifest-SHA256/);
 });

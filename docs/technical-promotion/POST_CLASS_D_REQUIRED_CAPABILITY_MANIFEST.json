@@ -7,8 +7,8 @@
     "authorization_source_sha256": "79edac71cdb2b24dc627441e72254417c6f4783573cead4262ab695e96b112e9",
     "authorization_effect": "exact-reviewed-court-bytes-only",
     "paths": {
-      "tools/promotion-gate/post-class-d-ledger.court.mjs": "6383493d270ae14ab5ebd0c322469cf5f41a3fdd9e8e1cc1be0aa0784a737a20",
-      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "a4fe60fce4653bc01b74ca6e6edbf2469d6c3e9e61a011e2419824882d5827a1"
+      "tools/promotion-gate/post-class-d-ledger.court.mjs": "08966bf33c11ae32fa536fd3e38e1af6c90ff65f791a6224198717ea81f5806b",
+      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "82a673514b3c065382d4ce68595927b26c22150aae6b332c6c440ab71b22464b"
     }
   },
   "assessment_diff_paths": [
@@ -16,8 +16,19 @@
     "docs/technical-promotion/POST_CLASS_D_REMAINING_CAPABILITY_LEDGER.jsonl",
     "docs/technical-promotion/POST_CLASS_D_REQUIRED_CAPABILITY_MANIFEST.json",
     "tools/promotion-gate/post-class-d-ledger.court.mjs",
-    "tools/promotion-gate/post-class-d-ledger.court.test.mjs"
+    "tools/promotion-gate/post-class-d-ledger.court.test.mjs",
+    "docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json"
   ],
+  "github_custody": {
+    "state": "PENDING_GITHUB_VERIFIED_COMMIT",
+    "receipt_path": "docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json",
+    "verification_requirement": "GitHub commit verification API must report verified=true and reason=valid for the receipt-adding commit."
+  },
+  "verification_receipt_policy": {
+    "evidence_root": ".omo/evidence",
+    "exact_source_required": true,
+    "durability_secret_scan_required_when_receipts_present": true
+  },
   "proofs": {
     "git.owner_console": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"apps/web/src/app/admin/console/page.tsx"},
     "git.authority": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"tools/authority/authority.mjs"},
@@ -29,6 +40,7 @@
     "git.component_disposition": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"docs/convergence/mission-1/COMPONENT_DISPOSITION.md"},
     "git.source_ledger": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"docs/convergence/mission-1/SOURCE_LEDGER.md"},
     "git.local_verification": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json"},
+    "git.runtime_inclusion_manifest": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"docs/convergence/mission-1/RUNTIME_INCLUSION_MANIFEST.json"},
     "git.alive_loop_adapter": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"tools/alive-loop/adapter.mjs"},
     "git.authority_receipts": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"tools/authority/receipts.mjs"},
     "git.evidence_envelope": {"type":"git_blob","commit":"e0466894121a4c92f0512cfa47e649815c7a3948","path":"packages/governor-kernel/standalone/runtime/evidence.py"},
@@ -111,5 +123,14 @@
     {"proof_id":"git.os_recovery_inventory","marker":"deterministic pipeline boundaries","capability_id":"orderweeddcrsi_deterministic_pipeline"},
     {"proof_id":"git.os_recovery_inventory","marker":"crash/restart fixtures","capability_id":"orderweeddcrsi_crash_restart_fixtures"},
     {"proof_id":"git.os_recovery_inventory","marker":"lesson persistence only behind the canonical Winner Memory gate","capability_id":"orderweeddcrsi_gated_lesson_persistence"}
+  ],
+  "independent_inclusion_evidence": [
+    {"capability_id":"orderweeddcrsi_mission_lease_idempotency","proof_id":"git.os_recovery_inventory"},
+    {"capability_id":"orderweeddcrsi_receipt_chain","proof_id":"git.os_recovery_inventory"},
+    {"capability_id":"orderweeddcrsi_evidence_envelope","proof_id":"git.os_recovery_inventory"},
+    {"capability_id":"orderweeddcrsi_provider_validation_circuit_breaker","proof_id":"git.os_recovery_inventory"},
+    {"capability_id":"orderweeddcrsi_deterministic_pipeline","proof_id":"git.os_recovery_inventory"},
+    {"capability_id":"orderweeddcrsi_crash_restart_fixtures","proof_id":"git.os_recovery_inventory"},
+    {"capability_id":"orderweeddcrsi_gated_lesson_persistence","proof_id":"git.os_recovery_inventory"}
   ]
 }

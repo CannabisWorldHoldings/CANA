@@ -9,6 +9,7 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const LEDGER = path.join(ROOT, 'docs/technical-promotion/POST_CLASS_D_REMAINING_CAPABILITY_LEDGER.jsonl');
 export const MANIFEST = path.join(ROOT, 'docs/technical-promotion/POST_CLASS_D_REQUIRED_CAPABILITY_MANIFEST.json');
 export const SUPERSESSION = path.join(ROOT, 'docs/technical-promotion/CANONICAL_CAPABILITY_SUPERSESSION_LEDGER.md');
+export const GITHUB_CUSTODY = path.join(ROOT, 'docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json');
 const ALLOWED_DISPOSITIONS = new Set(['CANONICAL', 'SUPERSEDED', 'REJECTED_WITH_REASON', 'DEFERRED_WITH_REASON', 'BOUNDED_UNKNOWN']);
 const BASE_KEYS = ['schema', 'capability_id', 'high_value', 'domain', 'source', 'current_canonical', 'disposition', 'reason', 'evidence', 'next_gate', 'production_effects', 'assessed_at', 'assessed_against_sha', 'assessed_against_tree'].sort();
 const INCLUSION_KEYS = ['artifact_inclusion', 'canonical_source', 'hosted_execution', 'product_import', 'production_authority'].sort();
@@ -72,7 +73,7 @@ export function validateCourtCustody(manifest) {
   const custodyCommit = gitText(['log', '-1', '--format=%H', '--', rel(MANIFEST)]);
   assert.match(custodyCommit, /^[0-9a-f]{40}$/, 'manifest custody commit missing');
   const recorded = trailers(custodyCommit);
-  assert.equal(recorded.get('Ledger-Manifest-SHA256'), sha256(fs.readFileSync(MANIFEST)));
+  assert.equal(recorded.get('Ledger-Manifest-SHA256'), sha256(git(['show', `${custodyCommit}:${rel(MANIFEST)}`], { encoding: null })));
   assert.equal(recorded.get('Ledger-Authorization-SHA256'), manifest.owner_authorization_source_sha256);
   for (const [courtPath, trailer] of [
     [expectedPaths[0], 'Ledger-Verifier-SHA256'],
@@ -133,6 +134,12 @@ export function validateManifest(manifest) {
   assert.equal(spawnSync('git', ['merge-base', '--is-ancestor', manifest.assessed_against_sha, 'HEAD'], { cwd: ROOT }).status, 0, 'candidate does not descend from assessment');
   assert.match(manifest.owner_authorization_source_sha256, /^[0-9a-f]{64}$/);
   assert.equal(new Set(manifest.assessment_diff_paths).size, manifest.assessment_diff_paths.length, 'duplicate diff paths');
+  assert.deepEqual(Object.keys(manifest.github_custody).sort(), ['receipt_path', 'state', 'verification_requirement']);
+  assert.equal(manifest.github_custody.state, 'PENDING_GITHUB_VERIFIED_COMMIT');
+  assert.equal(manifest.github_custody.receipt_path, rel(GITHUB_CUSTODY));
+  assert.equal(manifest.github_custody.verification_requirement.includes('verified=true'), true);
+  assert.deepEqual(Object.keys(manifest.verification_receipt_policy).sort(), ['durability_secret_scan_required_when_receipts_present', 'evidence_root', 'exact_source_required']);
+  assert.deepEqual(manifest.verification_receipt_policy, { evidence_root: '.omo/evidence', exact_source_required: true, durability_secret_scan_required_when_receipts_present: true });
   validateCourtCustody(manifest);
   for (const [proofId, proof] of Object.entries(manifest.proofs)) validateProof(proofId, proof);
 
@@ -171,6 +178,27 @@ export function validateManifest(manifest) {
     reconciled.add(marker.capability_id);
   }
   exactSet(reconciled, ids.filter((id) => id.startsWith('orderweeddcrsi_')), 'independent ORDERWEEDDCRSI inventory reconciliation drift');
+
+  const inclusionIds = new Set();
+  for (const item of manifest.independent_inclusion_evidence) {
+    assert.deepEqual(Object.keys(item).sort(), ['capability_id', 'proof_id']);
+    const required = manifest.required_capabilities.find((entry) => entry.capability_id === item.capability_id);
+    assert.deepEqual(required?.expected_inclusion, SOURCE_ONLY_INCLUSION, item.capability_id);
+    const proof = manifest.proofs[item.proof_id];
+    assert.equal(proof?.type, 'git_blob', item.proof_id);
+    const source = gitText(['show', `${proof.commit}:${proof.path}`]);
+    for (const marker of ['current product runtime inclusion: false', 'hosted OS execution: unproven', 'production provider routing: unproven', 'Any future production claim requires an intentional, separately authorized builder']) {
+      assert.equal(source.includes(marker), true, `${item.capability_id}:${marker}`);
+    }
+    inclusionIds.add(item.capability_id);
+  }
+  exactSet(inclusionIds, ids.filter((id) => id.startsWith('orderweeddcrsi_')), 'independent inclusion evidence drift');
+
+  const runtimeProof = manifest.proofs['git.runtime_inclusion_manifest'];
+  const runtimeManifest = JSON.parse(gitText(['show', `${runtimeProof.commit}:${runtimeProof.path}`]));
+  assert.equal(runtimeManifest.product_artifact_observation.convergence_runtime_included, false);
+  const runtimeSeams = runtimeManifest.components.find((entry) => entry.id === 'intelligence-os-runtime-seams');
+  assert.equal(runtimeSeams.included_in_orderweeddc_artifact, false);
 }
 
 export function validateLedger(entries, manifest) {
@@ -214,5 +242,46 @@ export function changedPathsSinceAssessment(manifest) {
 }
 
 export function assertExactAssessmentDrift(manifest) {
-  exactSet(changedPathsSinceAssessment(manifest), manifest.assessment_diff_paths, 'assessment has unrelated or missing source drift');
+  const expected = manifest.assessment_diff_paths.filter((candidate) => candidate !== rel(GITHUB_CUSTODY) || fs.existsSync(GITHUB_CUSTODY));
+  exactSet(changedPathsSinceAssessment(manifest), expected, 'assessment has unrelated or missing source drift');
+}
+
+export function validateGithubCustody(manifest) {
+  if (!fs.existsSync(GITHUB_CUSTODY)) return { state: manifest.github_custody.state, externallyVerified: false };
+  const receipt = JSON.parse(fs.readFileSync(GITHUB_CUSTODY, 'utf8'));
+  assert.deepEqual(Object.keys(receipt).sort(), ['authorization_source_sha256', 'court_sha256', 'kind', 'manifest_sha256', 'parent_commit', 'parent_tree', 'production_effects', 'schema', 'signature_verification_requirement', 'verifier_sha256']);
+  const head = gitText(['rev-parse', 'HEAD']);
+  const parent = gitText(['rev-parse', `${head}^`]);
+  assert.equal(receipt.schema, 'orderweeddc.post-class-d-github-custody.v1');
+  assert.equal(receipt.kind, 'GITHUB_VERIFIED_RECEIPT_COMMIT');
+  assert.equal(receipt.parent_commit, parent);
+  assert.equal(receipt.parent_tree, gitText(['show', '-s', '--format=%T', parent]));
+  assert.equal(receipt.manifest_sha256, sha256(git(['show', `${parent}:${rel(MANIFEST)}`], { encoding: null })));
+  assert.equal(receipt.verifier_sha256, sha256(git(['show', `${parent}:tools/promotion-gate/post-class-d-ledger.court.mjs`], { encoding: null })));
+  assert.equal(receipt.court_sha256, sha256(git(['show', `${parent}:tools/promotion-gate/post-class-d-ledger.court.test.mjs`], { encoding: null })));
+  assert.equal(receipt.authorization_source_sha256, manifest.owner_authorization_source_sha256);
+  assert.equal(receipt.signature_verification_requirement, manifest.github_custody.verification_requirement);
+  assert.equal(receipt.production_effects, 0);
+  assert.deepEqual(gitText(['diff-tree', '--no-commit-id', '--name-only', '-r', head]).split('\n').filter(Boolean), [rel(GITHUB_CUSTODY)]);
+  return { state: 'GITHUB_CUSTODY_RECEIPT_PRESENT', externallyVerified: false, commit: head };
+}
+
+export function validateExternalReceipts(manifest) {
+  const evidenceRoot = path.join(ROOT, manifest.verification_receipt_policy.evidence_root);
+  if (!fs.existsSync(evidenceRoot)) return { exactReceipts: 0, durabilitySecretScan: 'NOT_PRESENT' };
+  const head = gitText(['rev-parse', 'HEAD']);
+  const tree = gitText(['show', '-s', '--format=%T', head]);
+  const receipts = [];
+  for (const name of fs.readdirSync(evidenceRoot)) {
+    if (!name.endsWith('.json')) continue;
+    try {
+      const body = JSON.parse(fs.readFileSync(path.join(evidenceRoot, name), 'utf8'));
+      if (body?.source?.commit === head && body?.source?.tree === tree && body?.source?.status === '' && body?.overall === 'PASS') receipts.push(body);
+    } catch { /* reviewer reports and unrelated evidence are not source receipts */ }
+  }
+  if (receipts.length === 0) return { exactReceipts: 0, durabilitySecretScan: 'NOT_PRESENT' };
+  const durabilityBuild = receipts.find((body) => body.kind === 'durability-build');
+  assert.equal(Boolean(durabilityBuild), true, 'exact-head durability-build receipt missing');
+  assert.equal(durabilityBuild.secretScan, 'PASS', 'exact-head durability secret scan did not pass');
+  return { exactReceipts: receipts.length, durabilitySecretScan: 'PASS' };
 }
