@@ -191,6 +191,8 @@ export async function runRealityCellBrowserCourt({
           id: violation.id,
           impact: violation.impact,
           nodes: violation.nodes.length,
+          targets: violation.nodes.map((node) => node.target),
+          failureSummaries: violation.nodes.map((node) => node.failureSummary),
         }));
       });
       const horizontalOverflow = await page.evaluate(

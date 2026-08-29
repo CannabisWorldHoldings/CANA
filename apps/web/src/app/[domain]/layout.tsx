@@ -263,7 +263,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
                 {PUBLIC_PRODUCT_DESCRIPTION} Every public record carries an
                 explicit source, verification state, and freshness window.
               </p>
-              <p className="mt-4 inline-flex items-center rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-800">
+              <p className="mt-4 inline-flex items-center rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-200">
                 21+ Only
               </p>
             </div>
