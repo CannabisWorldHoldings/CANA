@@ -21,7 +21,7 @@ export default async function AdminConsolePage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-neutral-100 font-sans p-6 max-w-6xl mx-auto">
+    <main className="min-h-screen bg-[#0a0a0c] text-neutral-100 font-sans p-6 max-w-6xl mx-auto">
       <header className="border-b border-neutral-800 pb-4 mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-mono font-semibold tracking-wider text-emerald-400">
@@ -58,19 +58,19 @@ export default async function AdminConsolePage() {
               data-cana-tenant={adapters.tenant}
             >
               <div className="p-3 bg-neutral-950 border border-neutral-800 rounded">
-                <span className="block text-neutral-500 text-xs">VERIFIED SUPPLY</span>
+                <span className="block text-neutral-400 text-xs">VERIFIED SUPPLY</span>
                 <strong className="text-emerald-300 text-lg">{verifiedSupply.length}</strong>
               </div>
               <div className="p-3 bg-neutral-950 border border-neutral-800 rounded">
-                <span className="block text-neutral-500 text-xs">OBSERVATIONS</span>
+                <span className="block text-neutral-400 text-xs">OBSERVATIONS</span>
                 <strong className="text-emerald-300 text-lg">{observations.length}</strong>
               </div>
               <div className="p-3 bg-neutral-950 border border-neutral-800 rounded">
-                <span className="block text-neutral-500 text-xs">INTENT EVENTS</span>
+                <span className="block text-neutral-400 text-xs">INTENT EVENTS</span>
                 <strong className="text-emerald-300 text-lg">{intentEvents.length}</strong>
               </div>
               <div className="p-3 bg-neutral-950 border border-neutral-800 rounded">
-                <span className="block text-neutral-500 text-xs">WRITE / EXECUTE</span>
+                <span className="block text-neutral-400 text-xs">WRITE / EXECUTE</span>
                 <strong className="text-amber-300 text-sm">SEALED</strong>
               </div>
             </div>
@@ -140,6 +140,6 @@ export default async function AdminConsolePage() {
           </div>
         </section>
       </div>
-    </div>
+    </main>
   );
 }
