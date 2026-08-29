@@ -5,11 +5,16 @@ import { prisma } from '../prisma';
 import { createCanonicalCanaAdapter } from './canonical-adapter.mjs';
 import { createCanonicalWeldHost } from './canonical-host.mjs';
 import { createCanonicalEvidenceAdapter } from './receipts.mjs';
+import { CANONICAL_TENANT_DOMAIN } from '../tenant-host.mjs';
 
-export function createOwnerCanaIntelligenceAdapters(tenant: string) {
-  if (!tenant.trim()) throw new Error('CANA_HOST_TENANT_REQUIRED');
-  const canonicalHost = createCanonicalWeldHost({ prisma, assertAdmin, tenant });
+export function createOwnerCanaIntelligenceAdapters() {
+  const canonicalHost = createCanonicalWeldHost({
+    prisma,
+    assertAdmin,
+    tenant: CANONICAL_TENANT_DOMAIN,
+  });
   return Object.freeze({
+    tenant: CANONICAL_TENANT_DOMAIN,
     intelligence: createCanonicalCanaAdapter(canonicalHost),
     evidence: createCanonicalEvidenceAdapter(canonicalHost),
     resolveOwnerPrincipalReceipt: () => canonicalHost.resolveVerifiedPrincipalReceipt(),

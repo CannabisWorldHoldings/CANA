@@ -70,4 +70,11 @@ test('Worker Prisma accepts only the request-scoped PostgreSQL Hyperdrive bindin
       /C3_HYPERDRIVE_(?:BINDING_REQUIRED|CONNECTION_STRING_REQUIRED|CONNECTION_STRING_INVALID|POSTGRESQL_REQUIRED)/,
     );
   }
+
+  assert.throws(
+    () => assertCloudflareHyperdriveConnection({
+      HYPERDRIVE: { connectionString: 'postgresql://hyperdrive:secret@example.invalid/cana' },
+    }),
+    /CLOUDFLARE_DATABASE_URL_STRICT_TLS_REQUIRED/,
+  );
 });

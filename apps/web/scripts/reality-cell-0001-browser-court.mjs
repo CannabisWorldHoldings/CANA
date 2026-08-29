@@ -1,11 +1,15 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
-import http from 'node:http';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
+import { PrismaClient } from '@prisma/client';
 import { chromium } from 'playwright';
 
+import { digest } from '../src/lib/cana-intelligence/core.mjs';
+import { makeReceipt } from '../src/lib/cana-intelligence/receipts.mjs';
+import { buildManifest } from '../src/lib/experience/manifest.mjs';
+import { CANONICAL_TENANT_DOMAIN } from '../src/lib/tenant-host.mjs';
 import {
   createRealityCellFixture,
   runRealityCellFixtureDryRun,
@@ -23,108 +27,128 @@ function sha256(value) {
   return `sha256:${createHash('sha256').update(value).digest('hex')}`;
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
+function assertedApplicationOrigin(baseUrl) {
+  const origin = new URL(baseUrl);
+  if (origin.protocol !== 'http:' || origin.hostname !== CANONICAL_TENANT_DOMAIN) {
+    throw new Error('REALITY_CELL_BROWSER_LOCAL_APP_REQUIRED');
+  }
+  return origin;
 }
 
-function previewHtml(fixture) {
-  const candidate = escapeHtml(fixture.candidate.candidateDigest);
-  return `<!doctype html>
-<html lang="en" data-candidate-digest="${candidate}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="noindex,nofollow">
-  <title>Reality Cell 0001 private fixture preview</title>
-  <style>
-    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #f4f4ef; color: #172019; }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: #f4f4ef; }
-    header { background: #153d26; color: #fff; padding: 20px 32px; }
-    header p { margin: 6px 0 0; color: #d7eadb; }
-    main { width: min(1080px, calc(100% - 40px)); margin: 32px auto 56px; }
-    .notice { padding: 14px 16px; border: 2px solid #705100; border-radius: 14px; background: #fff4c2; color: #392900; font-weight: 700; }
-    .hero { margin-top: 22px; padding: 32px; border-radius: 24px; background: #fff; box-shadow: 0 12px 36px rgb(20 48 30 / 10%); }
-    h1 { max-width: 720px; margin: 0; font-size: clamp(2rem, 5vw, 4.2rem); line-height: 1; letter-spacing: -.04em; }
-    .lede { max-width: 690px; margin: 18px 0 0; font-size: 1.12rem; line-height: 1.6; color: #34433a; }
-    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0; margin: 24px 0 0; list-style: none; }
-    .fact { border: 1px solid #c8d4ca; border-radius: 14px; padding: 15px; background: #f7faf7; }
-    .fact strong { display: block; margin-bottom: 5px; }
-    h2 { margin: 34px 0 14px; font-size: 1.65rem; }
-    .products { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    article { min-height: 184px; padding: 20px; border: 1px solid #c8d4ca; border-radius: 18px; background: #fff; }
-    article h3 { margin: 8px 0; }
-    .verified { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 999px; background: #dff3e5; color: #0d4923; font-size: .8rem; font-weight: 800; }
-    .unknown { color: #5a625d; font-size: .9rem; }
-    a { color: #0c5e2c; font-weight: 750; text-underline-offset: 3px; }
-    footer { width: min(1080px, calc(100% - 40px)); margin: 0 auto 32px; color: #465149; font-size: .9rem; }
-    footer code { overflow-wrap: anywhere; word-break: break-word; }
-    @media (max-width: 760px) { header { padding: 18px 20px; } .hero { padding: 24px; } .facts, .products { grid-template-columns: 1fr; } }
-  </style>
-</head>
-<body>
-  <header>
-    <strong>ORDERWEEDDC Experience Fabric</strong>
-    <p>Private, local, fixture-only preview</p>
-  </header>
-  <main>
-    <div class="notice" role="status">SIMULATED / FIXTURE. No real merchant, inventory, customer traffic, price, availability, or authorization.</div>
-    <section class="hero" aria-labelledby="preview-title">
-      <h1 id="preview-title">Find verified merchant and product information faster.</h1>
-      <p class="lede">This bounded candidate tests information hierarchy only. Verified facts remain distinct from unknown availability and fixture product examples.</p>
-      <ul class="facts" aria-label="Fixture merchant facts">
-        <li class="fact"><strong>License</strong><span>Fixture identifier, not a real license</span></li>
-        <li class="fact"><strong>Service mode</strong><span>UNKNOWN until separately verified</span></li>
-        <li class="fact"><strong>Availability</strong><span>UNKNOWN; no inventory claim</span></li>
-      </ul>
-      <h2>Fixture product discovery</h2>
-      <div class="products">
-        <article><span class="verified">Fixture record</span><h3>Category example A</h3><p class="unknown">Price and availability: UNKNOWN</p><a href="#evidence-a">Inspect fixture evidence</a></article>
-        <article><span class="verified">Fixture record</span><h3>Category example B</h3><p class="unknown">Price and availability: UNKNOWN</p><a href="#evidence-b">Inspect fixture evidence</a></article>
-        <article><span class="verified">Fixture record</span><h3>Category example C</h3><p class="unknown">Price and availability: UNKNOWN</p><a href="#evidence-c">Inspect fixture evidence</a></article>
-      </div>
-    </section>
-  </main>
-  <footer>Candidate digest: <code>${candidate}</code></footer>
-</body>
-</html>`;
+async function assertDisposableDatabase(prisma) {
+  const expectedSystemIdentifier = process.env.CANA_DISPOSABLE_DATABASE_SYSTEM_IDENTIFIER ?? '';
+  let locator;
+  try {
+    locator = new URL(process.env.DATABASE_URL ?? '');
+  } catch {
+    throw new Error('REALITY_CELL_DISPOSABLE_DATABASE_REQUIRED');
+  }
+  if (
+    process.env.NODE_ENV === 'production'
+    || process.env.CANA_REALITY_CELL_DISPOSABLE_DB !== '1'
+    || !['postgres:', 'postgresql:'].includes(locator.protocol)
+    || !['127.0.0.1', 'localhost', '::1'].includes(locator.hostname)
+    || !/(?:cana|reality|fixture|verify|court)/i.test(locator.pathname)
+    || !/^\d{10,}$/.test(expectedSystemIdentifier)
+  ) throw new Error('REALITY_CELL_DISPOSABLE_DATABASE_REQUIRED');
+  const [identity] = await prisma.$queryRawUnsafe(
+    'SELECT current_database() AS database, system_identifier::text AS system_identifier FROM pg_control_system()',
+  );
+  if (
+    identity?.database !== locator.pathname.slice(1)
+    || identity?.system_identifier !== expectedSystemIdentifier
+  ) throw new Error('REALITY_CELL_DISPOSABLE_DATABASE_IDENTITY_MISMATCH');
 }
 
-async function listen(html) {
-  const server = http.createServer((request, response) => {
-    response.writeHead(200, {
-      'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'no-store',
-      'x-robots-tag': 'noindex, nofollow',
+async function seedFixtureManifest(prisma, fixture) {
+  const manifest = buildManifest({ tenant: CANONICAL_TENANT_DOMAIN, journey: 'DISPENSARIES' });
+  manifest.presentation.copy = {
+    eyebrow: 'SIMULATED / FIXTURE',
+    title: 'Find verified merchant and product information faster.',
+    description: 'Fixture-only information hierarchy. No real merchant, inventory, price, availability, customer traffic, or authorization.',
+    action: '/dispensaries',
+    placeholder: 'Fixture city or neighborhood',
+  };
+  const promotionReceipt = makeReceipt({
+    kind: 'PROMOTION',
+    subjectDigest: fixture.candidate.candidateDigest,
+    realm: 'FIXTURE',
+    issuer: 'fixture-runtime-promotion-court',
+    payload: {
+      candidateDigest: fixture.candidate.candidateDigest,
+      allowedEffectSet: ['UPDATE_LAYOUT'],
+      fixtureOnly: true,
+    },
+  });
+  await prisma.canaEvidenceReceipt.create({
+    data: {
+      tenant: CANONICAL_TENANT_DOMAIN,
+      receiptDigest: promotionReceipt.receiptDigest,
+      kind: promotionReceipt.kind,
+      subjectDigest: promotionReceipt.subjectDigest,
+      realm: promotionReceipt.realm,
+      issuer: promotionReceipt.issuer,
+      payloadJson: JSON.stringify(promotionReceipt.payload),
+      issuedAt: new Date(promotionReceipt.issuedAt),
+      expiresAt: promotionReceipt.expiresAt ? new Date(promotionReceipt.expiresAt) : null,
+      parentDigestsJson: JSON.stringify(promotionReceipt.parentDigests),
+    },
+  });
+  manifest.promotion = {
+    receiptDigest: promotionReceipt.receiptDigest,
+    candidateDigest: fixture.candidate.candidateDigest,
+    evidenceRealm: 'FIXTURE',
+  };
+  const recordType = 'EXPERIENCE_MANIFEST';
+  const recordId = 'journey:DISPENSARIES';
+  const recordDigest = digest({
+    tenant: CANONICAL_TENANT_DOMAIN,
+    recordType,
+    recordId,
+    body: manifest,
+  }, 'record-experience_manifest');
+  try {
+    await prisma.canaIntelligenceRecord.create({
+      data: {
+        tenant: CANONICAL_TENANT_DOMAIN,
+        recordDigest,
+        recordType,
+        recordId,
+        status: 'PROMOTED',
+        bodyJson: JSON.stringify(manifest),
+      },
     });
-    response.end(html);
-  });
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
-  });
-  return server;
+  } catch (error) {
+    if (error?.code !== 'P2002') throw error;
+    const replay = await prisma.canaIntelligenceRecord.findUnique({ where: { recordDigest } });
+    if (replay?.bodyJson !== JSON.stringify(manifest)) {
+      throw new Error('REALITY_CELL_FIXTURE_MANIFEST_DIGEST_CONFLICT');
+    }
+  }
 }
 
-export async function runRealityCellBrowserCourt({ commit, tree, outputDirectory, chromeExecutable = CHROME }) {
+export async function runRealityCellBrowserCourt({
+  baseUrl,
+  commit,
+  tree,
+  outputDirectory,
+  chromeExecutable = CHROME,
+}) {
   if (!outputDirectory) throw new Error('outputDirectory required');
   if (!fs.existsSync(chromeExecutable)) throw new Error(`Chrome executable not found: ${chromeExecutable}`);
+  const applicationOrigin = assertedApplicationOrigin(baseUrl);
   fs.mkdirSync(outputDirectory, { recursive: true, mode: 0o700 });
   const fixture = createRealityCellFixture({ commit, tree });
-  const html = previewHtml(fixture);
-  const server = await listen(html);
-  const address = server.address();
-  const route = fixture.candidate.target;
-  const url = `http://127.0.0.1:${address.port}${route}`;
+  const prisma = new PrismaClient();
   let browser;
   try {
+    await assertDisposableDatabase(prisma);
+    await seedFixtureManifest(prisma, fixture);
     browser = await chromium.launch({ headless: true, executablePath: chromeExecutable, args: ['--no-sandbox'] });
+    const route = fixture.candidate.target;
+    const url = new URL(route, applicationOrigin);
     const browserEvidenceByViewport = [];
+    const externalRequestUrls = new Set();
     for (const viewport of VIEWPORTS) {
       const consoleErrors = [];
       const context = await browser.newContext({
@@ -136,8 +160,23 @@ export async function runRealityCellBrowserCourt({ commit, tree, outputDirectory
         if (message.type() === 'error') consoleErrors.push(message.text());
       });
       page.on('pageerror', (error) => consoleErrors.push(error.message));
-      const response = await page.goto(url, { waitUntil: 'networkidle' });
-      if (!response?.ok()) throw new Error(`${viewport.label} private preview returned ${response?.status() ?? 'no response'}`);
+      page.on('request', (request) => {
+        const requestUrl = new URL(request.url());
+        if (!['data:', 'blob:'].includes(requestUrl.protocol) && requestUrl.origin !== url.origin) {
+          externalRequestUrls.add(requestUrl.href);
+        }
+      });
+      const response = await page.goto(url.href, { waitUntil: 'networkidle' });
+      if (!response?.ok()) throw new Error(`${viewport.label} CANA app returned ${response?.status() ?? 'no response'}`);
+      const renderedCandidateDigest = await page
+        .locator('[data-experience-candidate-digest]')
+        .first()
+        .getAttribute('data-experience-candidate-digest');
+      if (renderedCandidateDigest !== fixture.candidate.candidateDigest) {
+        throw new Error('REALITY_CELL_RENDERED_CANDIDATE_DIGEST_MISMATCH');
+      }
+      const fixtureNotice = await page.getByText('SIMULATED / FIXTURE', { exact: true }).count();
+      if (fixtureNotice !== 1) throw new Error('REALITY_CELL_FIXTURE_NOTICE_MISSING');
       const screenshotName = viewport.label === 'desktop' ? 'private-preview.png' : `private-preview-${viewport.label}.png`;
       const screenshotPath = path.join(outputDirectory, screenshotName);
       await page.screenshot({ path: screenshotPath, fullPage: true });
@@ -171,6 +210,8 @@ export async function runRealityCellBrowserCourt({ commit, tree, outputDirectory
         consoleResult: { status: consoleErrors.length === 0 ? 'PASS' : 'FAIL', errors: consoleErrors.length, messages: consoleErrors },
         accessibilityResult: { status: accessibility.length === 0 ? 'PASS' : 'FAIL', violations: accessibility },
         layoutResult: { status: horizontalOverflow ? 'FAIL' : 'PASS', horizontalOverflow },
+        independentObserver: 'playwright-browser-court',
+        evidenceRealm: 'FIXTURE',
       });
       await context.close();
     }
@@ -184,8 +225,9 @@ export async function runRealityCellBrowserCourt({ commit, tree, outputDirectory
         && evidence.accessibilityResult.status === 'PASS'
         && evidence.layoutResult.status === 'PASS');
     const result = {
-      schemaVersion: 'cana.reality-cell-0001-browser-court/1.1.0',
+      schemaVersion: 'cana.reality-cell-0001-browser-court/1.2.0',
       result: allViewportsPass
+        && externalRequestUrls.size === 0
         && dryRun.result === 'VERIFIED'
         ? 'PASS'
         : 'FAIL',
@@ -201,7 +243,9 @@ export async function runRealityCellBrowserCourt({ commit, tree, outputDirectory
         'browser-evidence-all-viewports.json',
         'dry-run.json',
       ],
-      externalRequests: 0,
+      externalRequests: externalRequestUrls.size,
+      externalRequestUrls: [...externalRequestUrls],
+      applicationRoute: route,
       productionEffects: 0,
       realCustomerExposure: 0,
       realMerchantExposure: 0,
@@ -211,7 +255,7 @@ export async function runRealityCellBrowserCourt({ commit, tree, outputDirectory
     return result;
   } finally {
     await browser?.close();
-    await new Promise((resolve) => server.close(resolve));
+    await prisma.$disconnect();
   }
 }
 
@@ -222,6 +266,7 @@ function argument(name) {
 
 async function main() {
   const result = await runRealityCellBrowserCourt({
+    baseUrl: argument('--base-url'),
     commit: argument('--commit'),
     tree: argument('--tree'),
     outputDirectory: argument('--out'),

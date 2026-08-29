@@ -49,7 +49,7 @@ function fixtureStore() {
 
 function defaultBrowserEvidence({ commit, tree, candidateDigest }) {
   return {
-    route: '/fixture/private/reality-cell-0001',
+    route: '/dispensaries',
     candidateDigest,
     commit,
     tree,
@@ -71,7 +71,7 @@ export function createRealityCellFixture({ commit, tree, browserEvidence = null 
   const experimentId = 'reality_cell_0001_fixture_only';
   const merchantId = 'fixture_licensed_merchant_not_real';
   const tenantId = 'fixture_orderweeddc_not_real';
-  const route = '/fixture/private/reality-cell-0001';
+  const route = '/dispensaries';
   const rollbackContract = {
     digest: digest({ route, restore: 'fixture-control-v1' }, 'rollback-contract'),
     restoreExperienceVersion: 'fixture-control-v1',

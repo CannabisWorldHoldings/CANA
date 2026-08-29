@@ -11,6 +11,12 @@ import {
 } from './receipts.mjs';
 
 const PRINCIPAL_ACTIONS = Object.freeze(Object.values(ACTIONS));
+const CANONICAL_ONLY_RECEIPT_KINDS = new Set([
+  'PRINCIPAL',
+  'MERCHANT_AUTHORIZATION',
+  'PROMOTION',
+  'EXPERIENCE_EXECUTION',
+]);
 const RECORD_TYPES = Object.freeze({
   LESSON: 'LESSON',
   PREDICTION: 'PREDICTION',
@@ -96,7 +102,7 @@ export function createCanonicalWeldHost({
   const receiptStore = requireDelegate(prisma, 'canaEvidenceReceipt');
   const recordStore = requireDelegate(prisma, 'canaIntelligenceRecord');
 
-  async function persistReceipt(receipt) {
+  async function persistReceiptCanonical(receipt) {
     validateReceiptShape(receipt);
     const data = receiptData(tenant, receipt);
     try {
@@ -112,6 +118,16 @@ export function createCanonicalWeldHost({
     return receipt.receiptDigest;
   }
 
+  async function persistReceipt(receipt) {
+    await resolveVerifiedPrincipal();
+    assert(
+      !CANONICAL_ONLY_RECEIPT_KINDS.has(receipt?.kind),
+      `CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED: ${receipt?.kind ?? 'authority'} receipts must be minted by their canonical authority owner`,
+      'CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED',
+    );
+    return persistReceiptCanonical(receipt);
+  }
+
   async function loadReceipt(receiptDigest) {
     assert(receiptDigest, 'receipt digest required', 'RECEIPT_DIGEST_REQUIRED');
     return receiptFromRow(await receiptStore.findUnique({
@@ -120,6 +136,7 @@ export function createCanonicalWeldHost({
   }
 
   async function persistRecord(recordType, recordId, body) {
+    await resolveVerifiedPrincipal();
     assert(Object.values(RECORD_TYPES).includes(recordType), 'unsupported intelligence record type', 'CANA_RECORD_TYPE_INVALID');
     assert(typeof recordId === 'string' && recordId, 'intelligence record id required', 'CANA_RECORD_ID_REQUIRED');
     const recordDigest = recordIdentity(tenant, recordType, recordId, body);
@@ -171,7 +188,7 @@ export function createCanonicalWeldHost({
       issuer: 'canonical-owner-session',
       payload: principal,
     });
-    await persistReceipt(receipt);
+    await persistReceiptCanonical(receipt);
     return receipt.receiptDigest;
   }
 
@@ -307,6 +324,7 @@ export function createCanonicalWeldHost({
   }
 
   async function persistPromotionReceipt(payload) {
+    await resolveVerifiedPrincipal();
     const receipt = makeReceipt({
       kind: 'PROMOTION',
       subjectDigest: payload?.candidateDigest,
@@ -323,11 +341,17 @@ export function createCanonicalWeldHost({
         payload?.rollbackReceiptDigest,
       ].filter(Boolean),
     });
-    await persistReceipt(receipt);
+    await persistReceiptCanonical(receipt);
     return receipt;
   }
 
   async function claimPromotionExecution({ promotion, candidate, principal }) {
+    const sessionPrincipal = await resolveVerifiedPrincipal();
+    assert(
+      sessionPrincipal.subject === principal?.subject,
+      'promotion execution principal does not match the authenticated Owner session',
+      'PROMOTION_PRINCIPAL_MISMATCH',
+    );
     validateReceiptShape(promotion, { kind: 'PROMOTION', subjectDigest: candidate?.candidateDigest });
     const claim = makeReceipt({
       kind: 'EXPERIENCE_EXECUTION',

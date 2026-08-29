@@ -86,15 +86,28 @@ export function assertCloudflareHyperdriveConnection(env) {
     throw new Error('C3_HYPERDRIVE_CONNECTION_STRING_REQUIRED');
   }
 
-  let parsed;
   try {
-    parsed = new URL(connectionString);
-  } catch {
-    throw new Error('C3_HYPERDRIVE_CONNECTION_STRING_INVALID');
+    return assertCloudflareDatabaseUrl(connectionString);
+  } catch (error) {
+    if (error?.message === 'CLOUDFLARE_DATABASE_URL_INVALID') {
+      throw new Error('C3_HYPERDRIVE_CONNECTION_STRING_INVALID');
+    }
+    if (error?.message === 'CLOUDFLARE_DATABASE_URL_POSTGRESQL_REQUIRED') {
+      throw new Error('C3_HYPERDRIVE_POSTGRESQL_REQUIRED');
+    }
+    throw error;
   }
-  if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
-    throw new Error('C3_HYPERDRIVE_POSTGRESQL_REQUIRED');
-  }
+}
 
-  return connectionString;
+export function resolveCloudflarePrismaConnection(env) {
+  if (env?.HYPERDRIVE !== undefined) {
+    return Object.freeze({
+      source: 'HYPERDRIVE',
+      connectionString: assertCloudflareHyperdriveConnection(env),
+    });
+  }
+  return Object.freeze({
+    source: 'DATABASE_URL',
+    connectionString: assertCloudflareDatabaseUrl(env?.DATABASE_URL),
+  });
 }

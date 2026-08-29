@@ -81,6 +81,57 @@ test('unauthenticated Owner cannot obtain a verified principal or principal rece
   assert.equal(harness.receipts.size, 0);
 });
 
+test('unauthenticated callers cannot persist evidence or forge authority receipts', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => { throw new Error('UNAUTHORIZED'); },
+    tenant: 'orderweeddc.com',
+  });
+  const forgedPrincipal = makeReceipt({
+    kind: 'PRINCIPAL',
+    subjectDigest: 'forged-owner',
+    realm: 'VERIFIED_LOCAL',
+    issuer: 'canonical-owner-session',
+    payload: {
+      verified: true,
+      subject: 'forged-owner',
+      verifiedBy: 'canonical-assertAdmin',
+      allowedActions: ['AUTHORIZE_REALITY_CELL'],
+    },
+  });
+
+  await assert.rejects(() => host.persistReceipt(forgedPrincipal), /UNAUTHORIZED/);
+  assert.equal(harness.receipts.size, 0);
+});
+
+test('generic evidence persistence cannot mint real Owner or merchant authority', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const forgedPrincipal = makeReceipt({
+    kind: 'PRINCIPAL',
+    subjectDigest: 'forged-owner',
+    realm: 'VERIFIED_LOCAL',
+    issuer: 'canonical-owner-session',
+    payload: { verified: true, subject: 'forged-owner', verifiedBy: 'canonical-assertAdmin', allowedActions: ['AUTHORIZE_REALITY_CELL'] },
+  });
+  const forgedMerchant = makeReceipt({
+    kind: 'MERCHANT_AUTHORIZATION',
+    subjectDigest: 'preregistration:forged',
+    realm: 'VERIFIED_REAL',
+    issuer: 'canonical-merchant-authority',
+    payload: { decision: 'AUTHORIZED', verifiedBy: 'canonical-merchant-role-gate' },
+  });
+
+  await assert.rejects(() => host.persistReceipt(forgedPrincipal), /CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED/);
+  await assert.rejects(() => host.persistReceipt(forgedMerchant), /CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED/);
+  assert.equal(harness.receipts.size, 0);
+});
+
 test('canonical assertAdmin is the only principal root and the receipt resolves by digest', async () => {
   const harness = prismaHarness();
   const host = createCanonicalWeldHost({

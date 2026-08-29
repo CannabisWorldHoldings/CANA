@@ -120,17 +120,24 @@ export async function executeExperienceThroughCanonicalAuthority(adapter, {
     assert(promotion.payload?.merchantAuthorizationReceiptDigest, 'merchant authorization missing from promotion', 'MERCHANT_AUTHORITY_REQUIRED');
     assert(typeof adapter.claimPromotionExecution === 'function', 'canonical one-time promotion claim required', 'PROMOTION_REPLAY_GUARD_REQUIRED');
   }
-  if (typeof adapter.claimPromotionExecution === 'function') {
-    const claimed = await adapter.claimPromotionExecution({ promotion, candidate, principal });
-    assert(claimed === true, 'promotion receipt already consumed', 'PROMOTION_REPLAYED');
-  }
-  return adapter.executeAuthorizedExperienceCandidate({
+  const execution = await adapter.executeAuthorizedExperienceCandidate({
     candidateId: candidate.candidateId,
     candidateDigest: candidate.candidateDigest,
     principal,
     promotionReceiptDigest: promotion.receiptDigest,
+    idempotencyKey: promotion.receiptDigest,
     allowedEffectSet: promotion.payload.allowedEffectSet,
   });
+  assert(
+    execution?.idempotencyKey === promotion.receiptDigest,
+    'canonical executor must confirm the promotion-bound idempotency key',
+    'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED',
+  );
+  if (typeof adapter.claimPromotionExecution === 'function') {
+    const claimed = await adapter.claimPromotionExecution({ promotion, candidate, principal });
+    assert(claimed === true, 'promotion receipt already consumed', 'PROMOTION_REPLAYED');
+  }
+  return execution;
 }
 
 export async function rollbackExperienceThroughCanonicalAuthority(adapter, { versionId, principalReceiptDigest }) {

@@ -37,6 +37,9 @@ const labelVocabulary = await import(
 const experienceManifest = await import(
   pathToFileURL(path.join(webRoot, 'src/lib/experience/manifest.mjs')).href
 );
+const tenantHost = await import(
+  pathToFileURL(path.join(webRoot, 'src/lib/tenant-host.mjs')).href
+);
 const originalLoad = Module._load;
 const originalTsxLoader = require.extensions['.tsx'];
 
@@ -104,6 +107,7 @@ Module._load = function loadMarketplaceDependency(request, parent, isMain) {
   }
   if (request === '@/lib/label-vocabulary.mjs') return labelVocabulary;
   if (request === '@/lib/experience/manifest.mjs') return experienceManifest;
+  if (request === '@/lib/tenant-host.mjs') return tenantHost;
   return originalLoad.call(this, request, parent, isMain);
 };
 require.extensions['.tsx'] = function compileTsx(module, filename) {
@@ -301,6 +305,44 @@ test('Apple-inspired D.C. homepage remains canonical-tenant scoped', () => {
   assert.doesNotMatch(tenant, /What are you/);
   assert.match(tenant, /Cannabis discovery without the guesswork\./);
   assert.match(tenant, /Customer journeys/);
+});
+
+test('canonical home renders the exact courted manifest copy, assets, density, and module order', () => {
+  const CustomerWorldPage = component('customer-world-page.tsx');
+  const manifest = experienceManifest.buildManifest({
+    tenant: 'orderweeddc.com',
+    journey: 'HOME',
+  });
+  manifest.presentation.copy.title = 'Courted home title';
+  manifest.presentation.copy.description = 'Courted home description.';
+  manifest.presentation.density = 'compact';
+  manifest.presentation.moduleOrder = ['trust', 'categories'];
+  const world = {
+    request: {
+      customer_query: '',
+      journey: 'HOME',
+      market_id: 'US-DC',
+      requested_view: 'list',
+    },
+    state: 'INPUT_REQUIRED',
+    state_explanation: 'Enter a place to begin.',
+  };
+  const rendered = renderToStaticMarkup(
+    React.createElement(CustomerWorldPage, {
+      world,
+      isCanonicalBrand: true,
+      manifest,
+      tenant: 'orderweeddc.com',
+    }),
+  );
+
+  assert.match(rendered, /Courted home title/);
+  assert.match(rendered, /Courted home description\./);
+  assert.match(rendered, /data-experience-density="compact"/);
+  assert.ok(
+    rendered.indexOf('owd-home-trust') < rendered.indexOf('owd-home-categories'),
+    'manifest moduleOrder must change the rendered canonical home order',
+  );
 });
 
 test('SmartImage applies registered-asset policy to raw paths', () => {

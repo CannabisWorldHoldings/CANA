@@ -73,6 +73,15 @@ export const JOURNEY_COPY = Object.freeze({
   }),
 });
 
+const CANONICAL_HOME_COPY = Object.freeze({
+  eyebrow: 'Ask ORDERWEEDDC',
+  title: 'What are you\nlooking for?',
+  description:
+    "Describe what you need in ordinary words. We check the verified D.C. market and show what's known — and exactly what isn't.",
+  action: '/search',
+  placeholder: 'Ask ORDERWEEDDC…',
+});
+
 /** Asset registry KEYS, not URLs — the asset registry stays the owner of resolution. */
 export const DEFAULT_ASSETS = Object.freeze({
   hero: 'marketplace.hero.v2',
@@ -89,7 +98,9 @@ export const DEFAULT_ASSETS = Object.freeze({
  * because the same state would hash differently on every render.
  */
 export function buildManifest({ tenant, journey }) {
-  const copy = JOURNEY_COPY[journey];
+  const copy = journey === 'HOME' && tenant === 'orderweeddc.localhost'
+    ? CANONICAL_HOME_COPY
+    : JOURNEY_COPY[journey];
   if (!copy) throw new Error(`MANIFEST_UNKNOWN_JOURNEY: no copy registered for "${journey}"`);
   if (typeof tenant !== 'string' || tenant.trim() === '') {
     throw new Error('MANIFEST_TENANT_REQUIRED: presentation state is tenant-scoped');
@@ -142,6 +153,17 @@ export function assertManifest(m) {
   if (p.density !== 'comfortable' && p.density !== 'compact') bad('presentation.density invalid');
   if (!m.contract || !m.contract.accessibility) bad('accessibility contract absent');
   if (!m.economics || m.economics.state !== 'UNKNOWN') bad('economics must remain UNKNOWN until measured');
+  if (m.promotion !== undefined && m.promotion !== null) {
+    if (typeof m.promotion.receiptDigest !== 'string' || m.promotion.receiptDigest.length === 0) {
+      bad('promotion.receiptDigest absent');
+    }
+    if (typeof m.promotion.candidateDigest !== 'string' || m.promotion.candidateDigest.length === 0) {
+      bad('promotion.candidateDigest absent');
+    }
+    if (typeof m.promotion.evidenceRealm !== 'string' || m.promotion.evidenceRealm.length === 0) {
+      bad('promotion.evidenceRealm absent');
+    }
+  }
   return true;
 }
 
@@ -174,6 +196,12 @@ export function applyModuleOrder(modules, order) {
 export function presentationFor(manifest, { tenant, journey }) {
   if (manifest) {
     assertManifest(manifest);
+    if (manifest.merchant?.identity?.tenant !== tenant) {
+      throw new Error('MANIFEST_TENANT_MISMATCH');
+    }
+    if (manifest.merchant?.journey !== journey || manifest.presentation?.journey !== journey) {
+      throw new Error('MANIFEST_JOURNEY_MISMATCH');
+    }
     return manifest.presentation;
   }
   return buildManifest({ tenant, journey }).presentation;

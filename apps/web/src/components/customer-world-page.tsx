@@ -1,11 +1,13 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { ArrowRight, BadgeDollarSign, Link2, Route } from 'lucide-react';
 import CustomerWorldResults, { type CustomerWorld, type HomeModule } from '@/components/customer-world-results';
 import Rail, { RailItem } from '@/components/rail';
 import SmartImage from '@/components/smart-image';
 import { customerWorldViewHref } from '@/lib/customer-world.mjs';
 import { chipLabel, publicWorldStateLabel } from '@/lib/label-vocabulary.mjs';
-import { presentationFor } from '@/lib/experience/manifest.mjs';
+import { applyModuleOrder, presentationFor } from '@/lib/experience/manifest.mjs';
+import { CANONICAL_TENANT_DOMAIN } from '@/lib/tenant-host.mjs';
 
 /**
  * Structural shape of a courted manifest as this component consumes it. The canonical
@@ -13,6 +15,8 @@ import { presentationFor } from '@/lib/experience/manifest.mjs';
  */
 type ExperienceManifestLike = {
   manifestVersion: 1;
+  merchant: { identity: { tenant: string }; journey: string };
+  promotion?: { receiptDigest: string; candidateDigest: string; evidenceRealm: string } | null;
   presentation: {
     copy: { eyebrow: string; title: string; description: string; action: string; placeholder: string };
     assets: { hero: string; storefront: string; delivery: string; dc: string };
@@ -20,13 +24,7 @@ type ExperienceManifestLike = {
     density: 'comfortable' | 'compact';
   };
 };
-
-const HOME_ASSETS = {
-  hero: 'marketplace.hero.v2',
-  storefront: 'marketplace.retailer.1',
-  delivery: 'home.delivery',
-  dc: 'home.dc',
-} as const;
+type ExperiencePresentation = ExperienceManifestLike['presentation'];
 
 const CATEGORIES = [
   { href: '/products?category=flower', label: 'Flower', assetId: 'home.category.flower' },
@@ -38,16 +36,20 @@ const CATEGORIES = [
   { href: '/products?category=accessories', label: 'Accessories', assetId: 'home.category.accessories' },
 ] as const;
 
-function MarketSearch({ marketId }: { marketId: string }) {
+function MarketSearch({ marketId, action, placeholder }: {
+  marketId: string;
+  action: string;
+  placeholder: string;
+}) {
   return (
-    <form action="/search" method="GET" className="owd-home-search">
+    <form action={action} method="GET" className="owd-home-search">
       <label htmlFor="home-market-query" className="sr-only">Ask ORDERWEEDDC what you are looking for</label>
       <input
         id="home-market-query"
         name="query"
         type="search"
         maxLength={160}
-        placeholder="Ask ORDERWEEDDC…"
+        placeholder={placeholder}
         autoComplete="off"
       />
       <input type="hidden" name="market" value={marketId} />
@@ -165,16 +167,112 @@ function HomeDeliveryNow({ world }: { world: CustomerWorld }) {
 function CustomerHome({
   world,
   illustrativeArtCapability,
+  presentation,
+  candidateDigest,
 }: {
   world: CustomerWorld;
   illustrativeArtCapability: object | null;
+  presentation: ExperiencePresentation;
+  candidateDigest?: string | null;
 }) {
+  const modules = applyModuleOrder([
+    {
+      kind: 'categories',
+      node: (
+        <div className="owd-home-categories">
+          <Rail label="Browse by product format" sublabel="Start with a familiar format." itemCount={CATEGORIES.length} minItems={1}>
+            {CATEGORIES.map((category) => (
+              <RailItem key={category.href}>
+                <Link href={category.href} className="owd-home-category">
+                  <span className="owd-home-category__media" data-label={category.label} aria-hidden="true">
+                    <SmartImage assetId={category.assetId} context="category-navigation" alt="" fill pendingRightsCapability={illustrativeArtCapability} sizes="112px" />
+                  </span>
+                  <span>{category.label}</span>
+                </Link>
+              </RailItem>
+            ))}
+          </Rail>
+        </div>
+      ),
+    },
+    { kind: 'deals', node: <HomeDealsNow world={world} /> },
+    {
+      kind: 'program',
+      node: (
+        <section className="owd-home-program owd-container-commerce" aria-labelledby="shop-heading">
+          <h2 id="shop-heading" className="owd-h2">Shop the market. <span className="owd-quiet">Start with what you need.</span></h2>
+          <div className="owd-home-campaigns">
+            <Link href="/dispensaries" className="owd-home-campaign owd-home-campaign--store">
+              <span className="owd-home-campaign__copy">
+                <span className="owd-eyebrow">Dispensaries</span>
+                <span className="owd-h3">Browse in person.</span>
+                <span className="owd-body-reduced">Find regulator-backed merchant records by place.</span>
+                <span className="owd-home-campaign__action">Explore storefronts <ArrowRight size={15} aria-hidden="true" /></span>
+              </span>
+              <span className="owd-home-campaign__media" aria-hidden="true">
+                <SmartImage assetId={presentation.assets.storefront} context="campaign-ambience" alt="" fill pendingRightsCapability={illustrativeArtCapability} sizes="(max-width: 734px) 87vw, 700px" />
+              </span>
+            </Link>
+            <Link href="/delivery" className="owd-home-campaign owd-home-campaign--delivery">
+              <span className="owd-home-campaign__copy">
+                <span className="owd-eyebrow">Delivery</span>
+                <span className="owd-h3">See what can be supported.</span>
+                <span className="owd-body-reduced">No invented fees, service areas, inventory, or arrival times.</span>
+                <span className="owd-home-campaign__action">Explore delivery <ArrowRight size={15} aria-hidden="true" /></span>
+              </span>
+              <span className="owd-home-campaign__media" aria-hidden="true">
+                <SmartImage assetId={presentation.assets.delivery} context="campaign-ambience" alt="" fill pendingRightsCapability={illustrativeArtCapability} sizes="(max-width: 734px) 87vw, 560px" />
+              </span>
+            </Link>
+          </div>
+        </section>
+      ),
+    },
+    { kind: 'dispensaries', node: <HomeStorefronts world={world} /> },
+    { kind: 'delivery', node: <HomeDeliveryNow world={world} /> },
+    {
+      kind: 'district',
+      node: (
+        <section className="owd-home-district" aria-labelledby="district-heading">
+          <div className="owd-container-commerce owd-home-district__inner">
+            <div className="owd-home-district__copy">
+              <p className="owd-eyebrow">Built for the District</p>
+              <h2 id="district-heading" className="owd-h1">Local discovery should feel local.</h2>
+              <p className="owd-intro">Neighborhood context, D.C. guidance, and market truth belong in one calm place without turning the customer experience into a dashboard.</p>
+              <Link href="/neighborhoods">Explore neighborhoods <ArrowRight size={15} aria-hidden="true" /></Link>
+            </div>
+            <div className="owd-home-district__media" aria-hidden="true">
+              <SmartImage assetId={presentation.assets.dc} context="district-feature" alt="" fill pendingRightsCapability={illustrativeArtCapability} sizes="(max-width: 734px) 100vw, 760px" />
+            </div>
+          </div>
+        </section>
+      ),
+    },
+    {
+      kind: 'trust',
+      node: (
+        <section className="owd-home-trust owd-container-story" aria-labelledby="trust-heading">
+          <h2 id="trust-heading" className="owd-h2">Easy to explore. <span className="owd-quiet">Honest about the gaps.</span></h2>
+          <div className="owd-home-trust__grid">
+            <article><Link2 aria-hidden="true" /><h3>Sources stay attached.</h3><p>Every record keeps its named source and current evidence state.</p></article>
+            <article><Route aria-hidden="true" /><h3>Delivery stays distinct.</h3><p>A merchant listing never silently becomes a delivery promise.</p></article>
+            <article><BadgeDollarSign aria-hidden="true" /><h3>Sponsorship stays labeled.</h3><p>Commercial placement does not silently rewrite organic order.</p></article>
+          </div>
+        </section>
+      ),
+    },
+  ], presentation.moduleOrder) as Array<{ kind: string; node: ReactNode }>;
+
   return (
-    <div className="owd-home">
+    <div
+      className="owd-home"
+      data-experience-density={presentation.density}
+      data-experience-candidate-digest={candidateDigest ?? undefined}
+    >
       <section className="owd-home-hero" aria-labelledby="home-title">
         <div className="owd-home-hero__media" aria-hidden="true">
           <SmartImage
-            assetId={HOME_ASSETS.hero}
+            assetId={presentation.assets.hero}
             context="hero-ambience"
             alt=""
             fill
@@ -185,13 +283,10 @@ function CustomerHome({
           />
         </div>
         <div className="owd-container-commerce owd-home-hero__copy">
-          <p className="owd-eyebrow">Ask ORDERWEEDDC</p>
-          <h1 id="home-title" className="owd-display">What are you<br />looking for?</h1>
-          <p className="owd-intro">
-            Describe what you need in ordinary words. We check the verified
-            D.C. market and show what{"'"}s known — and exactly what isn{"'"}t.
-          </p>
-          <MarketSearch marketId={world.request.market_id} />
+          <p className="owd-eyebrow">{presentation.copy.eyebrow}</p>
+          <h1 id="home-title" className="owd-display whitespace-pre-line">{presentation.copy.title}</h1>
+          <p className="owd-intro">{presentation.copy.description}</p>
+          <MarketSearch marketId={world.request.market_id} action={presentation.copy.action} placeholder={presentation.copy.placeholder} />
           <p className="owd-home-search-examples">
             Try “Something near Dupont Circle tonight,” “Dispensaries near Capitol Hill,”
             or “What can I actually verify near me?”
@@ -202,129 +297,9 @@ function CustomerHome({
           </nav>
         </div>
       </section>
-
-      <div className="owd-home-categories">
-        <Rail
-          label="Browse by product format"
-          sublabel="Start with a familiar format."
-          itemCount={CATEGORIES.length}
-          minItems={1}
-        >
-          {CATEGORIES.map((category) => (
-            <RailItem key={category.href}>
-              <Link href={category.href} className="owd-home-category">
-                <span className="owd-home-category__media" data-label={category.label} aria-hidden="true">
-                  <SmartImage
-                    assetId={category.assetId}
-                    context="category-navigation"
-                    alt=""
-                    fill
-                    pendingRightsCapability={illustrativeArtCapability}
-                    sizes="112px"
-                  />
-                </span>
-                <span>{category.label}</span>
-              </Link>
-            </RailItem>
-          ))}
-        </Rail>
-      </div>
-
-      <HomeDealsNow world={world} />
-
-      <section className="owd-home-program owd-container-commerce" aria-labelledby="shop-heading">
-        <h2 id="shop-heading" className="owd-h2">
-          Shop the market. <span className="owd-quiet">Start with what you need.</span>
-        </h2>
-        <div className="owd-home-campaigns">
-          <Link href="/dispensaries" className="owd-home-campaign owd-home-campaign--store">
-            <span className="owd-home-campaign__copy">
-              <span className="owd-eyebrow">Dispensaries</span>
-              <span className="owd-h3">Browse in person.</span>
-              <span className="owd-body-reduced">Find regulator-backed merchant records by place.</span>
-              <span className="owd-home-campaign__action">Explore storefronts <ArrowRight size={15} aria-hidden="true" /></span>
-            </span>
-            <span className="owd-home-campaign__media" aria-hidden="true">
-              <SmartImage
-                assetId={HOME_ASSETS.storefront}
-                context="campaign-ambience"
-                alt=""
-                fill
-                pendingRightsCapability={illustrativeArtCapability}
-                sizes="(max-width: 734px) 87vw, 700px"
-              />
-            </span>
-          </Link>
-          <Link href="/delivery" className="owd-home-campaign owd-home-campaign--delivery">
-            <span className="owd-home-campaign__copy">
-              <span className="owd-eyebrow">Delivery</span>
-              <span className="owd-h3">See what can be supported.</span>
-              <span className="owd-body-reduced">No invented fees, service areas, inventory, or arrival times.</span>
-              <span className="owd-home-campaign__action">Explore delivery <ArrowRight size={15} aria-hidden="true" /></span>
-            </span>
-            <span className="owd-home-campaign__media" aria-hidden="true">
-              <SmartImage
-                assetId={HOME_ASSETS.delivery}
-                context="campaign-ambience"
-                alt=""
-                fill
-                pendingRightsCapability={illustrativeArtCapability}
-                sizes="(max-width: 734px) 87vw, 560px"
-              />
-            </span>
-          </Link>
-        </div>
-      </section>
-
-      <HomeStorefronts world={world} />
-      <HomeDeliveryNow world={world} />
-
-      <section className="owd-home-district" aria-labelledby="district-heading">
-        <div className="owd-container-commerce owd-home-district__inner">
-          <div className="owd-home-district__copy">
-            <p className="owd-eyebrow">Built for the District</p>
-            <h2 id="district-heading" className="owd-h1">Local discovery should feel local.</h2>
-            <p className="owd-intro">
-              Neighborhood context, D.C. guidance, and market truth belong in one
-              calm place without turning the customer experience into a dashboard.
-            </p>
-            <Link href="/neighborhoods">Explore neighborhoods <ArrowRight size={15} aria-hidden="true" /></Link>
-          </div>
-          <div className="owd-home-district__media" aria-hidden="true">
-            <SmartImage
-              assetId={HOME_ASSETS.dc}
-              context="district-feature"
-              alt=""
-              fill
-              pendingRightsCapability={illustrativeArtCapability}
-              sizes="(max-width: 734px) 100vw, 760px"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="owd-home-trust owd-container-story" aria-labelledby="trust-heading">
-        <h2 id="trust-heading" className="owd-h2">
-          Easy to explore. <span className="owd-quiet">Honest about the gaps.</span>
-        </h2>
-        <div className="owd-home-trust__grid">
-          <article>
-            <Link2 aria-hidden="true" />
-            <h3>Sources stay attached.</h3>
-            <p>Every record keeps its named source and current evidence state.</p>
-          </article>
-          <article>
-            <Route aria-hidden="true" />
-            <h3>Delivery stays distinct.</h3>
-            <p>A merchant listing never silently becomes a delivery promise.</p>
-          </article>
-          <article>
-            <BadgeDollarSign aria-hidden="true" />
-            <h3>Sponsorship stays labeled.</h3>
-            <p>Commercial placement does not silently rewrite organic order.</p>
-          </article>
-        </div>
-      </section>
+      {modules.map((module) => (
+        <div key={module.kind} data-experience-module={module.kind}>{module.node}</div>
+      ))}
     </div>
   );
 }
@@ -334,7 +309,7 @@ export default function CustomerWorldPage({
   isCanonicalBrand = false,
   illustrativeArtCapability = null,
   manifest = null,
-  tenant = 'orderweeddc.com',
+  tenant,
 }: {
   world: CustomerWorld;
   isCanonicalBrand?: boolean;
@@ -349,23 +324,30 @@ export default function CustomerWorldPage({
   manifest?: ExperienceManifestLike | null;
   tenant?: string;
 }) {
+  const resolvedTenant = tenant ?? (isCanonicalBrand ? CANONICAL_TENANT_DOMAIN : 'orderweeddc.com');
+  const presentation = presentationFor(manifest, {
+    tenant: resolvedTenant,
+    journey: world.request.journey,
+  });
   if (world.request.journey === 'HOME' && isCanonicalBrand) {
     return (
       <CustomerHome
         world={world}
         illustrativeArtCapability={illustrativeArtCapability}
+        presentation={presentation}
+        candidateDigest={manifest?.promotion?.candidateDigest}
       />
     );
   }
 
-  const presentation = presentationFor(manifest, {
-    tenant,
-    journey: world.request.journey,
-  });
   const copy = presentation.copy;
   const mapView = world.request.requested_view === 'map';
   return (
-    <div className="flex-grow">
+    <div
+      className="flex-grow"
+      data-experience-density={presentation.density}
+      data-experience-candidate-digest={manifest?.promotion?.candidateDigest ?? undefined}
+    >
       <section className="border-b border-brand-border px-4 py-12 sm:px-6 lg:px-10">
         <div className="mx-auto max-w-screen-2xl">
           <p className="kicker">{copy.eyebrow}</p>
