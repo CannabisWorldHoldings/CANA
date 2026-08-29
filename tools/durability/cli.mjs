@@ -373,11 +373,13 @@ export const TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256 =
   'e45f32f807a05d584ad28b987e0ec4b06ed8047c367986d879b93ca484e3adf5';
 export const TASK0_5_CONVERGENCE_BASE_SHA =
   'e0466894121a4c92f0512cfa47e649815c7a3948';
+export const TASK0_5_CONVERGENCE_OWNERSHIP_PATH =
+  'tools/test-runner/TASK0_5_CHANGED_FILE_OWNERSHIP.json';
 export const TASK0_5_CONVERGENCE_PATH_COUNT = 105;
 export const TASK0_5_CONVERGENCE_PATHS_SHA256 =
-  '1579cf6e7f2bd4b543ded803fa78acb123d54ef460f10e9ed74273766c7155b3';
+  'fbd1e5769209027ff08d2855e24ccdeec3cc4b55197a56b3e7533537745f0df7';
 export const TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '44a6793eb7ed55e1a7a6f2b3d3c321c21efc8110570d9f764fd4a6356ee136a0';
+  '9ddd905ed01577c52044bdba3d00b7fa1584ffbf143efb5b4f19984eb9d581fe';
 const TASK0_5_CONVERGENCE_PROHIBITED_EFFECTS = Object.freeze([
   'ads',
   'credentials',
@@ -415,7 +417,6 @@ const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   FEDERATION_GATE_E_ASSIGNMENT,
   PR59_SOVEREIGN_CUSTODY_ASSIGNMENT,
   PR57_INHERITED_MAIN_ASSIGNMENT,
-  TASK0_5_CONVERGENCE_ASSIGNMENT,
 ]);
 const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PR29_ASSIGNMENT,
@@ -423,7 +424,7 @@ const COURT_ADMITTING_ASSIGNMENTS = Object.freeze([
   PHASE_B_SLICE2_ASSIGNMENT,
 ]);
 const CHANGED_FILE_OWNERSHIP_SHA256 =
-  'd50a03ec168a3dc34e50780278016b432d77c70be46c626963f6dfd581eff9ea';
+  'f90dd4b29d4b7b40c95ee41f77026d47df4abc80c0c5744be98789af0733e40a';
 
 export const PR59_SOVEREIGN_CUSTODY_PATHS = Object.freeze([
   'tools/visual-court/linux-custody-helper.c',
@@ -1016,64 +1017,6 @@ export function validateOwnershipManifest(ownership) {
   const allOwnedPaths = [...ownership.owned_create_paths, ...ownership.owned_modify_paths];
   if (new Set(allOwnedPaths).size !== allOwnedPaths.length) {
     refusal('duplicate changed-file ownership is not allowed');
-  }
-
-  const convergenceAssignment =
-    ownership.explicit_user_assignment[TASK0_5_CONVERGENCE_ASSIGNMENT];
-  if (
-    !exactKeys(convergenceAssignment, [
-      'authorization',
-      'authorization_source_sha256',
-      'scope',
-      'authorization_effect',
-      'root_candidate_base',
-      'paths',
-      'prohibited_effects',
-      'approval_sha256',
-    ])
-    || typeof convergenceAssignment.authorization !== 'string'
-    || convergenceAssignment.authorization.length === 0
-    || convergenceAssignment.authorization_source_sha256
-      !== TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256
-    || typeof convergenceAssignment.scope !== 'string'
-    || convergenceAssignment.scope.length === 0
-    || convergenceAssignment.authorization_effect !== 'durability-path-ownership-only'
-    || convergenceAssignment.root_candidate_base !== TASK0_5_CONVERGENCE_BASE_SHA
-    || !Array.isArray(convergenceAssignment.paths)
-    || convergenceAssignment.paths.length !== TASK0_5_CONVERGENCE_PATH_COUNT
-    || new Set(convergenceAssignment.paths).size !== convergenceAssignment.paths.length
-    || JSON.stringify(convergenceAssignment.paths)
-      !== JSON.stringify([...convergenceAssignment.paths].sort())
-    || convergenceAssignment.paths.some((relative) => (
-      typeof relative !== 'string'
-      || relative.length === 0
-      || relative.startsWith('/')
-      || relative.includes('\\')
-      || relative.includes('*')
-      || relative.includes('..')
-      || path.posix.normalize(relative) !== relative
-    ))
-    || sha256Bytes(canonicalJson(convergenceAssignment.paths))
-      !== TASK0_5_CONVERGENCE_PATHS_SHA256
-    || JSON.stringify(convergenceAssignment.prohibited_effects)
-      !== JSON.stringify(TASK0_5_CONVERGENCE_PROHIBITED_EFFECTS)
-    || convergenceAssignment.paths.some((relative) => !allOwnedPaths.includes(relative))
-    || convergenceAssignment.paths.some(
-      (relative) => !ownership.planned_candidate_files.includes(relative),
-    )
-  ) {
-    refusal('Task 0-5 convergence ownership assignment is malformed or incomplete');
-  }
-  const {
-    approval_sha256: convergenceRecordedDigest,
-    ...convergenceApprovalPayload
-  } = convergenceAssignment;
-  if (
-    convergenceRecordedDigest !== TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256
-    || sha256Bytes(canonicalJson(convergenceApprovalPayload))
-      !== TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256
-  ) {
-    refusal('Task 0-5 convergence ownership assignment failed its owner-approval digest');
   }
 
   const pr59CustodyAssignment =
@@ -2181,12 +2124,78 @@ export function mission3M001OwnershipAssignment(ownership) {
   return ownership.explicit_user_assignment[MISSION3_M001_ASSIGNMENT];
 }
 
-export function ownershipPatterns(ownership) {
+export function validateTask05OwnershipManifest(assignment) {
+  if (
+    !exactKeys(assignment, [
+      'schema_version',
+      'assignment_name',
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'root_candidate_base',
+      'paths',
+      'prohibited_effects',
+      'approval_sha256',
+    ])
+    || assignment.schema_version !== 'cana.task0-5-changed-file-ownership/1.0.0'
+    || assignment.assignment_name !== TASK0_5_CONVERGENCE_ASSIGNMENT
+    || typeof assignment.authorization !== 'string'
+    || assignment.authorization.length === 0
+    || assignment.authorization_source_sha256
+      !== TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256
+    || typeof assignment.scope !== 'string'
+    || assignment.scope.length === 0
+    || assignment.authorization_effect !== 'durability-path-ownership-only'
+    || assignment.root_candidate_base !== TASK0_5_CONVERGENCE_BASE_SHA
+    || !Array.isArray(assignment.paths)
+    || assignment.paths.length !== TASK0_5_CONVERGENCE_PATH_COUNT
+    || new Set(assignment.paths).size !== assignment.paths.length
+    || JSON.stringify(assignment.paths) !== JSON.stringify([...assignment.paths].sort())
+    || assignment.paths.some((relative) => (
+      typeof relative !== 'string'
+      || relative.length === 0
+      || relative.startsWith('/')
+      || relative.includes('\\')
+      || relative.includes('*')
+      || relative.includes('..')
+      || path.posix.normalize(relative) !== relative
+    ))
+    || !assignment.paths.includes(TASK0_5_CONVERGENCE_OWNERSHIP_PATH)
+    || sha256Bytes(canonicalJson(assignment.paths))
+      !== TASK0_5_CONVERGENCE_PATHS_SHA256
+    || JSON.stringify(assignment.prohibited_effects)
+      !== JSON.stringify(TASK0_5_CONVERGENCE_PROHIBITED_EFFECTS)
+  ) {
+    refusal('Task 0-5 supplemental ownership assignment is malformed or incomplete');
+  }
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+  if (
+    recordedDigest !== TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256
+    || sha256Bytes(canonicalJson(approvalPayload))
+      !== TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256
+  ) {
+    refusal('Task 0-5 supplemental ownership assignment failed its owner-approval digest');
+  }
+  return assignment;
+}
+
+export function task05OwnershipManifest() {
+  return validateTask05OwnershipManifest(readJson(
+    path.join(ROOT, TASK0_5_CONVERGENCE_OWNERSHIP_PATH),
+  ));
+}
+
+export function ownershipPatterns(ownership, task05Ownership = null) {
   validateOwnershipManifest(ownership);
+  const supplemental = task05Ownership
+    ? validateTask05OwnershipManifest(task05Ownership)
+    : null;
   return [
     ownership.explicit_user_assignment.root_dispatcher,
     ...ownership.owned_create_paths,
     ...ownership.owned_modify_paths,
+    ...(supplemental?.paths ?? []),
   ];
 }
 
@@ -2414,8 +2423,8 @@ function pr57InheritedMainCommitAdmitted(relative, ownership, commit, ancestry) 
   );
 }
 
-export function unownedPaths(changed, ownership) {
-  const patterns = ownershipPatterns(ownership);
+export function unownedPaths(changed, ownership, task05Ownership = null) {
+  const patterns = ownershipPatterns(ownership, task05Ownership);
   return changed.filter((file) => !patterns.some((pattern) => matchOwned(file, pattern)));
 }
 
@@ -2435,6 +2444,7 @@ function prerequisites(source) {
     path.join(ROOT, 'tools', 'test-runner', 'CODEX_CHANGED_FILE_OWNERSHIP.json'),
   );
   validateOwnershipManifest(ownership);
+  const task05Ownership = task05OwnershipManifest();
   const changed = git(['diff', '--name-only', `${BASE}..${source.commit}`])
     .split('\n')
     .filter(Boolean);
@@ -2495,7 +2505,7 @@ function prerequisites(source) {
         { allowFailure: true },
       ).status === 0,
   };
-  const unowned = unownedPaths(changed, ownership).filter(
+  const unowned = unownedPaths(changed, ownership, task05Ownership).filter(
     (file) => !pr57InheritedMainCommitAdmitted(
       file,
       ownership,

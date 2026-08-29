@@ -45,10 +45,13 @@ import {
   TASK0_5_CONVERGENCE_ASSIGNMENT,
   TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256,
   TASK0_5_CONVERGENCE_BASE_SHA,
+  TASK0_5_CONVERGENCE_OWNERSHIP_PATH,
   TASK0_5_CONVERGENCE_PATH_COUNT,
   TASK0_5_CONVERGENCE_PATHS_SHA256,
+  task05OwnershipManifest,
   unownedPaths,
   validateOwnershipManifest,
+  validateTask05OwnershipManifest,
 } from './cli.mjs';
 import * as durabilityCli from './cli.mjs';
 
@@ -59,6 +62,7 @@ const OWNERSHIP_FILE = path.join(
   'test-runner',
   'CODEX_CHANGED_FILE_OWNERSHIP.json',
 );
+const TASK0_5_OWNERSHIP_FILE = path.join(ROOT, TASK0_5_CONVERGENCE_OWNERSHIP_PATH);
 
 const PHASE_B_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
@@ -1088,7 +1092,7 @@ test('the convergence evidence court has exact ownership and a planned-candidate
 test('Task 0-5 convergence owns exactly the live outgoing path set without effect authority', () => {
   const manifest = ownership();
   validateOwnershipManifest(manifest);
-  const assignment = manifest.explicit_user_assignment[TASK0_5_CONVERGENCE_ASSIGNMENT];
+  const assignment = task05OwnershipManifest();
   const canonical = (value) => {
     if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
     if (value && typeof value === 'object') {
@@ -1097,49 +1101,62 @@ test('Task 0-5 convergence owns exactly the live outgoing path set without effec
     return JSON.stringify(value);
   };
   const digest = (value) => createHash('sha256').update(canonical(value)).digest('hex');
-  const actualPaths = execFileSync(
+  const trackedPaths = execFileSync(
     'git',
     ['diff', '--name-only', TASK0_5_CONVERGENCE_BASE_SHA, '--'],
     { cwd: ROOT, encoding: 'utf8' },
-  ).trim().split('\n').filter(Boolean).sort();
+  ).trim().split('\n').filter(Boolean);
+  const untrackedPaths = execFileSync(
+    'git',
+    ['ls-files', '--others', '--exclude-standard'],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).trim().split('\n').filter(Boolean);
+  const actualPaths = [...new Set([...trackedPaths, ...untrackedPaths])].sort();
   const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
 
+  assert.equal(assignment.assignment_name, TASK0_5_CONVERGENCE_ASSIGNMENT);
+  assert.equal(fs.realpathSync(TASK0_5_OWNERSHIP_FILE), TASK0_5_OWNERSHIP_FILE);
   assert.equal(assignment.paths.length, TASK0_5_CONVERGENCE_PATH_COUNT);
   assert.equal(digest(assignment.paths), TASK0_5_CONVERGENCE_PATHS_SHA256);
   assert.equal(recordedDigest, TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256);
   assert.equal(digest(approvalPayload), TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256);
   assert.deepEqual(actualPaths, assignment.paths);
-  assert.deepEqual(unownedPaths(assignment.paths, manifest), []);
-  assert.ok(assignment.paths.every((relative) => manifest.planned_candidate_files.includes(relative)));
+  assert.deepEqual(unownedPaths(assignment.paths, manifest, assignment), []);
+  assert.ok(assignment.paths.includes(TASK0_5_CONVERGENCE_OWNERSHIP_PATH));
+  assert.equal(
+    Object.hasOwn(
+      manifest.explicit_user_assignment,
+      TASK0_5_CONVERGENCE_ASSIGNMENT,
+    ),
+    false,
+    'the frozen PR59 ownership manifest must not be mutated by later assignments',
+  );
   assert.equal(assignment.authorization_effect, 'durability-path-ownership-only');
   assert.ok(assignment.prohibited_effects.includes('deployment'));
   assert.ok(assignment.prohibited_effects.includes('production-mutation'));
 });
 
-test('Task 0-5 convergence rejects scope, authority, ownership, and planning tampering', () => {
+test('Task 0-5 convergence rejects scope, authority, schema, and self-ownership tampering', () => {
   const mutations = [
-    (manifest, assignment) => { assignment.paths.pop(); },
-    (manifest, assignment) => { assignment.paths[0] = 'apps/web/**'; },
-    (manifest, assignment) => { assignment.authorization_effect = 'runtime-authority'; },
-    (manifest, assignment) => { assignment.root_candidate_base = '0'.repeat(40); },
-    (manifest, assignment) => { assignment.prohibited_effects = []; },
-    (manifest, assignment) => { assignment.approval_sha256 = '0'.repeat(64); },
-    (manifest, assignment) => {
-      const target = assignment.paths.find((relative) => manifest.owned_create_paths.includes(relative));
-      manifest.owned_create_paths = manifest.owned_create_paths.filter((relative) => relative !== target);
-    },
-    (manifest, assignment) => {
-      manifest.planned_candidate_files = manifest.planned_candidate_files.filter(
-        (relative) => relative !== assignment.paths[0],
+    (assignment) => { assignment.paths.pop(); },
+    (assignment) => { assignment.paths[0] = 'apps/web/**'; },
+    (assignment) => { assignment.authorization_effect = 'runtime-authority'; },
+    (assignment) => { assignment.root_candidate_base = '0'.repeat(40); },
+    (assignment) => { assignment.prohibited_effects = []; },
+    (assignment) => { assignment.approval_sha256 = '0'.repeat(64); },
+    (assignment) => { assignment.schema_version = 'future'; },
+    (assignment) => {
+      assignment.paths = assignment.paths.filter(
+        (relative) => relative !== TASK0_5_CONVERGENCE_OWNERSHIP_PATH,
       );
     },
   ];
   for (const mutate of mutations) {
-    const manifest = ownership();
-    mutate(manifest, manifest.explicit_user_assignment[TASK0_5_CONVERGENCE_ASSIGNMENT]);
+    const assignment = JSON.parse(fs.readFileSync(TASK0_5_OWNERSHIP_FILE, 'utf8'));
+    mutate(assignment);
     assert.throws(
-      () => validateOwnershipManifest(manifest),
-      /Task 0-5 convergence|changed-file ownership patterns/,
+      () => validateTask05OwnershipManifest(assignment),
+      /Task 0-5 supplemental ownership assignment/,
     );
   }
 });
