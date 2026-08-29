@@ -68,6 +68,7 @@ export function collectStaticInputs(rootDir) {
   const home = read(rootDir, 'apps/web/src/components/customer-world-page.tsx');
   const smartImage = read(rootDir, 'apps/web/src/components/smart-image.tsx');
   const homeRoute = read(rootDir, 'apps/web/src/app/[domain]/page.tsx');
+  const experienceManifest = read(rootDir, 'apps/web/src/lib/experience/manifest.mjs');
   const assetRegistry = read(rootDir, 'apps/web/src/lib/asset-registry.mjs');
   const proxy = read(rootDir, 'apps/web/src/proxy.ts');
 
@@ -114,12 +115,18 @@ export function collectStaticInputs(rootDir) {
     globals.indexOf('}', globals.indexOf('.owd-home-hero {')),
   );
   const heroMinHeightPx = Number(heroBlock.match(/min-height:\s*(\d+)px/)?.[1]);
+  const canonicalHomeCopy = experienceManifest.slice(
+    experienceManifest.indexOf('const CANONICAL_HOME_COPY'),
+    experienceManifest.indexOf('\n});', experienceManifest.indexOf('const CANONICAL_HOME_COPY')) + 4,
+  );
   const homeComposition = {
     usesCanonicalRail: home.includes("from '@/components/rail'") && home.includes('<Rail'),
     usesRailItem: home.includes('<RailItem'),
     smartImageCount: (home.match(/<SmartImage/g) ?? []).length,
     importsNextImage: home.includes("from 'next/image'"),
-    askUsesCanonicalSearch: home.includes('Ask ORDERWEEDDC') && home.includes('action="/search"'),
+    askUsesCanonicalSearch: home.includes('Ask ORDERWEEDDC')
+      && home.includes('action={presentation.copy.action}')
+      && canonicalHomeCopy.includes("action: '/search'"),
     imagePolicyEnforced: smartImage.includes('resolveAssetUse')
       && smartImage.includes('pendingRightsCapability')
       && smartImage.includes('getAssetByPath')

@@ -352,15 +352,23 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
   }), false);
 });
 
-test('Stage 1 Owner console is authenticated and truthfully UI-only', () => {
+test('Stage 1 Owner console is authenticated and exposes only canonical read-only host queries', () => {
   const source = fs.readFileSync(
     path.join(ROOT, 'apps/web/src/app/admin/console/page.tsx'),
     'utf8',
   );
   assert.match(source, /await requireAdmin\(\)/);
-  assert.match(source, /OWNER_CONSOLE_UI_ONLY/);
+  assert.match(source, /createOwnerCanaIntelligenceAdapters\(\)/);
+  assert.match(source, /adapters\.intelligence\.resolveVerifiedPrincipal\(\)/);
+  assert.match(source, /adapters\.intelligence\.loadVerifiedSupply\(\)/);
+  assert.match(source, /adapters\.intelligence\.loadObservations\(\)/);
+  assert.match(source, /adapters\.intelligence\.loadIntentEvents\(\)/);
+  assert.match(source, /data-cana-owner-bridge="read-only"/);
+  assert.match(source, /WRITE \/ EXECUTE/);
+  assert.match(source, />SEALED</);
   assert.doesNotMatch(source, /Vanguard sensors active/);
   assert.doesNotMatch(source, /AUTHORITY: OWNER/);
+  assert.doesNotMatch(source, /adapters\.(?:command|execution|promotion)\b/);
   assert.match(source, /<button[^>]*disabled/s);
 });
 
