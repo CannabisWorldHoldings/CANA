@@ -12,4 +12,7 @@ test('Reality Cell browser court drives the actual CANA app instead of serving s
   assert.match(source, /baseUrl/);
   assert.match(source, /page\.goto/);
   assert.match(source, /data-experience-candidate-digest/);
+  assert.match(source, /Yes, I'm 21 or older/);
+  assert.match(source, /candidateSurface\.waitFor\(\{ state: 'visible' \}\)/);
+  assert.match(source, /fixtureNotice\.isVisible\(\)/);
 });

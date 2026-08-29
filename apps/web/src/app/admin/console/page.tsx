@@ -78,7 +78,7 @@ export default async function AdminConsolePage() {
           <div className="mt-4 pt-3 border-t border-neutral-800 flex gap-2">
             <input
               type="text"
-              placeholder="Command transport is not connected in Stage 1"
+              placeholder="Command transport remains sealed"
               disabled
               aria-disabled="true"
               className="flex-1 bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-emerald-500 font-mono"
@@ -89,7 +89,7 @@ export default async function AdminConsolePage() {
               aria-disabled="true"
               className="bg-neutral-800 text-neutral-500 font-mono font-bold px-4 py-2 text-sm rounded cursor-not-allowed"
             >
-              NOT CONNECTED
+              SEALED
             </button>
           </div>
         </section>

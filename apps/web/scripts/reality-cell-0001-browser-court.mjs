@@ -168,15 +168,16 @@ export async function runRealityCellBrowserCourt({
       });
       const response = await page.goto(url.href, { waitUntil: 'networkidle' });
       if (!response?.ok()) throw new Error(`${viewport.label} CANA app returned ${response?.status() ?? 'no response'}`);
-      const renderedCandidateDigest = await page
-        .locator('[data-experience-candidate-digest]')
-        .first()
-        .getAttribute('data-experience-candidate-digest');
+      const ageConfirmation = page.getByRole('button', { name: "Yes, I'm 21 or older" });
+      if (await ageConfirmation.isVisible()) await ageConfirmation.click();
+      const candidateSurface = page.locator('[data-experience-candidate-digest]').first();
+      await candidateSurface.waitFor({ state: 'visible' });
+      const renderedCandidateDigest = await candidateSurface.getAttribute('data-experience-candidate-digest');
       if (renderedCandidateDigest !== fixture.candidate.candidateDigest) {
         throw new Error('REALITY_CELL_RENDERED_CANDIDATE_DIGEST_MISMATCH');
       }
-      const fixtureNotice = await page.getByText('SIMULATED / FIXTURE', { exact: true }).count();
-      if (fixtureNotice !== 1) throw new Error('REALITY_CELL_FIXTURE_NOTICE_MISSING');
+      const fixtureNotice = page.getByText('SIMULATED / FIXTURE', { exact: true });
+      if (!(await fixtureNotice.isVisible())) throw new Error('REALITY_CELL_FIXTURE_NOTICE_MISSING');
       const screenshotName = viewport.label === 'desktop' ? 'private-preview.png' : `private-preview-${viewport.label}.png`;
       const screenshotPath = path.join(outputDirectory, screenshotName);
       await page.screenshot({ path: screenshotPath, fullPage: true });
@@ -214,6 +215,8 @@ export async function runRealityCellBrowserCourt({
         layoutResult: { status: horizontalOverflow ? 'FAIL' : 'PASS', horizontalOverflow },
         independentObserver: 'playwright-browser-court',
         evidenceRealm: 'FIXTURE',
+        ageGateConfirmedLocally: true,
+        candidateSurfaceVisible: true,
       });
       await context.close();
     }
