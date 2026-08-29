@@ -192,12 +192,15 @@ test('attack 04 replayed promotion receipt fails closed', async () => {
     captureRenderedEvidenceReceipt: async () => null, generateMediaCandidate: async () => null,
     loadReceipt: async (receiptDigest) => receipts.get(receiptDigest) ?? null,
     resolveVerifiedPrincipalReceipt: async () => principal.receiptDigest,
-    executeAuthorizedExperienceCandidate: async (input) => input,
+    executeWithPromotionClaim: async ({ executionInput }) => {
+      if (claimed) throw new Error('PROMOTION_REPLAYED');
+      claimed = true;
+      return executionInput;
+    },
     rollbackExperienceVersion: async () => null,
-    claimPromotionExecution: async () => { if (claimed) return false; claimed = true; return true; },
   });
   await executeExperienceThroughCanonicalAuthority(adapter, { candidate, principalReceiptDigest: principal.receiptDigest, promotionReceiptDigest: promotion.receiptDigest });
-  await assert.rejects(() => executeExperienceThroughCanonicalAuthority(adapter, { candidate, principalReceiptDigest: principal.receiptDigest, promotionReceiptDigest: promotion.receiptDigest }), /already consumed/);
+  await assert.rejects(() => executeExperienceThroughCanonicalAuthority(adapter, { candidate, principalReceiptDigest: principal.receiptDigest, promotionReceiptDigest: promotion.receiptDigest }), /PROMOTION_REPLAYED/);
 });
 
 test('attack 05 candidate digest mismatch fails closed', () => {

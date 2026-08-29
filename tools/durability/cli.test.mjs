@@ -42,6 +42,11 @@ import {
   pr35OwnershipAssignment,
   pr2OwnershipAssignment,
   STAGE_A_AUTHORIZED_PATHS,
+  TASK0_5_CONVERGENCE_ASSIGNMENT,
+  TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256,
+  TASK0_5_CONVERGENCE_BASE_SHA,
+  TASK0_5_CONVERGENCE_PATH_COUNT,
+  TASK0_5_CONVERGENCE_PATHS_SHA256,
   unownedPaths,
   validateOwnershipManifest,
 } from './cli.mjs';
@@ -1080,6 +1085,65 @@ test('the convergence evidence court has exact ownership and a planned-candidate
   assert.equal(manifest.planned_candidate_files.filter((entry) => entry === target).length, 1);
 });
 
+test('Task 0-5 convergence owns exactly the live outgoing path set without effect authority', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const assignment = manifest.explicit_user_assignment[TASK0_5_CONVERGENCE_ASSIGNMENT];
+  const canonical = (value) => {
+    if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+    if (value && typeof value === 'object') {
+      return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
+    }
+    return JSON.stringify(value);
+  };
+  const digest = (value) => createHash('sha256').update(canonical(value)).digest('hex');
+  const actualPaths = execFileSync(
+    'git',
+    ['diff', '--name-only', TASK0_5_CONVERGENCE_BASE_SHA, '--'],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).trim().split('\n').filter(Boolean).sort();
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+
+  assert.equal(assignment.paths.length, TASK0_5_CONVERGENCE_PATH_COUNT);
+  assert.equal(digest(assignment.paths), TASK0_5_CONVERGENCE_PATHS_SHA256);
+  assert.equal(recordedDigest, TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256);
+  assert.equal(digest(approvalPayload), TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256);
+  assert.deepEqual(actualPaths, assignment.paths);
+  assert.deepEqual(unownedPaths(assignment.paths, manifest), []);
+  assert.ok(assignment.paths.every((relative) => manifest.planned_candidate_files.includes(relative)));
+  assert.equal(assignment.authorization_effect, 'durability-path-ownership-only');
+  assert.ok(assignment.prohibited_effects.includes('deployment'));
+  assert.ok(assignment.prohibited_effects.includes('production-mutation'));
+});
+
+test('Task 0-5 convergence rejects scope, authority, ownership, and planning tampering', () => {
+  const mutations = [
+    (manifest, assignment) => { assignment.paths.pop(); },
+    (manifest, assignment) => { assignment.paths[0] = 'apps/web/**'; },
+    (manifest, assignment) => { assignment.authorization_effect = 'runtime-authority'; },
+    (manifest, assignment) => { assignment.root_candidate_base = '0'.repeat(40); },
+    (manifest, assignment) => { assignment.prohibited_effects = []; },
+    (manifest, assignment) => { assignment.approval_sha256 = '0'.repeat(64); },
+    (manifest, assignment) => {
+      const target = assignment.paths.find((relative) => manifest.owned_create_paths.includes(relative));
+      manifest.owned_create_paths = manifest.owned_create_paths.filter((relative) => relative !== target);
+    },
+    (manifest, assignment) => {
+      manifest.planned_candidate_files = manifest.planned_candidate_files.filter(
+        (relative) => relative !== assignment.paths[0],
+      );
+    },
+  ];
+  for (const mutate of mutations) {
+    const manifest = ownership();
+    mutate(manifest, manifest.explicit_user_assignment[TASK0_5_CONVERGENCE_ASSIGNMENT]);
+    assert.throws(
+      () => validateOwnershipManifest(manifest),
+      /Task 0-5 convergence|changed-file ownership patterns/,
+    );
+  }
+});
+
 test('the six owner-approved Stage A paths have exact changed-file ownership', () => {
   const manifest = ownership();
   const assignment = validateOwnershipManifest(manifest);
@@ -1329,7 +1393,7 @@ test('removing any exact PR #2 entry recreates the durability ownership failure'
     );
     assert.throws(
       () => validateOwnershipManifest(manifest),
-      /must have exactly one exact ownership entry/,
+      /Task 0-5 convergence|must have exactly one exact ownership entry/,
     );
   }
 });

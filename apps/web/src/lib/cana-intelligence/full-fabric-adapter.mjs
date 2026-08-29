@@ -20,7 +20,7 @@ export function createFullFabricAdapter(impl) {
     'generateMediaCandidate',
     'loadReceipt',
     'resolveVerifiedPrincipalReceipt',
-    'executeAuthorizedExperienceCandidate',
+    'executeWithPromotionClaim',
     'rollbackExperienceVersion',
   ];
   for (const key of required) assert(typeof impl?.[key] === 'function', `full fabric adapter missing ${key}`, 'FULL_FABRIC_ADAPTER_INCOMPLETE');
@@ -118,25 +118,23 @@ export async function executeExperienceThroughCanonicalAuthority(adapter, {
   if (candidate.merchantId || candidate.tenantId || candidate.experimentId) {
     assert(executionRealm === 'VERIFIED_REAL', 'Reality Cell execution requires real authority evidence', 'REALITY_CELL_REAL_AUTHORITY_REQUIRED');
     assert(promotion.payload?.merchantAuthorizationReceiptDigest, 'merchant authorization missing from promotion', 'MERCHANT_AUTHORITY_REQUIRED');
-    assert(typeof adapter.claimPromotionExecution === 'function', 'canonical one-time promotion claim required', 'PROMOTION_REPLAY_GUARD_REQUIRED');
+    assert(typeof adapter.executeWithPromotionClaim === 'function', 'canonical atomic promotion execution required', 'PROMOTION_REPLAY_GUARD_REQUIRED');
   }
-  const execution = await adapter.executeAuthorizedExperienceCandidate({
+  const executionInput = {
     candidateId: candidate.candidateId,
     candidateDigest: candidate.candidateDigest,
     principal,
     promotionReceiptDigest: promotion.receiptDigest,
     idempotencyKey: promotion.receiptDigest,
     allowedEffectSet: promotion.payload.allowedEffectSet,
+  };
+  const execution = await adapter.executeWithPromotionClaim({
+    promotion,
+    candidate,
+    principal,
+    executionInput,
   });
-  assert(
-    execution?.idempotencyKey === promotion.receiptDigest,
-    'canonical executor must confirm the promotion-bound idempotency key',
-    'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED',
-  );
-  if (typeof adapter.claimPromotionExecution === 'function') {
-    const claimed = await adapter.claimPromotionExecution({ promotion, candidate, principal });
-    assert(claimed === true, 'promotion receipt already consumed', 'PROMOTION_REPLAYED');
-  }
+  assert(execution?.idempotencyKey === promotion.receiptDigest, 'canonical executor did not preserve idempotency', 'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED');
   return execution;
 }
 

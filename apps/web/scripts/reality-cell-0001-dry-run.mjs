@@ -250,7 +250,7 @@ export async function runRealityCellFixtureDryRun({ commit, tree, browserEvidenc
     generateMediaCandidate: async () => null,
     loadReceipt: store.adapter.loadReceipt,
     resolveVerifiedPrincipalReceipt: async () => owner.receiptDigest,
-    executeAuthorizedExperienceCandidate: async () => { throw new Error('fixture dry run must not execute a real treatment'); },
+    executeWithPromotionClaim: async () => { throw new Error('fixture dry run must not execute a real treatment'); },
     rollbackExperienceVersion: async () => rollback.receiptDigest,
     persistPromotionReceipt: async (payload) => store.put(makeReceipt({
       kind: 'PROMOTION',

@@ -2,8 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
+  admitRealityCellLesson,
+  createExperienceCandidate,
+  createFullFabricAdapter,
+  experiencePromotionCourt,
   makeReceipt,
   preregisterExperiment,
+  proposeRealityCellLesson,
 } from '../src/lib/cana-intelligence/index.mjs';
 import { createCanonicalWeldHost } from '../src/lib/cana-intelligence/canonical-host.mjs';
 
@@ -66,6 +71,49 @@ function prismaHarness() {
       },
     },
   };
+}
+
+function browserObservationPayload(candidate) {
+  return {
+    route: candidate.target,
+    candidateDigest: candidate.candidateDigest,
+    commit: 'a'.repeat(40),
+    tree: 'b'.repeat(40),
+    browser: 'chromium',
+    browserVersion: 'test',
+    viewport: { width: 390, height: 844 },
+    screenshotDigest: `sha256:${'c'.repeat(64)}`,
+    domDigest: `sha256:${'d'.repeat(64)}`,
+    capturedAt: new Date().toISOString(),
+    consoleResult: { status: 'PASS' },
+    accessibilityResult: { status: 'PASS' },
+  };
+}
+
+async function persistLocalPromotionCourt(host, candidate, principalReceiptDigest) {
+  const receipts = [
+    makeReceipt({ kind: 'PRIVATE_PREVIEW', subjectDigest: candidate.candidateDigest, issuer: 'preview', payload: { url: 'http://127.0.0.1/private' } }),
+    makeReceipt({ kind: 'BROWSER_OBSERVATION', subjectDigest: candidate.candidateDigest, issuer: 'browser', payload: browserObservationPayload(candidate) }),
+    makeReceipt({ kind: 'COURT', subjectDigest: candidate.candidateDigest, issuer: 'browser-court', payload: { court: 'BROWSER', verdict: 'PASS' } }),
+    makeReceipt({ kind: 'COURT', subjectDigest: candidate.candidateDigest, issuer: 'reality-court', payload: { court: 'REALITY', verdict: 'PASS' } }),
+    makeReceipt({ kind: 'ROLLBACK', subjectDigest: candidate.candidateDigest, issuer: 'rollback', payload: { targetVersion: 'v1' } }),
+  ];
+  receipts[2] = makeReceipt({
+    kind: 'COURT',
+    subjectDigest: candidate.candidateDigest,
+    issuer: 'browser-court',
+    payload: { court: 'BROWSER', verdict: 'PASS', observationReceiptDigest: receipts[1].receiptDigest },
+  });
+  for (const receipt of receipts) await host.persistReceipt(receipt);
+  return experiencePromotionCourt(createFullFabricAdapter(host), candidate, {
+    principalReceiptDigest,
+    previewReceiptDigest: receipts[0].receiptDigest,
+    browserObservationReceiptDigest: receipts[1].receiptDigest,
+    browserCourtReceiptDigest: receipts[2].receiptDigest,
+    realityCourtReceiptDigest: receipts[3].receiptDigest,
+    rollbackReceiptDigest: receipts[4].receiptDigest,
+    evidenceRealm: 'VERIFIED_LOCAL',
+  });
 }
 
 test('unauthenticated Owner cannot obtain a verified principal or principal receipt', async () => {
@@ -175,6 +223,46 @@ test('forged receipt content cannot replay under a canonical digest', async () =
   );
 });
 
+test('canonical promotion persistence independently resolves every court before minting', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const candidate = createExperienceCandidate({
+    objective: 'prove direct promotion calls cannot skip courts',
+    target: '/delivery',
+    operations: [{ type: 'UPDATE_LAYOUT' }],
+    proposer: 'owner-1',
+  });
+  await host.persistExperienceCandidate(candidate);
+  const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
+  await assert.rejects(() => host.persistPromotionReceipt({
+    candidateDigest: candidate.candidateDigest,
+    principalReceiptDigest,
+    merchantAuthorizationReceiptDigest: 'bogus-not-resolved',
+    experimentId: 'bogus-not-resolved',
+    allowedEffectSet: ['UPDATE_LAYOUT'],
+    evidenceRealm: 'VERIFIED_REAL',
+  }), (error) => error?.code === 'RECEIPT_DIGEST_REQUIRED');
+  assert.equal([...harness.receipts.values()].filter(({ kind }) => kind === 'PROMOTION').length, 0);
+
+  const promotion = await persistLocalPromotionCourt(host, candidate, principalReceiptDigest);
+  assert.equal(promotion.kind, 'PROMOTION');
+  assert.equal((await host.loadReceipt(promotion.receiptDigest)).receiptDigest, promotion.receiptDigest);
+  await assert.rejects(() => host.executeWithPromotionClaim({
+    promotion: { ...promotion, payload: { ...promotion.payload, allowedEffectSet: ['REPLACE_IMAGE'] } },
+    candidate,
+    principal: { subject: 'owner-1', principalReceiptDigest },
+    executionInput: { idempotencyKey: promotion.receiptDigest },
+  }), (error) => error?.code === 'PROMOTION_DIGEST_MISMATCH');
+  assert.deepEqual(
+    (await host.enumerateExperienceSurfaces()).map(({ route }) => route),
+    ['/', '/search', '/delivery', '/dispensaries'],
+  );
+});
+
 test('lesson and experiment state append canonically and the ledger reconstructs receipt digests', async () => {
   const harness = prismaHarness();
   const host = createCanonicalWeldHost({
@@ -182,16 +270,41 @@ test('lesson and experiment state append canonically and the ledger reconstructs
     assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
     tenant: 'orderweeddc.com',
   });
-  const lesson = {
-    lessonId: 'lesson-1',
-    status: 'ADMITTED',
-    trusted: true,
-    causalStatus: 'CAUSALLY_SUPPORTED',
-    admissionDigest: 'receipt:admission',
-    valueReceiptDigest: 'receipt:value',
-  };
+  const settlementDigest = 'settlement:lesson-1';
+  const valueReceipt = makeReceipt({
+    kind: 'VALUE',
+    subjectDigest: settlementDigest,
+    realm: 'VERIFIED_REAL',
+    issuer: 'value-court',
+    payload: { settlementClassification: 'CAUSAL_SUPPORTED' },
+  });
+  await host.persistReceipt(valueReceipt);
+  const proposedLesson = proposeRealityCellLesson({
+    claim: 'a real causal effect can inform the next challenger',
+    scope: 'merchant:1',
+    valueReceipt: {
+      ...valueReceipt,
+      settlementDigest,
+      settlementClassification: 'CAUSAL_SUPPORTED',
+      evidenceRealm: 'VERIFIED_REAL',
+    },
+    proposerId: 'proposer-1',
+  });
+  const verifierReceipt = makeReceipt({
+    kind: 'VERIFIER',
+    subjectDigest: proposedLesson.lessonDigest,
+    realm: 'VERIFIED_REAL',
+    issuer: 'verifier-1',
+    payload: { verifierId: 'verifier-1', verdict: 'ADMIT' },
+  });
+  await host.persistReceipt(verifierReceipt);
+  const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
+  const lesson = await admitRealityCellLesson(proposedLesson, {
+    verifierReceiptDigest: verifierReceipt.receiptDigest,
+    principalReceiptDigest,
+  }, host);
   await host.persistLesson(lesson);
-  assert.deepEqual(await host.loadLesson('lesson-1'), lesson);
+  assert.deepEqual(await host.loadLesson(lesson.lessonId), lesson);
 
   const experiment = preregisterExperiment({
     experimentId: 'experiment-1',
@@ -223,6 +336,33 @@ test('lesson and experiment state append canonically and the ledger reconstructs
   assert.equal(ledger.assignments.length, 1);
   assert.equal(ledger.exposures.length, 1);
   assert.equal(ledger.outcomes.length, 1);
+});
+
+test('caller trust and generic lesson-admission receipts cannot bypass canonical lesson admission', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const forgedAdmission = makeReceipt({
+    kind: 'LESSON_ADMISSION',
+    subjectDigest: 'lesson:forged',
+    realm: 'VERIFIED_REAL',
+    issuer: 'forged-verifier',
+    payload: { lessonId: 'lesson-forged', verdict: 'ADMIT', causalEnough: true, realEnough: true },
+  });
+  await assert.rejects(() => host.persistReceipt(forgedAdmission), /CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED/);
+  await assert.rejects(() => host.persistLesson({
+    lessonId: 'lesson-forged',
+    lessonDigest: 'lesson:forged',
+    status: 'ADMITTED',
+    trusted: true,
+    evidenceRealm: 'VERIFIED_REAL',
+    admissionDigest: forgedAdmission.receiptDigest,
+    admissionReceipt: forgedAdmission,
+  }), (error) => error?.code === 'LESSON_VALUE_MISMATCH');
+  assert.equal(await host.loadLesson('lesson-forged'), null);
 });
 
 test('raw observation append fails closed unless the canonical reality owner is injected', async () => {

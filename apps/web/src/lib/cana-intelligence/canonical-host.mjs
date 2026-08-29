@@ -1,4 +1,8 @@
-import { ACTIONS } from './authority.mjs';
+import {
+  ACTIONS,
+  requirePrincipalReceipt,
+  requireRealityCellAuthority,
+} from './authority.mjs';
 import {
   assert,
   canonicalJson,
@@ -7,8 +11,13 @@ import {
 } from './core.mjs';
 import {
   makeReceipt,
+  requireExactEvidenceRealm,
+  resolveCanonicalReceipt,
   validateReceiptShape,
 } from './receipts.mjs';
+import { assertManifest } from '../experience/manifest.mjs';
+import { resolveRuntimeExperienceManifest } from '../experience/runtime-manifest.mjs';
+import { validateBrowserObservationReceipt } from './site-cortex.mjs';
 
 const PRINCIPAL_ACTIONS = Object.freeze(Object.values(ACTIONS));
 const CANONICAL_ONLY_RECEIPT_KINDS = new Set([
@@ -16,12 +25,23 @@ const CANONICAL_ONLY_RECEIPT_KINDS = new Set([
   'MERCHANT_AUTHORIZATION',
   'PROMOTION',
   'EXPERIENCE_EXECUTION',
+  'LESSON_ADMISSION',
 ]);
 const RECORD_TYPES = Object.freeze({
   LESSON: 'LESSON',
   PREDICTION: 'PREDICTION',
   EXPERIMENT: 'EXPERIMENT',
+  EXPERIENCE_CANDIDATE: 'EXPERIENCE_CANDIDATE',
 });
+const EXPERIENCE_JOURNEY_BY_ROUTE = Object.freeze({
+  '/': 'HOME',
+  '/search': 'SEARCH',
+  '/delivery': 'DELIVERY',
+  '/dispensaries': 'DISPENSARIES',
+});
+const CANONICAL_EXPERIENCE_SURFACES = Object.freeze(
+  Object.entries(EXPERIENCE_JOURNEY_BY_ROUTE).map(([route, journey]) => Object.freeze({ route, journey })),
+);
 
 function dateIso(value) {
   return value instanceof Date ? value.toISOString() : value;
@@ -283,8 +303,66 @@ export function createCanonicalWeldHost({
     });
   }
 
+  async function validateLessonAdmission(lesson) {
+    const sessionPrincipal = await resolveVerifiedPrincipal();
+    assert(lesson?.lessonId && lesson?.lessonDigest, 'governed lesson identity required', 'LESSON_IDENTITY_REQUIRED');
+    const admission = lesson?.admissionReceipt;
+    validateReceiptShape(admission, {
+      kind: 'LESSON_ADMISSION',
+      subjectDigest: lesson.lessonDigest,
+    });
+    assert(admission.receiptDigest === lesson.admissionDigest, 'lesson admission digest mismatch', 'LESSON_ADMISSION_MISMATCH');
+    assert(admission.realm === lesson.evidenceRealm, 'lesson admission realm mismatch', 'LESSON_ADMISSION_REALM_MISMATCH');
+    assert(admission.payload?.lessonId === lesson.lessonId, 'lesson admission identity mismatch', 'LESSON_ADMISSION_MISMATCH');
+    assert(admission.payload?.valueReceiptDigest === lesson.valueReceiptDigest, 'lesson value lineage mismatch', 'LESSON_VALUE_MISMATCH');
+    assert(admission.payload?.verifierReceiptDigest === lesson.verifierReceiptDigest, 'lesson verifier lineage mismatch', 'LESSON_VERIFIER_MISMATCH');
+    assert(admission.parentDigests.includes(lesson.valueReceiptDigest), 'lesson value parent missing', 'LESSON_VALUE_MISMATCH');
+    assert(admission.parentDigests.includes(lesson.verifierReceiptDigest), 'lesson verifier parent missing', 'LESSON_VERIFIER_MISMATCH');
+
+    const valueReceipt = await resolveCanonicalReceipt({ loadReceipt }, lesson.valueReceiptDigest, {
+      kind: 'VALUE',
+      subjectDigest: lesson.settlementDigest,
+    });
+    const verifierReceipt = await resolveCanonicalReceipt({ loadReceipt }, lesson.verifierReceiptDigest, {
+      kind: 'VERIFIER',
+      subjectDigest: lesson.lessonDigest,
+    });
+    requireExactEvidenceRealm(valueReceipt, lesson.evidenceRealm);
+    requireExactEvidenceRealm(verifierReceipt, lesson.evidenceRealm);
+    assert(verifierReceipt.payload?.verifierId === lesson.verifierId, 'lesson verifier identity mismatch', 'LESSON_VERIFIER_MISMATCH');
+    assert(['ADMIT', 'REJECT'].includes(verifierReceipt.payload?.verdict), 'lesson verifier verdict invalid', 'LESSON_VERDICT_INVALID');
+    assert(['ADMIT', 'REJECT'].includes(admission.payload?.verdict), 'lesson admission verdict invalid', 'LESSON_VERDICT_INVALID');
+    if (admission.payload.verdict === 'ADMIT') {
+      assert(verifierReceipt.payload.verdict === 'ADMIT', 'lesson admission exceeds verifier verdict', 'LESSON_VERDICT_INVALID');
+    }
+
+    const admitted = admission.realm === 'VERIFIED_REAL'
+      && admission.payload?.verdict === 'ADMIT'
+      && admission.payload?.causalEnough === true
+      && admission.payload?.realEnough === true
+      && valueReceipt.payload?.settlementClassification === 'CAUSAL_SUPPORTED';
+    assert(lesson.trusted === admitted, 'caller-supplied lesson trust does not match canonical admission', 'LESSON_TRUST_MISMATCH');
+    assert(
+      admitted ? lesson.status === 'ADMITTED' : lesson.status !== 'ADMITTED',
+      'lesson status does not match canonical admission',
+      'LESSON_STATUS_MISMATCH',
+    );
+    if (admission.realm === 'VERIFIED_REAL') {
+      const principalReceiptDigest = admission.parentDigests.find((receiptDigest) => (
+        receiptDigest !== lesson.valueReceiptDigest && receiptDigest !== lesson.verifierReceiptDigest
+      ));
+      const principal = await requirePrincipalReceipt({ loadReceipt }, principalReceiptDigest, ACTIONS.ADMIT_LESSON);
+      assert(principal.subject === sessionPrincipal.subject, 'lesson admission principal mismatch', 'LESSON_PRINCIPAL_MISMATCH');
+    } else {
+      assert(!admitted, 'non-real lesson cannot be trusted', 'LESSON_REALITY_REQUIRED');
+    }
+    return admission;
+  }
+
   async function persistLesson(lesson) {
-    return persistRecord(RECORD_TYPES.LESSON, lesson?.lessonId, lesson);
+    const admission = await validateLessonAdmission(lesson);
+    await persistReceiptCanonical(admission);
+    return persistRecord(RECORD_TYPES.LESSON, lesson.lessonId, lesson);
   }
 
   async function loadLesson(lessonId) {
@@ -323,8 +401,86 @@ export function createCanonicalWeldHost({
     return loadRecord(RECORD_TYPES.EXPERIMENT, experimentId);
   }
 
+  async function validatePromotionLineage(payload, now = new Date()) {
+    const sessionPrincipal = await resolveVerifiedPrincipal();
+    assert(payload?.candidateDigest, 'promotion candidate digest required', 'PROMOTION_CANDIDATE_REQUIRED');
+    assert(['VERIFIED_LOCAL', 'VERIFIED_REAL'].includes(payload?.evidenceRealm), 'canonical promotion realm invalid', 'PROMOTION_REALM_INVALID');
+    assert(Array.isArray(payload?.allowedEffectSet) && payload.allowedEffectSet.length > 0, 'promotion effect set required', 'PROMOTION_EFFECT_SET_REQUIRED');
+    const candidate = await loadRecord(RECORD_TYPES.EXPERIENCE_CANDIDATE, payload.candidateDigest);
+    assert(candidate?.candidateDigest === payload.candidateDigest, 'canonical experience candidate not found', 'EXPERIENCE_CANDIDATE_NOT_FOUND');
+    const { candidateDigest, ...candidateBody } = candidate;
+    assert(digest(candidateBody, 'experience_candidate') === candidateDigest, 'canonical experience candidate digest mismatch', 'CANDIDATE_DIGEST_MISMATCH');
+    assert(candidate.operations.every(({ type }) => payload.allowedEffectSet.includes(type)), 'promotion effect set does not cover candidate', 'PROMOTION_EFFECT_SET_MISMATCH');
+    const principalReceipt = await resolveCanonicalReceipt({ loadReceipt }, payload.principalReceiptDigest, {
+      kind: 'PRINCIPAL',
+      minimumRealm: 'VERIFIED_LOCAL',
+      now,
+    });
+    const principal = await requirePrincipalReceipt({ loadReceipt }, principalReceipt.receiptDigest, ACTIONS.EXECUTE_EXPERIENCE_CANDIDATE);
+    assert(principal.subject === sessionPrincipal.subject, 'promotion principal does not match authenticated Owner', 'PROMOTION_PRINCIPAL_MISMATCH');
+    assert(principalReceipt.issuer === 'canonical-owner-session', 'promotion principal issuer invalid', 'INVALID_AUTHORITY_LINEAGE');
+    assert(principalReceipt.payload?.verifiedBy === 'canonical-assertAdmin', 'promotion principal lineage invalid', 'INVALID_AUTHORITY_LINEAGE');
+
+    const receiptRequirements = [
+      ['PRIVATE_PREVIEW', payload.previewReceiptDigest],
+      ['BROWSER_OBSERVATION', payload.browserObservationReceiptDigest],
+      ['COURT', payload.browserCourtReceiptDigest],
+      ['COURT', payload.realityCourtReceiptDigest],
+      ['ROLLBACK', payload.rollbackReceiptDigest],
+    ];
+    const [preview, browserObservation, browserCourt, realityCourt, rollback] = await Promise.all(
+      receiptRequirements.map(([kind, receiptDigest]) => resolveCanonicalReceipt({ loadReceipt }, receiptDigest, {
+        kind,
+        subjectDigest: payload.candidateDigest,
+        now,
+      })),
+    );
+    for (const receipt of [preview, browserObservation, browserCourt, realityCourt, rollback]) {
+      requireExactEvidenceRealm(receipt, payload.evidenceRealm);
+    }
+    validateBrowserObservationReceipt(browserObservation, {
+      candidateDigest: payload.candidateDigest,
+      route: candidate.target,
+      evidenceRealm: payload.evidenceRealm,
+    });
+    assert(browserCourt.payload?.court === 'BROWSER' && browserCourt.payload?.verdict === 'PASS', 'browser court not passed', 'EXPERIENCE_BROWSER_COURT_FAILED');
+    assert(browserCourt.payload?.observationReceiptDigest === browserObservation.receiptDigest, 'browser court observation mismatch', 'EXPERIENCE_BROWSER_OBSERVATION_MISMATCH');
+    assert(realityCourt.payload?.court === 'REALITY' && realityCourt.payload?.verdict === 'PASS', 'reality court not passed', 'EXPERIENCE_REALITY_COURT_FAILED');
+    assert(rollback.payload?.rollbackContractDigest || rollback.payload?.targetVersion, 'rollback receipt incomplete', 'EXPERIENCE_ROLLBACK_INCOMPLETE');
+
+    if (payload.experimentId || payload.merchantAuthorizationReceiptDigest) {
+      assert(payload.evidenceRealm === 'VERIFIED_REAL', 'Reality Cell promotion requires real evidence', 'REALITY_CELL_REAL_AUTHORITY_REQUIRED');
+      const experiment = await loadExperiment(payload.experimentId);
+      assert(experiment?.preregistrationDigest, 'canonical Reality Cell experiment not found', 'CANA_EXPERIMENT_NOT_FOUND');
+      assert(experiment.tenantId === tenant && payload.tenantId === tenant, 'promotion tenant mismatch', 'REALITY_CELL_TENANT_MISMATCH');
+      assert(experiment.merchantId === payload.merchantId, 'promotion merchant mismatch', 'MERCHANT_AUTHORITY_MISMATCH');
+      assert(experiment.preregistrationDigest === payload.preregistrationDigest, 'promotion preregistration mismatch', 'INVALID_AUTHORITY_LINEAGE');
+      assert(experiment.treatmentDefinition?.candidateDigest === payload.candidateDigest, 'promotion candidate mismatch', 'CANDIDATE_DIGEST_MISMATCH');
+      assert(rollback.payload?.rollbackContractDigest === experiment.rollbackContract?.digest, 'rollback contract mismatch', 'EXPERIENCE_ROLLBACK_MISMATCH');
+      await requireRealityCellAuthority({
+        experiment,
+        evidenceAdapter: { loadReceipt },
+        authorityBinding: {
+          experimentId: payload.experimentId,
+          preregistrationDigest: payload.preregistrationDigest,
+          candidateDigest: payload.candidateDigest,
+          ownerPrincipalReceiptDigest: payload.principalReceiptDigest,
+          merchantAuthorizationReceiptDigest: payload.merchantAuthorizationReceiptDigest,
+          allowedEffectSet: payload.allowedEffectSet,
+          rollbackContractDigest: payload.rollbackContractDigest,
+          expiresAt: payload.expiresAt,
+          evidenceRealm: payload.evidenceRealm,
+          realWorldExecutionAllowed: true,
+        },
+        now,
+      });
+    } else {
+      assert(!payload.preregistrationDigest && !payload.merchantId && !payload.tenantId, 'partial Reality Cell promotion forbidden', 'INVALID_AUTHORITY_LINEAGE');
+    }
+  }
+
   async function persistPromotionReceipt(payload) {
-    await resolveVerifiedPrincipal();
+    await validatePromotionLineage(payload);
     const receipt = makeReceipt({
       kind: 'PROMOTION',
       subjectDigest: payload?.candidateDigest,
@@ -345,15 +501,9 @@ export function createCanonicalWeldHost({
     return receipt;
   }
 
-  async function claimPromotionExecution({ promotion, candidate, principal }) {
-    const sessionPrincipal = await resolveVerifiedPrincipal();
-    assert(
-      sessionPrincipal.subject === principal?.subject,
-      'promotion execution principal does not match the authenticated Owner session',
-      'PROMOTION_PRINCIPAL_MISMATCH',
-    );
+  function promotionExecutionClaim({ promotion, candidate, principal }) {
     validateReceiptShape(promotion, { kind: 'PROMOTION', subjectDigest: candidate?.candidateDigest });
-    const claim = makeReceipt({
+    return makeReceipt({
       kind: 'EXPERIENCE_EXECUTION',
       subjectDigest: promotion.receiptDigest,
       realm: promotion.realm,
@@ -366,13 +516,127 @@ export function createCanonicalWeldHost({
         principalReceiptDigest: principal?.principalReceiptDigest,
       },
     });
-    try {
-      await receiptStore.create({ data: receiptData(tenant, claim) });
-      return true;
-    } catch (error) {
-      if (error?.code === 'P2002') return false;
-      throw error;
+  }
+
+  function promotedManifestRecord({ promotion, candidate, execution }) {
+    const journey = EXPERIENCE_JOURNEY_BY_ROUTE[candidate?.target];
+    assert(journey, 'candidate target is not a canonical customer journey', 'EXPERIENCE_RUNTIME_JOURNEY_REQUIRED');
+    const manifest = structuredClone(execution?.promotedManifest);
+    assertManifest(manifest);
+    assert(
+      manifest.merchant?.identity?.tenant === tenant,
+      'promoted manifest tenant does not match canonical host',
+      'EXPERIENCE_RUNTIME_TENANT_MISMATCH',
+    );
+    assert(
+      manifest.merchant?.journey === journey && manifest.presentation?.journey === journey,
+      'promoted manifest journey does not match candidate target',
+      'EXPERIENCE_RUNTIME_JOURNEY_MISMATCH',
+    );
+    manifest.promotion = {
+      receiptDigest: promotion.receiptDigest,
+      candidateDigest: candidate.candidateDigest,
+      evidenceRealm: promotion.realm,
+    };
+    assertManifest(manifest);
+    const recordType = 'EXPERIENCE_MANIFEST';
+    const recordId = `journey:${journey}`;
+    const recordDigest = recordIdentity(tenant, recordType, recordId, manifest);
+    return {
+      recordDigest,
+      data: {
+        tenant,
+        recordDigest,
+        recordType,
+        recordId,
+        status: 'PROMOTED',
+        bodyJson: canonicalJson(manifest),
+      },
+    };
+  }
+
+  async function enumerateExperienceSurfaces() {
+    if (typeof experience.enumerateExperienceSurfaces === 'function') {
+      return experience.enumerateExperienceSurfaces();
     }
+    return CANONICAL_EXPERIENCE_SURFACES;
+  }
+
+  async function loadExperienceManifest(surface) {
+    if (typeof experience.loadExperienceManifest === 'function') {
+      return experience.loadExperienceManifest(surface);
+    }
+    const route = typeof surface === 'string' ? surface : surface?.route;
+    const journey = EXPERIENCE_JOURNEY_BY_ROUTE[route];
+    assert(journey, 'surface is not a canonical customer journey', 'EXPERIENCE_RUNTIME_JOURNEY_REQUIRED');
+    return resolveRuntimeExperienceManifest({ receiptStore, recordStore, tenant, journey });
+  }
+
+  async function persistExperienceCandidate(candidate) {
+    assert(candidate?.candidateId && candidate?.candidateDigest, 'experience candidate identity required', 'EXPERIENCE_CANDIDATE_INCOMPLETE');
+    const { candidateDigest, ...body } = candidate;
+    assert(digest(body, 'experience_candidate') === candidateDigest, 'experience candidate digest mismatch', 'CANDIDATE_DIGEST_MISMATCH');
+    assert(candidate.status === 'CANDIDATE_ONLY' && candidate.mayExecute === false && candidate.mayPublish === false, 'experience candidate authority boundary invalid', 'EXPERIENCE_CANDIDATE_AUTHORITY_INVALID');
+    assert(EXPERIENCE_JOURNEY_BY_ROUTE[candidate.target], 'candidate target is not a canonical customer journey', 'EXPERIENCE_RUNTIME_JOURNEY_REQUIRED');
+    if (candidate.tenantId) assert(candidate.tenantId === tenant, 'candidate tenant mismatch', 'REALITY_CELL_TENANT_MISMATCH');
+    return persistRecord(RECORD_TYPES.EXPERIENCE_CANDIDATE, candidate.candidateDigest, candidate);
+  }
+
+  async function executeWithPromotionClaim({ promotion, candidate, principal, executionInput }) {
+    const sessionPrincipal = await resolveVerifiedPrincipal();
+    const canonicalCandidate = await loadRecord(RECORD_TYPES.EXPERIENCE_CANDIDATE, candidate?.candidateDigest);
+    assert(canonicalCandidate, 'canonical experience candidate not found', 'EXPERIENCE_CANDIDATE_NOT_FOUND');
+    assertExactReplay(canonicalCandidate, candidate, 'CANDIDATE_DIGEST_MISMATCH');
+    const canonicalPromotion = await resolveCanonicalReceipt({ loadReceipt }, promotion?.receiptDigest, {
+      kind: 'PROMOTION',
+      subjectDigest: candidate.candidateDigest,
+    });
+    assertExactReplay(canonicalPromotion, promotion, 'PROMOTION_DIGEST_MISMATCH');
+    const canonicalPrincipal = await requirePrincipalReceipt(
+      { loadReceipt },
+      principal?.principalReceiptDigest,
+      ACTIONS.EXECUTE_EXPERIENCE_CANDIDATE,
+    );
+    assert(
+      sessionPrincipal.subject === principal?.subject
+        && canonicalPrincipal.subject === sessionPrincipal.subject
+        && canonicalPromotion.payload?.principalReceiptDigest === principal.principalReceiptDigest,
+      'promotion execution principal does not match the authenticated Owner session',
+      'PROMOTION_PRINCIPAL_MISMATCH',
+    );
+    assert(
+      candidate.operations.every(({ type }) => canonicalPromotion.payload?.allowedEffectSet?.includes(type)),
+      'promotion effect set does not cover candidate',
+      'PROMOTION_EFFECT_SET_MISMATCH',
+    );
+    assert(
+      !canonicalPromotion.payload?.expiresAt
+        || new Date(canonicalPromotion.payload.expiresAt).getTime() >= Date.now(),
+      'promotion receipt expired',
+      'PROMOTION_EXPIRED',
+    );
+    assert(typeof prisma.$transaction === 'function', 'canonical transactional execution required', 'PROMOTION_ATOMIC_EXECUTION_REQUIRED');
+    const execute = requireExperience('executeAuthorizedExperienceCandidate');
+    const claim = promotionExecutionClaim({ promotion, candidate, principal });
+    return prisma.$transaction(async (transaction) => {
+      try {
+        await transaction.canaEvidenceReceipt.create({ data: receiptData(tenant, claim) });
+      } catch (error) {
+        if (error?.code === 'P2002') {
+          assert(false, 'promotion receipt already consumed', 'PROMOTION_REPLAYED');
+        }
+        throw error;
+      }
+      const execution = await execute(executionInput);
+      assert(
+        execution?.idempotencyKey === promotion.receiptDigest,
+        'canonical executor must confirm the promotion-bound idempotency key',
+        'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED',
+      );
+      const record = promotedManifestRecord({ promotion, candidate, execution });
+      await transaction.canaIntelligenceRecord.create({ data: record.data });
+      return execution;
+    });
   }
 
   const requireExperience = (name) => {
@@ -397,22 +661,17 @@ export function createCanonicalWeldHost({
     loadExperiment,
     resolveVerifiedPrincipalReceipt,
     persistPromotionReceipt,
-    claimPromotionExecution,
-    enumerateExperienceSurfaces: (...args) => (
-      typeof experience.enumerateExperienceSurfaces === 'function'
-        ? experience.enumerateExperienceSurfaces(...args)
-        : []
-    ),
-    loadExperienceManifest: (...args) => (
-      typeof experience.loadExperienceManifest === 'function'
-        ? experience.loadExperienceManifest(...args)
+    executeWithPromotionClaim,
+    enumerateExperienceSurfaces,
+    loadExperienceManifest,
+    persistExperienceCandidate,
+    renderPrivatePreview: (...args) => requireExperience('renderPrivatePreview')(...args),
+    captureRenderedEvidenceReceipt: (...args) => (
+      typeof experience.captureRenderedEvidenceReceipt === 'function'
+        ? experience.captureRenderedEvidenceReceipt(...args)
         : null
     ),
-    persistExperienceCandidate: (...args) => requireExperience('persistExperienceCandidate')(...args),
-    renderPrivatePreview: (...args) => requireExperience('renderPrivatePreview')(...args),
-    captureRenderedEvidenceReceipt: (...args) => requireExperience('captureRenderedEvidenceReceipt')(...args),
     generateMediaCandidate: (...args) => requireExperience('generateMediaCandidate')(...args),
-    executeAuthorizedExperienceCandidate: (...args) => requireExperience('executeAuthorizedExperienceCandidate')(...args),
     rollbackExperienceVersion: (...args) => requireExperience('rollbackExperienceVersion')(...args),
   });
 }

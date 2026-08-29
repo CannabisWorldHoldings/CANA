@@ -10,6 +10,7 @@ import {
 } from '../src/lib/cana-intelligence/index.mjs';
 function store(){const m=new Map();return {m,put:r=>(m.set(r.receiptDigest,r),r),loadReceipt:async d=>m.get(d)??null};}
 function browserPayload({route='/',candidateDigest='candidate:test'}={}){return {route,candidateDigest,commit:'ab2a0363ce7f3e1f2eb6067e73663cb88f042540',tree:'c4ffc5e9b62977f1e031eb8b43da73ff6da4d2c3',browser:'chromium',browserVersion:'140.0.0.0',viewport:{width:390,height:844},screenshotDigest:`sha256:${'1'.repeat(64)}`,domDigest:`sha256:${'2'.repeat(64)}`,capturedAt:'2026-08-24T12:00:00.000Z',consoleResult:{status:'PASS',errors:0},accessibilityResult:{status:'PASS',violations:0}};}
+const atomicExecution = (execute = async (input) => input) => async ({ executionInput }) => execute(executionInput);
 
 test('intent compiler never authenticates execution intent',()=>{const i=compileSovereignIntent('Deploy a new homepage theme across the entire site');assert.equal(i.requiresVerifiedPrincipal,true);assert.equal(i.authorityClaimed,false);});
 test('intent compiler recognizes page blog image operations',()=>{const i=compileSovereignIntent('Create a new blog page and generate a better hero image');assert.ok(i.operations.some(x=>['ADD_PAGE','ADD_BLOG'].includes(x)));assert.ok(i.operations.includes('REPLACE_IMAGE'));});
@@ -34,8 +35,8 @@ test('skill promotion requires holdout and verifier receipts',()=>{const s=propo
 test('adaptation decision chooses lowest proven layer',()=>assert.equal(chooseAdaptationLayer({evaluations:[{layer:'PROMPT',decisive:true,passes:false},{layer:'HARNESS',decisive:true,passes:true}]}).layer,'HARNESS'));
 test('frontier supremacy requires same benchmark contract',()=>{const no=buildFrontierLane({lane:'seo',frontierEvidence:{score:.8,benchmarkContractDigest:'a',evaluatorDigest:'e',window:'w',resourceBudgetDigest:'r',receiptDigest:'f'},canaEvidence:{score:.9,benchmarkContractDigest:'b',evaluatorDigest:'e',window:'w',resourceBudgetDigest:'r',receiptDigest:'c'}});assert.equal(no.supremacyClaimAllowed,false);const yes=buildFrontierLane({lane:'seo',frontierEvidence:{score:.8,benchmarkContractDigest:'a',evaluatorDigest:'e',window:'w',resourceBudgetDigest:'r',receiptDigest:'f'},canaEvidence:{score:.9,benchmarkContractDigest:'a',evaluatorDigest:'e',window:'w',resourceBudgetDigest:'r',receiptDigest:'c'}});assert.equal(yes.supremacyClaimAllowed,true);});
 test('page factory requires canonical information-gap receipt',async()=>{const s=store();await assert.rejects(()=>compilePageFactoryCandidate({gapReceiptDigest:'missing',evidenceAdapter:{loadReceipt:s.loadReceipt},route:'/shaw',purpose:'guide',proposer:'a'}),/not found/);const g=s.put(makeReceipt({kind:'INFORMATION_GAP',subjectDigest:'gap:shaw',realm:'VERIFIED_LOCAL',issuer:'research',payload:{description:'missing guide'}}));const c=await compilePageFactoryCandidate({gapReceiptDigest:g.receiptDigest,evidenceAdapter:{loadReceipt:s.loadReceipt},route:'/shaw',purpose:'guide',artifactType:'BLOG',proposer:'a'});assert.equal(c.publicationAllowed,false);});
-test('full-fabric execution requires promotion receipt bound to candidate',async()=>{const s=store();const c=createExperienceCandidate({objective:'x',target:'/',operations:[{type:'UPDATE_LAYOUT'}],proposer:'a'});const p=s.put(makeReceipt({kind:'PRINCIPAL',subjectDigest:'owner',realm:'VERIFIED_LOCAL',issuer:'auth',payload:{verified:true,subject:'owner',allowedActions:['EXECUTE_EXPERIENCE_CANDIDATE']}}));const adapter=createFullFabricAdapter({enumerateExperienceSurfaces:async()=>[],loadExperienceManifest:async()=>null,persistExperienceCandidate:async()=>{},renderPrivatePreview:async()=>{},captureRenderedEvidenceReceipt:async()=>null,generateMediaCandidate:async()=>{},loadReceipt:s.loadReceipt,resolveVerifiedPrincipalReceipt:async()=>p.receiptDigest,executeAuthorizedExperienceCandidate:async x=>x,rollbackExperienceVersion:async()=>{}});await assert.rejects(()=>executeExperienceThroughCanonicalAuthority(adapter,{candidate:c,principalReceiptDigest:p.receiptDigest,promotionReceiptDigest:'missing'}),/not found/);});
-test('promotion court binds preview browser reality rollback to candidate digest',async()=>{const s=store();const c=createExperienceCandidate({objective:'x',target:'/',operations:[{type:'UPDATE_LAYOUT'}],proposer:'a'});const p=s.put(makeReceipt({kind:'PRINCIPAL',subjectDigest:'owner',realm:'VERIFIED_LOCAL',issuer:'auth',payload:{verified:true,subject:'owner',allowedActions:['EXECUTE_EXPERIENCE_CANDIDATE']}}));const preview=s.put(makeReceipt({kind:'PRIVATE_PREVIEW',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'preview',payload:{url:'private'}}));const observation=s.put(makeReceipt({kind:'BROWSER_OBSERVATION',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'browser-observer',payload:browserPayload({candidateDigest:c.candidateDigest})}));const browser=s.put(makeReceipt({kind:'COURT',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'browser-court',payload:{court:'BROWSER',verdict:'PASS',observationReceiptDigest:observation.receiptDigest}}));const reality=s.put(makeReceipt({kind:'COURT',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'reality-court',payload:{court:'REALITY',verdict:'PASS'}}));const rollback=s.put(makeReceipt({kind:'ROLLBACK',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'versioning',payload:{targetVersion:'v1'}}));const adapter=createFullFabricAdapter({enumerateExperienceSurfaces:async()=>[],loadExperienceManifest:async()=>null,persistExperienceCandidate:async()=>{},renderPrivatePreview:async()=>{},captureRenderedEvidenceReceipt:async()=>null,generateMediaCandidate:async()=>{},loadReceipt:s.loadReceipt,resolveVerifiedPrincipalReceipt:async()=>p.receiptDigest,executeAuthorizedExperienceCandidate:async x=>x,rollbackExperienceVersion:async()=>{},persistPromotionReceipt:async payload=>{const r=makeReceipt({kind:'PROMOTION',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'promotion-court',payload});s.put(r);return r;}});const pr=await experiencePromotionCourt(adapter,c,{principalReceiptDigest:p.receiptDigest,previewReceiptDigest:preview.receiptDigest,browserObservationReceiptDigest:observation.receiptDigest,browserCourtReceiptDigest:browser.receiptDigest,realityCourtReceiptDigest:reality.receiptDigest,rollbackReceiptDigest:rollback.receiptDigest});assert.equal(pr.kind,'PROMOTION');const executed=await executeExperienceThroughCanonicalAuthority(adapter,{candidate:c,principalReceiptDigest:p.receiptDigest,promotionReceiptDigest:pr.receiptDigest});assert.equal(executed.candidateDigest,c.candidateDigest);});
+test('full-fabric execution requires promotion receipt bound to candidate',async()=>{const s=store();const c=createExperienceCandidate({objective:'x',target:'/',operations:[{type:'UPDATE_LAYOUT'}],proposer:'a'});const p=s.put(makeReceipt({kind:'PRINCIPAL',subjectDigest:'owner',realm:'VERIFIED_LOCAL',issuer:'auth',payload:{verified:true,subject:'owner',allowedActions:['EXECUTE_EXPERIENCE_CANDIDATE']}}));const adapter=createFullFabricAdapter({enumerateExperienceSurfaces:async()=>[],loadExperienceManifest:async()=>null,persistExperienceCandidate:async()=>{},renderPrivatePreview:async()=>{},captureRenderedEvidenceReceipt:async()=>null,generateMediaCandidate:async()=>{},loadReceipt:s.loadReceipt,resolveVerifiedPrincipalReceipt:async()=>p.receiptDigest,executeWithPromotionClaim:atomicExecution(),rollbackExperienceVersion:async()=>{}});await assert.rejects(()=>executeExperienceThroughCanonicalAuthority(adapter,{candidate:c,principalReceiptDigest:p.receiptDigest,promotionReceiptDigest:'missing'}),/not found/);});
+test('promotion court binds preview browser reality rollback to candidate digest',async()=>{const s=store();const c=createExperienceCandidate({objective:'x',target:'/',operations:[{type:'UPDATE_LAYOUT'}],proposer:'a'});const p=s.put(makeReceipt({kind:'PRINCIPAL',subjectDigest:'owner',realm:'VERIFIED_LOCAL',issuer:'auth',payload:{verified:true,subject:'owner',allowedActions:['EXECUTE_EXPERIENCE_CANDIDATE']}}));const preview=s.put(makeReceipt({kind:'PRIVATE_PREVIEW',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'preview',payload:{url:'private'}}));const observation=s.put(makeReceipt({kind:'BROWSER_OBSERVATION',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'browser-observer',payload:browserPayload({candidateDigest:c.candidateDigest})}));const browser=s.put(makeReceipt({kind:'COURT',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'browser-court',payload:{court:'BROWSER',verdict:'PASS',observationReceiptDigest:observation.receiptDigest}}));const reality=s.put(makeReceipt({kind:'COURT',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'reality-court',payload:{court:'REALITY',verdict:'PASS'}}));const rollback=s.put(makeReceipt({kind:'ROLLBACK',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'versioning',payload:{targetVersion:'v1'}}));const adapter=createFullFabricAdapter({enumerateExperienceSurfaces:async()=>[],loadExperienceManifest:async()=>null,persistExperienceCandidate:async()=>{},renderPrivatePreview:async()=>{},captureRenderedEvidenceReceipt:async()=>null,generateMediaCandidate:async()=>{},loadReceipt:s.loadReceipt,resolveVerifiedPrincipalReceipt:async()=>p.receiptDigest,executeWithPromotionClaim:atomicExecution(),rollbackExperienceVersion:async()=>{},persistPromotionReceipt:async payload=>{const r=makeReceipt({kind:'PROMOTION',subjectDigest:c.candidateDigest,realm:'VERIFIED_LOCAL',issuer:'promotion-court',payload});s.put(r);return r;}});const pr=await experiencePromotionCourt(adapter,c,{principalReceiptDigest:p.receiptDigest,previewReceiptDigest:preview.receiptDigest,browserObservationReceiptDigest:observation.receiptDigest,browserCourtReceiptDigest:browser.receiptDigest,realityCourtReceiptDigest:reality.receiptDigest,rollbackReceiptDigest:rollback.receiptDigest});assert.equal(pr.kind,'PROMOTION');const executed=await executeExperienceThroughCanonicalAuthority(adapter,{candidate:c,principalReceiptDigest:p.receiptDigest,promotionReceiptDigest:pr.receiptDigest});assert.equal(executed.candidateDigest,c.candidateDigest);});
 
 test('a failed idempotent executor does not consume the promotion before a safe retry', async () => {
   const s = store();
@@ -49,14 +50,11 @@ test('a failed idempotent executor does not consume the promotion before a safe 
     persistExperienceCandidate: async () => {}, renderPrivatePreview: async () => {},
     captureRenderedEvidenceReceipt: async () => null, generateMediaCandidate: async () => {},
     loadReceipt: s.loadReceipt, resolveVerifiedPrincipalReceipt: async () => principal.receiptDigest,
-    executeAuthorizedExperienceCandidate: async (input) => {
-      if (shouldFail) { shouldFail = false; throw new Error('EXECUTOR_FAILED'); }
-      return { ...input, idempotencyKey: input.idempotencyKey };
-    },
-    claimPromotionExecution: async () => {
+    executeWithPromotionClaim: async ({ executionInput }) => {
       if (claimed) return false;
+      if (shouldFail) { shouldFail = false; throw new Error('EXECUTOR_FAILED'); }
       claimed = true;
-      return true;
+      return executionInput;
     },
     rollbackExperienceVersion: async () => {},
   });
@@ -69,4 +67,32 @@ test('a failed idempotent executor does not consume the promotion before a safe 
   const result = await executeExperienceThroughCanonicalAuthority(adapter, { candidate, principalReceiptDigest: principal.receiptDigest, promotionReceiptDigest: promotion.receiptDigest });
   assert.equal(result.idempotencyKey, promotion.receiptDigest);
   assert.equal(claimed, true);
+});
+
+test('atomic promotion execution serializes concurrent effects', async () => {
+  const s = store();
+  const candidate = createExperienceCandidate({ objective: 'x', target: '/', operations: [{ type: 'UPDATE_LAYOUT' }], proposer: 'a' });
+  const principal = s.put(makeReceipt({ kind: 'PRINCIPAL', subjectDigest: 'owner', realm: 'VERIFIED_LOCAL', issuer: 'auth', payload: { verified: true, subject: 'owner', allowedActions: ['EXECUTE_EXPERIENCE_CANDIDATE'] } }));
+  const promotion = s.put(makeReceipt({ kind: 'PROMOTION', subjectDigest: candidate.candidateDigest, realm: 'VERIFIED_LOCAL', issuer: 'court', payload: { principalReceiptDigest: principal.receiptDigest, allowedEffectSet: ['UPDATE_LAYOUT'] } }));
+  let reserved = false;
+  let effects = 0;
+  const adapter = createFullFabricAdapter({
+    enumerateExperienceSurfaces: async () => [], loadExperienceManifest: async () => null,
+    persistExperienceCandidate: async () => {}, renderPrivatePreview: async () => {},
+    captureRenderedEvidenceReceipt: async () => null, generateMediaCandidate: async () => {},
+    loadReceipt: s.loadReceipt, resolveVerifiedPrincipalReceipt: async () => principal.receiptDigest,
+    executeWithPromotionClaim: async ({ executionInput }) => {
+      if (reserved) throw new Error('PROMOTION_REPLAYED');
+      reserved = true;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      effects += 1;
+      return executionInput;
+    },
+    rollbackExperienceVersion: async () => {},
+  });
+  const execute = () => executeExperienceThroughCanonicalAuthority(adapter, { candidate, principalReceiptDigest: principal.receiptDigest, promotionReceiptDigest: promotion.receiptDigest });
+  const results = await Promise.allSettled([execute(), execute()]);
+  assert.equal(results.filter(({ status }) => status === 'fulfilled').length, 1);
+  assert.equal(results.filter(({ status }) => status === 'rejected').length, 1);
+  assert.equal(effects, 1);
 });

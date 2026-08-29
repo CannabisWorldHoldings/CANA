@@ -38,7 +38,7 @@ test('manifest carries the journey copy that was previously hardcoded in JSX', (
   const m = base();
   assertManifest(m);
   assert.equal(m.presentation.copy.title, JOURNEY_COPY.DISPENSARIES.title);
-  assert.equal(m.presentation.copy.eyebrow, 'Dispensaries');
+  assert.equal(m.presentation.copy.eyebrow, JOURNEY_COPY.DISPENSARIES.eyebrow);
   assert.equal(m.presentation.assets.hero, 'marketplace.hero.v2');
 });
 

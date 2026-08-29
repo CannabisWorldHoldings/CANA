@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildManifest } from '../src/lib/experience/manifest.mjs';
+import { buildManifest, JOURNEY_COPY } from '../src/lib/experience/manifest.mjs';
 import { resolveRuntimeExperienceManifest } from '../src/lib/experience/runtime-manifest.mjs';
 import { makeReceipt } from '../src/lib/cana-intelligence/receipts.mjs';
 
@@ -21,7 +21,7 @@ test('runtime Experience state falls back through the kernel and loads only exac
     journey: 'DELIVERY',
   });
   assert.equal(fallback.merchant.identity.tenant, tenant);
-  assert.equal(fallback.presentation.copy.title, 'See who actually delivers to you.');
+  assert.equal(fallback.presentation.copy.title, JOURNEY_COPY.DELIVERY.title);
 
   const promoted = buildManifest({ tenant, journey: 'DELIVERY' });
   promoted.presentation.copy.title = 'Courted delivery title';

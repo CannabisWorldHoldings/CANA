@@ -23,14 +23,13 @@ export type CanonicalWeldHost = Readonly<{
   loadExperiment: (experimentId: string) => Promise<unknown>;
   resolveVerifiedPrincipalReceipt: () => Promise<string>;
   persistPromotionReceipt: (payload: unknown) => Promise<unknown>;
-  claimPromotionExecution: (payload: unknown) => Promise<boolean>;
-  enumerateExperienceSurfaces: (...args: unknown[]) => unknown;
-  loadExperienceManifest: (...args: unknown[]) => unknown;
-  persistExperienceCandidate: (...args: unknown[]) => unknown;
+  executeWithPromotionClaim: (payload: unknown) => Promise<unknown>;
+  enumerateExperienceSurfaces: () => Promise<readonly unknown[]>;
+  loadExperienceManifest: (...args: unknown[]) => Promise<unknown>;
+  persistExperienceCandidate: (...args: unknown[]) => Promise<unknown>;
   renderPrivatePreview: (...args: unknown[]) => unknown;
   captureRenderedEvidenceReceipt: (...args: unknown[]) => unknown;
   generateMediaCandidate: (...args: unknown[]) => unknown;
-  executeAuthorizedExperienceCandidate: (...args: unknown[]) => unknown;
   rollbackExperienceVersion: (...args: unknown[]) => unknown;
 }>;
 

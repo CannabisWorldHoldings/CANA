@@ -263,7 +263,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
                 {PUBLIC_PRODUCT_DESCRIPTION} Every public record carries an
                 explicit source, verification state, and freshness window.
               </p>
-              <p className="mt-4 inline-flex items-center rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-200">
+              <p className="mt-4 inline-flex items-center rounded-full border border-orange-500/35 bg-orange-500/10 px-3 py-1 text-[11px] font-bold text-orange-900 dark:text-orange-200">
                 21+ Only
               </p>
             </div>
@@ -312,7 +312,7 @@ export default async function TenantLayout({ children, params }: { children: Rea
             <p className="text-xs text-brand-muted">
               © {new Date().getFullYear()} {displayName}. All rights reserved.
             </p>
-            <p className="mx-auto mt-2 max-w-2xl text-[11px] leading-relaxed text-brand-muted/80">
+            <p className="mx-auto mt-2 max-w-2xl text-[11px] leading-relaxed text-brand-muted">
               Disclosure: {displayName} is an evidence-aware directory.
               Check each record&apos;s data-status label and primary source before
               relying on it. This platform does not fulfill, deliver, or sell

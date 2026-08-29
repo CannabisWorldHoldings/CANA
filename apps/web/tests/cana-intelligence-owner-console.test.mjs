@@ -28,5 +28,7 @@ test('existing Owner console is wired to authenticated canonical read-only CANA 
 test('Owner adapter fixes custody to the canonical tenant and accepts no caller tenant', () => {
   assert.match(adapterSource, /export function createOwnerCanaIntelligenceAdapters\(\)/);
   assert.match(adapterSource, /tenant: CANONICAL_TENANT_DOMAIN/);
+  assert.match(adapterSource, /experience: createFullFabricAdapter\(canonicalHost\)/);
+  assert.match(adapterSource, /site: createSiteCortexAdapter\(canonicalHost\)/);
   assert.doesNotMatch(adapterSource, /createOwnerCanaIntelligenceAdapters\([^)]*tenant/);
 });
