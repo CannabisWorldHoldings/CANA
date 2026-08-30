@@ -180,6 +180,35 @@ test('generic evidence persistence cannot mint real Owner or merchant authority'
   assert.equal(harness.receipts.size, 0);
 });
 
+test('generic Owner persistence cannot self-certify VERIFIED_REAL evidence', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+
+  for (const kind of ['ASSIGNMENT', 'EXPOSURE', 'OUTCOME', 'VALUE', 'VERIFIER']) {
+    const forged = makeReceipt({
+      kind,
+      subjectDigest: 'preregistration:forged-real-evidence',
+      realm: 'VERIFIED_REAL',
+      issuer: `caller-selected-${kind.toLowerCase()}`,
+      payload: {
+        independentObserverSource: 'caller-selected-independent-observer',
+        outcomeEvidenceDigest: `outcome-evidence:${kind.toLowerCase()}`,
+        settlementClassification: 'CAUSAL_SUPPORTED',
+        verdict: 'ADMIT',
+      },
+    });
+    await assert.rejects(
+      () => host.persistReceipt(forged),
+      (error) => error?.code === 'CANA_REAL_EVIDENCE_OWNER_REQUIRED',
+    );
+  }
+  assert.equal(harness.receipts.size, 0);
+});
+
 test('canonical assertAdmin is the only principal root and the receipt resolves by digest', async () => {
   const harness = prismaHarness();
   const host = createCanonicalWeldHost({
@@ -274,7 +303,7 @@ test('lesson and experiment state append canonically and the ledger reconstructs
   const valueReceipt = makeReceipt({
     kind: 'VALUE',
     subjectDigest: settlementDigest,
-    realm: 'VERIFIED_REAL',
+    realm: 'VERIFIED_LOCAL',
     issuer: 'value-court',
     payload: { settlementClassification: 'CAUSAL_SUPPORTED' },
   });
@@ -286,14 +315,14 @@ test('lesson and experiment state append canonically and the ledger reconstructs
       ...valueReceipt,
       settlementDigest,
       settlementClassification: 'CAUSAL_SUPPORTED',
-      evidenceRealm: 'VERIFIED_REAL',
+      evidenceRealm: 'VERIFIED_LOCAL',
     },
     proposerId: 'proposer-1',
   });
   const verifierReceipt = makeReceipt({
     kind: 'VERIFIER',
     subjectDigest: proposedLesson.lessonDigest,
-    realm: 'VERIFIED_REAL',
+    realm: 'VERIFIED_LOCAL',
     issuer: 'verifier-1',
     payload: { verifierId: 'verifier-1', verdict: 'ADMIT' },
   });
@@ -304,6 +333,8 @@ test('lesson and experiment state append canonically and the ledger reconstructs
     principalReceiptDigest,
   }, host);
   await host.persistLesson(lesson);
+  assert.equal(lesson.status, 'REJECTED_FIXTURE_BOUNDARY');
+  assert.equal(lesson.trusted, false);
   assert.deepEqual(await host.loadLesson(lesson.lessonId), lesson);
 
   const experiment = preregisterExperiment({

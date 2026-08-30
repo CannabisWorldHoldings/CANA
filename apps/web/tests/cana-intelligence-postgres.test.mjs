@@ -74,7 +74,7 @@ test('canonical WELD receipts and records persist transactionally in PostgreSQL'
     const valueReceipt = makeReceipt({
       kind: 'VALUE',
       subjectDigest: settlementDigest,
-      realm: 'VERIFIED_REAL',
+      realm: 'VERIFIED_LOCAL',
       issuer: 'postgres-value-court',
       payload: { settlementClassification: 'CAUSAL_SUPPORTED' },
     });
@@ -86,14 +86,14 @@ test('canonical WELD receipts and records persist transactionally in PostgreSQL'
         ...valueReceipt,
         settlementDigest,
         settlementClassification: 'CAUSAL_SUPPORTED',
-        evidenceRealm: 'VERIFIED_REAL',
+        evidenceRealm: 'VERIFIED_LOCAL',
       },
       proposerId: 'postgres-proposer',
     });
     const verifierReceipt = makeReceipt({
       kind: 'VERIFIER',
       subjectDigest: proposedLesson.lessonDigest,
-      realm: 'VERIFIED_REAL',
+      realm: 'VERIFIED_LOCAL',
       issuer: 'postgres-verifier',
       payload: { verifierId: 'postgres-verifier', verdict: 'ADMIT' },
     });
@@ -104,6 +104,8 @@ test('canonical WELD receipts and records persist transactionally in PostgreSQL'
       principalReceiptDigest,
     }, host);
     await host.persistLesson(lesson);
+    assert.equal(lesson.status, 'REJECTED_FIXTURE_BOUNDARY');
+    assert.equal(lesson.trusted, false);
     assert.equal((await host.loadReceipt(receipt.receiptDigest)).receiptDigest, receipt.receiptDigest);
     assert.deepEqual(await host.loadLesson(lesson.lessonId), lesson);
   });
@@ -178,20 +180,15 @@ async function executableExperience({ executionTenant, target, execute }) {
   };
 }
 
-test('failed Experience execution rolls back its claim and promoted manifest before safe retry', async () => {
+test('failed Experience execution durably consumes its claim and refuses replay', async () => {
   const executionTenant = `weld-experience-retry-${randomUUID()}`;
-  const manifest = buildManifest({ tenant: executionTenant, journey: 'DELIVERY' });
-  manifest.presentation.copy.title = 'Atomic retry court';
-  let shouldFail = true;
+  let attempts = 0;
   const context = await executableExperience({
     executionTenant,
     target: '/delivery',
-    execute: async (input) => {
-      if (shouldFail) {
-        shouldFail = false;
-        throw new Error('EXECUTOR_FAILED');
-      }
-      return { ...input, promotedManifest: manifest };
+    execute: async () => {
+      attempts += 1;
+      throw new Error('EXECUTOR_FAILED');
     },
   });
   const execute = () => executeExperienceThroughCanonicalAuthority(context.adapter, {
@@ -201,25 +198,44 @@ test('failed Experience execution rolls back its claim and promoted manifest bef
   });
 
   await assert.rejects(execute, /EXECUTOR_FAILED/);
-  assert.equal(await prisma.canaEvidenceReceipt.count({
-    where: { tenant: executionTenant, kind: 'EXPERIENCE_EXECUTION' },
-  }), 0);
-  assert.equal(await prisma.canaIntelligenceRecord.count({
-    where: { tenant: executionTenant, recordType: 'EXPERIENCE_MANIFEST' },
-  }), 0);
-
-  await execute();
+  assert.equal(attempts, 1);
   assert.equal(await prisma.canaEvidenceReceipt.count({
     where: { tenant: executionTenant, kind: 'EXPERIENCE_EXECUTION' },
   }), 1);
-  const runtime = await resolveRuntimeExperienceManifest({
-    recordStore: prisma.canaIntelligenceRecord,
-    receiptStore: prisma.canaEvidenceReceipt,
-    tenant: executionTenant,
-    journey: 'DELIVERY',
+  assert.equal(await prisma.canaIntelligenceRecord.count({
+    where: { tenant: executionTenant, recordType: 'EXPERIENCE_MANIFEST' },
+  }), 0);
+  await assert.rejects(execute, (error) => error?.code === 'PROMOTION_REPLAYED');
+  assert.equal(attempts, 1);
+});
+
+test('post-effect manifest failure consumes the promotion and cannot invoke the effect twice', async () => {
+  const executionTenant = `weld-experience-uncertain-${randomUUID()}`;
+  let effects = 0;
+  const context = await executableExperience({
+    executionTenant,
+    target: '/delivery',
+    execute: async (input) => {
+      effects += 1;
+      return { ...input, promotedManifest: { malformed: true } };
+    },
   });
-  assert.equal(runtime.presentation.copy.title, 'Atomic retry court');
-  assert.equal(runtime.promotion.candidateDigest, context.candidate.candidateDigest);
+  const execute = () => executeExperienceThroughCanonicalAuthority(context.adapter, {
+    candidate: context.candidate,
+    principalReceiptDigest: context.principalReceiptDigest,
+    promotionReceiptDigest: context.promotion.receiptDigest,
+  });
+
+  await assert.rejects(execute, /MANIFEST_INVALID/);
+  assert.equal(effects, 1);
+  assert.equal(await prisma.canaEvidenceReceipt.count({
+    where: { tenant: executionTenant, kind: 'EXPERIENCE_EXECUTION' },
+  }), 1);
+  assert.equal(await prisma.canaIntelligenceRecord.count({
+    where: { tenant: executionTenant, recordType: 'EXPERIENCE_MANIFEST' },
+  }), 0);
+  await assert.rejects(execute, (error) => error?.code === 'PROMOTION_REPLAYED');
+  assert.equal(effects, 1);
 });
 
 test('concurrent promotion replay executes one effect and persists one runtime manifest', async () => {

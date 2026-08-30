@@ -145,6 +145,11 @@ export function createCanonicalWeldHost({
       `CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED: ${receipt?.kind ?? 'authority'} receipts must be minted by their canonical authority owner`,
       'CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED',
     );
+    assert(
+      receipt?.realm !== 'VERIFIED_REAL',
+      'CANA_REAL_EVIDENCE_OWNER_REQUIRED: VERIFIED_REAL receipts must be admitted by their canonical evidence owner',
+      'CANA_REAL_EVIDENCE_OWNER_REQUIRED',
+    );
     return persistReceiptCanonical(receipt);
   }
 
@@ -618,7 +623,7 @@ export function createCanonicalWeldHost({
     assert(typeof prisma.$transaction === 'function', 'canonical transactional execution required', 'PROMOTION_ATOMIC_EXECUTION_REQUIRED');
     const execute = requireExperience('executeAuthorizedExperienceCandidate');
     const claim = promotionExecutionClaim({ promotion, candidate, principal });
-    return prisma.$transaction(async (transaction) => {
+    await prisma.$transaction(async (transaction) => {
       try {
         await transaction.canaEvidenceReceipt.create({ data: receiptData(tenant, claim) });
       } catch (error) {
@@ -627,16 +632,18 @@ export function createCanonicalWeldHost({
         }
         throw error;
       }
-      const execution = await execute(executionInput);
-      assert(
-        execution?.idempotencyKey === promotion.receiptDigest,
-        'canonical executor must confirm the promotion-bound idempotency key',
-        'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED',
-      );
-      const record = promotedManifestRecord({ promotion, candidate, execution });
-      await transaction.canaIntelligenceRecord.create({ data: record.data });
-      return execution;
     });
+    const execution = await execute(executionInput);
+    assert(
+      execution?.idempotencyKey === promotion.receiptDigest,
+      'canonical executor must confirm the promotion-bound idempotency key',
+      'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED',
+    );
+    const record = promotedManifestRecord({ promotion, candidate, execution });
+    await prisma.$transaction(async (transaction) => {
+      await transaction.canaIntelligenceRecord.create({ data: record.data });
+    });
+    return execution;
   }
 
   const requireExperience = (name) => {
