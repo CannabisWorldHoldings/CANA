@@ -133,6 +133,16 @@ export const RULES = Object.freeze([
     ],
   },
   {
+    classification: 'ENVIRONMENT_MISSING',
+    reason: 'descriptor-bound visual output custody is available only on Linux',
+    onlyWhenAbsent: (env) => (
+      typeof env?.platform === 'string' && !env.platform.startsWith('linux/')
+    ),
+    patterns: [
+      /OUTPUT_CUSTODY_PROOF_UNAVAILABLE/,
+    ],
+  },
+  {
     classification: 'OWNERSHIP_MANIFEST_CONTEXT',
     reason: 'the changed-file ownership manifest / owner-approved scope digest',
     patterns: [

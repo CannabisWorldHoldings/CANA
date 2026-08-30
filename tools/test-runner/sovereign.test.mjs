@@ -57,6 +57,18 @@ test('a missing docker daemon is ENVIRONMENT_MISSING, exactly as the handoff obs
   assert.equal(verdict.classification, 'ENVIRONMENT_MISSING');
 });
 
+test('descriptor-bound visual output custody is environment-missing only off Linux', () => {
+  const output = 'OUTPUT_CUSTODY_PROOF_UNAVAILABLE {"PLATFORM":"darwin"}';
+  assert.equal(
+    classifyFailure(output, { env: { platform: 'darwin/arm64' } }).classification,
+    'ENVIRONMENT_MISSING',
+  );
+  assert.equal(
+    classifyFailure(output, { env: { platform: 'linux/x64' } }).classification,
+    'REAL_REGRESSION',
+  );
+});
+
 test('a missing dependency tree is ENVIRONMENT_MISSING, not a broken court', () => {
   for (const text of [
     "Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@prisma/client' imported from /x/y.mjs",
