@@ -73,6 +73,69 @@ function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
 }
 
+const GIT_OBJECT_ID = /^[0-9a-f]{40}$/;
+
+function portableArchiveMemberPath(value, label) {
+  if (
+    typeof value !== 'string'
+    || value.length === 0
+    || path.isAbsolute(value)
+    || path.win32.isAbsolute(value)
+    || value.split(/[\\/]/).includes('..')
+  ) {
+    throw new Error(`ARTIFACT_DELIVERY_${label}_PATH_REFUSED`);
+  }
+  return value.replaceAll('\\', '/');
+}
+
+export function writeArtifactDeliveryManifest({
+  manifestPath,
+  archivePath,
+  embeddedReceiptPath,
+  embeddedReceiptArchivePath,
+  gitSha,
+  gitTree,
+} = {}) {
+  if (!GIT_OBJECT_ID.test(gitSha ?? '') || !GIT_OBJECT_ID.test(gitTree ?? '')) {
+    throw new Error('ARTIFACT_DELIVERY_SOURCE_IDENTITY_REFUSED');
+  }
+  if (!path.isAbsolute(manifestPath ?? '') || !path.isAbsolute(archivePath ?? '')) {
+    throw new Error('ARTIFACT_DELIVERY_OUTPUT_PATH_REFUSED');
+  }
+  if (!path.isAbsolute(embeddedReceiptPath ?? '')) {
+    throw new Error('ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED');
+  }
+  const archiveFile = path.basename(archivePath);
+  if (!archiveFile.endsWith('.tar.gz')) {
+    throw new Error('ARTIFACT_DELIVERY_ARCHIVE_TYPE_REFUSED');
+  }
+  const manifest = {
+    schemaVersion: 'cana.deployment-artifact-delivery/1.0.0',
+    source: {
+      commit: gitSha,
+      tree: gitTree,
+    },
+    archive: {
+      file: portableArchiveMemberPath(archiveFile, 'ARCHIVE'),
+      sha256: sha256(fs.readFileSync(archivePath)),
+    },
+    embeddedReceipt: {
+      file: portableArchiveMemberPath(embeddedReceiptArchivePath, 'RECEIPT'),
+      sha256: sha256(fs.readFileSync(embeddedReceiptPath)),
+    },
+    court: {
+      isolatedRuntime: 'PASS',
+      relocation: 'PASS',
+      artifactExclusionAudit: 'PASS',
+      rollback: 'PASS',
+      cleanup: 'PASS',
+      deployment: false,
+    },
+  };
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  return manifest;
+}
+
 function countOccurrences(buffer, value) {
   const needle = Buffer.from(value);
   if (needle.length === 0) return [];

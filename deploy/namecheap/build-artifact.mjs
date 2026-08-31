@@ -50,6 +50,7 @@ import {
   normalizePrismaGeneratedClient,
   PINNED_ARTIFACT_EXECUTABLE_SHA256,
   portableReleaseReproducibility,
+  writeArtifactDeliveryManifest,
 } from './artifact-exclusions.mjs';
 import { createReleaseChildEnvironment } from './release-environment.mjs';
 import { assertReleaseReproducible } from './release-preflight.mjs';
@@ -493,6 +494,7 @@ async function httpCode(port, hostHeader, pathname) {
 // Phase 0/1 — identity + clean
 // ---------------------------------------------------------------------------
 const gitSha = capture('git rev-parse HEAD', { cwd: repoRoot });
+const gitTree = capture('git rev-parse HEAD^{tree}', { cwd: repoRoot });
 const shortSha = gitSha.slice(0, 7);
 const workingTree = capture('git status --porcelain', { cwd: repoRoot });
 
@@ -524,8 +526,13 @@ const machineRoots = [
 const artifactName = `orderweeddc-${gitSha}`;
 const distRoot = path.join(repoRoot, 'dist/namecheap');
 const artifactRoot = path.join(distRoot, artifactName);
+const archivePath = path.join(distRoot, `${artifactName}.tar.gz`);
+const archiveChecksumPath = `${archivePath}.sha256`;
+const deliveryManifestPath = `${archivePath}.delivery.json`;
 
 fs.rmSync(artifactRoot, { recursive: true, force: true });
+fs.rmSync(archiveChecksumPath, { force: true });
+fs.rmSync(deliveryManifestPath, { force: true });
 fs.rmSync(path.join(webRoot, '.next'), { recursive: true, force: true });
 fs.mkdirSync(artifactRoot, { recursive: true });
 
@@ -892,6 +899,7 @@ function writeReceipt(extra = {}) {
   const receipt = {
     artifact: artifactName,
     gitSha,
+    gitTree,
     releaseRepro: portableReleaseReproducibility(releaseRepro),
     workingTree: workingTree === '' ? 'clean' : workingTree.split('\n'),
     builtAt: new Date().toISOString(),
@@ -959,14 +967,13 @@ function writeReceipt(extra = {}) {
 }
 
 function packageTar() {
-  const tarPath = path.join(distRoot, `${artifactName}.tar.gz`);
-  const packagingAudit = createCleanTar(tarPath, distRoot, artifactName);
+  const packagingAudit = createCleanTar(archivePath, distRoot, artifactName);
   console.log(
     `Clean artifact member audit: ${packagingAudit.memberCount} members, `
       + `${packagingAudit.rejectedMembers.length} rejected metadata members, `
       + `${packagingAudit.macOsExtendedHeaderCount} macOS extended headers`,
   );
-  return tarPath;
+  return archivePath;
 }
 
 function createRelocationGuard(isolationRoot) {
@@ -1488,7 +1495,6 @@ try {
     throw new Error('Final artifact deploy/rollback court changed the disposable PostgreSQL data state');
   }
   console.log(`  PASS  final deploy/rollback court leaves PostgreSQL unchanged — ${deliveryDatabaseSha256}`);
-  fs.writeFileSync(`${tarPath}.sha256`, `${tarSha256}  ${artifactName}.tar.gz\n`);
 } catch (error) {
   finalError = error;
 } finally {
@@ -1496,11 +1502,34 @@ try {
 }
 if (finalError || !finalCleanup) {
   fs.rmSync(tarPath, { force: true });
-  fs.rmSync(`${tarPath}.sha256`, { force: true });
+  fs.rmSync(archiveChecksumPath, { force: true });
+  fs.rmSync(deliveryManifestPath, { force: true });
   if (finalError) throw finalError;
   throw new Error('Artifact court failed to remove its disposable PostgreSQL container');
+}
+
+let deliveryManifest;
+try {
+  fs.writeFileSync(archiveChecksumPath, `${tarSha256}  ${path.basename(tarPath)}\n`);
+  deliveryManifest = writeArtifactDeliveryManifest({
+    manifestPath: deliveryManifestPath,
+    archivePath: tarPath,
+    embeddedReceiptPath: path.join(artifactRoot, 'receipt.json'),
+    embeddedReceiptArchivePath: `${artifactName}/receipt.json`,
+    gitSha,
+    gitTree,
+  });
+  if (deliveryManifest.archive.sha256 !== tarSha256) {
+    throw new Error('Artifact delivery manifest hash does not match the verified archive');
+  }
+} catch (error) {
+  fs.rmSync(tarPath, { force: true });
+  fs.rmSync(archiveChecksumPath, { force: true });
+  fs.rmSync(deliveryManifestPath, { force: true });
+  throw error;
 }
 
 console.log(`\nArtifact ready: ${tarPath}`);
 console.log(`sha256: ${tarSha256}`);
 console.log(`Receipt: ${path.join(artifactRoot, 'receipt.json')}`);
+console.log(`Delivery manifest: ${deliveryManifestPath}`);

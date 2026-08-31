@@ -13,6 +13,7 @@ import {
   normalizePrismaGeneratedClient,
   PINNED_ARTIFACT_EXECUTABLE_SHA256,
   portableReleaseReproducibility,
+  writeArtifactDeliveryManifest,
 } from './artifact-exclusions.mjs';
 
 const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
@@ -198,6 +199,61 @@ test('release reproducibility receipt retains provenance without the local Git p
     exactCommitVerified: true,
   });
   assert.doesNotMatch(JSON.stringify(result), /\/Users\/buildbot/);
+});
+
+test('artifact delivery manifest binds retrievable archive bytes without machine-local paths', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-delivery-manifest-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const archivePath = path.join(root, 'orderweeddc-a.tar.gz');
+  const receiptPath = path.join(root, 'receipt.json');
+  const manifestPath = `${archivePath}.delivery.json`;
+  fs.writeFileSync(archivePath, 'archive-bytes');
+  fs.writeFileSync(receiptPath, '{"status":"verified"}\n');
+
+  const manifest = writeArtifactDeliveryManifest({
+    manifestPath,
+    archivePath,
+    embeddedReceiptPath: receiptPath,
+    embeddedReceiptArchivePath: 'orderweeddc-a/receipt.json',
+    gitSha: 'a'.repeat(40),
+    gitTree: 'b'.repeat(40),
+  });
+
+  assert.deepEqual(JSON.parse(fs.readFileSync(manifestPath, 'utf8')), manifest);
+  assert.equal(
+    manifest.archive.sha256,
+    createHash('sha256').update('archive-bytes').digest('hex'),
+  );
+  assert.equal(
+    manifest.embeddedReceipt.sha256,
+    createHash('sha256').update('{"status":"verified"}\n').digest('hex'),
+  );
+  assert.equal(manifest.archive.file, 'orderweeddc-a.tar.gz');
+  assert.equal(manifest.embeddedReceipt.file, 'orderweeddc-a/receipt.json');
+  assert.equal(manifest.court.deployment, false);
+  assert.doesNotMatch(JSON.stringify(manifest), new RegExp(root.replaceAll('\\', '\\\\')));
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath,
+      archivePath,
+      embeddedReceiptPath: receiptPath,
+      embeddedReceiptArchivePath: '/Users/builder/receipt.json',
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED/,
+  );
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath,
+      archivePath,
+      embeddedReceiptPath: receiptPath,
+      embeddedReceiptArchivePath: String.raw`C:\Users\builder\receipt.json`,
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED/,
+  );
 });
 
 test('artifact exclusion audit rejects secret files without exposing their values', (t) => {
