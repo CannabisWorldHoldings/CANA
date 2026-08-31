@@ -96,6 +96,34 @@ function realityCellBody(contract) {
   };
 }
 
+function legacyExperimentBody(experiment) {
+  return {
+    experimentId: experiment.experimentId,
+    hypothesis: experiment.hypothesis,
+    unit: experiment.unit,
+    primaryMetric: experiment.primaryMetric,
+    secondaryMetrics: experiment.secondaryMetrics,
+    guardrails: experiment.guardrails,
+    population: experiment.population,
+    treatment: experiment.treatment,
+    comparator: experiment.comparator,
+    assignmentMethod: experiment.assignmentMethod,
+    allocation: experiment.allocation,
+    assignmentSaltCommitment: experiment.assignmentSaltCommitment,
+    exposureDefinition: experiment.exposureDefinition,
+    analysisMethod: experiment.analysisMethod,
+    minimumPerArm: experiment.minimumPerArm,
+    stopRule: experiment.stopRule,
+    rollbackPlan: experiment.rollbackPlan,
+    interferenceAssumptions: experiment.interferenceAssumptions,
+    maximumClaimCeiling: experiment.maximumClaimCeiling,
+    expectedEffect: experiment.expectedEffect,
+    alternatives: experiment.alternatives,
+    createdAt: experiment.createdAt,
+    proposerId: experiment.proposerId,
+  };
+}
+
 // Legacy WELD v3 experiment contract remains available for its existing callers.
 export function preregisterExperiment(input) {
   for (const field of ['hypothesis', 'unit', 'primaryMetric', 'exposureDefinition', 'analysisMethod', 'minimumPerArm', 'stopRule', 'rollbackPlan', 'comparator', 'assignmentMethod', 'interferenceAssumptions', 'maximumClaimCeiling']) {
@@ -129,6 +157,32 @@ export function preregisterExperiment(input) {
     proposerId: input.proposerId,
   };
   return sealPlain({ ...body, preRegDigest: digest(body, 'experiment-prereg'), status: 'PROPOSED', authorizedBy: null });
+}
+
+export function verifyExperimentPreregistration(experiment) {
+  if (experiment?.contractVersion === REALITY_CELL_CONTRACT_VERSION) {
+    return verifyRealityCellPreregistration(experiment);
+  }
+  assert(experiment && typeof experiment === 'object', 'experiment contract required', 'PREREG_CONTRACT_INVALID');
+  assert(typeof experiment.experimentId === 'string' && experiment.experimentId, 'experiment identity required', 'PREREG_CONTRACT_INVALID');
+  assert(ASSIGNMENT_METHODS.has(experiment.assignmentMethod), 'experiment assignment method invalid', 'PREREG_ASSIGNMENT_INVALID');
+  assert(Number.isInteger(experiment.minimumPerArm) && experiment.minimumPerArm >= 1, 'minimumPerArm must be positive integer', 'PREREG_MINIMUM_INVALID');
+  const expected = digest(legacyExperimentBody(experiment), 'experiment-prereg');
+  assert(experiment.preRegDigest === expected, 'post-hoc preregistration mutation detected', 'PREREGISTRATION_MUTATED');
+  assert(
+    ['PROPOSED', 'AUTHORIZED', 'RUNNING', 'SETTLED'].includes(experiment.status),
+    'experiment status invalid',
+    'EXPERIMENT_STATUS_INVALID',
+  );
+  if (experiment.status === 'PROPOSED') {
+    assert(experiment.authorizedBy === null, 'proposed experiment cannot claim authority', 'INVALID_AUTHORITY_LINEAGE');
+    assert(!experiment.authorityDigest && !experiment.principalReceiptDigest, 'proposed experiment cannot bind caller authority', 'INVALID_AUTHORITY_LINEAGE');
+  } else {
+    assert(typeof experiment.authorizedBy === 'string' && experiment.authorizedBy, 'authorized experiment subject required', 'INVALID_AUTHORITY_LINEAGE');
+    assert(typeof experiment.authorityDigest === 'string' && experiment.authorityDigest, 'authorized experiment digest required', 'INVALID_AUTHORITY_LINEAGE');
+    assert(typeof experiment.principalReceiptDigest === 'string' && experiment.principalReceiptDigest, 'authorized experiment principal receipt required', 'INVALID_AUTHORITY_LINEAGE');
+  }
+  return experiment;
 }
 
 export function preregisterRealityCell(input) {

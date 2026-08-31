@@ -2,8 +2,9 @@
  * EVIDENCE REALM LAW — the epistemic ceiling every claim carries.
  *
  * Gene recovered from the Sovereign Cell donor's `evidence-realm` concept and
- * reimplemented as a canonical standalone primitive. It owns ONE job: classify
- * evidence by realm and refuse silent upgrades across realms.
+ * reimplemented as a design-stage compatibility primitive. It owns ONE job:
+ * classify proposed causal designs by realm and refuse silent upgrades across
+ * those design labels.
  *
  * Laws enforced (CANA constitution, evidence realm):
  *   - Evidence has a realm. A claim lives AT a realm.
@@ -13,8 +14,11 @@
  *   - TEST PASS -> MARKET SUCCESS is forbidden (that mapping is a separate
  *     category error; this module refuses the realm jump that would encode it).
  *
- * This module mints and checks receipts only. It authorizes nothing and proves
- * no market outcome — it is pure, deterministic law over inert data.
+ * This is NOT the canonical persisted evidence vocabulary or receipt owner.
+ * `apps/web/src/lib/cana-intelligence/receipts.mjs` and CanaEvidenceReceipt own
+ * those jobs. Objects from this module are inert causal-design evidence and
+ * must be translated and independently admitted before canonical persistence.
+ * This module authorizes nothing and proves no market outcome.
  */
 
 export const EVIDENCE_REALMS = Object.freeze([
@@ -82,7 +86,7 @@ export function makeEvidenceReceipt({
   if (typeof claim !== 'string' || claim.trim() === '') throw new Error('receipt requires a claim');
   if (typeof digest !== 'string' || digest.trim() === '') throw new Error('receipt requires a digest');
   return {
-    schema: 'cana.evidence-receipt/1',
+    schema: 'cana.causal-design-evidence/1',
     claim,
     realm,
     source,

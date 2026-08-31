@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import {
   makeReceipt, validateReceiptShape, createExperienceCandidate, createFullFabricAdapter, executeExperienceThroughCanonicalAuthority,
   createSiteCortexAdapter, observeCustomerSite, recordModelTrial, settleModelArena, createHarnessCandidate, settleHarnessTournament,
@@ -7,7 +10,10 @@ import {
   preregisterExperiment, commitmentForSalt, makeAssignmentReceipt, makeExposureReceipt, makeOutcomeReceipt,
   createCanonicalEvidenceAdapter, settleExperiment, authorizeExperiment,
 } from '../src/lib/cana-intelligence/index.mjs';
-import { runCommandAgent } from '../../../tools/cana-armada/command-executor.mjs';
+import {
+  resolveArmadaAdapter,
+  runCommandAgent,
+} from '../../../tools/cana-armada/command-executor.mjs';
 function store(){const m=new Map(),ledgers=new Map();return {m,ledgers,put:r=>(m.set(r.receiptDigest,r),r),adapter:createCanonicalEvidenceAdapter({loadReceipt:async d=>m.get(d)??null,loadLesson:async()=>null,loadExperimentLedger:async id=>ledgers.get(id)??{assignments:[],exposures:[],outcomes:[]}})};}
 
 test('forged receipt digest is rejected',()=>{const r=makeReceipt({kind:'COURT',subjectDigest:'x',issuer:'v',payload:{court:'BROWSER',verdict:'PASS'}});assert.throws(()=>validateReceiptShape({...r,payload:{court:'BROWSER',verdict:'FAIL'}}),/digest mismatch/);});
@@ -22,8 +28,43 @@ test('temporal succession does not poison reality graph',()=>{const a=makeObserv
 test('sealed observation contains no mutable Date',()=>{const o=makeObservation({entityKey:'m',predicate:'p',value:1,sourceKind:'CANONICAL_REALITY',provenance:{},observedAt:new Date()});assert.equal(typeof o.observedAt,'string');});
 test('recursive harness claim requires next-cycle receipt not boolean',()=>assert.equal(recursiveHarnessCheck({parentWinnerDigest:'a',successorDigest:'b',nextCycleReceiptDigest:null,ablationReceiptDigest:'ab'}).verdict,'NOT_ESTABLISHED'));
 test('recursive improver claim requires successor identity change and receipts',()=>assert.equal(recursiveImproverCourt({parentImproverDigest:'a',successorImproverDigest:'a',nextCycleReceiptDigest:'n',ablationReceiptDigest:'a'}).verdict,'NOT_ESTABLISHED'));
-test('command agent does not inherit arbitrary parent secret',async()=>{process.env.CANA_FAKE_SECRET='DO_NOT_LEAK';const run=await runCommandAgent({command:process.execPath,args:['-e','process.stdout.write(JSON.stringify({secret:process.env.CANA_FAKE_SECRET??null}))'],input:''});assert.equal(JSON.parse(run.stdout).secret,null);delete process.env.CANA_FAKE_SECRET;});
-test('command agent can receive explicitly allowed scoped env',async()=>{process.env.CANA_TEST_ALLOWED='YES';const run=await runCommandAgent({command:process.execPath,args:['-e','process.stdout.write(JSON.stringify({v:process.env.CANA_TEST_ALLOWED??null}))'],input:'',inheritEnvKeys:['PATH','CANA_TEST_ALLOWED']});assert.equal(JSON.parse(run.stdout).v,'YES');delete process.env.CANA_TEST_ALLOWED;});
+test('source-registered command agent receives no parent secret, HOME, or effect authority', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'cana-armada-env-'));
+  process.env.CANA_FAKE_SECRET = 'DO_NOT_LEAK';
+  const run = await runCommandAgent({
+    adapter: resolveArmadaAdapter('fixture-agent-a', 'candidate'),
+    cwd,
+    input: JSON.stringify({ lane: 'fixture' }),
+  });
+  const output = JSON.parse(run.stdout);
+  assert.equal(output.inheritedSecret, null);
+  assert.equal(output.inheritedHome, null);
+  assert.equal(output.effectAuthority, 'NONE');
+  assert.equal(run.effectAuthority, 'NONE');
+  delete process.env.CANA_FAKE_SECRET;
+  await fs.rm(cwd, { recursive: true, force: true });
+});
+test('caller cannot forge a command adapter or select an executable', async () => {
+  const cwd = await fs.mkdtemp(path.join(os.tmpdir(), 'cana-armada-forge-'));
+  await assert.rejects(
+    () => runCommandAgent({
+      adapter: {
+        adapterId: 'fixture-agent-a',
+        role: 'candidate',
+        command: process.execPath,
+        args: ['-e', 'process.exit(0)'],
+      },
+      cwd,
+      input: '',
+    }),
+    (error) => error?.code === 'ARMADA_ADAPTER_NOT_AUTHORIZED',
+  );
+  assert.throws(
+    () => resolveArmadaAdapter('/bin/sh', 'candidate'),
+    (error) => error?.code === 'ARMADA_ADAPTER_NOT_AUTHORIZED',
+  );
+  await fs.rm(cwd, { recursive: true, force: true });
+});
 test('post-registration minimum sample cannot be changed at settlement',async()=>{const s=store();const principal=s.put(makeReceipt({kind:'PRINCIPAL',subjectDigest:'owner',realm:'VERIFIED_LOCAL',issuer:'auth',payload:{verified:true,subject:'owner',allowedActions:['AUTHORIZE_EXPERIMENT','SETTLE_EXPERIMENT']}}));const salt='0123456789abcdef';let e=preregisterExperiment({hypothesis:'x',unit:'session',primaryMetric:'m',treatment:'A',comparator:'B',assignmentMethod:'RANDOMIZED',assignmentSaltCommitment:commitmentForSalt(salt),exposureDefinition:'x',analysisMethod:'two-proportion-z',minimumPerArm:50,stopRule:'n',rollbackPlan:'r',interferenceAssumptions:'none',maximumClaimCeiling:'m',proposerId:'a'});e=await authorizeExperiment(e,s.adapter,principal.receiptDigest);const A=[],X=[],O=[];for(let i=0;i<30;i++){const a=makeAssignmentReceipt({experiment:e,unitId:`u${i}`,assignmentSalt:salt});s.put(a);A.push(a.receiptDigest);const x=makeExposureReceipt({experiment:e,assignmentReceipt:a,exposed:true,exposureEvidenceDigest:`x${i}`});s.put(x);X.push(x.receiptDigest);const o=makeOutcomeReceipt({experiment:e,exposureReceipt:x,success:a.payload.arm==='TREATMENT',outcomeEvidenceDigest:`o${i}`});s.put(o);O.push(o.receiptDigest);}s.ledgers.set(e.experimentId,{assignments:A,exposures:X,outcomes:O});const settled=await settleExperiment(e,s.adapter,principal.receiptDigest);assert.equal(settled.minimumPerArm,50);assert.equal(settled.sufficient,false);});
 
 test('prediction cannot settle before its window closes',async()=>{const {lockPrediction,settlePrediction}=await import('../src/lib/cana-intelligence/index.mjs');const s=store();const p=lockPrediction({worldStateDigest:'w',hypothesis:'demand rises',expectedDirection:'UP',windowStart:'2026-08-24T00:00:00Z',windowEnd:'2026-08-25T00:00:00Z',falsificationRule:'delta<=0'});const o=s.put(makeReceipt({kind:'PREDICTION_OUTCOME',subjectDigest:p.lockDigest,realm:'VERIFIED_LOCAL',issuer:'observer',payload:{actualDelta:0.2}}));await assert.rejects(()=>settlePrediction(p,o.receiptDigest,s.adapter,new Date('2026-08-24T12:00:00Z')),/window has not closed/);});

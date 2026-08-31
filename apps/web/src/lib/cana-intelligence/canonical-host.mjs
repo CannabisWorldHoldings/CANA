@@ -18,6 +18,10 @@ import {
 import { assertManifest } from '../experience/manifest.mjs';
 import { resolveRuntimeExperienceManifest } from '../experience/runtime-manifest.mjs';
 import { validateBrowserObservationReceipt } from './site-cortex.mjs';
+import {
+  REALITY_CELL_CONTRACT_VERSION,
+  verifyExperimentPreregistration,
+} from './experiment.mjs';
 
 const PRINCIPAL_ACTIONS = Object.freeze(Object.values(ACTIONS));
 const CANONICAL_ONLY_RECEIPT_KINDS = new Set([
@@ -379,12 +383,59 @@ export function createCanonicalWeldHost({
   }
 
   async function persistExperiment(experiment) {
+    await validateExperimentRecord(experiment);
     return persistRecord(RECORD_TYPES.EXPERIMENT, experiment?.experimentId, experiment);
+  }
+
+  async function validateExperimentRecord(experiment) {
+    verifyExperimentPreregistration(experiment);
+    if (experiment.contractVersion === REALITY_CELL_CONTRACT_VERSION) {
+      assert(experiment.tenantId === tenant, 'Reality Cell experiment tenant mismatch', 'REALITY_CELL_TENANT_MISMATCH');
+      assert(
+        ['PREREGISTERED', 'AUTHORIZED', 'AUTHORIZED_FIXTURE_ONLY', 'RUNNING', 'SETTLED'].includes(experiment.status),
+        'Reality Cell experiment status invalid',
+        'EXPERIMENT_STATUS_INVALID',
+      );
+      if (experiment.status === 'PREREGISTERED') {
+        assert(experiment.authorityBinding === null, 'preregistered Reality Cell cannot claim authority', 'INVALID_AUTHORITY_LINEAGE');
+      } else {
+        const authority = await requireRealityCellAuthority({
+          experiment,
+          evidenceAdapter: { loadReceipt },
+          authorityBinding: experiment.authorityBinding,
+        });
+        assert(
+          experiment.status === (authority.realWorldExecutionAllowed ? 'AUTHORIZED' : 'AUTHORIZED_FIXTURE_ONLY')
+            || ['RUNNING', 'SETTLED'].includes(experiment.status),
+          'Reality Cell status exceeds authority lineage',
+          'INVALID_AUTHORITY_LINEAGE',
+        );
+      }
+      return experiment;
+    }
+    assert(experiment.evidenceRealm !== 'VERIFIED_REAL', 'legacy experiment cannot claim real evidence', 'INVALID_AUTHORITY_LINEAGE');
+    if (experiment.status === 'PROPOSED') return experiment;
+    const action = experiment.status === 'AUTHORIZED'
+      ? ACTIONS.AUTHORIZE_EXPERIMENT
+      : experiment.status === 'RUNNING'
+        ? ACTIONS.EXECUTE_EXPERIMENT
+        : ACTIONS.SETTLE_EXPERIMENT;
+    const authority = await requirePrincipalReceipt(
+      { loadReceipt },
+      experiment.principalReceiptDigest,
+      action,
+    );
+    assert(authority.subject === experiment.authorizedBy, 'experiment authority subject mismatch', 'INVALID_AUTHORITY_LINEAGE');
+    if (experiment.status === 'AUTHORIZED') {
+      assert(authority.authorityDigest === experiment.authorityDigest, 'experiment authority digest mismatch', 'INVALID_AUTHORITY_LINEAGE');
+    }
+    return experiment;
   }
 
   async function loadExperimentLedger(experimentId) {
     const experiment = await loadRecord(RECORD_TYPES.EXPERIMENT, experimentId);
     assert(experiment?.preRegDigest, 'canonical experiment not found', 'CANA_EXPERIMENT_NOT_FOUND');
+    await validateExperimentRecord(experiment);
     const receipts = await receiptStore.findMany({
       where: {
         tenant,
@@ -403,7 +454,9 @@ export function createCanonicalWeldHost({
   }
 
   async function loadExperiment(experimentId) {
-    return loadRecord(RECORD_TYPES.EXPERIMENT, experimentId);
+    const experiment = await loadRecord(RECORD_TYPES.EXPERIMENT, experimentId);
+    if (experiment) await validateExperimentRecord(experiment);
+    return experiment;
   }
 
   async function validatePromotionLineage(payload, now = new Date()) {

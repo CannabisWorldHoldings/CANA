@@ -209,6 +209,82 @@ test('generic Owner persistence cannot self-certify VERIFIED_REAL evidence', asy
   assert.equal(harness.receipts.size, 0);
 });
 
+test('canonical experiment custody rejects forged authority, real-realm claims and preregistration mutation', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const experiment = preregisterExperiment({
+    experimentId: 'experiment-forgery-court',
+    hypothesis: 'bounded proposal',
+    unit: 'session',
+    primaryMetric: 'answerability',
+    treatment: 'A',
+    comparator: 'B',
+    assignmentMethod: 'OBSERVATIONAL',
+    exposureDefinition: 'rendered candidate',
+    analysisMethod: 'two-proportion-z',
+    minimumPerArm: 20,
+    stopRule: 'after 20 per arm',
+    rollbackPlan: 'restore prior manifest',
+    interferenceAssumptions: 'none',
+    maximumClaimCeiling: 'association only',
+    proposerId: 'agent-1',
+  });
+
+  await assert.rejects(
+    () => host.persistExperiment({
+      ...experiment,
+      status: 'AUTHORIZED',
+      authorizedBy: 'owner-1',
+      authorityDigest: 'caller-selected-authority',
+      principalReceiptDigest: 'caller-selected-principal',
+      evidenceRealm: 'VERIFIED_REAL',
+    }),
+    (error) => error?.code === 'INVALID_AUTHORITY_LINEAGE',
+  );
+  await assert.rejects(
+    () => host.persistExperiment({ ...experiment, hypothesis: 'post-hoc mutation' }),
+    (error) => error?.code === 'PREREGISTRATION_MUTATED',
+  );
+  await assert.rejects(
+    () => host.persistExperiment({
+      experimentId: 'forged-real-experiment',
+      preRegDigest: 'caller-selected-digest',
+      status: 'AUTHORIZED',
+      evidenceRealm: 'VERIFIED_REAL',
+    }),
+    (error) => ['PREREG_ASSIGNMENT_INVALID', 'PREREGISTRATION_MUTATED'].includes(error?.code),
+  );
+  assert.equal(harness.records.length, 0);
+
+  harness.records.push({
+    tenant: 'orderweeddc.com',
+    recordDigest: 'forged-record-digest',
+    recordType: 'EXPERIMENT',
+    recordId: 'forged-loaded-experiment',
+    status: 'AUTHORIZED',
+    bodyJson: JSON.stringify({
+      experimentId: 'forged-loaded-experiment',
+      preRegDigest: 'caller-selected-digest',
+      status: 'AUTHORIZED',
+      evidenceRealm: 'VERIFIED_REAL',
+    }),
+    sequence: 1n,
+  });
+  await assert.rejects(
+    () => host.loadExperiment('forged-loaded-experiment'),
+    (error) => ['PREREG_ASSIGNMENT_INVALID', 'PREREGISTRATION_MUTATED'].includes(error?.code),
+  );
+  harness.records.length = 0;
+
+  await host.persistExperiment(experiment);
+  assert.deepEqual(await host.loadExperiment(experiment.experimentId), experiment);
+  assert.equal(harness.records.length, 1);
+});
+
 test('canonical assertAdmin is the only principal root and the receipt resolves by digest', async () => {
   const harness = prismaHarness();
   const host = createCanonicalWeldHost({

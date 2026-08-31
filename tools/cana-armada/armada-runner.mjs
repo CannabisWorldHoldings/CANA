@@ -3,14 +3,176 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { digest } from '../../apps/web/src/lib/cana-intelligence/core.mjs';
 import { runArmadaTournament } from '../../apps/web/src/lib/cana-intelligence/armada.mjs';
-import { runCommandAgent, parseJsonFromAgent } from './command-executor.mjs';
+import {
+  parseJsonFromAgent,
+  resolveArmadaAdapter,
+  runCommandAgent,
+} from './command-executor.mjs';
 import { createDisposableWorktree, removeDisposableWorktree, worktreeDiff } from './worktree-sandbox.mjs';
-const [configPath,receiptPathArg]=process.argv.slice(2);if(!configPath){console.error('usage: armada-runner.mjs armada.config.json [receipt.json]');process.exit(2);}const absoluteConfig=path.resolve(configPath),config=JSON.parse(await fs.readFile(absoluteConfig,'utf8'));const repoRoot=path.resolve(path.dirname(absoluteConfig),config.repoRoot??'.'),receiptPath=path.resolve(receiptPathArg??config.receiptPath??'./INTELLIGENCE_ALLOCATION_RECEIPT.json');
-if(!config.baseSha)throw new Error('config.baseSha required');if(!Array.isArray(config.agents)||config.agents.length<2)throw new Error('config.agents must contain >=2 agents');if(!config.verifier?.command)throw new Error('config.verifier.command required');if(!Array.isArray(config.trials)||!config.trials.length)throw new Error('config.trials required');
-const sig=x=>digest({command:x.command,args:x.args??[],provider:x.provider??null,model:x.model??null},'process_identity');const agentSigs=config.agents.map(sig);if(new Set(agentSigs).size!==agentSigs.length)throw new Error('candidate process/model identities must be distinct');if(agentSigs.includes(sig(config.verifier)))throw new Error('verifier process/model identity must differ from every candidate');
-const worktrees=new Map();try{
-  for(const a of config.agents)worktrees.set(a.id,await createDisposableWorktree({repoRoot,baseSha:config.baseSha,label:`armada-${a.id.replace(/[^a-zA-Z0-9_-]/g,'_')}`}));
-  const executor=async({agent,mission,lane,trial})=>{const cwd=worktrees.get(agent.id);const payload={role:'CANA_ARMADA_CANDIDATE',mission,lane,trial,baseSha:config.baseSha,requirements:{returnJson:true,doNotClaimExecutionWithoutEvidence:true,epistemicDiscipline:true}};const run=await runCommandAgent({command:agent.command,args:agent.args??[],input:JSON.stringify(payload),cwd,env:agent.env??{},inheritEnvKeys:agent.inheritEnvKeys??config.inheritEnvKeys,timeoutMs:agent.timeoutMs??config.timeoutMs??120000,maxOutputBytes:config.maxOutputBytes??2_000_000});const diff=await worktreeDiff({worktree:cwd});return {agentResult:parseJsonFromAgent(run),processReceipt:run,workspaceDiff:diff,workspaceDiffDigest:digest(diff,'workspace_diff')};};
-  const verifier=async({agent,mission,lane,trial,output})=>{const payload={role:'CANA_ARMADA_INDEPENDENT_VERIFIER',candidateAgent:{id:agent.id,provider:agent.provider??null,model:agent.model??null},mission,lane,trial,baseSha:config.baseSha,candidateOutput:output.agentResult,processEvidence:{stdoutDigest:output.processReceipt.stdoutDigest,stderrDigest:output.processReceipt.stderrDigest,exitCode:output.processReceipt.code,durationMs:output.processReceipt.durationMs,workspaceDiffDigest:output.workspaceDiffDigest},scoringContract:{scoreRange:[0,1],requiredFields:['verifierId','score','verdict','reasons'],forbidSelfCertification:true}};const run=await runCommandAgent({command:config.verifier.command,args:config.verifier.args??[],input:JSON.stringify(payload),cwd:repoRoot,env:config.verifier.env??{},inheritEnvKeys:config.verifier.inheritEnvKeys??config.inheritEnvKeys,timeoutMs:config.verifier.timeoutMs??config.timeoutMs??120000,maxOutputBytes:config.maxOutputBytes??2_000_000});const verdict=parseJsonFromAgent(run);if(!verdict.verifierId)verdict.verifierId=config.verifier.id??'verifier:external';if(!Number.isFinite(verdict.score)||verdict.score<0||verdict.score>1)throw new Error('verifier score must be in [0,1]');return {...verdict,verifierProcessDigest:digest({stdoutDigest:run.stdoutDigest,stderrDigest:run.stderrDigest,code:run.code,durationMs:run.durationMs},'verifier-process')};};
-  const receipt=await runArmadaTournament({mission:config.mission,lane:config.lane,agents:config.agents,executor,verifier,trials:config.trials,baseSha:config.baseSha});await fs.mkdir(path.dirname(receiptPath),{recursive:true});await fs.writeFile(receiptPath,`${JSON.stringify(receipt,null,2)}\n`);console.log(JSON.stringify({receiptPath,winnerAgentId:receipt.winnerAgentId,winnerScore:receipt.winnerScore,allocationDigest:receipt.allocationDigest},null,2));
-} finally {for(const wt of worktrees.values())await removeDisposableWorktree({repoRoot,worktree:wt});}
+
+const [configPath, receiptPathArg] = process.argv.slice(2);
+if (!configPath) {
+  console.error('usage: armada-runner.mjs armada.config.json [receipt.json]');
+  process.exit(2);
+}
+const absoluteConfig = path.resolve(configPath);
+const config = JSON.parse(await fs.readFile(absoluteConfig, 'utf8'));
+const repoRoot = path.resolve(path.dirname(absoluteConfig), config.repoRoot ?? '.');
+const requestedReceiptPath = receiptPathArg ?? config.receiptPath;
+if (!requestedReceiptPath) throw new Error('explicit receipt path required');
+const receiptPath = path.resolve(path.dirname(absoluteConfig), requestedReceiptPath);
+
+if (!/^[0-9a-f]{40}$/.test(config.baseSha ?? '')) throw new Error('config.baseSha must be an exact 40-character commit SHA');
+if (!Array.isArray(config.agents) || config.agents.length < 2) throw new Error('config.agents must contain >=2 agents');
+if (!config.verifier?.adapter) throw new Error('config.verifier.adapter required');
+if (!Array.isArray(config.trials) || !config.trials.length) throw new Error('config.trials required');
+
+const forbiddenProcessKeys = ['command', 'args', 'cwd', 'env', 'inheritEnvKeys'];
+for (const processSpec of [...config.agents, config.verifier]) {
+  for (const key of forbiddenProcessKeys) {
+    if (Object.hasOwn(processSpec, key)) {
+      const error = new Error(`Armada config cannot select ${key}; use a source-registered adapter`);
+      error.code = 'ARMADA_ARBITRARY_COMMAND_FORBIDDEN';
+      throw error;
+    }
+  }
+}
+if (Object.hasOwn(config, 'inheritEnvKeys')) {
+  const error = new Error('Armada config cannot select inherited environment');
+  error.code = 'ARMADA_ARBITRARY_COMMAND_FORBIDDEN';
+  throw error;
+}
+const receiptRelativeToRepo = path.relative(repoRoot, receiptPath);
+if (receiptRelativeToRepo === '' || (!receiptRelativeToRepo.startsWith('..') && !path.isAbsolute(receiptRelativeToRepo))) {
+  const error = new Error('Armada receipt must be written outside the source repository');
+  error.code = 'ARMADA_SOURCE_WRITE_FORBIDDEN';
+  throw error;
+}
+
+const candidateAdapters = new Map(config.agents.map((agent) => [
+  agent.id,
+  resolveArmadaAdapter(agent.adapter, 'candidate'),
+]));
+const verifierAdapter = resolveArmadaAdapter(config.verifier.adapter, 'verifier');
+const signature = (processSpec) => digest({
+  adapter: processSpec.adapter,
+  provider: processSpec.provider ?? null,
+  model: processSpec.model ?? null,
+}, 'process_identity');
+const agentSignatures = config.agents.map(signature);
+if (new Set(agentSignatures).size !== agentSignatures.length) throw new Error('candidate process/model identities must be distinct');
+if (agentSignatures.includes(signature(config.verifier))) throw new Error('verifier process/model identity must differ from every candidate');
+
+const worktrees = new Map();
+let verifierWorktree = null;
+try {
+  for (const agent of config.agents) {
+    worktrees.set(agent.id, await createDisposableWorktree({
+      repoRoot,
+      baseSha: config.baseSha,
+      label: `armada-${agent.id.replace(/[^a-zA-Z0-9_-]/g, '_')}`,
+    }));
+  }
+  verifierWorktree = await createDisposableWorktree({
+    repoRoot,
+    baseSha: config.baseSha,
+    label: 'armada-independent-verifier',
+  });
+  const executor = async ({ agent, mission, lane, trial }) => {
+    const cwd = worktrees.get(agent.id);
+    const payload = {
+      role: 'CANA_ARMADA_CANDIDATE',
+      mission,
+      lane,
+      trial,
+      baseSha: config.baseSha,
+      effectAuthority: 'NONE',
+      requirements: {
+        returnJson: true,
+        doNotClaimExecutionWithoutEvidence: true,
+        epistemicDiscipline: true,
+      },
+    };
+    const run = await runCommandAgent({
+      adapter: candidateAdapters.get(agent.id),
+      input: JSON.stringify(payload),
+      cwd,
+      timeoutMs: agent.timeoutMs ?? config.timeoutMs ?? 120_000,
+      maxOutputBytes: config.maxOutputBytes ?? 2_000_000,
+    });
+    const diff = await worktreeDiff({ worktree: cwd });
+    return {
+      agentResult: parseJsonFromAgent(run),
+      processReceipt: run,
+      workspaceDiff: diff,
+      workspaceDiffDigest: digest(diff, 'workspace_diff'),
+    };
+  };
+  const verifier = async ({ agent, mission, lane, trial, output }) => {
+    const payload = {
+      role: 'CANA_ARMADA_INDEPENDENT_VERIFIER',
+      candidateAgent: { id: agent.id, provider: agent.provider ?? null, model: agent.model ?? null },
+      mission,
+      lane,
+      trial,
+      baseSha: config.baseSha,
+      effectAuthority: 'NONE',
+      candidateOutput: output.agentResult,
+      processEvidence: {
+        stdoutDigest: output.processReceipt.stdoutDigest,
+        stderrDigest: output.processReceipt.stderrDigest,
+        exitCode: output.processReceipt.code,
+        durationMs: output.processReceipt.durationMs,
+        workspaceDiffDigest: output.workspaceDiffDigest,
+      },
+      scoringContract: {
+        scoreRange: [0, 1],
+        requiredFields: ['verifierId', 'score', 'verdict', 'reasons'],
+        forbidSelfCertification: true,
+      },
+    };
+    const run = await runCommandAgent({
+      adapter: verifierAdapter,
+      input: JSON.stringify(payload),
+      cwd: verifierWorktree,
+      timeoutMs: config.verifier.timeoutMs ?? config.timeoutMs ?? 120_000,
+      maxOutputBytes: config.maxOutputBytes ?? 2_000_000,
+    });
+    if (await worktreeDiff({ worktree: verifierWorktree })) {
+      const error = new Error('independent verifier attempted workspace mutation');
+      error.code = 'ARMADA_VERIFIER_MUTATION_FORBIDDEN';
+      throw error;
+    }
+    const verdict = parseJsonFromAgent(run);
+    if (!verdict.verifierId) verdict.verifierId = config.verifier.id ?? 'verifier:external';
+    if (!Number.isFinite(verdict.score) || verdict.score < 0 || verdict.score > 1) throw new Error('verifier score must be in [0,1]');
+    return {
+      ...verdict,
+      verifierProcessDigest: digest({
+        stdoutDigest: run.stdoutDigest,
+        stderrDigest: run.stderrDigest,
+        code: run.code,
+        durationMs: run.durationMs,
+      }, 'verifier-process'),
+    };
+  };
+  const receipt = await runArmadaTournament({
+    mission: config.mission,
+    lane: config.lane,
+    agents: config.agents,
+    executor,
+    verifier,
+    trials: config.trials,
+    baseSha: config.baseSha,
+  });
+  await fs.writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { flag: 'wx' });
+  console.log(JSON.stringify({
+    receiptPath,
+    winnerAgentId: receipt.winnerAgentId,
+    winnerScore: receipt.winnerScore,
+    allocationDigest: receipt.allocationDigest,
+  }, null, 2));
+} finally {
+  for (const worktree of worktrees.values()) await removeDisposableWorktree({ repoRoot, worktree });
+  if (verifierWorktree) await removeDisposableWorktree({ repoRoot, worktree: verifierWorktree });
+}

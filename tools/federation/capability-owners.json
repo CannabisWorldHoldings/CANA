@@ -134,7 +134,7 @@
     {
       "capability": "causal-experiment-design",
       "what_it_owns": "Compiling a falsifiable causal question into a typed experiment contract: an explicit experimental unit, population, assignment mechanism, counterfactual, preregistered primary/guardrail/diagnostic metrics, baseline, power, stop conditions, frozen analysis plan, and a COMPUTED claim ceiling the settlement layer may not exceed. It judges whether a design can identify an effect; it refuses or downgrades designs that cannot.",
-      "not_this_capability": "NOT an authorizer (tools/authority owns the single seat), NOT an executor, NOT the lesson/memory store (tools/alive-loop/winner-memory.mjs), and NOT the outcome settler (independent evaluators settle). It mints no authority and certifies nothing.",
+      "not_this_capability": "NOT an authorizer (tools/authority owns the single seat), NOT an executor, NOT the lesson/memory store (tools/alive-loop/winner-memory.mjs), NOT the canonical persisted evidence-realm/receipt vocabulary (apps/web/src/lib/cana-intelligence/receipts.mjs + CanaEvidenceReceipt), and NOT the outcome settler (independent evaluators settle). tools/causal-design/evidence-realm.mjs carries design-stage compatibility labels only; they require translation and independent admission before canonical persistence. It mints no authority and certifies nothing.",
       "job_terms": [
         "causal design compiler",
         "experiment design contract",

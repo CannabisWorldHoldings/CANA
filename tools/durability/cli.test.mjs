@@ -1171,7 +1171,10 @@ test('Task 0-5 convergence owns exactly the live outgoing path set without effec
     'git',
     ['ls-files', '--others', '--exclude-standard'],
     { cwd: ROOT, encoding: 'utf8' },
-  ).trim().split('\n').filter(Boolean);
+  ).trim().split('\n').filter(Boolean).filter((relative) => {
+    if (relative !== 'node_modules') return true;
+    return !fs.lstatSync(path.join(ROOT, relative)).isSymbolicLink();
+  });
   const actualPaths = [...new Set([...trackedPaths, ...untrackedPaths])].sort();
   const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
 

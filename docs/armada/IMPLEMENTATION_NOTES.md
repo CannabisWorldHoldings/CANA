@@ -19,7 +19,7 @@ This overlay is additive. It does **not** create a second truth store, owner aut
 - `experiment.mjs`: preregistration, verified owner authorization, observed settlement.
 - `economics.mjs`: ValueReceipts that refuse dollar claims without causal support + observed AOV.
 - `memory.mjs`: independent lesson admission.
-- `armada.mjs`: a real provider-agnostic META-ARMADA interface; it requires actual agent executor/verifier adapters and emits an intelligence-allocation receipt.
+- `armada.mjs`: a provider-neutral META-ARMADA contract that emits an intelligence-allocation receipt. The checked-in command runner is fixture-only and accepts only source-registered adapters; adding a real provider adapter requires a reviewed source change and separate provider authority.
 - `wraith.mjs`: independent adversarial attack court.
 - `rsi.mjs`: lesson-linked incumbent/challenger evaluation with ablation and independent verification.
 - `audit.mjs`: constitutional invariant auditor.
@@ -28,17 +28,18 @@ This overlay is additive. It does **not** create a second truth store, owner aut
 
 ## Intentionally not implemented here
 
-The exact local champion repository is not mounted in this execution environment. Therefore this artifact does not claim:
+This reconciled implementation does not claim:
 
-- mutation of `7f68c6c...`;
-- C2/Next 15.5.21 recertification;
-- Prisma schema/migration integration;
 - actual OpenAI/Anthropic/Gemini/OpenRouter model-provider wiring;
 - real ORDERWEEDDC traffic;
 - production deployment;
 - economic or causal success.
 
-The supplied apply script refuses to run unless the exact expected local HEAD/tree are present and clean.
+The retained donor apply script is forensic installation material only and is not a canonical promotion path.
+
+## Command execution boundary
+
+`armada-runner.mjs` cannot accept a command, argument vector, working directory, environment, inherited-secret list, shell, Git action, SQL action, or deployment primitive from JSON. Candidate and verifier processes resolve through the closed source registry in `command-executor.mjs`, run in separate disposable worktrees at an exact 40-character commit SHA, receive no inherited `HOME`, and carry `CANA_ARMADA_EFFECT_AUTHORITY=NONE`. The current registry contains fixture adapters only. The independent verifier is also isolated and must leave its worktree unchanged. Its receipt must be a new file outside the source repository, so a caller cannot overwrite source or an existing receipt.
 
 ## Protected-champion installation law
 
