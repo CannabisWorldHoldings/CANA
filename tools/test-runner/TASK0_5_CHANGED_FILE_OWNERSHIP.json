@@ -3,7 +3,7 @@
   "assignment_name": "task0_5_canonical_convergence_2026_08_29",
   "authorization": "ORDERWEEDDC × CANA CODEX — TASK 0–5 CANONICAL CONVERGENCE + COMPLETE ALL UNBLOCKED ENGINEERING",
   "authorization_source_sha256": "e45f32f807a05d584ad28b987e0ec4b06ed8047c367986d879b93ca484e3adf5",
-  "scope": "Exactly the 107 outgoing paths in the Task 0–5 reconciliation candidate rooted at e0466894121a4c92f0512cfa47e649815c7a3948; no wildcard, neighboring path, future blob, deployment, production, credential, external-effect, or verification-bypass authority.",
+  "scope": "Exactly the 108 outgoing paths in the Task 0–5 reconciliation candidate rooted at e0466894121a4c92f0512cfa47e649815c7a3948; no wildcard, neighboring path, future blob, deployment, production, credential, external-effect, or verification-bypass authority.",
   "authorization_effect": "durability-path-ownership-only",
   "root_candidate_base": "e0466894121a4c92f0512cfa47e649815c7a3948",
   "paths": [
@@ -110,6 +110,7 @@
     "tools/durability/cli.test.mjs",
     "tools/experience-fabric/kernel.d.mts",
     "tools/federation/capability-owners.json",
+    "tools/mariadb-sim/schema.prisma",
     "tools/test-runner/TASK0_5_CHANGED_FILE_OWNERSHIP.json",
     "tools/test-runner/sovereign-classify.mjs",
     "tools/test-runner/sovereign.test.mjs",
@@ -128,5 +129,5 @@
     "publication",
     "spend"
   ],
-  "approval_sha256": "31e5b118673d29bdf8c6d86e9bb8ff83cdea1f915bf2b67c73537733ba9378a6"
+  "approval_sha256": "1bd9d398fe674319bc4ab3d0fa7872324645bb711657e5db37afcb5e2e30644d"
 }

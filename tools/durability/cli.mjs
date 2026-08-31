@@ -375,11 +375,32 @@ export const TASK0_5_CONVERGENCE_BASE_SHA =
   'e0466894121a4c92f0512cfa47e649815c7a3948';
 export const TASK0_5_CONVERGENCE_OWNERSHIP_PATH =
   'tools/test-runner/TASK0_5_CHANGED_FILE_OWNERSHIP.json';
-export const TASK0_5_CONVERGENCE_PATH_COUNT = 107;
+export const TASK0_5_CONVERGENCE_PATH_COUNT = 108;
 export const TASK0_5_CONVERGENCE_PATHS_SHA256 =
-  'ce18491a0a487f75b538222b96c2f96dbc969ec45300ef592ec9eb00ca592a75';
+  '1a80d79e2d17f4c88708bcae23c18347bf3d97d5fbecdee36b0bf304ed491f22';
 export const TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256 =
-  '31e5b118673d29bdf8c6d86e9bb8ff83cdea1f915bf2b67c73537733ba9378a6';
+  '1bd9d398fe674319bc4ab3d0fa7872324645bb711657e5db37afcb5e2e30644d';
+export const TASK0_5_MIGRATION_COURT_PATH =
+  'apps/web/tests/migration-court.test.mjs';
+export const TASK0_5_MIGRATION_COURT_CONTENT_SHA256 =
+  '8da8b60b4c3dbec9ab5f5d72ebd226bd984f364d4c7dfa314088d0f0c4891778';
+export const TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256 =
+  '7bc625b7f8c8e4e927e835285b3a0e6d5ab46bce7d60adc1eea4059e2c400b0b';
+const TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT =
+  'c941ffced233a1ca2c04571d922fa7799a21d15c';
+const TASK0_5_MIGRATION_COURT_ADMISSION = Object.freeze({
+  authorization: 'ORDERWEEDDC × CANA Task 0–5 canonical convergence owner authorization',
+  authorization_source_sha256: TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256,
+  scope: 'One exact immutable migration-court file at its reviewed content SHA-256 only; no wildcard, directory, neighboring path, replacement blob, deployment, credential, production, verification bypass, runtime authority, or future-edit authority.',
+  authorization_effect: 'durability-court-blob-admission-only',
+  rationale: 'The reviewed court binds the canonical migration manifest to the CANA evidence bridge migration without changing migration or runtime behavior.',
+  originating_commit: TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT,
+  paths: Object.freeze([TASK0_5_MIGRATION_COURT_PATH]),
+  court_blob_sha256: Object.freeze({
+    [TASK0_5_MIGRATION_COURT_PATH]: TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  }),
+  assignment_sha256: TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256,
+});
 const TASK0_5_CONVERGENCE_PROHIBITED_EFFECTS = Object.freeze([
   'ads',
   'credentials',
@@ -2186,6 +2207,58 @@ export function task05OwnershipManifest() {
   ));
 }
 
+export function task05MigrationCourtAdmission() {
+  return JSON.parse(JSON.stringify(TASK0_5_MIGRATION_COURT_ADMISSION));
+}
+
+export function task05MigrationCourtAdmitted(
+  observation,
+  admission = TASK0_5_MIGRATION_COURT_ADMISSION,
+) {
+  if (
+    !exactKeys(admission, [
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'rationale',
+      'originating_commit',
+      'paths',
+      'court_blob_sha256',
+      'assignment_sha256',
+    ])
+    || !exactKeys(observation, [
+      'path',
+      'content_sha256',
+      'originating_commit_ancestor',
+    ])
+    || !Array.isArray(admission.paths)
+    || !exactKeys(admission.court_blob_sha256, [TASK0_5_MIGRATION_COURT_PATH])
+  ) return false;
+  const { assignment_sha256: recordedDigest, ...payload } = admission;
+  return (
+    recordedDigest === TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256
+    && sha256Bytes(canonicalJson(payload)) === TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256
+    && admission.authorization_source_sha256
+      === TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256
+    && admission.authorization_effect === 'durability-court-blob-admission-only'
+    && admission.originating_commit === TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT
+    && JSON.stringify(admission.paths) === JSON.stringify([TASK0_5_MIGRATION_COURT_PATH])
+    && admission.paths.every(
+      (relative) => !relative.includes('*')
+        && !relative.includes('\\')
+        && !relative.startsWith('/')
+        && !relative.includes('..')
+        && path.posix.normalize(relative) === relative,
+    )
+    && admission.court_blob_sha256[TASK0_5_MIGRATION_COURT_PATH]
+      === TASK0_5_MIGRATION_COURT_CONTENT_SHA256
+    && observation.path === TASK0_5_MIGRATION_COURT_PATH
+    && observation.content_sha256 === TASK0_5_MIGRATION_COURT_CONTENT_SHA256
+    && observation.originating_commit_ancestor === true
+  );
+}
+
 export function ownershipPatterns(ownership, task05Ownership = null) {
   validateOwnershipManifest(ownership);
   const supplemental = task05Ownership
@@ -2486,9 +2559,25 @@ function prerequisites(source) {
           { allowFailure: true },
         ).status === 0,
     });
+    const task05MigrationAdmission = task05MigrationCourtAdmitted({
+      path: file,
+      content_sha256: digest,
+      originating_commit_ancestor:
+        command(
+          'git',
+          [
+            'merge-base',
+            '--is-ancestor',
+            TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT,
+            source.commit,
+          ],
+          { allowFailure: true },
+        ).status === 0,
+    });
     return !existingCourtAdmission
       && !attributionCollisionAdmission
-      && !certificationGateRepairAdmission;
+      && !certificationGateRepairAdmission
+      && !task05MigrationAdmission;
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const pr57Ancestry = {

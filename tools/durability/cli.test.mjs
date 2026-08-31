@@ -48,6 +48,11 @@ import {
   TASK0_5_CONVERGENCE_OWNERSHIP_PATH,
   TASK0_5_CONVERGENCE_PATH_COUNT,
   TASK0_5_CONVERGENCE_PATHS_SHA256,
+  TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256,
+  TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  TASK0_5_MIGRATION_COURT_PATH,
+  task05MigrationCourtAdmission,
+  task05MigrationCourtAdmitted,
   task05OwnershipManifest,
   unownedPaths,
   validateOwnershipManifest,
@@ -844,6 +849,62 @@ test('bounded certification-gate repair rejects drift, neighbors, ancestry and m
     path: `${BOUNDED_CERTIFICATION_GATE_REPAIR_PATH}.neighbor`,
   }), false);
   assert.equal(boundedCertificationGateRepairAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
+});
+
+test('Task 0-5 migration court admission accepts only the reviewed immutable blob', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const admission = task05MigrationCourtAdmission();
+  assert.equal(admission.assignment_sha256, TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256);
+  assert.deepEqual(admission.paths, [TASK0_5_MIGRATION_COURT_PATH]);
+  assert.equal(
+    admission.court_blob_sha256[TASK0_5_MIGRATION_COURT_PATH],
+    TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  );
+  assert.equal(manifest.global_no_edit.includes(TASK0_5_MIGRATION_COURT_PATH), true);
+  assert.equal(
+    createHash('sha256')
+      .update(fs.readFileSync(path.join(ROOT, TASK0_5_MIGRATION_COURT_PATH)))
+      .digest('hex'),
+    TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  );
+  assert.equal(task05MigrationCourtAdmitted({
+    path: TASK0_5_MIGRATION_COURT_PATH,
+    content_sha256: TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  }), true);
+});
+
+test('Task 0-5 migration court admission rejects drift, neighbors and authority broadening', () => {
+  const valid = {
+    path: TASK0_5_MIGRATION_COURT_PATH,
+    content_sha256: TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  };
+  for (const mutate of [
+    (admission) => { admission.paths[0] = 'apps/web/tests/**'; },
+    (admission) => { admission.paths.push(`${TASK0_5_MIGRATION_COURT_PATH}.future`); },
+    (admission) => { admission.authorization_source_sha256 = '0'.repeat(64); },
+    (admission) => { admission.authorization_effect = 'runtime-authority'; },
+    (admission) => { admission.originating_commit = '0'.repeat(40); },
+    (admission) => { admission.assignment_sha256 = '0'.repeat(64); },
+  ]) {
+    const admission = task05MigrationCourtAdmission();
+    mutate(admission);
+    assert.equal(task05MigrationCourtAdmitted(valid, admission), false);
+  }
+  assert.equal(task05MigrationCourtAdmitted({
+    ...valid,
+    content_sha256: '0'.repeat(64),
+  }), false);
+  assert.equal(task05MigrationCourtAdmitted({
+    ...valid,
+    path: `${TASK0_5_MIGRATION_COURT_PATH}.neighbor`,
+  }), false);
+  assert.equal(task05MigrationCourtAdmitted({
     ...valid,
     originating_commit_ancestor: false,
   }), false);
