@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -79,6 +80,7 @@ function portableArchiveMemberPath(value, label) {
   if (
     typeof value !== 'string'
     || value.length === 0
+    || value.startsWith('-')
     || path.isAbsolute(value)
     || path.win32.isAbsolute(value)
     || value.split(/[\\/]/).includes('..')
@@ -91,7 +93,6 @@ function portableArchiveMemberPath(value, label) {
 export function writeArtifactDeliveryManifest({
   manifestPath,
   archivePath,
-  embeddedReceiptPath,
   embeddedReceiptArchivePath,
   gitSha,
   gitTree,
@@ -102,12 +103,72 @@ export function writeArtifactDeliveryManifest({
   if (!path.isAbsolute(manifestPath ?? '') || !path.isAbsolute(archivePath ?? '')) {
     throw new Error('ARTIFACT_DELIVERY_OUTPUT_PATH_REFUSED');
   }
-  if (!path.isAbsolute(embeddedReceiptPath ?? '')) {
-    throw new Error('ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED');
-  }
   const archiveFile = path.basename(archivePath);
   if (!archiveFile.endsWith('.tar.gz')) {
     throw new Error('ARTIFACT_DELIVERY_ARCHIVE_TYPE_REFUSED');
+  }
+  const receiptFile = portableArchiveMemberPath(
+    embeddedReceiptArchivePath,
+    'RECEIPT',
+  );
+  let members;
+  let receiptBytes;
+  try {
+    members = execFileSync('/usr/bin/tar', ['-tzf', archivePath], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim().split('\n').filter(Boolean);
+    for (const member of members) portableArchiveMemberPath(member, 'MEMBER');
+    if (members.filter((member) => member === receiptFile).length !== 1) {
+      throw new Error('ARTIFACT_DELIVERY_RECEIPT_MEMBERSHIP_REFUSED');
+    }
+    receiptBytes = execFileSync(
+      '/usr/bin/tar',
+      ['-xOzf', archivePath, receiptFile],
+      { maxBuffer: 16 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] },
+    );
+  } catch (error) {
+    if (error?.message === 'ARTIFACT_DELIVERY_RECEIPT_MEMBERSHIP_REFUSED') throw error;
+    throw new Error('ARTIFACT_DELIVERY_ARCHIVE_INVALID');
+  }
+  let receipt;
+  try {
+    receipt = JSON.parse(receiptBytes.toString('utf8'));
+  } catch {
+    throw new Error('ARTIFACT_DELIVERY_RECEIPT_INVALID');
+  }
+  const artifactName = archiveFile.slice(0, -'.tar.gz'.length);
+  const runtime = receipt?.isolatedRuntimeTest;
+  const runtimeSteps = Object.values(runtime?.steps ?? {});
+  const artifactChecks = Object.values(receipt?.checks ?? {});
+  if (
+    receipt?.artifact !== artifactName
+    || receipt?.gitSha !== gitSha
+    || receipt?.gitTree !== gitTree
+    || receipt?.workingTree !== 'clean'
+  ) {
+    throw new Error('ARTIFACT_DELIVERY_RECEIPT_IDENTITY_REFUSED');
+  }
+  if (
+    runtime?.passed !== true
+    || runtime?.health?.status !== 'HEALTHY'
+    || runtime?.restart?.status !== 'HEALTHY'
+    || runtime?.rollback?.databaseUnchanged !== true
+    || runtime?.relocation?.differentRoot !== true
+    || runtime?.relocation?.originalRootUnavailableToNodeProcesses !== true
+    || runtime?.relocation?.originalRootAccessAttempts !== 0
+    || runtime?.relocation?.prismaWorkerPrismaPg !== true
+    || runtime?.artifactExclusionAudit?.passed !== true
+    || runtime?.artifactExclusionAudit?.forbiddenFiles?.length !== 0
+    || runtime?.artifactExclusionAudit?.credentialFindings?.length !== 0
+    || runtime?.artifactExclusionAudit?.machinePathOccurrences !== 0
+    || runtimeSteps.length === 0
+    || !runtimeSteps.every((passed) => passed === true)
+    || artifactChecks.length === 0
+    || !artifactChecks.every((passed) => passed === true)
+  ) {
+    throw new Error('ARTIFACT_DELIVERY_RECEIPT_COURT_REFUSED');
   }
   const manifest = {
     schemaVersion: 'cana.deployment-artifact-delivery/1.0.0',
@@ -118,18 +179,11 @@ export function writeArtifactDeliveryManifest({
     archive: {
       file: portableArchiveMemberPath(archiveFile, 'ARCHIVE'),
       sha256: sha256(fs.readFileSync(archivePath)),
+      memberCount: members.length,
     },
     embeddedReceipt: {
-      file: portableArchiveMemberPath(embeddedReceiptArchivePath, 'RECEIPT'),
-      sha256: sha256(fs.readFileSync(embeddedReceiptPath)),
-    },
-    court: {
-      isolatedRuntime: 'PASS',
-      relocation: 'PASS',
-      artifactExclusionAudit: 'PASS',
-      rollback: 'PASS',
-      cleanup: 'PASS',
-      deployment: false,
+      file: receiptFile,
+      sha256: sha256(receiptBytes),
     },
   };
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);

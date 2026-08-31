@@ -1514,7 +1514,6 @@ try {
   deliveryManifest = writeArtifactDeliveryManifest({
     manifestPath: deliveryManifestPath,
     archivePath: tarPath,
-    embeddedReceiptPath: path.join(artifactRoot, 'receipt.json'),
     embeddedReceiptArchivePath: `${artifactName}/receipt.json`,
     gitSha,
     gitTree,

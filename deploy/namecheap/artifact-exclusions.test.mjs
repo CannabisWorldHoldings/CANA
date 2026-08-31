@@ -205,15 +205,43 @@ test('artifact delivery manifest binds retrievable archive bytes without machine
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-delivery-manifest-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const archivePath = path.join(root, 'orderweeddc-a.tar.gz');
-  const receiptPath = path.join(root, 'receipt.json');
+  const artifactRoot = path.join(root, 'orderweeddc-a');
+  const receiptPath = path.join(artifactRoot, 'receipt.json');
   const manifestPath = `${archivePath}.delivery.json`;
-  fs.writeFileSync(archivePath, 'archive-bytes');
-  fs.writeFileSync(receiptPath, '{"status":"verified"}\n');
+  fs.mkdirSync(artifactRoot);
+  const receipt = {
+    artifact: 'orderweeddc-a',
+    gitSha: 'a'.repeat(40),
+    gitTree: 'b'.repeat(40),
+    workingTree: 'clean',
+    checks: { server: true, migrations: true },
+    isolatedRuntimeTest: {
+      passed: true,
+      health: { status: 'HEALTHY' },
+      restart: { status: 'HEALTHY' },
+      rollback: { databaseUnchanged: true },
+      relocation: {
+        differentRoot: true,
+        originalRootUnavailableToNodeProcesses: true,
+        originalRootAccessAttempts: 0,
+        prismaWorkerPrismaPg: true,
+      },
+      artifactExclusionAudit: {
+        passed: true,
+        forbiddenFiles: [],
+        credentialFindings: [],
+        machinePathOccurrences: 0,
+      },
+      steps: { health: true, restart: true },
+    },
+  };
+  const receiptContents = `${JSON.stringify(receipt)}\n`;
+  fs.writeFileSync(receiptPath, receiptContents);
+  execFileSync('/usr/bin/tar', ['-czf', archivePath, '-C', root, 'orderweeddc-a']);
 
   const manifest = writeArtifactDeliveryManifest({
     manifestPath,
     archivePath,
-    embeddedReceiptPath: receiptPath,
     embeddedReceiptArchivePath: 'orderweeddc-a/receipt.json',
     gitSha: 'a'.repeat(40),
     gitTree: 'b'.repeat(40),
@@ -222,21 +250,34 @@ test('artifact delivery manifest binds retrievable archive bytes without machine
   assert.deepEqual(JSON.parse(fs.readFileSync(manifestPath, 'utf8')), manifest);
   assert.equal(
     manifest.archive.sha256,
-    createHash('sha256').update('archive-bytes').digest('hex'),
+    createHash('sha256').update(fs.readFileSync(archivePath)).digest('hex'),
   );
   assert.equal(
     manifest.embeddedReceipt.sha256,
-    createHash('sha256').update('{"status":"verified"}\n').digest('hex'),
+    createHash('sha256').update(receiptContents).digest('hex'),
   );
   assert.equal(manifest.archive.file, 'orderweeddc-a.tar.gz');
+  assert.ok(manifest.archive.memberCount >= 2);
   assert.equal(manifest.embeddedReceipt.file, 'orderweeddc-a/receipt.json');
-  assert.equal(manifest.court.deployment, false);
   assert.doesNotMatch(JSON.stringify(manifest), new RegExp(root.replaceAll('\\', '\\\\')));
+
+  receipt.isolatedRuntimeTest.passed = false;
+  fs.writeFileSync(receiptPath, `${JSON.stringify(receipt)}\n`);
+  execFileSync('/usr/bin/tar', ['-czf', archivePath, '-C', root, 'orderweeddc-a']);
   assert.throws(
     () => writeArtifactDeliveryManifest({
       manifestPath,
       archivePath,
-      embeddedReceiptPath: receiptPath,
+      embeddedReceiptArchivePath: 'orderweeddc-a/receipt.json',
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_RECEIPT_COURT_REFUSED/,
+  );
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath,
+      archivePath,
       embeddedReceiptArchivePath: '/Users/builder/receipt.json',
       gitSha: 'a'.repeat(40),
       gitTree: 'b'.repeat(40),
@@ -247,12 +288,24 @@ test('artifact delivery manifest binds retrievable archive bytes without machine
     () => writeArtifactDeliveryManifest({
       manifestPath,
       archivePath,
-      embeddedReceiptPath: receiptPath,
       embeddedReceiptArchivePath: String.raw`C:\Users\builder\receipt.json`,
       gitSha: 'a'.repeat(40),
       gitTree: 'b'.repeat(40),
     }),
     /ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED/,
+  );
+
+  const invalidArchivePath = path.join(root, 'orderweeddc-invalid.tar.gz');
+  fs.writeFileSync(invalidArchivePath, 'archive-bytes');
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath: `${invalidArchivePath}.delivery.json`,
+      archivePath: invalidArchivePath,
+      embeddedReceiptArchivePath: 'orderweeddc-invalid/receipt.json',
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_ARCHIVE_INVALID/,
   );
 });
 
