@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { digest } from '../../apps/web/src/lib/cana-intelligence/core.mjs';
 import { runArmadaTournament } from '../../apps/web/src/lib/cana-intelligence/armada.mjs';
 import {
@@ -8,7 +9,15 @@ import {
   resolveArmadaAdapter,
   runCommandAgent,
 } from './command-executor.mjs';
-import { createDisposableWorktree, removeDisposableWorktree, worktreeDiff } from './worktree-sandbox.mjs';
+import {
+  assertCanonicalRepository,
+  createDisposableWorktree,
+  removeDisposableWorktree,
+  worktreeDiff,
+} from './worktree-sandbox.mjs';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const sourceRepositoryRoot = path.resolve(here, '../..');
 
 const [configPath, receiptPathArg] = process.argv.slice(2);
 if (!configPath) {
@@ -17,12 +26,20 @@ if (!configPath) {
 }
 const absoluteConfig = path.resolve(configPath);
 const config = JSON.parse(await fs.readFile(absoluteConfig, 'utf8'));
-const repoRoot = path.resolve(path.dirname(absoluteConfig), config.repoRoot ?? '.');
+if (Object.hasOwn(config, 'repoRoot')) {
+  const error = new Error('Armada config cannot select the source repository');
+  error.code = 'ARMADA_REPOSITORY_SELECTION_FORBIDDEN';
+  throw error;
+}
+if (!/^[0-9a-f]{40}$/.test(config.baseSha ?? '')) throw new Error('config.baseSha must be an exact 40-character commit SHA');
+const repoRoot = await assertCanonicalRepository({
+  repoRoot: sourceRepositoryRoot,
+  baseSha: config.baseSha,
+});
 const requestedReceiptPath = receiptPathArg ?? config.receiptPath;
 if (!requestedReceiptPath) throw new Error('explicit receipt path required');
 const receiptPath = path.resolve(path.dirname(absoluteConfig), requestedReceiptPath);
 
-if (!/^[0-9a-f]{40}$/.test(config.baseSha ?? '')) throw new Error('config.baseSha must be an exact 40-character commit SHA');
 if (!Array.isArray(config.agents) || config.agents.length < 2) throw new Error('config.agents must contain >=2 agents');
 if (!config.verifier?.adapter) throw new Error('config.verifier.adapter required');
 if (!Array.isArray(config.trials) || !config.trials.length) throw new Error('config.trials required');

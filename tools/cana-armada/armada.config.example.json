@@ -1,7 +1,6 @@
 {
   "mission": "Design the strongest bounded implementation of one CANA capability without weakening canonical truth or authority",
   "lane": "architecture",
-  "repoRoot": "REPLACE_WITH_EXACT_CANA_REPOSITORY_PATH",
   "baseSha": "REPLACE_WITH_EXACT_40_CHARACTER_COMMIT_SHA",
   "timeoutMs": 180000,
   "receiptPath": "REPLACE_WITH_NEW_PATH_OUTSIDE_REPOSITORY.json",
