@@ -174,6 +174,72 @@ test('exact subreaper zero-exit proves cleanup without global proc visibility', 
   } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
 });
 
+test('Browser.close receives a bounded natural-exit grace before exact SIGTERM custody', async () => {
+  const f = fixture('subreaper-browser-close-grace');
+  const signals = [];
+  const waits = [];
+  try {
+    const custody = createBrowserProcessCustodian({
+      rootPid: 100,
+      runToken: f.runToken,
+      userDataDir: f.userDataDir,
+      platform: 'linux',
+      supervisorBoundary: Object.freeze({}),
+      waitForSupervisorExit: async (timeoutMs) => {
+        waits.push(timeoutMs);
+        return { exited: true, code: 0, signal: null };
+      },
+      processController: {
+        bindSupervisor() { return { status: 'LIVE_EXACT', startTime: '1000' }; },
+        status() { return { status: 'LIVE_EXACT' }; },
+        signal(input) {
+          signals.push(input);
+          return { status: 'SIGNALLED_EXACT' };
+        },
+      },
+      graceMs: 50,
+    });
+    const receipt = await custody.cleanup({ requestBrowserClose: async () => true });
+    assert.deepEqual(waits, [50]);
+    assert.deepEqual(signals, [], 'a natural exact-zero exit must not be raced by SIGTERM');
+    assert.equal(receipt.proofAvailable, true);
+    assert.equal(receipt.browserCloseRequested, true);
+    assert.equal(receipt.ownedBrowserProcessCountAfter, 0);
+  } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
+});
+
+test('an expired Browser.close grace falls back to exact SIGTERM and zero-exit drain proof', async () => {
+  const f = fixture('subreaper-browser-close-timeout');
+  const signals = [];
+  const outcomes = [
+    { exited: false, code: null, signal: null },
+    { exited: true, code: 0, signal: null },
+  ];
+  try {
+    const custody = createBrowserProcessCustodian({
+      rootPid: 100,
+      runToken: f.runToken,
+      userDataDir: f.userDataDir,
+      platform: 'linux',
+      supervisorBoundary: Object.freeze({}),
+      waitForSupervisorExit: async () => outcomes.shift(),
+      processController: {
+        bindSupervisor() { return { status: 'LIVE_EXACT', startTime: '1000' }; },
+        status() { return { status: 'LIVE_EXACT' }; },
+        signal(input) {
+          signals.push(input);
+          return { status: 'SIGNALLED_EXACT' };
+        },
+      },
+      graceMs: 0,
+    });
+    const receipt = await custody.cleanup({ requestBrowserClose: async () => true });
+    assert.deepEqual(signals, [{ pid: 100, startTime: '1000', signal: 'SIGTERM' }]);
+    assert.equal(receipt.proofAvailable, true);
+    assert.equal(receipt.ownedBrowserProcessCountAfter, 0);
+  } finally { fs.rmSync(f.root, { recursive: true, force: true }); }
+});
+
 test('subreaper boundary rejection fails before cleanup authority is created', () => {
   const f = fixture('subreaper-boundary-rejected');
   try {

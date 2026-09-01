@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parse } from 'pg-connection-string';
 
-import { assertCloudflareDatabaseUrl } from '../src/lib/prisma-cloudflare-database-url.mjs';
+import {
+  assertCloudflareDatabaseUrl,
+  assertCloudflareHyperdriveConnection,
+} from '../src/lib/prisma-cloudflare-database-url.mjs';
 
 test('Cloudflare PostgreSQL URLs fail closed unless remote TLS is strict', () => {
   const strict = 'postgresql://user:secret@example.invalid/db?sslmode=require&sslaccept=strict';
@@ -44,4 +47,34 @@ test('disposable loopback PostgreSQL remains available without remote TLS claims
   ]) {
     assert.equal(assertCloudflareDatabaseUrl(url), url);
   }
+});
+
+test('Worker Prisma accepts only the request-scoped PostgreSQL Hyperdrive binding', () => {
+  const connectionString = 'postgresql://hyperdrive:secret@127.0.0.1:5432/cana';
+  assert.equal(
+    assertCloudflareHyperdriveConnection({ HYPERDRIVE: { connectionString } }),
+    connectionString,
+  );
+
+  for (const env of [
+    undefined,
+    {},
+    { DATABASE_URL: connectionString },
+    { HYPERDRIVE: {} },
+    { HYPERDRIVE: { connectionString: '' } },
+    { HYPERDRIVE: { connectionString: 'not-a-url' } },
+    { HYPERDRIVE: { connectionString: 'mysql://hyperdrive:secret@127.0.0.1/cana' } },
+  ]) {
+    assert.throws(
+      () => assertCloudflareHyperdriveConnection(env),
+      /C3_HYPERDRIVE_(?:BINDING_REQUIRED|CONNECTION_STRING_REQUIRED|CONNECTION_STRING_INVALID|POSTGRESQL_REQUIRED)/,
+    );
+  }
+
+  assert.throws(
+    () => assertCloudflareHyperdriveConnection({
+      HYPERDRIVE: { connectionString: 'postgresql://hyperdrive:secret@example.invalid/cana' },
+    }),
+    /CLOUDFLARE_DATABASE_URL_STRICT_TLS_REQUIRED/,
+  );
 });

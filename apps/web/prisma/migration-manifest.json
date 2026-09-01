@@ -25,6 +25,10 @@
     {
       "name": "20260810200000_live_reality_acquisition",
       "sha256": "bdc41027d78bc2b42f56dcbb2586becd9e0e6e1c9e3493e2eb3f2c85d552d545"
+    },
+    {
+      "name": "20260824120000_cana_evidence_bridge",
+      "sha256": "51fc42c7a979b969f179ddb1803d76726813bbc18c243d99026ed66e0f37903e"
     }
   ]
 }

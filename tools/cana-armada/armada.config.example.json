@@ -1,0 +1,31 @@
+{
+  "mission": "Design the strongest bounded implementation of one CANA capability without weakening canonical truth or authority",
+  "lane": "architecture",
+  "baseSha": "REPLACE_WITH_EXACT_40_CHARACTER_COMMIT_SHA",
+  "timeoutMs": 180000,
+  "receiptPath": "REPLACE_WITH_NEW_PATH_OUTSIDE_REPOSITORY.json",
+  "agents": [
+    {
+      "id": "architect-a",
+      "adapter": "fixture-agent-a"
+    },
+    {
+      "id": "architect-b",
+      "adapter": "fixture-agent-b"
+    }
+  ],
+  "verifier": {
+    "id": "independent-verifier",
+    "adapter": "fixture-verifier"
+  },
+  "trials": [
+    {
+      "id": "microtrial-1",
+      "task": "Propose a bounded design with invariants, brittle point, decisive test, and executable change set."
+    },
+    {
+      "id": "microtrial-2",
+      "task": "Attack the same requirement from security, evidence, and failure-recovery perspectives."
+    }
+  ]
+}

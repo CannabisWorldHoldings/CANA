@@ -9,6 +9,14 @@
       "lineage_note": "All five owner files originate in the POST38 lineage (commit 190c990), not the sovereign tip this registry was compiled at. They were converged into this tree as part of the CANA/ORDERWEEDDC convergence; each entry records `lineage` + `origin_commit`. An entry whose owner files have NOT yet been converged must carry `sibling_lineage_only: true` so the path-existence court can tell 'not yet merged' apart from 'fictional citation'.",
       "architecture_note": "CAPABILITY OWNERSHIP IS NOT ROOT AUTHORITY. These entries record who owns a JOB, not who may authorize effects. tools/vanguard/governor.mjs is deliberately NOT filed under `authorization-governor`: an independent audit established its only export is pulse(n) (governor.mjs:42), which spawns subprocesses and appends a receipt — it orchestrates the metabolism, it does not authorize anything. Root authorization is UNSETTLED and is being decided separately; registry repair must not decide architecture.",
       "verified_by": "tools/federation/census-blindspot.test.mjs"
+    },
+    {
+      "id": "CANA-OMEGA-WELD-V3-convergence",
+      "at": "2026-08-24",
+      "why": "The WELD v3 donor kernel was admitted only as evidence-addressed extensions to canonical CANA owners after an exact C3 census. Existing jobs remain owned by their original authority, truth, Experience Fabric, causal, memory, prediction and allocation paths.",
+      "added_capabilities": ["experience-fabric", "sitemind", "shared-reality-projection", "demand-graph", "achievement-debt", "artifact-lineage", "model-routing-court", "harness-forge", "skill-crystallization", "frontier-supremacy-court", "canonical-evidence-ledger", "armada-tournament"],
+      "architecture_note": "Portable modules propose and court mechanisms. Canonical assertAdmin, PostgreSQL evidence persistence, Reality Compiler, Experience Fabric, causal compiler and governed memory remain the only consequential owners. No route or authority is admitted by this registry amendment.",
+      "verified_by": "apps/web/tests/cana-intelligence-host-adapter.test.mjs"
     }
   ],
   "owners": [
@@ -20,17 +28,17 @@
     {
       "capability": "governed-improvement-cycle",
       "job_terms": ["alive loop", "improvement cycle", "governed cycle", "self improvement loop", "flywheel cycle"],
-      "owner_paths": ["tools/alive-loop/run-cycle.mjs", "tools/alive-loop/flywheel.mjs"]
+      "owner_paths": ["tools/alive-loop/run-cycle.mjs", "tools/alive-loop/flywheel.mjs", "apps/web/src/lib/cana-intelligence/organism-cycle.mjs", "apps/web/src/lib/cana-intelligence/rsi.mjs"]
     },
     {
       "capability": "durable-lesson-memory",
       "job_terms": ["winner memory", "lesson store", "durable lessons", "memory store lessons"],
-      "owner_paths": ["tools/alive-loop/winner-memory.mjs", "tools/alive-loop/slow-memory.mjs"]
+      "owner_paths": ["tools/alive-loop/winner-memory.mjs", "tools/alive-loop/slow-memory.mjs", "apps/web/src/lib/cana-intelligence/memory.mjs"]
     },
     {
       "capability": "memory-settlement",
       "job_terms": ["memory settlement", "memory atom", "settle memory", "memory promotion path"],
-      "owner_paths": ["tools/federation/memory.mjs"]
+      "owner_paths": ["tools/federation/memory.mjs", "apps/web/src/lib/cana-intelligence/receipts.mjs", "apps/web/src/lib/cana-intelligence/canonical-host.mjs"]
     },
     {
       "capability": "signal-to-fix-court",
@@ -45,12 +53,12 @@
     {
       "capability": "capability-genome",
       "job_terms": ["capability gene", "donor genome", "gene complex", "capability dna"],
-      "owner_paths": ["tools/federation/genome.mjs"]
+      "owner_paths": ["tools/federation/genome.mjs", "apps/web/src/lib/cana-intelligence/competitive-genome.mjs"]
     },
     {
       "capability": "agent-task-contracts",
       "job_terms": ["agent passport", "task contract", "result contract", "typed delegation"],
-      "owner_paths": ["tools/federation/contracts.mjs"]
+      "owner_paths": ["tools/federation/contracts.mjs", "apps/web/src/lib/cana-intelligence/workforce-compiler.mjs"]
     },
     {
       "capability": "evolution-case",
@@ -60,12 +68,12 @@
     {
       "capability": "forecast-prediction-ledger",
       "job_terms": ["forecast ledger", "prediction ledger", "reality graded prediction"],
-      "owner_paths": ["tools/alive-loop/forecast-ledger.mjs"]
+      "owner_paths": ["tools/alive-loop/forecast-ledger.mjs", "apps/web/src/lib/cana-intelligence/prediction.mjs"]
     },
     {
       "capability": "economic-allocation",
       "job_terms": ["advantage allocator", "regret ledger", "victory board", "economic layer allocation"],
-      "owner_paths": ["tools/vanguard/allocator.mjs", "tools/vanguard/regret-ledger.mjs", "tools/vanguard/victory-board.mjs"]
+      "owner_paths": ["tools/vanguard/allocator.mjs", "tools/vanguard/regret-ledger.mjs", "tools/vanguard/victory-board.mjs", "apps/web/src/lib/cana-intelligence/economics.mjs"]
     },
     {
       "capability": "visual-court",
@@ -111,7 +119,7 @@
       "what_it_owns": "Layout as executable product state: a BSP LayoutGraph of panes with stable semantic ids, role-gated mounting, state-preserving relocation via the ResidualStore, utterances compiled deterministically to layout ops, and a concurrency court that quarantines rather than last-writer-wins.",
       "extends": "tools/experience-fabric/kernel.mjs (composes the existing Experience Fabric IntentPatch court; adds the layout half)",
       "job_terms": ["layout graph", "layout tree", "pane layout", "pane state", "tab panes", "workspace layout", "layout operation", "semantic pane id", "preserve pane state", "adaptive layout", "layout intelligence", "split pane"],
-      "owner_paths": ["tools/experience-fabric/layout-kernel.mjs"],
+      "owner_paths": ["tools/experience-fabric/layout-kernel.mjs", "apps/web/src/lib/cana-intelligence/experience-extensions.mjs", "apps/web/src/lib/cana-intelligence/page-factory.mjs"],
       "lineage": "post38",
       "origin_commit": "190c990"
     },
@@ -121,7 +129,91 @@
       "reason": "CAPABILITY != AUTHORITY. This row RECORDS who owns the JOB of authorization so the anti-duplication census can refuse a second seat; it GRANTS NOTHING. The census reads inert data and mints no authorization — the authority plane (tools/authority + the Hermes grant path) is disjoint from the census (proven by capability-admission.test.mjs COURT 3/6). Registering this job does not make the registry an authorizer, and a registry entry is neither necessary nor sufficient for a grant.",
       "not_this_capability": "NOT authorization-governor (the Python governor-kernel action-contract validator) and NOT metabolism-coordination (the governor daemon's pulse loop). This owns the authorization SEAT itself — the mint side, not the validate side and not the metabolism.",
       "job_terms": ["authority single seat", "authorization seat", "single authorize seat", "mint authorization", "authorization minter", "second authority", "rival grant minter", "issue authorization object", "owner signed authorization", "root authorization", "authority sovereignty", "sovereign authorizer"],
-      "owner_paths": ["tools/authority/authority.mjs"]
+      "owner_paths": ["tools/authority/authority.mjs", "apps/web/src/lib/cana-intelligence/authority.mjs", "apps/web/src/lib/cana-intelligence/canonical-owner-adapter.ts"]
+    },
+    {
+      "capability": "causal-experiment-design",
+      "what_it_owns": "Compiling a falsifiable causal question into a typed experiment contract: an explicit experimental unit, population, assignment mechanism, counterfactual, preregistered primary/guardrail/diagnostic metrics, baseline, power, stop conditions, frozen analysis plan, and a COMPUTED claim ceiling the settlement layer may not exceed. It judges whether a design can identify an effect; it refuses or downgrades designs that cannot.",
+      "not_this_capability": "NOT an authorizer (tools/authority owns the single seat), NOT an executor, NOT the lesson/memory store (tools/alive-loop/winner-memory.mjs), NOT the canonical persisted evidence-realm/receipt vocabulary (apps/web/src/lib/cana-intelligence/receipts.mjs + CanaEvidenceReceipt), and NOT the outcome settler (independent evaluators settle). tools/causal-design/evidence-realm.mjs carries design-stage compatibility labels only; they require translation and independent admission before canonical persistence. It mints no authority and certifies nothing.",
+      "job_terms": [
+        "causal design compiler",
+        "experiment design contract",
+        "claim ceiling",
+        "identification requirements",
+        "counterfactual design",
+        "treatment assignment design",
+        "causal identification",
+        "preregistered experiment",
+        "causal inference design"
+      ],
+      "owner_paths": [
+        "tools/causal-design/compiler.mjs",
+        "tools/causal-design/contract.mjs",
+        "tools/causal-design/evidence-realm.mjs",
+        "apps/web/src/lib/cana-intelligence/experiment.mjs",
+        "apps/web/src/lib/cana-intelligence/assignment.mjs",
+        "apps/web/src/lib/cana-intelligence/stats.mjs"
+      ]
+    },
+    {
+      "capability": "experience-fabric",
+      "job_terms": ["experience fabric", "private experience candidate", "experience promotion", "content addressed rollback", "presentation candidate"],
+      "owner_paths": ["tools/experience-fabric/kernel.mjs", "apps/web/src/lib/experience/fabric.mjs", "apps/web/src/lib/cana-intelligence/experience-extensions.mjs", "apps/web/src/lib/cana-intelligence/full-fabric-adapter.mjs", "apps/web/src/lib/cana-intelligence/page-factory.mjs"]
+    },
+    {
+      "capability": "sitemind",
+      "job_terms": ["sitemind browser observation", "site cortex", "rendered site receipt", "screenshot dom evidence"],
+      "owner_paths": ["apps/web/src/lib/sitemind.mjs", "apps/web/src/lib/cana-intelligence/site-cortex.mjs", "apps/web/src/lib/cana-intelligence/site-operator.mjs"]
+    },
+    {
+      "capability": "shared-reality-projection",
+      "job_terms": ["bitemporal reality projection", "reality graph projection", "temporal claim succession", "overlapping claim contradiction"],
+      "owner_paths": ["apps/web/src/lib/reality/reality-repository.mjs", "apps/web/src/lib/cana-intelligence/reality-graph.mjs", "apps/web/src/lib/cana-intelligence/epistemics.mjs"]
+    },
+    {
+      "capability": "demand-graph",
+      "job_terms": ["observed demand graph", "intent event aggregation", "answerability demand gap", "verified supply opportunity"],
+      "owner_paths": ["apps/web/src/lib/ask/intent-ir.mjs", "apps/web/src/lib/cana-intelligence/demand-graph.mjs", "apps/web/src/lib/cana-intelligence/opportunity.mjs"]
+    },
+    {
+      "capability": "achievement-debt",
+      "job_terms": ["achievement debt", "capability claim debt", "unproven system claim"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/achievement-debt.mjs", "apps/web/src/lib/cana-intelligence/audit.mjs"]
+    },
+    {
+      "capability": "artifact-lineage",
+      "job_terms": ["artifact lineage dag", "artifact evidence edge", "artifact cycle court"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/artifact-lineage.mjs"]
+    },
+    {
+      "capability": "model-routing-court",
+      "job_terms": ["model routing court", "comparable model benchmark", "distinct model trial"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/model-arena.mjs", "apps/web/src/lib/cana-intelligence/adaptation-decision.mjs"]
+    },
+    {
+      "capability": "harness-forge",
+      "job_terms": ["harness forge", "reasoning harness tournament", "harness benchmark court"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/harness-forge.mjs"]
+    },
+    {
+      "capability": "skill-crystallization",
+      "job_terms": ["skill crystallization", "verified workflow replication", "skill holdout court"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/skill-crystallizer.mjs"]
+    },
+    {
+      "capability": "frontier-supremacy-court",
+      "job_terms": ["frontier supremacy court", "comparable frontier benchmark", "same evaluator resource budget"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/frontier-lanes.mjs"]
+    },
+    {
+      "capability": "canonical-evidence-ledger",
+      "job_terms": ["canonical evidence ledger", "receipt digest resolver", "append only intelligence receipt", "canonical receipt persistence"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/receipts.mjs", "apps/web/src/lib/cana-intelligence/canonical-host.mjs", "apps/web/prisma/schema.prisma", "apps/web/prisma/migrations/20260824120000_cana_evidence_bridge/migration.sql"]
+    },
+    {
+      "capability": "armada-tournament",
+      "job_terms": ["armada tournament", "isolated candidate worktree", "independent agent verifier", "agent secret allowlist"],
+      "owner_paths": ["apps/web/src/lib/cana-intelligence/armada.mjs", "tools/cana-armada/armada-runner.mjs", "tools/cana-armada/worktree-sandbox.mjs", "tools/cana-armada/command-executor.mjs"]
     }
   ]
 }

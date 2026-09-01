@@ -5,6 +5,7 @@ import { CANONICAL_TENANT_DOMAIN } from '@/lib/tenant-host.mjs';
 import { requestOrigin } from '@/lib/server-request-url';
 import { issuePendingRightsCapability } from '@/lib/asset-registry.mjs';
 import { buildPublicMetadata } from '@/lib/seo-meta.mjs';
+import { loadRuntimeExperienceManifest } from '@/lib/experience/runtime-manifest.server';
 
 type Props = {
   params: Promise<{ domain: string }>;
@@ -30,19 +31,24 @@ export default async function TenantHomePage({ params, searchParams }: Props) {
     searchParams,
     requestOrigin(),
   ]);
-  const result = await loadCustomerWorld({
-    journey: 'HOME',
-    market: filters.market,
-    query: filters.query,
-    view: filters.view,
-    tenantDomain: domain,
-  });
+  const [result, manifest] = await Promise.all([
+    loadCustomerWorld({
+      journey: 'HOME',
+      market: filters.market,
+      query: filters.query,
+      view: filters.view,
+      tenantDomain: domain,
+    }),
+    loadRuntimeExperienceManifest({ tenant: domain, journey: 'HOME' }),
+  ]);
   if (!result) return notFound();
   return (
     <CustomerWorldPage
       world={result.world}
       isCanonicalBrand={domain === CANONICAL_TENANT_DOMAIN}
       illustrativeArtCapability={issuePendingRightsCapability(origin.hostname)}
+      manifest={manifest}
+      tenant={domain}
     />
   );
 }

@@ -42,8 +42,21 @@ import {
   pr35OwnershipAssignment,
   pr2OwnershipAssignment,
   STAGE_A_AUTHORIZED_PATHS,
+  TASK0_5_CONVERGENCE_ASSIGNMENT,
+  TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256,
+  TASK0_5_CONVERGENCE_BASE_SHA,
+  TASK0_5_CONVERGENCE_OWNERSHIP_PATH,
+  TASK0_5_CONVERGENCE_PATH_COUNT,
+  TASK0_5_CONVERGENCE_PATHS_SHA256,
+  TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256,
+  TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  TASK0_5_MIGRATION_COURT_PATH,
+  task05MigrationCourtAdmission,
+  task05MigrationCourtAdmitted,
+  task05OwnershipManifest,
   unownedPaths,
   validateOwnershipManifest,
+  validateTask05OwnershipManifest,
 } from './cli.mjs';
 import * as durabilityCli from './cli.mjs';
 
@@ -54,6 +67,7 @@ const OWNERSHIP_FILE = path.join(
   'test-runner',
   'CODEX_CHANGED_FILE_OWNERSHIP.json',
 );
+const TASK0_5_OWNERSHIP_FILE = path.join(ROOT, TASK0_5_CONVERGENCE_OWNERSHIP_PATH);
 
 const PHASE_B_ASSIGNMENT = 'phase_b_reality_compiler_slice1_2026_08_09';
 const PHASE_B_SLICE2_ASSIGNMENT = 'phase_b_slice2_live_reality_2026_08_10';
@@ -352,15 +366,23 @@ test('Stage 1 convergence admission binds exact reviewed blobs and refuses drift
   }), false);
 });
 
-test('Stage 1 Owner console is authenticated and truthfully UI-only', () => {
+test('Stage 1 Owner console is authenticated and exposes only canonical read-only host queries', () => {
   const source = fs.readFileSync(
     path.join(ROOT, 'apps/web/src/app/admin/console/page.tsx'),
     'utf8',
   );
   assert.match(source, /await requireAdmin\(\)/);
-  assert.match(source, /OWNER_CONSOLE_UI_ONLY/);
+  assert.match(source, /createOwnerCanaIntelligenceAdapters\(\)/);
+  assert.match(source, /adapters\.intelligence\.resolveVerifiedPrincipal\(\)/);
+  assert.match(source, /adapters\.intelligence\.loadVerifiedSupply\(\)/);
+  assert.match(source, /adapters\.intelligence\.loadObservations\(\)/);
+  assert.match(source, /adapters\.intelligence\.loadIntentEvents\(\)/);
+  assert.match(source, /data-cana-owner-bridge="read-only"/);
+  assert.match(source, /WRITE \/ EXECUTE/);
+  assert.match(source, />SEALED</);
   assert.doesNotMatch(source, /Vanguard sensors active/);
   assert.doesNotMatch(source, /AUTHORITY: OWNER/);
+  assert.doesNotMatch(source, /adapters\.(?:command|execution|promotion)\b/);
   assert.match(source, /<button[^>]*disabled/s);
 });
 
@@ -571,12 +593,12 @@ test('Phase B Slice 2 live reality paths have exact ownership without neighborin
   );
 });
 
-test('Phase B Slice 2 court admission is bound to the exact reviewed bytes', () => {
+test('Phase B Slice 2 court admission refuses superseding and tampered bytes', () => {
   const manifest = ownership();
   const courtPath = 'apps/web/tests/migration-court.test.mjs';
   assert.equal(
     courtEditAdmitted(courtPath, manifest, undefined, PHASE_B_SLICE2_ASSIGNMENT),
-    true,
+    false,
   );
   assert.equal(
     courtEditAdmitted(courtPath, manifest, Buffer.from('tampered Slice 2 court'), PHASE_B_SLICE2_ASSIGNMENT),
@@ -832,6 +854,62 @@ test('bounded certification-gate repair rejects drift, neighbors, ancestry and m
   }), false);
 });
 
+test('Task 0-5 migration court admission accepts only the reviewed immutable blob', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const admission = task05MigrationCourtAdmission();
+  assert.equal(admission.assignment_sha256, TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256);
+  assert.deepEqual(admission.paths, [TASK0_5_MIGRATION_COURT_PATH]);
+  assert.equal(
+    admission.court_blob_sha256[TASK0_5_MIGRATION_COURT_PATH],
+    TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  );
+  assert.equal(manifest.global_no_edit.includes(TASK0_5_MIGRATION_COURT_PATH), true);
+  assert.equal(
+    createHash('sha256')
+      .update(fs.readFileSync(path.join(ROOT, TASK0_5_MIGRATION_COURT_PATH)))
+      .digest('hex'),
+    TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  );
+  assert.equal(task05MigrationCourtAdmitted({
+    path: TASK0_5_MIGRATION_COURT_PATH,
+    content_sha256: TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  }), true);
+});
+
+test('Task 0-5 migration court admission rejects drift, neighbors and authority broadening', () => {
+  const valid = {
+    path: TASK0_5_MIGRATION_COURT_PATH,
+    content_sha256: TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+    originating_commit_ancestor: true,
+  };
+  for (const mutate of [
+    (admission) => { admission.paths[0] = 'apps/web/tests/**'; },
+    (admission) => { admission.paths.push(`${TASK0_5_MIGRATION_COURT_PATH}.future`); },
+    (admission) => { admission.authorization_source_sha256 = '0'.repeat(64); },
+    (admission) => { admission.authorization_effect = 'runtime-authority'; },
+    (admission) => { admission.originating_commit = '0'.repeat(40); },
+    (admission) => { admission.assignment_sha256 = '0'.repeat(64); },
+  ]) {
+    const admission = task05MigrationCourtAdmission();
+    mutate(admission);
+    assert.equal(task05MigrationCourtAdmitted(valid, admission), false);
+  }
+  assert.equal(task05MigrationCourtAdmitted({
+    ...valid,
+    content_sha256: '0'.repeat(64),
+  }), false);
+  assert.equal(task05MigrationCourtAdmitted({
+    ...valid,
+    path: `${TASK0_5_MIGRATION_COURT_PATH}.neighbor`,
+  }), false);
+  assert.equal(task05MigrationCourtAdmitted({
+    ...valid,
+    originating_commit_ancestor: false,
+  }), false);
+});
+
 test('PR #59 attribution collision repair admits only its exact owned global-no-edit blob', () => {
   const manifest = ownership();
   validateOwnershipManifest(manifest);
@@ -1070,6 +1148,81 @@ test('the convergence evidence court has exact ownership and a planned-candidate
   const target = 'tools/test-runner/convergence-sovereign-evidence.test.mjs';
   assert.equal(manifest.owned_create_paths.filter((entry) => entry === target).length, 1);
   assert.equal(manifest.planned_candidate_files.filter((entry) => entry === target).length, 1);
+});
+
+test('Task 0-5 convergence owns exactly the live outgoing path set without effect authority', () => {
+  const manifest = ownership();
+  validateOwnershipManifest(manifest);
+  const assignment = task05OwnershipManifest();
+  const canonical = (value) => {
+    if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+    if (value && typeof value === 'object') {
+      return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`;
+    }
+    return JSON.stringify(value);
+  };
+  const digest = (value) => createHash('sha256').update(canonical(value)).digest('hex');
+  const trackedPaths = execFileSync(
+    'git',
+    ['diff', '--name-only', TASK0_5_CONVERGENCE_BASE_SHA, '--'],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).trim().split('\n').filter(Boolean);
+  const untrackedPaths = execFileSync(
+    'git',
+    ['ls-files', '--others', '--exclude-standard'],
+    { cwd: ROOT, encoding: 'utf8' },
+  ).trim().split('\n').filter(Boolean).filter((relative) => {
+    if (relative !== 'node_modules') return true;
+    return !fs.lstatSync(path.join(ROOT, relative)).isSymbolicLink();
+  });
+  const actualPaths = [...new Set([...trackedPaths, ...untrackedPaths])].sort();
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+
+  assert.equal(assignment.assignment_name, TASK0_5_CONVERGENCE_ASSIGNMENT);
+  assert.equal(fs.realpathSync(TASK0_5_OWNERSHIP_FILE), TASK0_5_OWNERSHIP_FILE);
+  assert.equal(assignment.paths.length, TASK0_5_CONVERGENCE_PATH_COUNT);
+  assert.equal(digest(assignment.paths), TASK0_5_CONVERGENCE_PATHS_SHA256);
+  assert.equal(recordedDigest, TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256);
+  assert.equal(digest(approvalPayload), TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256);
+  assert.deepEqual(actualPaths, assignment.paths);
+  assert.deepEqual(unownedPaths(assignment.paths, manifest, assignment), []);
+  assert.ok(assignment.paths.includes(TASK0_5_CONVERGENCE_OWNERSHIP_PATH));
+  assert.equal(
+    Object.hasOwn(
+      manifest.explicit_user_assignment,
+      TASK0_5_CONVERGENCE_ASSIGNMENT,
+    ),
+    false,
+    'the frozen PR59 ownership manifest must not be mutated by later assignments',
+  );
+  assert.equal(assignment.authorization_effect, 'durability-path-ownership-only');
+  assert.ok(assignment.prohibited_effects.includes('deployment'));
+  assert.ok(assignment.prohibited_effects.includes('production-mutation'));
+});
+
+test('Task 0-5 convergence rejects scope, authority, schema, and self-ownership tampering', () => {
+  const mutations = [
+    (assignment) => { assignment.paths.pop(); },
+    (assignment) => { assignment.paths[0] = 'apps/web/**'; },
+    (assignment) => { assignment.authorization_effect = 'runtime-authority'; },
+    (assignment) => { assignment.root_candidate_base = '0'.repeat(40); },
+    (assignment) => { assignment.prohibited_effects = []; },
+    (assignment) => { assignment.approval_sha256 = '0'.repeat(64); },
+    (assignment) => { assignment.schema_version = 'future'; },
+    (assignment) => {
+      assignment.paths = assignment.paths.filter(
+        (relative) => relative !== TASK0_5_CONVERGENCE_OWNERSHIP_PATH,
+      );
+    },
+  ];
+  for (const mutate of mutations) {
+    const assignment = JSON.parse(fs.readFileSync(TASK0_5_OWNERSHIP_FILE, 'utf8'));
+    mutate(assignment);
+    assert.throws(
+      () => validateTask05OwnershipManifest(assignment),
+      /Task 0-5 supplemental ownership assignment/,
+    );
+  }
 });
 
 test('the six owner-approved Stage A paths have exact changed-file ownership', () => {
@@ -1321,7 +1474,7 @@ test('removing any exact PR #2 entry recreates the durability ownership failure'
     );
     assert.throws(
       () => validateOwnershipManifest(manifest),
-      /must have exactly one exact ownership entry/,
+      /Task 0-5 convergence|must have exactly one exact ownership entry/,
     );
   }
 });

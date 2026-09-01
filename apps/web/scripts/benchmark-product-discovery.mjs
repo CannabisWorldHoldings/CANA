@@ -53,6 +53,11 @@ const safeEnvironmentKeys = [
   'PATH',
   'PATHEXT',
   'SystemRoot',
+  // Public OS temporary-root identity. The detached cleanup watchdog must
+  // resolve the same os.tmpdir() as its parent or it will correctly reject the
+  // parent's macOS /var/folders/... path as outside its own default /tmp root.
+  // Disposable benchmark children still override this with their isolated root.
+  'TMPDIR',
   'WINDIR',
   // Public TLS trust-store paths, not credentials. Required so sanitized
   // child processes can verify HTTPS behind corporate/CI TLS-inspection

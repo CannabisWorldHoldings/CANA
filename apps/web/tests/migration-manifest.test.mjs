@@ -63,6 +63,7 @@ test('the committed universe includes the reviewed additive live-reality migrati
     '20260809170000_continuation_kernel',
     '20260810000000_market_reality_compiler',
     '20260810200000_live_reality_acquisition',
+    '20260824120000_cana_evidence_bridge',
   ]);
 });
 

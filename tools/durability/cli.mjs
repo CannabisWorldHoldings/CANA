@@ -367,6 +367,53 @@ const PR57_PRE_REPAIR_OWNERSHIP_SHA256 =
   '4a368db5329998a2d1d983cf2822e40e417d2cc9474cc100a6e681f6a2e056f5';
 const PR57_CANONICAL_MAIN_SHA = '4cc502cb317be157f1448e04ee296cb202829ed7';
 const PR57_CANDIDATE_SHA = 'e03acd96ccfed958b0a21c76e32c2075038a4e34';
+export const TASK0_5_CONVERGENCE_ASSIGNMENT =
+  'task0_5_canonical_convergence_2026_08_29';
+export const TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256 =
+  'e45f32f807a05d584ad28b987e0ec4b06ed8047c367986d879b93ca484e3adf5';
+export const TASK0_5_CONVERGENCE_BASE_SHA =
+  'e0466894121a4c92f0512cfa47e649815c7a3948';
+export const TASK0_5_CONVERGENCE_OWNERSHIP_PATH =
+  'tools/test-runner/TASK0_5_CHANGED_FILE_OWNERSHIP.json';
+export const TASK0_5_CONVERGENCE_PATH_COUNT = 110;
+export const TASK0_5_CONVERGENCE_PATHS_SHA256 =
+  '196db1f661829097b59f5c96cc28150d1ae717c3fba8d6a8c69200c385ed2300';
+export const TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256 =
+  'dfd035a16fc70635c4573263da9b5432439a1ab7fdca35cff86357fe08cbab85';
+export const TASK0_5_MIGRATION_COURT_PATH =
+  'apps/web/tests/migration-court.test.mjs';
+export const TASK0_5_MIGRATION_COURT_CONTENT_SHA256 =
+  '8da8b60b4c3dbec9ab5f5d72ebd226bd984f364d4c7dfa314088d0f0c4891778';
+export const TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256 =
+  '7bc625b7f8c8e4e927e835285b3a0e6d5ab46bce7d60adc1eea4059e2c400b0b';
+const TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT =
+  'c941ffced233a1ca2c04571d922fa7799a21d15c';
+const TASK0_5_MIGRATION_COURT_ADMISSION = Object.freeze({
+  authorization: 'ORDERWEEDDC × CANA Task 0–5 canonical convergence owner authorization',
+  authorization_source_sha256: TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256,
+  scope: 'One exact immutable migration-court file at its reviewed content SHA-256 only; no wildcard, directory, neighboring path, replacement blob, deployment, credential, production, verification bypass, runtime authority, or future-edit authority.',
+  authorization_effect: 'durability-court-blob-admission-only',
+  rationale: 'The reviewed court binds the canonical migration manifest to the CANA evidence bridge migration without changing migration or runtime behavior.',
+  originating_commit: TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT,
+  paths: Object.freeze([TASK0_5_MIGRATION_COURT_PATH]),
+  court_blob_sha256: Object.freeze({
+    [TASK0_5_MIGRATION_COURT_PATH]: TASK0_5_MIGRATION_COURT_CONTENT_SHA256,
+  }),
+  assignment_sha256: TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256,
+});
+const TASK0_5_CONVERGENCE_PROHIBITED_EFFECTS = Object.freeze([
+  'ads',
+  'credentials',
+  'customer-exposure',
+  'deployment',
+  'dns',
+  'merchant-exposure',
+  'outreach',
+  'payments',
+  'production-mutation',
+  'publication',
+  'spend',
+]);
 const OWNERSHIP_ASSIGNMENT_KEYS = Object.freeze([
   'root_dispatcher',
   'reason',
@@ -2098,12 +2145,130 @@ export function mission3M001OwnershipAssignment(ownership) {
   return ownership.explicit_user_assignment[MISSION3_M001_ASSIGNMENT];
 }
 
-export function ownershipPatterns(ownership) {
+export function validateTask05OwnershipManifest(assignment) {
+  if (
+    !exactKeys(assignment, [
+      'schema_version',
+      'assignment_name',
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'root_candidate_base',
+      'paths',
+      'prohibited_effects',
+      'approval_sha256',
+    ])
+    || assignment.schema_version !== 'cana.task0-5-changed-file-ownership/1.0.0'
+    || assignment.assignment_name !== TASK0_5_CONVERGENCE_ASSIGNMENT
+    || typeof assignment.authorization !== 'string'
+    || assignment.authorization.length === 0
+    || assignment.authorization_source_sha256
+      !== TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256
+    || typeof assignment.scope !== 'string'
+    || assignment.scope.length === 0
+    || assignment.authorization_effect !== 'durability-path-ownership-only'
+    || assignment.root_candidate_base !== TASK0_5_CONVERGENCE_BASE_SHA
+    || !Array.isArray(assignment.paths)
+    || assignment.paths.length !== TASK0_5_CONVERGENCE_PATH_COUNT
+    || new Set(assignment.paths).size !== assignment.paths.length
+    || JSON.stringify(assignment.paths) !== JSON.stringify([...assignment.paths].sort())
+    || assignment.paths.some((relative) => (
+      typeof relative !== 'string'
+      || relative.length === 0
+      || relative.startsWith('/')
+      || relative.includes('\\')
+      || relative.includes('*')
+      || relative.includes('..')
+      || path.posix.normalize(relative) !== relative
+    ))
+    || !assignment.paths.includes(TASK0_5_CONVERGENCE_OWNERSHIP_PATH)
+    || sha256Bytes(canonicalJson(assignment.paths))
+      !== TASK0_5_CONVERGENCE_PATHS_SHA256
+    || JSON.stringify(assignment.prohibited_effects)
+      !== JSON.stringify(TASK0_5_CONVERGENCE_PROHIBITED_EFFECTS)
+  ) {
+    refusal('Task 0-5 supplemental ownership assignment is malformed or incomplete');
+  }
+  const { approval_sha256: recordedDigest, ...approvalPayload } = assignment;
+  if (
+    recordedDigest !== TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256
+    || sha256Bytes(canonicalJson(approvalPayload))
+      !== TASK0_5_CONVERGENCE_ASSIGNMENT_SHA256
+  ) {
+    refusal('Task 0-5 supplemental ownership assignment failed its owner-approval digest');
+  }
+  return assignment;
+}
+
+export function task05OwnershipManifest() {
+  return validateTask05OwnershipManifest(readJson(
+    path.join(ROOT, TASK0_5_CONVERGENCE_OWNERSHIP_PATH),
+  ));
+}
+
+export function task05MigrationCourtAdmission() {
+  return JSON.parse(JSON.stringify(TASK0_5_MIGRATION_COURT_ADMISSION));
+}
+
+export function task05MigrationCourtAdmitted(
+  observation,
+  admission = TASK0_5_MIGRATION_COURT_ADMISSION,
+) {
+  if (
+    !exactKeys(admission, [
+      'authorization',
+      'authorization_source_sha256',
+      'scope',
+      'authorization_effect',
+      'rationale',
+      'originating_commit',
+      'paths',
+      'court_blob_sha256',
+      'assignment_sha256',
+    ])
+    || !exactKeys(observation, [
+      'path',
+      'content_sha256',
+      'originating_commit_ancestor',
+    ])
+    || !Array.isArray(admission.paths)
+    || !exactKeys(admission.court_blob_sha256, [TASK0_5_MIGRATION_COURT_PATH])
+  ) return false;
+  const { assignment_sha256: recordedDigest, ...payload } = admission;
+  return (
+    recordedDigest === TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256
+    && sha256Bytes(canonicalJson(payload)) === TASK0_5_MIGRATION_COURT_ASSIGNMENT_SHA256
+    && admission.authorization_source_sha256
+      === TASK0_5_CONVERGENCE_AUTHORIZATION_SOURCE_SHA256
+    && admission.authorization_effect === 'durability-court-blob-admission-only'
+    && admission.originating_commit === TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT
+    && JSON.stringify(admission.paths) === JSON.stringify([TASK0_5_MIGRATION_COURT_PATH])
+    && admission.paths.every(
+      (relative) => !relative.includes('*')
+        && !relative.includes('\\')
+        && !relative.startsWith('/')
+        && !relative.includes('..')
+        && path.posix.normalize(relative) === relative,
+    )
+    && admission.court_blob_sha256[TASK0_5_MIGRATION_COURT_PATH]
+      === TASK0_5_MIGRATION_COURT_CONTENT_SHA256
+    && observation.path === TASK0_5_MIGRATION_COURT_PATH
+    && observation.content_sha256 === TASK0_5_MIGRATION_COURT_CONTENT_SHA256
+    && observation.originating_commit_ancestor === true
+  );
+}
+
+export function ownershipPatterns(ownership, task05Ownership = null) {
   validateOwnershipManifest(ownership);
+  const supplemental = task05Ownership
+    ? validateTask05OwnershipManifest(task05Ownership)
+    : null;
   return [
     ownership.explicit_user_assignment.root_dispatcher,
     ...ownership.owned_create_paths,
     ...ownership.owned_modify_paths,
+    ...(supplemental?.paths ?? []),
   ];
 }
 
@@ -2331,8 +2496,8 @@ function pr57InheritedMainCommitAdmitted(relative, ownership, commit, ancestry) 
   );
 }
 
-export function unownedPaths(changed, ownership) {
-  const patterns = ownershipPatterns(ownership);
+export function unownedPaths(changed, ownership, task05Ownership = null) {
+  const patterns = ownershipPatterns(ownership, task05Ownership);
   return changed.filter((file) => !patterns.some((pattern) => matchOwned(file, pattern)));
 }
 
@@ -2352,6 +2517,7 @@ function prerequisites(source) {
     path.join(ROOT, 'tools', 'test-runner', 'CODEX_CHANGED_FILE_OWNERSHIP.json'),
   );
   validateOwnershipManifest(ownership);
+  const task05Ownership = task05OwnershipManifest();
   const changed = git(['diff', '--name-only', `${BASE}..${source.commit}`])
     .split('\n')
     .filter(Boolean);
@@ -2393,9 +2559,25 @@ function prerequisites(source) {
           { allowFailure: true },
         ).status === 0,
     });
+    const task05MigrationAdmission = task05MigrationCourtAdmitted({
+      path: file,
+      content_sha256: digest,
+      originating_commit_ancestor:
+        command(
+          'git',
+          [
+            'merge-base',
+            '--is-ancestor',
+            TASK0_5_MIGRATION_COURT_ORIGINATING_COMMIT,
+            source.commit,
+          ],
+          { allowFailure: true },
+        ).status === 0,
+    });
     return !existingCourtAdmission
       && !attributionCollisionAdmission
-      && !certificationGateRepairAdmission;
+      && !certificationGateRepairAdmission
+      && !task05MigrationAdmission;
   });
   if (prohibited.length) refusal(`prohibited paths changed:\n${prohibited.join('\n')}`);
   const pr57Ancestry = {
@@ -2412,7 +2594,7 @@ function prerequisites(source) {
         { allowFailure: true },
       ).status === 0,
   };
-  const unowned = unownedPaths(changed, ownership).filter(
+  const unowned = unownedPaths(changed, ownership, task05Ownership).filter(
     (file) => !pr57InheritedMainCommitAdmitted(
       file,
       ownership,

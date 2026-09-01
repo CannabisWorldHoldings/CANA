@@ -5,10 +5,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   auditArtifactExclusions,
+  detectMachineLocalPaths,
+  normalizeNextStandaloneOutput,
+  normalizePrismaGeneratedClient,
   PINNED_ARTIFACT_EXECUTABLE_SHA256,
+  portableReleaseReproducibility,
+  writeArtifactDeliveryManifest,
 } from './artifact-exclusions.mjs';
 
 const BUILDER = fs.readFileSync(new URL('./build-artifact.mjs', import.meta.url), 'utf8');
@@ -30,7 +35,278 @@ test('artifact exclusion audit accepts ordinary release files', (t) => {
     filesScanned: 2,
     forbiddenFiles: [],
     credentialFindings: [],
+    machinePathFindings: [],
+    machinePathOccurrences: 0,
   });
+});
+
+test('artifact exclusion audit rejects macOS, Linux, Windows, and UNC builder paths', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-artifact-path-audit-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(
+    path.join(root, 'machine-paths.js'),
+    [
+      'const mac = "/Users/buildbot/work/cana/apps/web";',
+      'const linux = "/home/runner/work/cana/apps/web";',
+      'const workspace = "/workspace/cana/apps/web";',
+      'const windows = "C:\\\\Users\\\\buildbot\\\\work\\\\cana";',
+      'const unc = "\\\\\\\\builder-host\\\\share\\\\cana";',
+    ].join('\n'),
+  );
+
+  const result = auditArtifactExclusions(root);
+  assert.equal(result.passed, false);
+  assert.deepEqual(
+    [...new Set(result.machinePathFindings.map(({ pattern }) => pattern))].sort(),
+    [
+      'LINUX_BUILD_ROOT',
+      'POSIX_USER_HOME',
+      'WINDOWS_DRIVE_PATH',
+      'WINDOWS_UNC_PATH',
+    ],
+  );
+  assert.equal(result.machinePathOccurrences, 5);
+});
+
+test('artifact path detector catches exact generated roots in opaque files', () => {
+  const checkout = '/nonstandard/courts/generated-checkout-47';
+  const findings = detectMachineLocalPaths(
+    Buffer.concat([Buffer.from([0]), Buffer.from(`compiled:${checkout}/apps/web`)]),
+    { machineRoots: [{ label: 'CURRENT_CHECKOUT_ROOT', value: checkout }] },
+  );
+  assert.deepEqual(findings.map(({ pattern, occurrences }) => ({ pattern, occurrences })), [
+    { pattern: 'CURRENT_CHECKOUT_ROOT', occurrences: 1 },
+  ]);
+});
+
+test('artifact path detector permits URLs, application routes, and portable virtual paths', () => {
+  const contents = [
+    'const api = "https://orderweeddc.com/api/health";',
+    'const route = "/dispensaries";',
+    'const virtualRuntime = "/home/web_user";',
+    'const prismaDownload = "/tmp/prisma-download";',
+    'const fileUrl = "file:///portable-artifact/config.json";',
+  ].join('\n');
+  assert.deepEqual(detectMachineLocalPaths(contents), []);
+});
+
+test('artifact path detector stays linear on minified escaped expressions', () => {
+  const minified = [
+    `const patterns="${'\\\\w+'.repeat(100_000)}";`,
+    String.raw`const controls="\\x00-\\x1F\\x7F";`,
+    String.raw`const unicode="\\u0300-\\u036f\\ufe20-\\ufe2f";`,
+  ].join('');
+  assert.deepEqual(detectMachineLocalPaths(minified), []);
+});
+
+test('Prisma client normalization removes checkout and schema roots from generated metadata', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-prisma-path-normalize-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const file = path.join(root, 'index.js');
+  const expectedOutputPath = '/Users/buildbot/cana/node_modules/@cana/prisma-worker';
+  const expectedSchemaPath = '/Users/buildbot/cana/apps/web/prisma/schema.prisma';
+  fs.writeFileSync(
+    file,
+    `const config = ${JSON.stringify({
+      generator: {
+        output: { value: expectedOutputPath, fromEnvVar: null },
+        sourceFilePath: expectedSchemaPath,
+        config: { engineType: 'client' },
+      },
+      relativePath: '../../../apps/web/prisma',
+    }, null, 2)}\nconfig.dirname = '/'\nmodule.exports = config\n`,
+  );
+
+  const result = normalizePrismaGeneratedClient(file, {
+    expectedOutputPath,
+    expectedSchemaPath,
+    portableOutputPath: 'node_modules/@cana/prisma-worker',
+  });
+  const normalized = fs.readFileSync(file, 'utf8');
+  assert.equal(result.outputPath, 'node_modules/@cana/prisma-worker');
+  assert.doesNotMatch(normalized, /\/Users\/buildbot/);
+  assert.match(normalized, /"engineType": "client"/);
+  assert.match(normalized, /"sourceFilePath": "apps\/web\/prisma\/schema\.prisma"/);
+});
+
+test('Next standalone normalization removes build config and relocates generated identities', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-next-path-normalize-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const standaloneRoot = path.join(root, 'standalone');
+  const serverFile = path.join(standaloneRoot, 'apps/web/server.js');
+  const requiredServerFiles = path.join(standaloneRoot, 'apps/web/.next/required-server-files.json');
+  const routeFile = path.join(standaloneRoot, 'apps/web/.next/server/app/page.js');
+  const buildRoot = '/Users/buildbot/checkouts/cana';
+  fs.mkdirSync(path.dirname(serverFile), { recursive: true });
+  fs.mkdirSync(path.dirname(requiredServerFiles), { recursive: true });
+  fs.mkdirSync(path.dirname(routeFile), { recursive: true });
+  fs.writeFileSync(
+    serverFile,
+    `const nextConfig = ${JSON.stringify({
+      outputFileTracingRoot: buildRoot,
+      turbopack: { root: buildRoot },
+      output: 'standalone',
+    }, null, 2)}\n\nprocess.chdir(__dirname)\n`,
+  );
+  fs.writeFileSync(requiredServerFiles, JSON.stringify({
+    appDir: `${buildRoot}/apps/web`,
+    relativeAppDir: 'apps/web',
+    config: {
+      outputFileTracingRoot: buildRoot,
+      turbopack: { root: buildRoot },
+      output: 'standalone',
+    },
+  }));
+  fs.writeFileSync(
+    routeFile,
+    [
+      `const resolvedPagePath = ${JSON.stringify(`${buildRoot}/apps/web/src/app/page.tsx`)};`,
+      `const sourceModule = ${JSON.stringify(`${pathToFileURL(buildRoot).href}/apps/web/src/app/page.tsx`)};`,
+    ].join('\n'),
+  );
+
+  const result = normalizeNextStandaloneOutput({
+    standaloneRoot,
+    serverFile,
+    requiredServerFiles,
+    buildRoot,
+  });
+  const server = fs.readFileSync(serverFile, 'utf8');
+  const required = JSON.parse(fs.readFileSync(requiredServerFiles, 'utf8'));
+  const route = fs.readFileSync(routeFile, 'utf8');
+  assert.equal(result.serverBuildConfigRemoved, true);
+  assert.equal(result.requiredServerManifestRelocated, true);
+  assert.doesNotMatch(server, /outputFileTracingRoot|turbopack/);
+  assert.equal(required.appDir, 'apps/web');
+  assert.equal(required.config.outputFileTracingRoot, undefined);
+  assert.equal(required.config.turbopack, undefined);
+  assert.match(route, /cana-artifact-source\/apps\/web\/src\/app\/page\.tsx/);
+  assert.match(route, /file:\/\/\/cana-artifact-source\/apps\/web\/src\/app\/page\.tsx/);
+  assert.doesNotMatch(
+    [server, JSON.stringify(required), route].join('\n'),
+    /\/Users\/buildbot/,
+  );
+});
+
+test('release reproducibility receipt retains provenance without the local Git path', () => {
+  const result = portableReleaseReproducibility({
+    remote: '/Users/buildbot/checkouts/cana/.git',
+    remoteReachable: true,
+  });
+  assert.deepEqual(result, {
+    remoteKind: 'LOCAL_GIT_OBJECT_DATABASE',
+    remoteReachable: true,
+    exactCommitVerified: true,
+  });
+  assert.doesNotMatch(JSON.stringify(result), /\/Users\/buildbot/);
+});
+
+test('artifact delivery manifest binds retrievable archive bytes without machine-local paths', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'owd-delivery-manifest-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const archivePath = path.join(root, 'orderweeddc-a.tar.gz');
+  const artifactRoot = path.join(root, 'orderweeddc-a');
+  const receiptPath = path.join(artifactRoot, 'receipt.json');
+  const manifestPath = `${archivePath}.delivery.json`;
+  fs.mkdirSync(artifactRoot);
+  const receipt = {
+    artifact: 'orderweeddc-a',
+    gitSha: 'a'.repeat(40),
+    gitTree: 'b'.repeat(40),
+    workingTree: 'clean',
+    checks: { server: true, migrations: true },
+    isolatedRuntimeTest: {
+      passed: true,
+      health: { status: 'HEALTHY' },
+      restart: { status: 'HEALTHY' },
+      rollback: { databaseUnchanged: true },
+      relocation: {
+        differentRoot: true,
+        originalRootUnavailableToNodeProcesses: true,
+        originalRootAccessAttempts: 0,
+        prismaWorkerPrismaPg: true,
+      },
+      artifactExclusionAudit: {
+        passed: true,
+        forbiddenFiles: [],
+        credentialFindings: [],
+        machinePathOccurrences: 0,
+      },
+      steps: { health: true, restart: true },
+    },
+  };
+  const receiptContents = `${JSON.stringify(receipt)}\n`;
+  fs.writeFileSync(receiptPath, receiptContents);
+  execFileSync('/usr/bin/tar', ['-czf', archivePath, '-C', root, 'orderweeddc-a']);
+
+  const manifest = writeArtifactDeliveryManifest({
+    manifestPath,
+    archivePath,
+    embeddedReceiptArchivePath: 'orderweeddc-a/receipt.json',
+    gitSha: 'a'.repeat(40),
+    gitTree: 'b'.repeat(40),
+  });
+
+  assert.deepEqual(JSON.parse(fs.readFileSync(manifestPath, 'utf8')), manifest);
+  assert.equal(
+    manifest.archive.sha256,
+    createHash('sha256').update(fs.readFileSync(archivePath)).digest('hex'),
+  );
+  assert.equal(
+    manifest.embeddedReceipt.sha256,
+    createHash('sha256').update(receiptContents).digest('hex'),
+  );
+  assert.equal(manifest.archive.file, 'orderweeddc-a.tar.gz');
+  assert.ok(manifest.archive.memberCount >= 2);
+  assert.equal(manifest.embeddedReceipt.file, 'orderweeddc-a/receipt.json');
+  assert.doesNotMatch(JSON.stringify(manifest), new RegExp(root.replaceAll('\\', '\\\\')));
+
+  receipt.isolatedRuntimeTest.passed = false;
+  fs.writeFileSync(receiptPath, `${JSON.stringify(receipt)}\n`);
+  execFileSync('/usr/bin/tar', ['-czf', archivePath, '-C', root, 'orderweeddc-a']);
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath,
+      archivePath,
+      embeddedReceiptArchivePath: 'orderweeddc-a/receipt.json',
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_RECEIPT_COURT_REFUSED/,
+  );
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath,
+      archivePath,
+      embeddedReceiptArchivePath: '/Users/builder/receipt.json',
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED/,
+  );
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath,
+      archivePath,
+      embeddedReceiptArchivePath: String.raw`C:\Users\builder\receipt.json`,
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_RECEIPT_PATH_REFUSED/,
+  );
+
+  const invalidArchivePath = path.join(root, 'orderweeddc-invalid.tar.gz');
+  fs.writeFileSync(invalidArchivePath, 'archive-bytes');
+  assert.throws(
+    () => writeArtifactDeliveryManifest({
+      manifestPath: `${invalidArchivePath}.delivery.json`,
+      archivePath: invalidArchivePath,
+      embeddedReceiptArchivePath: 'orderweeddc-invalid/receipt.json',
+      gitSha: 'a'.repeat(40),
+      gitTree: 'b'.repeat(40),
+    }),
+    /ARTIFACT_DELIVERY_ARCHIVE_INVALID/,
+  );
 });
 
 test('artifact exclusion audit rejects secret files without exposing their values', (t) => {
@@ -162,9 +438,23 @@ test('production artifact bootstrap stays demo-free and market-count agnostic', 
   assert.match(BUILDER, /packagedSchemaEngines/);
   assert.match(
     BUILDER,
-    /run\('sh migrate\.sh --initialize',[\s\S]*?cwd: appRoot/,
+    /execFileSync\('\/bin\/sh', \['migrate\.sh', '--initialize'\],[\s\S]*?cwd: appRoot/,
     'the isolated court must execute the extracted release migration entrypoint',
   );
+  assert.match(BUILDER, /normalizePrismaGeneratedClient/);
+  assert.match(BUILDER, /normalizeNextStandaloneOutput/);
+  assert.match(BUILDER, /auditArtifactExclusions\(artifactRoot, \{ machineRoots \}\)/);
+  assert.match(BUILDER, /ORIGINAL_BUILD_ROOT_ACCESS_BLOCKED/);
+  assert.match(BUILDER, /relocated @cana\/prisma-worker executes through PrismaPg/);
+  assert.match(BUILDER, /releaseRepro: portableReleaseReproducibility\(releaseRepro\)/);
+  assert.doesNotMatch(BUILDER, /nodePath: process\.execPath/);
+  assert.doesNotMatch(BUILDER, /isolationDir: isolatedResults\.isolationDir/);
+  assert.match(BUILDER, /copyInstalledPackageClosure\('@cana\/prisma-worker'/);
+  assert.match(BUILDER, /copyInstalledPackageClosure\('@prisma\/adapter-pg',/);
+  assert.match(BUILDER, /query_compiler_bg\.wasm/);
+  assert.match(BUILDER, /current_database\(\)::text AS database/);
+  assert.match(BUILDER, /DEBUG_DIAGNOSTIC_RESIDUE/);
+  assert.match(BUILDER, /Windows paths containing shell metacharacters are rejected/);
   assert.match(BUILDER, /OWD_NODE: process\.execPath/);
   assert.doesNotMatch(BUILDER, /npx --no-install prisma migrate deploy/);
   assert.doesNotMatch(BUILDER, /\.deploy-court\.tar\.gz/);
