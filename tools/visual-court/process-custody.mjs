@@ -69,36 +69,46 @@ function createLinuxSubreaperCustodian({
       signalFailures.push({ target: 'Browser.close', message: error.message });
     }
 
-    if (binding.status === 'LIVE_EXACT') {
-      const status = processController.status({ pid: rootPid, startTime: binding.startTime });
-      if (status.status === 'LIVE_EXACT') {
-        const signalled = processController.signal({
-          pid: rootPid,
-          startTime: binding.startTime,
-          signal: 'SIGTERM',
-        });
-        if (!['SIGNALLED_EXACT', 'EXITED_EXACT', 'IDENTITY_REPLACED'].includes(signalled.status)) {
-          signalFailures.push({
-            target: 'subreaper-supervisor',
-            pid: rootPid,
-            signal: 'SIGTERM',
-            status: signalled.status,
-          });
-        }
-      } else if (!['EXITED_EXACT', 'IDENTITY_REPLACED'].includes(status.status)) {
-        proofErrors.push({
-          type: 'SUPERVISOR_STATUS_PROOF_UNAVAILABLE',
-          pid: rootPid,
-          status: status.status,
-        });
+    let outcome = null;
+    if (browserCloseRequested) {
+      try {
+        outcome = await waitForSupervisorExit(graceMs);
+      } catch (error) {
+        proofErrors.push({ type: 'SUPERVISOR_EXIT_OBSERVATION_FAILED', phase: 'BROWSER_CLOSE_GRACE', message: error.message });
       }
     }
 
-    let outcome = null;
-    try {
-      outcome = await waitForSupervisorExit(graceMs);
-    } catch (error) {
-      proofErrors.push({ type: 'SUPERVISOR_EXIT_OBSERVATION_FAILED', message: error.message });
+    if (!outcome?.exited) {
+      if (binding.status === 'LIVE_EXACT') {
+        const status = processController.status({ pid: rootPid, startTime: binding.startTime });
+        if (status.status === 'LIVE_EXACT') {
+          const signalled = processController.signal({
+            pid: rootPid,
+            startTime: binding.startTime,
+            signal: 'SIGTERM',
+          });
+          if (!['SIGNALLED_EXACT', 'EXITED_EXACT', 'IDENTITY_REPLACED'].includes(signalled.status)) {
+            signalFailures.push({
+              target: 'subreaper-supervisor',
+              pid: rootPid,
+              signal: 'SIGTERM',
+              status: signalled.status,
+            });
+          }
+        } else if (!['EXITED_EXACT', 'IDENTITY_REPLACED'].includes(status.status)) {
+          proofErrors.push({
+            type: 'SUPERVISOR_STATUS_PROOF_UNAVAILABLE',
+            pid: rootPid,
+            status: status.status,
+          });
+        }
+      }
+
+      try {
+        outcome = await waitForSupervisorExit(graceMs);
+      } catch (error) {
+        proofErrors.push({ type: 'SUPERVISOR_EXIT_OBSERVATION_FAILED', phase: 'EXACT_SIGNAL_DRAIN', message: error.message });
+      }
     }
     if (!outcome?.exited) {
       proofErrors.push({ type: 'SUPERVISOR_DRAIN_INCOMPLETE', pid: rootPid });
