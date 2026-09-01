@@ -62,6 +62,7 @@ function defaultBrowserEvidence({ commit, tree, candidateDigest }) {
     capturedAt: '2026-08-24T12:05:00.000Z',
     consoleResult: { status: 'PASS', errors: 0 },
     accessibilityResult: { status: 'PASS', violations: 0 },
+    layoutResult: { status: 'PASS', horizontalOverflow: false },
   };
 }
 

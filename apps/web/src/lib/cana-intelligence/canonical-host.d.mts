@@ -21,6 +21,7 @@ export type CanonicalWeldHost = Readonly<{
   loadLesson: (lessonId: string) => Promise<unknown>;
   loadExperimentLedger: (experimentId: string) => Promise<unknown>;
   loadExperiment: (experimentId: string) => Promise<unknown>;
+  settleLegacyExperiment: (experimentId: string, principalReceiptDigest: string) => Promise<unknown>;
   resolveVerifiedPrincipalReceipt: () => Promise<string>;
   persistPromotionReceipt: (payload: unknown) => Promise<unknown>;
   executeWithPromotionClaim: (payload: unknown) => Promise<unknown>;

@@ -33,8 +33,9 @@ function browserObservationPayload(candidate) {
     screenshotDigest: `sha256:${'c'.repeat(64)}`,
     domDigest: `sha256:${'d'.repeat(64)}`,
     capturedAt: new Date().toISOString(),
-    consoleResult: { status: 'PASS' },
-    accessibilityResult: { status: 'PASS' },
+    consoleResult: { status: 'PASS', errors: 0 },
+    accessibilityResult: { status: 'PASS', violations: 0 },
+    layoutResult: { status: 'PASS', horizontalOverflow: false },
   };
 }
 

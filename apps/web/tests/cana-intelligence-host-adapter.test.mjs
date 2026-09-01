@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   admitRealityCellLesson,
+  authorizeExperiment,
   createExperienceCandidate,
   createFullFabricAdapter,
   digest,
@@ -11,6 +12,7 @@ import {
   makeReceipt,
   preregisterExperiment,
   proposeRealityCellLesson,
+  startExperiment,
 } from '../src/lib/cana-intelligence/index.mjs';
 import { createCanonicalWeldHost } from '../src/lib/cana-intelligence/canonical-host.mjs';
 import { createRealityCellFixture } from '../scripts/reality-cell-0001-dry-run.mjs';
@@ -90,8 +92,9 @@ function browserObservationPayload(candidate) {
     screenshotDigest: `sha256:${'c'.repeat(64)}`,
     domDigest: `sha256:${'d'.repeat(64)}`,
     capturedAt: new Date().toISOString(),
-    consoleResult: { status: 'PASS' },
-    accessibilityResult: { status: 'PASS' },
+    consoleResult: { status: 'PASS', errors: 0 },
+    accessibilityResult: { status: 'PASS', violations: 0 },
+    layoutResult: { status: 'PASS', horizontalOverflow: false },
   };
 }
 
@@ -182,6 +185,33 @@ test('generic evidence persistence cannot mint real Owner or merchant authority'
 
   await assert.rejects(() => host.persistReceipt(forgedPrincipal), /CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED/);
   await assert.rejects(() => host.persistReceipt(forgedMerchant), /CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED/);
+  assert.equal(harness.receipts.size, 0);
+});
+
+test('generic evidence persistence cannot mint an experiment settlement', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const forgedSettlement = makeReceipt({
+    kind: 'EXPERIMENT_SETTLEMENT',
+    subjectDigest: 'preregistration:forged',
+    realm: 'VERIFIED_LOCAL',
+    issuer: 'canonical-experiment-settlement',
+    payload: {
+      status: 'SETTLED',
+      causalStatus: 'CAUSALLY_SUPPORTED',
+      stats: { lift: 1 },
+      outcome: { treatmentN: 10 },
+    },
+  });
+
+  await assert.rejects(
+    () => host.persistReceipt(forgedSettlement),
+    (error) => error?.code === 'CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED',
+  );
   assert.equal(harness.receipts.size, 0);
 });
 
@@ -288,6 +318,50 @@ test('canonical experiment custody rejects forged authority, real-realm claims a
   await host.persistExperiment(experiment);
   assert.deepEqual(await host.loadExperiment(experiment.experimentId), experiment);
   assert.equal(harness.records.length, 1);
+});
+
+test('canonical host settles a legacy experiment from its stored record and ledger', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
+  let experiment = preregisterExperiment({
+    experimentId: 'canonical-legacy-settlement',
+    hypothesis: 'bounded local answerability effect',
+    unit: 'session',
+    primaryMetric: 'answerability',
+    treatment: 'A',
+    comparator: 'B',
+    assignmentMethod: 'OBSERVATIONAL',
+    exposureDefinition: 'rendered candidate',
+    analysisMethod: 'two-proportion-z',
+    minimumPerArm: 1,
+    stopRule: 'after one unit per arm',
+    rollbackPlan: 'restore prior manifest',
+    interferenceAssumptions: 'none',
+    maximumClaimCeiling: 'association only',
+    proposerId: 'agent-1',
+  });
+  await host.persistExperiment(experiment);
+  experiment = await authorizeExperiment(experiment, host, principalReceiptDigest);
+  await host.persistExperiment(experiment);
+  experiment = await startExperiment(experiment, host, principalReceiptDigest);
+  await host.persistExperiment(experiment);
+  for (const [unitHash, arm, success] of [['unit:control', 'CONTROL', false], ['unit:treatment', 'TREATMENT', true]]) {
+    const assignment = makeReceipt({ kind: 'ASSIGNMENT', subjectDigest: experiment.preRegDigest, issuer: 'canonical-assignment', payload: { unitHash, arm } });
+    const exposure = makeReceipt({ kind: 'EXPOSURE', subjectDigest: experiment.preRegDigest, issuer: 'independent-observer', payload: { unitHash, assignmentReceiptDigest: assignment.receiptDigest } });
+    const outcome = makeReceipt({ kind: 'OUTCOME', subjectDigest: experiment.preRegDigest, issuer: 'canonical-outcome', payload: { unitHash, success } });
+    for (const receipt of [assignment, exposure, outcome]) await host.persistReceipt(receipt);
+  }
+
+  const settlement = await host.settleLegacyExperiment(experiment.experimentId, principalReceiptDigest);
+  assert.equal(settlement.status, 'SETTLED');
+  assert.equal(settlement.receipt.issuer, 'canonical-experiment-settlement');
+  assert.equal((await host.loadReceipt(settlement.settlementDigest)).receiptDigest, settlement.settlementDigest);
+  assert.equal((await host.loadExperiment(experiment.experimentId)).settlementDigest, settlement.settlementDigest);
 });
 
 test('Reality Cell RUNNING and SETTLED state cannot persist without canonical lifecycle receipts', async () => {

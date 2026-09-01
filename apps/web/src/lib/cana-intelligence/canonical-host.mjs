@@ -21,6 +21,7 @@ import { validateBrowserObservationReceipt } from './site-cortex.mjs';
 import { requireExperienceCandidateResult } from './experience-extensions.mjs';
 import {
   REALITY_CELL_CONTRACT_VERSION,
+  settleExperiment,
   verifyExperimentPreregistration,
 } from './experiment.mjs';
 
@@ -30,6 +31,7 @@ const CANONICAL_ONLY_RECEIPT_KINDS = new Set([
   'MERCHANT_AUTHORIZATION',
   'PROMOTION',
   'EXPERIENCE_EXECUTION',
+  'EXPERIMENT_SETTLEMENT',
   'LESSON_ADMISSION',
 ]);
 const RECORD_TYPES = Object.freeze({
@@ -475,6 +477,32 @@ export function createCanonicalWeldHost({
     return experiment;
   }
 
+  async function settleLegacyExperiment(experimentId, principalReceiptDigest) {
+    const experiment = await loadExperiment(experimentId);
+    assert(experiment?.preRegDigest, 'canonical legacy experiment not found', 'CANA_EXPERIMENT_NOT_FOUND');
+    assert(experiment.contractVersion !== REALITY_CELL_CONTRACT_VERSION, 'Reality Cell uses its dedicated settlement court', 'CANA_EXPERIMENT_SETTLEMENT_OWNER_MISMATCH');
+    const settlement = await settleExperiment(experiment, {
+      loadReceipt,
+      loadLesson,
+      loadExperimentLedger,
+    }, principalReceiptDigest);
+    const recordDigest = recordIdentity(tenant, RECORD_TYPES.EXPERIMENT, experimentId, settlement);
+    await prisma.$transaction(async (transaction) => {
+      await transaction.canaEvidenceReceipt.create({ data: receiptData(tenant, settlement.receipt) });
+      await transaction.canaIntelligenceRecord.create({
+        data: {
+          tenant,
+          recordDigest,
+          recordType: RECORD_TYPES.EXPERIMENT,
+          recordId: experimentId,
+          status: settlement.status,
+          bodyJson: canonicalJson(settlement),
+        },
+      });
+    });
+    return settlement;
+  }
+
   async function validatePromotionLineage(payload, now = new Date()) {
     const sessionPrincipal = await resolveVerifiedPrincipal();
     assert(payload?.candidateDigest, 'promotion candidate digest required', 'PROMOTION_CANDIDATE_REQUIRED');
@@ -744,6 +772,7 @@ export function createCanonicalWeldHost({
     loadLesson,
     loadExperimentLedger,
     loadExperiment,
+    settleLegacyExperiment,
     resolveVerifiedPrincipalReceipt,
     persistPromotionReceipt,
     executeWithPromotionClaim,

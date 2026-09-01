@@ -36,12 +36,15 @@ export function validateBrowserObservationReceipt(receipt, {
   assert(SHA_256.test(payload.domDigest), 'browser receipt DOM digest invalid', 'BROWSER_RECEIPT_DOM_REQUIRED');
   assert(Number.isFinite(new Date(payload.capturedAt).getTime()), 'browser receipt capturedAt required', 'BROWSER_RECEIPT_CAPTURED_AT_REQUIRED');
   assert(payload.consoleResult && typeof payload.consoleResult === 'object' && typeof payload.consoleResult.status === 'string', 'browser receipt console result required', 'BROWSER_RECEIPT_CONSOLE_REQUIRED');
-  assert(payload.consoleResult.status === 'PASS', 'browser receipt console court failed', 'BROWSER_RECEIPT_CONSOLE_FAILED');
+  const consoleErrors = payload.consoleResult.errors;
+  assert(consoleErrors !== undefined, 'browser receipt concrete console errors required', 'BROWSER_RECEIPT_CONSOLE_REQUIRED');
+  assert(payload.consoleResult.status === 'PASS' && ((Number.isInteger(consoleErrors) && consoleErrors === 0) || (Array.isArray(consoleErrors) && consoleErrors.length === 0)), 'browser receipt console court failed', 'BROWSER_RECEIPT_CONSOLE_FAILED');
   assert(payload.accessibilityResult && typeof payload.accessibilityResult === 'object' && typeof payload.accessibilityResult.status === 'string', 'browser receipt accessibility result required', 'BROWSER_RECEIPT_ACCESSIBILITY_REQUIRED');
-  assert(payload.accessibilityResult.status === 'PASS', 'browser receipt accessibility court failed', 'BROWSER_RECEIPT_ACCESSIBILITY_FAILED');
-  if (payload.layoutResult !== undefined) {
-    assert(payload.layoutResult && typeof payload.layoutResult === 'object' && payload.layoutResult.status === 'PASS', 'browser receipt layout court failed', 'BROWSER_RECEIPT_LAYOUT_FAILED');
-  }
+  const accessibilityViolations = payload.accessibilityResult.violations;
+  assert(accessibilityViolations !== undefined, 'browser receipt concrete accessibility violations required', 'BROWSER_RECEIPT_ACCESSIBILITY_REQUIRED');
+  assert(payload.accessibilityResult.status === 'PASS' && ((Number.isInteger(accessibilityViolations) && accessibilityViolations === 0) || (Array.isArray(accessibilityViolations) && accessibilityViolations.length === 0)), 'browser receipt accessibility court failed', 'BROWSER_RECEIPT_ACCESSIBILITY_FAILED');
+  assert(payload.layoutResult && typeof payload.layoutResult === 'object', 'browser receipt layout result required', 'BROWSER_RECEIPT_LAYOUT_REQUIRED');
+  assert(payload.layoutResult.status === 'PASS' && payload.layoutResult.horizontalOverflow === false, 'browser receipt layout court failed', 'BROWSER_RECEIPT_LAYOUT_FAILED');
   if (candidateDigest) assert(payload.candidateDigest === candidateDigest, 'browser candidate digest mismatch', 'BROWSER_RECEIPT_CANDIDATE_MISMATCH');
   if (route) assert(payload.route === route, 'browser route mismatch', 'BROWSER_RECEIPT_ROUTE_MISMATCH');
   if (commit) assert(payload.commit === commit, 'browser commit mismatch', 'BROWSER_RECEIPT_COMMIT_MISMATCH');
