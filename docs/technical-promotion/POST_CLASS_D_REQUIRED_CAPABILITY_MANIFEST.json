@@ -1,0 +1,658 @@
+{
+  "schema": "orderweeddc.post-class-d-required-capabilities.v1",
+  "assessed_against_sha": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+  "assessed_against_tree": "3f3952c0d2ba504787e6816574930cfeb960944f",
+  "owner_authorization_source_sha256": "8694efec6376423b49c10610318d64275f58436ba47da91f98ab0bd6c28a14c2",
+  "court_admission": {
+    "authorization_source_sha256": "8694efec6376423b49c10610318d64275f58436ba47da91f98ab0bd6c28a14c2",
+    "authorization_effect": "exact-reviewed-court-bytes-only",
+    "paths": {
+      "tools/promotion-gate/post-class-d-ledger.court.mjs": "8d9a827a51f55a3e6299be210fd7521e16b84b6e4942bf72aaf48c31592587bf",
+      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "9a88d6fa3ca3efdf8f0d3a9d1dd9a8f60a03590da575c66a1cf2584c214a67ac",
+      "tools/promotion-gate/github-web-flow-signing-key.asc": "c135dfc1e3add3eb84e6119af7095dec97e0e92730a468d234f925a72bacaf74"
+    }
+  },
+  "assessment_diff_paths": [
+    "docs/technical-promotion/CANONICAL_CAPABILITY_SUPERSESSION_LEDGER.md",
+    "docs/technical-promotion/POST_CLASS_D_REMAINING_CAPABILITY_LEDGER.jsonl",
+    "docs/technical-promotion/POST_CLASS_D_REQUIRED_CAPABILITY_MANIFEST.json",
+    "tools/promotion-gate/post-class-d-ledger.court.mjs",
+    "tools/promotion-gate/post-class-d-ledger.court.test.mjs",
+    "tools/promotion-gate/github-web-flow-signing-key.asc",
+    "docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json"
+  ],
+  "github_custody": {
+    "state": "PENDING_GITHUB_VERIFIED_COMMIT",
+    "receipt_path": "docs/technical-promotion/POST_CLASS_D_GITHUB_CUSTODY.json",
+    "verification_requirement": "GitHub commit verification API must report verified=true and reason=valid for the receipt-adding commit."
+  },
+  "verification_receipt_policy": {
+    "evidence_root": ".omo/evidence",
+    "exact_source_required": true,
+    "durability_secret_scan_required_when_receipts_present": true
+  },
+  "proofs": {
+    "git.owner_console": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/app/admin/console/page.tsx"
+    },
+    "git.authority": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/authority/authority.mjs"
+    },
+    "git.vanguard_console": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/vanguard/console.mjs"
+    },
+    "git.experience_fabric": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/experience-fabric/layout-kernel.mjs"
+    },
+    "git.asset_registry": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/lib/asset-registry.mjs"
+    },
+    "git.homepage_hero": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/components/marketplace-home-hero.tsx"
+    },
+    "git.os_recovery_inventory": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "docs/convergence/mission-1/INTELLIGENCE_OS_RECOVERY_STATUS.md"
+    },
+    "git.component_disposition": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "docs/convergence/mission-1/COMPONENT_DISPOSITION.md"
+    },
+    "git.source_ledger": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "docs/convergence/mission-1/SOURCE_LEDGER.md"
+    },
+    "git.local_verification": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "docs/convergence/mission-1/LOCAL_VERIFICATION_RECEIPTS.json"
+    },
+    "git.runtime_inclusion_manifest": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "docs/convergence/mission-1/RUNTIME_INCLUSION_MANIFEST.json"
+    },
+    "git.alive_loop_adapter": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/alive-loop/adapter.mjs"
+    },
+    "git.authority_receipts": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/authority/receipts.mjs"
+    },
+    "git.evidence_envelope": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "packages/governor-kernel/standalone/runtime/evidence.py"
+    },
+    "git.provider_boundary": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "packages/governor-kernel/standalone/runtime/model_router.py"
+    },
+    "git.change_pipeline": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "skills-src/cana-signal-to-fix.mjs"
+    },
+    "git.restart_court": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/mission-2/mission-2.test.mjs"
+    },
+    "git.winner_memory": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/alive-loop/winner-memory.mjs"
+    },
+    "git.sitemind_core": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "packages/governor-kernel/sitemind-core/ATTACK_COURT_RECEIPT.json"
+    },
+    "git.hermes_boundary": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/authority/hermes-boundary.test.mjs"
+    },
+    "git.merchant_core": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/lib/growth-os.mjs"
+    },
+    "git.merchant_ai": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "packages/ai/package.json"
+    },
+    "git.customer_delivery": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/app/[domain]/delivery/page.tsx"
+    },
+    "git.growth_core": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "tools/growth-foundry/m001/claim-graph.mjs"
+    },
+    "git.cloudflare_foundation": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/open-next.config.ts"
+    },
+    "git.postgis_adr": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "docs/adr/0001-postgresql-postgis-canonical-datastore.md"
+    },
+    "observation.search_sensor_donor": {
+      "type": "assessment_observation",
+      "commit": "22edfbca1e598e251df98633498f8c442dd68619",
+      "tree": "c51d62a99793f8daffdca4f150d1fe5025635820",
+      "parent": "06fe1c8bbff8fb9a240799cc45ab7e7a2f54d127",
+      "base_commit": "7d618141a8033ac3667d1770ed350b0268140ac9",
+      "diff_mode": "CUMULATIVE_BASE_DIFF",
+      "changed_path_count": 13,
+      "patch_sha256": "5a2b4f39416a23b93aea7b2e63d126dcd99d797dd2eeb5f631939fccc88c73d8",
+      "path_list_sha256": "5526eaea6987e79e47b535c2ec900e01fcc5fb118b222ee4a8b200e3c2a4244a",
+      "object_optional": true
+    },
+    "observation.vanguard_donor": {
+      "type": "assessment_observation",
+      "commit": "7f68c6c2d1ed9d008cf61021499ca74dea822dba",
+      "tree": "fb14522d55fbfab5e8fe0c5c5ed1d82b6797ebcb",
+      "parent": "9e0419a260bf8d3e7c81de3ab663d97d1868ab48",
+      "changed_path_count": 7,
+      "patch_sha256": "7001656a7703bbc1b931819c95806600d7bf7a7cb5b54fcb520c5f0ebc501da4",
+      "path_list_sha256": "7726b9e8f3589d94fccfc944e191fd31f8f4803eeb3ca76935009c51bc42a6be",
+      "object_optional": true
+    },
+    "external.search_console_access": {
+      "type": "external_boundary",
+      "boundary": "The last exact-scope Owner-account enumeration returned zero accessible properties. This is NOT_ACCESSIBLE, not proof of property absence; current authority remains NONE.",
+      "authority": "NONE",
+      "may_execute": false,
+      "may_query_provider": false,
+      "may_access_credentials": false,
+      "may_mutate_production": false
+    },
+    "external.live_postgis_identity": {
+      "type": "external_boundary",
+      "boundary": "Production database identity is outside the authorized zero-effect court.",
+      "authority": "NONE",
+      "may_execute": false,
+      "may_query_provider": false,
+      "may_access_credentials": false,
+      "may_mutate_production": false
+    },
+    "git.owner_adapter": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/lib/cana-intelligence/canonical-owner-adapter.ts"
+    },
+    "git.cana_intelligence_host": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/lib/cana-intelligence/canonical-host.mjs"
+    },
+    "git.application_experience_fabric": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/lib/experience/fabric.mjs"
+    },
+    "git.hyperdrive_runtime": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "apps/web/src/lib/prisma-cloudflare.ts"
+    },
+    "git.artifact_portability": {
+      "type": "git_blob",
+      "commit": "bf3ffc9a7a4f91f4b491b2f9d9b066bbe749c436",
+      "path": "deploy/namecheap/artifact-exclusions.mjs"
+    }
+  },
+  "inventory_sources": [
+    {
+      "inventory_id": "owner_post_class_d_canonicalization_requirement_inventory",
+      "type": "owner_authorization_digest",
+      "source_sha256": "8694efec6376423b49c10610318d64275f58436ba47da91f98ab0bd6c28a14c2",
+      "capability_ids": [
+        "owner_cana_console_surface",
+        "owner_cana_governed_transport",
+        "owner_cana_whole_system_query",
+        "owner_cockpit_vanguard_cli",
+        "experience_fabric_core",
+        "owner_experience_web_bridge",
+        "asset_registry_rights_core",
+        "homepage_image_acceptance_workflow",
+        "search_console_demand_sensor",
+        "search_console_property_access",
+        "vanguard_output_adapter_isolation",
+        "vanguard_zenith_wholesale_candidate",
+        "rsi_sitemind_core",
+        "rsi_cross_repository_evaluation",
+        "rsi_hermes_runtime_wholesale",
+        "orderweeddc_rsi_standalone_runtime",
+        "orderweeddcrsi_mission_lease_idempotency",
+        "orderweeddcrsi_receipt_chain",
+        "orderweeddcrsi_evidence_envelope",
+        "orderweeddcrsi_provider_validation_circuit_breaker",
+        "orderweeddcrsi_deterministic_pipeline",
+        "orderweeddcrsi_crash_restart_fixtures",
+        "orderweeddcrsi_gated_lesson_persistence",
+        "merchant_intelligence_core",
+        "merchant_ai_tenant_productization",
+        "customer_ask_world",
+        "growth_intelligence_core",
+        "cloudflare_edge_foundation",
+        "final_nonprod_cloudflare_release",
+        "live_postgis_identity"
+      ]
+    },
+    {
+      "inventory_id": "preexisting_mission1_orderweeddcrsi_inventory",
+      "type": "git_blob_inventory",
+      "proof_id": "git.os_recovery_inventory",
+      "capability_ids": [
+        "orderweeddc_rsi_standalone_runtime",
+        "orderweeddcrsi_mission_lease_idempotency",
+        "orderweeddcrsi_receipt_chain",
+        "orderweeddcrsi_evidence_envelope",
+        "orderweeddcrsi_provider_validation_circuit_breaker",
+        "orderweeddcrsi_deterministic_pipeline",
+        "orderweeddcrsi_crash_restart_fixtures",
+        "orderweeddcrsi_gated_lesson_persistence"
+      ]
+    },
+    {
+      "inventory_id": "preexisting_canonical_capability_conservation_inventory",
+      "type": "git_blob_inventory",
+      "proof_id": "git.component_disposition",
+      "capability_ids": [
+        "rsi_sitemind_core",
+        "rsi_cross_repository_evaluation",
+        "rsi_hermes_runtime_wholesale",
+        "merchant_intelligence_core",
+        "customer_ask_world",
+        "growth_intelligence_core"
+      ]
+    }
+  ],
+  "required_capabilities": [
+    {
+      "capability_id": "owner_cana_console_surface",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.owner_console",
+        "git.owner_adapter",
+        "git.cana_intelligence_host"
+      ]
+    },
+    {
+      "capability_id": "owner_cana_governed_transport",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "git.owner_adapter",
+        "git.cana_intelligence_host",
+        "git.authority"
+      ]
+    },
+    {
+      "capability_id": "owner_cana_whole_system_query",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "git.owner_console",
+        "git.owner_adapter",
+        "git.cana_intelligence_host",
+        "git.vanguard_console",
+        "git.merchant_core"
+      ]
+    },
+    {
+      "capability_id": "owner_cockpit_vanguard_cli",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.vanguard_console"
+      ]
+    },
+    {
+      "capability_id": "experience_fabric_core",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.experience_fabric",
+        "git.application_experience_fabric"
+      ]
+    },
+    {
+      "capability_id": "owner_experience_web_bridge",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "git.application_experience_fabric",
+        "git.owner_adapter"
+      ]
+    },
+    {
+      "capability_id": "asset_registry_rights_core",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.asset_registry"
+      ]
+    },
+    {
+      "capability_id": "homepage_image_acceptance_workflow",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "git.asset_registry",
+        "git.homepage_hero",
+        "git.application_experience_fabric"
+      ]
+    },
+    {
+      "capability_id": "search_console_demand_sensor",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "observation.search_sensor_donor"
+      ]
+    },
+    {
+      "capability_id": "search_console_property_access",
+      "expected_disposition": "BOUNDED_UNKNOWN",
+      "proof_ids": [
+        "external.search_console_access"
+      ]
+    },
+    {
+      "capability_id": "vanguard_output_adapter_isolation",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "observation.vanguard_donor",
+        "git.cloudflare_foundation"
+      ]
+    },
+    {
+      "capability_id": "vanguard_zenith_wholesale_candidate",
+      "expected_disposition": "REJECTED_WITH_REASON",
+      "proof_ids": [
+        "observation.vanguard_donor",
+        "git.cloudflare_foundation"
+      ]
+    },
+    {
+      "capability_id": "rsi_sitemind_core",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.source_ledger",
+        "git.sitemind_core"
+      ]
+    },
+    {
+      "capability_id": "rsi_cross_repository_evaluation",
+      "expected_disposition": "SUPERSEDED",
+      "proof_ids": [
+        "git.source_ledger",
+        "git.sitemind_core"
+      ]
+    },
+    {
+      "capability_id": "rsi_hermes_runtime_wholesale",
+      "expected_disposition": "REJECTED_WITH_REASON",
+      "proof_ids": [
+        "git.component_disposition",
+        "git.hermes_boundary"
+      ]
+    },
+    {
+      "capability_id": "orderweeddc_rsi_standalone_runtime",
+      "expected_disposition": "REJECTED_WITH_REASON",
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.component_disposition"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_mission_lease_idempotency",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.alive_loop_adapter",
+        "git.authority"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_receipt_chain",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.authority_receipts"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_evidence_envelope",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.evidence_envelope"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_provider_validation_circuit_breaker",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.provider_boundary"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_deterministic_pipeline",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.change_pipeline"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_crash_restart_fixtures",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.restart_court"
+      ]
+    },
+    {
+      "capability_id": "orderweeddcrsi_gated_lesson_persistence",
+      "expected_disposition": "CANONICAL",
+      "expected_inclusion": {
+        "canonical_source": "VERIFIED_PRESENT",
+        "product_import": "NOT_INCLUDED",
+        "artifact_inclusion": "NOT_INCLUDED",
+        "hosted_execution": "NOT_VERIFIED",
+        "production_authority": "NONE"
+      },
+      "proof_ids": [
+        "git.os_recovery_inventory",
+        "git.winner_memory"
+      ]
+    },
+    {
+      "capability_id": "merchant_intelligence_core",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.merchant_core"
+      ]
+    },
+    {
+      "capability_id": "merchant_ai_tenant_productization",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "git.merchant_ai",
+        "git.merchant_core"
+      ]
+    },
+    {
+      "capability_id": "customer_ask_world",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.customer_delivery"
+      ]
+    },
+    {
+      "capability_id": "growth_intelligence_core",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.growth_core"
+      ]
+    },
+    {
+      "capability_id": "cloudflare_edge_foundation",
+      "expected_disposition": "CANONICAL",
+      "proof_ids": [
+        "git.cloudflare_foundation",
+        "git.hyperdrive_runtime",
+        "git.artifact_portability"
+      ]
+    },
+    {
+      "capability_id": "final_nonprod_cloudflare_release",
+      "expected_disposition": "DEFERRED_WITH_REASON",
+      "proof_ids": [
+        "git.cloudflare_foundation",
+        "git.hyperdrive_runtime",
+        "git.artifact_portability"
+      ]
+    },
+    {
+      "capability_id": "live_postgis_identity",
+      "expected_disposition": "BOUNDED_UNKNOWN",
+      "proof_ids": [
+        "git.postgis_adr",
+        "external.live_postgis_identity"
+      ]
+    }
+  ],
+  "independent_inventory_markers": [
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "mission lease and idempotency mechanics",
+      "capability_id": "orderweeddcrsi_mission_lease_idempotency"
+    },
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "evidence envelope and receipt integrity",
+      "capability_id": "orderweeddcrsi_receipt_chain"
+    },
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "evidence envelope and receipt integrity",
+      "capability_id": "orderweeddcrsi_evidence_envelope"
+    },
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "explicit none/mock provider routing",
+      "capability_id": "orderweeddcrsi_provider_validation_circuit_breaker"
+    },
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "deterministic pipeline boundaries",
+      "capability_id": "orderweeddcrsi_deterministic_pipeline"
+    },
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "crash/restart fixtures",
+      "capability_id": "orderweeddcrsi_crash_restart_fixtures"
+    },
+    {
+      "proof_id": "git.os_recovery_inventory",
+      "marker": "lesson persistence only behind the canonical Winner Memory gate",
+      "capability_id": "orderweeddcrsi_gated_lesson_persistence"
+    }
+  ],
+  "independent_inclusion_evidence": [
+    {
+      "capability_id": "orderweeddcrsi_mission_lease_idempotency",
+      "proof_id": "git.os_recovery_inventory"
+    },
+    {
+      "capability_id": "orderweeddcrsi_receipt_chain",
+      "proof_id": "git.os_recovery_inventory"
+    },
+    {
+      "capability_id": "orderweeddcrsi_evidence_envelope",
+      "proof_id": "git.os_recovery_inventory"
+    },
+    {
+      "capability_id": "orderweeddcrsi_provider_validation_circuit_breaker",
+      "proof_id": "git.os_recovery_inventory"
+    },
+    {
+      "capability_id": "orderweeddcrsi_deterministic_pipeline",
+      "proof_id": "git.os_recovery_inventory"
+    },
+    {
+      "capability_id": "orderweeddcrsi_crash_restart_fixtures",
+      "proof_id": "git.os_recovery_inventory"
+    },
+    {
+      "capability_id": "orderweeddcrsi_gated_lesson_persistence",
+      "proof_id": "git.os_recovery_inventory"
+    }
+  ]
+}
