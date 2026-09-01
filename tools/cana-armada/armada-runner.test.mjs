@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -8,6 +8,11 @@ import { fileURLToPath } from 'node:url';
 import { resolveArmadaAdapter } from './command-executor.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const fixtureRoots = new Set();
+
+after(async () => {
+  await Promise.all([...fixtureRoots].map((directory) => fs.rm(directory, { recursive: true, force: true })));
+});
 
 function git(dir, args) {
   const result = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8' });
@@ -17,6 +22,7 @@ function git(dir, args) {
 
 async function fixtureRepo(prefix) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+  fixtureRoots.add(dir);
   const repo = path.join(dir, 'repo');
   await fs.mkdir(repo);
   git(repo, ['init']);

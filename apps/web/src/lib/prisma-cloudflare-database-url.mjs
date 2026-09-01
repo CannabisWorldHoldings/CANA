@@ -100,14 +100,8 @@ export function assertCloudflareHyperdriveConnection(env) {
 }
 
 export function resolveCloudflarePrismaConnection(env) {
-  if (env?.HYPERDRIVE !== undefined) {
-    return Object.freeze({
-      source: 'HYPERDRIVE',
-      connectionString: assertCloudflareHyperdriveConnection(env),
-    });
-  }
   return Object.freeze({
-    source: 'DATABASE_URL',
-    connectionString: assertCloudflareDatabaseUrl(env?.DATABASE_URL),
+    source: 'HYPERDRIVE',
+    connectionString: assertCloudflareHyperdriveConnection(env),
   });
 }

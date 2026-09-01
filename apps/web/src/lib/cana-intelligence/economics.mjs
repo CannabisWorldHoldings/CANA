@@ -1,4 +1,4 @@
-import { assert, newId, sealPlain } from './core.mjs';
+import { assert, canonicalJson, newId, sealPlain } from './core.mjs';
 import {
   makeReceipt,
   requireExactEvidenceRealm,
@@ -36,19 +36,49 @@ export async function issueRealityCellValueReceipt({
     kind: 'EXPERIMENT_SETTLEMENT',
     subjectDigest: settlement.preregistrationDigest,
   });
+  assert(
+    settlement.settlementDigest === settlement.receipt.receiptDigest,
+    'settlement projection digest mismatch',
+    'VALUE_SETTLEMENT_PROJECTION_MISMATCH',
+  );
   const canonicalSettlement = await resolveCanonicalReceipt(evidenceAdapter, settlement.settlementDigest, {
     kind: 'EXPERIMENT_SETTLEMENT',
     subjectDigest: settlement.preregistrationDigest,
   });
-  requireExactEvidenceRealm(canonicalSettlement, settlement.evidenceRealm);
+  assert(
+    canonicalJson(canonicalSettlement) === canonicalJson(settlement.receipt),
+    'settlement receipt does not exactly replay canonical evidence',
+    'VALUE_SETTLEMENT_PROJECTION_MISMATCH',
+  );
+  const settlementProjection = Object.fromEntries(
+    Object.entries(settlement).filter(([key]) => !['status', 'settlementDigest', 'receipt'].includes(key)),
+  );
+  assert(
+    canonicalJson(settlementProjection) === canonicalJson(canonicalSettlement.payload),
+    'settlement projection does not exactly replay canonical evidence',
+    'VALUE_SETTLEMENT_PROJECTION_MISMATCH',
+  );
+  const settled = canonicalSettlement.payload;
+  const settlementRealm = canonicalSettlement.realm;
+  requireExactEvidenceRealm(canonicalSettlement, settlementRealm);
+  assert(
+    intervention?.candidateDigest === settled.treatmentCandidateDigest,
+    'ValueReceipt intervention candidate does not match canonical settlement',
+    'VALUE_INTERVENTION_MISMATCH',
+  );
+  assert(
+    intervention?.rollbackContract?.digest === settled.rollbackContractDigest,
+    'ValueReceipt rollback contract does not match canonical settlement',
+    'VALUE_INTERVENTION_MISMATCH',
+  );
   assert(Array.isArray(economicObservationReceiptDigests), 'economic observation receipt digests must be an array', 'ECONOMIC_INPUT_INVALID');
   const observations = new Map();
   for (const receiptDigest of economicObservationReceiptDigests) {
     const receipt = await resolveCanonicalReceipt(evidenceAdapter, receiptDigest, {
       kind: 'ECONOMIC_OBSERVATION',
-      subjectDigest: settlement.settlementDigest,
+      subjectDigest: canonicalSettlement.receiptDigest,
     });
-    requireExactEvidenceRealm(receipt, settlement.evidenceRealm);
+    requireExactEvidenceRealm(receipt, settlementRealm);
     const metric = receipt.payload?.metric;
     assert(ECONOMIC_METRICS.has(metric), `unsupported economic metric ${metric}`, 'ECONOMIC_INPUT_INVALID');
     assert(!observations.has(metric), `duplicate economic metric ${metric}`, 'ECONOMIC_INPUT_DUPLICATE');
@@ -74,13 +104,13 @@ export async function issueRealityCellValueReceipt({
   const totalCostUsd = costsComplete
     ? Object.values(costs).reduce((sum, value) => sum + value, 0)
     : null;
-  const causal = settlement.classification === 'CAUSAL_SUPPORTED';
+  const causal = settled.classification === 'CAUSAL_SUPPORTED';
   const complete = causal
-    && settlement.claimCeiling === 'ECONOMIC_EFFECT'
+    && settled.claimCeiling === 'ECONOMIC_EFFECT'
     && grossMargin !== null
     && totalCostUsd !== null;
   const economicEffectUsd = complete ? grossMargin - totalCostUsd : null;
-  const fixture = settlement.evidenceRealm !== 'VERIFIED_REAL';
+  const fixture = settlementRealm !== 'VERIFIED_REAL';
   const economicStatus = !complete
     ? 'UNMEASURED'
     : fixture
@@ -88,35 +118,35 @@ export async function issueRealityCellValueReceipt({
       : 'MEASURED_CAUSAL_ECONOMIC_EFFECT';
   const payload = {
     receiptId: newId('value'),
-    merchantId: settlement.merchantId,
-    tenantId: settlement.tenantId,
-    experimentId: settlement.experimentId,
+    merchantId: settled.merchantId,
+    tenantId: settled.tenantId,
+    experimentId: settled.experimentId,
     intervention,
-    preregistrationDigest: settlement.preregistrationDigest,
+    preregistrationDigest: canonicalSettlement.subjectDigest,
     verifiedExposure: {
-      count: settlement.counts?.verifiedExposures ?? 0,
-      exposureReceiptDigests: settlement.evidenceDigests?.exposures ?? [],
+      count: settled.counts?.verifiedExposures ?? 0,
+      exposureReceiptDigests: settled.evidenceDigests?.exposures ?? [],
     },
-    settlementClassification: settlement.classification,
-    settlementDigest: settlement.settlementDigest,
-    effectEstimate: settlement.effectEstimate,
-    uncertainty: settlement.sufficient ? settlement.effectEstimate : null,
+    settlementClassification: settled.classification,
+    settlementDigest: canonicalSettlement.receiptDigest,
+    effectEstimate: settled.effectEstimate,
+    uncertainty: settled.sufficient ? settled.effectEstimate : null,
     economicStatus,
     economicEffectUsd,
     incrementalRevenueUsd: revenue,
     incrementalMarginUsd: observedMargin,
     marginRate,
     costs: { ...costs, totalCostUsd },
-    guardrailResults: settlement.guardrailResults,
-    claimCeiling: settlement.claimCeiling,
-    evidenceRealm: settlement.evidenceRealm,
+    guardrailResults: settled.guardrailResults,
+    claimCeiling: settled.claimCeiling,
+    evidenceRealm: settlementRealm,
     evidenceDigests: {
-      settlement: settlement.settlementDigest,
+      settlement: canonicalSettlement.receiptDigest,
       economics: economicObservationReceiptDigests,
     },
     rollback: intervention?.rollbackContract ?? null,
     limitations: [
-      ...(settlement.limitations ?? []),
+      ...(settled.limitations ?? []),
       ...(!complete ? ['Economic effect is UNMEASURED because causal settlement or observed margin/cost inputs are incomplete'] : []),
       ...(fixture ? ['Fixture economics cannot establish merchant ROI or real economic value'] : []),
     ],
@@ -125,15 +155,15 @@ export async function issueRealityCellValueReceipt({
   };
   const receipt = makeReceipt({
     kind: 'VALUE',
-    subjectDigest: settlement.settlementDigest,
-    realm: settlement.evidenceRealm,
+    subjectDigest: canonicalSettlement.receiptDigest,
+    realm: settlementRealm,
     issuer,
     payload,
-    parentDigests: [settlement.settlementDigest, ...economicObservationReceiptDigests],
+    parentDigests: [canonicalSettlement.receiptDigest, ...economicObservationReceiptDigests],
   });
   return sealPlain({
     ...payload,
-    causalStatus: settlement.classification,
+    causalStatus: settled.classification,
     receiptDigest: receipt.receiptDigest,
     receipt,
   });

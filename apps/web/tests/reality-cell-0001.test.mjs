@@ -361,6 +361,8 @@ test('attack 20 fabricated AOV or revenue cannot become economic value', async (
   const payload = {
     experimentId: fixture.experiment.experimentId, merchantId: fixture.experiment.merchantId,
     tenantId: fixture.experiment.tenantId, preregistrationDigest: fixture.experiment.preregistrationDigest,
+    treatmentCandidateDigest: fixture.experiment.treatmentDefinition.candidateDigest,
+    rollbackContractDigest: fixture.experiment.rollbackContract.digest,
     classification: 'CAUSAL_SUPPORTED', evidenceRealm: 'FIXTURE', counts: { verifiedExposures: 100 },
     evidenceDigests: { exposures: [] }, guardrailResults: [], claimCeiling: 'CAUSAL_EFFECT', sufficient: true,
   };
@@ -370,12 +372,81 @@ test('attack 20 fabricated AOV or revenue cannot become economic value', async (
   }));
   const settlement = { ...payload, status: 'SETTLED', settlementDigest: receipt.receiptDigest, receipt };
   const value = await issueRealityCellValueReceipt({
-    settlement, intervention: { description: 'fixture' }, economicObservationReceiptDigests: [],
+    settlement,
+    intervention: {
+      candidateDigest: fixture.experiment.treatmentDefinition.candidateDigest,
+      description: 'fixture',
+      rollbackContract: fixture.experiment.rollbackContract,
+    },
+    economicObservationReceiptDigests: [],
     economics: { fabricatedAovUsd: 100, fabricatedRevenueUsd: 1000000 }, evidenceAdapter: fixture.store.adapter,
   });
   assert.equal(value.economicStatus, 'UNMEASURED');
   assert.equal(value.economicEffectUsd, null);
   assert.equal(value.realEconomicValueEstablished, false);
+});
+
+test('attack 20b caller settlement projection cannot upgrade canonical NULL into economic value', async () => {
+  const fixture = createRealityCellFixture({ commit: COMMIT, tree: TREE });
+  const canonicalPayload = {
+    experimentId: fixture.experiment.experimentId,
+    merchantId: fixture.experiment.merchantId,
+    tenantId: fixture.experiment.tenantId,
+    preregistrationDigest: fixture.experiment.preregistrationDigest,
+    treatmentCandidateDigest: fixture.experiment.treatmentDefinition.candidateDigest,
+    rollbackContractDigest: fixture.experiment.rollbackContract.digest,
+    classification: 'NULL',
+    evidenceRealm: 'VERIFIED_REAL',
+    counts: { verifiedExposures: 100 },
+    evidenceDigests: { exposures: [] },
+    guardrailResults: [],
+    claimCeiling: 'ECONOMIC_EFFECT',
+    sufficient: true,
+    effectEstimate: { lift: 0 },
+    limitations: ['Canonical settlement found no causal effect'],
+  };
+  const canonicalReceipt = fixture.store.put(makeReceipt({
+    kind: 'EXPERIMENT_SETTLEMENT',
+    subjectDigest: fixture.experiment.preregistrationDigest,
+    realm: 'VERIFIED_REAL',
+    issuer: 'canonical-reality-cell-settlement',
+    payload: canonicalPayload,
+  }));
+  const metrics = [
+    ['INCREMENTAL_MARGIN_USD', 100],
+    ['DISCOUNT_COST_USD', 0],
+    ['MEDIA_COST_USD', 0],
+    ['FULFILLMENT_COST_USD', 0],
+    ['PLATFORM_COST_USD', 0],
+    ['OTHER_DIRECT_COST_USD', 0],
+  ];
+  const economicObservationReceiptDigests = metrics.map(([metric, value]) => fixture.store.put(makeReceipt({
+    kind: 'ECONOMIC_OBSERVATION',
+    subjectDigest: canonicalReceipt.receiptDigest,
+    realm: 'VERIFIED_REAL',
+    issuer: 'canonical-economic-observer',
+    payload: { metric, value, source: 'verified-ledger', observedAt: START.toISOString() },
+  })).receiptDigest);
+  const forgedProjection = {
+    ...canonicalPayload,
+    classification: 'CAUSAL_SUPPORTED',
+    status: 'SETTLED',
+    settlementDigest: canonicalReceipt.receiptDigest,
+    receipt: canonicalReceipt,
+  };
+  await assert.rejects(
+    () => issueRealityCellValueReceipt({
+      settlement: forgedProjection,
+      intervention: {
+        candidateDigest: fixture.experiment.treatmentDefinition.candidateDigest,
+        description: 'caller-forged causal projection',
+        rollbackContract: fixture.experiment.rollbackContract,
+      },
+      economicObservationReceiptDigests,
+      evidenceAdapter: fixture.store.adapter,
+    }),
+    (error) => error?.code === 'VALUE_SETTLEMENT_PROJECTION_MISMATCH',
+  );
 });
 
 test('attack 21 lesson admission without causal support fails closed', async () => {

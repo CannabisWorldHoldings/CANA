@@ -11,6 +11,7 @@ const ADAPTERS = Object.freeze({
     role: 'candidate',
     provider: 'FIXTURE',
     model: 'fixture-a',
+    implementation: 'node:fixtures/fake-agent.mjs#a',
     command: process.execPath,
     args: Object.freeze([path.join(HERE, 'fixtures/fake-agent.mjs'), 'a']),
   }),
@@ -18,6 +19,7 @@ const ADAPTERS = Object.freeze({
     role: 'candidate',
     provider: 'FIXTURE',
     model: 'fixture-b',
+    implementation: 'node:fixtures/fake-agent.mjs#b',
     command: process.execPath,
     args: Object.freeze([path.join(HERE, 'fixtures/fake-agent.mjs'), 'b']),
   }),
@@ -26,15 +28,16 @@ const ADAPTERS = Object.freeze({
     provider: 'FIXTURE',
     model: 'fixture-verifier',
     verifierId: 'verifier:fixture',
+    implementation: 'node:fixtures/fake-verifier.mjs',
     command: process.execPath,
     args: Object.freeze([path.join(HERE, 'fixtures/fake-verifier.mjs')]),
   }),
 });
-const adapterIdentity = (adapterId, registered) => digest({
-  adapterId,
+const adapterIdentity = (registered) => digest({
   role: registered.role,
   provider: registered.provider,
   model: registered.model,
+  implementation: registered.implementation,
 }, 'armada_adapter_identity');
 
 export function resolveArmadaAdapter(adapterId, role) {
@@ -50,8 +53,9 @@ export function resolveArmadaAdapter(adapterId, role) {
     role,
     provider: registered.provider,
     model: registered.model,
+    implementation: registered.implementation,
     verifierId: registered.verifierId ?? null,
-    identityDigest: adapterIdentity(adapterId, registered),
+    identityDigest: adapterIdentity(registered),
     command: registered.command,
     args: registered.args,
   });
@@ -81,8 +85,9 @@ export async function runCommandAgent({
     || adapter.role !== registered.role
     || adapter.provider !== registered.provider
     || adapter.model !== registered.model
+    || adapter.implementation !== registered.implementation
     || adapter.verifierId !== (registered.verifierId ?? null)
-    || adapter.identityDigest !== adapterIdentity(adapter.adapterId, registered)
+    || adapter.identityDigest !== adapterIdentity(registered)
   ) {
     const error = new Error('Armada adapter grant does not match its source registration');
     error.code = 'ARMADA_ADAPTER_NOT_AUTHORIZED';

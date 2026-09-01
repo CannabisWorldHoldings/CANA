@@ -11,6 +11,7 @@ import {
   proposeRealityCellLesson,
 } from '../src/lib/cana-intelligence/index.mjs';
 import { createCanonicalWeldHost } from '../src/lib/cana-intelligence/canonical-host.mjs';
+import { createRealityCellFixture } from '../scripts/reality-cell-0001-dry-run.mjs';
 
 function prismaHarness() {
   const receipts = new Map();
@@ -283,6 +284,27 @@ test('canonical experiment custody rejects forged authority, real-realm claims a
   await host.persistExperiment(experiment);
   assert.deepEqual(await host.loadExperiment(experiment.experimentId), experiment);
   assert.equal(harness.records.length, 1);
+});
+
+test('Reality Cell RUNNING and SETTLED state cannot persist without canonical lifecycle receipts', async () => {
+  const fixture = createRealityCellFixture({ commit: 'a'.repeat(40), tree: 'b'.repeat(40) });
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'fixture-owner-not-real', role: 'ADMIN' }),
+    tenant: fixture.experiment.tenantId,
+  });
+  for (const status of ['RUNNING', 'SETTLED']) {
+    await assert.rejects(
+      () => host.persistExperiment({
+        ...fixture.experiment,
+        status,
+        authorityBinding: { callerSelected: true },
+      }),
+      (error) => error?.code === 'REALITY_CELL_LIFECYCLE_RECEIPT_REQUIRED',
+    );
+  }
+  assert.equal(harness.records.length, 0);
 });
 
 test('canonical assertAdmin is the only principal root and the receipt resolves by digest', async () => {

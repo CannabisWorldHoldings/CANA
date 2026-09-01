@@ -392,9 +392,9 @@ export function createCanonicalWeldHost({
     if (experiment.contractVersion === REALITY_CELL_CONTRACT_VERSION) {
       assert(experiment.tenantId === tenant, 'Reality Cell experiment tenant mismatch', 'REALITY_CELL_TENANT_MISMATCH');
       assert(
-        ['PREREGISTERED', 'AUTHORIZED', 'AUTHORIZED_FIXTURE_ONLY', 'RUNNING', 'SETTLED'].includes(experiment.status),
-        'Reality Cell experiment status invalid',
-        'EXPERIMENT_STATUS_INVALID',
+        ['PREREGISTERED', 'AUTHORIZED', 'AUTHORIZED_FIXTURE_ONLY'].includes(experiment.status),
+        'Reality Cell lifecycle state must remain receipt-derived',
+        'REALITY_CELL_LIFECYCLE_RECEIPT_REQUIRED',
       );
       if (experiment.status === 'PREREGISTERED') {
         assert(experiment.authorityBinding === null, 'preregistered Reality Cell cannot claim authority', 'INVALID_AUTHORITY_LINEAGE');
@@ -405,8 +405,7 @@ export function createCanonicalWeldHost({
           authorityBinding: experiment.authorityBinding,
         });
         assert(
-          experiment.status === (authority.realWorldExecutionAllowed ? 'AUTHORIZED' : 'AUTHORIZED_FIXTURE_ONLY')
-            || ['RUNNING', 'SETTLED'].includes(experiment.status),
+          experiment.status === (authority.realWorldExecutionAllowed ? 'AUTHORIZED' : 'AUTHORIZED_FIXTURE_ONLY'),
           'Reality Cell status exceeds authority lineage',
           'INVALID_AUTHORITY_LINEAGE',
         );

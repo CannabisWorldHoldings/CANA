@@ -393,7 +393,11 @@ export async function settleExperiment(experiment, evidenceAdapter, principalRec
 function invalidRealityCellSettlement(experiment, error, now) {
   const payload = {
     experimentId: experiment?.experimentId ?? null,
+    merchantId: experiment?.merchantId ?? null,
+    tenantId: experiment?.tenantId ?? null,
     preregistrationDigest: experiment?.preregistrationDigest ?? null,
+    treatmentCandidateDigest: experiment?.treatmentDefinition?.candidateDigest ?? null,
+    rollbackContractDigest: experiment?.rollbackContract?.digest ?? null,
     classification: 'INVALID_EXPERIMENT',
     reason: error?.code ?? 'INVALID_EXPERIMENT',
     evidenceRealm: experiment?.evidenceRealm ?? 'UNKNOWN',
@@ -422,6 +426,8 @@ export async function settleRealityCell(experiment, evidenceAdapter, { now = new
       merchantId: experiment.merchantId,
       tenantId: experiment.tenantId,
       preregistrationDigest: experiment.preregistrationDigest,
+      treatmentCandidateDigest: experiment.treatmentDefinition.candidateDigest,
+      rollbackContractDigest: experiment.rollbackContract.digest,
       classification: result.classification,
       analysisMethod: experiment.analysisMethod,
       primaryMetric: experiment.primaryMetric,
