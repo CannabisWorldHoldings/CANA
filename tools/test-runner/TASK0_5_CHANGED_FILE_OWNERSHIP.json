@@ -3,7 +3,7 @@
   "assignment_name": "task0_5_canonical_convergence_2026_08_29",
   "authorization": "ORDERWEEDDC × CANA CODEX — TASK 0–5 CANONICAL CONVERGENCE + COMPLETE ALL UNBLOCKED ENGINEERING",
   "authorization_source_sha256": "e45f32f807a05d584ad28b987e0ec4b06ed8047c367986d879b93ca484e3adf5",
-  "scope": "Exactly the 108 outgoing paths in the Task 0–5 reconciliation candidate rooted at e0466894121a4c92f0512cfa47e649815c7a3948; no wildcard, neighboring path, future blob, deployment, production, credential, external-effect, or verification-bypass authority.",
+  "scope": "Exactly the 110 outgoing paths in the Task 0–5 reconciliation candidate rooted at e0466894121a4c92f0512cfa47e649815c7a3948; no wildcard, neighboring path, future blob, deployment, production, credential, external-effect, or verification-bypass authority.",
   "authorization_effect": "durability-path-ownership-only",
   "root_candidate_base": "e0466894121a4c92f0512cfa47e649815c7a3948",
   "paths": [
@@ -114,6 +114,8 @@
     "tools/test-runner/TASK0_5_CHANGED_FILE_OWNERSHIP.json",
     "tools/test-runner/sovereign-classify.mjs",
     "tools/test-runner/sovereign.test.mjs",
+    "tools/visual-court/process-custody.mjs",
+    "tools/visual-court/process-custody.test.mjs",
     "tools/visual-court/static-collector.mjs"
   ],
   "prohibited_effects": [
@@ -129,5 +131,5 @@
     "publication",
     "spend"
   ],
-  "approval_sha256": "1bd9d398fe674319bc4ab3d0fa7872324645bb711657e5db37afcb5e2e30644d"
+  "approval_sha256": "dfd035a16fc70635c4573263da9b5432439a1ab7fdca35cff86357fe08cbab85"
 }
