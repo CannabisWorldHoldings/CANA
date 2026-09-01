@@ -364,6 +364,95 @@ test('canonical host settles a legacy experiment from its stored record and ledg
   assert.equal((await host.loadExperiment(experiment.experimentId)).settlementDigest, settlement.settlementDigest);
 });
 
+test('generic experiment persistence cannot store a caller-forged legacy settlement', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
+  let experiment = preregisterExperiment({
+    experimentId: 'forged-generic-settlement',
+    hypothesis: 'bounded local answerability effect',
+    unit: 'session',
+    primaryMetric: 'answerability',
+    treatment: 'A',
+    comparator: 'B',
+    assignmentMethod: 'OBSERVATIONAL',
+    exposureDefinition: 'rendered candidate',
+    analysisMethod: 'two-proportion-z',
+    minimumPerArm: 1,
+    stopRule: 'after one unit per arm',
+    rollbackPlan: 'restore prior manifest',
+    interferenceAssumptions: 'none',
+    maximumClaimCeiling: 'association only',
+    proposerId: 'agent-1',
+  });
+  await host.persistExperiment(experiment);
+  experiment = await authorizeExperiment(experiment, host, principalReceiptDigest);
+  await host.persistExperiment(experiment);
+  experiment = await startExperiment(experiment, host, principalReceiptDigest);
+  await host.persistExperiment(experiment);
+
+  await assert.rejects(
+    () => host.persistExperiment({
+      ...experiment,
+      status: 'SETTLED',
+      settlementDigest: 'receipt-experiment_settlement:forged',
+      causalStatus: 'CAUSALLY_SUPPORTED',
+      sufficient: true,
+      stats: { lift: 1 },
+      outcome: { controlN: 1, treatmentN: 1 },
+    }),
+    (error) => error?.code === 'CANA_EXPERIMENT_SETTLEMENT_OWNER_REQUIRED',
+  );
+  assert.equal((await host.loadExperiment(experiment.experimentId)).status, 'RUNNING');
+});
+
+test('legacy settlement authority must match the active authenticated Owner', async () => {
+  const harness = prismaHarness();
+  const ownerOne = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const ownerTwo = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-2', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  const ownerOneReceiptDigest = await ownerOne.resolveVerifiedPrincipalReceipt();
+  let experiment = preregisterExperiment({
+    experimentId: 'active-owner-settlement',
+    hypothesis: 'bounded local answerability effect',
+    unit: 'session',
+    primaryMetric: 'answerability',
+    treatment: 'A',
+    comparator: 'B',
+    assignmentMethod: 'OBSERVATIONAL',
+    exposureDefinition: 'rendered candidate',
+    analysisMethod: 'two-proportion-z',
+    minimumPerArm: 1,
+    stopRule: 'after one unit per arm',
+    rollbackPlan: 'restore prior manifest',
+    interferenceAssumptions: 'none',
+    maximumClaimCeiling: 'association only',
+    proposerId: 'agent-1',
+  });
+  await ownerOne.persistExperiment(experiment);
+  experiment = await authorizeExperiment(experiment, ownerOne, ownerOneReceiptDigest);
+  await ownerOne.persistExperiment(experiment);
+  experiment = await startExperiment(experiment, ownerOne, ownerOneReceiptDigest);
+  await ownerOne.persistExperiment(experiment);
+
+  await assert.rejects(
+    () => ownerTwo.settleLegacyExperiment(experiment.experimentId, ownerOneReceiptDigest),
+    (error) => error?.code === 'EXPERIMENT_PRINCIPAL_MISMATCH',
+  );
+  assert.equal((await ownerOne.loadExperiment(experiment.experimentId)).status, 'RUNNING');
+});
+
 test('Reality Cell RUNNING and SETTLED state cannot persist without canonical lifecycle receipts', async () => {
   const fixture = createRealityCellFixture({ commit: 'a'.repeat(40), tree: 'b'.repeat(40) });
   const harness = prismaHarness();

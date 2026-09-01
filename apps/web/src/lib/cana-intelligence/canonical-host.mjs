@@ -402,6 +402,11 @@ export function createCanonicalWeldHost({
   }
 
   async function persistExperiment(experiment) {
+    assert(
+      experiment?.contractVersion === REALITY_CELL_CONTRACT_VERSION || experiment?.status !== 'SETTLED',
+      'legacy experiment settlement must be recomputed and persisted by the canonical settlement owner',
+      'CANA_EXPERIMENT_SETTLEMENT_OWNER_REQUIRED',
+    );
     await validateExperimentRecord(experiment);
     return persistRecord(RECORD_TYPES.EXPERIMENT, experiment?.experimentId, experiment);
   }
@@ -481,6 +486,17 @@ export function createCanonicalWeldHost({
     const experiment = await loadExperiment(experimentId);
     assert(experiment?.preRegDigest, 'canonical legacy experiment not found', 'CANA_EXPERIMENT_NOT_FOUND');
     assert(experiment.contractVersion !== REALITY_CELL_CONTRACT_VERSION, 'Reality Cell uses its dedicated settlement court', 'CANA_EXPERIMENT_SETTLEMENT_OWNER_MISMATCH');
+    const sessionPrincipal = await resolveVerifiedPrincipal();
+    const settlementPrincipal = await requirePrincipalReceipt(
+      { loadReceipt },
+      principalReceiptDigest,
+      ACTIONS.SETTLE_EXPERIMENT,
+    );
+    assert(
+      settlementPrincipal.subject === sessionPrincipal.subject,
+      'settlement principal does not match the authenticated Owner session',
+      'EXPERIMENT_PRINCIPAL_MISMATCH',
+    );
     const settlement = await settleExperiment(experiment, {
       loadReceipt,
       loadLesson,
