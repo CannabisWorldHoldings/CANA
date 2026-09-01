@@ -160,6 +160,9 @@ export function assertManifest(m) {
     if (typeof m.promotion.candidateDigest !== 'string' || m.promotion.candidateDigest.length === 0) {
       bad('promotion.candidateDigest absent');
     }
+    if (typeof m.promotion.manifestAfterDigest !== 'string' || m.promotion.manifestAfterDigest.length === 0) {
+      bad('promotion.manifestAfterDigest absent');
+    }
     if (typeof m.promotion.evidenceRealm !== 'string' || m.promotion.evidenceRealm.length === 0) {
       bad('promotion.evidenceRealm absent');
     }

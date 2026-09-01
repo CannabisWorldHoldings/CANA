@@ -4,6 +4,7 @@ import test from 'node:test';
 import { buildManifest, JOURNEY_COPY } from '../src/lib/experience/manifest.mjs';
 import { resolveRuntimeExperienceManifest } from '../src/lib/experience/runtime-manifest.mjs';
 import { makeReceipt } from '../src/lib/cana-intelligence/receipts.mjs';
+import { digest } from '../src/lib/cana-intelligence/core.mjs';
 
 function receiptRow(receipt) {
   return {
@@ -25,16 +26,18 @@ test('runtime Experience state falls back through the kernel and loads only exac
 
   const promoted = buildManifest({ tenant, journey: 'DELIVERY' });
   promoted.presentation.copy.title = 'Courted delivery title';
+  const manifestAfterDigest = digest(promoted, 'experience_manifest');
   const promotion = makeReceipt({
     kind: 'PROMOTION',
     subjectDigest: 'experience-candidate:courted-delivery',
     realm: 'VERIFIED_LOCAL',
     issuer: 'canonical-experience-promotion-court',
-    payload: { candidateDigest: 'experience-candidate:courted-delivery' },
+    payload: { candidateDigest: 'experience-candidate:courted-delivery', manifestAfterDigest },
   });
   promoted.promotion = {
     receiptDigest: promotion.receiptDigest,
     candidateDigest: promotion.subjectDigest,
+    manifestAfterDigest,
     evidenceRealm: promotion.realm,
   };
   const loaded = await resolveRuntimeExperienceManifest({
@@ -49,16 +52,18 @@ test('runtime Experience state falls back through the kernel and loads only exac
 test('runtime Experience state refuses promoted content without exact canonical receipt lineage', async () => {
   const tenant = 'orderweeddc.com';
   const manifest = buildManifest({ tenant, journey: 'DISPENSARIES' });
+  const manifestAfterDigest = digest(manifest, 'experience_manifest');
   const promotion = makeReceipt({
     kind: 'PROMOTION',
     subjectDigest: 'experience-candidate:other',
     realm: 'VERIFIED_LOCAL',
     issuer: 'canonical-experience-promotion-court',
-    payload: { candidateDigest: 'experience-candidate:other' },
+    payload: { candidateDigest: 'experience-candidate:other', manifestAfterDigest },
   });
   manifest.promotion = {
     receiptDigest: promotion.receiptDigest,
     candidateDigest: 'experience-candidate:expected',
+    manifestAfterDigest,
     evidenceRealm: promotion.realm,
   };
   await assert.rejects(
@@ -69,6 +74,35 @@ test('runtime Experience state refuses promoted content without exact canonical 
       journey: 'DISPENSARIES',
     }),
     /receipt subject mismatch/,
+  );
+});
+
+test('runtime Experience state rejects manifest content changed after candidate promotion', async () => {
+  const tenant = 'orderweeddc.com';
+  const manifest = buildManifest({ tenant, journey: 'SEARCH' });
+  const manifestAfterDigest = digest(manifest, 'experience_manifest');
+  const promotion = makeReceipt({
+    kind: 'PROMOTION',
+    subjectDigest: 'experience-candidate:exact-search',
+    realm: 'VERIFIED_LOCAL',
+    issuer: 'canonical-experience-promotion-court',
+    payload: { candidateDigest: 'experience-candidate:exact-search', manifestAfterDigest },
+  });
+  manifest.presentation.copy.title = 'Unauthorized different presentation';
+  manifest.promotion = {
+    receiptDigest: promotion.receiptDigest,
+    candidateDigest: promotion.subjectDigest,
+    manifestAfterDigest,
+    evidenceRealm: promotion.realm,
+  };
+  await assert.rejects(
+    () => resolveRuntimeExperienceManifest({
+      recordStore: { findFirst: async () => ({ bodyJson: JSON.stringify(manifest) }) },
+      receiptStore: { findUnique: async () => receiptRow(promotion) },
+      tenant,
+      journey: 'SEARCH',
+    }),
+    /EXPERIENCE_RUNTIME_PROMOTION_MISMATCH/,
   );
 });
 

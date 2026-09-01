@@ -174,14 +174,14 @@ test('attack 03 forged browser receipt fails closed', () => {
 
 test('attack 04 replayed promotion receipt fails closed', async () => {
   const receipts = new Map();
-  const candidate = createExperienceCandidate({ objective: 'fixture', target: '/', operations: [{ type: 'UPDATE_LAYOUT' }], proposer: 'test' });
+  const candidate = createExperienceCandidate({ objective: 'fixture', target: '/', operations: [{ type: 'UPDATE_LAYOUT' }], manifestAfter: { version: 'fixture-v1' }, proposer: 'test' });
   const principal = makeReceipt({
     kind: 'PRINCIPAL', subjectDigest: 'owner', realm: 'VERIFIED_LOCAL', issuer: 'canonical-auth',
     payload: { verified: true, subject: 'owner', allowedActions: [ACTIONS.EXECUTE_EXPERIENCE_CANDIDATE] },
   });
   const promotion = makeReceipt({
     kind: 'PROMOTION', subjectDigest: candidate.candidateDigest, realm: 'VERIFIED_LOCAL', issuer: 'promotion-court',
-    payload: { candidateDigest: candidate.candidateDigest, principalReceiptDigest: principal.receiptDigest, allowedEffectSet: ['UPDATE_LAYOUT'] },
+    payload: { candidateDigest: candidate.candidateDigest, manifestAfterDigest: candidate.manifestAfterDigest, principalReceiptDigest: principal.receiptDigest, allowedEffectSet: ['UPDATE_LAYOUT'] },
   });
   receipts.set(principal.receiptDigest, principal);
   receipts.set(promotion.receiptDigest, promotion);
@@ -195,7 +195,7 @@ test('attack 04 replayed promotion receipt fails closed', async () => {
     executeWithPromotionClaim: async ({ executionInput }) => {
       if (claimed) throw new Error('PROMOTION_REPLAYED');
       claimed = true;
-      return executionInput;
+      return { ...executionInput, appliedManifestDigest: executionInput.targetManifestDigest };
     },
     rollbackExperienceVersion: async () => null,
   });

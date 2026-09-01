@@ -153,7 +153,7 @@ test('PostgreSQL receipt lookup stays tenant-bound', async () => {
   assert.equal((await second.loadReceipt(receipt.receiptDigest)).receiptDigest, receipt.receiptDigest);
 });
 
-async function executableExperience({ executionTenant, target, execute }) {
+async function executableExperience({ executionTenant, target, execute, manifestAfter = null }) {
   const host = createCanonicalWeldHost({
     prisma,
     assertAdmin: admin,
@@ -167,6 +167,10 @@ async function executableExperience({ executionTenant, target, execute }) {
     objective: 'verify atomic canonical Experience execution',
     target,
     operations: [{ type: 'UPDATE_LAYOUT' }],
+    manifestAfter: manifestAfter ?? buildManifest({
+      tenant: executionTenant,
+      journey: { '/': 'HOME', '/search': 'SEARCH', '/delivery': 'DELIVERY', '/dispensaries': 'DISPENSARIES' }[target],
+    }),
     proposer: 'postgres-integration-court',
   });
   const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
@@ -209,7 +213,7 @@ test('failed Experience execution durably consumes its claim and refuses replay'
   assert.equal(attempts, 1);
 });
 
-test('post-effect manifest failure consumes the promotion and cannot invoke the effect twice', async () => {
+test('post-effect manifest mismatch consumes the promotion and cannot invoke the effect twice', async () => {
   const executionTenant = `weld-experience-uncertain-${randomUUID()}`;
   let effects = 0;
   const context = await executableExperience({
@@ -217,7 +221,7 @@ test('post-effect manifest failure consumes the promotion and cannot invoke the 
     target: '/delivery',
     execute: async (input) => {
       effects += 1;
-      return { ...input, promotedManifest: { malformed: true } };
+      return { ...input, promotedManifest: { malformed: true }, appliedManifestDigest: input.targetManifestDigest };
     },
   });
   const execute = () => executeExperienceThroughCanonicalAuthority(context.adapter, {
@@ -226,7 +230,7 @@ test('post-effect manifest failure consumes the promotion and cannot invoke the 
     promotionReceiptDigest: context.promotion.receiptDigest,
   });
 
-  await assert.rejects(execute, /MANIFEST_INVALID/);
+  await assert.rejects(execute, (error) => error?.code === 'EXPERIENCE_EXECUTION_RESULT_MISMATCH');
   assert.equal(effects, 1);
   assert.equal(await prisma.canaEvidenceReceipt.count({
     where: { tenant: executionTenant, kind: 'EXPERIENCE_EXECUTION' },
@@ -246,10 +250,11 @@ test('concurrent promotion replay executes one effect and persists one runtime m
   const context = await executableExperience({
     executionTenant,
     target: '/search',
+    manifestAfter: manifest,
     execute: async (input) => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       effects += 1;
-      return { ...input, promotedManifest: manifest };
+      return { ...input, promotedManifest: manifest, appliedManifestDigest: input.targetManifestDigest };
     },
   });
   const execute = () => executeExperienceThroughCanonicalAuthority(context.adapter, {

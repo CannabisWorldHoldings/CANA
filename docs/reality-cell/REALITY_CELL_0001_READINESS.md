@@ -30,12 +30,17 @@ The real path requires all of the following exact bindings:
 2. a `VERIFIED_REAL` merchant authorization issued by the canonical merchant
    role gate for the exact merchant, tenant, preregistration digest, treatment
    candidate digest, allowed effects, expiration, and rollback digest;
-3. a browser observation receipt with candidate, commit, tree, browser version,
-   viewport, screenshot and DOM digests, capture time, console result, and
-   accessibility result;
-4. private-preview, browser-court, reality-court, rollback, and promotion
+3. an exact proposed runtime manifest and `manifestAfterDigest` sealed inside
+   the candidate digest, repeated by the promotion receipt, supplied unchanged
+   to the narrow executor, attested by its applied-result digest, persisted from
+   the sealed candidate rather than executor-selected content, and recomputed
+   again by the customer renderer;
+4. a browser observation receipt with candidate, commit, tree, browser version,
+   viewport, screenshot and DOM digests, capture time, and explicit `PASS`
+   console and accessibility results;
+5. private-preview, browser-court, reality-court, rollback, and promotion
    receipts bound to that same candidate digest; and
-5. an atomic one-time promotion claim before narrow execution.
+6. an atomic one-time promotion claim before narrow execution.
 
 Until those receipts exist, the state is
 `AWAITING_OWNER_AND_MERCHANT_AUTHORIZATION` and real execution is refused.

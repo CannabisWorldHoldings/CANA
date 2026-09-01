@@ -8,7 +8,6 @@ import { chromium } from 'playwright';
 
 import { digest } from '../src/lib/cana-intelligence/core.mjs';
 import { makeReceipt } from '../src/lib/cana-intelligence/receipts.mjs';
-import { buildManifest } from '../src/lib/experience/manifest.mjs';
 import { CANONICAL_TENANT_DOMAIN } from '../src/lib/tenant-host.mjs';
 import {
   createRealityCellFixture,
@@ -61,14 +60,7 @@ async function assertDisposableDatabase(prisma) {
 }
 
 async function seedFixtureManifest(prisma, fixture) {
-  const manifest = buildManifest({ tenant: CANONICAL_TENANT_DOMAIN, journey: 'DISPENSARIES' });
-  manifest.presentation.copy = {
-    eyebrow: 'SIMULATED / FIXTURE',
-    title: 'Find verified merchant and product information faster.',
-    description: 'Fixture-only information hierarchy. No real merchant, inventory, price, availability, customer traffic, or authorization.',
-    action: '/dispensaries',
-    placeholder: 'Fixture city or neighborhood',
-  };
+  const manifest = structuredClone(fixture.candidate.manifestAfter);
   const promotionReceipt = makeReceipt({
     kind: 'PROMOTION',
     subjectDigest: fixture.candidate.candidateDigest,
@@ -76,6 +68,7 @@ async function seedFixtureManifest(prisma, fixture) {
     issuer: 'fixture-runtime-promotion-court',
     payload: {
       candidateDigest: fixture.candidate.candidateDigest,
+      manifestAfterDigest: fixture.candidate.manifestAfterDigest,
       allowedEffectSet: ['UPDATE_LAYOUT'],
       fixtureOnly: true,
     },
@@ -97,6 +90,7 @@ async function seedFixtureManifest(prisma, fixture) {
   manifest.promotion = {
     receiptDigest: promotionReceipt.receiptDigest,
     candidateDigest: fixture.candidate.candidateDigest,
+    manifestAfterDigest: fixture.candidate.manifestAfterDigest,
     evidenceRealm: 'FIXTURE',
   };
   const recordType = 'EXPERIENCE_MANIFEST';
@@ -138,7 +132,7 @@ export async function runRealityCellBrowserCourt({
   if (!fs.existsSync(chromeExecutable)) throw new Error(`Chrome executable not found: ${chromeExecutable}`);
   const applicationOrigin = assertedApplicationOrigin(baseUrl);
   fs.mkdirSync(outputDirectory, { recursive: true, mode: 0o700 });
-  const fixture = createRealityCellFixture({ commit, tree });
+  const fixture = createRealityCellFixture({ commit, tree, tenantId: CANONICAL_TENANT_DOMAIN });
   const prisma = new PrismaClient();
   let browser;
   try {

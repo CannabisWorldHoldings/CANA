@@ -9,6 +9,7 @@ import {
   resolveCanonicalReceipt,
 } from './receipts.mjs';
 import { validateBrowserObservationReceipt } from './site-cortex.mjs';
+import { requireExperienceCandidateResult } from './experience-extensions.mjs';
 
 export function createFullFabricAdapter(impl) {
   const required = [
@@ -52,6 +53,7 @@ export async function experiencePromotionCourt(adapter, candidate, {
   evidenceRealm = null,
   now = new Date(),
 }) {
+  requireExperienceCandidateResult(candidate);
   const principal = evidenceRealm === 'FIXTURE' || evidenceRealm === 'SIMULATED'
     ? await resolveCanonicalReceipt(adapter, principalReceiptDigest, { kind: 'PRINCIPAL', now })
     : await requirePrincipalReceipt(adapter, principalReceiptDigest, ACTIONS.EXECUTE_EXPERIENCE_CANDIDATE);
@@ -81,6 +83,7 @@ export async function experiencePromotionCourt(adapter, candidate, {
   }
   const payload = {
     candidateDigest: candidate.candidateDigest,
+    manifestAfterDigest: candidate.manifestAfterDigest,
     experimentId: experiment?.experimentId ?? candidate.experimentId ?? null,
     preregistrationDigest: experiment?.preregistrationDigest ?? null,
     merchantId: experiment?.merchantId ?? candidate.merchantId ?? null,
@@ -114,6 +117,8 @@ export async function executeExperienceThroughCanonicalAuthority(adapter, {
   requireExactEvidenceRealm(promotion, executionRealm);
   assert(promotion.payload?.principalReceiptDigest === principal.principalReceiptDigest, 'promotion principal mismatch', 'PROMOTION_PRINCIPAL_MISMATCH');
   assert(Array.isArray(promotion.payload?.allowedEffectSet), 'promotion effect set required', 'PROMOTION_EFFECT_SET_REQUIRED');
+  requireExperienceCandidateResult(candidate);
+  assert(promotion.payload?.manifestAfterDigest === candidate.manifestAfterDigest, 'promotion exact result mismatch', 'EXPERIENCE_CANDIDATE_RESULT_MISMATCH');
   assert(!promotion.payload?.expiresAt || new Date(promotion.payload.expiresAt).getTime() >= Date.now(), 'promotion receipt expired', 'PROMOTION_EXPIRED');
   if (candidate.merchantId || candidate.tenantId || candidate.experimentId) {
     assert(executionRealm === 'VERIFIED_REAL', 'Reality Cell execution requires real authority evidence', 'REALITY_CELL_REAL_AUTHORITY_REQUIRED');
@@ -127,6 +132,8 @@ export async function executeExperienceThroughCanonicalAuthority(adapter, {
     promotionReceiptDigest: promotion.receiptDigest,
     idempotencyKey: promotion.receiptDigest,
     allowedEffectSet: promotion.payload.allowedEffectSet,
+    targetManifest: candidate.manifestAfter,
+    targetManifestDigest: candidate.manifestAfterDigest,
   };
   const execution = await adapter.executeWithPromotionClaim({
     promotion,
@@ -135,6 +142,7 @@ export async function executeExperienceThroughCanonicalAuthority(adapter, {
     executionInput,
   });
   assert(execution?.idempotencyKey === promotion.receiptDigest, 'canonical executor did not preserve idempotency', 'EXPERIENCE_EXECUTION_IDEMPOTENCY_REQUIRED');
+  assert(execution?.appliedManifestDigest === candidate.manifestAfterDigest, 'canonical executor did not confirm the exact candidate result', 'EXPERIENCE_EXECUTION_RESULT_MISMATCH');
   return execution;
 }
 

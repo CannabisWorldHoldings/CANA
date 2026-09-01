@@ -5,6 +5,8 @@ import {
   admitRealityCellLesson,
   createExperienceCandidate,
   createFullFabricAdapter,
+  digest,
+  executeExperienceThroughCanonicalAuthority,
   experiencePromotionCourt,
   makeReceipt,
   preregisterExperiment,
@@ -12,6 +14,7 @@ import {
 } from '../src/lib/cana-intelligence/index.mjs';
 import { createCanonicalWeldHost } from '../src/lib/cana-intelligence/canonical-host.mjs';
 import { createRealityCellFixture } from '../scripts/reality-cell-0001-dry-run.mjs';
+import { buildManifest } from '../src/lib/experience/manifest.mjs';
 
 function prismaHarness() {
   const receipts = new Map();
@@ -22,6 +25,7 @@ function prismaHarness() {
     receipts,
     records,
     prisma: {
+      async $transaction(callback) { return callback(this); },
       canaEvidenceReceipt: {
         async create({ data }) {
           const key = `${data.tenant}:${data.receiptDigest}`;
@@ -361,12 +365,14 @@ test('canonical promotion persistence independently resolves every court before 
     objective: 'prove direct promotion calls cannot skip courts',
     target: '/delivery',
     operations: [{ type: 'UPDATE_LAYOUT' }],
+    manifestAfter: buildManifest({ tenant: 'orderweeddc.com', journey: 'DELIVERY' }),
     proposer: 'owner-1',
   });
   await host.persistExperienceCandidate(candidate);
   const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
   await assert.rejects(() => host.persistPromotionReceipt({
     candidateDigest: candidate.candidateDigest,
+    manifestAfterDigest: candidate.manifestAfterDigest,
     principalReceiptDigest,
     merchantAuthorizationReceiptDigest: 'bogus-not-resolved',
     experimentId: 'bogus-not-resolved',
@@ -388,6 +394,47 @@ test('canonical promotion persistence independently resolves every court before 
     (await host.enumerateExperienceSurfaces()).map(({ route }) => route),
     ['/', '/search', '/delivery', '/dispensaries'],
   );
+});
+
+test('candidate A promotion cannot persist a different valid candidate B manifest', async () => {
+  const harness = prismaHarness();
+  const tenant = 'orderweeddc.com';
+  const manifestA = buildManifest({ tenant, journey: 'DELIVERY' });
+  manifestA.presentation.copy.title = 'Candidate A exact title';
+  const manifestB = buildManifest({ tenant, journey: 'DELIVERY' });
+  manifestB.presentation.copy.title = 'Candidate B unauthorized title';
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant,
+    experience: {
+      executeAuthorizedExperienceCandidate: async (input) => ({
+        ...input,
+        promotedManifest: manifestB,
+        appliedManifestDigest: digest(manifestB, 'experience_manifest'),
+      }),
+      rollbackExperienceVersion: async () => null,
+    },
+  });
+  const candidate = createExperienceCandidate({
+    objective: 'authorize only candidate A',
+    target: '/delivery',
+    operations: [{ type: 'UPDATE_LAYOUT' }],
+    manifestAfter: manifestA,
+    proposer: 'owner-1',
+  });
+  await host.persistExperienceCandidate(candidate);
+  const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
+  const promotion = await persistLocalPromotionCourt(host, candidate, principalReceiptDigest);
+  await assert.rejects(
+    () => executeExperienceThroughCanonicalAuthority(createFullFabricAdapter(host), {
+      candidate,
+      principalReceiptDigest,
+      promotionReceiptDigest: promotion.receiptDigest,
+    }),
+    (error) => error?.code === 'EXPERIENCE_EXECUTION_RESULT_MISMATCH',
+  );
+  assert.equal(harness.records.some(({ recordType }) => recordType === 'EXPERIENCE_MANIFEST'), false);
 });
 
 test('lesson and experiment state append canonically and the ledger reconstructs receipt digests', async () => {

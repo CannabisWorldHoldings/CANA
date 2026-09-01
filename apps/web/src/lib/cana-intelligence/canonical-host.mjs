@@ -18,6 +18,7 @@ import {
 import { assertManifest } from '../experience/manifest.mjs';
 import { resolveRuntimeExperienceManifest } from '../experience/runtime-manifest.mjs';
 import { validateBrowserObservationReceipt } from './site-cortex.mjs';
+import { requireExperienceCandidateResult } from './experience-extensions.mjs';
 import {
   REALITY_CELL_CONTRACT_VERSION,
   verifyExperimentPreregistration,
@@ -46,6 +47,22 @@ const EXPERIENCE_JOURNEY_BY_ROUTE = Object.freeze({
 const CANONICAL_EXPERIENCE_SURFACES = Object.freeze(
   Object.entries(EXPERIENCE_JOURNEY_BY_ROUTE).map(([route, journey]) => Object.freeze({ route, journey })),
 );
+
+function validateCanonicalExperienceCandidateResult(candidate, tenant) {
+  requireExperienceCandidateResult(candidate);
+  assert(candidate.manifestAfter?.promotion == null, 'candidate result cannot carry prior promotion authority', 'EXPERIENCE_CANDIDATE_PROMOTION_PREBOUND');
+  assertManifest(candidate.manifestAfter);
+  const journey = EXPERIENCE_JOURNEY_BY_ROUTE[candidate.target];
+  assert(journey, 'candidate target is not a canonical customer journey', 'EXPERIENCE_RUNTIME_JOURNEY_REQUIRED');
+  assert(candidate.manifestAfter.merchant?.identity?.tenant === tenant, 'candidate result tenant mismatch', 'EXPERIENCE_RUNTIME_TENANT_MISMATCH');
+  assert(
+    candidate.manifestAfter.merchant?.journey === journey
+      && candidate.manifestAfter.presentation?.journey === journey,
+    'candidate result journey mismatch',
+    'EXPERIENCE_RUNTIME_JOURNEY_MISMATCH',
+  );
+  return candidate;
+}
 
 function dateIso(value) {
   return value instanceof Date ? value.toISOString() : value;
@@ -465,6 +482,8 @@ export function createCanonicalWeldHost({
     assert(Array.isArray(payload?.allowedEffectSet) && payload.allowedEffectSet.length > 0, 'promotion effect set required', 'PROMOTION_EFFECT_SET_REQUIRED');
     const candidate = await loadRecord(RECORD_TYPES.EXPERIENCE_CANDIDATE, payload.candidateDigest);
     assert(candidate?.candidateDigest === payload.candidateDigest, 'canonical experience candidate not found', 'EXPERIENCE_CANDIDATE_NOT_FOUND');
+    validateCanonicalExperienceCandidateResult(candidate, tenant);
+    assert(payload.manifestAfterDigest === candidate.manifestAfterDigest, 'promotion exact result mismatch', 'EXPERIENCE_CANDIDATE_RESULT_MISMATCH');
     const { candidateDigest, ...candidateBody } = candidate;
     assert(digest(candidateBody, 'experience_candidate') === candidateDigest, 'canonical experience candidate digest mismatch', 'CANDIDATE_DIGEST_MISMATCH');
     assert(candidate.operations.every(({ type }) => payload.allowedEffectSet.includes(type)), 'promotion effect set does not cover candidate', 'PROMOTION_EFFECT_SET_MISMATCH');
@@ -578,7 +597,12 @@ export function createCanonicalWeldHost({
   function promotedManifestRecord({ promotion, candidate, execution }) {
     const journey = EXPERIENCE_JOURNEY_BY_ROUTE[candidate?.target];
     assert(journey, 'candidate target is not a canonical customer journey', 'EXPERIENCE_RUNTIME_JOURNEY_REQUIRED');
-    const manifest = structuredClone(execution?.promotedManifest);
+    validateCanonicalExperienceCandidateResult(candidate, tenant);
+    assert(execution?.appliedManifestDigest === candidate.manifestAfterDigest, 'executor result does not match exact candidate', 'EXPERIENCE_EXECUTION_RESULT_MISMATCH');
+    if (execution?.promotedManifest !== undefined) {
+      assert(canonicalJson(execution.promotedManifest) === canonicalJson(candidate.manifestAfter), 'executor manifest differs from exact candidate', 'EXPERIENCE_EXECUTION_RESULT_MISMATCH');
+    }
+    const manifest = structuredClone(candidate.manifestAfter);
     assertManifest(manifest);
     assert(
       manifest.merchant?.identity?.tenant === tenant,
@@ -593,6 +617,7 @@ export function createCanonicalWeldHost({
     manifest.promotion = {
       receiptDigest: promotion.receiptDigest,
       candidateDigest: candidate.candidateDigest,
+      manifestAfterDigest: candidate.manifestAfterDigest,
       evidenceRealm: promotion.realm,
     };
     assertManifest(manifest);
@@ -634,6 +659,7 @@ export function createCanonicalWeldHost({
     const { candidateDigest, ...body } = candidate;
     assert(digest(body, 'experience_candidate') === candidateDigest, 'experience candidate digest mismatch', 'CANDIDATE_DIGEST_MISMATCH');
     assert(candidate.status === 'CANDIDATE_ONLY' && candidate.mayExecute === false && candidate.mayPublish === false, 'experience candidate authority boundary invalid', 'EXPERIENCE_CANDIDATE_AUTHORITY_INVALID');
+    if (candidate.manifestAfter !== null || candidate.manifestAfterDigest !== null) validateCanonicalExperienceCandidateResult(candidate, tenant);
     assert(EXPERIENCE_JOURNEY_BY_ROUTE[candidate.target], 'candidate target is not a canonical customer journey', 'EXPERIENCE_RUNTIME_JOURNEY_REQUIRED');
     if (candidate.tenantId) assert(candidate.tenantId === tenant, 'candidate tenant mismatch', 'REALITY_CELL_TENANT_MISMATCH');
     return persistRecord(RECORD_TYPES.EXPERIENCE_CANDIDATE, candidate.candidateDigest, candidate);

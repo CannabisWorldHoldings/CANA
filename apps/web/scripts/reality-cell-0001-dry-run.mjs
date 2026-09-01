@@ -20,6 +20,7 @@ import {
   proposeRealityCellLesson,
   settleRealityCell,
 } from '../src/lib/cana-intelligence/index.mjs';
+import { buildManifest } from '../src/lib/experience/manifest.mjs';
 
 const FIXTURE_REALM = 'FIXTURE';
 export const REALITY_CELL_FIXTURE_SALT = 'reality-cell-0001-fixture-salt';
@@ -64,13 +65,24 @@ function defaultBrowserEvidence({ commit, tree, candidateDigest }) {
   };
 }
 
-export function createRealityCellFixture({ commit, tree, browserEvidence = null } = {}) {
+export function buildRealityCellFixtureManifest(tenantId) {
+  const manifest = buildManifest({ tenant: tenantId, journey: 'DISPENSARIES' });
+  manifest.presentation.copy = {
+    eyebrow: 'SIMULATED / FIXTURE',
+    title: 'Find verified merchant and product information faster.',
+    description: 'Fixture-only information hierarchy. No real merchant, inventory, price, availability, customer traffic, or authorization.',
+    action: '/dispensaries',
+    placeholder: 'Fixture city or neighborhood',
+  };
+  return manifest;
+}
+
+export function createRealityCellFixture({ commit, tree, browserEvidence = null, tenantId = 'fixture_orderweeddc_not_real' } = {}) {
   if (!/^[a-f0-9]{40}$/.test(commit ?? '')) throw new Error('40-hex commit required');
   if (!/^[a-f0-9]{40}$/.test(tree ?? '')) throw new Error('40-hex tree required');
   const store = fixtureStore();
   const experimentId = 'reality_cell_0001_fixture_only';
   const merchantId = 'fixture_licensed_merchant_not_real';
-  const tenantId = 'fixture_orderweeddc_not_real';
   const route = '/dispensaries';
   const rollbackContract = {
     digest: digest({ route, restore: 'fixture-control-v1' }, 'rollback-contract'),
@@ -81,6 +93,7 @@ export function createRealityCellFixture({ commit, tree, browserEvidence = null 
     objective: 'Improve accurate merchant and product information discovery in a private fixture preview',
     target: route,
     operations: [{ type: 'UPDATE_LAYOUT', scope: 'FIXTURE_PRIVATE_PREVIEW' }],
+    manifestAfter: buildRealityCellFixtureManifest(tenantId),
     proposer: 'fixture-reality-cell-preparer',
     experimentId,
     merchantId,

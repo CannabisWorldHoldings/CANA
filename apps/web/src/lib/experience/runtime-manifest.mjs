@@ -1,6 +1,7 @@
 import { openExperience } from './fabric.mjs';
 import { assertManifest, buildManifest } from './manifest.mjs';
 import { validateReceiptShape } from '../cana-intelligence/receipts.mjs';
+import { digest } from '../cana-intelligence/core.mjs';
 
 function parseManifest(row) {
   if (!row) return null;
@@ -26,7 +27,7 @@ function promotionReceiptFromRow(row) {
   };
 }
 
-async function assertPromotionLineage({ receiptStore, tenant, promotion }) {
+async function assertPromotionLineage({ receiptStore, tenant, promotion, manifestAfterDigest }) {
   if (!promotion) throw new Error('EXPERIENCE_RUNTIME_PROMOTION_REQUIRED');
   if (!receiptStore || typeof receiptStore.findUnique !== 'function') {
     throw new Error('EXPERIENCE_RUNTIME_RECEIPT_STORE_REQUIRED');
@@ -45,7 +46,12 @@ async function assertPromotionLineage({ receiptStore, tenant, promotion }) {
     subjectDigest: promotion.candidateDigest,
     minimumRealm: promotion.evidenceRealm,
   });
-  if (receipt.realm !== promotion.evidenceRealm || receipt.payload?.candidateDigest !== promotion.candidateDigest) {
+  if (
+    receipt.realm !== promotion.evidenceRealm
+    || receipt.payload?.candidateDigest !== promotion.candidateDigest
+    || receipt.payload?.manifestAfterDigest !== manifestAfterDigest
+    || promotion.manifestAfterDigest !== manifestAfterDigest
+  ) {
     throw new Error('EXPERIENCE_RUNTIME_PROMOTION_MISMATCH');
   }
 }
@@ -71,6 +77,16 @@ export async function resolveRuntimeExperienceManifest({ recordStore, receiptSto
   if (manifest.merchant?.journey !== journey || manifest.presentation?.journey !== journey) {
     throw new Error('EXPERIENCE_RUNTIME_JOURNEY_MISMATCH');
   }
-  if (row) await assertPromotionLineage({ receiptStore, tenant, promotion: manifest.promotion });
+  if (row) {
+    const candidateManifest = structuredClone(manifest);
+    delete candidateManifest.promotion;
+    const manifestAfterDigest = digest(candidateManifest, 'experience_manifest');
+    await assertPromotionLineage({
+      receiptStore,
+      tenant,
+      promotion: manifest.promotion,
+      manifestAfterDigest,
+    });
+  }
   return openExperience(manifest).current();
 }
