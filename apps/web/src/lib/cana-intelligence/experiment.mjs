@@ -387,7 +387,15 @@ export async function settleExperiment(experiment, evidenceAdapter, principalRec
   }
   const outcomeSummary = { controlSuccesses, controlN, treatmentSuccesses, treatmentN, assignmentReceiptDigests: ledger.assignments, exposureReceiptDigests: ledger.exposures, outcomeReceiptDigests: ledger.outcomes };
   const body = { ...experiment, status: 'SETTLED', settledAt: new Date().toISOString(), outcome: outcomeSummary, stats, minimumPerArm: experiment.minimumPerArm, sufficient, effectSeparatedFromZero, causalStatus };
-  return sealPlain({ ...body, settlementDigest: digest({ preRegDigest: experiment.preRegDigest, outcomeSummary, stats, causalStatus, analysisMethod: experiment.analysisMethod }, 'experiment-settlement') });
+  const receipt = makeReceipt({
+    kind: 'EXPERIMENT_SETTLEMENT',
+    subjectDigest: experiment.preRegDigest,
+    realm: 'VERIFIED_LOCAL',
+    issuer: 'canonical-experiment-settlement',
+    payload: body,
+    parentDigests: [...ledger.assignments, ...ledger.exposures, ...ledger.outcomes],
+  });
+  return sealPlain({ ...body, settlementDigest: receipt.receiptDigest, receipt });
 }
 
 function invalidRealityCellSettlement(experiment, error, now) {
