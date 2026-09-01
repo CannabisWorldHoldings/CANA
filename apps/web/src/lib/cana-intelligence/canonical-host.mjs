@@ -20,6 +20,10 @@ import { resolveRuntimeExperienceManifest } from '../experience/runtime-manifest
 import { validateBrowserObservationReceipt } from './site-cortex.mjs';
 import { requireExperienceCandidateResult } from './experience-extensions.mjs';
 import {
+  issueRealityCellValueReceipt,
+  issueValueReceipt,
+} from './economics.mjs';
+import {
   REALITY_CELL_CONTRACT_VERSION,
   settleExperiment,
   verifyExperimentPreregistration,
@@ -32,6 +36,8 @@ const CANONICAL_ONLY_RECEIPT_KINDS = new Set([
   'PROMOTION',
   'EXPERIENCE_EXECUTION',
   'EXPERIMENT_SETTLEMENT',
+  'ECONOMIC_OBSERVATION',
+  'VALUE',
   'LESSON_ADMISSION',
 ]);
 const RECORD_TYPES = Object.freeze({
@@ -136,6 +142,7 @@ export function createCanonicalWeldHost({
   assertAdmin,
   tenant,
   appendCanonicalObservation = null,
+  admitCanonicalEconomicObservation = null,
   experience = {},
 } = {}) {
   assert(prisma && typeof prisma === 'object', 'canonical Prisma client required', 'CANA_HOST_PRISMA_REQUIRED');
@@ -174,6 +181,56 @@ export function createCanonicalWeldHost({
       'CANA_REAL_EVIDENCE_OWNER_REQUIRED',
     );
     return persistReceiptCanonical(receipt);
+  }
+
+  async function admitEconomicObservation(observation) {
+    const principal = await resolveVerifiedPrincipal();
+    assert(
+      typeof admitCanonicalEconomicObservation === 'function',
+      'CANONICAL_ECONOMIC_ADMISSION_REQUIRED: economic observations must enter through the existing economic evidence owner',
+      'CANONICAL_ECONOMIC_ADMISSION_REQUIRED',
+    );
+    assert(observation?.settlementDigest, 'economic observation settlement required', 'ECONOMIC_INPUT_INVALID');
+    assert(
+      observation?.receiptDigest === undefined && observation?.issuer === undefined,
+      'economic observation receipt identity is owned by the canonical economic evidence owner',
+      'CANONICAL_ECONOMIC_ADMISSION_REQUIRED',
+    );
+    const settlementReceipt = await resolveCanonicalReceipt(
+      { loadReceipt },
+      observation.settlementDigest,
+      { kind: 'EXPERIMENT_SETTLEMENT' },
+    );
+    const receipt = await admitCanonicalEconomicObservation({ tenant, observation, principal });
+    validateReceiptShape(receipt, {
+      kind: 'ECONOMIC_OBSERVATION',
+      subjectDigest: observation.settlementDigest,
+    });
+    requireExactEvidenceRealm(receipt, settlementReceipt.realm);
+    return persistReceiptCanonical(receipt);
+  }
+
+  async function settleLegacyValueReceipt(settlement, economics = {}) {
+    await resolveVerifiedPrincipal();
+    const value = await issueValueReceipt({
+      settlement,
+      economics,
+      evidenceAdapter: { loadReceipt },
+    });
+    await persistReceiptCanonical(value.receipt);
+    return value;
+  }
+
+  async function settleRealityCellValueReceipt(settlement, intervention, economicObservationReceiptDigests = []) {
+    await resolveVerifiedPrincipal();
+    const value = await issueRealityCellValueReceipt({
+      settlement,
+      intervention,
+      economicObservationReceiptDigests,
+      evidenceAdapter: { loadReceipt },
+    });
+    await persistReceiptCanonical(value.receipt);
+    return value;
   }
 
   async function loadReceipt(receiptDigest) {
@@ -781,6 +838,9 @@ export function createCanonicalWeldHost({
     loadVerifiedSupply,
     resolveVerifiedPrincipal,
     persistReceipt,
+    admitEconomicObservation,
+    settleLegacyValueReceipt,
+    settleRealityCellValueReceipt,
     persistLesson,
     persistPrediction,
     persistExperiment,

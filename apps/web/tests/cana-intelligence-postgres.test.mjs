@@ -6,13 +6,11 @@ import { PrismaClient } from '@prisma/client';
 
 import { createCanonicalWeldHost } from '../src/lib/cana-intelligence/canonical-host.mjs';
 import {
-  admitRealityCellLesson,
   createExperienceCandidate,
   createFullFabricAdapter,
   executeExperienceThroughCanonicalAuthority,
   experiencePromotionCourt,
   makeReceipt,
-  proposeRealityCellLesson,
 } from '../src/lib/cana-intelligence/index.mjs';
 import { buildManifest } from '../src/lib/experience/manifest.mjs';
 import { resolveRuntimeExperienceManifest } from '../src/lib/experience/runtime-manifest.mjs';
@@ -71,44 +69,13 @@ test('canonical WELD receipts and records persist transactionally in PostgreSQL'
   await prisma.$transaction(async (transaction) => {
     const host = createCanonicalWeldHost({ prisma: transaction, assertAdmin: admin, tenant });
     await host.persistReceipt(receipt);
-    const settlementDigest = `settlement-${randomUUID()}`;
-    const valueReceipt = makeReceipt({
-      kind: 'VALUE',
-      subjectDigest: settlementDigest,
-      realm: 'VERIFIED_LOCAL',
-      issuer: 'postgres-value-court',
-      payload: { settlementClassification: 'CAUSAL_SUPPORTED' },
+    await host.persistPrediction({
+      predictionId: `prediction-${randomUUID()}`,
+      status: 'LOCKED',
+      lockDigest: 'prediction-lock:postgres-transaction',
     });
-    await host.persistReceipt(valueReceipt);
-    const proposedLesson = proposeRealityCellLesson({
-      claim: 'transactionally persisted causal lesson',
-      scope: 'merchant:postgres',
-      valueReceipt: {
-        ...valueReceipt,
-        settlementDigest,
-        settlementClassification: 'CAUSAL_SUPPORTED',
-        evidenceRealm: 'VERIFIED_LOCAL',
-      },
-      proposerId: 'postgres-proposer',
-    });
-    const verifierReceipt = makeReceipt({
-      kind: 'VERIFIER',
-      subjectDigest: proposedLesson.lessonDigest,
-      realm: 'VERIFIED_LOCAL',
-      issuer: 'postgres-verifier',
-      payload: { verifierId: 'postgres-verifier', verdict: 'ADMIT' },
-    });
-    await host.persistReceipt(verifierReceipt);
-    const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
-    const lesson = await admitRealityCellLesson(proposedLesson, {
-      verifierReceiptDigest: verifierReceipt.receiptDigest,
-      principalReceiptDigest,
-    }, host);
-    await host.persistLesson(lesson);
-    assert.equal(lesson.status, 'REJECTED_FIXTURE_BOUNDARY');
-    assert.equal(lesson.trusted, false);
     assert.equal((await host.loadReceipt(receipt.receiptDigest)).receiptDigest, receipt.receiptDigest);
-    assert.deepEqual(await host.loadLesson(lesson.lessonId), lesson);
+    assert.equal(await transaction.canaIntelligenceRecord.count({ where: { tenant } }), 1);
   });
 });
 

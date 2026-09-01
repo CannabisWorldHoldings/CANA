@@ -9,6 +9,7 @@ import {
   digest,
   executeExperienceThroughCanonicalAuthority,
   experiencePromotionCourt,
+  issueValueReceipt,
   makeReceipt,
   preregisterExperiment,
   proposeRealityCellLesson,
@@ -215,6 +216,40 @@ test('generic evidence persistence cannot mint an experiment settlement', async 
   assert.equal(harness.receipts.size, 0);
 });
 
+test('generic evidence persistence cannot mint economic observations or value receipts', async () => {
+  const harness = prismaHarness();
+  const host = createCanonicalWeldHost({
+    prisma: harness.prisma,
+    assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
+    tenant: 'orderweeddc.com',
+  });
+  for (const kind of ['ECONOMIC_OBSERVATION', 'VALUE']) {
+    const forged = makeReceipt({
+      kind,
+      subjectDigest: 'receipt-experiment_settlement:forged-economics',
+      realm: 'VERIFIED_LOCAL',
+      issuer: 'caller-selected-economic-owner',
+      payload: kind === 'ECONOMIC_OBSERVATION'
+        ? { metric: 'AOV_USD', valueUsd: 987654321 }
+        : { settlementClassification: 'CAUSAL_SUPPORTED', economicEffectUsd: 987654321 },
+    });
+    await assert.rejects(
+      () => host.persistReceipt(forged),
+      (error) => error?.code === 'CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED',
+    );
+    assert.equal(await host.loadReceipt(forged.receiptDigest), null);
+  }
+  await assert.rejects(
+    () => host.admitEconomicObservation({
+      settlementDigest: 'receipt-experiment_settlement:forged-economics',
+      metric: 'AOV_USD',
+      valueUsd: 987654321,
+    }),
+    (error) => error?.code === 'CANONICAL_ECONOMIC_ADMISSION_REQUIRED',
+  );
+  assert.equal(harness.receipts.size, 0);
+});
+
 test('generic Owner persistence cannot self-certify VERIFIED_REAL evidence', async () => {
   const harness = prismaHarness();
   const host = createCanonicalWeldHost({
@@ -223,7 +258,7 @@ test('generic Owner persistence cannot self-certify VERIFIED_REAL evidence', asy
     tenant: 'orderweeddc.com',
   });
 
-  for (const kind of ['ASSIGNMENT', 'EXPOSURE', 'OUTCOME', 'VALUE', 'VERIFIER']) {
+  for (const kind of ['ASSIGNMENT', 'EXPOSURE', 'OUTCOME', 'VERIFIER']) {
     const forged = makeReceipt({
       kind,
       subjectDigest: 'preregistration:forged-real-evidence',
@@ -326,6 +361,18 @@ test('canonical host settles a legacy experiment from its stored record and ledg
     prisma: harness.prisma,
     assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
     tenant: 'orderweeddc.com',
+    admitCanonicalEconomicObservation: async ({ observation }) => makeReceipt({
+      kind: 'ECONOMIC_OBSERVATION',
+      subjectDigest: observation.settlementDigest,
+      realm: 'VERIFIED_LOCAL',
+      issuer: 'fixture-canonical-economic-observer',
+      payload: {
+        metric: observation.metric,
+        valueUsd: observation.valueUsd,
+        source: 'fixture-owner',
+        observedAt: new Date().toISOString(),
+      },
+    }),
   });
   const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
   let experiment = preregisterExperiment({
@@ -335,11 +382,11 @@ test('canonical host settles a legacy experiment from its stored record and ledg
     primaryMetric: 'answerability',
     treatment: 'A',
     comparator: 'B',
-    assignmentMethod: 'OBSERVATIONAL',
+    assignmentMethod: 'RANDOMIZED',
     exposureDefinition: 'rendered candidate',
     analysisMethod: 'two-proportion-z',
-    minimumPerArm: 1,
-    stopRule: 'after one unit per arm',
+    minimumPerArm: 20,
+    stopRule: 'after twenty units per arm',
     rollbackPlan: 'restore prior manifest',
     interferenceAssumptions: 'none',
     maximumClaimCeiling: 'association only',
@@ -350,7 +397,10 @@ test('canonical host settles a legacy experiment from its stored record and ledg
   await host.persistExperiment(experiment);
   experiment = await startExperiment(experiment, host, principalReceiptDigest);
   await host.persistExperiment(experiment);
-  for (const [unitHash, arm, success] of [['unit:control', 'CONTROL', false], ['unit:treatment', 'TREATMENT', true]]) {
+  for (const index of Array.from({ length: 50 }, (_, item) => item)) {
+    const arm = index < 25 ? 'CONTROL' : 'TREATMENT';
+    const unitHash = `unit:${index}`;
+    const success = arm === 'TREATMENT';
     const assignment = makeReceipt({ kind: 'ASSIGNMENT', subjectDigest: experiment.preRegDigest, issuer: 'canonical-assignment', payload: { unitHash, arm } });
     const exposure = makeReceipt({ kind: 'EXPOSURE', subjectDigest: experiment.preRegDigest, issuer: 'independent-observer', payload: { unitHash, assignmentReceiptDigest: assignment.receiptDigest } });
     const outcome = makeReceipt({ kind: 'OUTCOME', subjectDigest: experiment.preRegDigest, issuer: 'canonical-outcome', payload: { unitHash, success } });
@@ -362,6 +412,64 @@ test('canonical host settles a legacy experiment from its stored record and ledg
   assert.equal(settlement.receipt.issuer, 'canonical-experiment-settlement');
   assert.equal((await host.loadReceipt(settlement.settlementDigest)).receiptDigest, settlement.settlementDigest);
   assert.equal((await host.loadExperiment(experiment.experimentId)).settlementDigest, settlement.settlementDigest);
+
+  const forgedAov = makeReceipt({
+    kind: 'ECONOMIC_OBSERVATION',
+    subjectDigest: settlement.settlementDigest,
+    realm: 'VERIFIED_LOCAL',
+    issuer: 'caller-selected-economic-owner',
+    payload: { metric: 'AOV_USD', valueUsd: 987654321 },
+  });
+  await assert.rejects(
+    () => host.persistReceipt(forgedAov),
+    (error) => error?.code === 'CANA_AUTHORITY_RECEIPT_OWNER_REQUIRED',
+  );
+  await assert.rejects(
+    () => issueValueReceipt({
+      settlement,
+      economics: { attributedAovReceiptDigest: forgedAov.receiptDigest },
+      evidenceAdapter: host,
+    }),
+    (error) => error?.code === 'CANONICAL_RECEIPT_NOT_FOUND',
+  );
+
+  const canonicalAovDigest = await host.admitEconomicObservation({
+    settlementDigest: settlement.settlementDigest,
+    metric: 'AOV_USD',
+    valueUsd: 50,
+  });
+  const value = await host.settleLegacyValueReceipt(settlement, {
+    attributedAovReceiptDigest: canonicalAovDigest,
+  });
+  assert.equal(value.economicStatus, 'MEASURED_WITH_CAUSAL_SUPPORT');
+  assert.equal((await host.loadReceipt(value.receiptDigest)).receiptDigest, value.receiptDigest);
+
+  const proposedLesson = proposeRealityCellLesson({
+    claim: 'a local causal fixture can exercise lesson custody without becoming real memory',
+    scope: 'merchant:fixture',
+    valueReceipt: {
+      ...value,
+      settlementClassification: value.causalStatus,
+      evidenceRealm: value.receipt.realm,
+    },
+    proposerId: 'proposer-1',
+  });
+  const verifierReceipt = makeReceipt({
+    kind: 'VERIFIER',
+    subjectDigest: proposedLesson.lessonDigest,
+    realm: value.receipt.realm,
+    issuer: 'verifier-1',
+    payload: { verifierId: 'verifier-1', verdict: 'ADMIT' },
+  });
+  await host.persistReceipt(verifierReceipt);
+  const lesson = await admitRealityCellLesson(proposedLesson, {
+    verifierReceiptDigest: verifierReceipt.receiptDigest,
+    principalReceiptDigest,
+  }, host);
+  await host.persistLesson(lesson);
+  assert.equal(lesson.status, 'REJECTED_FIXTURE_BOUNDARY');
+  assert.equal(lesson.trusted, false);
+  assert.deepEqual(await host.loadLesson(lesson.lessonId), lesson);
 });
 
 test('generic experiment persistence cannot store a caller-forged legacy settlement', async () => {
@@ -600,51 +708,13 @@ test('candidate A promotion cannot persist a different valid candidate B manifes
   assert.equal(harness.records.some(({ recordType }) => recordType === 'EXPERIENCE_MANIFEST'), false);
 });
 
-test('lesson and experiment state append canonically and the ledger reconstructs receipt digests', async () => {
+test('experiment state appends canonically and the ledger reconstructs receipt digests', async () => {
   const harness = prismaHarness();
   const host = createCanonicalWeldHost({
     prisma: harness.prisma,
     assertAdmin: async () => ({ userId: 'owner-1', role: 'ADMIN' }),
     tenant: 'orderweeddc.com',
   });
-  const settlementDigest = 'settlement:lesson-1';
-  const valueReceipt = makeReceipt({
-    kind: 'VALUE',
-    subjectDigest: settlementDigest,
-    realm: 'VERIFIED_LOCAL',
-    issuer: 'value-court',
-    payload: { settlementClassification: 'CAUSAL_SUPPORTED' },
-  });
-  await host.persistReceipt(valueReceipt);
-  const proposedLesson = proposeRealityCellLesson({
-    claim: 'a real causal effect can inform the next challenger',
-    scope: 'merchant:1',
-    valueReceipt: {
-      ...valueReceipt,
-      settlementDigest,
-      settlementClassification: 'CAUSAL_SUPPORTED',
-      evidenceRealm: 'VERIFIED_LOCAL',
-    },
-    proposerId: 'proposer-1',
-  });
-  const verifierReceipt = makeReceipt({
-    kind: 'VERIFIER',
-    subjectDigest: proposedLesson.lessonDigest,
-    realm: 'VERIFIED_LOCAL',
-    issuer: 'verifier-1',
-    payload: { verifierId: 'verifier-1', verdict: 'ADMIT' },
-  });
-  await host.persistReceipt(verifierReceipt);
-  const principalReceiptDigest = await host.resolveVerifiedPrincipalReceipt();
-  const lesson = await admitRealityCellLesson(proposedLesson, {
-    verifierReceiptDigest: verifierReceipt.receiptDigest,
-    principalReceiptDigest,
-  }, host);
-  await host.persistLesson(lesson);
-  assert.equal(lesson.status, 'REJECTED_FIXTURE_BOUNDARY');
-  assert.equal(lesson.trusted, false);
-  assert.deepEqual(await host.loadLesson(lesson.lessonId), lesson);
-
   const experiment = preregisterExperiment({
     experimentId: 'experiment-1',
     hypothesis: 'A improves conversion',

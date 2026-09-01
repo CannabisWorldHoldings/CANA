@@ -14,6 +14,9 @@ export type CanonicalWeldHost = Readonly<{
   loadVerifiedSupply: () => Promise<readonly unknown[]>;
   resolveVerifiedPrincipal: () => Promise<CanonicalWeldPrincipal>;
   persistReceipt: (receipt: unknown) => Promise<string>;
+  admitEconomicObservation: (observation: unknown) => Promise<string>;
+  settleLegacyValueReceipt: (settlement: unknown, economics?: unknown) => Promise<unknown>;
+  settleRealityCellValueReceipt: (settlement: unknown, intervention: unknown, economicObservationReceiptDigests?: readonly string[]) => Promise<unknown>;
   persistLesson: (lesson: unknown) => Promise<string>;
   persistPrediction: (prediction: unknown) => Promise<string>;
   persistExperiment: (experiment: unknown) => Promise<string>;
@@ -39,5 +42,6 @@ export declare function createCanonicalWeldHost(options: {
   assertAdmin: () => Promise<{ userId: string; role: string }>;
   tenant: string;
   appendCanonicalObservation?: ((observation: unknown) => Promise<unknown>) | null;
+  admitCanonicalEconomicObservation?: ((input: unknown) => Promise<unknown>) | null;
   experience?: Readonly<Record<string, (...args: unknown[]) => unknown>>;
 }): CanonicalWeldHost;
