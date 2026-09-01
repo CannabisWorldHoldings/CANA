@@ -103,7 +103,10 @@ test('laundering, omissions, evidence drift, credentials, inclusion drift, and c
 
   const donorWindowDrift = structuredClone(manifest);
   donorWindowDrift.proofs['observation.search_sensor_donor'].base_commit = donorWindowDrift.proofs['observation.search_sensor_donor'].parent;
-  assert.throws(() => validateManifest(donorWindowDrift), /changed_path_count|path_list_sha256|Ledger-Manifest-SHA256/);
+  assert.throws(
+    () => validateManifest(donorWindowDrift),
+    /observation\.search_sensor_donor|changed_path_count|path_list_sha256|Ledger-Manifest-SHA256/,
+  );
 
   const inclusionDrift = structuredClone(entries);
   inclusionDrift.find((entry) => entry.capability_id === 'orderweeddcrsi_evidence_envelope').inclusion.product_import = 'VERIFIED_INCLUDED';

@@ -8,7 +8,7 @@
     "authorization_effect": "exact-reviewed-court-bytes-only",
     "paths": {
       "tools/promotion-gate/post-class-d-ledger.court.mjs": "8d9a827a51f55a3e6299be210fd7521e16b84b6e4942bf72aaf48c31592587bf",
-      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "898dac88ec48168bafec40f43d12133759616c245baac2cdad1baf2d5ad8ba3c",
+      "tools/promotion-gate/post-class-d-ledger.court.test.mjs": "9a88d6fa3ca3efdf8f0d3a9d1dd9a8f60a03590da575c66a1cf2584c214a67ac",
       "tools/promotion-gate/github-web-flow-signing-key.asc": "c135dfc1e3add3eb84e6119af7095dec97e0e92730a468d234f925a72bacaf74"
     }
   },
