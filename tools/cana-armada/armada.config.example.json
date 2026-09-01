@@ -8,21 +8,15 @@
   "agents": [
     {
       "id": "architect-a",
-      "provider": "FIXTURE",
-      "model": "fixture-a",
       "adapter": "fixture-agent-a"
     },
     {
       "id": "architect-b",
-      "provider": "FIXTURE",
-      "model": "fixture-b",
       "adapter": "fixture-agent-b"
     }
   ],
   "verifier": {
     "id": "independent-verifier",
-    "provider": "FIXTURE",
-    "model": "fixture-verifier",
     "adapter": "fixture-verifier"
   },
   "trials": [

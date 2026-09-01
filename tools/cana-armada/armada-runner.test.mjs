@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveArmadaAdapter } from './command-executor.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -27,8 +28,8 @@ async function fixtureRepo(prefix) {
   return { dir, repo, baseSha: git(repo, ['rev-parse', 'HEAD']) };
 }
 
-function processSpec(id, adapter, model) {
-  return { id, provider: 'fixture', model, adapter };
+function processSpec(id, adapter) {
+  return { id, adapter };
 }
 
 test('process Armada uses source-registered adapters and isolated candidate/verifier worktrees', async () => {
@@ -55,12 +56,36 @@ test('process Armada uses source-registered adapters and isolated candidate/veri
   assert.equal(parsed.winnerAgentId, 'b');
   assert.equal(parsed.baseSha, baseSha);
   assert.equal(parsed.candidateRuns.length, 2);
+  const expectedAgents = [
+    resolveArmadaAdapter('fixture-agent-a', 'candidate'),
+    resolveArmadaAdapter('fixture-agent-b', 'candidate'),
+  ];
+  const actualIdentities = parsed.consideredAgents.map((agent) => ({
+    provider: agent.provider,
+    model: agent.model,
+    identityDigest: agent.identityDigest,
+  })).sort((left, right) => left.model.localeCompare(right.model));
+  const expectedIdentities = expectedAgents.map((adapter) => ({
+    provider: adapter.provider,
+    model: adapter.model,
+    identityDigest: adapter.identityDigest,
+  })).sort((left, right) => left.model.localeCompare(right.model));
+  assert.deepEqual(actualIdentities, expectedIdentities);
   assert.deepEqual(git(repo, ['status', '--porcelain=v1']), '');
   assert.deepEqual(git(repo, ['worktree', 'list', '--porcelain']).match(/worktree /g)?.length, 1);
 });
 
 test('runner refuses caller-selected command, args, cwd, environment and inherited secrets', async () => {
-  const forbidden = ['command', 'args', 'cwd', 'env', 'inheritEnvKeys'];
+  const forbidden = [
+    'command',
+    'args',
+    'cwd',
+    'env',
+    'inheritEnvKeys',
+    'provider',
+    'model',
+    'processIdentityDigest',
+  ];
   for (const key of forbidden) {
     const { dir, repo, baseSha } = await fixtureRepo(`cana-armada-refuse-${key}-`);
     const marker = path.join(dir, `marker-${key}`);
@@ -77,7 +102,9 @@ test('runner refuses caller-selected command, args, cwd, environment and inherit
           ? dir
           : key === 'env'
             ? { CANA_FAKE_SECRET: 'secret' }
-            : ['PATH', 'HOME'];
+            : key === 'inheritEnvKeys'
+              ? ['PATH', 'HOME']
+              : 'caller-selected-identity';
     await fs.writeFile(configPath, JSON.stringify({
       mission: 'fixture mission',
       lane: 'architecture',
@@ -95,7 +122,7 @@ test('runner refuses caller-selected command, args, cwd, environment and inherit
   }
 });
 
-test('runner refuses unknown adapters and candidate identity reuse', async () => {
+test('runner refuses unknown adapters, duplicate ids, and source-adapter identity reuse', async () => {
   const { dir, repo, baseSha } = await fixtureRepo('cana-armada-identity-');
   const base = {
     mission: 'x',
@@ -118,6 +145,15 @@ test('runner refuses unknown adapters and candidate identity reuse', async () =>
   const unknown = spawnSync(process.execPath, [path.join(here, 'armada-runner.mjs'), unknownPath], { encoding: 'utf8' });
   assert.notEqual(unknown.status, 0);
   assert.match(unknown.stderr, /not source-registered/);
+
+  const duplicateIdPath = path.join(dir, 'duplicate-id.json');
+  await fs.writeFile(duplicateIdPath, JSON.stringify({
+    ...base,
+    agents: [base.agents[0], { ...base.agents[1], id: base.agents[0].id }],
+  }));
+  const duplicateId = spawnSync(process.execPath, [path.join(here, 'armada-runner.mjs'), duplicateIdPath], { encoding: 'utf8' });
+  assert.notEqual(duplicateId.status, 0);
+  assert.match(duplicateId.stderr, /agent ids must be distinct/);
 
   const reusedPath = path.join(dir, 'reused.json');
   await fs.writeFile(reusedPath, JSON.stringify({

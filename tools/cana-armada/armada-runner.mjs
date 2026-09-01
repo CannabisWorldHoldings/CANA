@@ -27,7 +27,7 @@ if (!Array.isArray(config.agents) || config.agents.length < 2) throw new Error('
 if (!config.verifier?.adapter) throw new Error('config.verifier.adapter required');
 if (!Array.isArray(config.trials) || !config.trials.length) throw new Error('config.trials required');
 
-const forbiddenProcessKeys = ['command', 'args', 'cwd', 'env', 'inheritEnvKeys'];
+const forbiddenProcessKeys = ['command', 'args', 'cwd', 'env', 'inheritEnvKeys', 'provider', 'model', 'processIdentityDigest'];
 for (const processSpec of [...config.agents, config.verifier]) {
   for (const key of forbiddenProcessKeys) {
     if (Object.hasOwn(processSpec, key)) {
@@ -49,19 +49,26 @@ if (receiptRelativeToRepo === '' || (!receiptRelativeToRepo.startsWith('..') && 
   throw error;
 }
 
+const agentIds = config.agents.map((agent) => agent.id);
+if (agentIds.some((id) => typeof id !== 'string' || !id)) throw new Error('candidate agent ids are required');
+if (new Set(agentIds).size !== agentIds.length) throw new Error('candidate agent ids must be distinct');
 const candidateAdapters = new Map(config.agents.map((agent) => [
   agent.id,
   resolveArmadaAdapter(agent.adapter, 'candidate'),
 ]));
 const verifierAdapter = resolveArmadaAdapter(config.verifier.adapter, 'verifier');
-const signature = (processSpec) => digest({
-  adapter: processSpec.adapter,
-  provider: processSpec.provider ?? null,
-  model: processSpec.model ?? null,
-}, 'process_identity');
-const agentSignatures = config.agents.map(signature);
+const agentSignatures = [...candidateAdapters.values()].map((adapter) => adapter.identityDigest);
 if (new Set(agentSignatures).size !== agentSignatures.length) throw new Error('candidate process/model identities must be distinct');
-if (agentSignatures.includes(signature(config.verifier))) throw new Error('verifier process/model identity must differ from every candidate');
+if (agentSignatures.includes(verifierAdapter.identityDigest)) throw new Error('verifier process/model identity must differ from every candidate');
+const candidateSpecs = new Map(config.agents.map((agent) => [agent.id, agent]));
+const tournamentAgents = config.agents.map((agent) => {
+  const adapter = candidateAdapters.get(agent.id);
+  return Object.freeze({
+    id: agent.id,
+    provider: adapter.provider,
+    model: adapter.model,
+  });
+});
 
 const worktrees = new Map();
 let verifierWorktree = null;
@@ -80,6 +87,7 @@ try {
   });
   const executor = async ({ agent, mission, lane, trial }) => {
     const cwd = worktrees.get(agent.id);
+    const processSpec = candidateSpecs.get(agent.id);
     const payload = {
       role: 'CANA_ARMADA_CANDIDATE',
       mission,
@@ -97,7 +105,7 @@ try {
       adapter: candidateAdapters.get(agent.id),
       input: JSON.stringify(payload),
       cwd,
-      timeoutMs: agent.timeoutMs ?? config.timeoutMs ?? 120_000,
+      timeoutMs: processSpec.timeoutMs ?? config.timeoutMs ?? 120_000,
       maxOutputBytes: config.maxOutputBytes ?? 2_000_000,
     });
     const diff = await worktreeDiff({ worktree: cwd });
@@ -111,7 +119,12 @@ try {
   const verifier = async ({ agent, mission, lane, trial, output }) => {
     const payload = {
       role: 'CANA_ARMADA_INDEPENDENT_VERIFIER',
-      candidateAgent: { id: agent.id, provider: agent.provider ?? null, model: agent.model ?? null },
+      candidateAgent: {
+        id: agent.id,
+        provider: agent.provider,
+        model: agent.model,
+        processIdentityDigest: candidateAdapters.get(agent.id).identityDigest,
+      },
       mission,
       lane,
       trial,
@@ -144,7 +157,12 @@ try {
       throw error;
     }
     const verdict = parseJsonFromAgent(run);
-    if (!verdict.verifierId) verdict.verifierId = config.verifier.id ?? 'verifier:external';
+    if (!verdict.verifierId) verdict.verifierId = verifierAdapter.verifierId;
+    if (verdict.verifierId !== verifierAdapter.verifierId) {
+      const error = new Error('verifier identity does not match source registration');
+      error.code = 'ARMADA_VERIFIER_IDENTITY_MISMATCH';
+      throw error;
+    }
     if (!Number.isFinite(verdict.score) || verdict.score < 0 || verdict.score > 1) throw new Error('verifier score must be in [0,1]');
     return {
       ...verdict,
@@ -159,11 +177,19 @@ try {
   const receipt = await runArmadaTournament({
     mission: config.mission,
     lane: config.lane,
-    agents: config.agents,
+    agents: tournamentAgents,
     executor,
     verifier,
     trials: config.trials,
     baseSha: config.baseSha,
+    resolveAgentIdentity: (agent) => {
+      const adapter = candidateAdapters.get(agent.id);
+      return {
+        provider: adapter.provider,
+        model: adapter.model,
+        identityDigest: adapter.identityDigest,
+      };
+    },
   });
   await fs.writeFile(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`, { flag: 'wx' });
   console.log(JSON.stringify({

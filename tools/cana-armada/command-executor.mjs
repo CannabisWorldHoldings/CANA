@@ -9,20 +9,33 @@ const SAFE_ENV_KEYS = Object.freeze(['PATH', 'TMPDIR', 'TMP', 'TEMP', 'LANG', 'L
 const ADAPTERS = Object.freeze({
   'fixture-agent-a': Object.freeze({
     role: 'candidate',
+    provider: 'FIXTURE',
+    model: 'fixture-a',
     command: process.execPath,
     args: Object.freeze([path.join(HERE, 'fixtures/fake-agent.mjs'), 'a']),
   }),
   'fixture-agent-b': Object.freeze({
     role: 'candidate',
+    provider: 'FIXTURE',
+    model: 'fixture-b',
     command: process.execPath,
     args: Object.freeze([path.join(HERE, 'fixtures/fake-agent.mjs'), 'b']),
   }),
   'fixture-verifier': Object.freeze({
     role: 'verifier',
+    provider: 'FIXTURE',
+    model: 'fixture-verifier',
+    verifierId: 'verifier:fixture',
     command: process.execPath,
     args: Object.freeze([path.join(HERE, 'fixtures/fake-verifier.mjs')]),
   }),
 });
+const adapterIdentity = (adapterId, registered) => digest({
+  adapterId,
+  role: registered.role,
+  provider: registered.provider,
+  model: registered.model,
+}, 'armada_adapter_identity');
 
 export function resolveArmadaAdapter(adapterId, role) {
   const registered = ADAPTERS[adapterId];
@@ -35,6 +48,10 @@ export function resolveArmadaAdapter(adapterId, role) {
     [ADAPTER_GRANT]: true,
     adapterId,
     role,
+    provider: registered.provider,
+    model: registered.model,
+    verifierId: registered.verifierId ?? null,
+    identityDigest: adapterIdentity(adapterId, registered),
     command: registered.command,
     args: registered.args,
   });
@@ -62,6 +79,10 @@ export async function runCommandAgent({
     adapter.command !== registered.command
     || JSON.stringify(adapter.args) !== JSON.stringify(registered.args)
     || adapter.role !== registered.role
+    || adapter.provider !== registered.provider
+    || adapter.model !== registered.model
+    || adapter.verifierId !== (registered.verifierId ?? null)
+    || adapter.identityDigest !== adapterIdentity(adapter.adapterId, registered)
   ) {
     const error = new Error('Armada adapter grant does not match its source registration');
     error.code = 'ARMADA_ADAPTER_NOT_AUTHORIZED';
@@ -115,6 +136,9 @@ export async function runCommandAgent({
   return Object.freeze({
     ...result,
     adapterId: adapter.adapterId,
+    adapterIdentityDigest: adapter.identityDigest,
+    provider: adapter.provider,
+    model: adapter.model,
     effectAuthority: 'NONE',
     startedAt: startedAt.toISOString(),
     completedAt: completedAt.toISOString(),

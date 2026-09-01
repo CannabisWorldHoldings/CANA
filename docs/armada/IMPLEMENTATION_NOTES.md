@@ -39,7 +39,7 @@ The retained donor apply script is forensic installation material only and is no
 
 ## Command execution boundary
 
-`armada-runner.mjs` cannot accept a command, argument vector, working directory, environment, inherited-secret list, shell, Git action, SQL action, or deployment primitive from JSON. Candidate and verifier processes resolve through the closed source registry in `command-executor.mjs`, run in separate disposable worktrees at an exact 40-character commit SHA, receive no inherited `HOME`, and carry `CANA_ARMADA_EFFECT_AUTHORITY=NONE`. The current registry contains fixture adapters only. The independent verifier is also isolated and must leave its worktree unchanged. Its receipt must be a new file outside the source repository, so a caller cannot overwrite source or an existing receipt.
+`armada-runner.mjs` cannot accept a command, argument vector, working directory, environment, inherited-secret list, provider/model/process identity, shell, Git action, SQL action, or deployment primitive from JSON. Candidate and verifier processes resolve through the closed source registry in `command-executor.mjs`; that registry owns provider/model/verifier identity and the process-identity digest. Duplicate candidate ids or adapter identities fail before any worktree is created. Processes run in separate disposable worktrees at an exact 40-character commit SHA, receive no inherited `HOME`, and carry `CANA_ARMADA_EFFECT_AUTHORITY=NONE`. The current registry contains fixture adapters only. The independent verifier is also isolated and must leave its worktree unchanged. Its receipt must be a new file outside the source repository, so a caller cannot overwrite source or an existing receipt.
 
 ## Protected-champion installation law
 
